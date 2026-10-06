@@ -25,7 +25,6 @@ import FeatureFlags_iOS
 enum FloatingSwipePreviewGeometry {
 
     static func destinationFrame(isAITab: Bool,
-                                 hasInlineSearchInput: Bool = false,
                                  superviewBounds: CGRect,
                                  contentContainerFrame: CGRect,
                                  safeAreaInsets: UIEdgeInsets,
@@ -41,12 +40,8 @@ enum FloatingSwipePreviewGeometry {
                 width: superviewBounds.width,
                 height: max(bottom - top, 0)
             )
-        } else if hasInlineSearchInput {
-            frameInSuperview = superviewBounds.inset(by: UIEdgeInsets(top: safeAreaInsets.top,
-                                                                     left: 0,
-                                                                     bottom: 0,
-                                                                     right: 0))
         } else {
+            // The redesigned NTP also fills the viewport; its content manages the safe-area inset.
             frameInSuperview = superviewBounds
         }
 
@@ -530,7 +525,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if floatingUIManager.isFloatingUIEnabled {
             targetFrame = FloatingSwipePreviewGeometry.destinationFrame(
                 isAITab: tab?.isAITab == true,
-                hasInlineSearchInput: hasInlineSearchInput(tab),
                 superviewBounds: coordinator.superview.bounds,
                 contentContainerFrame: coordinator.contentContainer.frame,
                 safeAreaInsets: coordinator.superview.safeAreaInsets,
@@ -677,7 +671,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         guard state.aiChatInputBoxVisibility != .hidden else { return }
 
-        let inputController = UnifiedToggleInputViewController(isToggleEnabled: true, isFireTab: tab.fireTab)
+        let attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: omnibarDependencies.featureFlagger)
+        let inputController = UnifiedToggleInputViewController(
+            isToggleEnabled: true,
+            isFireTab: tab.fireTab,
+            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
         inputController.loadViewIfNeeded()
         inputController.view.isUserInteractionEnabled = false
 

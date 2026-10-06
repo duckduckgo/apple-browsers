@@ -227,6 +227,22 @@
             }
         ]
     },
+    "aichat_usage_warning_weekly_limit_tapped": {
+        "description": "Fires when the user taps Start Using Weekly Limit on the daily limit-reached card. Counts as follow-through for the exposure, so no aichat_usage_warning_limit_reached_abandoned follows it.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance is spent.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
     "aichat_high_usage_model_notice_shown": {
         "description": "Fires when the high-usage model notice appears under the Duck.ai input. Keyed off the selected model rather than an allowance, and shown once per model until dismissed.",
         "owners": ["Bunn"],

@@ -1016,6 +1016,7 @@ private final class DocumentReadGate {
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
+    var waitTimeoutReasons: [MultiTabCollectionWaitTimeoutPixel.Reason] = []
     var pageContextCollectionEmptyCount = 0
     var pageContextCollectionUnavailableCount = 0
 
@@ -1059,6 +1060,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedFrontend() {}
     func firePageContextCollectionEmpty() {
         pageContextCollectionEmptyCount += 1
+    }
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {
+        waitTimeoutReasons.append(reason)
     }
     func firePageContextCollectionUnavailable() {
         pageContextCollectionUnavailableCount += 1
@@ -1246,6 +1250,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
     private let url = URL(string: "https://example.com/page")!
     private let webView = WKWebView()
     private let script = AttachedPageScript()
+    private let timeoutPixels = MockContextualModePixelHandler()
 
     override func tearDown() {
         script.onCollect = nil
@@ -1257,9 +1262,11 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
                               truncated: false, fullContentLength: content.count)
     }
 
-    private func handler() -> DuckDuckGo.AIChatPageContextHandler {
+    private func handler(pixelHandler: AIChatContextualModePixelFiring? = nil,
+                         now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) -> DuckDuckGo.AIChatPageContextHandler {
         DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
-                                            faviconProvider: { _ in nil }, currentURLProvider: { self.url })
+                                            faviconProvider: { _ in nil }, pixelHandler: pixelHandler ?? timeoutPixels,
+                                            currentURLProvider: { self.url }, now: now)
     }
 
     func testIgnoresWrongPageAndAcceptsMatchingDocumentURL() async {
@@ -1285,10 +1292,279 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
     }
 
     func testTimeoutReleasesSubscriptionWithoutClearingSharedScript() async {
-        let result = await handler().collectContext(for: url, timeout: 0, isValid: { true })
+        let result = await handler().collectContext(for: url, timeout: 0.01, isValid: { true })
         XCTAssertEqual(result, .timedOut)
         XCTAssertEqual(script.subscriptionCount, 0)
         XCTAssertTrue(script.webView === webView)
+        XCTAssertTrue(timeoutPixels.waitTimeoutReasons.isEmpty)
+    }
+
+    func testCurrentPageCollectionAutomaticUpdatesAndResubscriptionInBothFeatureStates() async {
+        for state in [AIChatContextualAttachMoreTabsState.unavailable, .available(maximumTabAttachmentCount: 3)] {
+            let handler = handler()
+            let tab = Tab(uid: "current", link: Link(title: "Page", url: url), fireTab: false)
+            let source = MultiTabAttachmentSource(currentTabID: tab.uid, mode: .normal, tabsProvider: { [tab] }, pageProvider: { _ in
+                XCTFail("Current-page collection must not enter the additional-tab path")
+                return nil
+            })
+            let attachments = MultiTabAttachmentContext(source: source, feature: AttachedPageFeature(state: state))
+            XCTAssertNil(attachments.prepare(.init(tabId: tab.uid, title: "Page", url: url, source: .recentTabs), onChange: { _ in }))
+
+            let initial = expectation(description: "Initial current-page result")
+            let automatic = expectation(description: "Automatic update")
+            let reopened = expectation(description: "Result after resubscription")
+            let restarted = expectation(description: "Result after clear and new collection")
+            var received: [AIChatPageContextData?] = []
+            let subscription = handler.contextPublisher.dropFirst().sink { context in
+                received.append(context?.contextData)
+                switch received.count {
+                case 1: initial.fulfill()
+                case 2: automatic.fulfill()
+                case 3: reopened.fulfill()
+                case 5: restarted.fulfill()
+                default: break
+                }
+            }
+            let first = context(content: "Current page")
+            script.onCollect = { self.script.results.send(.collected(first)) }
+            XCTAssertTrue(handler.triggerContextCollection(trigger: .auto))
+            await fulfillment(of: [initial], timeout: 1)
+            let updated = context(content: "Updated page")
+            script.results.send(.collected(updated))
+            await fulfillment(of: [automatic], timeout: 1)
+
+            handler.resubscribe()
+            XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+            await fulfillment(of: [reopened], timeout: 1)
+            handler.clear()
+            XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+            await fulfillment(of: [restarted], timeout: 1)
+
+            XCTAssertEqual(received, [first, updated, first, nil, first])
+            subscription.cancel()
+            handler.clear()
+        }
+    }
+
+    func testAttachmentResultsPreserveSourceContextAndPixelsThenResumeAutomaticUpdates() async {
+        let pixels = MockContextualModePixelHandler()
+        let handler = handler(pixelHandler: pixels)
+        let original = context(content: "Original source context")
+        let initialUpdate = expectation(description: "Source context collected")
+        let automaticUpdate = expectation(description: "Automatic updates resumed")
+        var received: [AIChatPageContextData?] = []
+        let subscription = handler.contextPublisher.dropFirst().sink { context in
+            received.append(context?.contextData)
+            if received.count == 1 { initialUpdate.fulfill() }
+            if received.count == 2 { automaticUpdate.fulfill() }
+        }
+        defer { subscription.cancel() }
+        script.onCollect = { self.script.results.send(.collected(original)) }
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .auto))
+        await fulfillment(of: [initialUpdate], timeout: 1)
+
+        let outcomes: [(PageContextCollectionResult, MultiTabAttachmentCollectionResult)] = [
+            (.collected(context(content: "Attachment")), .collected(context(content: "Attachment"))),
+            (.collected(context(content: "")), .empty),
+            (.scriptError, .failed),
+            (.decodeFailed, .failed)
+        ]
+        for (emission, expected) in outcomes {
+            script.onCollect = { self.script.results.send(emission) }
+            let result = await handler.collectContext(for: url, isValid: { true })
+            XCTAssertEqual(result, expected)
+            XCTAssertEqual(received, [original])
+            XCTAssertEqual(pixels.pageContextCollectionEmptyCount, 0)
+        }
+
+        let updated = context(content: "Automatic update")
+        script.results.send(.collected(updated))
+        await fulfillment(of: [automaticUpdate], timeout: 1)
+        XCTAssertEqual(received, [original, updated])
+    }
+
+    func testOwnCollectionWaitsForAttachmentResult() async {
+        let handler = handler()
+        let attachmentStarted = expectation(description: "Attachment started")
+        let ownContextReceived = expectation(description: "Deferred own collection received")
+        let ownContext = context(content: "Own collection")
+        var received: [AIChatPageContextData?] = []
+        let subscription = handler.contextPublisher.dropFirst().sink { context in
+            received.append(context?.contextData)
+            ownContextReceived.fulfill()
+        }
+        defer { subscription.cancel() }
+        script.onCollect = {
+            if self.script.collectCallCount == 1 {
+                attachmentStarted.fulfill()
+            } else {
+                self.script.results.send(.collected(ownContext))
+            }
+        }
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [attachmentStarted], timeout: 1)
+
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        XCTAssertEqual(script.collectCallCount, 1)
+        let attached = context(content: "For another tab")
+        script.results.send(.collected(attached))
+        let result = await task.value
+        await fulfillment(of: [ownContextReceived], timeout: 1)
+
+        XCTAssertEqual(result, .collected(attached))
+        XCTAssertEqual(script.collectCallCount, 2)
+        XCTAssertEqual(received, [ownContext])
+    }
+
+    func testAttachmentWaitsForAllPendingOwnCollections() async {
+        let waiting = expectation(description: "Attachment entered")
+        var entered = false
+        let handler = handler(now: {
+            if !entered {
+                entered = true
+                waiting.fulfill()
+            }
+            return ProcessInfo.processInfo.systemUptime
+        })
+        let ownResults = expectation(description: "Own results received")
+        ownResults.expectedFulfillmentCount = 2
+        var received: [AIChatPageContextData?] = []
+        let subscription = handler.contextPublisher.dropFirst().sink { context in
+            received.append(context?.contextData)
+            ownResults.fulfill()
+        }
+        defer { subscription.cancel() }
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .auto))
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let attached = context(content: "For another tab")
+        script.onCollect = { self.script.results.send(.collected(attached)) }
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [waiting], timeout: 1)
+        XCTAssertEqual(script.collectCallCount, 2)
+
+        let own = context(content: "Own context")
+        script.results.send(.collected(own))
+        script.results.send(.collected(own))
+        await fulfillment(of: [ownResults], timeout: 1)
+        let result = await task.value
+
+        XCTAssertEqual(result, .collected(attached))
+        XCTAssertEqual(script.collectCallCount, 3)
+        XCTAssertEqual(received, [own, own])
+    }
+
+    func testWhenSourceCollectionBlocksThenReportsOneWaitTimeout() async {
+        let handler = handler()
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let result = await handler.collectContext(for: url, timeout: 0.01, isValid: { true })
+        XCTAssertEqual(result, .timedOut)
+        XCTAssertEqual(script.collectCallCount, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.count, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.first, .sourceCollection)
+    }
+
+    func testWhenAnotherCrossTabCollectionBlocksThenReportsItsWaitReason() async {
+        let handler = handler()
+        let started = expectation(description: "First collection started")
+        script.onCollect = { started.fulfill() }
+        let first = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [started], timeout: 1)
+
+        let result = await handler.collectContext(for: url, timeout: 0.01, isValid: { true })
+        first.cancel()
+        _ = await first.value
+
+        XCTAssertEqual(result, .timedOut)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.count, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.first, .crossTabCollection)
+    }
+
+    func testWhenWaitingIsCancelledThenDoesNotReportTimeout() async {
+        let entered = expectation(description: "Waiting started")
+        var didEnter = false
+        let handler = handler(now: {
+            if !didEnter {
+                didEnter = true
+                entered.fulfill()
+            }
+            return ProcessInfo.processInfo.systemUptime
+        })
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [entered], timeout: 1)
+        task.cancel()
+        let result = await task.value
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertTrue(timeoutPixels.waitTimeoutReasons.isEmpty)
+    }
+
+    func testWhenBothCollectionKindsBlockThenReasonIncludesBoth() {
+        XCTAssertEqual(MultiTabCollectionWaitTimeoutPixel.Reason(hasSourceCollection: true, hasCrossTabCollection: true), .both)
+        XCTAssertNil(MultiTabCollectionWaitTimeoutPixel.Reason(hasSourceCollection: false, hasCrossTabCollection: false))
+    }
+
+    func testWaitingConsumesAttachmentTimeoutBudget() async {
+        let waiting = expectation(description: "Attachment entered")
+        var entered = false
+        var time: TimeInterval = 0
+        let handler = handler(now: {
+            if !entered {
+                entered = true
+                waiting.fulfill()
+            }
+            return time
+        })
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let task = Task { await handler.collectContext(for: url, timeout: 5, isValid: { true }) }
+        await fulfillment(of: [waiting], timeout: 1)
+
+        time = 5
+        script.results.send(.collected(context()))
+        let result = await task.value
+
+        XCTAssertEqual(result, .timedOut)
+        XCTAssertEqual(script.collectCallCount, 1)
+        XCTAssertEqual(script.subscriptionCount, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.count, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.first, .sourceCollection)
+    }
+
+    func testCancellationResumesSourceObservationAndDeferredCollection() async {
+        let handler = handler()
+        handler.resubscribe()
+        let started = expectation(description: "Attachment started")
+        script.onCollect = { started.fulfill() }
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [started], timeout: 1)
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let resumed = expectation(description: "Deferred collection resumed")
+        let subscription = handler.contextPublisher.dropFirst().sink { _ in resumed.fulfill() }
+        defer { subscription.cancel() }
+        script.onCollect = { self.script.results.send(.collected(self.context())) }
+
+        task.cancel()
+        let result = await task.value
+        await fulfillment(of: [resumed], timeout: 1)
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertEqual(script.collectCallCount, 2)
+    }
+
+    func testClearDuringAttachmentDoesNotRestoreObservationOrDeferredCollection() async {
+        let handler = handler()
+        handler.resubscribe()
+        let started = expectation(description: "Attachment started")
+        script.onCollect = { started.fulfill() }
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [started], timeout: 1)
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+
+        handler.clear()
+        script.results.send(.collected(context()))
+        _ = await task.value
+
+        XCTAssertEqual(script.collectCallCount, 1)
+        XCTAssertEqual(script.subscriptionCount, 0)
+        XCTAssertNil(script.webView)
     }
 
     func testCancellationReleasesSubscriptionAndDoesNotAffectNextCollection() async {
@@ -1356,11 +1632,24 @@ private final class AttachedPageScript: PageContextCollecting {
     var webView: WKWebView?
     var onCollect: (() -> Void)?
     private(set) var subscriptionCount = 0
+    private(set) var collectCallCount = 0
 
     var collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never> {
         results.handleEvents(receiveSubscription: { [weak self] _ in self?.subscriptionCount += 1 },
                              receiveCancel: { [weak self] in self?.subscriptionCount -= 1 }).eraseToAnyPublisher()
     }
 
-    func collect() { onCollect?() }
+    func collect() {
+        collectCallCount += 1
+        onCollect?()
+    }
+}
+
+private struct AttachedPageFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
+    let state: AIChatContextualAttachMoreTabsState
 }

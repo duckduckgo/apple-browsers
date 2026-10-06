@@ -35,12 +35,12 @@ enum SubscriptionOnboardingExperiment {
         case treatment
     }
 
-    private static let freeTrialsFlag = FeatureFlag.subscriptionOnboardingFreeTrialsSep2026
-    private static let paidSubsFlag = FeatureFlag.subscriptionOnboardingPaidSubsSep2026
+    private static let freeTrialsFlag = FeatureFlag.subscriptionOnboardingFreeTrialsOct2026
+    private static let paidSubsFlag = FeatureFlag.subscriptionOnboardingPaidSubsOct2026
     private static let flags: [FeatureFlag] = [freeTrialsFlag, paidSubsFlag]
 
-    private static let freeTrialsSubfeatureID = PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026.rawValue
-    private static let paidSubsSubfeatureID = PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026.rawValue
+    private static let freeTrialsSubfeatureID = PrivacyProSubfeature.subscriptionOnboardingFreeTrialsOct2026.rawValue
+    private static let paidSubsSubfeatureID = PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026.rawValue
 
     private static let d1Window: ConversionWindow = 0...1
 

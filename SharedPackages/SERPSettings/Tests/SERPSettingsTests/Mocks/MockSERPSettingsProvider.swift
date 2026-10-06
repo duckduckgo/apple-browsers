@@ -82,6 +82,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var isAIChatEnabled: Bool = false
     var sessionTimerInMinutes: Int = 30
     var aiChatAttachMoreTabsLimit: Int = 3
+    var aiChatAttachMoreTabsPromotionStartDate: Date?
     var isAIChatAddressBarUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool = false

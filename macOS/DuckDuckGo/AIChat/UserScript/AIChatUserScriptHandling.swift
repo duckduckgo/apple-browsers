@@ -22,6 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Foundation
+import PixelExperimentKit
 import PixelKit
 import Subscription
 import UserScript
@@ -92,6 +93,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -117,6 +119,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var messageHandling: AIChatMessageHandling { get }
 
     var isFireWindowProvider: (() -> Bool)? { get set }
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
@@ -202,8 +205,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
     private let browserTools: AIChatBrowserToolsService
+    private let fireNewAIChatExperimentPixels: () -> Void
 
     var isFireWindowProvider: (() -> Bool)?
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
 
     /// Surface that opened this chat, consumed once per document and retained for its pixels.
     private var conversationSource: AIChatConversationSource?
@@ -233,7 +238,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
         conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
-        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
+        fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -248,6 +254,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
         self.conversationSourceHandler = conversationSourceHandler
+        self.fireNewAIChatExperimentPixels = fireNewAIChatExperimentPixels
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -295,6 +302,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    @MainActor
+    public func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
+        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosureProvider?().claim() ?? false)
     }
 
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a
@@ -1140,6 +1152,9 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
                                                              hasPageContext: hasAttachedPageContext),
                 frequency: .standard
             )
+            // The first prompt is what actually starts a chat, so `duck_ai_new_chat` hangs off it
+            // rather than off the new-chat page being opened.
+            fireNewAIChatExperimentPixels()
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

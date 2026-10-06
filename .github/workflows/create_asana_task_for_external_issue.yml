@@ -1,0 +1,31 @@
+name: Create Asana Task for External Issue
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+jobs:
+  create-asana-task:
+    name: Create Asana task
+    if: >-
+      ${{
+        github.event.issue.user.type != 'Bot' &&
+        !contains(fromJSON('["OWNER", "MEMBER"]'), github.event.issue.author_association)
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create task from GitHub issue
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: '1218263236060238'
+          asana-section: '1218266698505984'
+          asana-task-name: 'GitHub Issue: #${{ github.event.issue.number }} ${{ github.event.issue.title }}'
+          asana-task-description: |
+            ${{ github.event.issue.html_url }}
+
+            ${{ github.event.issue.body }}

@@ -52,8 +52,10 @@ class NewPermissionViewTests: UITestCase {
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .microphone)
 
-        // Now set up and launch the app
-        app = XCUIApplication.setUp()
+        // Now set up and launch the app, keeping the Allow / Deny prompt these tests are written for
+        app = XCUIApplication.setUp(featureFlags: [
+            "websitePermissionsPrompts": false,
+        ])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
@@ -649,7 +651,8 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Verify the external apps permission dropdown exists and shows "Always ask"
-        let externalAppsDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        // Query by identifier: video ads on the page can add an Autoplay row above External apps
+        let externalAppsDropdown = permissionCenterPopover.popUpButtons["PermissionCenterView.externalSchemeDecisionPopUp"]
         XCTAssertTrue(
             externalAppsDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "External apps permission dropdown didn't appear in the permission center."
@@ -688,6 +691,7 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
+                "websitePermissionsPrompts": false,
             ]
         )
 

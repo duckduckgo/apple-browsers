@@ -88,7 +88,7 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            tabProvider: { [weak self] in self?.tabManager.currentTabsModel.currentTab }
+            floatingUIManager: floatingUIManager
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -521,6 +521,10 @@ private extension MainViewController {
                 self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.onFloatingReturnKeyAvailabilityChanged = { [weak self] in
+            self?.updateFloatingReturnKeyVisibility()
+        }
 
         coordinator.textChangePublisher
             .sink { [weak self] text in
@@ -1360,7 +1364,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
         recordDuckAISessionPromptSubmittedOnCurrentTab()
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
@@ -1377,7 +1381,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
+                   termsAccepted: termsAccepted)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -1432,6 +1437,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestAppMenu() {
         onMenuPressed()
+    }
+
+    func unifiedToggleInputDidRequestAppMenuLongPress() {
+        onMenuLongPressed()
     }
 
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
@@ -1585,11 +1594,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         })
     }
 
+    /// Opens the chat in a new tab, so the current one stays reachable.
     func aiChatTabChatHeaderDidTapNewChat() {
+        guard let tab = currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        unifiedToggleInputCoordinator?.startNewChat()
-        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
-        currentTab?.submitStartChatAction()
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {

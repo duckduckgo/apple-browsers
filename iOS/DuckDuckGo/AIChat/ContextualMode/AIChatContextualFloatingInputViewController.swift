@@ -110,6 +110,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     weak var delegate: AIChatContextualFloatingInputViewControllerDelegate?
 
     private let utiHost: AIChatContextualFloatingInputHosting
+    private var areTabMentionSuggestionsVisible = false
     private var isTransitioningSize = false
     let chipsViewController: AIChatContextualInputViewController
 
@@ -276,11 +277,30 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         chipsViewController.showStartActions()
     }
 
+    func showSuggestionsLoading() {
+        chipsViewController.updateStartActions(suggestions: [], quickActions: [])
+        chipsViewController.updateSuggestionsLoading(true)
+        // A previous empty state may have hidden the container or left a fade-out in flight.
+        chipsContainerView.layer.removeAllAnimations()
+        chipsContainerView.alpha = 1
+    }
+
     /// Clears only once invisible: removing them collapses the stack into the input's own animation.
     func clearChipsFadingOut() {
+        if areTabMentionSuggestionsVisible {
+            chipsContainerView.layer.removeAllAnimations()
+            chipsContainerView.alpha = 0
+            chipsViewController.updateStartActions(suggestions: [], quickActions: [])
+            return
+        }
         fadeChipsContainer(to: 0) { [weak self] in
             self?.chipsViewController.updateStartActions(suggestions: [], quickActions: [])
         }
+    }
+
+    func setTabMentionSuggestionsVisible(_ isVisible: Bool) {
+        areTabMentionSuggestionsVisible = isVisible
+        chipsViewController.view.isHidden = isVisible
     }
 
     private func fadeChipsContainer(to alpha: CGFloat, completion: (() -> Void)? = nil) {
@@ -548,6 +568,13 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     /// Taps on our own controls are the surface being used, not the user leaving it. Deferring to our
     /// hit test keeps one definition of which points this surface owns.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if gestureRecognizer === dragToDismissRecognizer {
+            var touchedView = touch.view
+            while let current = touchedView {
+                if current is MultiTabMentionSuggestionsView { return false }
+                touchedView = current.superview
+            }
+        }
         guard gestureRecognizer === dismissOnPageTapRecognizer else { return true }
         // Page only: the address bar dismisses this surface by taking focus, so its tap must land.
         gestureRecognizer.cancelsTouchesInView = isWithinWebContent(touch.view)

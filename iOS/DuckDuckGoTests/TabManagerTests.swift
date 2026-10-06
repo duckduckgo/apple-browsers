@@ -98,9 +98,13 @@ final class TabManagerTests: XCTestCase {
         tabsModel.insert(tab: Tab(), placement: .atEnd, selectNewTab: false)
         fireModel.insert(tab: Tab(fireTab: true), placement: .atEnd, selectNewTab: false)
         let manager = try makeManager(tabsModel, fireModel: fireModel, previewsSource: mock)
+        let previewsCleanedUp = expectation(description: "Excess tab previews cleaned up")
+        mock.onRemovePreviewsWithIdNotIn = { previewsCleanedUp.fulfill() }
+
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-        try await Task.sleep(interval: 0.5)
+        await fulfillment(of: [previewsCleanedUp], timeout: 5.0)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
+        mock.onRemovePreviewsWithIdNotIn = nil
 
         // This is just to keep a reference to the manager to supress the unused warning and keep it from being deinit
         manager.removeAll()
@@ -430,6 +434,37 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(cacheDelegate.evictionReasons, [.memoryWarning, .memoryWarning])
         XCTAssertEqual(model.tabs.count, 3)
         XCTAssertTrue(model.currentTab === tabs[0])
+    }
+
+    func testWhenMemoryWarningIsReceivedInBackgroundThenReservedControllerIsPreservedUntilRelease() throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      applicationState: { .background })
+        let currentController = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let source = try XCTUnwrap(currentController.tabAttachmentSource)
+        let reservation = try XCTUnwrap(source.acquirePage(tabs[1]))
+        defer { reservation.release() }
+        let reservedController = try XCTUnwrap(manager.controller(for: tabs[1]))
+        _ = try XCTUnwrap(manager.controller(for: tabs[2], createIfNeeded: true))
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertTrue(manager.controller(for: tabs[0]) === currentController)
+        XCTAssertTrue(manager.controller(for: tabs[1]) === reservedController)
+        XCTAssertNil(manager.controller(for: tabs[2]))
+        XCTAssertEqual(model.tabs.count, 3)
+
+        reservation.release()
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertTrue(manager.controller(for: tabs[0]) === currentController)
+        XCTAssertEqual(model.tabs.count, 3)
     }
 
     func testWhenMemoryWarningEvictionFlagIsDisabledThenControllersRemainCached() throws {

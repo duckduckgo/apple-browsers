@@ -854,6 +854,58 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.createImageModelSwitch)
     }
 
+    // MARK: - attachment privacy disclaimer
+
+    @MainActor
+    func testTheProvidersAttachmentPrivacyAnswerIsIncludedInConfig() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, true)
+    }
+
+    @MainActor
+    func testWhenTheProviderRefusesThenConfigSaysSo() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyDisclaimerShownForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown(kind: .image)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown, parameters: action)
+
+        XCTAssertEqual(configProvider.attachmentPrivacyDisclaimerShownKinds, [.image])
+    }
+
+    @MainActor
+    func testWhenTheKindIsUnrecognisedThenNoDisplayIsSpent() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue(configProvider.attachmentPrivacyDisclaimerShownKinds.isEmpty)
+    }
+
+    @MainActor
+    func testOpenAttachmentPrivacyLearnMoreForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore(kind: .file)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds, [.file])
+    }
+
+    @MainActor
+    func testWhenTheLearnMoreKindIsUnrecognisedThenNothingIsForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds.isEmpty == true)
+    }
+
     // MARK: - usage limits
 
     @MainActor

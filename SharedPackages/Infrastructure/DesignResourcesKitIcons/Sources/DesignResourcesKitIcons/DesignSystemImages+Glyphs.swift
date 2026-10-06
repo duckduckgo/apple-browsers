@@ -18,6 +18,10 @@
 
 public extension DesignSystemImages {
     enum Glyphs {
+        public enum Size10 {
+            public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight10) }
+        }
+
         public enum Size12 {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility12) }
             public static var add: DesignSystemImage { .init(resource: .add12) }
@@ -49,6 +53,7 @@ public extension DesignSystemImages {
             public static var car: DesignSystemImage { .init(resource: .car12) }
             public static var chat: DesignSystemImage { .init(resource: .chat12) }
             public static var check: DesignSystemImage { .init(resource: .check12) }
+            public static var chevronUp: DesignSystemImage { .init(resource: .chevronUp12) }
             public static var chip: DesignSystemImage { .init(resource: .chip12) }
             public static var close: DesignSystemImage { .init(resource: .close12) }
             public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall12) }
@@ -148,10 +153,12 @@ public extension DesignSystemImages {
         }
 
         public enum Size16 {
+            public static var returnTo: DesignSystemImage { .init(resource: .returnTo16) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneral16) }
             public static var priceTag: DesignSystemImage { .init(resource: .priceTag16) }
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility16) }
             public static var add: DesignSystemImage { .init(resource: .add16) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop16) }
@@ -160,11 +167,7 @@ public extension DesignSystemImages {
             public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
             public static var aiChatDown: DesignSystemImage { .init(resource: .aiChatDown16) }
-            public static var aiChatGradientColor: DesignSystemImage {
-                AppRebrand.isAppRebranded()
-                    ? .init(resource: .aiChatColor16)
-                    : .init(resource: .aiChatGradientColor16)
-            }
+            public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatColor16) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory16) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings16) }
             public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude16) }

@@ -26,7 +26,8 @@ import PixelKit
 @Suite("AI Chat Contextual Mode Pixel Handler Tests", .serialized)
 final class AIChatContextualModePixelHandlerTests {
 
-    @Test("Tab collection wait timeouts use contextual pixel forwarding")
+    @available(iOS 16, macOS 13, *)
+    @Test("Tab collection wait timeouts use contextual pixel forwarding", .timeLimit(.minutes(1)))
     func tabCollectionWaitTimeoutUsesContextualPixelForwarding() {
         var firedName: String?
         var firedParameters: [String: String]?

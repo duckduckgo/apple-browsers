@@ -26,7 +26,7 @@ import Persistence
 import PrivacyConfig
 
 extension Notification.Name {
-    static let duckAiLauncherPromoOutcomeDidReset = Notification.Name("duckAiLauncherPromoOutcomeDidReset")
+    static let duckAiLauncherPromoOutcomeDidChange = Notification.Name("duckAiLauncherPromoOutcomeDidChange")
 }
 
 enum DuckAiLauncherPromoOutcome: String {
@@ -56,7 +56,6 @@ final class DuckAiLauncherPromo {
     private let preferences: PromptBarPreferences
     private let keyValueStore: ThrowingKeyValueStoring
     private let openSettings: @MainActor () -> Void
-    private let dismissalSubject = PassthroughSubject<Void, Never>()
     @Published private var chatCount = 0
     private var chatsCancellable: AnyCancellable?
 
@@ -104,8 +103,7 @@ final class DuckAiLauncherPromo {
             preferences.$isMenuBarIconVisible.map { _ in () }.eraseToAnyPublisher(),
             $chatCount.map { _ in () }.eraseToAnyPublisher(),
             featureFlagger.updatesPublisher,
-            dismissalSubject.eraseToAnyPublisher(),
-            NotificationCenter.default.publisher(for: .duckAiLauncherPromoOutcomeDidReset).map { _ in () }.eraseToAnyPublisher()
+            NotificationCenter.default.publisher(for: .duckAiLauncherPromoOutcomeDidChange).map { _ in () }.eraseToAnyPublisher()
         )
         .receive(on: DispatchQueue.main)
         .compactMap { [weak self] in self.map { $0.presentation() } }
@@ -133,12 +131,12 @@ final class DuckAiLauncherPromo {
 
     private func record(_ outcome: DuckAiLauncherPromoOutcome) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
-        dismissalSubject.send()
+        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidChange, object: nil)
     }
 
     static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
         try? keyValueStore.removeObject(forKey: outcomeKey)
-        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidReset, object: nil)
+        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidChange, object: nil)
     }
 }
 

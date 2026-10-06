@@ -47,8 +47,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/duckduckgo/BareBonesBrowser.git", exact: "0.1.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "4.0.3"),
-        .package(url: "https://github.com/pointfreeco/combine-schedulers.git", exact: "1.2.2"),
+        .package(url: "https://github.com/pointfreeco/combine-schedulers.git", exact: "1.2.0"),
         .package(url: "https://github.com/airbnb/lottie-spm.git", exact: "4.6.1"),
+        // Keep the reporting graph consistent across Xcode 26 and 27.
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", exact: "1.7.0"),
+        .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", exact: "1.11.0"),
         .package(path: "../../SharedPackages/AIChat"),
         .package(path: "../../SharedPackages/AttributedMetric"),
         .package(path: "../../SharedPackages/AutomationServer"),
@@ -187,6 +190,7 @@ let package = Package(
                 .product(name: "WebExtensions", package: "WebExtensions"),
                 .product(name: "WebKitExtensions", package: "WebKitExtensions"),
                 .product(name: "WideEvent", package: "WideEvent"),
+                .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay"),
             ],
             path: ".",
             exclude: [

@@ -70,6 +70,8 @@ final class UTIFooterController {
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
     var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
+    /// Unaccepted with the feature on, so the disclaimer returns whenever the input is open in Duck.ai mode.
+    var isTermsOfServicePending: Bool { termsOfServiceStore?.hasAccepted == false }
 
     init(viewModel: DuckAiUsageWarningViewModel?,
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,

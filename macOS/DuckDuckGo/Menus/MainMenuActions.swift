@@ -863,6 +863,8 @@ extension AppDelegate {
     @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
         SyncPromoManager().resetPromos()
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupBookmarksPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupAutofillPromoID, clearHistory: true)
         DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 

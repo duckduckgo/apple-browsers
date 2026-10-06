@@ -22,4 +22,30 @@ extension PromoServiceFactory {
 
     static let syncSetupBookmarksPromoID = "sync-setup-bookmarks"
     static let syncSetupAutofillPromoID = "sync-setup-autofill"
+
+    /// "Sync your bookmarks" promo in the Bookmarks panel and Manage Bookmarks.
+    @MainActor
+    static func syncSetupBookmarks(dependencies: PromoDependencies) -> Promo {
+        InternalPromo(
+            id: syncSetupBookmarksPromoID,
+            triggers: [.bookmarksPanelOpened, .bookmarksManagerOpened],
+            initiated: .app,
+            promoType: PromoType(.inlineTip),
+            context: .global,
+            delegate: dependencies.syncSetupBookmarksPromoManager
+        )
+    }
+
+    /// "Sync your autofill data" promo in the Passwords panel and Passwords & Autofill settings.
+    @MainActor
+    static func syncSetupAutofill(dependencies: PromoDependencies) -> Promo {
+        InternalPromo(
+            id: syncSetupAutofillPromoID,
+            triggers: [.passwordsPanelOpened, .autofillSettingsOpened],
+            initiated: .app,
+            promoType: PromoType(.inlineTip),
+            context: .global,
+            delegate: dependencies.syncSetupAutofillPromoManager
+        )
+    }
 }

@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Δοκιμάστε το δωρεάν";
+"action.title.vpn.free-trial-badge" = "Δωρεάν δοκιμή";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Αποκλείει επεμβατικά προγράμματα παρακολούθησης προτού φορτώσουν, εξαλείφοντας αποτελεσματικά διαφημίσεις που βασίζονται σε παρακολούθηση.";
@@ -310,12 +310,6 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Τραβήξτε φωτογραφία";
 
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Τα αρχεία ελέγχονται αυτόματα για παράνομο περιεχόμενο. Οι επισημασμένες συνομιλίες έχουν περιορισμένη διατήρηση δεδομένων. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Μάθε περισσότερα";
-
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Αυτό το μήνυμα είναι πολύ μεγάλο για να σταλεί με συνημμένα.";
 
@@ -345,15 +339,6 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "Προσθήκη καρτελών";
-
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "Το %@ δεν μπορεί να δημιουργήσει εικόνες. Η μηδενική ορατότητα από τον πάροχο δεν θα ισχύει μέχρι να επιστρέψεις.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ δεν υποστηρίζει τη δημιουργία εικόνων.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Τώρα χρησιμοποιείται το %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Η επεξεργασία θα αντικαταστήσει την απάντηση με μια νέα.";
@@ -1482,6 +1467,9 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
+
+/* No comment provided by engineer. */
+"Configuration" = "Διαμόρφωση";
 
 /* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
@@ -2624,6 +2612,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Εισαγάγετε έναν μη αρνητικό αριθμό ημερών. Η ημερομηνία εγκατάστασης θα οριστεί σε αυτήν πριν από πολλές ημέρες.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3076,6 +3067,9 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Το συμβάν προστέθηκε στο Ημερολόγιο Apple";
 
+/* No comment provided by engineer. */
+"ID: %@ | %@ | %@" = "Αναγνωριστικό: %1$@ | %2$@ | %3$@";
+
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Εισαγωγή κωδικών πρόσβασης";
 
@@ -3194,6 +3188,9 @@
 "keyCommandZoomOut" = "Σμίκρυνση";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Τελευταία επεξεργασία: %@";
+
+/* No comment provided by engineer. */
 "Loading available products..." = "Φόρτωση διαθέσιμων προϊόντων...";
 
 /* No comment provided by engineer. */
@@ -3267,6 +3264,9 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Όνομα κεντρικού υπολογιστή πολιτικής μηνυμάτων";
+
+/* No comment provided by engineer. */
+"Messages" = "Μηνύματα";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3626,7 +3626,13 @@
 "No extensions installed" = "Δεν έχουν εγκατασταθεί επεκτάσεις";
 
 /* No comment provided by engineer. */
+"No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
+
+/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
+
+/* No comment provided by engineer. */
+"No messages" = "Δεν υπάρχουν μηνύματα";
 
 /* No comment provided by engineer. */
 "No results found" = "Δεν βρέθηκαν αποτελέσματα";
@@ -4160,6 +4166,9 @@
 "prompt.web-page-load-error.title" = "Το DuckDuckGo δεν μπορεί να φορτώσει τη σελίδα αυτή.";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Πρόσφατα αρχεία καταγραφής επεξεργασίας";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Συγγενείς: %@";
 
 /* No comment provided by engineer. */
@@ -4517,25 +4526,25 @@
 "settings.complete.setup" = "Ολοκληρώστε την εγκατάστασή σας";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
+"settings.cookie.auto-manage.explanation" = "Θα προσπαθήσουμε να επιλέξουμε μόνο τις πιο ιδιωτικές διαθέσιμες επιλογές cookie για εσάς και έπειτα να κλείσουμε αυτά τα αναδυόμενα παράθυρα.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Reject optional cookies";
+"settings.cookie.auto-manage.title" = "Αυτόματη διαχείριση αναδυόμενων παραθύρων cookie";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Προστασία αναδυόμενων παραθύρων για cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "Το DuckDuckGo μπορεί να διαχειρίζεται αυτόματα τις προτιμήσεις για τα cookie ώστε να μεγιστοποιείται το απόρρητο, να ελαχιστοποιούνται τα cookie και να κλείνουν αυτά τα αναδυόμενα παράθυρα.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Επίσης, επιτρέψτε στο DuckDuckGo να σας γλιτώσει ένα κλικ αποδεχόμενο cookie εκ μέρους σας, ώστε να κλείνουν τα αναδυόμενα παράθυρα που δεν σας επιτρέπουν να εξαιρεθείτε.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
+"settings.cookie.popups-without-opt-outs.title" = "Αναδυόμενα παράθυρα χωρίς επιλογή εξαίρεσης";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
@@ -4942,6 +4951,9 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Τι νέο υπάρχει";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Εμφανίζει αρχεία καταγραφής από το τελευταίο λεπτό, για να βοηθήσει στη διάγνωση προβλημάτων αμέσως μετά από μια ανανέωση.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Επιλέξτε αυτό που περιγράφει καλύτερα το πρόβλημα που αντιμετωπίσατε.";
 
@@ -4986,6 +4998,9 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Κατάσταση: Καταστάθηκε μη έγκυρο";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
@@ -5474,6 +5489,9 @@
 "theme.name.light" = "Φωτεινό";
 
 /* No comment provided by engineer. */
+"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Η λίστα αυτή περιέχει μηνύματα που έχουν εμφανιστεί συν το πολύ 1 μήνυμα που έχει προγραμματιστεί προς εμφάνιση. Ενδέχεται να υπάρχουν και άλλα μηνύματα στη διαμόρφωση που θα παρουσιαστούν, ωστόσο δεν έχουν ακόμη υποβληθεί σε επεξεργασία.";
+
+/* No comment provided by engineer. */
 "Title" = "Τίτλος";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5496,6 +5514,9 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Προστέθηκε επαφή";
+
+/* No comment provided by engineer. */
+"Version: %@" = "Έκδοση: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Αναζήτηση";
@@ -5893,3 +5914,20 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "Το %@ δεν μπορεί να δημιουργήσει εικόνες. Η μηδενική ορατότητα από τον πάροχο δεν θα ισχύει μέχρι να επιστρέψεις.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ δεν υποστηρίζει τη δημιουργία εικόνων.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Τώρα χρησιμοποιείται το %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Όλες οι συνομιλίες";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Τα αρχεία ελέγχονται αυτόματα για παράνομο περιεχόμενο. Οι επισημασμένες συνομιλίες έχουν περιορισμένη διατήρηση δεδομένων. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Μάθε περισσότερα";

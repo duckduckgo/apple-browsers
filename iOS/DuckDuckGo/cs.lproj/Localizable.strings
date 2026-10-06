@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Vyzkoušet zdarma";
+"action.title.vpn.free-trial-badge" = "Zkus to zdarma";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Zablokuje invazivní trackery ještě před jejich načtením, čímž účinně eliminuje reklamy, které tě pronásledují.";
@@ -310,12 +310,6 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Vyfotit se";
 
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Soubory jsou automaticky kontrolovány na přítomnost nelegálního obsahu. Označené chaty mají omezené uchovávání dat. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Více informací";
-
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Tahle zpráva je moc dlouhá na to, aby se dala poslat s přílohami.";
 
@@ -345,15 +339,6 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "Přidat karty";
-
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ neumí vytvářet obrázky. Záruka „Poskytovatel nic nevidí“ nebude platit, dokud nepřepneš zpátky.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ nepodporuje vytváření obrázků.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Nyní používáš %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Po úpravě se odpověď nahradí novou.";
@@ -1482,6 +1467,9 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
+
+/* No comment provided by engineer. */
+"Configuration" = "Konfigurace";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
@@ -2624,6 +2612,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Zadej nezáporný počet dní. Datum instalace bude nastaveno na tolik dní zpět.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3076,6 +3067,9 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Událost přidána do kalendáře Apple";
 
+/* No comment provided by engineer. */
+"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importovat hesla";
 
@@ -3194,6 +3188,9 @@
 "keyCommandZoomOut" = "Oddálit";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Naposledy zpracováno: %@";
+
+/* No comment provided by engineer. */
 "Loading available products..." = "Načítání dostupných produktů...";
 
 /* No comment provided by engineer. */
@@ -3267,6 +3264,9 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Název hostitele zásad zpráv";
+
+/* No comment provided by engineer. */
+"Messages" = "Zprávy";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3626,7 +3626,13 @@
 "No extensions installed" = "Nejsou nainstalována žádná rozšíření";
 
 /* No comment provided by engineer. */
+"No Logs" = "Žádné záznamy";
+
+/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Žádné shody pro \"%@\"";
+
+/* No comment provided by engineer. */
+"No messages" = "Žádné zprávy";
 
 /* No comment provided by engineer. */
 "No results found" = "Nebyly nalezeny žádné výsledky";
@@ -4160,6 +4166,9 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo nemůže načíst tuto stránku.";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Nedávné protokoly zpracování";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Příbuzní: %@";
 
 /* No comment provided by engineer. */
@@ -4517,25 +4526,25 @@
 "settings.complete.setup" = "Dokonči své nastavení";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
+"settings.cookie.auto-manage.explanation" = "Budeme se snažit vybírat pro tebe jen ty možnosti cookies, které nejlépe chrání soukromí, a pak tato vyskakovací okna zavřeme.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Reject optional cookies";
+"settings.cookie.auto-manage.title" = "Automaticky spravovat vyskakovací okna o cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrana před vyskakovacími okny ohledně cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo může automaticky spravovat předvolby cookies tak, aby zajistilo maximální ochranu soukromí, co nejméně cookies a zavíralo vyskakovací okna.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa vyskakovacích oken ohledně cookies";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Nech DuckDuckGo, ať ti také šetří klikání přijímáním cookies za tebe a zavírá vyskakovací okna, kde není možnost cookies odmítnout.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
+"settings.cookie.popups-without-opt-outs.title" = "Vyskakovací okna bez možnosti odmítnutí";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Vymazat karty a data";
@@ -4942,6 +4951,9 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Co je nového";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Zobrazuje protokoly z poslední minuty, aby se problémy mohly diagnostikovat hned po obnovení.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyber možnost, která nejlíp popisuje tvůj problém.";
 
@@ -4986,6 +4998,9 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Stav: Neplatné";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený název hostitele: %@";
@@ -5474,6 +5489,9 @@
 "theme.name.light" = "Světlo";
 
 /* No comment provided by engineer. */
+"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Tenhle seznam obsahuje zprávy, které se zobrazily, plus maximálně 1 zprávu, která má zobrazení naplánované. V konfiguraci můžou být další zprávy, které se zobrazí, ale ještě nebyly zpracované.";
+
+/* No comment provided by engineer. */
 "Title" = "Název";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5496,6 +5514,9 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt byl přidán";
+
+/* No comment provided by engineer. */
+"Version: %@" = "Verze: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Hledat";
@@ -5893,3 +5914,20 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ neumí vytvářet obrázky. Záruka „Poskytovatel nic nevidí“ nebude platit, dokud nepřepneš zpátky.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nepodporuje vytváření obrázků.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Nyní používáš %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Všechny chaty";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Soubory jsou automaticky kontrolovány na přítomnost nelegálního obsahu. Označené chaty mají omezené uchovávání dat. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Více informací";

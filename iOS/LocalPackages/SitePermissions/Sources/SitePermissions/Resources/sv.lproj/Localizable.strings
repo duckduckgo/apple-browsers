@@ -135,4 +135,3 @@
 
 /* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
 "sitePermissions.voice-search.settings-reminder.body" = "Mikrofonbehörighet behövs om du vill använda våra privata röstfunktioner.";
-

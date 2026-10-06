@@ -61,7 +61,12 @@ struct DefaultRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
 private enum RemoteMessagePixel: PixelKit.Event {
     case autoDismissed(messageID: String)
 
-    var name: String { "m_mac_remote_message_auto_dismissed" }
+    var name: String {
+        switch self {
+        case .autoDismissed:
+            return "m_mac_remote_message_auto_dismissed"
+        }
+    }
 
     var parameters: [String: String]? {
         switch self {

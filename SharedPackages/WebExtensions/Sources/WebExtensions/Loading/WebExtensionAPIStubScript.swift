@@ -151,8 +151,8 @@ public enum WebExtensionAPIStubScript {
 
         retain(api);
 
-        // Reports a stub call or a missing permission through `WebExtensionAPICompatibilityScript`,
-        // which runs first in the same pages. Without it, nothing is reported.
+        // Reports a stub call through `WebExtensionAPICompatibilityScript`, which runs first in the same
+        // pages. Without it, nothing is reported.
         function reportAPI(kind, path) {
             try {
                 var report = globalThis["\(WebExtensionAPICompatibilityScript.reportFunctionName)"];
@@ -165,13 +165,16 @@ public enum WebExtensionAPIStubScript {
         }
 
         // Hands a trailing Chrome-style callback its value once, out of band, so a throwing
-        // callback cannot take down the caller.
+        // callback cannot take down the caller. Its error is thrown again from a timer, where it
+        // surfaces as an uncaught error the page and the compatibility log can see.
         function invokeCallback(callback, value) {
             Promise.resolve().then(function() {
                 try {
                     callback(value);
                 } catch (error) {
-                    console.info("[DuckDuckGo] Stubbed API callback threw: " + error);
+                    setTimeout(function() {
+                        throw error;
+                    }, 0);
                 }
             });
         }
@@ -243,7 +246,10 @@ public enum WebExtensionAPIStubScript {
                     return children[property];
                 },
                 apply: function(target, thisArgument, argumentsList) {
-                    reportAPI("stubbed", path);
+                    // `JSON.stringify` and `valueOf()` call these on any object; they are not API use.
+                    if (!/\\.(toJSON|valueOf)$/.test(path)) {
+                        reportAPI("stubbed", path);
+                    }
                     // Support both API styles: hand `undefined` to a trailing callback, and return a
                     // promise for callers that await instead.
                     var callback = argumentsList.length > 0 ? argumentsList[argumentsList.length - 1] : undefined;

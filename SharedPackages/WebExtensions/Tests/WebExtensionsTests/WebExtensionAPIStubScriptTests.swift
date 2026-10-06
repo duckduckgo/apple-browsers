@@ -141,8 +141,24 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions()
 
         // The callback is invoked on a microtask, which drains once the evaluation above returns.
-        // Tolerate a host that drains later — what matters is that it is never called with a value.
-        try assertTrue("callbackArguments === null || (callbackArguments.length === 1 && callbackArguments[0] === undefined)")
+        try assertTrue("callbackArguments !== null && callbackArguments.length === 1 && callbackArguments[0] === undefined")
+    }
+
+    func testWhenStubCallbackThrows_ThenTheErrorIsThrownAgainFromATimer() throws {
+        let scheduleTimer: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
+            self?.scheduledTimers.append(ScheduledTimer(callback: callback, delay: delay))
+            return self?.scheduledTimers.count ?? 0
+        }
+        context.setObject(scheduleTimer, forKeyedSubscript: "setTimeout" as NSString)
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.topSites.get(function(sites) { sites.forEach(function() {}); });")
+        try assertNoExceptions()
+
+        XCTAssertEqual(scheduledTimers.count, 1)
+        scheduledTimers.first?.callback.call(withArguments: [])
+        XCTAssertEqual(exceptions.count, 1)
+        exceptions = []
     }
 
     func testWhenStubIsInspected_ThenItDoesNotLookLikeAThenable() throws {
@@ -346,6 +362,16 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         chrome.storage.managed.get();
         chrome.storage.managed.onChanged.addListener(function() {});
         """)
+        try assertNoExceptions()
+
+        try assertReports("[]")
+    }
+
+    func testWhenAStubIsSerializedOrConverted_ThenNothingIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("JSON.stringify({ stub: chrome.notifications }); chrome.notifications.valueOf();")
         try assertNoExceptions()
 
         try assertReports("[]")

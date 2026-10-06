@@ -22,6 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Foundation
+import PixelExperimentKit
 import PixelKit
 import Subscription
 import UserScript
@@ -204,6 +205,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
     private let browserTools: AIChatBrowserToolsService
+    private let fireNewAIChatExperimentPixels: () -> Void
 
     var isFireWindowProvider: (() -> Bool)?
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
@@ -236,7 +238,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
         conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
-        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
+        fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -251,6 +254,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
         self.conversationSourceHandler = conversationSourceHandler
+        self.fireNewAIChatExperimentPixels = fireNewAIChatExperimentPixels
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -1148,6 +1152,9 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
                                                              hasPageContext: hasAttachedPageContext),
                 frequency: .standard
             )
+            // The first prompt is what actually starts a chat, so `duck_ai_new_chat` hangs off it
+            // rather than off the new-chat page being opened.
+            fireNewAIChatExperimentPixels()
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

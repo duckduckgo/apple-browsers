@@ -358,6 +358,7 @@ public enum FeatureFlag: String {
     case unifiedToggleInputAttachmentPrivacy
 
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
+    /// https://app.asana.com/1/137249556945/task/1218992416130371
     case aiChatAttachmentPrivacyIPad
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled

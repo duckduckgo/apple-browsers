@@ -175,15 +175,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             guard isAIChatShortcutEnabled && isAIChatSettingVisible else {
                 return .search
             }
-            do {
-                if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
-                   let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
-                    return mode
-                }
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
-            }
-            return .search
+            return Self.storedMode(in: keyValueStore)
         }
         set {
             firePixel(NewTabPagePixel.omnibarModeChanged(mode: newValue == .search ? .search : .duckAI))
@@ -194,6 +186,20 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             }
             modeSubject.send(newValue)
         }
+    }
+
+    /// The mode last picked on the New Tab Page, whether or not Duck.ai is currently offered there.
+    /// Static so it can be read without building a provider.
+    static func storedMode(in keyValueStore: ThrowingKeyValueStoring) -> NewTabPageDataModel.OmnibarMode {
+        do {
+            if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
+               let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
+                return mode
+            }
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
+        }
+        return .search
     }
 
     var isAIChatShortcutEnabled: Bool {

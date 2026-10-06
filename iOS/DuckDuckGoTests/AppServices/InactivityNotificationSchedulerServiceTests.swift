@@ -171,6 +171,51 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
     }
 
+    // MARK: - Resume with system notification center semantics
+
+    func test_resume_withSystemSemantics_statusNotDetermined_schedulesOne() async {
+        // Given
+        let userNotificationCenter = FakeUNUserNotificationCenter()
+        let service = makeService(userNotificationCenter: userNotificationCenter)
+
+        // When
+        await service.resume().value
+
+        // Then
+        let status = await userNotificationCenter.authorizationStatus()
+        XCTAssertEqual(status, .provisional)
+        XCTAssertEqual(userNotificationCenter.pendingRequestIdentifiers, [InactivityNotificationSchedulerService.Constants.notificationIdentifier])
+    }
+
+    func test_resume_withSystemSemantics_calledManyTimes_schedulesOne() async {
+        // Given
+        let userNotificationCenter = FakeUNUserNotificationCenter()
+        let service = makeService(userNotificationCenter: userNotificationCenter)
+
+        // When
+        for _ in 0..<25 {
+            await service.resume().value
+        }
+
+        // Then
+        XCTAssertEqual(userNotificationCenter.pendingRequestIdentifiers, [InactivityNotificationSchedulerService.Constants.notificationIdentifier])
+    }
+
+    func test_resume_withSystemSemantics_calledConcurrently_schedulesOne() async {
+        // Given
+        let userNotificationCenter = FakeUNUserNotificationCenter()
+        let service = makeService(userNotificationCenter: userNotificationCenter)
+
+        // When
+        let tasks = (0..<25).map { _ in service.resume() }
+        for task in tasks {
+            await task.value
+        }
+
+        // Then
+        XCTAssertEqual(userNotificationCenter.pendingRequestIdentifiers, [InactivityNotificationSchedulerService.Constants.notificationIdentifier])
+    }
+
     // MARK: - Schedule
 
     func test_schedule_statusAuthorized_schedules() async {
@@ -456,5 +501,73 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         } else {
             XCTFail("Expected daysInactive in userInfo")
         }
+    }
+
+    // MARK: - Helpers
+
+    private func makeService(userNotificationCenter: UNUserNotificationCenterRepresentable) -> InactivityNotificationSchedulerService {
+        InactivityNotificationSchedulerService(
+            featureFlagger: mockFeatureFlagger,
+            notificationServiceManager: mockNotificationServiceManager,
+            privacyConfigurationManager: mockPrivacyConfigManager,
+            stateStore: stateStore,
+            userNotificationCenter: userNotificationCenter
+        )
+    }
+}
+
+/// Models the `UNUserNotificationCenter` semantics the scheduler relies on: provisional authorization is granted without
+/// a prompt, and adding a request replaces any pending request with the same identifier. Unlike
+/// `MockUNUserNotificationCenter`, it is safe to call from concurrent tasks.
+///
+/// `InactivityNotificationSchedulerServiceIntegrationTests` verifies these semantics against the real notification center.
+private final class FakeUNUserNotificationCenter: UNUserNotificationCenterRepresentable, @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var status: UNAuthorizationStatus = .notDetermined
+    private var pendingRequests: [UNNotificationRequest] = []
+
+    var delegate: UNUserNotificationCenterDelegate?
+
+    var pendingRequestIdentifiers: [String] {
+        synchronized { pendingRequests.map(\.identifier) }
+    }
+
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        synchronized { status }
+    }
+
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
+        synchronized {
+            if status == .notDetermined, options.contains(.provisional) {
+                status = .provisional
+            }
+            return status == .provisional || status == .authorized
+        }
+    }
+
+    func add(_ request: UNNotificationRequest) async throws {
+        synchronized {
+            pendingRequests.removeAll { $0.identifier == request.identifier }
+            pendingRequests.append(request)
+        }
+    }
+
+    func pendingNotificationRequests() async -> [UNNotificationRequest] {
+        synchronized { pendingRequests }
+    }
+
+    func removePendingNotificationRequests(withIdentifiers identifiers: [String]) {
+        synchronized {
+            pendingRequests.removeAll { identifiers.contains($0.identifier) }
+        }
+    }
+
+    func setNotificationCategories(_ categories: Set<UNNotificationCategory>) {}
+
+    private func synchronized<T>(_ body: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body()
     }
 }

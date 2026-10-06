@@ -65,6 +65,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
+    private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
     private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
@@ -99,7 +100,15 @@ public final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
         }
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        // Every install path (installExtension(from:), installEmbeddedExtension) funnels into this
+        // method, so patching here covers all of them — and does so after the files have landed but
+        // before WKWebExtension reads the manifest. The patcher leaves our own extensions alone, and
+        // rewrites a copy of the others, leaving the installation untouched.
+        let loadableURL = backgroundPagePatcher.loadableExtensionURL(
+            for: extensionURL,
+            installFolder: storageProvider.extensionsDirectory.appendingPathComponent(identifier))
+
+        let webExtension = try await WKWebExtension(resourceBaseURL: loadableURL)
 
         let context = try await makeContext(for: webExtension, identifier: identifier)
 

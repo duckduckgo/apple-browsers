@@ -39,7 +39,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
     }()
     private var isSuppressingKeyboardTransfer = false
-    private var pendingFooterLinkDraft: String?
+    private let unboundIPadDraft = IPadOmnibarDraft()
+    private lazy var iPadDraft = unboundIPadDraft
+    private var isBindingIPadDraft = false
 
     override var isExpandedPhone: Bool {
         didSet {
@@ -173,7 +175,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             guard let self else { return }
             // Ahead of the delegate, which anchors the suggestions popover below the card.
             if isExpanded {
-                self.restorePendingFooterLinkDraft()
+                self.restoreIPadDraft()
                 self.refreshFooterMessage(animated: true)
             }
             self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
@@ -186,7 +188,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.onFooterLinkTapped = { [weak self] id, url in
             guard let self else { return }
             if id == .attachmentPrivacy {
-                pendingFooterLinkDraft = omniBarView.aiChatTextView.text ?? ""
+                saveIPadDraftText()
                 fireAttachmentPrivacyPixel(.learnMoreTapped)
             }
             omniDelegate?.onOmniBarFooterLinkTapped(url)
@@ -309,10 +311,43 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     override func endEditing() {
+        saveIPadDraftText()
         if omniBarView.isSearchAreaExpanded {
             omniBarView.aiChatTextView.resignFirstResponder()
         }
         super.endEditing()
+    }
+
+    override func bindIPadDraft(to tab: Tab?) {
+        let draft = tab?.iPadOmnibarDraft ?? unboundIPadDraft
+        guard draft !== iPadDraft, !isBindingIPadDraft else { return }
+        isBindingIPadDraft = true
+        defer { isBindingIPadDraft = false }
+        endEditing()
+        iPadDraft = draft
+        omniBarView.aiChatTextView.text = ""
+        modeToggleTextModel.updateText("")
+        modeToggleTextModel.invalidateSearchTextToRestore()
+        attachmentController?.bindDraft(draft)
+    }
+
+    override func onClearButtonPressed() {
+        iPadDraft.text = ""
+        modeToggleTextModel.updateText("")
+        super.onClearButtonPressed()
+    }
+
+    override func consumeAIChatControlValues() -> IPadDuckAIControlValues {
+        let values = iPadDuckAIControlValues
+        iPadDraft.clear()
+        omniBarView.aiChatTextView.text = ""
+        omniBarView.textField.text = ""
+        modeToggleTextModel.updateText("")
+        attachmentController?.bindDraft(iPadDraft)
+        toolPickerController?.resetSelection()
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
+        omniBarView.updateAIChatSendButton(hasText: false)
+        return values
     }
 
     // MARK: - Layout
@@ -466,6 +501,7 @@ extension DefaultOmniBarViewController {
 
         if selectedTextEntryMode == .aiChat {
             textView.text = ""
+            modeToggleTextModel.updateText("")
             omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
             omniBarView.updateAIChatSendButton(hasText: false)
 
@@ -483,15 +519,13 @@ extension DefaultOmniBarViewController {
                 PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
                 fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstPromptNewInstall: isFirstPromptNewInstall)
                 featureDiscovery.markDuckAIPromptSubmitted()
+                let controlValues = consumeAIChatControlValues()
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
                 omniBarView.setSearchAreaExpanded(false, animated: false)
                 omniBarView.aiChatTextView.resignFirstResponder()
-                omniDelegate?.onPromptSubmitted(query, tools: nil)
-                toolPickerController?.resetSelection()
-                pendingFooterLinkDraft = nil
-                attachmentController?.resetSelection()
+                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: controlValues)
             }
         } else {
             omniDelegate?.onOmniQuerySubmitted(query)
@@ -507,12 +541,13 @@ extension DefaultOmniBarViewController {
         setSelectedTextEntryMode(.search)
         endEditing()
         isSuppressingKeyboardTransfer = false
-        pendingFooterLinkDraft = nil
+        iPadDraft.clear()
         attachmentController?.resetSelection()
     }
 
     /// Handles the duck.ai ↔ search mode transition on iPad, preserving text and keyboard state.
     fileprivate func handleIPadModeToggleTransition(to mode: TextEntryMode) {
+        saveIPadDraftText()
         if omniBarView.isSearchAreaExpanded {
             modeToggleTextModel.updateText(omniBarView.aiChatTextView.text ?? "")
         }
@@ -527,6 +562,8 @@ extension DefaultOmniBarViewController {
         if mode == .aiChat && shouldClearTextWhenSwitchingToDuckAI() {
             modeToggleTextModel.rememberSearchTextToRestore(omniBarView.textField.text ?? "")
             omniBarView.textField.text = ""
+        } else if mode == .aiChat, userDidEditText, omniBarView.textField.isFirstResponder {
+            iPadDraft.text = omniBarView.textField.text ?? ""
         }
 
         let isKeyboardActive = omniBarView.aiChatTextView.isFirstResponder || omniBarView.textField.isFirstResponder
@@ -633,6 +670,7 @@ extension DefaultOmniBarViewController {
         )
         attachmentController = attachmentControllerInstance
         attachmentControllerInstance.attachmentsStripView = omniBarView.attachmentsStripView
+        attachmentControllerInstance.bindDraft(iPadDraft)
         attachmentControllerInstance.presenterProvider = { [weak self] in
             self?.view.window?.windowScene?.keyWindow?.rootViewController
         }
@@ -674,14 +712,20 @@ extension DefaultOmniBarViewController {
         refreshAttachButton()
     }
 
-    private func restorePendingFooterLinkDraft() {
+    private func saveIPadDraftText() {
+        guard selectedTextEntryMode == .aiChat,
+              omniBarView.isSearchAreaExpanded,
+              iPadDraft.isValid else { return }
+        iPadDraft.text = omniBarView.aiChatTextView.text ?? ""
+    }
+
+    private func restoreIPadDraft() {
         guard selectedTextEntryMode == .aiChat,
               omniBarView.aiChatTextView.isFirstResponder,
-              let draft = pendingFooterLinkDraft else { return }
+              iPadDraft.isValid else { return }
 
-        omniBarView.aiChatTextView.text = draft
-        modeToggleTextModel.updateText(draft)
-        pendingFooterLinkDraft = nil
+        omniBarView.aiChatTextView.text = iPadDraft.text
+        modeToggleTextModel.updateText(iPadDraft.text)
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
     }
@@ -818,7 +862,7 @@ extension DefaultOmniBarViewController {
     /// (limits change with the pending set), grows or collapses the expanded area to fit, and nudges
     /// any anchored suggestions popover to follow the new height.
     private func handleAttachmentsChanged() {
-        if omniBarView.attachmentsStripView.attachments.isEmpty { pendingFooterLinkDraft = nil }
+        attachmentController?.handleAttachmentsChanged()
         refreshAttachButton()
         omniBarView.updateAttachmentsLayout(animated: true)
         refreshFooterMessage(animated: true)
@@ -850,8 +894,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        pendingFooterLinkDraft = nil
         let newQuery = textView.text ?? ""
+        if selectedTextEntryMode == .aiChat, iPadDraft.isValid {
+            iPadDraft.text = newQuery
+        }
 
         modeToggleTextModel.updateText(newQuery)
         userDidEditText = true
@@ -884,6 +930,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
+        saveIPadDraftText()
         guard !modeToggleTextModel.isTransitioning else { return }
 
         omniBarView.setSearchAreaExpanded(false, animated: true)
@@ -906,7 +953,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
         refreshState(state.onEditingStartedState)
-        restorePendingFooterLinkDraft()
+        restoreIPadDraft()
         omniDelegate?.onDidBeginEditing()
 
         omniBarView.layoutIfNeeded()

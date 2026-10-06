@@ -3108,6 +3108,9 @@ class MainViewController: UIViewController {
     }
 
     func refreshOmniBar() {
+        if isPad {
+            viewCoordinator.omniBar.bindIPadDraft(to: tabManager.currentTabsModel.currentTab)
+        }
         updateOmniBarLoadingState()
         bindAIChatChromeChipToCurrentTab()
         refreshDuckAIAddressBarMenu(type: duckAIAddressBarMenuType(for: currentTab))
@@ -5359,7 +5362,7 @@ extension MainViewController: OmniBarDelegate {
         segueToEditBookmark(favorite)
     }
 
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues) {
         // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
@@ -5367,7 +5370,6 @@ extension MainViewController: OmniBarDelegate {
         // Recorded before `openAIChat`, which ends the visit on its own terminal.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
-        let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
         openAIChat(source: .ipadTogglePrompt, query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
                    reasoningEffort: controlValues.selectedReasoningEffort,

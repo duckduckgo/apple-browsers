@@ -182,6 +182,78 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         XCTAssertTrue(sut.hasAttachments)
     }
 
+    func testPickerCompletionUpdatesOriginDraftWithoutChangingActiveDraft() {
+        store.models = [makeModel(id: "vision", supportsImageUpload: true)]
+        let origin = IPadOmnibarDraft()
+        let destination = IPadOmnibarDraft()
+        sut.bindDraft(origin)
+        let callbacks = sut.makePickerCallbacks()
+        sut.bindDraft(destination)
+        strip.addAttachment(.file(makeFileAttachment()))
+        sut.handleAttachmentsChanged()
+        var expansionCount = 0
+        sut.onExpandRequested = { expansionCount += 1 }
+
+        callbacks.onImagePicked?(makeImage(), "origin.jpg")
+        callbacks.onExpandIfNeeded?()
+
+        XCTAssertEqual(origin.attachments.map(\.fileName), ["origin.jpg"])
+        XCTAssertEqual(destination.attachments.map(\.fileName), ["doc.pdf"])
+        XCTAssertEqual(strip.attachments.map(\.fileName), ["doc.pdf"])
+        XCTAssertEqual(expansionCount, 0)
+        sut.bindDraft(origin)
+        XCTAssertEqual(strip.attachments.map(\.fileName), ["origin.jpg"])
+    }
+
+    func testPickerRejectsImageWhenActiveModelStopsSupportingImages() {
+        store.models = [makeModel(id: "vision", supportsImageUpload: true)]
+        let draft = IPadOmnibarDraft()
+        sut.bindDraft(draft)
+        let callbacks = sut.makePickerCallbacks()
+        store.models = [makeModel(id: "text-only", supportsImageUpload: false)]
+        sut.handleModelChanged()
+
+        callbacks.onImagePicked?(makeImage(), "late.jpg")
+
+        XCTAssertTrue(draft.attachments.isEmpty)
+        XCTAssertTrue(strip.attachments.isEmpty)
+    }
+
+    func testRestoringInactiveDraftRemovesImagesUnsupportedByCurrentModel() {
+        store.models = [makeModel(id: "vision", supportsImageUpload: true)]
+        let origin = IPadOmnibarDraft()
+        sut.bindDraft(origin)
+        strip.addAttachment(.image(AIChatImageAttachment(image: makeImage(), fileName: "photo.jpg")))
+        sut.handleAttachmentsChanged()
+        sut.bindDraft(IPadOmnibarDraft())
+        store.models = [makeModel(id: "text-only", supportsImageUpload: false)]
+        sut.handleModelChanged()
+
+        sut.bindDraft(origin)
+
+        XCTAssertTrue(origin.attachments.isEmpty)
+        XCTAssertTrue(strip.attachments.isEmpty)
+    }
+
+    func testClearedOrClosedDraftRejectsLatePickerCompletion() {
+        store.models = [makeModel(id: "vision", supportsImageUpload: true)]
+        for closesTab in [false, true] {
+            let origin = IPadOmnibarDraft()
+            sut.bindDraft(origin)
+            let callbacks = sut.makePickerCallbacks()
+            if closesTab {
+                origin.invalidate()
+            } else {
+                origin.clear()
+            }
+
+            callbacks.onImagePicked?(makeImage(), "late.jpg")
+
+            XCTAssertTrue(origin.attachments.isEmpty)
+            XCTAssertTrue(strip.attachments.isEmpty)
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeLimits() -> AIChatAttachmentTierLimits {
@@ -436,6 +508,173 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         XCTAssertTrue(sut.attachButton.isEnabled)
         XCTAssertNotNil(sut.attachButton.menu)
     }
+}
+
+@MainActor
+final class IPadOmnibarDraftTests: XCTestCase {
+
+    func testSwitchingTabsRestoresEachDraftTextAndAttachments() throws {
+        let (controller, view, window) = try makeController()
+        defer { window.isHidden = true }
+        let first = Tab()
+        let second = Tab()
+        controller.bindIPadDraft(to: first)
+        expand(controller, view)
+        enter("First draft", in: controller, view)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { $0.fill(CGRect(x: 0, y: 0, width: 2, height: 2)) }
+        view.attachmentsStripView.addAttachment(.image(AIChatImageAttachment(image: image, fileName: "first.jpg")))
+
+        controller.endEditing()
+        controller.cancel()
+        expand(controller, view)
+        XCTAssertEqual(view.aiChatTextView.text, "First draft")
+        XCTAssertEqual(view.attachmentsStripView.attachments.map(\.fileName), ["first.jpg"])
+        let url = try XCTUnwrap(UTIFooterMessageMapper().attachmentPrivacyMessage().link?.url)
+        view.onFooterLinkTapped?(.attachmentPrivacy, url)
+        controller.endEditing()
+        controller.cancel()
+
+        controller.bindIPadDraft(to: second)
+        expand(controller, view)
+        XCTAssertEqual(view.aiChatTextView.text, "")
+        XCTAssertTrue(view.attachmentsStripView.attachments.isEmpty)
+        enter("Second draft", in: controller, view)
+        view.attachmentsStripView.addAttachment(file(named: "second.pdf"))
+
+        controller.bindIPadDraft(to: first)
+        expand(controller, view)
+        XCTAssertEqual(view.aiChatTextView.text, "First draft")
+        XCTAssertEqual(view.attachmentsStripView.attachments.map(\.fileName), ["first.jpg"])
+        XCTAssertEqual(view.textField.alpha, 0)
+        controller.bindIPadDraft(to: second)
+        expand(controller, view)
+        XCTAssertEqual(view.aiChatTextView.text, "Second draft")
+        XCTAssertEqual(view.attachmentsStripView.attachments.map(\.fileName), ["second.pdf"])
+    }
+
+    func testClearThenReopenDoesNotRestoreOldText() throws {
+        for mode in [TextEntryMode.search, .aiChat] {
+            let (controller, view, window) = try makeController()
+            defer { window.isHidden = true }
+            controller.bindIPadDraft(to: Tab())
+            expand(controller, view)
+            enter("Clear me", in: controller, view)
+            if mode == .search {
+                controller.endEditing()
+                controller.setSelectedTextEntryMode(mode)
+            }
+
+            view.onClearButtonPressed?()
+            controller.endEditing()
+            controller.cancel()
+            expand(controller, view)
+
+            XCTAssertEqual(view.aiChatTextView.text, "", "Mode: \(mode)")
+            XCTAssertEqual(view.textField.alpha, 1, "Mode: \(mode)")
+        }
+    }
+
+    func testNewSearchTextTransfersToAIInsteadOfRestoringOldDraft() throws {
+        let (controller, view, window) = try makeController()
+        defer { window.isHidden = true }
+        controller.bindIPadDraft(to: Tab())
+        expand(controller, view)
+        enter("Old AI draft", in: controller, view)
+        controller.setSelectedTextEntryMode(.search)
+        expectation(for: NSPredicate { _, _ in
+            view.textField.isFirstResponder && view.onCollapseAnimationCompleted == nil
+        }, evaluatedWith: nil)
+        waitForExpectations(timeout: 2)
+        XCTAssertEqual(controller.selectedTextEntryMode, .search)
+        _ = controller.textField(view.textField, shouldChangeCharactersIn: NSRange(location: 0, length: 0), replacementString: "New search text")
+        controller.updateQuery("New search text")
+        XCTAssertEqual(view.textField.text, "New search text")
+
+        controller.setSelectedTextEntryMode(.aiChat)
+        expectation(for: NSPredicate { _, _ in
+            view.aiChatTextView.isFirstResponder && view.isSearchAreaExpanded
+        }, evaluatedWith: nil)
+        waitForExpectations(timeout: 2)
+
+        XCTAssertEqual(view.aiChatTextView.text, "New search text")
+    }
+
+    func testSynchronousTabSwitchDuringSubmissionPreservesDestinationAndSubmittedPayload() throws {
+        for usesLegacyTextField in [false, true] {
+            let (controller, view, window) = try makeController()
+            defer { window.isHidden = true }
+            let origin = Tab()
+            let destination = Tab()
+            let delegate = MockOmniBarDelegate()
+            controller.omniDelegate = delegate
+            controller.bindIPadDraft(to: destination)
+            expand(controller, view)
+            enter("Destination draft", in: controller, view)
+            view.attachmentsStripView.addAttachment(file(named: "destination.pdf"))
+            controller.bindIPadDraft(to: origin)
+            expand(controller, view)
+            enter("Submitted prompt", in: controller, view)
+            view.attachmentsStripView.addAttachment(file(named: "origin.pdf"))
+            delegate.onPromptSubmittedAction = {
+                controller.bindIPadDraft(to: destination)
+                self.expand(controller, view)
+            }
+
+            if usesLegacyTextField {
+                controller.endEditing()
+                view.setSearchAreaExpanded(false, animated: false)
+                view.textField.text = "Submitted prompt"
+                controller.onQuerySubmitted()
+            } else {
+                view.aiChatSendButton.sendActions(for: .primaryActionTriggered)
+            }
+
+            XCTAssertEqual(delegate.promptQuery, "Submitted prompt", "Legacy: \(usesLegacyTextField)")
+            XCTAssertEqual(delegate.promptControlValues?.selectedFiles?.map(\.fileName), ["origin.pdf"], "Legacy: \(usesLegacyTextField)")
+            XCTAssertEqual(view.aiChatTextView.text, "Destination draft", "Legacy: \(usesLegacyTextField)")
+            XCTAssertEqual(view.attachmentsStripView.attachments.map(\.fileName), ["destination.pdf"], "Legacy: \(usesLegacyTextField)")
+            controller.bindIPadDraft(to: origin)
+            expand(controller, view)
+            XCTAssertEqual(view.aiChatTextView.text, "", "Legacy: \(usesLegacyTextField)")
+            XCTAssertTrue(view.attachmentsStripView.attachments.isEmpty, "Legacy: \(usesLegacyTextField)")
+        }
+    }
+
+    private func makeController() throws -> (DefaultOmniBarViewController, DefaultOmniBarView, UIWindow) {
+        let controller = DefaultOmniBarViewController(
+            dependencies: MockOmnibarDependency(
+                aiChatSettings: MockAIChatSettingsProvider(isAIChatSearchInputUserSettingsEnabled: true),
+                userInterfaceIdiomProvider: DraftIPadIdiomProvider()
+            ),
+            isFloatingUIEnabled: false
+        )
+        controller.loadViewIfNeeded()
+        controller.enterPadState()
+        let view = try XCTUnwrap(controller.view as? DefaultOmniBarView)
+        view.setLayoutMode(.expandedPad)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        return (controller, view, window)
+    }
+
+    private func expand(_ controller: DefaultOmniBarViewController, _ view: DefaultOmniBarView) {
+        controller.setSelectedTextEntryMode(.aiChat)
+        view.setSearchAreaExpanded(true, animated: false)
+    }
+
+    private func enter(_ text: String, in controller: DefaultOmniBarViewController, _ view: DefaultOmniBarView) {
+        view.aiChatTextView.text = text
+        controller.textViewDidChange(view.aiChatTextView)
+    }
+
+    private func file(named name: String) -> UnifiedToggleInputAttachment {
+        .file(AIChatFileAttachment(data: Data([1]), fileName: name, mimeType: "application/pdf"))
+    }
+}
+
+private struct DraftIPadIdiomProvider: UserInterfaceIdiomProviding {
+    let userInterfaceIdiom: UIUserInterfaceIdiom = .pad
 }
 
 private final class StubAttachmentPreferences: AIChatPreferencesPersisting {

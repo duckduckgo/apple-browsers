@@ -105,8 +105,10 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Every install path (installExtension(from:), installEmbeddedExtension) funnels into this
         // method, so patching here covers all of them — and does so after the files have landed but
         // before WKWebExtension reads the manifest. The patcher leaves our own extensions alone, and
-        // loads a ZIP that needs patching from an unpacked copy.
-        let loadableURL = backgroundPagePatcher.loadableExtensionURL(for: extensionURL)
+        // rewrites a copy of the others, leaving the installation untouched.
+        let loadableURL = backgroundPagePatcher.loadableExtensionURL(
+            for: extensionURL,
+            installFolder: storageProvider.extensionsDirectory.appendingPathComponent(identifier))
 
         let webExtension = try await WKWebExtension(resourceBaseURL: loadableURL)
 

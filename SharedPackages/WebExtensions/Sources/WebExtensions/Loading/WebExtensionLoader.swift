@@ -58,6 +58,8 @@ public final class WebExtensionLoader: WebExtensionLoading {
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
     private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
+    /// The API stub script added for each loaded third-party extension, by identifier.
+    private var stubScripts: [String: WKUserScript] = [:]
     public weak var delegate: WebExtensionLoadingDelegate?
 
     public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
@@ -100,7 +102,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Notify delegate before loading to allow handler registration
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try controller.load(context)
+        try loadWithStubScript(context, identifier: identifier, into: controller)
 
         return WebExtensionLoadResult(
             identifier: identifier,
@@ -141,7 +143,53 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Notify delegate before loading to allow handler registration.
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try controller.load(context)
+        try loadWithStubScript(context, identifier: identifier, into: controller)
+    }
+
+    /// Loads `context`, adding the API stub script for its pages first when it is a third-party extension.
+    ///
+    /// WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a top-level
+    /// reference to one aborts an extension's background script; the stub script defines them. It is
+    /// a user script because one on the controller's configuration reaches every page the extension
+    /// owns — background page, popup, options page and, with `forMainFrameOnly: false`, the offscreen
+    /// iframe the stubs create — and is exempt from the page's CSP. The controller's user scripts are
+    /// shared by every extension, so the script is limited to this extension's base URL: our own
+    /// extensions never run it. It must be added before the context loads, because a user script
+    /// only reaches documents created after it was added.
+    private func loadWithStubScript(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
+        removeStubScript(for: identifier, from: controller)
+
+        if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
+            addStubScript(for: context, identifier: identifier, to: controller)
+        }
+
+        do {
+            try controller.load(context)
+        } catch {
+            removeStubScript(for: identifier, from: controller)
+            throw error
+        }
+    }
+
+    private func addStubScript(for context: WKWebExtensionContext, identifier: String, to controller: WKWebExtensionController) {
+        // The base URL is new for every context, so the pattern is too.
+        let pattern = context.baseURL.absoluteString + "*"
+        guard let script = WebExtensionScopedUserScript.make(source: WebExtensionAPIStubScript.source,
+                                                             injectionTime: .atDocumentStart,
+                                                             forMainFrameOnly: false,
+                                                             includeMatchPatterns: [pattern]) else {
+            Logger.webExtensions.error("❌ Could not create the API stub script for \(identifier, privacy: .public)")
+            return
+        }
+
+        controller.configuration.webViewConfiguration.userContentController.addUserScript(script)
+        stubScripts[identifier] = script
+    }
+
+    /// Removes the extension's stub script, which would otherwise stay on the shared controller after the extension unloads.
+    private func removeStubScript(for identifier: String, from controller: WKWebExtensionController) {
+        guard let script = stubScripts.removeValue(forKey: identifier) else { return }
+        WebExtensionScopedUserScript.remove(script, from: controller.configuration.webViewConfiguration.userContentController)
     }
 
     public func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
@@ -154,6 +202,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         try controller.unload(context)
+        removeStubScript(for: identifier, from: controller)
     }
 
     /// WebKit silently drops manifest permissions it does not implement; the compatibility log lists them.

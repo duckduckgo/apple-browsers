@@ -2860,28 +2860,49 @@ class MainViewController: UIViewController {
     }
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
-    func showKeyboardOnAppOpenIfAllowed() -> Bool {
-        guard isAppOpenKeyboardWindowVisible, presentedViewController == nil else { return false }
+    func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
-        guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
-        if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return false }
-        // The page is already on screen, so this is its own dialog. The last onboarding dialog counts
-        // itself as seen as soon as it appears, so the onboarding check alone misses it.
-        if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return false }
-        if onNewTabPage, let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
-            if isNewTabPageVisible {
+        let requestID = appOpenKeyboardRequestID
+        let tabID = tabManager.currentTabsModel.currentTab?.uid
+        let isRequestValid = { [weak self] in
+            self?.isAppOpenKeyboardRequestValid(requestID, tabID: tabID, onNewTabPage: onNewTabPage) == true
+        }
+        guard isRequestValid() else {
+            completion(false)
+            return
+        }
+        let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
+            guard let self, didFocus, isRequestValid() else {
+                completion(false)
+                return
+            }
+            if onNewTabPage, isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
             }
-            showBars()
-            defaultOmniBar.beginEditingOnNewTabPageAppOpen()
+            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            completion(true)
+        }
+        if onNewTabPage, let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
+            if unifiedToggleInputCoordinator?.isOmnibarSession != true {
+                showBars()
+            }
+            defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
         } else {
             enterSearchOnAppOpen()
+            focusCompleted(viewCoordinator.omniBar.isTextFieldEditing)
         }
-        let didShowKeyboard = viewCoordinator.omniBar.isTextFieldEditing
-        if didShowKeyboard {
-            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
-        }
-        return didShowKeyboard
+    }
+
+    private func isAppOpenKeyboardRequestValid(_ requestID: UUID, tabID: String?, onNewTabPage: Bool) -> Bool {
+        guard appOpenKeyboardRequestID == requestID,
+              featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              isAppOpenKeyboardWindowVisible, presentedViewController == nil,
+              tabManager.currentTabsModel.currentTab?.uid == tabID,
+              (tabManager.currentTabsModel.currentTab?.isHomeTab == true) == onNewTabPage,
+              NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
+        // The last onboarding dialog marks itself seen on appearance, so also check whether it is visible.
+        return !onNewTabPage || (!isNewTabPageKeyboardHeldForOnboarding && !isNewTabPageKeyboardBlockedByDialog &&
+                                !daxDialogsManager.isShowingContextualOnboardingDialog)
     }
 
     /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because

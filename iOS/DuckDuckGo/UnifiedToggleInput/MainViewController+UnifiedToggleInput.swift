@@ -1318,6 +1318,33 @@ extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
+    func activateFromOmnibarOnAppOpenIfNeeded(currentText: String?,
+                                              isRequestValid: @escaping () -> Bool,
+                                              completion: @escaping (Bool) -> Void) -> UnifiedToggleInputActivationDecision {
+        guard isRequestValid() else {
+            completion(false)
+            return .intercept
+        }
+        guard let coordinator = unifiedToggleInputCoordinator, currentTab?.isAITab != true else { return .allowDefault }
+        if coordinator.isOmnibarSession {
+            coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
+            return .intercept
+        }
+        revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
+        let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
+        let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
+        // activateFromOmnibar sets the initial mode without publishing a user toggle interaction.
+        coordinator.updateToggleEnabled(isAIChatSearchInputToggleEnabledForCurrentOnboardingState())
+        resetSERPFlowForQuery(currentText)
+        coordinator.activateFromOmnibar(prefilledText: currentText,
+                                        inputMode: inputMode,
+                                        cardPosition: position,
+                                        isFocusRequestValid: isRequestValid,
+                                        onFocus: completion)
+        return .intercept
+    }
+
     func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {

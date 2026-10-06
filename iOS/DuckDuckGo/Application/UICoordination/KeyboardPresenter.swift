@@ -39,7 +39,7 @@ protocol AppOpenKeyboardHandling: AnyObject {
     func runWhenAppOpenKeyboardWindowVisible(_ handler: @escaping () -> Void)
     var presentedViewController: UIViewController? { get }
     func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void)
-    func showKeyboardOnAppOpenIfAllowed() -> Bool
+    func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void)
     func enterSearchOnAppOpen()
 }
 
@@ -175,7 +175,7 @@ final class KeyboardPresenter: KeyboardPresenting {
                     self?.showKeyboardAfterLaunchPrompt(requestID: requestID, onAppLaunch: onAppLaunch)
                 })
                 guard !waitsForLaunchPrompt else { return }
-                showKeyboardOnAppOpen(onAppLaunch: onAppLaunch)
+                showKeyboardOnAppOpen(requestID: requestID, onAppLaunch: onAppLaunch)
             } else {
                 mainViewController.enterSearchOnAppOpen()
             }
@@ -187,14 +187,16 @@ final class KeyboardPresenter: KeyboardPresenting {
         // Let a prompt's destination finish opening before deciding whether to focus.
         scheduleAfterPrompt { [self] in
             guard isCurrentRequest(requestID) else { return }
-            showKeyboardOnAppOpen(onAppLaunch: onAppLaunch)
+            showKeyboardOnAppOpen(requestID: requestID, onAppLaunch: onAppLaunch)
         }
     }
 
-    private func showKeyboardOnAppOpen(onAppLaunch: Bool) {
-        let didShowKeyboard = mainViewController.showKeyboardOnAppOpenIfAllowed()
-        if didShowKeyboard && onAppLaunch && !mainViewController.isNewTabPageVisible {
-            pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
+    private func showKeyboardOnAppOpen(requestID: UUID, onAppLaunch: Bool) {
+        mainViewController.showKeyboardOnAppOpenIfAllowed { [weak self] didShowKeyboard in
+            guard let self, isCurrentRequest(requestID) else { return }
+            if didShowKeyboard && onAppLaunch && !mainViewController.isNewTabPageVisible {
+                pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
+            }
         }
     }
 

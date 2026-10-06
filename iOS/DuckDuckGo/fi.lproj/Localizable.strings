@@ -295,6 +295,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Voit liittää vain %d kuvaa kerrallaan.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Lisää välilehtiä";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Kysy sivusta";
 
@@ -310,6 +313,9 @@
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Viesti on liian pitkä lähetettäväksi liitteiden kanssa.";
 
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Viimeisimmät välilehdet";
+
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Liitteet eivät ole tilapäisesti käytettävissä. Yritä myöhemmin uudelleen.";
 
@@ -321,6 +327,18 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tätä tiedostotyyppiä ei tueta, liitä %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Ei osuvia välilehtiä";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Valitse enintään %d välilehteä";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d/%2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Lisää välilehtiä";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Muokkaaminen korvaa vastauksen uudella.";
@@ -423,6 +441,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Kokeile maksutta";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Uusi · Kirjoita “@” tai napauta kuvaketta {attachment}, niin voit lisätä välilehden.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "liite";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";

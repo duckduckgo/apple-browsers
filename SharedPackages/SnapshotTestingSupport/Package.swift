@@ -37,7 +37,10 @@ let package = Package(
         ),
     ],
     dependencies: [
+        // Keep the reporting graph consistent across Xcode 26 and 27.
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", exact: "1.7.0"),
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.6"),
+        .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", exact: "1.11.0"),
     ],
     targets: [
         .target(name: "PreviewSnapshots"),
@@ -51,7 +54,11 @@ let package = Package(
         ),
         .testTarget(
             name: "SnapshotTestingSupportTests",
-            dependencies: ["SnapshotTestingSupport"]
+            dependencies: [
+                "SnapshotTestingSupport",
+                .product(name: "CustomDump", package: "swift-custom-dump"),
+                .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay"),
+            ]
         ),
     ],
     swiftLanguageVersions: [.v5]

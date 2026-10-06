@@ -47,7 +47,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published var hasSubmittedPrompt: Bool = false
     @Published var submitsAIChatOnKeyboardReturn: Bool = false
     @Published var usesReturnKeySubmitButtonStyle: Bool = false
-    @Published var usesAskSubmitButton: Bool = false
+    @Published var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton?
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
@@ -61,8 +61,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         $usesReturnKeySubmitButtonStyle.eraseToAnyPublisher()
     }
 
-    var usesAskSubmitButtonPublisher: AnyPublisher<Bool, Never> {
-        $usesAskSubmitButton.eraseToAnyPublisher()
+    var termsOfServiceSendButtonPublisher: AnyPublisher<DuckAiTermsOfServiceSendButton?, Never> {
+        $termsOfServiceSendButton.eraseToAnyPublisher()
     }
 
     var isGenerating: Bool = false {

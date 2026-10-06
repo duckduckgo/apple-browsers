@@ -170,11 +170,15 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         let sut = UnifiedToggleInputView(handler: handler)
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Submit", in: sut))
 
-        handler.usesAskSubmitButton = true
+        handler.termsOfServiceSendButton = .ask
         flushMainQueue()
         XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
 
-        handler.usesAskSubmitButton = false
+        handler.termsOfServiceSendButton = .create
+        flushMainQueue()
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+
+        handler.termsOfServiceSendButton = nil
         flushMainQueue()
         XCTAssertNil(submitButton.title(for: .normal))
     }

@@ -295,6 +295,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Naraz môžeš priložiť iba %d obrázkov.";
 
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Opýtaj sa na dokument";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Opýtaj sa na stránku";
 
@@ -303,6 +306,9 @@
 
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Pridať obrázok";
+
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Pokračovať v Duck.ai";
 
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Urobiť fotografiu";

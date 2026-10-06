@@ -61,7 +61,7 @@ final class ReportingService {
          pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
-        self.deviceLaunchPixelReporter = DeviceLaunchPixelReporter(pixelFiring: pixelKit)
+        self.deviceLaunchPixelReporter = DeviceLaunchPixelReporter(featureFlagger: featureFlagging, pixelFiring: pixelKit)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)

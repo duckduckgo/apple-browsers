@@ -18,15 +18,20 @@
 //
 
 import Darwin
+import FeatureFlags_iOS
 import Foundation
 import PixelKit
+import PrivacyConfig
 
 struct DeviceLaunchPixelReporter {
+    private let featureFlagger: FeatureFlagger
     private let machineIdentifier: () -> String?
     private let pixelFiring: PixelFiring?
 
-    init(machineIdentifier: @escaping () -> String? = { Self.hardwareMachine() },
+    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         machineIdentifier: @escaping () -> String? = { Self.hardwareMachine() },
          pixelFiring: PixelFiring? = PixelKit.shared) {
+        self.featureFlagger = featureFlagger
         self.machineIdentifier = machineIdentifier
         self.pixelFiring = pixelFiring
     }
@@ -43,7 +48,8 @@ struct DeviceLaunchPixelReporter {
     }
 
     func reportLaunch() {
-        guard machineIdentifier() == "iPhone19,4" else { return }
+        guard featureFlagger.isFeatureOn(.iPhoneDuoLaunchReporting),
+              machineIdentifier() == "iPhone19,4" else { return }
         pixelFiring?.fire(DeviceLaunchPixel.iPhoneDuoLaunched, frequency: .daily)
     }
 }

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import XCTest
 @_spi(Testing) import PixelKit
 @testable import DuckDuckGo
@@ -24,7 +25,8 @@ import XCTest
 final class DeviceLaunchPixelReporterTests: XCTestCase {
     func testMatchingDeviceFiresDailyPixelWithExactName() throws {
         let pixelFiring = PixelKitMock()
-        let reporter = DeviceLaunchPixelReporter(machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring)
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring)
 
         reporter.reportLaunch()
 
@@ -53,7 +55,8 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
             names.append(name)
             completion(true, nil)
         }
-        let reporter = DeviceLaunchPixelReporter(machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelKit)
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelKit)
 
         reporter.reportLaunch()
         reporter.reportLaunch()
@@ -67,7 +70,8 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
     func testOtherDevicesDoNotFirePixel() {
         for identifier in ["iPhone19,3", "iPhone19,40", "iPad16,1", "arm64", ""] {
             let pixelFiring = PixelKitMock()
-            let reporter = DeviceLaunchPixelReporter(machineIdentifier: { identifier }, pixelFiring: pixelFiring)
+            let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
+                                                     machineIdentifier: { identifier }, pixelFiring: pixelFiring)
 
             reporter.reportLaunch()
 
@@ -77,11 +81,50 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
 
     func testFailedLookupDoesNotFirePixel() {
         let pixelFiring = PixelKitMock()
-        let reporter = DeviceLaunchPixelReporter(machineIdentifier: { nil }, pixelFiring: pixelFiring)
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
+                                                 machineIdentifier: { nil }, pixelFiring: pixelFiring)
 
         reporter.reportLaunch()
 
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testDisabledFlagSkipsLookupAndPixel() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let pixelFiring = PixelKitMock()
+        var lookupCount = 0
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: featureFlagger,
+                                                 machineIdentifier: {
+            lookupCount += 1
+            return "iPhone19,4"
+        }, pixelFiring: pixelFiring)
+
+        reporter.reportLaunch()
+
+        XCTAssertEqual(lookupCount, 0)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testFlagChangesApplyToExistingReporter() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let pixelFiring = PixelKitMock()
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: featureFlagger,
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring)
+
+        reporter.reportLaunch()
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+
+        featureFlagger.enabledFeatureFlags = [.iPhoneDuoLaunchReporting]
+        reporter.reportLaunch()
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+
+        featureFlagger.enabledFeatureFlags = []
+        reporter.reportLaunch()
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+
+        featureFlagger.enabledFeatureFlags = [.iPhoneDuoLaunchReporting]
+        reporter.reportLaunch()
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 2)
     }
 
     func testHardwareMachineReturnsNonemptyValue() throws {

@@ -1,18 +1,35 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
     "m_mac_aichat_addressbar_activated_toggle_on": {
-        "description": "Fired when user selects address bar and toggle settings is ON (duck.ai mode)",
+        "description": "Fired when user activates the address bar while Duck.ai is enabled and the Search & Duck.ai toggle setting is on. Reports the setting, not the toggle's current mode",
         "owners": ["Bunn"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_activated_toggle_off": {
-        "description": "Fired when user selects address bar and toggle settings is OFF (search mode)",
+        "description": "Fired when user activates the address bar while Duck.ai is enabled and the Search & Duck.ai toggle setting is off",
         "owners": ["Bunn"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_button_clicked": {
+        "description": "Fired when user clicks the Duck.ai button in the address bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "action",
+                "description": "What the click opened: the sidebar, a new Duck.ai tab, or a new Duck.ai tab with the typed text as the prompt",
+                "type": "string",
+                "enum": ["sidebar", "tab", "tab-with-prompt"]
+            }
+        ]
     },
     "m_mac_aichat_addressbar_toggle_changed_aichat": {
         "description": "Fired when user changes toggle to duck.ai",

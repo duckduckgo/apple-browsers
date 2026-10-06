@@ -1515,6 +1515,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // MARK: perform first time launch logic here
         }
 
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: LocalStatisticsStore())
+
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
 

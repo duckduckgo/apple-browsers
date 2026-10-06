@@ -444,11 +444,17 @@ enum AIChatPixel: PixelKit.Event {
     // MARK: - Prompt Metrics
 
     /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
-    case aiChatMetricStartNewConversation(source: AIChatConversationSource, hasPageContext: Bool)
+    case aiChatMetricStartNewConversation(source: AIChatConversationSource,
+                                          hasPageContext: Bool,
+                                          surface: AIChatPromptSurface,
+                                          firstPromptNewInstall: Bool)
 
     /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
-    /// `source` is how that conversation was opened, not this prompt's surface.
-    case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource, hasPageContext: Bool)
+    /// `source` is how that conversation was opened; `surface` is where this prompt was submitted.
+    case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource,
+                                           hasPageContext: Bool,
+                                           surface: AIChatPromptSurface,
+                                           firstPromptNewInstall: Bool)
 
     /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
     /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
@@ -1001,14 +1007,19 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
-        case .aiChatMetricStartNewConversation(let source, let hasPageContext),
-                .aiChatMetricSentPromptOngoingChat(let source, let hasPageContext):
-            return [
+        case .aiChatMetricStartNewConversation(let source, let hasPageContext, let surface, let firstPromptNewInstall),
+                .aiChatMetricSentPromptOngoingChat(let source, let hasPageContext, let surface, let firstPromptNewInstall):
+            var params = [
                 "source": source.rawValue,
                 // Derived from `source`; kept for continuity with dashboards that predate it.
                 "isOpenedFromAskDuckAiButton": source.isAskDuckAiButton ? "true" : "false",
-                "hasPageContext": hasPageContext ? "true" : "false"
+                "hasPageContext": hasPageContext ? "true" : "false",
+                "surface": surface.rawValue
             ]
+            if firstPromptNewInstall {
+                params["first_prompt_new_install"] = "true"
+            }
+            return params
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType, "origin": origin]
         case .aiChatAddressBarCreateImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
@@ -1284,6 +1295,16 @@ enum AIChatPixel: PixelKit.Event {
         }
     }
 
+}
+
+/// Where a Duck.ai prompt was submitted, as the prompt pixels report it.
+enum AIChatPromptSurface: String, CaseIterable {
+    case addressBar = "address_bar"
+    case newTabPage = "new_tab_page"
+    case promptBar = "prompt_bar"
+    case duckAI = "duck_ai"
+    case sidebar
+    case floating
 }
 
 /// Action performed when address bar button is clicked

@@ -1016,6 +1016,7 @@ private final class DocumentReadGate {
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
+    var waitTimeoutReasons: [MultiTabCollectionWaitTimeoutPixel.Reason] = []
     var pageContextCollectionEmptyCount = 0
     var pageContextCollectionUnavailableCount = 0
 
@@ -1059,6 +1060,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedFrontend() {}
     func firePageContextCollectionEmpty() {
         pageContextCollectionEmptyCount += 1
+    }
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {
+        waitTimeoutReasons.append(reason)
     }
     func firePageContextCollectionUnavailable() {
         pageContextCollectionUnavailableCount += 1
@@ -1246,6 +1250,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
     private let url = URL(string: "https://example.com/page")!
     private let webView = WKWebView()
     private let script = AttachedPageScript()
+    private let timeoutPixels = MockContextualModePixelHandler()
 
     override func tearDown() {
         script.onCollect = nil
@@ -1257,10 +1262,10 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
                               truncated: false, fullContentLength: content.count)
     }
 
-    private func handler(pixelHandler: AIChatContextualModePixelFiring = MockContextualModePixelHandler(),
+    private func handler(pixelHandler: AIChatContextualModePixelFiring? = nil,
                          now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) -> DuckDuckGo.AIChatPageContextHandler {
         DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
-                                            faviconProvider: { _ in nil }, pixelHandler: pixelHandler,
+                                            faviconProvider: { _ in nil }, pixelHandler: pixelHandler ?? timeoutPixels,
                                             currentURLProvider: { self.url }, now: now)
     }
 
@@ -1291,6 +1296,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
         XCTAssertEqual(result, .timedOut)
         XCTAssertEqual(script.subscriptionCount, 0)
         XCTAssertTrue(script.webView === webView)
+        XCTAssertTrue(timeoutPixels.waitTimeoutReasons.isEmpty)
     }
 
     func testCurrentPageCollectionAutomaticUpdatesAndResubscriptionInBothFeatureStates() async {
@@ -1302,7 +1308,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
                 return nil
             })
             let attachments = MultiTabAttachmentContext(source: source, feature: AttachedPageFeature(state: state))
-            XCTAssertNil(attachments.prepare(.init(tabId: tab.uid, title: "Page", url: url), onChange: { _ in }))
+            XCTAssertNil(attachments.prepare(.init(tabId: tab.uid, title: "Page", url: url, source: .recentTabs), onChange: { _ in }))
 
             let initial = expectation(description: "Initial current-page result")
             let automatic = expectation(description: "Automatic update")
@@ -1447,6 +1453,56 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
         XCTAssertEqual(received, [own, own])
     }
 
+    func testWhenSourceCollectionBlocksThenReportsOneWaitTimeout() async {
+        let handler = handler()
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let result = await handler.collectContext(for: url, timeout: 0.01, isValid: { true })
+        XCTAssertEqual(result, .timedOut)
+        XCTAssertEqual(script.collectCallCount, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.count, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.first, .sourceCollection)
+    }
+
+    func testWhenAnotherCrossTabCollectionBlocksThenReportsItsWaitReason() async {
+        let handler = handler()
+        let started = expectation(description: "First collection started")
+        script.onCollect = { started.fulfill() }
+        let first = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [started], timeout: 1)
+
+        let result = await handler.collectContext(for: url, timeout: 0.01, isValid: { true })
+        first.cancel()
+        _ = await first.value
+
+        XCTAssertEqual(result, .timedOut)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.count, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.first, .crossTabCollection)
+    }
+
+    func testWhenWaitingIsCancelledThenDoesNotReportTimeout() async {
+        let entered = expectation(description: "Waiting started")
+        var didEnter = false
+        let handler = handler(now: {
+            if !didEnter {
+                didEnter = true
+                entered.fulfill()
+            }
+            return ProcessInfo.processInfo.systemUptime
+        })
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [entered], timeout: 1)
+        task.cancel()
+        let result = await task.value
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertTrue(timeoutPixels.waitTimeoutReasons.isEmpty)
+    }
+
+    func testWhenBothCollectionKindsBlockThenReasonIncludesBoth() {
+        XCTAssertEqual(MultiTabCollectionWaitTimeoutPixel.Reason(hasSourceCollection: true, hasCrossTabCollection: true), .both)
+        XCTAssertNil(MultiTabCollectionWaitTimeoutPixel.Reason(hasSourceCollection: false, hasCrossTabCollection: false))
+    }
+
     func testWaitingConsumesAttachmentTimeoutBudget() async {
         let waiting = expectation(description: "Attachment entered")
         var entered = false
@@ -1469,6 +1525,8 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
         XCTAssertEqual(result, .timedOut)
         XCTAssertEqual(script.collectCallCount, 1)
         XCTAssertEqual(script.subscriptionCount, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.count, 1)
+        XCTAssertEqual(timeoutPixels.waitTimeoutReasons.first, .sourceCollection)
     }
 
     func testCancellationResumesSourceObservationAndDeferredCollection() async {

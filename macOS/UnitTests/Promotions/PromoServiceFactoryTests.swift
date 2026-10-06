@@ -253,7 +253,8 @@ extension PromoServiceFactoryTests {
                 featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
-            )
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState())
         )
     }
 }

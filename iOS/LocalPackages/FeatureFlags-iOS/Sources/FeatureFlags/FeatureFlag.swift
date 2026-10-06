@@ -157,10 +157,10 @@ public enum FeatureFlag: String {
     case subscriptionConcurrentExperiments
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637477
-    case subscriptionOnboardingFreeTrialsSep2026
+    case subscriptionOnboardingFreeTrialsOct2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
-    case subscriptionOnboardingPaidSubsSep2026
+    case subscriptionOnboardingPaidSubsOct2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -392,9 +392,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
-    case tabTerminationErrorPage
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
 
@@ -610,14 +607,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the `subscriptionOnboardingFreeTrialsSep2026` ABN test.
-    public enum SubscriptionOnboardingFreeTrialsSep2026Cohort: String, FeatureFlagCohortDescribing {
+    /// Cohorts for the `subscriptionOnboardingFreeTrialsOct2026` ABN test.
+    public enum SubscriptionOnboardingFreeTrialsOct2026Cohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
 
-    /// Cohorts for the `subscriptionOnboardingPaidSubsSep2026` ABN test.
-    public enum SubscriptionOnboardingPaidSubsSep2026Cohort: String, FeatureFlagCohortDescribing {
+    /// Cohorts for the `subscriptionOnboardingPaidSubsOct2026` ABN test.
+    public enum SubscriptionOnboardingPaidSubsOct2026Cohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -731,10 +728,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
         case .subscriptionConcurrentExperiments:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionConcurrentExperiments))
-        case .subscriptionOnboardingFreeTrialsSep2026:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026), cohortType: SubscriptionOnboardingFreeTrialsSep2026Cohort.self)
-        case .subscriptionOnboardingPaidSubsSep2026:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026), cohortType: SubscriptionOnboardingPaidSubsSep2026Cohort.self)
+        case .subscriptionOnboardingFreeTrialsOct2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsOct2026), cohortType: SubscriptionOnboardingFreeTrialsOct2026Cohort.self)
+        case .subscriptionOnboardingPaidSubsOct2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026), cohortType: SubscriptionOnboardingPaidSubsOct2026Cohort.self)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -889,8 +886,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .tabTerminationTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
-        case .tabTerminationErrorPage:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationErrorPage))
         case .tabEvictionOnMemoryWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
         case .tabLRUEviction:

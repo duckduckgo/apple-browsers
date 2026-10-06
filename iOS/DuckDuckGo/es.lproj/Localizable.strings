@@ -442,14 +442,11 @@
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Probar gratis";
 
-/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. The translation of New must match aichat.multiTab.promotion.new so it can be emphasized. */
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
 "aichat.multiTab.promotion" = "Novedad · Escribe «@» o pulsa el icono {attachment} para añadir una pestaña.";
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "archivo adjunto";
-
-/* Emphasized prefix in the multi-tab feature promotion. Must exactly match the translated New in aichat.multiTab.promotion. */
-"aichat.multiTab.promotion.new" = "Nuevo";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Para tareas de análisis";

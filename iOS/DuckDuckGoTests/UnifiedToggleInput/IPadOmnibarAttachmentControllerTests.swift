@@ -599,6 +599,27 @@ final class IPadOmnibarDraftTests: XCTestCase {
         XCTAssertEqual(view.aiChatTextView.text, "New search text")
     }
 
+    func testTabSwitchCancelsPendingSearchModeTransfer() throws {
+        let (controller, view, window) = try makeController()
+        defer { window.isHidden = true }
+        let origin = Tab()
+        controller.bindIPadDraft(to: origin)
+        expand(controller, view)
+        enter("Origin draft", in: controller, view)
+        controller.setSelectedTextEntryMode(.search)
+        XCTAssertNotNil(view.onCollapseAnimationCompleted)
+
+        controller.bindIPadDraft(to: Tab())
+        controller.updateQuery("Destination search")
+        view.onCollapseAnimationCompleted?()
+
+        XCTAssertEqual(view.textField.text, "Destination search")
+        XCTAssertFalse(view.textField.isFirstResponder)
+        controller.bindIPadDraft(to: origin)
+        expand(controller, view)
+        XCTAssertEqual(view.aiChatTextView.text, "Origin draft")
+    }
+
     func testSynchronousTabSwitchDuringSubmissionPreservesDestinationAndSubmittedPayload() throws {
         for usesLegacyTextField in [false, true] {
             let (controller, view, window) = try makeController()

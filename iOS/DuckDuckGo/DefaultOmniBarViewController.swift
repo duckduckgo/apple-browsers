@@ -323,6 +323,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard draft !== iPadDraft, !isBindingIPadDraft else { return }
         isBindingIPadDraft = true
         defer { isBindingIPadDraft = false }
+        omniBarView.onCollapseAnimationCompleted = nil
+        modeToggleTextModel.endTransition()
+        omniBarView.aiChatTextView.resignFirstResponder()
         endEditing()
         iPadDraft = draft
         omniBarView.aiChatTextView.text = ""

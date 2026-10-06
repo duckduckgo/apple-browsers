@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import ZIPFoundation
 @testable import WebExtensions
 
 final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
@@ -266,6 +267,84 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         """)
     }
 
+    // MARK: - Archived Extensions
+
+    private let serviceWorkerManifest = """
+    { "manifest_version": 3, "name": "Archived", "version": "1.0", "background": { "service_worker": "background.js" } }
+    """
+
+    func testWhenArchiveDeclaresServiceWorker_ThenAnUnpackedCopyIsRewrittenAndLoadedInstead() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": serviceWorkerManifest, "background.js": "1;"])
+        let archiveData = try Data(contentsOf: archiveURL)
+
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL)
+
+        XCTAssertEqual(loadableURL.standardizedFileURL, unpackedURL(for: archiveURL).standardizedFileURL)
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: loadableURL.appendingPathComponent("background.js").path))
+        XCTAssertEqual(try Data(contentsOf: archiveURL), archiveData, "The archive itself is never changed")
+    }
+
+    func testWhenArchiveWrapsItsFilesInAFolder_ThenThatFolderIsLoaded() throws {
+        let archiveURL = try makeArchive(files: ["bitwarden/manifest.json": serviceWorkerManifest, "bitwarden/background.js": "1;"])
+
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL)
+
+        XCTAssertEqual(loadableURL.standardizedFileURL,
+                       unpackedURL(for: archiveURL).appendingPathComponent("bitwarden").standardizedFileURL)
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+    }
+
+    func testWhenArchiveIsOneOfOurs_ThenItIsLoadedAsIs() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": """
+        { "manifest_version": 3, "name": "Ours", "version": "1.0", "background": { "service_worker": "background.js" },
+          "browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.test" } } }
+        """])
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL), archiveURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: unpackedURL(for: archiveURL).path))
+    }
+
+    func testWhenArchiveNeedsNoRewrite_ThenItIsLoadedAsIs() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": """
+        { "manifest_version": 3, "name": "Page", "version": "1.0", "background": { "page": "background.html" } }
+        """])
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL), archiveURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: unpackedURL(for: archiveURL).path))
+    }
+
+    func testWhenArchiveIsUnchanged_ThenTheUnpackedCopyIsReused() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": serviceWorkerManifest, "background.js": "1;"])
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL)
+        let markerURL = loadableURL.appendingPathComponent("marker")
+        try Data().write(to: markerURL)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL), loadableURL)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: markerURL.path))
+    }
+
+    func testWhenArchiveChanges_ThenItIsUnpackedAgain() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": serviceWorkerManifest, "background.js": "1;"])
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL)
+        let markerURL = loadableURL.appendingPathComponent("marker")
+        try Data().write(to: markerURL)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(60)], ofItemAtPath: archiveURL.path)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL), loadableURL)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+    }
+
+    func testWhenExtensionIsAFolder_ThenItIsPatchedInPlaceAndLoaded() throws {
+        let extensionDirectory = try makeExtensionDirectory(manifest: serviceWorkerManifest)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: extensionDirectory), extensionDirectory)
+        XCTAssertEqual(try backgroundSection(in: extensionDirectory)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+    }
+
     // MARK: - Helpers
 
     private func assertManifestIsUntouched(_ manifest: String,
@@ -303,6 +382,25 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
             }
             searchStart = range.upperBound
         }
+    }
+
+    /// An archive in its own install folder, like the ones the Chrome Web Store flow stores.
+    private func makeArchive(files: [String: String]) throws -> URL {
+        let installFolder = temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: installFolder, withIntermediateDirectories: true)
+        let archiveURL = installFolder.appendingPathComponent("extension.zip")
+        let archive = try Archive(url: archiveURL, accessMode: .create)
+        for (path, contents) in files.sorted(by: { $0.key < $1.key }) {
+            let data = Data(contents.utf8)
+            try archive.addEntry(with: path, type: .file, uncompressedSize: Int64(data.count)) { position, size in
+                data.subdata(in: Int(position)..<Int(position) + size)
+            }
+        }
+        return archiveURL
+    }
+
+    private func unpackedURL(for archiveURL: URL) -> URL {
+        archiveURL.deletingLastPathComponent().appendingPathComponent(WebExtensionBackgroundPagePatcher.unpackedFolderName)
     }
 
     private func makeExtensionDirectory(manifest: String) throws -> URL {

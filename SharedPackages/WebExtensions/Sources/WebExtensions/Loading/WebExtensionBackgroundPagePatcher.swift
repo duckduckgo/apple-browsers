@@ -18,6 +18,7 @@
 
 import Foundation
 import os.log
+import ZIPFoundation
 
 /// Makes Chrome extensions start their background script in WebKit.
 ///
@@ -36,6 +37,10 @@ import os.log
 ///
 /// Running it twice is harmless: after the first run there is no service worker left to rewrite.
 ///
+/// Extensions installed from the Chrome Web Store are kept as a ZIP, which can't be rewritten. Those
+/// are unpacked into a folder next to the ZIP, and the rewrite and WebKit use that folder instead
+/// (see `loadableExtensionURL(for:)`).
+///
 /// Some service workers load extra files with `importScripts`, which pages don't have. For those,
 /// the page first loads `WebExtensionImportScriptsShim` and the extra files, then the
 /// extension's script.
@@ -45,6 +50,12 @@ struct WebExtensionBackgroundPagePatcher {
     static let backgroundPageFilename = "ddg-background-page.html"
 
     private static let manifestFilename = "manifest.json"
+
+    /// Name of the folder an archived extension is unpacked into, next to the archive.
+    static let unpackedFolderName = "unpacked"
+
+    /// File in the unpacked folder recording the modification date of the archive it came from.
+    private static let archiveDateFilename = ".ddg-archive-date"
 
     private enum ManifestKey {
         static let background = "background"
@@ -59,6 +70,91 @@ struct WebExtensionBackgroundPagePatcher {
 
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
+    }
+
+    /// Returns the URL WebKit should load the installed extension from, rewriting its background first
+    /// when needed.
+    ///
+    /// For a folder, that's the folder itself, patched in place. For a ZIP whose background must be
+    /// rewritten, it's an unpacked copy next to the ZIP, with the rewrite applied; the ZIP itself is never
+    /// changed. The copy is reused until the ZIP changes, and it lives in the extension's install folder,
+    /// so uninstalling removes it too. Any other ZIP, and any failure, returns the ZIP as it is.
+    func loadableExtensionURL(for installedExtensionURL: URL) -> URL {
+        guard installedExtensionURL.pathExtension.lowercased() == "zip" else {
+            patchIfNeeded(installedExtensionURL: installedExtensionURL)
+            return installedExtensionURL
+        }
+
+        do {
+            let archive = try Archive(url: installedExtensionURL, accessMode: .read)
+            guard let manifest = try Self.manifest(in: archive),
+                  !declaresDuckDuckGoSettings(inManifest: manifest),
+                  Self.hasServiceWorkerOnlyBackground(manifest) else {
+                return installedExtensionURL
+            }
+
+            let unpackedURL = installedExtensionURL.deletingLastPathComponent()
+                .appendingPathComponent(Self.unpackedFolderName, isDirectory: true)
+            try unpackIfNeeded(installedExtensionURL, to: unpackedURL)
+            guard let extensionDirectory = extensionDirectory(in: unpackedURL) else {
+                return installedExtensionURL
+            }
+
+            patchIfNeeded(installedExtensionURL: extensionDirectory)
+            return extensionDirectory
+        } catch {
+            Logger.webExtensions.error("❌ Failed to unpack \(installedExtensionURL.path) for its background rewrite: \(error.localizedDescription)")
+            return installedExtensionURL
+        }
+    }
+
+    /// Unpacks `archiveURL` into `unpackedURL`, unless it already holds this version of the archive.
+    private func unpackIfNeeded(_ archiveURL: URL, to unpackedURL: URL) throws {
+        // Read from disk each time: `URL` resource values are cached and would miss an updated archive.
+        let archiveDate = try fileManager.attributesOfItem(atPath: archiveURL.path)[.modificationDate] as? Date
+        let dateStamp = archiveDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
+        let stampURL = unpackedURL.appendingPathComponent(Self.archiveDateFilename)
+        if let unpackedStamp = try? String(contentsOf: stampURL, encoding: .utf8), unpackedStamp == dateStamp {
+            return
+        }
+
+        if fileManager.fileExists(atPath: unpackedURL.path) {
+            try fileManager.removeItem(at: unpackedURL)
+        }
+        try fileManager.createDirectory(at: unpackedURL, withIntermediateDirectories: true)
+        try fileManager.unzipItem(at: archiveURL, to: unpackedURL)
+        try dateStamp.write(to: stampURL, atomically: true, encoding: .utf8)
+    }
+
+    /// The folder holding `manifest.json`: `directory` itself, or the single top-level folder an archive
+    /// wrapped its contents in.
+    private func extensionDirectory(in directory: URL) -> URL? {
+        if let manifestDirectory = manifestDirectory(in: directory) {
+            return manifestDirectory
+        }
+        let contents = (try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil,
+                                                              options: [.skipsHiddenFiles])) ?? []
+        return contents.lazy.compactMap { manifestDirectory(in: $0) }.first
+    }
+
+    /// The manifest of an archived extension, at its root or inside a single top-level folder.
+    private static func manifest(in archive: Archive) throws -> [String: Any]? {
+        let entry = archive[manifestFilename]
+            ?? archive.first { $0.type == .file && $0.path.split(separator: "/").count == 2 && $0.path.hasSuffix("/" + manifestFilename) }
+        guard let entry else { return nil }
+
+        var data = Data()
+        _ = try archive.extract(entry) { data.append($0) }
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    /// Whether the manifest declares a service worker and no other background, which is what gets rewritten.
+    private static func hasServiceWorkerOnlyBackground(_ manifest: [String: Any]) -> Bool {
+        guard let background = manifest[ManifestKey.background] as? [String: Any],
+              let serviceWorkerPath = background[ManifestKey.serviceWorker] as? String else {
+            return false
+        }
+        return !serviceWorkerPath.isEmpty && background[ManifestKey.scripts] == nil && background[ManifestKey.page] == nil
     }
 
     /// Patches the manifest of the extension installed at `installedExtensionURL`: rewrites a
@@ -107,11 +203,9 @@ struct WebExtensionBackgroundPagePatcher {
     /// scripts it loads, when the manifest declares a service worker and nothing else.
     /// - Returns: `true` when `manifest` was changed.
     private func patchBackground(in manifest: inout [String: Any], manifestDirectory: URL) throws -> Bool {
-        guard var background = manifest[ManifestKey.background] as? [String: Any],
-              let serviceWorkerPath = background[ManifestKey.serviceWorker] as? String,
-              !serviceWorkerPath.isEmpty,
-              background[ManifestKey.scripts] == nil,
-              background[ManifestKey.page] == nil else {
+        guard Self.hasServiceWorkerOnlyBackground(manifest),
+              var background = manifest[ManifestKey.background] as? [String: Any],
+              let serviceWorkerPath = background[ManifestKey.serviceWorker] as? String else {
             return false
         }
 
@@ -181,7 +275,7 @@ struct WebExtensionBackgroundPagePatcher {
     /// Returns `directory` when it is a directory holding `manifest.json`, and `nil` otherwise.
     ///
     /// The directory check is not redundant: an installed extension can also be an archive file,
-    /// which has no manifest to patch.
+    /// which `loadableExtensionURL(for:)` unpacks first.
     private func manifestDirectory(in directory: URL) -> URL? {
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {

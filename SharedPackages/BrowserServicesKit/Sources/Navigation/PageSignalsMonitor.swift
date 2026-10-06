@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import Common
 import Foundation
 import WebKit
@@ -28,36 +27,40 @@ public final class PageSignalsMonitor {
     private let signalsCollector: PageSignalsCollector
     private let resourceObserver: PageResourceLoadObserver
     private let isEnabled: () -> Bool
-    private var cancellables = Set<AnyCancellable>()
-    private weak var observedWebView: WKWebView?
 
-    public var pageSignals: PageSignals {
-        signalsCollector.signals
+    public var pageSignals: PageSignals? {
+        isEnabled() ? signalsCollector.signals : nil
     }
 
     /// - Parameters:
-    ///   - isEnabled: Evaluated on every event, and again whenever `updatesPublisher` emits.
-    public init(tld: TLD, isEnabled: @escaping () -> Bool, updatesPublisher: some Publisher<Void, Never>) {
+    ///   - isEnabled: Evaluated on attach and on every event.
+    public init(tld: TLD, isEnabled: @escaping () -> Bool) {
         let signalsCollector = PageSignalsCollector(tld: tld)
 
         self.signalsCollector = signalsCollector
         self.isEnabled = isEnabled
         self.resourceObserver = PageResourceLoadObserver { [weak signalsCollector] url, error in
+            guard isEnabled() else {
+                return
+            }
+
             signalsCollector?.recordResourceFailure(error, for: url)
         }
-
-        startListeningToEnabledUpdates(updatesPublisher)
     }
 
     public func attach(to webView: WKWebView) {
         detach()
-        observedWebView = webView
-        refreshObservers()
+
+        guard isEnabled() else {
+            return
+        }
+
+        signalsCollector.startCollectingSignals(for: webView.url)
+        resourceObserver.attach(to: webView)
     }
 
     public func detach() {
         resourceObserver.detach()
-        observedWebView = nil
     }
 
     public func didCommitNavigation(to url: URL?) {
@@ -82,37 +85,6 @@ public final class PageSignalsMonitor {
         }
 
         signalsCollector.recordContentRuleListAction(action, for: url)
-    }
-}
-
-private extension PageSignalsMonitor {
-
-    func startListeningToEnabledUpdates(_ updatesPublisher: some Publisher<Void, Never>) {
-        updatesPublisher
-            .map { [isEnabled] in isEnabled() }
-            .prepend(isEnabled())
-            .removeDuplicates()
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshObservers()
-            }
-            .store(in: &cancellables)
-    }
-
-    func refreshObservers() {
-        guard isEnabled() else {
-            resourceObserver.detach()
-            signalsCollector.startCollectingSignals(for: nil)
-            return
-        }
-
-        guard let observedWebView else {
-            return
-        }
-
-        signalsCollector.startCollectingSignals(for: observedWebView.url)
-        resourceObserver.attach(to: observedWebView)
     }
 }
 #endif

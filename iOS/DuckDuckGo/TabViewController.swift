@@ -324,8 +324,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
-                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
-                                                                  updatesPublisher: featureFlagger.updatesPublisher)
+                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.

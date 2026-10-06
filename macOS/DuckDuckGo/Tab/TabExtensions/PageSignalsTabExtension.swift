@@ -26,18 +26,20 @@ import WebKit
 
 /// Bridges the tab's web view and navigation events into a `PageSignalsMonitor`
 @MainActor
-final class PageSignalsTabExtension {
+final class PageSignalsTabExtension: NSObject {
+    static let contentRuleListActionSelectorName = "_webView:contentRuleListWithIdentifier:performedAction:forURL:"
+
     private let monitor: PageSignalsMonitor
     private var cancellables = Set<AnyCancellable>()
 
-    var pageSignals: PageSignals {
+    var pageSignals: PageSignals? {
         monitor.pageSignals
     }
 
     init(webViewPublisher: some Publisher<WKWebView, Never>, featureFlagger: FeatureFlagger, tld: TLD) {
         self.monitor = PageSignalsMonitor(tld: tld,
-                                          isEnabled: { featureFlagger.isFeatureOn(.pageSignals) },
-                                          updatesPublisher: featureFlagger.updatesPublisher)
+                                          isEnabled: { featureFlagger.isFeatureOn(.pageSignals) })
+        super.init()
 
         webViewPublisher
             .sink { [weak self] webView in
@@ -66,14 +68,21 @@ extension PageSignalsTabExtension: NavigationResponder {
 
         monitor.didFailProvisionalNavigation(to: error.failingUrl ?? navigation.url, with: error)
     }
+}
 
-    func navigationDidPerformContentRuleListAction(_ action: ContentRuleListAction, forURL url: URL, ruleListIdentifier identifier: String) {
-        monitor.didPerformContentRuleListAction(action, for: url)
+// MARK: - Private WebKit Delegate
+
+extension PageSignalsTabExtension {
+
+    /// Forwarded by `DistributedNavigationDelegate` only when registered as a custom delegate method handler.
+    @objc(_webView:contentRuleListWithIdentifier:performedAction:forURL:)
+    func webView(_ webView: WKWebView, contentRuleListWithIdentifier identifier: String, performedAction action: NSObject, forURL url: URL) {
+        monitor.didPerformContentRuleListAction(ContentRuleListAction(webKitAction: action), for: url)
     }
 }
 
 protocol PageSignalsTabExtensionProtocol: AnyObject, NavigationResponder {
-    @MainActor var pageSignals: PageSignals { get }
+    @MainActor var pageSignals: PageSignals? { get }
 }
 
 extension PageSignalsTabExtension: TabExtension, PageSignalsTabExtensionProtocol {

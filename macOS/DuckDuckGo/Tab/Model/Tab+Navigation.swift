@@ -117,6 +117,11 @@ extension Tab: NavigationResponder {
             navigationDelegate
                 .registerCustomDelegateMethodHandler(.weak(downloadsExtension), forSelectorNamed: "_webView:contextMenuDidCreateDownload:")
         }
+
+        if featureFlagger.isFeatureOn(.pageSignals), let pageSignals = self.pageSignals {
+            navigationDelegate
+                .registerCustomDelegateMethodHandler(.weak(pageSignals), forSelectorNamed: PageSignalsTabExtension.contentRuleListActionSelectorName)
+        }
     }
 
     var redirectNavigationResponder: RedirectNavigationResponder {

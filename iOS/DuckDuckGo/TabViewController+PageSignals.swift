@@ -23,6 +23,18 @@ import WebKit
 // WebKit delivers these private callbacks to the tab's existing navigation delegate.
 extension TabViewController {
 
+
+    /// We'll conceal the `contentRuleList` selector whenever the Feature Flag is disabled
+    override func responds(to aSelector: Selector!) -> Bool {
+        let contentRuleListActionSelector = NSSelectorFromString("_webView:contentRuleListWithIdentifier:performedAction:forURL:")
+
+        if aSelector == contentRuleListActionSelector {
+            return featureFlagger.isFeatureOn(.pageSignals)
+        }
+
+        return super.responds(to: aSelector)
+    }
+
     @objc(_webView:contentRuleListWithIdentifier:performedAction:forURL:)
     func webView(_ webView: WKWebView, contentRuleListWithIdentifier identifier: String, performedAction action: NSObject, forURL url: URL) {
         guard webView == self.webView else {

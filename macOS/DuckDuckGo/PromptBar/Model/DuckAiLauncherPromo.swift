@@ -55,19 +55,16 @@ final class DuckAiLauncherPromo {
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
     private let keyValueStore: ThrowingKeyValueStoring
-    private let openSettings: @MainActor () -> Void
     @Published private var chatCount = 0
     private var chatsCancellable: AnyCancellable?
 
     init(featureFlagger: FeatureFlagger,
          preferences: PromptBarPreferences,
          chatCountPublisher: AnyPublisher<Int, Never>,
-         keyValueStore: ThrowingKeyValueStoring,
-         openSettings: @escaping @MainActor () -> Void) {
+         keyValueStore: ThrowingKeyValueStoring) {
         self.featureFlagger = featureFlagger
         self.preferences = preferences
         self.keyValueStore = keyValueStore
-        self.openSettings = openSettings
 
         chatsCancellable = chatCountPublisher
             .receive(on: DispatchQueue.main)
@@ -113,12 +110,11 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    @MainActor
     func tryNow() {
         preferences.isKeyboardShortcutEnabled = true
         preferences.isMenuBarIconVisible = true
+        preferences.pendingMenuBarTip = true
         record(.triedNow)
-        openSettings()
     }
 
     func dismiss() {
@@ -151,7 +147,6 @@ extension DuckAiLauncherPromo {
         self.init(featureFlagger: featureFlagger,
                   preferences: NSApp.delegateTyped.promptBarPreferences,
                   chatCountPublisher: chatCountPublisher,
-                  keyValueStore: keyValueStore,
-                  openSettings: { Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat) })
+                  keyValueStore: keyValueStore)
     }
 }

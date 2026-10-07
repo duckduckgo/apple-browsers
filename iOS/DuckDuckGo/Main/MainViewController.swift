@@ -2351,10 +2351,13 @@ class MainViewController: UIViewController {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
-    /// True right after either input accepted the app's focus request. Unified input applies focus
-    /// asynchronously, but enters its editing state synchronously when it accepts the request.
+    /// True right after either input accepted the app's focus request. Unified input applies a new session's
+    /// focus asynchronously, but enters its editing state synchronously when it accepts the request; resuming
+    /// a suspended session takes first responder synchronously and enters the editing state later.
     private var isAutomaticFocusAccepted: Bool {
-        omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarEditing == true
+        omniBar.isTextFieldEditing
+            || unifiedToggleInputCoordinator?.isOmnibarEditing == true
+            || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
     }
 
     /// Restores the keyboard after an escape-hatch burn that started in focus mode, using the unified-input
@@ -2365,6 +2368,10 @@ class MainViewController: UIViewController {
             coordinator.activateInput()
         } else {
             enterSearch()
+        }
+        // The page after the burn started its visit with the keyboard down.
+        if isNewTabPageVisible, isAutomaticFocusAccepted {
+            newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
         }
     }
 
@@ -8156,7 +8163,7 @@ extension MainViewController {
                         guard showsKeyboard,
                               !self.isNewTabPageKeyboardBlockedByDialog,
                               !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
-                        self.enterSearch()
+                        self.enterSearchOnAppOpen()
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
                     self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
@@ -8167,7 +8174,7 @@ extension MainViewController {
                     // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.
                     guard self.currentTab?.isAITab != true else { return }
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-                        self.enterSearch()
+                        self.enterSearchOnAppOpen()
                     }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)

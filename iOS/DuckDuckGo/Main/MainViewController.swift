@@ -2370,6 +2370,27 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
+    /// Attaches the after-idle treatment without rebuilding the page or changing input focus.
+    func showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
+        guard let page = newTabPageViewController,
+              let currentTab = tabManager.currentTabsModel.currentTab,
+              let hatch = escapeHatchModelBuilder.makeAfterIdleHatchForKeptNewTabPage(router: self) else {
+            return false
+        }
+
+        currentTab.openedAfterIdle = true
+        if homePageConfiguration.mode == .coordinated {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: true)
+        }
+        page.setEscapeHatch(hatch)
+        currentNTPEscapeHatch = hatch
+        configureUnifiedInputEscapeHatch(hatch)
+        postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        let focused = omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
+        fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: focused)
+        return true
+    }
+
     private var isChatPathCompletionPending: Bool {
         daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
     }
@@ -2468,10 +2489,6 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
-
-        if hasCompletedInitialLoad {
-            lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
-        }
 
         configureUnifiedInputEscapeHatch(hatch)
 

@@ -18,6 +18,8 @@
 //
 
 import UIKit
+import SwiftUI
+import DesignResourcesKit
 import Core
 
 class KeyboardSettingsViewController: UITableViewController {
@@ -69,5 +71,24 @@ extension KeyboardSettingsViewController {
         tableView.separatorColor = theme.tableCellSeparatorColor
         
         tableView.reloadData()
+    }
+}
+
+struct KeyboardSettingsView: View {
+    @State private var settings = KeyboardSettings()
+
+    // Reuse the existing storyboard translations for this screen's header and toggle labels.
+    var body: some View {
+        List {
+            Section(header: Text(NSLocalizedString("tGh-di-rfq.headerTitle", tableName: "Settings", value: "Show keyboard on", comment: ""))) {
+                SettingsCellView(label: NSLocalizedString("Zpg-h0-rYv.text", tableName: "Settings", value: "New Tab", comment: ""),
+                                 accessory: .toggle(isOn: $settings.onNewTab))
+                SettingsCellView(label: NSLocalizedString("13n-KI-KLq.text", tableName: "Settings", value: "App Launch", comment: ""),
+                                 accessory: .toggle(isOn: $settings.onAppLaunch))
+            }
+        }
+        .applyInsetGroupedListStyle()
+        .navigationBarTitle(UserText.settingsKeyboard, displayMode: .inline)
+        .accentColor(Color(designSystemColor: .textPrimary))
     }
 }

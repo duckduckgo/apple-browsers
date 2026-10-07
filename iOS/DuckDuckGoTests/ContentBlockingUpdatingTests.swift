@@ -442,43 +442,51 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTabTearsDownDuringOverlappingLegacyAssetWaitsThenTimeoutPixelsDoNotFire() async throws {
-        for teardown in ["close", "dataClearing", "deinit"] {
-            let pixelFiring = PixelKitMock()
-            var tab: TabViewController? = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                               sitePermissionsEnabled: false, pixelFiring: pixelFiring)
-            defer { tab?.prepareForDataClearing() }
-            tab?.specialErrorPageNavigationHandler.delegate = nil
-            try enableContentBlocking(for: XCTUnwrap(tab))
-            tab?.contentBlockingWaitPixelTimeout = 0.05
-            weak var releasedTab = tab
-            let didDeinit = expectation(description: "Tab releases after \(teardown)")
-            tab?.onDeinit { didDeinit.fulfill() }
-            var decisions = [Bool]()
-            for path in ["first", "second"] {
-                XCTAssertEqual(tab?.shouldWaitUntilContentBlockingIsLoaded({ decisions.append($0) },
-                                                                           for: URL(string: "https://example.com/\(path)")!), true)
-            }
-            await Task.yield()
-            XCTAssertTrue(decisions.isEmpty, "Both legacy navigations must still be waiting before \(teardown)")
+    func testWhenTabClosesDuringOverlappingLegacyAssetWaitsThenTimeoutPixelsDoNotFireAndNavigationsStillResume() async throws {
+        try await assertLegacyAssetWaitsSurviveTeardownWithoutTimeoutPixels { $0.closeSitePermissions() }
+    }
 
-            switch teardown {
-            case "close": tab?.closeSitePermissions()
-            case "dataClearing": tab?.prepareForDataClearing()
-            default: tab = nil
-            }
-            if teardown == "deinit" {
-                await fulfillment(of: [didDeinit], timeout: 1)
-                XCTAssertNil(releasedTab, "The legacy asset wait must not retain the tab")
-            }
-            try await Task.sleep(nanoseconds: 300_000_000)
-            XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty, "\(teardown) must cancel every overlapping timeout pixel")
+    @MainActor
+    func testWhenDataIsClearedDuringOverlappingLegacyAssetWaitsThenTimeoutPixelsDoNotFireAndNavigationsStillResume() async throws {
+        try await assertLegacyAssetWaitsSurviveTeardownWithoutTimeoutPixels { $0.prepareForDataClearing() }
+    }
 
-            if teardown != "deinit" {
-                tab = nil
-                await fulfillment(of: [didDeinit], timeout: 1)
-            }
+    @MainActor
+    private func assertLegacyAssetWaitsSurviveTeardownWithoutTimeoutPixels(_ teardown: (TabViewController) -> Void) async throws {
+        let pixelFiring = PixelKitMock()
+        var tab: TabViewController? = TabViewController.fake(sitePermissionsEnabled: false,
+                                                           contentBlockingAssetsPublisher: updating.userContentBlockingAssets,
+                                                           pixelFiring: pixelFiring)
+        tab?.specialErrorPageNavigationHandler.delegate = nil
+        try enableContentBlocking(for: XCTUnwrap(tab))
+        let config = try XCTUnwrap(tab?.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        tab?.contentBlockingWaitPixelTimeout = 0.05
+        let didDeinit = expectation(description: "Tab releases once its waits resolve")
+        tab?.onDeinit { didDeinit.fulfill() }
+        let resumed = expectation(description: "Both navigations resume once assets install")
+        resumed.expectedFulfillmentCount = 2
+        var decisions = [Bool]()
+        for path in ["first", "second"] {
+            XCTAssertEqual(tab?.shouldWaitUntilContentBlockingIsLoaded({
+                decisions.append($0)
+                resumed.fulfill()
+            }, for: URL(string: "https://example.com/\(path)")!), true)
         }
+
+        // Tear down and release before the wait tasks start, as TabManager does when closing or burning tabs.
+        try teardown(XCTUnwrap(tab))
+        tab = nil
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty, "Teardown must cancel every overlapping timeout pixel")
+        XCTAssertTrue(decisions.isEmpty, "Teardown must not resolve the legacy waits")
+
+        // The fixture's rule list is a stub WebKit cannot install, so only the wait decision sees content blocking on.
+        config.enabledFeaturesForVersions = [:]
+        rulesManager.updatesSubject.send(Self.testUpdate())
+        // The waits retain the tab: releasing it earlier would stop asset delivery and strand both decisions.
+        await fulfillment(of: [resumed, didDeinit], timeout: 10, enforceOrder: true)
+        XCTAssertEqual(decisions, [true, true])
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     @MainActor

@@ -2520,7 +2520,6 @@ class TabViewController: UIViewController {
 
     deinit {
         webExtensionNavigationTask?.cancel()
-        contentBlockingWaitTimeoutTasks.values.forEach { $0.cancel() }
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
@@ -3811,13 +3810,15 @@ extension TabViewController: WKNavigationDelegate {
 
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
-            rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
-            showProgressIndicator()
+            // Start the timer now so teardown cancels it even before the wait task runs.
             let timeoutPixel = isMainFrame ? fireContentBlockingWaitTimeoutPixelAfterDelay() : nil
-            Task { [rulesCompilationMonitor, tabID = tabModel.uid, awaitAssets = userContentController.awaitContentBlockingAssetsInstalled] in
-                await awaitAssets()
+            // Retains the tab until assets install: tab deinit stops asset delivery and would strand WebKit's decision.
+            Task {
+                rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+                showProgressIndicator()
+                await userContentController.awaitContentBlockingAssetsInstalled()
                 timeoutPixel?.cancel()
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
                 completion(true)
             }
             return true

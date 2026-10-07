@@ -53,11 +53,39 @@ protocol IdleReturnEvaluating {
 /// Key namespace for idle-return NTP debug overrides (typed storage, no dotted keys).
 enum IdleReturnDebugStorageKeys: String, StorageKeyDescribing {
     case idleReturnThresholdSecondsDebugOverride = "idle-return-threshold-seconds-debug-override"
+    case idleReturnWarmTransitionDebugOverride = "idle-return-warm-transition-debug-override"
+}
+
+/// POC: how a warm return to an after-idle New Tab Page should look, so the three candidates can be
+/// compared on a build rather than in screenshots.
+enum IdleReturnWarmTransition: Int, CaseIterable {
+    /// Today: the previous page is drawn live, then replaced by the New Tab Page.
+    case live = 0
+    /// Decide before the first frame, so the New Tab Page is drawn instead of the previous page.
+    case decideEarly = 1
+    /// Cover the window with a still of the page and shrink it into the return-to-tab card.
+    case genie = 2
+
+    var title: String {
+        switch self {
+        case .live: return "A — Today"
+        case .decideEarly: return "B — Straight to New Tab Page"
+        case .genie: return "C — Page shrinks into the card"
+        }
+    }
+
+    static var current: IdleReturnWarmTransition {
+        let storage: any KeyedStoring<IdleReturnDebugOverridesKeys> = UserDefaults.app.keyedStoring()
+        let raw: Int? = storage.warmTransition
+        return raw.flatMap(IdleReturnWarmTransition.init(rawValue:)) ?? .live
+    }
 }
 
 /// StoringKeys for idle-return debug overrides.
 struct IdleReturnDebugOverridesKeys: StoringKeys {
     let thresholdSecondsOverride = StorageKey<Int>(IdleReturnDebugStorageKeys.idleReturnThresholdSecondsDebugOverride)
+    /// POC: raw value of `IdleReturnWarmTransition`.
+    let warmTransition = StorageKey<Int>(IdleReturnDebugStorageKeys.idleReturnWarmTransitionDebugOverride)
 }
 
 struct IdleReturnThresholdResolver {

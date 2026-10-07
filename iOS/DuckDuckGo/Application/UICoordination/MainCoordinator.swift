@@ -967,7 +967,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+            guard IdleReturnWarmTransition.current == .genie else {
+                self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+                return
+            }
+            self.controller.minimizeCurrentPageIntoEscapeHatch {
+                self.controller.newTab(reuseExisting: true, allowingKeyboard: false, openedAfterIdle: true)
+            }
         }
     }
 

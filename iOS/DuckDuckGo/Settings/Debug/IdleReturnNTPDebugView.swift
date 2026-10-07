@@ -28,6 +28,11 @@ struct IdleReturnNTPDebugView: View {
     @State private var overrideSecondsText: String = ""
     @FocusState private var isTextFieldFocused: Bool
 
+    private var warmTransition: IdleReturnWarmTransition {
+        let raw: Int? = storage.warmTransition
+        return raw.flatMap(IdleReturnWarmTransition.init(rawValue:)) ?? .live
+    }
+
     private var currentOverride: Int? {
         guard let value: Int = storage.thresholdSecondsOverride, value > 0 else { return nil }
         return value
@@ -41,6 +46,19 @@ struct IdleReturnNTPDebugView: View {
                 } else {
                     Text(verbatim: "Effective threshold: config default (no override)")
                 }
+            }
+
+            Section(header: Text(verbatim: "Reopening the app — which transition?"),
+                    footer: Text(verbatim: "Pick one, then: open a page, leave the app, wait longer than the interval above, and come back to it without closing it from the app switcher.\n\nA is how the app behaves today. B goes straight to the New Tab Page. C shows your page shrinking into the card that takes you back to it.\n\nThis only changes what you see when the app was still open in the background. If you closed it completely, all three look the same.")) {
+                Picker(selection: Binding(get: { warmTransition },
+                                          set: { storage.warmTransition = $0.rawValue })) {
+                    ForEach(IdleReturnWarmTransition.allCases, id: \.rawValue) { transition in
+                        Text(verbatim: transition.title).tag(transition)
+                    }
+                } label: {
+                    Text(verbatim: "Transition")
+                }
+                .pickerStyle(.inline)
             }
 
             Section(header: Text(verbatim: "Override")) {

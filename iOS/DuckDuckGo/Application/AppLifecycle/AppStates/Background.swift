@@ -102,6 +102,17 @@ extension Background {
         ThemeManager.shared.updateUserInterfaceStyle()
         sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()
+
+        applyAfterIdleTreatmentBeforeFirstFrameIfSelected()
+    }
+
+    /// POC: apply the after-idle treatment here, where nothing has been rendered for this foreground
+    /// yet, so the New Tab Page is the first frame rather than a replacement of the previous page.
+    private func applyAfterIdleTreatmentBeforeFirstFrameIfSelected() {
+        guard IdleReturnWarmTransition.current == .decideEarly,
+              case .afterIdle(.ntp, let timeAwayMs) = appDependencies.idleReturnEvaluator.evaluateReturn() else { return }
+
+        appDependencies.mainCoordinator.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
     }
 
     /// Called when the app transitions from launching or foreground to background

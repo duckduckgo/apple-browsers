@@ -56,6 +56,7 @@ struct RedesignedEscapeHatchView: View {
                     onShowAllTap: model.onTabSwitcherTap) {
                         menuContent
                     }
+                    .reportsFrameInWindow { model.reportCardFrame($0) }
             } else {
                 EscapeHatchView(model: model, usesMaterialBackground: true)
             }

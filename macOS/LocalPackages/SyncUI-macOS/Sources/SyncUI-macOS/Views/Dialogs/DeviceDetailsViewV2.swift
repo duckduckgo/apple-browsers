@@ -58,8 +58,8 @@ struct DeviceDetailsViewV2: View {
                 illustration
                     .accessibilityHidden(true)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViews.TextHeader(text: title)
-                    SyncUIViewsV2.TextCaption(text: UserText.deviceDetailsSyncedStatusV2)
+                    SyncUIViews.DialogTitle(text: title)
+                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatusV2)
                 }
                 if device.isCurrent {
                     nameField

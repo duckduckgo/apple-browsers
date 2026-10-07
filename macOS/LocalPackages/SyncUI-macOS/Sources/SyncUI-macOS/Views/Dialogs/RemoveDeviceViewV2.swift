@@ -42,8 +42,8 @@ struct RemoveDeviceViewV2: View {
             VStack(alignment: .center, spacing: 20) {
                 illustration
                     .accessibilityHidden(true)
-                SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitleV2)
-                SyncUIViewsV2.TextDetailMultilineMarkdown(text: UserText.removeDeviceConfirmMessageV2(device.name))
+                SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitleV2)
+                SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessageV2(device.name))
             }
         } buttons: {
             Spacer()

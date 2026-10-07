@@ -33,8 +33,8 @@ struct SyncAuthenticationCancelledView: View {
         SyncDialogV2(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.lockDuckDuckGo128)
-                SyncUIViewsV2.TextHeader(text: UserText.syncAuthenticationCancelledTitleV2)
-                SyncUIViewsV2.TextDetailSecondary(text: UserText.syncAuthenticationCancelledSubtitleV2)
+                SyncUIViews.CenteredTitle(text: UserText.syncAuthenticationCancelledTitleV2)
+                SyncUIViews.CenteredSecondaryBody(text: UserText.syncAuthenticationCancelledSubtitleV2)
             }
         } buttons: {
             Spacer()

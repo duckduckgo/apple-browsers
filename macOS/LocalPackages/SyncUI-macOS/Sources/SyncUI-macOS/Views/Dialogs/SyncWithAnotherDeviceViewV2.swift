@@ -77,7 +77,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         SyncDialogV2(spacing: .zero) {
             VStack(spacing: 20) {
                 headerArtwork
-                SyncUIViews.TextHeader(text: title)
+                SyncUIViews.DialogTitle(text: title)
                 optionsPanel
             }
             .padding(.bottom, 16)

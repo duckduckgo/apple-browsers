@@ -53,8 +53,8 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
                 .padding(.bottom, 12)
 
             VStack(alignment: .center, spacing: 10) {
-                SyncUIViewsV2.TextHeader(text: UserText.beginSyncTitleV2)
-                SyncUIViewsV2.TextDetailSecondary(text: UserText.beginSyncDescriptionV2)
+                SyncUIViews.CenteredTitle(text: UserText.beginSyncTitleV2)
+                SyncUIViews.CenteredSecondaryBody(text: UserText.beginSyncDescriptionV2)
             }
             .padding(.bottom, 20)
 
@@ -109,7 +109,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     @ViewBuilder
     fileprivate var recoverSyncedDataView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SyncUIViewsV2.TextHeader2(text: UserText.recoverSyncedDataTitleV2)
+            SyncUIViews.SectionHeading(text: UserText.recoverSyncedDataTitleV2)
             Button(UserText.recoverCodeButtonV2) {
                 Task {
                     await model.recoverDataPressed()

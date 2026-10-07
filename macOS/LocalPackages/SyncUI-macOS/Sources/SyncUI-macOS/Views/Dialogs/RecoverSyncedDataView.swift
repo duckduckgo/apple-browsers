@@ -26,8 +26,8 @@ struct RecoverSyncedDataView: View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPair96)
-                SyncUIViews.TextHeader(text: UserText.reciverSyncedDataDialogTitle)
-                SyncUIViews.TextDetailMultiline(text: UserText.reciverSyncedDataDialogSubitle)
+                SyncUIViews.DialogTitle(text: UserText.reciverSyncedDataDialogTitle)
+                SyncUIViews.DialogMessage(text: UserText.reciverSyncedDataDialogSubitle)
             }
             .frame(width: 320)
         } buttons: {

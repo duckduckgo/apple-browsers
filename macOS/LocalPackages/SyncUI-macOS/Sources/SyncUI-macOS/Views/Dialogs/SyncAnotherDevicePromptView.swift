@@ -32,8 +32,8 @@ struct SyncAnotherDevicePromptView: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPairFeature128)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViewsV2.TextHeader(text: UserText.syncAnotherDevicePromptTitleV2)
-                    SyncUIViewsV2.TextDetailSecondary(text: UserText.syncAnotherDevicePromptSubtitleV2)
+                    SyncUIViews.CenteredTitle(text: UserText.syncAnotherDevicePromptTitleV2)
+                    SyncUIViews.CenteredSecondaryBody(text: UserText.syncAnotherDevicePromptSubtitleV2)
                 }
             }
         } buttons: {

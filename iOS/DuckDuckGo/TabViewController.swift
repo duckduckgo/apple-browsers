@@ -3829,9 +3829,6 @@ extension TabViewController: WKNavigationDelegate {
         showProgressIndicator()
         let waitID = UUID()
         let timeout = sitePermissionsNavigationTimeout
-        let waitsForContentBlocking = !userContentController.contentBlockingAssetsInstalled
-            && privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
-            && !url.isDuckDuckGoSearch
         sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
@@ -3858,9 +3855,7 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
             if !isReady, isMainFrame {
-                if waitsForContentBlocking, !userContentController.contentBlockingAssetsInstalled {
-                    self?.pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
-                }
+                self?.pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
             completion(isReady)

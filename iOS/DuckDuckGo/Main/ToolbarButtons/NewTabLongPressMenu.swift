@@ -43,23 +43,20 @@ enum NewTabLongPressMenu {
     static func make(source: Source, actions: Actions, pixelFiring: PixelFiring? = PixelKit.shared) -> UIMenu {
         UIMenu(children: [
             UIDeferredMenuElement.uncached { completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: source.rawValue
-                ]))
+                pixelFiring?.fire(NewTabLongPressMenuPixel.displayed(source: source))
                 completion(items(source: source, actions: actions, pixelFiring: pixelFiring))
             }
         ])
     }
 
     static func items(source: Source, actions: Actions, pixelFiring: PixelFiring?) -> [UIAction] {
-        let parameters = [PixelParameters.source: source.rawValue]
         var items = [
             UIAction(title: UserText.actionNewFireTab, image: DesignSystemImages.Glyphs.Size16.fireWindow) { _ in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters(parameters))
+                pixelFiring?.fire(NewTabLongPressMenuPixel.newFireTab(source: source))
                 actions.onNewFireTab()
             },
             UIAction(title: UserText.actionNewTab, image: DesignSystemImages.Glyphs.Size16.add) { _ in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters(parameters))
+                pixelFiring?.fire(NewTabLongPressMenuPixel.newNormalTab(source: source))
                 actions.onNewTab()
             }
         ]
@@ -75,17 +72,24 @@ enum NewTabLongPressMenu {
 
 enum NewTabLongPressMenuPixel: PixelKit.Event {
 
+    case displayed(source: NewTabLongPressMenu.Source)
+    case newFireTab(source: NewTabLongPressMenu.Source)
+    case newNormalTab(source: NewTabLongPressMenu.Source)
     case newChat(source: NewTabLongPressMenu.Source)
 
     var name: String {
         switch self {
+        case .displayed: return "m_tab_long_press_menu_displayed"
+        case .newFireTab: return "m_tab_long_press_menu_new_fire_tab"
+        case .newNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .newChat: return "tab_long_press_menu_new_chat"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .newChat(let source): return [PixelParameters.source: source.rawValue]
+        case .displayed(let source), .newFireTab(let source), .newNormalTab(let source), .newChat(let source):
+            return [PixelParameters.source: source.rawValue]
         }
     }
 

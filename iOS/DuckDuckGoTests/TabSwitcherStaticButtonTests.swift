@@ -72,12 +72,19 @@ class TabSwitcherStaticButtonTests: XCTestCase {
                        [UserText.actionNewFireTab, UserText.actionNewTab])
     }
 
-    func testNewChatPixelCarriesMenuSource() {
+    func testLongPressMenuPixelsKeepTheirNamesAndCarryMenuSource() {
         let sources: [(NewTabLongPressMenu.Source, String)] = [(.toolbar, "toolbar"), (.tabSwitcher, "tab_switcher"), (.tabsBar, "tabs_bar")]
         for (source, expected) in sources {
-            let pixel = NewTabLongPressMenuPixel.newChat(source: source)
-            XCTAssertEqual(pixel.name, "tab_long_press_menu_new_chat")
-            XCTAssertEqual(pixel.parameters, ["source": expected])
+            let pixels: [(NewTabLongPressMenuPixel, String)] = [
+                (.displayed(source: source), "m_tab_long_press_menu_displayed"),
+                (.newFireTab(source: source), "m_tab_long_press_menu_new_fire_tab"),
+                (.newNormalTab(source: source), "m_tab_long_press_menu_new_normal_tab"),
+                (.newChat(source: source), "tab_long_press_menu_new_chat")
+            ]
+            for (pixel, name) in pixels {
+                XCTAssertEqual(pixel.name, name)
+                XCTAssertEqual(pixel.parameters, ["source": expected])
+            }
         }
     }
 

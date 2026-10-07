@@ -68,6 +68,8 @@ public final class WebExtensionLoader: WebExtensionLoading {
     private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
     /// Whether the third-party scripts are on the controller, which happens when the first third-party extension loads.
     private var areThirdPartyScriptsInstalled = false
+    /// Writes the permissions third-party extensions lose to the API compatibility log.
+    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
     private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
@@ -201,7 +203,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: webExtension.manifest,
                                                                                  webKitPermissions: webKitPermissions)
         for permission in dropped {
-            WebExtensionAPICompatibilityReporter.shared.report(
+            compatibilityReporter.report(
                 kind: .missing,
                 api: WebExtensionAPICompatibilityClassifier.permissionPrefix + permission,
                 extensionName: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),

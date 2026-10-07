@@ -34,7 +34,7 @@ struct NetworkSignalsProviderTests {
     @available(iOS 16, macOS 13, *)
     @Test("Ping is skipped when the network is unavailable", .timeLimit(.minutes(1)))
     func pingIsSkippedWithoutNetwork() async {
-        let provider = makeProvider(networkType: .unavailable)
+        let provider = makeProvider(isNetworkAvailable: false)
 
         #expect(provider.prefetchSignals() == nil)
         #expect(await provider.currentSignals()?.pingQuality == .unknown)
@@ -47,7 +47,7 @@ struct NetworkSignalsProviderTests {
 
         await provider.prefetchSignals()?.value
 
-        let expected = NetworkSignals(networkType: .cellular, isLowDataModeEnabled: true, hasVPNConnectivityIssues: true, pingQuality: .poor)
+        let expected = NetworkSignals(isNetworkAvailable: true, networkType: .cellular, isLowDataModeEnabled: true, hasVPNConnectivityIssues: true, pingQuality: .poor)
         #expect(await provider.currentSignals() == expected)
     }
 
@@ -73,11 +73,12 @@ struct NetworkSignalsProviderTests {
 private extension NetworkSignalsProviderTests {
 
     func makeProvider(isEnabled: Bool = true,
+                      isNetworkAvailable: Bool = true,
                       networkType: NetworkSignals.NetworkType = .wifi,
                       isConstrained: Bool = false,
                       hasVPNIssues: Bool = false,
                       pingQuality: PingQualityProviderMock.Quality = .good) -> NetworkSignalsProvider {
-        NetworkSignalsProvider(pathProvider: NetworkPathProviderMock(currentPathState: NetworkPathState(networkType: networkType, isConstrained: isConstrained)),
+        NetworkSignalsProvider(pathProvider: NetworkPathProviderMock(currentPathState: NetworkPathState(isNetworkAvailable: isNetworkAvailable, networkType: networkType, isConstrained: isConstrained)),
                                vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviderMock(hasIssues: hasVPNIssues),
                                pingQualityProvider: PingQualityProviderMock(quality: pingQuality),
                                isEnabledProvider: { isEnabled })

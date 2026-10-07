@@ -280,4 +280,37 @@ final class KeyboardPresenterTests {
 
         #expect(target.closedScreen === settings)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch task that outlives its foreground cannot raise the keyboard or replace a later wait",
+          .timeLimit(.minutes(1)), arguments: [false, true])
+    func endedForegroundCannotFocus(endsBeforeRequest: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.isWindowVisible = false
+        if endsBeforeRequest {
+            presenter.foregroundDidEnd()
+        }
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
+        presenter.foregroundDidEnd()
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
+
+        #expect((target.windowVisibleHandler == nil) == endsBeforeRequest)
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag-off requests ignore the end of their foreground", .timeLimit(.minutes(1)))
+    func flagOffIgnoresEndedForeground() {
+        featureFlagger.enabledFeatureFlags = []
+        onAppLaunch = true
+        presenter.foregroundDidEnd()
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
+        scheduledActions.forEach { $0() }
+
+        #expect(target.legacyKeyboardCallCount == 1)
+    }
 }

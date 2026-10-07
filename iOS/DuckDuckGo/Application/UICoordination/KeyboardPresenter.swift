@@ -81,6 +81,7 @@ final class KeyboardPresenter: KeyboardPresenting {
     private let pixelFiring: (any PixelKitFiring)?
     private let onAppLaunch: () -> Bool
     private let schedule: (@escaping () -> Void) -> Void
+    private var hasForegroundEnded = false
 
     init(mainViewController: any AppOpenKeyboardHandling,
          featureFlagger: FeatureFlagger,
@@ -127,6 +128,18 @@ final class KeyboardPresenter: KeyboardPresenting {
             scheduleKeyboard()
             return
         }
+        scheduleKeyboardWhenWindowVisible(requestID: requestID,
+                                          isAfterIdleReturn: isAfterIdleReturn,
+                                          screenLeftOpen: screenLeftOpen,
+                                          scheduleKeyboard: scheduleKeyboard)
+    }
+
+    private func scheduleKeyboardWhenWindowVisible(requestID: UUID,
+                                                   isAfterIdleReturn: Bool,
+                                                   screenLeftOpen: UIViewController?,
+                                                   scheduleKeyboard: @escaping () -> Void) {
+        // A launch task can finish after its foreground ended; replacing the next foreground's wait would drop its keyboard.
+        guard isCurrentRequest(requestID) else { return }
         mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
             guard isCurrentRequest(requestID) else { return }
             if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
@@ -137,8 +150,15 @@ final class KeyboardPresenter: KeyboardPresenting {
         }
     }
 
+    /// Each foreground has its own presenter, so a launch task that outlives it can't raise the keyboard on a later one.
+    func foregroundDidEnd() {
+        hasForegroundEnded = true
+    }
+
     private func isCurrentRequest(_ requestID: UUID) -> Bool {
-        mainViewController.appOpenKeyboardRequestID == requestID && featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+        !hasForegroundEnded
+            && mainViewController.appOpenKeyboardRequestID == requestID
+            && featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
     }
 
 }

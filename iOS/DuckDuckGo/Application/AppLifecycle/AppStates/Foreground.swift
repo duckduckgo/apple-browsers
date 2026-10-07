@@ -46,6 +46,7 @@ struct Foreground: ForegroundHandling {
 
     private let launchAction: LaunchAction
     private let launchActionHandler: LaunchActionHandler
+    private let keyboardPresenter: KeyboardPresenter
     private let interactionManager: UIInteractionManager
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
     private let appReturnInstrumentation: AppReturnInstrumentation
@@ -97,12 +98,14 @@ struct Foreground: ForegroundHandling {
             eligibilityManager: idleReturnEligibilityManager,
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
         )
+        let keyboardPresenter = KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
+                                                  featureFlagger: appDependencies.featureFlagger)
+        self.keyboardPresenter = keyboardPresenter
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
             userActivityHandler: appDependencies.mainCoordinator,
-            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
-                                                 featureFlagger: appDependencies.featureFlagger),
+            keyboardPresenter: keyboardPresenter,
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnEvaluator: idleReturnEvaluator,
             featureFlagger: appDependencies.featureFlagger,
@@ -270,20 +273,22 @@ extension Foreground {
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
-        Background(stateContext: StateContext(appDependencies: appDependencies,
-                                              sceneDependencies: sceneDependencies),
-                   lastBackgroundDateStorage: lastBackgroundDateStorage)
+        keyboardPresenter.foregroundDidEnd()
+        return Background(stateContext: StateContext(appDependencies: appDependencies,
+                                                     sceneDependencies: sceneDependencies),
+                          lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
     /// If confirmed this scenario never occurs, this code should be removed.
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
-        Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
-                                                       appDependencies: appDependencies),
-                  actionToHandle: actionToHandle,
-                  window: window,
-                  lastBackgroundDateStorage: lastBackgroundDateStorage)
+        keyboardPresenter.foregroundDidEnd()
+        return Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
+                                                              appDependencies: appDependencies),
+                         actionToHandle: actionToHandle,
+                         window: window,
+                         lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

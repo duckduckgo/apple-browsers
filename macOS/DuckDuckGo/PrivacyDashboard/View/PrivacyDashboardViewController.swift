@@ -159,7 +159,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
 
     override func loadView() {
-        view = ColorView(frame: NSRect(x: 0, y: 0, width: 360, height: 489), backgroundColor: NSColor(named: "PopoverBackgroundColor"))
+        view = ColorView(frame: NSRect(x: 0, y: 0, width: 360, height: 489), backgroundColor: NSColor(resource: .popoverBackground))
         initWebView()
     }
 
@@ -172,12 +172,6 @@ final class PrivacyDashboardViewController: NSViewController {
 
         subscribeToThemeChanges()
         refreshDashboardStyle()
-    }
-
-    override func viewWillAppear() {
-        super.viewWillAppear()
-
-        networkSignalsProvider.prefetchSignals()
     }
 
     override func viewWillDisappear() {
@@ -331,6 +325,10 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
         NSApp.delegateTyped.openReportABrowserProblem(nil)
+    }
+
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController) {
+        networkSignalsProvider.prefetchSignals()
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,

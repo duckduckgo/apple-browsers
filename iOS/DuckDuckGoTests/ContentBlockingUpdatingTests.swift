@@ -427,6 +427,104 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenFireClearsPendingGeolocationPolicyThenWebViewIsReleased() async throws {
+        try await assertPendingGeolocationEvaluationIsReleased(stage: .policy) { $0.prepareForDataClearing() }
+    }
+
+    @MainActor
+    func testWhenTabClosesWithPendingGeolocationPolicyThenWebViewIsReleased() async throws {
+        try await assertPendingGeolocationEvaluationIsReleased(stage: .policy) { $0.closeSitePermissions() }
+    }
+
+    @MainActor
+    func testWhenFireClearsPendingGeolocationDocumentValidationThenWebViewIsReleased() async throws {
+        try await assertPendingGeolocationEvaluationIsReleased(stage: .currentDocument) { $0.prepareForDataClearing() }
+    }
+
+    @MainActor
+    func testWhenTabClosesBeforeGeolocationPolicyResumesThenDocumentValidationDoesNotStart() async throws {
+        try await assertPendingGeolocationEvaluationIsReleased(stage: .completedPolicy) { $0.closeSitePermissions() }
+    }
+
+    @MainActor
+    private func assertPendingGeolocationEvaluationIsReleased(stage: SuspendedGeolocationEvaluation.Stage,
+                                                              teardown: (TabViewController) -> Void) async throws {
+        let evaluationStarted = expectation(description: "Geolocation JavaScript evaluation started")
+        let replied = expectation(description: "Pending geolocation request denied")
+        replied.assertForOverFulfill = true
+        let navigationCancelled = expectation(description: "Pending navigation cancelled")
+        navigationCancelled.assertForOverFulfill = true
+        let released = expectation(description: "WebView released before JavaScript completes")
+        let evaluation = SuspendedGeolocationEvaluation(stage: stage, started: evaluationStarted)
+        defer { evaluation.complete() }
+        weak var weakWebView: WKWebView?
+        var replies = 0
+        var decisions = [WKNavigationActionPolicy]()
+
+        func exercise() async throws -> Task<Void, Never> {
+            let tab = TabViewController.fake(customWebView: { configuration in
+                let webView = SuspendedGeolocationWebView(frame: .zero, configuration: configuration)
+                webView.evaluation = evaluation
+                return webView
+            }, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
+            tab.specialErrorPageNavigationHandler.delegate = nil
+            let webView = try XCTUnwrap(tab.webView)
+            weakWebView = webView
+            webView.onDeinit { released.fulfill() }
+            let script = GeolocationUserScript()
+            tab.configureSitePermissionsGeolocation(with: script)
+            let controller = webView.configuration.userContentController
+            let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+            let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: [
+                "kind": "registerFrame",
+                "capability": GeolocationUserScript.capabilityToken,
+                "nonce": String(repeating: "a", count: 32),
+                "documentID": String(repeating: "b", count: 32)
+            ]).scriptMessage
+            // The message and frame mocks hold the WebView weakly; the request must not capture the tab.
+            let request = Task { @MainActor in
+                let response = await script.userContentController(controller, didReceive: message)
+                XCTAssertEqual((response.0 as? [String: Any])?["code"] as? Int,
+                               GeolocationPositionError.Code.permissionDenied.rawValue)
+                replies += 1
+                replied.fulfill()
+            }
+            await fulfillment(of: [evaluationStarted], timeout: 1)
+
+            let urlRequest = URLRequest(url: URL(string: "https://example.com/pending")!)
+            let action = MockNavigationAction(request: urlRequest, navigationType: .other,
+                                              targetFrame: .mock(isMainFrame: true, securityOriginHost: "example.com", request: urlRequest))
+            tab.webView(webView, decidePolicyFor: action) { policy in
+                decisions.append(policy)
+                navigationCancelled.fulfill()
+            }
+            XCTAssertFalse(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
+            if stage == .completedPolicy {
+                // Resume JavaScript and close in the same actor turn, before the request task can run again.
+                evaluation.complete()
+            }
+            teardown(tab)
+            // Resolve while the tab is alive so deinit cannot provide the cancellation under test.
+            await fulfillment(of: [replied, navigationCancelled], timeout: 1)
+            XCTAssertEqual(decisions, [.cancel])
+            XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
+            if stage == .completedPolicy {
+                XCTAssertEqual(evaluation.currentDocumentEvaluationCount, 0)
+            }
+            return request
+        }
+
+        let request = try await exercise()
+        await fulfillment(of: [released], timeout: 1)
+        XCTAssertNil(weakWebView)
+        // A late callback must be harmless. Completing also cleans up the deliberately suspended pre-fix fixture.
+        evaluation.complete()
+        await request.value
+        XCTAssertEqual(replies, 1)
+        XCTAssertEqual(decisions, [.cancel])
+    }
+
+    @MainActor
     func testWhenUserStopsDuringAssetWaitThenLateAssetsCannotResumeNavigationOrShowAnError() async throws {
         let controllerReleased = expectation(description: "Stopped navigation releases its content controller")
         func exerciseStop() async throws {
@@ -1052,6 +1150,69 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         .init(rules: testRules(), changes: [:], completionTokens: [UUID().uuidString, UUID().uuidString])
     }
 
+}
+
+@MainActor
+private final class SuspendedGeolocationEvaluation {
+    enum Stage {
+        case policy
+        case currentDocument
+        case completedPolicy
+    }
+
+    let stage: Stage
+    let started: XCTestExpectation
+    var currentDocumentEvaluationCount = 0
+    var completion: (@MainActor @Sendable (Any?, Error?) -> Void)?
+
+    init(stage: Stage, started: XCTestExpectation) {
+        self.stage = stage
+        self.started = started
+    }
+
+    var policy: [String: Any] {
+        ["documentID": String(repeating: "c", count: 32),
+         "isSecureContext": true, "isSandboxed": false, "isPolicyAllowed": true]
+    }
+
+    func complete() {
+        let callback = completion
+        completion = nil
+        callback?(stage == .currentDocument ? String(repeating: "b", count: 32) : policy, nil)
+    }
+}
+
+@MainActor
+private final class SuspendedGeolocationWebView: WKWebView {
+    var evaluation: SuspendedGeolocationEvaluation!
+
+    override func loadHTMLString(_ string: String, baseURL: URL?) -> WKNavigation? { nil }
+
+    override func __callAsyncJavaScript(_ functionBody: String,
+                                        arguments: [String: Any]?,
+                                        inFrame frame: WKFrameInfo?,
+                                        in contentWorld: WKContentWorld,
+                                        completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
+        if evaluation.stage == .currentDocument {
+            completionHandler?(evaluation.policy, nil)
+        } else {
+            evaluation.completion = completionHandler
+            evaluation.started.fulfill()
+        }
+    }
+
+    override func __evaluateJavaScript(_ javaScriptString: String,
+                                       inFrame frame: WKFrameInfo?,
+                                       in contentWorld: WKContentWorld,
+                                       completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
+        evaluation.currentDocumentEvaluationCount += 1
+        if evaluation.stage == .currentDocument {
+            evaluation.completion = completionHandler
+            evaluation.started.fulfill()
+        } else {
+            completionHandler?(String(repeating: "b", count: 32), nil)
+        }
+    }
 }
 
 private struct NonGeolocationContent: UserContentControllerNewContent {

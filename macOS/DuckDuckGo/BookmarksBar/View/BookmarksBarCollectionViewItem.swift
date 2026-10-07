@@ -52,11 +52,11 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
 
     var isDisplayingMouseDownState: Bool {
         get {
-            mouseOverView.backgroundColor == .buttonMouseDown
+            mouseOverView.backgroundColor == NSColor(resource: .buttonMouseDown)
         }
         set {
-            mouseOverView.backgroundColor = newValue ? .buttonMouseDown : .clear
-            mouseOverView.mouseOverColor = newValue ? .buttonMouseDown : .buttonMouseOver
+            mouseOverView.backgroundColor = newValue ? NSColor(resource: .buttonMouseDown) : .clear
+            mouseOverView.mouseOverColor = newValue ? NSColor(resource: .buttonMouseDown) : NSColor(resource: .buttonMouseOver)
         }
     }
 
@@ -91,8 +91,8 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         // of the favicon and the title — behind them it would not receive clicks on the favicon.
         mouseOverView = MouseOverView(frame: .zero)
         mouseOverView.translatesAutoresizingMaskIntoConstraints = false
-        mouseOverView.mouseOverColor = .buttonMouseOver
-        mouseOverView.mouseDownColor = .buttonMouseDown
+        mouseOverView.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        mouseOverView.mouseDownColor = NSColor(resource: .buttonMouseDown)
         mouseOverView.cornerRadius = 3
         mouseOverView.target = self
         mouseOverView.action = #selector(mouseClickAction)
@@ -102,8 +102,8 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         faviconView = NSImageView()
         faviconView.translatesAutoresizingMaskIntoConstraints = false
         faviconView.imageScaling = .scaleProportionallyDown
-        faviconView.image = .bookmark
-        faviconView.contentTintColor = .blackWhite80
+        faviconView.image = NSImage(resource: .bookmark)
+        faviconView.contentTintColor = NSColor(resource: .blackWhite80)
         faviconView.setCornerRadius(3.0)
 
         // Create title label

@@ -20,10 +20,12 @@ import Foundation
 import Network
 
 public struct NetworkPathState: Equatable, Sendable {
+    public let isNetworkAvailable: Bool
     public let networkType: NetworkSignals.NetworkType
     public let isConstrained: Bool
 
-    public init(networkType: NetworkSignals.NetworkType, isConstrained: Bool) {
+    public init(isNetworkAvailable: Bool, networkType: NetworkSignals.NetworkType, isConstrained: Bool) {
+        self.isNetworkAvailable = isNetworkAvailable
         self.networkType = networkType
         self.isConstrained = isConstrained
     }
@@ -49,14 +51,12 @@ public final class NetworkPathMonitor: NetworkPathProviding {
 
     public var currentPathState: NetworkPathState {
         let path = monitor.currentPath
-        return NetworkPathState(networkType: networkType(for: path), isConstrained: path.isConstrained)
+        return NetworkPathState(isNetworkAvailable: path.status == .satisfied,
+                                networkType: networkType(for: path),
+                                isConstrained: path.isConstrained)
     }
 
     private func networkType(for path: NWPath) -> NetworkSignals.NetworkType {
-        guard path.status == .satisfied else {
-            return .unavailable
-        }
-
         if path.usesInterfaceType(.wiredEthernet) {
             return .wired
         }

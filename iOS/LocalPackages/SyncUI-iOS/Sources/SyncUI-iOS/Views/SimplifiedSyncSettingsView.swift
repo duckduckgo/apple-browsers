@@ -57,16 +57,7 @@ public struct SimplifiedSyncSettingsView: View {
                 selectedDevice = nil
             }
         }
-        .alert(isPresented: $model.shouldShowPasscodeRequiredAlert) {
-            Alert(
-                title: Text(UserText.syncPasscodeRequiredAlertTitle),
-                message: Text(UserText.syncPasscodeRequiredAlertMessage),
-                dismissButton: .default(Text(UserText.syncPasscodeRequiredAlertGoToSettingsButton), action: {
-                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-                    model.shouldShowPasscodeRequiredAlert = false
-                })
-            )
-        }
+        .syncPasscodeRequiredAlert(isPresented: $model.shouldShowPasscodeRequiredAlert)
         .sheet(item: $model.connectingSheetPhase, onDismiss: {
             model.connectingSheetDidDismiss()
         }, content: {_ in

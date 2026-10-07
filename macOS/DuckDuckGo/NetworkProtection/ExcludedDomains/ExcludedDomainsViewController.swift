@@ -231,7 +231,7 @@ final class ExcludedDomainsViewController: NSViewController {
         imageView.imageScaling = .scaleProportionallyDown
         imageView.imageAlignment = .alignLeft
         imageView.refusesFirstResponder = true
-        imageView.image = .web
+        imageView.image = NSImage(resource: .web)
         imageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         imageView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 

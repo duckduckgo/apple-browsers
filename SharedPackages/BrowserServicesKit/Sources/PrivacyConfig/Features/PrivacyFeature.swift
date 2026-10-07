@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case webExtensions
     case chromeWebstorePatching
     case extensionManagement
+    case extensionsCatalog
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -406,6 +407,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 
+    /// Controls the attachment privacy disclosure in Duck.ai on iPad.
+    case iPadAttachmentPrivacy
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -547,6 +551,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
 
+    /// Promotes the Duck.ai launcher (prompt bar) to users who chat often but haven't turned it on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
+    case launcherPromo
+
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
 }
@@ -590,9 +598,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
-
-    /// Global switch to disable advanced card ordering for the Next Steps List widget
-    case nextStepsListAdvancedCardOrdering
 
     /// Enables deleting history-based search suggestions from the New Tab Page omnibar
     case searchSuggestionsDeletion
@@ -674,6 +679,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
+
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
+    case improvedPairingFlow
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
@@ -979,5 +987,12 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
-    case curatedExtensions
+}
+
+public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionsCatalog }
+
+    case bitwarden
+    case onePassword
+    case lastPass
 }

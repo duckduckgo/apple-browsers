@@ -66,6 +66,8 @@ final class UTIFooterCardView: UIView {
     private var contentTopConstraint: NSLayoutConstraint?
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
+    private var actionVerticalConstraints: [NSLayoutConstraint] = []
+    private var dismissVerticalConstraints: [NSLayoutConstraint] = []
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
     private var formattedTitleMessage: UTIFooterMessage?
@@ -138,7 +140,9 @@ final class UTIFooterCardView: UIView {
         // Hidden views still take part in Auto Layout, so the footprint collapses explicitly.
         actionCollapsedWidthConstraint?.isActive = message.primaryAction == nil
 
+        actionVerticalConstraints.forEach { $0.isActive = message.primaryAction != nil }
         dismissButton.isHidden = !message.isDismissible
+        dismissVerticalConstraints.forEach { $0.isActive = message.isDismissible }
         // Otherwise the CTA stops short of the trailing edge by the width of a close button that
         // isn't there.
         actionTrailingConstraint?.constant = message.isDismissible ? -Constants.dismissTrailingFootprint : 0
@@ -279,6 +283,16 @@ private extension UTIFooterCardView {
                                                             constant: Constants.iconTextGap)
         iconTextGapConstraint = iconTextGap
 
+        actionVerticalConstraints = [
+            actionButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            actionButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor)
+        ]
+        dismissVerticalConstraints = [
+            dismissButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            dismissButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor)
+        ]
+        NSLayoutConstraint.activate(actionVerticalConstraints + dismissVerticalConstraints)
+
         NSLayoutConstraint.activate([
             contentTop,
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.contentLeading),
@@ -316,8 +330,6 @@ private extension UTIFooterCardView {
             giftIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             iconTextGap,
-            // Centered rather than stretched: the controls keep the content at least their height even
-            // when hidden, and a text view stretched to that draws its one line at the top.
             textStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             textStack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor).withPriority(.defaultLow),
@@ -325,13 +337,9 @@ private extension UTIFooterCardView {
             textStack.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -Constants.actionSpacing),
             actionButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             actionTrailing,
-            actionButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
-            actionButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
 
             dismissButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             dismissButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            dismissButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
-            dismissButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
             dismissButton.widthAnchor.constraint(equalToConstant: Constants.dismissSize),
             dismissButton.heightAnchor.constraint(equalToConstant: Constants.dismissSize),
         ])

@@ -111,6 +111,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
@@ -144,7 +145,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - Initialization
 
-    init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
+    init(handler: AIChatUserScriptHandling,
+         debugSettings: AIChatDebugSettingsHandling,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+        self.devicePlatform = devicePlatform
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
@@ -297,6 +301,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .cancelEdit:
             return handler.cancelEdit
+        case .attachmentPrivacyShouldDisplay:
+            guard !devicePlatform.isIphone else { return nil }
+            return handler.attachmentPrivacyShouldDisplay
         default:
             return nil
         }

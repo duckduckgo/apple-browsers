@@ -303,6 +303,8 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     var query: String = ""
     var promptQuery: String = ""
     var suggestion: Suggestion?
+    var promptControlValues: IPadDuckAIControlValues?
+    var onPromptSubmittedAction: (() -> Void)?
     var wasOnOmniQuerySubmittedCalled = false
     var wasOnPromptSubmittedCalled = false
     var wasOnOmniSuggestionSelectedCalled = false
@@ -320,6 +322,8 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         query = ""
         promptQuery = ""
         suggestion = nil
+        promptControlValues = nil
+        onPromptSubmittedAction = nil
         wasOnOmniQuerySubmittedCalled = false
         wasOnPromptSubmittedCalled = false
         wasOnOmniSuggestionSelectedCalled = false
@@ -342,9 +346,11 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return nil
     }
 
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues) {
         wasOnPromptSubmittedCalled = true
         promptQuery = query
+        promptControlValues = controlValues
+        onPromptSubmittedAction?()
     }
 
     func onAbortPressed() {

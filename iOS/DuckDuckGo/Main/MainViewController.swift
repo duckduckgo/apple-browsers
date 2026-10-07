@@ -1218,15 +1218,17 @@ class MainViewController: UIViewController {
                                                     }) { [weak self] tab in
 
             guard let self else { return }
+            // Swiping restores a page's previous focus; it does not start a new keyboard landing.
+            // Consumed here, before the attach below clears it, so it can't outlive this arrival.
+            let shouldRestoreFocus = NewTabPageKeyboardPolicy().shouldRestoreInputFocusOnTabSwipe(
+                on: tab, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
+            tab.wasInputFocusedBeforeTabSwitch = false
             if tab !== tabManager.currentTabsModel.currentTab {
                 PixelKit.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
                 selectTab(tab)
             }
-            // Swiping restores a page's previous focus; it does not start a new keyboard landing.
-            let shouldRestoreFocus = NewTabPageKeyboardPolicy().shouldRestoreInputFocusOnTabSwipe(
-                on: tab, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
             if shouldRestoreFocus {
                 showKeyboardOnNewTabPageIfAllowed()
             }
@@ -2472,6 +2474,8 @@ class MainViewController: UIViewController {
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
             fatalError("No tab model")
         }
+        // Focus remembered for a swipe back is stale once the page is attached by any other arrival.
+        tabModel.wasInputFocusedBeforeTabSwitch = false
 
         let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         if homePageConfiguration.mode == .coordinated, !tabModel.fireTab {
@@ -2968,7 +2972,8 @@ class MainViewController: UIViewController {
     }
 
     private func rememberNewTabPageInputFocusForTabSwitch() {
-        guard let tab = tabManager.currentTabsModel.currentTab else { return }
+        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              let tab = tabManager.currentTabsModel.currentTab else { return }
         // A suspended UTI session can outlive a user dismissal, so remember only actual input focus.
         let isInputFocused = omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
         NewTabPageKeyboardPolicy().rememberInputFocusForTabSwitch(
@@ -7760,6 +7765,8 @@ extension MainViewController: TabSwitcherDelegate {
         let previousTabModel = tabManager.currentTabsModel.currentTab
         
         guard tab !== previousTab?.tabModel else {
+            // Done returns to the same page without an attach; its focus remembered on opening is stale now.
+            previousTabModel?.wasInputFocusedBeforeTabSwitch = false
             if daxDialogsManager.shouldShowFireButtonPulse {
                 showFireButtonPulse()
             }

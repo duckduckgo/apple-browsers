@@ -315,6 +315,9 @@ class MainViewController: UIViewController {
     /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
     /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
     private var isAttachingNewTabPageAfterFire = false
+    /// A New Tab Page visit held back because the page was attached behind the tab switcher, which reports
+    /// a pick before it starts dismissing. Started once the switcher closes.
+    private var pendingNewTabPageVisitStart: (isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool)?
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
@@ -2544,6 +2547,7 @@ class MainViewController: UIViewController {
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
+        pendingNewTabPageVisitStart = nil
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             // Consumed here rather than before the guard, so an attach that happens behind a
             // presented controller and records nothing cannot swallow the burn's trigger. Moving on
@@ -2557,6 +2561,10 @@ class MainViewController: UIViewController {
             if startsNewTabPageSessionVisit {
                 startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
             }
+        } else {
+            // A pick in the tab switcher attaches the page before the switcher starts dismissing.
+            pendingNewTabPageVisitStart = startsNewTabPageSessionVisit && presentedViewController === tabSwitcherController
+                ? (isNewTab, willBeginEditing, isAttachingNewTabPageAfterFire) : nil
         }
 
         if willBeginEditing {
@@ -2595,6 +2603,7 @@ class MainViewController: UIViewController {
         // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
         // trip to the VPN screen it was taken for ended without coming back here.
         vpnConnectedWhenLeavingNewTabPage = nil
+        pendingNewTabPageVisitStart = nil
 
         let trigger: NewTabPageSessionWideEventData.Trigger
         if isAfterFire {
@@ -3183,6 +3192,7 @@ class MainViewController: UIViewController {
         // The user moved on to an existing tab, so whatever New Tab Page they reach later is not the
         // page a burn landed them on.
         isAttachingNewTabPageAfterFire = false
+        pendingNewTabPageVisitStart = nil
 
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
@@ -7734,6 +7744,14 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) {
         remoteMessageImpressionReporter.scheduleCheck()
+        // Started before the keyboard below, which then upgrades the visit.
+        if let visit = pendingNewTabPageVisitStart, isNewTabPageVisible, presentedViewController == nil {
+            if visit.isAfterFire {
+                isAttachingNewTabPageAfterFire = false
+            }
+            startNewTabPageSessionInstrumentation(isNewTab: visit.isNewTab, willBeginEditing: visit.willBeginEditing, isAfterFire: visit.isAfterFire)
+        }
+        pendingNewTabPageVisitStart = nil
         let pendingKeyboard = pendingTabSwitcherKeyboard
         pendingTabSwitcherKeyboard = nil
         if let pendingKeyboard,

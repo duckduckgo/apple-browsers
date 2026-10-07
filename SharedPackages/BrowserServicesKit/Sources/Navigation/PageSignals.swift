@@ -25,6 +25,34 @@ public struct PageSignals {
     public var resourceFailures: [String: Set<PageResourceLoadError>] = [:] /// eTLD+1 > Error
     public var blockedDomains: [String: Int] = [:]
     public var blockedLoads = 0
+
+    public init(host: String? = nil, resourceFailures: [String: Set<PageResourceLoadError>] = [:], blockedDomains: [String: Int] = [:], blockedLoads: Int = 0) {
+        self.host = host
+        self.resourceFailures = resourceFailures
+        self.blockedDomains = blockedDomains
+        self.blockedLoads = blockedLoads
+    }
+}
+
+public extension PageSignals {
+
+    /// Returns comma-separated domain:error pairs, sorted alphabetically and capped to `maxEntries`.
+    func formattedResourceLoadErrors(maxEntries: Int) -> String {
+        resourceFailures
+            .flatMap { domain, errors in errors.map { "\(domain):\($0.rawValue)" } }
+            .sorted()
+            .prefix(maxEntries)
+            .joined(separator: ",")
+    }
+
+    /// Returns comma-separated domain:count pairs, sorted by descending count then domain, and capped to `maxEntries`.
+    func formattedContentBlockedDomains(maxEntries: Int) -> String {
+        blockedDomains
+            .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+            .prefix(maxEntries)
+            .map { domain, count in "\(domain):\(count)" }
+            .joined(separator: ",")
+    }
 }
 
 @MainActor

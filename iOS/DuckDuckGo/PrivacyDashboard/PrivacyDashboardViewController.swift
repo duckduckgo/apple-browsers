@@ -25,6 +25,8 @@ import BrowserServicesKit
 import PrivacyConfig
 import PrivacyDashboard
 import Common
+import DDGNavigation
+import FeatureFlags_iOS
 import FoundationExtensions
 import os.log
 import PixelExperimentKit
@@ -328,6 +330,7 @@ extension PrivacyDashboardViewController {
         let adBlockingExtensionScriptletsVersion: String?
         let cpmExtensionLoaded: Bool
         let cpmExtensionDroppedCallbacks: Int
+        let pageSignals: PageSignals?
     }
     
     enum BrokenSiteReportError: Error {
@@ -380,6 +383,9 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
+        let pageSignalsSettings = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.pageSignals)
+        let pageSignalsEntryLimit = PageSignalsSettings.maxEntries(from: pageSignalsSettings)
+
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
@@ -418,7 +424,9 @@ extension PrivacyDashboardViewController {
                                 adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
                                 networkSignals: networkSignals,
                                 dnsResolution: dnsResolution,
-                                memoryPressure: memoryPressureProvider.currentLevel)
+                                memoryPressure: memoryPressureProvider.currentLevel,
+                                pageSignals: breakageAdditionalInfo.pageSignals,
+                                pageSignalsEntryLimit: pageSignalsEntryLimit)
     }
 
     /// `nil` when page signals are disabled or the URL has no host.

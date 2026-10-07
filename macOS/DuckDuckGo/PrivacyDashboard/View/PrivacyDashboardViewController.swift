@@ -413,6 +413,8 @@ extension PrivacyDashboardViewController {
         // current domain's protection status
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
+        let pageSignalsSettings = configuration.settings(for: MacOSBrowserConfigSubfeature.pageSignals)
+        let pageSignalsEntryLimit = PageSignalsSettings.maxEntries(from: pageSignalsSettings)
 
         async let asyncBreakageReportData = collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
         async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
@@ -486,7 +488,9 @@ extension PrivacyDashboardViewController {
                                                adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                networkSignals: networkSignals,
                                                dnsResolution: dnsResolution,
-                                               memoryPressure: memoryPressureProvider.currentLevel)
+                                               memoryPressure: memoryPressureProvider.currentLevel,
+                                               pageSignals: currentTab.pageSignals?.pageSignals,
+                                               pageSignalsEntryLimit: pageSignalsEntryLimit)
         return websiteBreakage
     }
 

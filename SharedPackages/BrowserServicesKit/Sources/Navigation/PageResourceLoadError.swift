@@ -19,7 +19,7 @@
 import Foundation
 import FoundationExtensions
 
-public enum PageResourceLoadError: Error, Hashable {
+public enum PageResourceLoadError: String, Error, Hashable {
     case dns
     case certificate
     case connection

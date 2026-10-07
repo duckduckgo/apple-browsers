@@ -38,6 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingManager: ContentBlockerRulesManager
+    private let networkSignalsProvider: NetworkSignalsProviding
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
     private let featureFlagger: FeatureFlagger
@@ -79,6 +80,7 @@ final class PrivacyDashboardViewController: UIViewController {
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
           breakageAdditionalInfo: BreakageAdditionalInfo?,
+          networkSignalsProvider: NetworkSignalsProviding = AppDependencyProvider.shared.networkSignalsProvider,
           featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
@@ -90,6 +92,7 @@ final class PrivacyDashboardViewController: UIViewController {
                                                                 eventMapping: privacyDashboardEvents)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
+        self.networkSignalsProvider = networkSignalsProvider
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
         self.featureFlagger = featureFlagger
@@ -258,6 +261,10 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
         }
     }
 
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController) {
+        networkSignalsProvider.prefetchSignals()
+    }
+
     func privacyDashboardControllerDidRequestShowAlertForMissingDescription(_ privacyDashboardController: PrivacyDashboardController) {
         let alert = UIAlertController(title: UserText.brokenSiteReportMissingDescriptionAlertTitle,
                                       message: UserText.brokenSiteReportMissingDescriptionAlertDescription,
@@ -341,7 +348,10 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        async let asyncBreakageReportData = collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
+
+        let (breakageReportData, networkSignals) = await (asyncBreakageReportData, asyncNetworkSignals)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance
@@ -399,7 +409,8 @@ extension PrivacyDashboardViewController {
                                 isAfterTabTermination: breakageAdditionalInfo.isAfterTabTermination,
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
-                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion)
+                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
+                                networkSignals: networkSignals)
     }
 
 }

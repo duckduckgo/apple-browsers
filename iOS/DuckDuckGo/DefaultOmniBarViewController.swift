@@ -171,6 +171,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             self?.handleAttachmentsChanged()
         }
 
+        // The popover isn't anchored until the expansion is laid out, so there's no size change to report yet.
+        omniBarView.onSearchAreaWillExpand = { [weak self] in
+            self?.applyFooterMessages(animated: false)
+        }
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
             // Ahead of the delegate, which anchors the suggestions popover below the card.
@@ -745,6 +749,11 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshFooterMessage(animated: Bool) {
+        applyFooterMessages(animated: animated)
+        omniDelegate?.onOmniBarExpandedContentSizeChanged()
+    }
+
+    private func applyFooterMessages(animated: Bool) {
         attachmentPrivacyNotice.refresh()
         let sendButton = DuckAiTermsOfServiceSendButton(selectedTool: toolPickerController?.selectedTool)
         var messages: [UTIFooterItem] = []
@@ -761,7 +770,6 @@ extension DefaultOmniBarViewController {
         omniBarView.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? sendButton : nil
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
-        omniDelegate?.onOmniBarExpandedContentSizeChanged()
     }
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.

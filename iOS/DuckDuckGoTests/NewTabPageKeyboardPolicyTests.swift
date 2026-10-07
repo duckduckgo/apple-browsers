@@ -54,4 +54,12 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A short return before the first unlock still counts as the cold start", .timeLimit(.minutes(1)))
+    func whenReturningBeforeFirstUnlockThenItIsAnAppOpen() {
+        let now = Date()
+
+        #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: now.addingTimeInterval(-5), hasCompletedAuthentication: false, now: now))
+    }
+
 }

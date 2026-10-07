@@ -247,4 +247,17 @@ final class KeyboardPresenterTests {
         #expect(target.windowVisibleHandler == nil)
         #expect(target.legacyKeyboardCallCount == 1)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A short return before the first unlock is an app open only with the flag on", .timeLimit(.minutes(1)), arguments: [false, true])
+    func returnBeforeFirstUnlock(flagOn: Bool) {
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        onAppLaunch = true
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-5),
+                                       hasCompletedAuthentication: false,
+                                       isAfterIdleReturn: false)
+
+        #expect(scheduledActions.count == (flagOn ? 1 : 0))
+    }
 }

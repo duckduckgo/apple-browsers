@@ -28,9 +28,10 @@ enum LaunchAction {
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
     case handleUserActivity(NSUserActivity)
-    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool)
+    /// `hasCompletedAuthentication` is `false` while App Lock has not been unlocked since launch.
+    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool, hasCompletedAuthentication: Bool = true)
 
-    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false) {
+    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false, hasCompletedAuthentication: Bool = true) {
         switch actionToHandle {
         case .openURL(let url)?:
             self = .openURL(url)
@@ -39,7 +40,9 @@ enum LaunchAction {
         case .handleUserActivity(let userActivity)?:
             self = .handleUserActivity(userActivity)
         case nil:
-            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate, isFirstForeground: isFirstForeground)
+            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate,
+                                   isFirstForeground: isFirstForeground,
+                                   hasCompletedAuthentication: hasCompletedAuthentication)
         }
     }
 
@@ -120,7 +123,7 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
             userActivityHandler.handleUserActivity(userActivity)
-        case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
+        case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
             let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
             let isAfterIdleReturn = idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate)
@@ -137,6 +140,7 @@ final class LaunchActionHandler: LaunchActionHandling {
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                   hasCompletedAuthentication: hasCompletedAuthentication,
                                                    isAfterIdleReturn: isAfterIdleReturn)
         }
     }

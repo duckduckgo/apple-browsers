@@ -81,12 +81,10 @@ struct Foreground: ForegroundHandling {
         self.sceneDependencies = sceneDependencies
         self.isFirstForeground = isFirstForeground
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
-        // A cancelled unlock must not consume the cold app open when the user briefly backgrounds the lock screen.
-        let isFirstAppOpen = isFirstForeground || (appDependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-            && !sceneDependencies.authenticationService.hasCompletedAuthentication)
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
-                                    isFirstForeground: isFirstAppOpen)
+                                    isFirstForeground: isFirstForeground,
+                                    hasCompletedAuthentication: sceneDependencies.authenticationService.hasCompletedAuthentication)
         let daxDialogsManager = appDependencies.mainCoordinator.controller.daxDialogsManager
         let idleReturnEligibilityManager = IdleReturnEligibilityManager(
             featureFlagger: appDependencies.featureFlagger,

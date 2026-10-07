@@ -73,10 +73,12 @@ final class MockKeyboardPresenter: KeyboardPresenting {
     var showKeyboardOnLaunchCalled = false
     var lastBackgroundDate: Date?
     var isAfterIdleReturn = false
+    var hasCompletedAuthentication = true
 
-    func showKeyboardOnLaunch(lastBackgroundDate: Date?, isAfterIdleReturn: Bool) {
+    func showKeyboardOnLaunch(lastBackgroundDate: Date?, hasCompletedAuthentication: Bool, isAfterIdleReturn: Bool) {
         showKeyboardOnLaunchCalled = true
         self.lastBackgroundDate = lastBackgroundDate
+        self.hasCompletedAuthentication = hasCompletedAuthentication
         self.isAfterIdleReturn = isAfterIdleReturn
     }
 
@@ -197,6 +199,20 @@ final class LaunchActionHandlerTests {
 
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A standard launch passes the authentication state to the keyboard", .timeLimit(.minutes(1)), arguments: [false, true])
+    func passesAuthenticationStateToKeyboard(hasCompletedAuthentication: Bool) {
+        let action = LaunchAction(actionToHandle: nil,
+                                  lastBackgroundDate: Date(),
+                                  isFirstForeground: false,
+                                  hasCompletedAuthentication: hasCompletedAuthentication)
+
+        launchActionHandler.handleLaunchAction(action)
+
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.hasCompletedAuthentication == hasCompletedAuthentication)
     }
 
     @available(iOS 16, *)

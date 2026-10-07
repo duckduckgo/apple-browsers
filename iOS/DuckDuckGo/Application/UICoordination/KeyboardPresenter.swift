@@ -26,7 +26,7 @@ import FeatureFlags_iOS
 @MainActor
 protocol KeyboardPresenting {
 
-    func showKeyboardOnLaunch(lastBackgroundDate: Date?, isAfterIdleReturn: Bool)
+    func showKeyboardOnLaunch(lastBackgroundDate: Date?, hasCompletedAuthentication: Bool, isAfterIdleReturn: Bool)
 
 }
 
@@ -50,9 +50,10 @@ struct NewTabPageKeyboardPolicy {
     let onNewTab: Bool
     let onAppLaunch: Bool
 
-    /// `nil` means a cold start.
-    static func isAppOpen(lastBackgroundDate: Date?, now: Date = Date()) -> Bool {
-        guard let lastBackgroundDate else { return true }
+    /// `nil` means a cold start. Until App Lock is first unlocked, a return still counts as that cold start,
+    /// so backgrounding the lock screen briefly doesn't use it up.
+    static func isAppOpen(lastBackgroundDate: Date?, hasCompletedAuthentication: Bool = true, now: Date = Date()) -> Bool {
+        guard hasCompletedAuthentication, let lastBackgroundDate else { return true }
         return now.timeIntervalSince(lastBackgroundDate) > appOpenBackgroundThreshold
     }
 
@@ -91,11 +92,12 @@ final class KeyboardPresenter: KeyboardPresenting {
         self.schedule = schedule
     }
 
-    func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil, isAfterIdleReturn: Bool = false) {
+    func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil, hasCompletedAuthentication: Bool = true, isAfterIdleReturn: Bool = false) {
         let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         let onAppLaunch = onAppLaunch()
         guard flagOn || onAppLaunch else { return }
-        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate)
+        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate,
+                                                           hasCompletedAuthentication: !flagOn || hasCompletedAuthentication)
         if !flagOn && isAppOpen && onAppLaunch {
             pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
         }

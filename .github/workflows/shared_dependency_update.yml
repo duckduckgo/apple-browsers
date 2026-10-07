@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       pin-kind:
-        description: "package-swift or pbxproj (see scripts/dependency-updates/check_dependency_update.sh)"
+        description: "package-swift or pbxproj (see scripts/dependency-updates/update_pinned_dependency.sh)"
         required: true
         type: string
       pin-files:
@@ -78,7 +78,7 @@ jobs:
           DEP_REPO: ${{ inputs.repo }}
           PIN_KIND: ${{ inputs.pin-kind }}
           PIN_FILES: ${{ inputs.pin-files }}
-        run: bash scripts/dependency-updates/check_dependency_update.sh
+        run: bash scripts/dependency-updates/update_pinned_dependency.sh
 
       - name: Check for existing update PR
         id: dedupe

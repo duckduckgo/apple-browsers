@@ -211,6 +211,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var keyboardMonitor: UTIKeyboardMonitor!
+    private let scheduleOmnibarFocus: (@escaping () -> Void) -> Void
+    private var omnibarFocusWorkID = UUID()
+    private var isOmnibarFocusPending = false
+    private var pendingOmnibarFocusRequests: [(isValid: () -> Bool, completion: ((Bool) -> Void)?, allowsInactive: Bool)] = []
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
@@ -387,7 +391,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         floatingUIManager: FloatingUIManaging? = nil,
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        scheduleOmnibarFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
     ) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
@@ -399,6 +404,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
+        self.scheduleOmnibarFocus = scheduleOmnibarFocus
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
@@ -1157,6 +1163,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        cancelPendingOmnibarFocus()
         keyboardMonitor.disarm()
         displayState = .hidden
         isClearingModelPickerPinWithoutPersist = true
@@ -1189,7 +1196,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Omnibar State
 
-    func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+    func activateFromOmnibar(prefilledText: String? = nil,
+                             inputMode: TextEntryMode = .search,
+                             cardPosition: UnifiedToggleInputCardPosition = .top,
+                             isFocusRequestValid: @escaping () -> Bool = { true },
+                             onFocus: ((Bool) -> Void)? = nil) {
         restoreAttachmentsRetainedForDismiss()
         keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
@@ -1239,15 +1250,66 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             keyboardMonitor.scheduleFallback()
         }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self, isOmnibarEditing else { return }
-            viewController.activateInput()
-            guard omnibarPrefilledText != nil else { return }
+        requestOmnibarInputFocus(isRequestValid: isFocusRequestValid, completion: onFocus, allowsInactive: false)
+    }
+
+    /// Resumes the existing editor without resetting its draft, mode, tools, or entrance presentation.
+    func restoreOmnibarInputOnAppOpen(isRequestValid: @escaping () -> Bool = { true }, completion: @escaping (Bool) -> Void) {
+        guard isOmnibarSession, !isOnboardingLocked, isRequestValid() else {
+            completion(false)
+            return
+        }
+        if viewController.isViewLoaded, viewController.isInputFirstResponder {
+            completion(true)
+            return
+        }
+        requestOmnibarInputFocus(isRequestValid: isRequestValid, completion: completion, allowsInactive: true)
+    }
+
+    private func requestOmnibarInputFocus(isRequestValid: @escaping () -> Bool,
+                                          completion: ((Bool) -> Void)?,
+                                          allowsInactive: Bool) {
+        pendingOmnibarFocusRequests.append((isRequestValid, completion, allowsInactive))
+        guard !isOmnibarFocusPending else { return }
+        isOmnibarFocusPending = true
+        omnibarFocusWorkID = UUID()
+        let workID = omnibarFocusWorkID
+        scheduleOmnibarFocus { [weak self] in
+            guard let self, self.isOmnibarFocusPending, self.omnibarFocusWorkID == workID else { return }
+            let requests = self.pendingOmnibarFocusRequests
+            self.pendingOmnibarFocusRequests = []
+            self.isOmnibarFocusPending = false
+            let validRequests = requests.map { $0.isValid() && ($0.allowsInactive || self.isOmnibarEditing) }
+            let selectsPrefill = zip(requests, validRequests).contains { !$0.0.allowsInactive && $0.1 }
+            guard self.isOmnibarSession, !self.isOnboardingLocked, validRequests.contains(true) else {
+                requests.forEach { $0.completion?(false) }
+                return
+            }
+            self.viewController.activateInput()
+            let didFocus = self.omnibarFocusWorkID == workID && self.viewController.isInputFirstResponder
+            if didFocus, !self.isOmnibarEditing {
+                self.transitionOmnibarToActive()
+            }
+            for (request, valid) in zip(requests, validRequests) {
+                request.completion?(valid && didFocus && self.omnibarFocusWorkID == workID &&
+                                    self.isOmnibarSession && !self.isOnboardingLocked &&
+                                    self.viewController.isInputFirstResponder && request.isValid())
+            }
+            guard selectsPrefill, self.omnibarPrefilledText != nil else { return }
             DispatchQueue.main.async { [weak self] in
-                guard let self, isOmnibarEditing else { return }
-                viewController.selectAllText()
+                guard let self, self.omnibarFocusWorkID == workID, self.isOmnibarEditing,
+                      requests.contains(where: { !$0.allowsInactive && $0.isValid() }) else { return }
+                self.viewController.selectAllText()
             }
         }
+    }
+
+    private func cancelPendingOmnibarFocus() {
+        omnibarFocusWorkID = UUID()
+        isOmnibarFocusPending = false
+        let requests = pendingOmnibarFocusRequests
+        pendingOmnibarFocusRequests = []
+        requests.forEach { $0.completion?(false) }
     }
 
     func deactivateToOmnibar(resetView: Bool = true,
@@ -1260,6 +1322,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @discardableResult
     func completeOmnibarDeactivation(resetView: Bool = true) -> Bool {
         guard isOmnibarSession else { return false }
+        cancelPendingOmnibarFocus()
         inputMode = committedInputMode
         keyboardMonitor.disarm()
         displayState = .hidden
@@ -1420,13 +1483,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             keyboardMonitor.cancelFallback()
             transitionOmnibarToInactive()
         case (.omnibar(.inactive), true):
-            keyboardMonitor.disarm()
-            displayState = .omnibar(.active)
-            syncInputBehaviorToHandler()
-            updateFloatingReturnKeyState()
-            let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
-            intentSubject.send(.showOmnibarActive)
+            transitionOmnibarToActive()
         case (.omnibar(.active), true):
             keyboardMonitor.disarm()
         case (.aiTab(.expanded), _) where isAITabSearch:
@@ -1487,6 +1544,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Animated so a concurrent mode change doesn't get snapped to final layout non-animatedly.
         viewController.apply(renderState.viewConfig, animated: true)
         intentSubject.send(.showOmnibarInactive)
+    }
+
+    private func transitionOmnibarToActive() {
+        keyboardMonitor.disarm()
+        displayState = .omnibar(.active)
+        syncInputBehaviorToHandler()
+        updateFloatingReturnKeyState()
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
+        intentSubject.send(.showOmnibarActive)
     }
 
     func clearText() {

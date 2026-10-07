@@ -56,7 +56,7 @@ struct VPNLocationPreferenceItem: View {
         .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
         .frame(height: 52)
         .padding(.horizontal, 10)
-        .background(Color.blackWhite1)
+        .background(Color(.blackWhite1))
         .roundedBorder()
     }
 

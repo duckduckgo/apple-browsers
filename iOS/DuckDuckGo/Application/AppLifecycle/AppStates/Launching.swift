@@ -390,7 +390,13 @@ struct Launching: LaunchingHandling {
                                     notificationServiceManager: notificationServiceManager,
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
-        let aiChatService = AIChatService(aiChatSettings: aiChatSettings)
+        let aiChatService = AIChatService(
+            aiChatSettings: aiChatSettings,
+            termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver(
+                storageHandler: duckAiNativeStorageHandler,
+                feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
+            )
+        )
         let applicationShortcutItemsService = ApplicationShortcutItemsService(shortcutItemProviders: [
             { aiChatService.shortcutItem() },
             { await vpnService.shortcutItem() }

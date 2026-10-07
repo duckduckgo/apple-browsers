@@ -100,6 +100,23 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// open NTP stops offering the disclaimer.
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { get }
 
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
+
+    @MainActor
+    func launcherPromoShown()
+
+    @MainActor
+    func selectLauncherPromoCta()
+
+    @MainActor
+    func dismissLauncherPromo()
+
+    @MainActor
+    func launcherPromoIgnored()
+
+    var launcherPromoPublisher: AnyPublisher<Void, Never> { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

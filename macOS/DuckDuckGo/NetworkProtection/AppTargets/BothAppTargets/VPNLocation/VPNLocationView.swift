@@ -274,7 +274,7 @@ private struct VPNLocationViewButtons: View {
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 20)
-            .background(Color.blackWhite1)
+            .background(Color(.blackWhite1))
         }
     }
 

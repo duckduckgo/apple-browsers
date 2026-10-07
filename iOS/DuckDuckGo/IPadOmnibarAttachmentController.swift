@@ -23,22 +23,37 @@ import UIKit
 import UniformTypeIdentifiers
 import PixelKit
 
-/// Drives the Duck.ai attachment picker shown on the far left of the iPad address bar's expanded
-/// AI-chat input area, and the strip of pending attachments displayed above the toolbar row.
-///
-/// Reuses the iPhone attachment stack — `UnifiedToggleInputAttachmentPresenter` for picking,
-/// `UnifiedToggleInputAttachmentsStripView` for display, `UTIAttachmentPolicy` for limits, and the
-/// shared encoders for submission — so iPad and iPhone stay in lockstep. The strip view owns the
-/// pending attachments; this controller reads them for policy checks and submission payloads.
+@MainActor
+final class IPadOmnibarDraft {
+    var text = ""
+    var attachments: [UnifiedToggleInputAttachment] = []
+    private(set) var generation = UUID()
+    private(set) var isValid = true
+
+    func clear() {
+        text = ""
+        attachments = []
+        generation = UUID()
+    }
+
+    func invalidate() {
+        clear()
+        isValid = false
+    }
+}
+
 @MainActor
 final class IPadOmnibarAttachmentController {
 
     private let store: UTIModelStore
     private let keepsUnavailableAttachmentButtonVisible: Bool
     private let presenter = UnifiedToggleInputAttachmentPresenter()
+    private let fallbackDraft = IPadOmnibarDraft()
+    private weak var boundDraft: IPadOmnibarDraft?
+    private var isRenderingDraft = false
 
-    /// The strip that renders and owns the pending attachments. Set by the omnibar view controller
-    /// once its view is loaded.
+    private var currentDraft: IPadOmnibarDraft { boundDraft ?? fallbackDraft }
+
     weak var attachmentsStripView: UnifiedToggleInputAttachmentsStripView? {
         didSet {
             attachmentsStripView?.onAttachmentRemoved = { _, attachment, isUserInitiated in
@@ -58,21 +73,75 @@ final class IPadOmnibarAttachmentController {
         self.store = store
         self.keepsUnavailableAttachmentButtonVisible = keepsUnavailableAttachmentButtonVisible
 
-        presenter.onExpandIfNeeded = { [weak self] in
-            self?.onExpandRequested?()
+        presenter.pickerCallbacksProvider = { [weak self] in
+            self?.makePickerCallbacks() ?? .init()
         }
-        presenter.onImagePicked = { [weak self] image, fileName in
-            self?.addImageAttachment(image: image, fileName: fileName)
+    }
+
+    func bindDraft(_ draft: IPadOmnibarDraft) {
+        boundDraft = draft
+        if store.selectedModel != nil {
+            let policy = attachmentPolicy
+            draft.attachments.removeAll { !policy.isAttachmentSupported($0) }
         }
-        presenter.onFilePicked = { [weak self] attachment, metadata in
-            self?.addFileAttachment(attachment, sourceURL: metadata.url)
+        renderDraft()
+    }
+
+    func handleAttachmentsChanged() {
+        guard !isRenderingDraft, currentDraft.isValid else { return }
+        currentDraft.attachments = attachmentsStripView?.attachments ?? []
+    }
+
+    func makePickerCallbacks() -> UnifiedToggleInputAttachmentPresenter.PickerCallbacks {
+        let draft = currentDraft
+        let generation = draft.generation
+        let model = store.selectedModel
+        let limits = store.attachmentLimits
+        let policy = { [weak self, weak draft] in
+            if let self, let draft, self.currentDraft === draft {
+                return self.attachmentPolicy
+            }
+            return UTIAttachmentPolicy(attachmentLimits: limits, attachmentUsage: nil,
+                                       pendingAttachments: draft?.attachments ?? [], model: model)
         }
-        presenter.onFileValidationFailed = { [weak self] message, metadata in
-            self?.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
-        }
-        presenter.fileMetadataValidationMessage = { [weak self] metadata in
-            self?.attachmentPolicy.fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.message
-        }
+        return .init(
+            onExpandIfNeeded: { [weak self, weak draft] in
+                guard let self, let draft, draft.isValid, draft.generation == generation,
+                      self.currentDraft === draft else { return }
+                self.onExpandRequested?()
+            },
+            onImagePicked: { [weak self, weak draft] image, fileName in
+                guard let draft, draft.isValid, draft.generation == generation,
+                      policy().canAttachImages else { return }
+                self?.addAttachment(.image(AIChatImageAttachment(image: image, fileName: fileName)), to: draft)
+            },
+            onFilePicked: { [weak self, weak draft] attachment, metadata in
+                guard let draft, draft.isValid, draft.generation == generation else { return }
+                self?.addFileAttachment(attachment, sourceURL: metadata.url, to: draft, policy: policy())
+            },
+            onFileValidationFailed: { [weak self, weak draft] message, metadata in
+                guard let draft, draft.isValid, draft.generation == generation else { return }
+                self?.addInvalidFileAttachment(metadata: metadata, validationMessage: message, to: draft, policy: policy())
+            },
+            fileMetadataValidationMessage: { metadata in
+                policy().fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.message
+            }
+        )
+    }
+
+    private func renderDraft() {
+        isRenderingDraft = true
+        defer { isRenderingDraft = false }
+        attachmentsStripView?.removeAllAttachments()
+        currentDraft.attachments.forEach { attachmentsStripView?.addAttachment($0) }
+    }
+
+    private func addAttachment(_ attachment: UnifiedToggleInputAttachment, to draft: IPadOmnibarDraft) {
+        draft.attachments.append(attachment)
+        guard currentDraft === draft else { return }
+        isRenderingDraft = true
+        defer { isRenderingDraft = false }
+        attachmentsStripView?.addAttachment(attachment)
     }
 
     // MARK: - Availability
@@ -140,16 +209,18 @@ final class IPadOmnibarAttachmentController {
         UnifiedToggleInputFileEncoder.encode(currentAttachments)
     }
 
-    /// Clears all pending attachments (on submit or when leaving Duck.ai mode).
     func resetSelection() {
-        guard hasAttachments else { return }
-        attachmentsStripView?.removeAllAttachments()
+        currentDraft.clear()
+        renderDraft()
     }
 
     // MARK: - Private
 
     private var currentAttachments: [UnifiedToggleInputAttachment] {
-        attachmentsStripView?.attachments ?? []
+        if boundDraft == nil, !isRenderingDraft {
+            fallbackDraft.attachments = attachmentsStripView?.attachments ?? []
+        }
+        return currentDraft.attachments
     }
 
     /// Built fresh each access so it reflects the latest model and pending attachments. Usage is nil:
@@ -171,17 +242,12 @@ final class IPadOmnibarAttachmentController {
         attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty
     }
 
-    private func addImageAttachment(image: UIImage, fileName: String) {
-        guard attachmentPolicy.canAttachImages else { return }
-        attachmentsStripView?.addAttachment(.image(AIChatImageAttachment(image: image, fileName: fileName)))
-    }
-
-    private func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL?) {
-        if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
+    private func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL?, to draft: IPadOmnibarDraft, policy: UTIAttachmentPolicy) {
+        if let validationError = policy.fileValidationError(for: fileAttachment) {
             PixelKit.fire(Pixel.Event.unifiedToggleInputFileValidationFailed,
                           frequency: .dailyAndCount,
                           options: .parameters(["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
-            attachmentsStripView?.addAttachment(.invalidFile(
+            addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
                     id: fileAttachment.id,
                     fileName: fileAttachment.fileName,
@@ -190,20 +256,22 @@ final class IPadOmnibarAttachmentController {
                     validationMessage: validationError.message,
                     sourceURL: sourceURL
                 )
-            ))
+            ), to: draft)
             return
         }
 
         PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters(["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
-        attachmentsStripView?.addAttachment(.file(fileAttachment))
+        addAttachment(.file(fileAttachment), to: draft)
     }
 
     private func addInvalidFileAttachment(
         metadata: UnifiedToggleInputAttachmentPresenter.FileMetadata,
-        validationMessage: String
+        validationMessage: String,
+        to draft: IPadOmnibarDraft,
+        policy: UTIAttachmentPolicy
     ) {
         let reason: UTIAttachmentPolicy.FileValidationFailureReason
-        if let metadataError = attachmentPolicy.fileMetadataValidationError(
+        if let metadataError = policy.fileMetadataValidationError(
             mimeType: metadata.mimeType,
             fileSizeBytes: metadata.fileSizeBytes
         ) {
@@ -216,7 +284,7 @@ final class IPadOmnibarAttachmentController {
         PixelKit.fire(Pixel.Event.unifiedToggleInputFileValidationFailed,
                       frequency: .dailyAndCount,
                       options: .parameters(["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
-        attachmentsStripView?.addAttachment(.invalidFile(
+        addAttachment(.invalidFile(
             UnifiedToggleInputInvalidFileAttachment(
                 fileName: metadata.fileName,
                 mimeType: metadata.mimeType,
@@ -224,13 +292,16 @@ final class IPadOmnibarAttachmentController {
                 validationMessage: validationMessage,
                 sourceURL: metadata.url
             )
-        ))
+        ), to: draft)
     }
 
     private func removeUnsupportedAttachmentsForSelectedModel() {
         guard store.selectedModel != nil else { return }
         let policy = attachmentPolicy
         let unsupported = currentAttachments.filter { policy.isAttachmentSupported($0) == false }
+        currentDraft.attachments.removeAll { attachment in unsupported.contains { $0.id == attachment.id } }
+        isRenderingDraft = true
+        defer { isRenderingDraft = false }
         unsupported.forEach { attachmentsStripView?.removeAttachment(id: $0.id) }
     }
 }

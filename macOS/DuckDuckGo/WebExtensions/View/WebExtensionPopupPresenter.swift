@@ -298,7 +298,7 @@ final class WebExtensionPopupPresenter {
                 hasPresentedTab = true
                 return
             }
-            guard !Self.isSameTab(selectedTab, as: presentedTab) else { return }
+            guard selectedTab !== presentedTab else { return }
             // The publisher emits before the selection changes, so closing here would run mid-mutation.
             // The close is tied to this popup's panel, so it can't take down a popup presented meanwhile.
             let panel = self?.panel
@@ -316,11 +316,6 @@ final class WebExtensionPopupPresenter {
                 }
             }
         ]
-    }
-
-    /// Whether the popup shows the same tab it was opened on. Compared by identity, as tabs are reference types.
-    static func isSameTab(_ tab: Tab?, as presentedTab: Tab?) -> Bool {
-        tab === presentedTab
     }
 
     private func closeIfClickLandsOutside(in clickedWindow: NSWindow?, at location: NSPoint) {

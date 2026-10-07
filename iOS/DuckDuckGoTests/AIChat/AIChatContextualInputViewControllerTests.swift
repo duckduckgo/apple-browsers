@@ -62,6 +62,50 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         }
     }
 
+    func testUpdatingUnchangedStartActionsPreservesChipViews() throws {
+        let sut = makeBasicInputSUT()
+        sut.loadViewIfNeeded()
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        let chip = try XCTUnwrap(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView })
+
+        sut.view.isHidden = true
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        sut.view.isHidden = false
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+
+        XCTAssertTrue(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView } === chip)
+        XCTAssertEqual(sut.startActionCount, 1)
+    }
+
+    func testUpdatingSuggestionWithSameIDRendersChangedContent() throws {
+        let sut = makeBasicInputSUT()
+        sut.loadViewIfNeeded()
+        let original = ContextualSuggestedPrompt(id: "summary", label: "Original", prompt: "Original prompt", icon: nil)
+        sut.updateStartActions(suggestions: [original], quickActions: [])
+        let originalChip = try XCTUnwrap(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView })
+        let updated = ContextualSuggestedPrompt(id: "summary", label: "Updated", prompt: "Updated prompt", icon: "summary")
+
+        sut.updateStartActions(suggestions: [updated], quickActions: [])
+
+        let updatedChip = try XCTUnwrap(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView })
+        XCTAssertFalse(updatedChip === originalChip)
+        XCTAssertNotNil(findSubview(in: updatedChip) { ($0 as? UILabel)?.text == "Updated" })
+    }
+
+    func testClearingThenRestoringStartActionsRecreatesChips() {
+        let sut = makeBasicInputSUT()
+        sut.loadViewIfNeeded()
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+
+        sut.updateStartActions(suggestions: [], quickActions: [])
+        XCTAssertEqual(sut.startActionCount, 0)
+        sut.updateSuggestionsLoading(true)
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        sut.updateSuggestionsLoading(false)
+
+        XCTAssertEqual(sut.startActionCount, 1)
+    }
+
     // MARK: - Terms of Service
 
     func testWhenTermsAreNotAcceptedThenTheDisclaimerShowsBelowTheInput() throws {
@@ -101,7 +145,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let window = show(sut)
         defer { window.isHidden = true }
 
-        sut.acceptTermsIfDisclaimerShown()
+        XCTAssertTrue(sut.acceptTermsIfDisclaimerShown())
 
         XCTAssertTrue(termsStore.hasAccepted)
         XCTAssertEqual(termsOfServiceCard(in: sut)?.isHidden, true)
@@ -111,7 +155,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let sut = makeBasicInputSUT()
         sut.loadViewIfNeeded()
 
-        sut.acceptTermsIfDisclaimerShown()
+        XCTAssertFalse(sut.acceptTermsIfDisclaimerShown())
 
         XCTAssertFalse(termsStore.hasAccepted)
     }

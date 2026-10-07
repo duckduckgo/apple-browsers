@@ -880,12 +880,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, let termsAccepted) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNil(context)
+            XCTAssertFalse(termsAccepted)
         } else {
             XCTFail("Expected submitPrompt effect")
         }
+    }
+
+    func testWhenPromptIsSubmittedWithTermsAcceptedThenSubmitPromptEffectCarriesThem() {
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { receivedEffect = $0 }
+            .store(in: &cancellables)
+
+        sessionState.handlePromptSubmission("Hello world", termsAccepted: true)
+
+        guard case .submitPrompt(_, _, let termsAccepted) = receivedEffect else {
+            return XCTFail("Expected submitPrompt effect")
+        }
+        XCTAssertTrue(termsAccepted)
     }
 
     func testEffectsPublisherEmitsSubmitPromptWithContext() {
@@ -909,7 +924,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, _) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNotNil(context)
             XCTAssertEqual(context?.title, "Test Page")
@@ -2328,6 +2343,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    // MARK: - Prompt depth
+
+    func testWhenPromptsAreSentThenTheirDepthIsReported() {
+        for _ in 0..<3 {
+            sessionState.recordPromptSent()
+        }
+
+        XCTAssertEqual(mockPixelHandler.promptDepthBuckets, [.first, .second, .threeToFive])
+    }
+
+    func testWhenANewChatStartsThenDepthCountingRestarts() {
+        sessionState.recordPromptSent()
+        sessionState.recordPromptSent()
+        sessionState.resetToNoChat()
+        mockPixelHandler.promptDepthBuckets = []
+
+        sessionState.recordPromptSent()
+
+        XCTAssertEqual(mockPixelHandler.promptDepthBuckets, [.first])
+    }
+
     // MARK: - Offered page context
 
     /// Auto-attach off, UTI active, chat under way: the conditions the offer shares with auto-attach.
@@ -2395,15 +2431,54 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
     }
 
-    func testWhenAnOfferIsDismissedThenNothingIsAttachedOrDetached() {
+    func testWhenAnOfferFollowsANavigationThenItIsReportedAsSuch() {
+        arrangeOfferConditions()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferShownReasons, [.navigation])
+    }
+
+    func testWhenTheUserDetachesThePageThenTheOfferBackIsReportedAsDetached() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+        sessionState.acceptSuggestedContext()
+        mockPixelHandler.pageContextOfferShownReasons = []
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferShownReasons, [.detached])
+    }
+
+    func testWhenADetachedOfferIsAcceptedThenItIsReportedAsDetached() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+        sessionState.acceptSuggestedContext()
+        XCTAssertTrue(sessionState.handleChipRemoval())
+        mockPixelHandler.pageContextOfferAcceptedReasons = []
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedReasons, [.detached])
+    }
+
+    func testWhenTheSameOfferIsMadeAgainThenItIsCountedOnce() {
+        let url = "https://en.wikipedia.org/wiki/Tokamak"
+        arrangeOfferConditions()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak", url: url))
+        sessionState.updateContext(makeTestContext(title: "Tokamak", url: url))
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferShownReasons, [.navigation])
+    }
+
+    func testWhenAnOfferIsAcceptedThenItIsReportedWithTheReasonItWasShownWith() {
         arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
-        sessionState.dismissSuggestedContext()
+        sessionState.acceptSuggestedContext()
 
-        XCTAssertNil(sessionState.suggestedContext)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
-        XCTAssertNil(sessionState.intendedAttachedContext)
+        XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedReasons, [.navigation])
     }
 
     func testWhenNavigatingThenAPreviousOfferIsDropped() {
@@ -2413,6 +2488,61 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.notifyPageChanged()
 
         XCTAssertNil(sessionState.suggestedContext, "The offer belonged to the page we left")
+    }
+
+    // MARK: - Offered back after detaching
+
+    private func arrangeAttachedPage(title: String = "Tokamak") {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+        sessionState.updateContext(makeTestContext(title: title))
+    }
+
+    func testWhenAnAttachedPageIsDetachedThenItIsOfferedBack() {
+        var deliveredTargets: PageContextDeliveryTargets?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(_, let targets) = effect { deliveredTargets = targets }
+            }
+            .store(in: &cancellables)
+        arrangeAttachedPage()
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak")
+        XCTAssertEqual(deliveredTargets, .utiSuggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenTheOfferLeftByDetachingIsAcceptedThenThePageIsAttachedAgain() {
+        arrangeAttachedPage()
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenThePlaceholderFlagIsOffThenDetachingOffersNothing() {
+        arrangeAttachedPage()
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenTheUnifiedToggleInputIsInactiveThenDetachingOffersNothing() {
+        arrangeAttachedPage()
+        sessionState.updateUnifiedToggleInputActive(false)
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertNil(sessionState.suggestedContext)
     }
 
     private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {
@@ -2688,6 +2818,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var selectionRemovedCount = 0
     var promptSubmittedWithSelectionsCounts: [Int] = []
     var selectionToolDeliveryTimedOutCount = 0
+    var pageContextOfferShownReasons: [AIChatContextualPageContextOfferReason] = []
+    var pageContextOfferAcceptedReasons: [AIChatContextualPageContextOfferReason] = []
+    var promptDepthBuckets: [AIChatContextualPromptDepthBucket] = []
 
     func fireSheetOpened() { sheetOpenedFired = true }
     func fireSheetDismissed(hadUnsubmittedSelections: Bool) {
@@ -2695,6 +2828,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         sheetDismissedHadUnsubmittedSelections = hadUnsubmittedSelections
     }
     func fireSessionRestored() { sessionRestoredFired = true }
+    func fireSheetOpenedOnDeletedChat() {}
+    func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) { pageContextOfferShownReasons.append(reason) }
+    func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) { pageContextOfferAcceptedReasons.append(reason) }
     func fireSelectionAttached() { selectionAttachedCount += 1 }
     func fireSelectionLimitReached() { selectionLimitReachedCount += 1 }
     func fireSelectionRemoved() { selectionRemovedCount += 1 }
@@ -2721,6 +2857,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireAddressBarMenuAskAboutSearchSelected() {}
     func fireAddressBarMenuRecentChatsSelected() {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
@@ -2731,9 +2868,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedNative() { pageContextRemovedNativeFired = true }
     func firePageContextRemovedFrontend() { pageContextRemovedFrontendFired = true }
     func firePageContextCollectionEmpty() {}
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {}
     func firePageContextCollectionUnavailable() {}
     func firePromptSubmittedWithContext() { promptSubmittedWithContextFired = true }
     func firePromptSubmittedWithoutContext() { promptSubmittedWithoutContextFired = true }
+    func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket) { promptDepthBuckets.append(bucket) }
     func beginManualAttach() { manualAttachBegan = true; isManualAttachInProgress = true }
     func endManualAttach() { manualAttachEnded = true; isManualAttachInProgress = false }
 

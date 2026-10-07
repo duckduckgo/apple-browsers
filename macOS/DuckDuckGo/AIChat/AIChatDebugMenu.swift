@@ -20,6 +20,7 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import ConcurrencyExtensions
 import os.log
 import Persistence
 
@@ -29,6 +30,28 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
+    @MainActor
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure {
+        AttachmentPrivacyDisclosure(
+            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
+        )
+    }
+
+    private lazy var attachmentPrivacyMenuItem = NSMenuItem(
+        title: "",
+        action: #selector(resetAttachmentPrivacyDisclosure),
+        target: self
+    )
+
+    /// Stands in for the web app until the front end writes this itself.
+    private lazy var attachmentPrivacyWebFlagMenuItem = NSMenuItem(
+        title: "Set Duck.ai's Attachment Privacy Flag",
+        action: #selector(setAttachmentPrivacyWebFlag),
+        target: self
+    )
+
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
@@ -56,6 +79,17 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem.separator()
 
             usageWarningsMenuItem
+
+            NSMenuItem.separator()
+
+            attachmentPrivacyMenuItem
+
+            attachmentPrivacyWebFlagMenuItem
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
+                .targetting(self)
 
             NSMenuItem.separator()
 
@@ -113,6 +147,30 @@ final class AIChatDebugMenu: NSMenu {
             item.toolTip = seed.expectation
             menu.addItem(item)
         }
+    }
+
+    @objc private func resetLauncherPromo() {
+        DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    @MainActor
+    @objc private func resetAttachmentPrivacyDisclosure() {
+        attachmentPrivacyDisclosure.reset()
+        updateAttachmentPrivacyMenuItemTitle()
+    }
+
+    @MainActor
+    @objc private func setAttachmentPrivacyWebFlag() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey,
+                                                                      value: true)
+    }
+
+    @MainActor
+    private func updateAttachmentPrivacyMenuItemTitle() {
+        attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
+            + (attachmentPrivacyDisclosure.hasShown ? "(shown)" : "(not shown)")
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {
@@ -220,6 +278,10 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        // Main thread only, and the title must be right before the menu draws, so not a Task.
+        MainActor.assumeMainThread {
+            updateAttachmentPrivacyMenuItemTitle()
+        }
     }
 
     @objc func setCustomURL() {

@@ -111,6 +111,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
@@ -144,7 +145,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - Initialization
 
-    init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
+    init(handler: AIChatUserScriptHandling,
+         debugSettings: AIChatDebugSettingsHandling,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+        self.devicePlatform = devicePlatform
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
@@ -297,6 +301,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .cancelEdit:
             return handler.cancelEdit
+        case .attachmentPrivacyShouldDisplay:
+            guard !devicePlatform.isIphone else { return nil }
+            return handler.attachmentPrivacyShouldDisplay
         default:
             return nil
         }
@@ -372,15 +379,20 @@ final class AIChatUserScript: NSObject, Subfeature {
         webView != nil && broker != nil
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
-        submitPrompt(prompt, pageContext: pageContext, modelId: nil)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
+        submitPrompt(prompt, pageContext: pageContext, modelId: nil, termsAccepted: termsAccepted)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    func submitPrompt(_ prompt: String,
+                      pageContext: AIChatPageContextData? = nil,
+                      modelId: String?,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
+                      termsAccepted: Bool = false) {
         let selections = attachedSelectionsPayload
         submitWithTabContexts(currentPageContext: pageContext, request: attachedTabContextsProvider?()) { context in
             AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
                                            pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
+                .withTermsAccepted(termsAccepted)
         }
     }
 
@@ -408,6 +420,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      termsAccepted: Bool = false,
                       onPromptDispatched: (() -> Void)? = nil) {
         let currentPageContext = pageContext ?? attachedPageContextProvider?()
         let selections = attachedSelectionsPayload
@@ -425,7 +438,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 modelId: modelId,
                 pageContext: context,
                 selections: selections,
-                reasoningEffort: reasoningEffort)
+                reasoningEffort: reasoningEffort
+            ).withTermsAccepted(termsAccepted)
         })
     }
 
@@ -466,8 +480,17 @@ final class AIChatUserScript: NSObject, Subfeature {
             guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
                   self.webView === sourceWebView else { return }
 
-            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: request?.validate(contexts) ?? [])
+            let validatedContexts = request?.validate(contexts) ?? []
+            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: validatedContexts)
             guard self.pushPrompt(makePayload(context)) else { return }
+            let totalTabCount: Int
+            switch context {
+            case .multiple(let pages): totalTabCount = pages.count
+            case .single: totalTabCount = 1
+            case nil: totalTabCount = 0
+            }
+            request?.didDispatch(.init(totalTabCount: totalTabCount,
+                                       additionalTabCount: validatedContexts.filter { $0.tabId != nil }.count))
             request?.didConsume()
             didSubmit?()
         }
@@ -509,7 +532,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
     @discardableResult
     private func pushPrompt(_ prompt: AIChatNativePrompt) -> Bool {
-        let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker())
+        let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker(for: prompt))
         guard push(.submitPrompt(payload)) else { return false }
         if let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty {
             onAttachedSelectionsConsumed?(selectionIDs)

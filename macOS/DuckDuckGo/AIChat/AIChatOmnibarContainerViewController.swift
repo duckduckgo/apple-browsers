@@ -211,6 +211,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
+    private lazy var attachmentPrivacyGate: AttachmentPrivacyDisclosureGate = {
+        let gate = AttachmentPrivacyDisclosureGate(
+            disclosure: AttachmentPrivacyDisclosure(
+                store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+                webKeySource: duckAiNativeStorageHandler,
+                featureFlagger: NSApp.delegateTyped.featureFlagger
+            )
+        )
+        gate.onDisplayStarted = { [weak self] kind in
+            self?.attachmentPrivacyPixelFirer.fireShown(kind: kind)
+        }
+        return gate
+    }()
+
+    private lazy var attachmentPrivacyPixelFirer = AttachmentPrivacyDisclosurePixelFirer(
+        surface: omnibarController.surface.attachmentPrivacyPixelSurface
+    )
+
     /// Only the exposed band counts; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
         isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
@@ -1194,6 +1212,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
         }
+        usageWarningCardView.onLearnMore = { [weak self] in
+            self?.openAttachmentPrivacyLearnMore()
+        }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
@@ -1231,6 +1252,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
+
+        // Required > Action > Informational. Out of usage outranks the disclosure: it is the
+        // reason Send is disabled.
+        if let warning, warning.blocksInput {
+            usageWarningCardView.update(with: warning)
+            currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
+        if shouldShowAttachmentPrivacyDisclosure {
+            usageWarningCardView.updateForAttachmentPrivacy()
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
         if let createImageModelSwitchNotice {
             usageWarningCardView.update(with: createImageModelSwitchNotice)
             // Not a usage message, so nothing here is an impression — and leaving the last one set
@@ -1246,6 +1282,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         applyHighUsageNotice()
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    /// Images and files only: a page-context chip is not scanned, so the claim would not apply.
+    private var stagedAttachmentKind: AttachmentPrivacyDisclosureKind? {
+        if !omnibarController.activeImageAttachments.isEmpty { return .image }
+        if !omnibarController.activeFileAttachments.isEmpty { return .file }
+        return nil
+    }
+
+    private var shouldShowAttachmentPrivacyDisclosure: Bool {
+        attachmentPrivacyGate.shouldShow(attachmentKind: stagedAttachmentKind,
+                                         tabID: omnibarController.currentTabUUID)
+    }
+
+    /// A new tab, so the staged attachment and the draft survive.
+    private func openAttachmentPrivacyLearnMore() {
+        if let stagedAttachmentKind {
+            attachmentPrivacyPixelFirer.fireLearnMoreTapped(kind: stagedAttachmentKind)
+        }
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
+                                                              source: .ui,
+                                                              newTab: true,
+                                                              selected: true)
     }
 
     /// Spent allowance: the whole input goes inert so the card is the only thing left to act on,
@@ -2084,6 +2145,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.hasImageAttachments = hasAttachments
 
+        // Every path that changes the staged set lands here: menu, picker and drag & drop.
+        refreshUsageCard()
+
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
         // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).
         updateAttachmentsCarouselLayout()
@@ -2525,8 +2589,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
 
-        if let borderColor = NSColor(named: "AddressBarBorderColor"), !hostDrawsChrome {
-            backgroundView.borderColor = borderColor
+        if !hostDrawsChrome {
+            backgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             backgroundView.borderColor = .clear
         }
@@ -2545,31 +2609,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // be themed without a deeper rewrite.)
         let focusRingColor = colorsProvider.accentPrimaryColor
         toolsButton.tintColor = toolButtonTintColor
-        toolsButton.hoverBackgroundColor = .buttonMouseOver
-        toolsButton.pressedBackgroundColor = .buttonMouseDown
+        toolsButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        toolsButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         toolsButton.focusRingColor = focusRingColor
         imageGenActiveButton.tintColor = toolButtonTintColor
-        imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
-        imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageGenActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageGenActiveButton.focusRingColor = focusRingColor
         webSearchActiveButton.tintColor = toolButtonTintColor
-        webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
-        webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        webSearchActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         webSearchActiveButton.focusRingColor = focusRingColor
         imageUploadButton.tintColor = toolButtonTintColor
-        imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-        imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageUploadButton.focusRingColor = focusRingColor
         reasoningPickerButton.tintColor = toolButtonTintColor
-        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
-        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        reasoningPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
         // The two borders read as one crisp edge over an opaque fill, but split into a visible
         // double outline over a translucent one.
-        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
+        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(resource: .addressBarInnerBorder)
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
@@ -2586,7 +2650,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap
         panelBottomEdgeStrokeView.cornerRadius = panelRadius
-        panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")
+        panelBottomEdgeStrokeView.strokeColor = NSColor(resource: .addressBarBorder)
         // Re-asserted because `applyTheme` re-runs on appearance changes. Over host-drawn chrome
         // the host owns the outer silhouette, so a shadow round the card falls inside the bar.
         usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
@@ -2597,10 +2661,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
             usageWarningShadowView.shadowColor = colorsProvider.addressBarShadowColor
-            imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-            imageUploadButton.pressedBackgroundColor = .buttonMouseDown
-            modelPickerButton.hoverBackgroundColor = .buttonMouseOver
-            modelPickerButton.pressedBackgroundColor = .buttonMouseDown
+            imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
+            modelPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            modelPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         }
     }
 }

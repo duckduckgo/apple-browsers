@@ -34,7 +34,7 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
-    /// The disclaimer on screen means the next send accepts the terms.
+    /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
@@ -55,6 +55,7 @@ final class UTIFooterController {
     private var isInputBlocked = false
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
+    private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
     private var visibleIDs: Set<UTIFooterItem.ID> = [] {
         didSet {
             guard isTermsOfServiceVisible != oldValue.contains(.termsConsent) else { return }
@@ -69,6 +70,8 @@ final class UTIFooterController {
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
     var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
+    /// Unaccepted with the feature on, so the disclaimer returns whenever the input is open in Duck.ai mode.
+    var isTermsOfServicePending: Bool { termsOfServiceStore?.hasAccepted == false }
 
     init(viewModel: DuckAiUsageWarningViewModel?,
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
@@ -151,6 +154,13 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+    /// The disclaimer names the button the user will tap, which reads "Create" while Create Image is selected.
+    func setTermsOfServiceSendButton(_ sendButton: DuckAiTermsOfServiceSendButton) {
+        guard termsOfServiceSendButton != sendButton else { return }
+        termsOfServiceSendButton = sendButton
+        applyCurrentState()
+    }
+
 
     func dismiss(_ id: UTIFooterItem.ID) {
         guard visibleIDs.contains(id), currentMessages.first(where: { $0.id == id })?.message.isDismissible == true else { return }
@@ -193,10 +203,16 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    func acceptTermsIfDisclaimerShown() {
-        guard visibleIDs.contains(.termsConsent), let termsOfServiceStore else { return }
-        termsOfServiceStore.recordAcceptedInNativeInput()
-        applyCurrentState()
+    /// Call only for an Ask tap. Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        guard let termsOfServiceStore else { return false }
+        if visibleIDs.contains(.termsConsent) {
+            termsOfServiceStore.recordAcceptedInNativeInput()
+            Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
+            applyCurrentState()
+        }
+        return termsOfServiceStore.hasAccepted
     }
 
     func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
@@ -246,7 +262,8 @@ final class UTIFooterController {
         switch action {
         case .switchToModel, .switchToFreeModel: return .switchModel
         case .tryForFree: return .upsell
-        case .startUsingWeeklyLimit, .none: return nil
+        case .startUsingWeeklyLimit: return .weeklyLimit
+        case .none: return nil
         }
     }
 
@@ -302,7 +319,7 @@ final class UTIFooterController {
     private func applicableMessages() -> [UTIFooterItem] {
         var items: [UTIFooterItem] = []
         if let termsOfServiceStore, !termsOfServiceStore.hasAccepted, viewModel?.warning?.blocksInput != true {
-            items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage()))
+            items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage(sendButton: termsOfServiceSendButton)))
         }
         if attachmentPrivacyNotice?.isPresented == true, viewModel?.warning?.blocksInput != true {
             items.append(.init(id: .attachmentPrivacy, message: mapper.attachmentPrivacyMessage()))
@@ -322,9 +339,18 @@ final class UTIFooterController {
     }
 
     static let springAnimator: Animator = { changes in
-        guard !UIAccessibility.isReduceMotionEnabled else { return changes() }
+        animateWithSpring(changes)
+    }
+
+    static func animateWithSpring(_ changes: @escaping () -> Void, completion: ((Bool) -> Void)? = nil) {
+        guard !UIAccessibility.isReduceMotionEnabled else {
+            changes()
+            completion?(true)
+            return
+        }
         UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85,
-                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: changes)
+                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction],
+                       animations: changes, completion: completion)
     }
 }
 

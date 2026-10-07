@@ -295,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Egyszerre csak %d képet csatolhatsz.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Lapok hozzáadása";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Kérdés a dokumentumról";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Kérdezz az oldalról";
 
@@ -304,11 +310,17 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Kép hozzáadása";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Folytatás a Duck.ai-ban";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fénykép készítése";
 
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Az üzenet túl hosszú a mellékletekkel együtt való küldéshez.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Legutóbbi lapok";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "A mellékletek átmenetileg nem érhetők el. Próbálkozz újra később.";
@@ -321,6 +333,18 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "A fájltípus nem támogatott, csatolj %@ fájlt.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Nincs egyező lap";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Válassz ki legfeljebb %d lapot";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d/%2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Lapok hozzáadása";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "A szerkesztés lecseréli a választ egy újra.";
@@ -423,6 +447,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Próbáld ki ingyen";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Új · Írd be, hogy „@”, vagy koppints az {attachment} ikonra egy lap hozzáadásához.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "melléklet";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Elemezési feladatokhoz";
@@ -4702,6 +4732,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Állítsd be a címsor elhelyezkedését";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Engedélyezés mindig";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Rákérdezés minden alkalommal";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Tartózkodási hely";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Webhelyek kezelése";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Engedélyezés soha";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Összes webhelyengedély eltávolítása";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Engedélyek eltávolítása";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Minden webhely engedélye eltávolítva";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "%@ engedélyei eltávolítva";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "%@ engedélyei";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "A DuckDuckGo rendszerengedélyeit itt tekintheted meg és módosíthatod: %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Rendszerbeállítások.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktiválás";
 
@@ -4899,6 +4971,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Nem működik a webhely? Jelezd a DuckDuckGo felé.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Webhelyengedélyek";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Jelentés beküldése";

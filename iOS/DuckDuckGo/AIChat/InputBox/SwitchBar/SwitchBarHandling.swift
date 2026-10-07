@@ -32,6 +32,17 @@ extension TextEntryMode {
     }
 }
 
+// MARK: - TextSubmissionTrigger Enum
+/// What sent a submission. Only the send button, which reads "Ask" while the Duck.ai Terms of Service
+/// disclaimer shows, accepts those terms.
+enum TextSubmissionTrigger: String {
+    case sendButton
+    /// Return or Paste & Go.
+    case textEntry
+    /// A prompt the app sends on the user's behalf, such as a quick action chip.
+    case programmatic
+}
+
 // MARK: - SwitchBarHandling Protocol
 protocol SwitchBarHandling: AnyObject {
 
@@ -66,7 +77,7 @@ protocol SwitchBarHandling: AnyObject {
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }

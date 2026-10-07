@@ -1,3 +1,1 @@
-• We made some very minor design tweaks to the address bar. 
-• We fixed the bug that prevented captions from working on full screen videos. 
-• This update includes various other bug fixes and improvements.
+• Fixed an issue that could prevent Duck.ai onboarding from completing properly.

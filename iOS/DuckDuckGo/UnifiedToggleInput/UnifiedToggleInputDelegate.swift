@@ -22,7 +22,8 @@ import Foundation
 
 @MainActor
 protocol UnifiedToggleInputDelegate: AnyObject {
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
+    /// `termsAccepted` is `true` only for a prompt sent with Ask.
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool)
     /// Nothing to deliver, only the moment — reported before the keyboard takes the surface with it.
     func unifiedToggleInputDidSubmitPromptToBoundChat()
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?)

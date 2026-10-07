@@ -28,10 +28,11 @@ struct UnifiedSuggestionsView: View {
     let favoritesPresentation: FocusedFavoritesPresentation
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var escapeHatch: EscapeHatchModel?
 
     var body: some View {
-        // The chrome (escape hatch + sync-promo) is pinned to the bar by the container (it rides the
-        // bar's UIKit animation in the same layout pass), so it's not in this host. The logo overlays
+        // Chrome stays pinned to the bar except for the redesigned Search escape hatch,
+        // which follows favorites in the scrolling modules. The logo overlays
         // the content, anchored to the keyboard (the host's fixed bottom) so neither the bar-driven top
         // inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
@@ -72,7 +73,8 @@ struct UnifiedSuggestionsView: View {
             listLayer
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
-                                                   messagesModel: favoritesPresentation.viewController?.messagesModel)
+                                                   messagesModel: favoritesPresentation.viewController?.messagesModel,
+                                                   escapeHatch: escapeHatch)
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsRedesignedSearchModules ? 1 : 0)

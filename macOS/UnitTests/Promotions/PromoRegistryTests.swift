@@ -89,7 +89,18 @@ final class PromoRegistryTests: XCTestCase {
             updateController: nil,
             updateNotificationBridge: nil,
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
-            quitSurveyPromoObserver: QuitSurveyPromoObserver()
+            quitSurveyPromoObserver: QuitSurveyPromoObserver(),
+            vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState())
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

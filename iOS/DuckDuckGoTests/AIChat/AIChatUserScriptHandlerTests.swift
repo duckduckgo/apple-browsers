@@ -21,6 +21,7 @@
 import Combine
 import Common
 import FoundationExtensions
+import FeatureFlags_iOS
 import Core
 import DDGSync
 import XCTest
@@ -81,6 +82,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
+                                             attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
                                              installDateProvider: @escaping () -> Date? = { nil },
                                              installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger)
@@ -95,9 +97,156 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults),
+            attachmentPrivacyWebKeySource: attachmentPrivacyWebKeySource,
             installDateProvider: installDateProvider,
             installTypeProvider: installTypeProvider
         )
+    }
+
+    @MainActor
+    func testAttachmentPrivacyIsIPadOnlyAndIndependentOfUnifiedInputFlag() async {
+        let flagStates: [([FeatureFlag], Bool)] = [
+            ([], false),
+            ([.unifiedToggleInputAttachmentPrivacy], false),
+            ([.aiChatAttachmentPrivacyIPad], true),
+            ([.unifiedToggleInputAttachmentPrivacy, .aiChatAttachmentPrivacyIPad], true)
+        ]
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        for isIphone in [false, true] {
+            MockDevicePlatform.isIphone = isIphone
+            for (flags, enabledOnIPad) in flagStates {
+                store.reset()
+                mockFeatureFlagger.enabledFeatureFlags = flags
+                aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+                let expected = !isIphone && enabledOnIPad
+                let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues
+                let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                    params: [:], message: message
+                ) as? AttachmentPrivacyShouldDisplayResponse
+
+                XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, expected, "iPhone: \(isIphone), flags: \(flags)")
+                XCTAssertEqual(response?.show, expected, "iPhone: \(isIphone), flags: \(flags)")
+                XCTAssertEqual(store.hasShown, expected)
+            }
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyBridgeHandlerRemainsAbsentOnIPhone() {
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler,
+                                     debugSettings: MockAIChatDebugSettingsForTests(),
+                                     devicePlatform: MockDevicePlatform.self)
+        for isIphone in [true, false] {
+            MockDevicePlatform.isIphone = isIphone
+            let handler = script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue)
+            XCTAssertEqual(handler == nil, isIphone)
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyRechecksDeviceFlagWithoutConsumingDisabledRequests() async {
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        for enabled in [false, true, false] {
+            mockFeatureFlagger.enabledFeatureFlags = enabled ? [.aiChatAttachmentPrivacyIPad] : [.unifiedToggleInputAttachmentPrivacy]
+            let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues
+            let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+
+            XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, enabled)
+            XCTAssertEqual(response?.show, enabled)
+            XCTAssertEqual(store.hasShown, enabled)
+            if enabled {
+                store.reset()
+            }
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyMessageClaimsOnceAndReturnsShowResponse() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler,
+                                     debugSettings: MockAIChatDebugSettingsForTests(),
+                                     devicePlatform: MockDevicePlatform.self)
+        XCTAssertNotNil(script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue))
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let firstResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message)
+        let first = try XCTUnwrap(firstResponse)
+        let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Bool]
+        XCTAssertEqual(json, ["show": true])
+        let second = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(second?.show, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyMessageRechecksFlagAndAdoptsWebState() async throws {
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: "true")
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let disabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(disabled?.show, false)
+        XCTAssertFalse(store.hasShown)
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let enabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(enabled?.show, false)
+        XCTAssertTrue(store.hasShown)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyAdoptsWebStateDurablyAcrossHandlers() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let shownValues: [Any] = [true, 1, 0.5, "true", "TRUE", "2"]
+
+        for value in shownValues {
+            store.reset()
+            try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: value)
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+            let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+            XCTAssertEqual(response?.show, false)
+            XCTAssertTrue(store.hasShown)
+
+            try webStorage.deleteEntry(key: AttachmentPrivacyDisclosure.webEntryKey)
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+            let subsequentResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+            XCTAssertEqual(subsequentResponse?.show, false)
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyResetClearsIPadAndWebStateWithoutChangingIPhoneState() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let iphoneStore = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults)
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        store.markShown()
+        iphoneStore.markShown()
+        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: true)
+        let disclosure = AttachmentPrivacyDisclosure(store: store, webKeySource: webStorage, isEnabled: { true })
+
+        disclosure.reset()
+
+        XCTAssertFalse(store.hasShown)
+        XCTAssertTrue(iphoneStore.hasShown)
+        XCTAssertNil(try webStorage.getEntry(key: AttachmentPrivacyDisclosure.webEntryKey))
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+        let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+            params: [:], message: MockUserScriptMessage(name: "test", body: [:])
+        ) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(response?.show, true)
     }
 
     func testWhenReturningUserThenInstallTypeIsReturning() {
@@ -1169,6 +1318,9 @@ extension AIChatUserScriptHandlerTests {
 
 extension AIChatUserScriptHandlerTests {
 
+    private var askPrompt: AIChatNativePrompt { AIChatNativePrompt.queryPrompt("hello", autoSubmit: true).withTermsAccepted(true) }
+    private var promptSentWithoutAsk: AIChatNativePrompt { AIChatNativePrompt.queryPrompt("hello", autoSubmit: true) }
+
     private func enableNativeTermsOfService() {
         mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
         MockDevicePlatform.isIphone = true
@@ -1176,114 +1328,117 @@ extension AIChatUserScriptHandlerTests {
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
     }
 
-    private func configValues() -> AIChatNativeConfigValues? {
-        aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
-    }
-
-    func testWhenNativeTermsOfServiceFlagIsOnAndNativeChatInputAvailableThenConfigAdvertisesSupport() {
-        enableNativeTermsOfService()
-
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, true)
-    }
-
-    func testWhenNativeTermsOfServiceFlagIsOffThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        MockDevicePlatform.isIphone = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
-    }
-
-    /// The disclaimer lives on the native input, so without it the FE must keep its own card.
-    func testWhenNativeTermsOfServiceFlagIsOnButNativeChatInputUnavailableThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = true
-        mockUnifiedToggleInputFeature.isAvailable = false
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
-    }
-
-    /// duck.ai on iPad keeps its own Terms of Service, even though the iPad inputs show the disclaimer.
-    func testWhenNativeTermsOfServiceFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupportInAnyDisplayMode() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = false
-        mockIPadDuckAIControlsFeature.isAvailable = true
-        mockAIChatContextualModeFeature.isAvailable = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
-            aiChatUserScriptHandler.displayMode = displayMode
-            XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false, "\(displayMode)")
-        }
-    }
-
-    /// An acceptance in the iPad address bar or sheet stays native; duck.ai still asks on its own.
-    func testWhenAcceptedInAnIPadInputThenPulledPromptCarriesNoMarker() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = false
-        mockIPadDuckAIControlsFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-        aiChatUserScriptHandler.displayMode = .fullTab
+    private func recordAcceptedInNativeInput() {
         DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
-        AIChatPromptHandler.shared.setData(.queryPrompt("hello", autoSubmit: true))
-
-        let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
-
-        XCTAssertNotNil(prompt)
-        XCTAssertNil(prompt?.termsAccepted)
-        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker())
     }
 
-    func testWhenNativeTermsOfServiceIsUnsupportedThenPromptsCarryNoMarker() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        mockUserDefaults.set(true, forKey: termsAcceptedKey)
-
-        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker())
+    private func pullPrompt() -> AIChatNativePrompt? {
+        aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
     }
 
-    func testWhenNativeTermsOfServiceIsSupportedAndNotAcceptedThenMarkerIsFalse() {
+    func testWhenPromptIsSentWithAskAndTermsAreAcceptedThenMarkerIsTrue() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true)
+    }
+
+    /// A chip, Summarize or voice prompt never claims acceptance, even from a user who accepted.
+    func testWhenPromptIsSentWithoutAskThenMarkerIsFalseEvenAfterAcceptance() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: promptSentWithoutAsk), false)
+    }
+
+    func testWhenPromptIsSentWithAskButTermsAreNotAcceptedThenMarkerIsFalse() {
         enableNativeTermsOfService()
 
-        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(), false)
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), false)
     }
 
-    /// One acceptance state: accepting on the web also counts for prompts native sends later.
-    func testWhenWebReportsAcceptanceThenMarkerIsTrue() async {
+    /// One acceptance state: accepting on the web also counts for prompts the user later sends with Ask.
+    func testWhenWebReportsAcceptanceThenAskPromptMarkerIsTrue() async {
         enableNativeTermsOfService()
 
         _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": "userDidAcceptTermsAndConditions"],
                                                        message: MockUserScriptMessage(name: "test", body: [:]))
 
-        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(), true)
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true)
     }
 
-    func testWhenAcceptedInNativeInputThenMarkerIsTrue() {
-        enableNativeTermsOfService()
-
-        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
-
-        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(), true)
-    }
-
-    /// The page-loading path: the FE pulls the prompt, so it must be stamped on the way out.
-    func testWhenPromptIsPulledThenItCarriesTheMarker() {
-        enableNativeTermsOfService()
-        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
-        AIChatPromptHandler.shared.setData(.queryPrompt("hello", autoSubmit: true))
-
-        let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
-
-        XCTAssertEqual(prompt?.termsAccepted, true)
-    }
-
-    func testWhenNativeTermsOfServiceIsUnsupportedThenPulledPromptCarriesNoMarker() {
+    func testWhenNativeTermsOfServiceFlagIsOffThenPromptsCarryNoMarker() {
         mockFeatureFlagger.enabledFeatureFlags = []
-        AIChatPromptHandler.shared.setData(.queryPrompt("hello", autoSubmit: true))
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
 
-        let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    /// The disclaimer lives on the native input, so without it the FE keeps its own card.
+    func testWhenNativeChatInputIsUnavailableThenPromptsCarryNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
+
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    /// iPad's address bar sends into a full-tab chat, which has no native chat input, so the marker can't depend on one.
+    func testWhenAcceptedInAnIPadInputThenAskPromptsCarryTheMarkerInAnyDisplayMode() {
+        enableNativeTermsOfServiceOnIPad()
+        recordAcceptedInNativeInput()
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
+            aiChatUserScriptHandler.displayMode = displayMode
+            XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true, "\(displayMode)")
+            XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: promptSentWithoutAsk), false, "\(displayMode)")
+        }
+    }
+
+    func testWhenNativeTermsOfServiceFlagIsOffOnIPadThenPromptsCarryNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        MockDevicePlatform.isIphone = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
+
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    private func enableNativeTermsOfServiceOnIPad() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+        mockAIChatContextualModeFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+    }
+
+    /// The page-loading path: the FE pulls the prompt, so it is stamped on the way out.
+    func testWhenAskPromptIsPulledThenItCarriesTermsAccepted() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        XCTAssertEqual(pullPrompt()?.termsAccepted, true)
+    }
+
+    func testWhenPromptSentWithoutAskIsPulledThenItCarriesTermsAcceptedFalse() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+        AIChatPromptHandler.shared.setData(promptSentWithoutAsk)
+
+        XCTAssertEqual(pullPrompt()?.termsAccepted, false)
+    }
+
+    func testWhenNativeTermsOfServiceIsOffThenPulledPromptCarriesNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        let prompt = pullPrompt()
 
         XCTAssertNotNil(prompt)
         XCTAssertNil(prompt?.termsAccepted)
@@ -1413,6 +1568,8 @@ extension AIChatUserScriptHandlerTests {
             ("userDidClickPromotionCardButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__promotioncard"),
             ("userDidViewSettingsSubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
             ("userDidClickSettingsSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
+            ("userDidViewSettingsResubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
+            ("userDidClickSettingsResubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
             ("userDidViewProUpgradeDisclaimerBanner", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidClickProUpgradeDisclaimerBannerButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidViewVoiceChatLimitModal", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__voicechatlimit"),

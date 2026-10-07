@@ -81,16 +81,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
-    case appSwitcherSnapshotClearing
-
     case screenTimeCleaning
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
-    case suppressShowBarsGestureRecogniserDelay
 
     /// https://app.asana.com/1/137249556945/project/414709148257752/task/1217605270508341
     case elementFullscreen
@@ -123,7 +117,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case walletPassDownload
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUIAugust2026
+    case floatingUIiOS26
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
+    case floatingUIiOS27
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
@@ -144,4 +141,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
     case sitePermissions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
+    case alwaysShowKeyboardOnNewTabPage
 }

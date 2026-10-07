@@ -54,9 +54,9 @@ public struct UserText {
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
-    public static let sitePermissions = NotLocalizedString("site.permissions",
+    public static let sitePermissions = NSLocalizedString("site.permissions",
                                                           value: "Site Permissions",
-                                                          comment: "Browser menu item that opens permission controls for the current website")
+                                                          comment: "Browser menu item and Settings title for website camera, microphone, and location permissions.")
 
     // MARK: Scoped Fire Confirmation
 
@@ -579,20 +579,20 @@ public struct UserText {
     public static let settingsAutoplayLabel = NSLocalizedString("settings.autoplay", value: "Autoplay", comment: "Settings label for the autoplay settings screen")
     public static let settingsAutoplayFooter = NSLocalizedString("settings.autoplay.footer", value: "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ", comment: "Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings")
     public static let settingsAutoplayDuckPlayerLink = NSLocalizedString("settings.autoplay.duck.player.link", value: "Duck Player Settings", comment: "Link text in the autoplay settings footer that navigates to Duck Player settings")
-    public static let settingsSitePermissionsCamera = NotLocalizedString("settings.site.permissions.camera", value: "Camera", comment: "Camera permission title in Settings")
-    public static let settingsSitePermissionsMicrophone = NotLocalizedString("settings.site.permissions.microphone", value: "Microphone", comment: "Microphone permission title in Settings")
-    public static let settingsSitePermissionsLocation = NotLocalizedString("settings.site.permissions.location", value: "Location", comment: "Location permission title in Settings")
-    public static let settingsSitePermissionsAskEachTime = NotLocalizedString("settings.site.permissions.ask.each.time", value: "Ask Each Time", comment: "Site permission option that asks on each visit")
-    public static let settingsSitePermissionsAlwaysAllow = NotLocalizedString("settings.site.permissions.always.allow", value: "Always Allow", comment: "Site permission option that always grants access")
-    public static let settingsSitePermissionsNeverAllow = NotLocalizedString("settings.site.permissions.never.allow", value: "Never Allow", comment: "Site permission option that prevents access")
-    public static let settingsSitePermissionsManageSites = NotLocalizedString("settings.site.permissions.manage.sites", value: "Manage Sites", comment: "Header for sites with stored permissions")
-    public static let settingsSitePermissionsRemoveAll = NotLocalizedString("settings.site.permissions.remove.all", value: "Remove All Site Permissions", comment: "Button that removes every stored site permission")
-    public static let settingsSitePermissionsRemoveSite = NotLocalizedString("settings.site.permissions.remove.site", value: "Remove Permissions", comment: "Button that removes all stored permissions for one site")
-    public static let settingsSitePermissionsSystemSettingsFooterPrefix = NotLocalizedString("settings.site.permissions.system.settings.footer.prefix", value: "You can view and modify DuckDuckGo’s system permissions in ", comment: "Settings footer before the System Settings link")
-    public static let settingsSitePermissionsSystemSettingsLink = NotLocalizedString("settings.site.permissions.system.settings.link", value: "System Settings.", comment: "Link that opens the DuckDuckGo page in System Settings")
-    public static let settingsSitePermissionsRemovedAll = NotLocalizedString("settings.site.permissions.removed.all", value: "Permissions removed for all sites", comment: "Toast after all stored site permissions are removed")
-    public static let settingsSitePermissionsRemovedSiteFormat = NotLocalizedString("settings.site.permissions.removed.site.format", value: "Permissions removed for %@", comment: "Toast after one site's stored permissions are removed; placeholder is the domain")
-    public static let settingsSitePermissionsSiteHeaderFormat = NotLocalizedString("settings.site.permissions.site.header.format", value: "Permissions for %@", comment: "Header for one site's permission settings; placeholder is the domain")
+    public static let settingsSitePermissionsCamera = NSLocalizedString("settings.site.permissions.camera", value: "Camera", comment: "Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission.")
+    public static let settingsSitePermissionsMicrophone = NSLocalizedString("settings.site.permissions.microphone", value: "Microphone", comment: "Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission.")
+    public static let settingsSitePermissionsLocation = NSLocalizedString("settings.site.permissions.location", value: "Location", comment: "Website location permission row in Settings, separate from DuckDuckGo's iOS app permission.")
+    public static let settingsSitePermissionsAskEachTime = NSLocalizedString("settings.site.permissions.ask.each.time", value: "Ask Each Time", comment: "Website permission option in Settings that asks again when the site requests access.")
+    public static let settingsSitePermissionsAlwaysAllow = NSLocalizedString("settings.site.permissions.always.allow", value: "Always Allow", comment: "Website permission option in Settings that saves approval for this site; iOS app permission is separate.")
+    public static let settingsSitePermissionsNeverAllow = NSLocalizedString("settings.site.permissions.never.allow", value: "Never Allow", comment: "Website permission option in Settings that saves denial for this site; it can be changed later.")
+    public static let settingsSitePermissionsManageSites = NSLocalizedString("settings.site.permissions.manage.sites", value: "Manage Sites", comment: "Settings header for websites with saved permission choices.")
+    public static let settingsSitePermissionsRemoveAll = NSLocalizedString("settings.site.permissions.remove.all", value: "Remove All Site Permissions", comment: "Settings button that removes all saved website permission choices.")
+    public static let settingsSitePermissionsRemoveSite = NSLocalizedString("settings.site.permissions.remove.site", value: "Remove Permissions", comment: "Settings button that removes saved permission choices for one website.")
+    public static let settingsSitePermissionsSystemSettingsFooterFormat = NSLocalizedString("settings.site.permissions.system.settings.footer.format", value: "You can view and modify DuckDuckGo’s system permissions in %@", comment: "Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence.")
+    public static let settingsSitePermissionsSystemSettingsLink = NSLocalizedString("settings.site.permissions.system.settings.link", value: "System Settings.", comment: "Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link.")
+    public static let settingsSitePermissionsRemovedAll = NSLocalizedString("settings.site.permissions.removed.all", value: "Permissions removed for all sites", comment: "Toast after all stored site permissions are removed")
+    public static let settingsSitePermissionsRemovedSiteFormat = NSLocalizedString("settings.site.permissions.removed.site.format", value: "Permissions removed for %@", comment: "Toast after one site's stored website permissions are removed. %@ is the website domain.")
+    public static let settingsSitePermissionsSiteHeaderFormat = NSLocalizedString("settings.site.permissions.site.header.format", value: "Permissions for %@", comment: "Header for one site's website permission settings. %@ is the website domain.")
     public static let settingsMediaSection = NSLocalizedString("settings.media.section", value: "Media", comment: "Header for the media section in general settings")
 
     public static let webJSAlertOKButton = NSLocalizedString("webJSAlert.OK.button", value: "OK", comment: "OK button for JavaScript alerts")
@@ -1774,6 +1774,7 @@ public struct UserText {
     public static let settingsLastTabShortcutSubtitle = NSLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to return to the last used tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the ‘Return to’ Shortcut option")
 
     // Escape Hatch (Return to Tab Card)
+    public static let escapeHatchShowAllTabs = NotLocalizedString("escapeHatch.showAllTabs.label", value: "Show All Tabs", comment: "Button in the Return to module header that opens the tab switcher")
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
@@ -2450,37 +2451,34 @@ public struct UserText {
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
-    public static let aiChatAttachmentOptionAskAboutDocument = NotLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Top-level attachment menu option to attach the current document content to an AI chat message")
-    public static let aiChatAttachmentOptionContinueInDuckAi = NotLocalizedString("aichat.attachment.option.continue.in.duckAI", value: "Continue in Duck.ai", comment: "Top-level attachment menu option to attach the continue with the prompt in duck.ai")
-    public static let aiChatAttachmentOptionAddTabs = NotLocalizedString(
+    public static let aiChatAttachmentOptionAskAboutDocument = NSLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat")
+    public static let aiChatAttachmentOptionContinueInDuckAi = NSLocalizedString("aichat.attachment.option.continue.in.duckAI", value: "Continue in Duck.ai", comment: "Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated")
+    public static let aiChatAttachmentOptionAddTabs = NSLocalizedString(
         "aichat.attachment.option.add.tabs",
         value: "Add Tabs",
         comment: "attachment-menu option that opens the Choose Tabs picker")
-    public static let aiChatAttachmentRecentTabsSectionTitle = NotLocalizedString(
+    public static let aiChatAttachmentRecentTabsSectionTitle = NSLocalizedString(
         "aichat.attachment.recent-tabs.section-title",
         value: "Recent Tabs",
         comment: "attachment-menu section title for recently viewed tabs")
-    public static let aiChatChooseTabsTitle = NotLocalizedString(
+    public static let aiChatChooseTabsTitle = NSLocalizedString(
         "aichat.choose-tabs.title",
         value: "Add tabs",
         comment: "title of the tab attachment picker")
     public static func aiChatChooseTabsPrompt(attachmentLimit: Int) -> String {
-        let format = NotLocalizedString(
+        let format = NSLocalizedString(
             "aichat.choose-tabs.prompt",
             value: "Pick up to %d tabs",
             comment: "Instruction above the tab attachment list. Parameter is the configured maximum number of tabs.")
         return String(format: format, attachmentLimit)
     }
-    public static let aiChatChooseTabsSearchPlaceholder = NotLocalizedString(
-        "aichat.choose-tabs.search.placeholder",
-        value: "Search",
-        comment: "placeholder in the tab attachment search field")
-    public static let aiChatChooseTabsNoMatches = NotLocalizedString(
+    public static let aiChatChooseTabsSearchPlaceholder = UserText.aiChatHistorySearchBarPlaceholder
+    public static let aiChatChooseTabsNoMatches = NSLocalizedString(
         "aichat.choose-tabs.no-matches",
         value: "No matching tabs",
         comment: "empty state shown when no tabs match the search query")
     public static func aiChatChooseTabsSelectionCount(_ selectedCount: Int, attachmentLimit: Int) -> String {
-        let format = NotLocalizedString(
+        let format = NSLocalizedString(
             "aichat.choose-tabs.selection-count",
             value: "%1$d of %2$d",
             comment: "tab attachment selection count. First parameter is selected count; second is attachment limit.")
@@ -2564,9 +2562,8 @@ public struct UserText {
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
     public static let aiChatHeaderEditMessageTitle = NSLocalizedString("aichat.header.editMessage", value: "Edit Message", comment: "Title shown in the Duck.ai tab header while editing a previously sent message")
     public static let aiChatEditReplaceResponseDisclaimer = NSLocalizedString("aichat.edit.replaceResponseDisclaimer", value: "Editing will replace the response with a new one.", comment: "Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response")
-    public static let aiChatMultiTabPromotion = NotLocalizedString("aichat.multiTab.promotion", value: "New · Type “@” or tap the {attachment} icon to add a tab.", comment: "Multi-tab feature promotion. {attachment} is replaced by an inline attachment icon.")
-    public static let aiChatMultiTabPromotionNew = NotLocalizedString("aichat.multiTab.promotion.new", value: "New", comment: "Emphasized prefix in the multi-tab feature promotion.")
-    public static let aiChatMultiTabPromotionAttachment = NotLocalizedString("aichat.multiTab.promotion.attachment", value: "attachment", comment: "Spoken name of the inline attachment icon in the multi-tab feature promotion.")
+    public static let aiChatMultiTabPromotion = NSLocalizedString("aichat.multiTab.promotion", value: "New · Type “@” or tap the {attachment} icon to add a tab.", comment: "Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized.")
+    public static let aiChatMultiTabPromotionAttachment = NSLocalizedString("aichat.multiTab.promotion.attachment", value: "attachment", comment: "Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label.")
     public static let aiChatAttachmentPrivacyNoticeFormat = NSLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
     public static let aiChatAttachmentPrivacyNoticeLearnMore = NSLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
     public static let aiChatHeaderRecentChatsAccessibilityLabel = NotLocalizedString("aichat.header.recentChats.a11y", value: "Recent chats", comment: "Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header")
@@ -2594,6 +2591,8 @@ public struct UserText {
     public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By tapping 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
     public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
     public static let duckAIAskButtonTitle = NotLocalizedString("aichat.termsOfService.ask.button", value: "Ask", comment: "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
+    public static let duckAITermsOfServiceCreateDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer.create", value: "DuckDuckGo anonymizes your chats. By tapping 'Create' you agree to our %@.", comment: "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAICreateButtonTitle = NotLocalizedString("aichat.termsOfService.create.button", value: "Create", comment: "Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 

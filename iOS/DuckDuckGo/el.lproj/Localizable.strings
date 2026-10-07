@@ -295,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες κάθε φορά.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Προσθήκη καρτελών";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Ρωτήστε για το έγγραφο";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
 
@@ -304,11 +310,17 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Προσθήκη εικόνας";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Συνέχεια στο Duck.ai";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Τραβήξτε φωτογραφία";
 
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Αυτό το μήνυμα είναι πολύ μεγάλο για να σταλεί με συνημμένα.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Πρόσφατες καρτέλες";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Τα συνημμένα δεν είναι προσωρινά διαθέσιμα. Προσπαθήστε πάλι αργότερα.";
@@ -321,6 +333,18 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισυνάψτε %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Δεν υπάρχουν αντίστοιχες καρτέλες";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Επίλεξε έως %d καρτέλες";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d από %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Προσθήκη καρτελών";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Η επεξεργασία θα αντικαταστήσει την απάντηση με μια νέα.";
@@ -423,6 +447,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Δοκιμάστε το δωρεάν";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Νέο · Πληκτρολόγησε «@» ή πάτησε το εικονίδιο {attachment} για να προσθέσεις μια καρτέλα.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "συνημμένο";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
@@ -4702,6 +4732,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Ορίστε τη θέση της γραμμής διευθύνσεών σας";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Να επιτρέπεται πάντα";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Να γίνεται ερώτηση κάθε φορά";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Κάμερα";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Τοποθεσία";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Διαχείριση ιστότοπων";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Μικρόφωνο";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Να μην επιτρέπεται ποτέ";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Κατάργηση όλων των δικαιωμάτων ιστότοπων";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Κατάργηση δικαιωμάτων";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Τα δικαιώματα καταργήθηκαν για όλους τους ιστότοπους";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Τα δικαιώματα καταργήθηκαν για το %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Δικαιώματα για %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Μπορείτε να δείτε και να τροποποιήσετε τα δικαιώματα συστήματος του DuckDuckGo στο %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Ρυθμίσεις συστήματος.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Ενεργοποίηση";
 
@@ -4899,6 +4971,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Ο ιστότοπος δεν λειτουργεί; Ενημερώστε σχετικά το DuckDuckGo.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Δικαιώματα ιστότοπου";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Υποβολή αναφοράς";

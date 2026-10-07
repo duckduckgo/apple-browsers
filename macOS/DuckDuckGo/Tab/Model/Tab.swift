@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
@@ -668,6 +669,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return newContent
         }()
 
+        // The same chat differs only by the source of the navigation that opened it; reopening it must not reload.
+        if case .aiChat(let newURL, source: _) = newContent, case .aiChat(let oldURL, source: _) = self.content, newURL == oldURL {
+            return nil
+        }
+
         // reload if content differs or user-entered
         guard newContent != self.content || newContent.isUserEnteredUrl else { return nil }
 
@@ -1110,7 +1116,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 .loadFileURL(url, allowingReadAccessTo: readAccessScopeURL, withExpectedNavigationType: source.navigationType)
         }
 
-        var request = URLRequest(url: url, cachePolicy: source.cachePolicy)
+        var request = URLRequest(url: url, cachePolicy: content.cachePolicy)
         if content.isUserEnteredUrl {
             request.attribution = .user
         }

@@ -47,7 +47,9 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published var hasSubmittedPrompt: Bool = false
     @Published var submitsAIChatOnKeyboardReturn: Bool = false
     @Published var usesReturnKeySubmitButtonStyle: Bool = false
-    @Published var usesAskSubmitButton: Bool = false
+    @Published var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton?
+    /// The terms are unaccepted, so `termsOfServiceSendButton` may appear at any time and the toolbar reserves its width.
+    @Published var reservesTermsOfServiceSendButton: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
@@ -61,8 +63,12 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         $usesReturnKeySubmitButtonStyle.eraseToAnyPublisher()
     }
 
-    var usesAskSubmitButtonPublisher: AnyPublisher<Bool, Never> {
-        $usesAskSubmitButton.eraseToAnyPublisher()
+    var termsOfServiceSendButtonPublisher: AnyPublisher<DuckAiTermsOfServiceSendButton?, Never> {
+        $termsOfServiceSendButton.eraseToAnyPublisher()
+    }
+
+    var reservesTermsOfServiceSendButtonPublisher: AnyPublisher<Bool, Never> {
+        $reservesTermsOfServiceSendButton.eraseToAnyPublisher()
     }
 
     var isGenerating: Bool = false {
@@ -151,8 +157,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         $buttonState.eraseToAnyPublisher()
     }
 
-    private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> {
+    private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never>()
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> {
         textSubmissionSubject.eraseToAnyPublisher()
     }
 
@@ -204,15 +210,20 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
+        submitText(text, trigger: .textEntry)
+    }
+
+    func submitText(_ text: String, trigger: TextSubmissionTrigger) {
         guard !isInputBlockedByUsageLimit else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
+        textSubmissionSubject.send((text: trimmed, mode: currentToggleState, trigger: trigger))
     }
 
+    /// Only the send button submits a prompt with nothing but attachments.
     func submitAIChatAttachmentOnlyPrompt() {
         guard !isInputBlockedByUsageLimit else { return }
-        textSubmissionSubject.send((text: "", mode: .aiChat))
+        textSubmissionSubject.send((text: "", mode: .aiChat, trigger: .sendButton))
     }
 
     func setToggleState(_ state: TextEntryMode) {

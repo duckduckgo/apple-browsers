@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppKit
 import AppUpdaterShared
 import Combine
@@ -84,10 +86,10 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
         let text: String
         switch latestUpdate.type {
         case .critical:
-            icon = .criticalUpdateNotificationInfo
+            icon = NSImage(resource: .criticalUpdateNotificationInfo)
             text = "\(UserText.criticalUpdateNotification) \(action)"
         case .regular:
-            icon = .updateNotificationInfo
+            icon = NSImage(resource: .updateNotificationInfo)
             text = "\(UserText.updateAvailableNotification) \(action)"
         }
 

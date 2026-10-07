@@ -460,6 +460,14 @@ extension RemoteMessagingStore {
                         continuation.resume(returning: .notRecorded)
                         return
                     }
+                    if shown, self.enforcesMaxImpressions,
+                       let payload = message.message,
+                       let maxImpressions = RemoteMessageMapper.fromString(payload)?.displayConditions?.maxImpressions,
+                       maxImpressions > 0,
+                       message.impressionCount >= Int64(maxImpressions) {
+                        continuation.resume(returning: .notRecorded)
+                        return
+                    }
                     let isFirstImpression = shown && message.firstShownDate == nil
                     message.shown = shown
                     if shown {

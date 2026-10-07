@@ -17,10 +17,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
+import os.log
 
 /// The UTI footer's Terms of Service rules, for the iPad inputs that have no UTI: required until the
-/// user accepts on either side, and sending with it on screen is the acceptance.
+/// user accepts on either side, and tapping Ask with it on screen is the acceptance.
 struct DuckAiTermsOfServiceDisclaimer {
 
     private let feature: DuckAiNativeTermsOfServiceFeatureProviding
@@ -36,17 +38,51 @@ struct DuckAiTermsOfServiceDisclaimer {
     }
 
     /// Read on every call, so an acceptance made on the web or in another input retires it.
-    var message: UTIFooterMessage? {
+    func message(sendButton: DuckAiTermsOfServiceSendButton) -> UTIFooterMessage? {
         guard feature.isAvailable, !store.hasAccepted else { return nil }
-        return mapper.termsOfServiceMessage()
+        return mapper.termsOfServiceMessage(sendButton: sendButton)
     }
 
-    /// `visibleMessage` is what the input's card shows right now; a send made without seeing the
-    /// disclaimer accepts nothing, and the web app shows its own card for that prompt instead.
+    /// Whether `visibleMessage` is the disclaimer, whichever send button it names.
+    func isDisclaimer(_ visibleMessage: UTIFooterMessage?) -> Bool {
+        guard let visibleMessage else { return false }
+        return DuckAiTermsOfServiceSendButton.allCases.contains { message(sendButton: $0) == visibleMessage }
+    }
+
+    /// Off with the flag, so no prompt claims an acceptance made while native Terms of Service was on.
+    var hasAccepted: Bool { feature.isAvailable && store.hasAccepted }
+
+    /// Call only for an Ask tap. `visibleMessage` is what the input's card shows right now; a send made
+    /// without seeing the disclaimer accepts nothing, and the web app shows its own card for that prompt instead.
     @discardableResult
     func acceptIfShown(_ visibleMessage: UTIFooterMessage?) -> Bool {
-        guard let visibleMessage, visibleMessage == message else { return false }
+        guard isDisclaimer(visibleMessage) else { return false }
         store.recordAcceptedInNativeInput()
+        Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
         return true
+    }
+}
+
+/// The send button the disclaimer names, as on the web: "Create" while Create Image is selected, "Ask" otherwise.
+enum DuckAiTermsOfServiceSendButton: CaseIterable {
+    case ask
+    case create
+
+    init(selectedTool: AIChatRAGTool?) {
+        self = selectedTool == .imageGeneration ? .create : .ask
+    }
+
+    var title: String {
+        switch self {
+        case .ask: return UserText.duckAIAskButtonTitle
+        case .create: return UserText.duckAICreateButtonTitle
+        }
+    }
+
+    var disclaimerFormat: String {
+        switch self {
+        case .ask: return UserText.duckAITermsOfServiceDisclaimer
+        case .create: return UserText.duckAITermsOfServiceCreateDisclaimer
+        }
     }
 }

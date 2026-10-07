@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import DesignResourcesKitIcons
 import SwiftUI
 
@@ -34,12 +35,17 @@ struct PermissionAuthorizationView: View {
     @ObservedObject
     var viewModel: PermissionAuthorizationViewModel
 
+    /// Redraws the prompt with the new palette when the browser theme changes while it's open.
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Status colours use the default palette so the warning looks the same in every theme
+    /// (Cool Gray's dark `statusWarningFillPrimary` is an opaque yellow).
     private var systemPermissionIconColor: Color {
         colorScheme == .dark ?
-            Color(designSystemColor: .statusYellowTertiary) :
-            Color(designSystemColor: .statusYellowPrimary)
+            Color(designSystemColor: .statusYellowTertiary, palette: .default) :
+            Color(designSystemColor: .statusYellowPrimary, palette: .default)
     }
 
     /// The design keeps the brand blue with white text in dark mode, where `accentPrimary` turns light blue.
@@ -79,7 +85,7 @@ struct PermissionAuthorizationView: View {
         }
         .padding(20)
         .frame(width: Constants.width)
-        .background(Color(designSystemColor: .surfaceSecondary))
+        .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         .onAppear {
             viewModel.send(action: .onAppear)
         }
@@ -141,10 +147,10 @@ struct PermissionAuthorizationView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
-                .fill(Color(designSystemColor: .statusWarningFillPrimary))
+                .fill(Color(designSystemColor: .statusWarningFillPrimary, palette: .default))
                 .overlay(
                     RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
-                        .strokeBorder(Color(designSystemColor: .statusWarningFillPrimary), lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .statusWarningFillPrimary, palette: .default), lineWidth: 1)
                 )
         )
     }
@@ -153,7 +159,7 @@ struct PermissionAuthorizationView: View {
     private var systemPermissionIcon: some View {
         ZStack {
             Circle()
-                .fill(Color(designSystemColor: .statusWarningContentPrimary))
+                .fill(Color(designSystemColor: .statusWarningContentPrimary, palette: .default))
                 .frame(width: Constants.systemPermissionIconMarkSize, height: Constants.systemPermissionIconMarkSize)
 
             Image(nsImage: DesignSystemImages.Glyphs.Size24.exclamationSolid)

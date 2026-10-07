@@ -293,7 +293,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let originalID = sut.viewController.currentAttachments.first?.id
         XCTAssertNotNil(originalID)
         let tabAttachment = UnifiedToggleInputAttachment.tab(.init(tabId: "page-tab", title: "Page",
-                                                                    url: URL(string: "https://example.com")!))
+                                                                    url: URL(string: "https://example.com")!, source: .recentTabs))
         sut.viewController.addAttachment(tabAttachment)
         XCTAssertTrue(sut.completeOmnibarDeactivation())
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)

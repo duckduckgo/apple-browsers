@@ -34,6 +34,49 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
+    func testWhenPromotionContainsSeparatorThenOnlyLocalizedPrefixIsEmphasized() throws {
+        for prefix in ["Nowość", "Nytt", "新機能"] {
+            let sut = UTIFooterCardView()
+            let title = "  \(prefix)  · Add {attachment} · More"
+            let message = UTIFooterMessageMapper().multiTabPromotionMessage(title: title)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let renderedTitle = try XCTUnwrap(label.attributedText)
+            let prefixRange = (renderedTitle.string as NSString).range(of: prefix)
+            XCTAssertNotEqual(prefixRange.location, NSNotFound)
+            for index in 0..<renderedTitle.length {
+                guard renderedTitle.attribute(.attachment, at: index, effectiveRange: nil) == nil else { continue }
+                let expectedFont: UIFont = NSLocationInRange(index, prefixRange) ? .daxFootnoteSemibold() : .daxFootnoteRegular()
+                XCTAssertEqual(renderedTitle.attribute(.font, at: index, effectiveRange: nil) as? UIFont, expectedFont, prefix)
+            }
+            XCTAssertTrue(renderedTitle.string.contains("\u{fffc}"))
+            XCTAssertFalse(renderedTitle.string.contains("{attachment}"))
+            XCTAssertEqual(label.accessibilityLabel,
+                           title.replacingOccurrences(of: "{attachment}", with: UserText.aiChatMultiTabPromotionAttachment))
+        }
+    }
+
+    func testWhenPromotionHasNoPrefixOrSeparatorThenTitleIsNotEmphasized() throws {
+        for title in ["Nowość Add {attachment}", "  · Add {attachment}"] {
+            let sut = UTIFooterCardView()
+            let message = UTIFooterMessageMapper().multiTabPromotionMessage(title: title)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let renderedTitle = try XCTUnwrap(label.attributedText)
+            renderedTitle.enumerateAttributes(in: NSRange(location: 0, length: renderedTitle.length)) { attributes, _, _ in
+                guard attributes[.attachment] == nil else { return }
+                XCTAssertEqual(attributes[.font] as? UIFont, .daxFootnoteRegular())
+            }
+            XCTAssertTrue(renderedTitle.string.contains("\u{fffc}"))
+            XCTAssertEqual(label.accessibilityLabel,
+                           title.replacingOccurrences(of: "{attachment}", with: UserText.aiChatMultiTabPromotionAttachment))
+        }
+    }
+
     func testSwitchingFromPromotionToPlainTitleRestoresOriginalPresentation() throws {
         for message in [makeMessage(), makeNotice()] {
             let sut = UTIFooterCardView()

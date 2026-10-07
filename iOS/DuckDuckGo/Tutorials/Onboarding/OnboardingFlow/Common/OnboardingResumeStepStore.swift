@@ -36,4 +36,17 @@ enum OnboardingResumeCheckpointStore {
         store.resumeStep = nil
         store.resumeDuckAIQueryPrompt = nil
     }
+
+    @discardableResult
+    static func clearCompletedDuckAIAnswerStepIfNeeded(
+        in store: any KeyedStoring<OnboardingStoringKeys>,
+        fireEducationMessageSeen: Bool
+    ) -> Bool {
+        guard fireEducationMessageSeen, store.resumeStep == .duckAIAnswerStep else {
+            return false
+        }
+
+        clearAll(in: store)
+        return true
+    }
 }

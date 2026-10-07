@@ -128,6 +128,41 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         attachmentPrivacySubject.eraseToAnyPublisher()
     }
 
+    var launcherPromoResult: NewTabPageDataModel.OmnibarLauncherPromo?
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
+        launcherPromoResult
+    }
+
+    private(set) var launcherPromoShownCallCount = 0
+    @MainActor
+    func launcherPromoShown() {
+        launcherPromoShownCallCount += 1
+    }
+
+    private(set) var selectLauncherPromoCtaCallCount = 0
+    @MainActor
+    func selectLauncherPromoCta() {
+        selectLauncherPromoCtaCallCount += 1
+    }
+
+    private(set) var dismissLauncherPromoCallCount = 0
+    @MainActor
+    func dismissLauncherPromo() {
+        dismissLauncherPromoCallCount += 1
+    }
+
+    private(set) var launcherPromoIgnoredCallCount = 0
+    @MainActor
+    func launcherPromoIgnored() {
+        launcherPromoIgnoredCallCount += 1
+    }
+
+    let launcherPromoSubject = PassthroughSubject<Void, Never>()
+    var launcherPromoPublisher: AnyPublisher<Void, Never> {
+        launcherPromoSubject.eraseToAnyPublisher()
+    }
+
     @Published var isAttachTabsEnabled: Bool = false
 
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {

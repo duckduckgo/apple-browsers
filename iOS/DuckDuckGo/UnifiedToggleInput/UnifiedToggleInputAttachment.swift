@@ -46,6 +46,23 @@ struct UnifiedToggleInputInvalidFileAttachment: Identifiable {
     }
 }
 
+enum TabAttachmentOrigin: Equatable {
+    case recentTabs
+    case tabPicker
+    case mention
+}
+
+enum TabAttachmentSelectionResult: Equatable {
+    /// Applied the requested attachment change.
+    case changed
+    /// The attachment already matched the requested state.
+    case unchanged
+    /// The request could not be applied.
+    case rejected
+
+    var isSuccessful: Bool { self != .rejected }
+}
+
 /// An explicitly attached browser tab, identified independently of its current address.
 ///
 /// `id` is the attachment's own identity, because the enum's `id` is a `UUID` while a tab is
@@ -57,13 +74,16 @@ struct UnifiedToggleInputTabAttachment: Identifiable, Equatable {
     let title: String
     let url: URL
     let favicon: UIImage?
+    let source: TabAttachmentOrigin
 
-    init(id: UUID = UUID(), tabId: TabUID, title: String, url: URL, favicon: UIImage? = nil) {
+    init(id: UUID = UUID(), tabId: TabUID, title: String, url: URL, favicon: UIImage? = nil,
+         source: TabAttachmentOrigin) {
         self.id = id
         self.tabId = tabId
         self.title = title
         self.url = url
         self.favicon = favicon
+        self.source = source
     }
 }
 

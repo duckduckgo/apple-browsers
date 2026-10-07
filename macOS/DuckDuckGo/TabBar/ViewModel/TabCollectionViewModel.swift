@@ -461,7 +461,6 @@ final class TabCollectionViewModel: NSObject {
     /// atomic-replace paths.
     private func handleNewTabPageSideEffects(for tab: Tab) {
         guard tab.content == .newtab else { return }
-        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
         if isBurner {
             var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
             if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {

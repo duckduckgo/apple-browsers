@@ -252,6 +252,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var updateProgressCancellable: AnyCancellable?
 
+    /// One for the whole app: each instance observes every chat to count them.
+    @MainActor
+    private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
+
     @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: appearancePreferences,

@@ -211,6 +211,7 @@ private struct StoreDownloaderMock: ChromeWebStoreDownloading {
 @MainActor
 private final class StoreCatalogMock: ChromeWebStoreCatalogProviding {
     var allowed = true
+    var extensionIDs: [String] = []
     func contains(_ identifier: String) -> Bool { allowed }
 }
 

@@ -26,7 +26,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.storageAccessPromptHeader
         alert.alertStyle = .warning
-        alert.icon = .privacyQuestion
+        alert.icon = NSImage(resource: .privacyQuestion)
         alert.addButton(withTitle: UserText.storageAccessPromptAllow)
         alert.addButton(withTitle: UserText.storageAccessPromptDontAllow)
         alert.buttons.first?.keyEquivalent = "\r"
@@ -140,7 +140,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.storageAccessPromptQuirkDomainsHeader
         alert.alertStyle = .warning
-        alert.icon = .privacyQuestion
+        alert.icon = NSImage(resource: .privacyQuestion)
         alert.addButton(withTitle: UserText.storageAccessPromptAllow)
         alert.addButton(withTitle: UserText.storageAccessPromptDontAllow)
 

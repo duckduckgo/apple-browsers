@@ -24,9 +24,14 @@ import AIChat
 final class AIChatService: NSObject {
 
     private let aiChatSettings: AIChatSettingsProvider
-    init(aiChatSettings: AIChatSettingsProvider) {
+    private let termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
+
+    init(aiChatSettings: AIChatSettingsProvider,
+         termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver? = nil) {
         self.aiChatSettings = aiChatSettings
+        self.termsOfServiceChatsObserver = termsOfServiceChatsObserver
         super.init()
+        termsOfServiceChatsObserver?.start()
     }
 
     // MARK: - Resume

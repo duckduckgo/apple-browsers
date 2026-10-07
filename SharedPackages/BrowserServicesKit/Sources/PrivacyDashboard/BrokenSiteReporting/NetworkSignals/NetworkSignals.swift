@@ -24,16 +24,17 @@ public struct NetworkSignals: Equatable, Sendable {
         case wifi
         case cellular
         case wired
-        case unavailable
         case unknown
     }
 
+    public let isNetworkAvailable: Bool
     public let networkType: NetworkType
     public let isLowDataModeEnabled: Bool
     public let hasVPNConnectivityIssues: Bool
     public let pingQuality: PingQuality
 
-    public init(networkType: NetworkType, isLowDataModeEnabled: Bool, hasVPNConnectivityIssues: Bool, pingQuality: PingQuality) {
+    public init(isNetworkAvailable: Bool, networkType: NetworkType, isLowDataModeEnabled: Bool, hasVPNConnectivityIssues: Bool, pingQuality: PingQuality) {
+        self.isNetworkAvailable = isNetworkAvailable
         self.networkType = networkType
         self.isLowDataModeEnabled = isLowDataModeEnabled
         self.hasVPNConnectivityIssues = hasVPNConnectivityIssues

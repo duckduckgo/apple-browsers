@@ -82,8 +82,14 @@ public class Tab: NSObject, NSCoding {
         }
     }
     
+    /// Remembers input focus across tab switches for this page; deliberately not persisted.
+    var wasInputFocusedBeforeTabSwitch = false
+
     var link: Link? {
         didSet {
+            if link != nil {
+                wasInputFocusedBeforeTabSwitch = false
+            }
             notifyObservers()
         }
     }

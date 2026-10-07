@@ -65,6 +65,16 @@ struct NewTabPageKeyboardPolicy {
         onNewTabPage ? onNewTab : onAppLaunch
     }
 
+    /// Capture before a tab switch programmatically dismisses the input; only actual focus is retained.
+    func rememberInputFocusForTabSwitch(on tab: Tab, isInputFocused: Bool, isEnabled: Bool) {
+        tab.wasInputFocusedBeforeTabSwitch = isEnabled && tab.isHomeTab && isInputFocused
+    }
+
+    /// A swipe preserves the page's previous focus without counting as a new keyboard landing.
+    func shouldRestoreInputFocusOnTabSwipe(on tab: Tab, isEnabled: Bool) -> Bool {
+        isEnabled && onNewTab && tab.isHomeTab && tab.wasInputFocusedBeforeTabSwitch
+    }
+
     /// After Fire, New Tab decides unless onboarding is still running. A burned Duck.ai chat reopens
     /// as a new chat that owns its input. The Search & Duck.ai address bar no longer plays a part:
     /// its old suppression was for onboarding, which now holds the keyboard back for everyone.

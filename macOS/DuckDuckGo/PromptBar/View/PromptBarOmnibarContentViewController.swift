@@ -217,6 +217,11 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
 
     var viewController: NSViewController { self }
 
+    var placeholderOverride: String? {
+        get { textViewController.placeholderOverride }
+        set { textViewController.placeholderOverride = newValue }
+    }
+
     var isPresentingAuxiliaryUI: Bool {
         isMenuTracking || view.window?.attachedSheet != nil || NSApp.modalWindow != nil
     }
@@ -258,6 +263,7 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     func resetAfterDismissal() {
+        placeholderOverride = nil
         textViewController.stopEventMonitoring()
         containerViewController.cleanup()
         draftStore.reset()

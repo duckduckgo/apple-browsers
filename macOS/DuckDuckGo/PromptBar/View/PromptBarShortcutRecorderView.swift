@@ -121,24 +121,22 @@ struct PromptBarShortcutRecorderView: View {
         )
     }
 
-    /// `compact` sizes it to sit inline with 13pt body text.
-    struct KeyCapChip: View {
+    private struct KeyCapChip: View {
         let label: String
-        var compact = false
 
         var body: some View {
             Text(label)
-                .font(.system(size: compact ? 11 : 13, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(minWidth: compact ? 12 : 16)
-                .padding(.horizontal, compact ? 5 : 6)
-                .padding(.vertical, compact ? 1 : 3)
+                .frame(minWidth: 16)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
                 .background(
-                    RoundedRectangle(cornerRadius: compact ? 4 : 5)
+                    RoundedRectangle(cornerRadius: 5)
                         .fill(Color(designSystemColor: .surfacePrimary))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: compact ? 4 : 5)
+                    RoundedRectangle(cornerRadius: 5)
                         .stroke(Color(designSystemColor: .lines))
                 )
         }

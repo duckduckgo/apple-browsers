@@ -39,6 +39,9 @@ protocol PromptBarContentHosting: AnyObject {
     /// Fired just *before* the prompt is handed off, so the bar is out of the way.
     var onSubmit: (() -> Void)? { get set }
 
+    /// Replaces the prompt placeholder for the current presentation only.
+    var placeholderOverride: String? { get set }
+
     func prepareForPresentation()
 
     /// Called once the window is key, when first responder assignment sticks.

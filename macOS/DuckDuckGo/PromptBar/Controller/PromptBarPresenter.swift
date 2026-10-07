@@ -66,6 +66,8 @@ enum PromptBarDismissReason: Equatable {
 protocol PromptBarPresenting: AnyObject {
     var isVisible: Bool { get }
     func show(source: PromptBarPresentationSource)
+    /// Opened by the launcher promo rather than an entry point, so no visibility pixel.
+    func showForLauncherPromo(placeholder: String)
     func dismiss(reason: PromptBarDismissReason)
     func toggle(source: PromptBarPresentationSource)
 }
@@ -112,6 +114,16 @@ final class PromptBarPresenter: PromptBarPresenting {
     }
 
     func show(source: PromptBarPresentationSource) {
+        present()
+        firePixel(source.shownPixel)
+    }
+
+    func showForLauncherPromo(placeholder: String) {
+        content.placeholderOverride = placeholder
+        present()
+    }
+
+    private func present() {
         content.prepareForPresentation()
 
         let window = existingWindowOrNew()
@@ -126,8 +138,6 @@ final class PromptBarPresenter: PromptBarPresenting {
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.
         subscribeToResignKey(of: window)
-
-        firePixel(source.shownPixel)
     }
 
     func dismiss(reason: PromptBarDismissReason) {

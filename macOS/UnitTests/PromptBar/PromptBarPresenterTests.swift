@@ -212,6 +212,7 @@ private final class MockPromptBarContent: PromptBarContentHosting {
     var preferredWindowContentSize = NSSize(width: 680, height: 80)
     var onPreferredWindowContentSizeChanged: ((NSSize) -> Void)?
     var onSubmit: (() -> Void)?
+    var placeholderOverride: String?
 
     var viewController: NSViewController { hostedViewController }
 

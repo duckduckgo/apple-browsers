@@ -282,9 +282,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let launcherPromo: DuckAiLauncherPromo?
     private var launcherPromoCancellable: AnyCancellable?
     private var isShowingLauncherPromo = false
-    /// Another message held the card during this opening, so the promo waits for the next one.
     private var isLauncherPromoDeferred = false
-    /// Set for the Prompt Bar opening that the launcher promo's Try Now caused; outranks every other message.
     private var launcherIntroductionShortcut: String?
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -1376,7 +1374,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
     }
 
-    /// Last in line: shows only when no other message wants the card during this opening.
     private func applyLauncherPromo() {
         currentUsageWarningExposure = nil
         guard !isLauncherPromoDeferred, let promo = launcherPromo?.presentation() else {

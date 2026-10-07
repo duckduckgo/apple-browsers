@@ -24,7 +24,6 @@ import Combine
 /// global shortcut registration), so all consumers observe the same object.
 final class PromptBarPreferences: ObservableObject {
 
-    /// Asks for the Prompt Bar to open once, introducing its entry points. Not persisted.
     @Published var pendingLauncherIntroduction = false
 
     @Published var isKeyboardShortcutEnabled: Bool {

@@ -19,7 +19,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-/// V2 of the shared Sync text components, gated behind the `simplifiedSyncSetupV2` feature flag.
+/// V2 of the shared Sync text components.
 /// Mirrors the structure of `SyncUIViews` but adopts the type ramp and semantic colors from the
 /// "Encourage Sync cross-device activations" Figma designs.
 enum SyncUIViewsV2 {

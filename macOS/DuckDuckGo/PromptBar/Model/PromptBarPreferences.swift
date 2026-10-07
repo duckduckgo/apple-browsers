@@ -24,6 +24,9 @@ import Combine
 /// global shortcut registration), so all consumers observe the same object.
 final class PromptBarPreferences: ObservableObject {
 
+    /// Asks the menu bar icon to point out the shortcut once it is on screen. Not persisted.
+    @Published var pendingMenuBarTip = false
+
     @Published var isKeyboardShortcutEnabled: Bool {
         didSet { persistor.isKeyboardShortcutEnabled = isKeyboardShortcutEnabled }
     }

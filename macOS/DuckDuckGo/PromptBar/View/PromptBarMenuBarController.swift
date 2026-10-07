@@ -18,6 +18,7 @@
 
 import AppKit
 import DesignResourcesKitIcons
+import SwiftUI
 
 /// The part of `NSStatusItem` this controller drives, so tests can substitute a
 /// detached item instead of installing one in the system menu bar.
@@ -72,5 +73,31 @@ final class PromptBarMenuBarController: NSObject {
 
     func hide() {
         statusItem?.isVisible = false
+    }
+
+    // ponytail: skipped on macOS 12 and when the item has no screen (e.g. hidden behind the notch); no retry.
+    func showTip(_ text: AttributedString, onLinkClicked: @escaping () -> Void) {
+        guard #available(macOS 13, *),
+              let button = statusItem?.button, button.window?.screen != nil else { return }
+
+        let popover = NSPopover()
+        let content = Text(text)
+            .frame(width: 260, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(12)
+            .environment(\.openURL, OpenURLAction { [weak popover] _ in
+                popover?.close()
+                onLinkClicked()
+                return .handled
+            })
+        let hostingController = NSHostingController(rootView: content)
+        hostingController.sizingOptions = [.preferredContentSize]
+
+        popover.behavior = .transient
+        popover.contentViewController = hostingController
+        // The first SwiftUI popover in the process reports no preferred size in time for `show`.
+        popover.contentSize = hostingController.sizeThatFits(in: NSSize(width: CGFloat.greatestFiniteMagnitude,
+                                                                       height: CGFloat.greatestFiniteMagnitude))
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     }
 }

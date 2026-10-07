@@ -61,7 +61,6 @@ final class DuckAiLauncherPromo {
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
     private let keyValueStore: ThrowingKeyValueStoring
-    private let openSettings: @MainActor () -> Void
     private let surface: DuckAiLauncherPromoSurface
     private let firePixel: (PromptBarPixel) -> Void
     @Published private var chatCount = 0
@@ -72,13 +71,11 @@ final class DuckAiLauncherPromo {
          chatCountPublisher: AnyPublisher<Int, Never>,
          keyValueStore: ThrowingKeyValueStoring,
          surface: DuckAiLauncherPromoSurface,
-         openSettings: @escaping @MainActor () -> Void,
          firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
         self.featureFlagger = featureFlagger
         self.preferences = preferences
         self.keyValueStore = keyValueStore
         self.surface = surface
-        self.openSettings = openSettings
         self.firePixel = firePixel
 
         chatsCancellable = chatCountPublisher
@@ -133,12 +130,11 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    @MainActor
     func tryNow() {
         preferences.isKeyboardShortcutEnabled = true
         preferences.isMenuBarIconVisible = true
+        preferences.pendingMenuBarTip = true
         record(.triedNow)
-        openSettings()
     }
 
     func dismiss() {
@@ -177,7 +173,6 @@ extension DuckAiLauncherPromo {
                   preferences: NSApp.delegateTyped.promptBarPreferences,
                   chatCountPublisher: chatCountPublisher,
                   keyValueStore: keyValueStore,
-                  surface: surface,
-                  openSettings: { Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat) })
+                  surface: surface)
     }
 }

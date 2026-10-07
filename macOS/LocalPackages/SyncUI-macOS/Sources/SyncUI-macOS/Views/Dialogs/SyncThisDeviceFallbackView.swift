@@ -32,8 +32,8 @@ struct SyncThisDeviceFallbackView: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.desktopSyncNewFeature128)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViewsV2.TextHeader(text: UserText.syncThisDeviceFallbackTitleImproved)
-                    SyncUIViewsV2.TextDetailSecondary(text: UserText.syncThisDeviceFallbackSubtitleImproved)
+                    SyncUIViews.CenteredTitle(text: UserText.syncThisDeviceFallbackTitleImproved)
+                    SyncUIViews.CenteredSecondaryBody(text: UserText.syncThisDeviceFallbackSubtitleImproved)
                 }
             }
         } buttons: {

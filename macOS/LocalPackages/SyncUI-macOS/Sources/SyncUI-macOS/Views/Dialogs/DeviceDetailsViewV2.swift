@@ -66,7 +66,7 @@ struct DeviceDetailsViewV2: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.center)
         } else {
-            SyncUIViews.TextHeader(text: title)
+            SyncUIViews.DialogTitle(text: title)
         }
     }
 
@@ -77,7 +77,7 @@ struct DeviceDetailsViewV2: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .center, spacing: 8) {
                     header
-                    SyncUIViewsV2.TextCaption(text: UserText.deviceDetailsSyncedStatusV2)
+                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatusV2)
                 }
                 if device.isCurrent {
                     nameField

@@ -43,11 +43,11 @@ struct RemoveDeviceViewV2: View {
                 illustration
                     .accessibilityHidden(true)
                 if model.isImprovedPairingFlowEnabled {
-                    SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitleImproved(device.name))
-                    SyncUIViewsV2.TextDetailMultiline(text: UserText.removeDeviceConfirmMessageImproved(device.name))
+                    SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitleImproved(device.name))
+                    SyncUIViews.CenteredBody(text: UserText.removeDeviceConfirmMessageImproved(device.name))
                 } else {
-                    SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitleV2)
-                    SyncUIViewsV2.TextDetailMultilineMarkdown(text: UserText.removeDeviceConfirmMessageV2(device.name))
+                    SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitleV2)
+                    SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessageV2(device.name))
                 }
             }
         } buttons: {

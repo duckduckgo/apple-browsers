@@ -33,8 +33,8 @@ struct DeleteAccountViewV2: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncWarnFeature128)
                     .accessibilityHidden(true)
-                SyncUIViews.TextHeader(text: UserText.deleteAccountConfirmTitleV2)
-                SyncUIViewsV2.TextDetailMultiline(text: UserText.deleteAccountConfirmMessageV2)
+                SyncUIViews.DialogTitle(text: UserText.deleteAccountConfirmTitleV2)
+                SyncUIViews.CenteredBody(text: UserText.deleteAccountConfirmMessageV2)
 
                 SyncedDevicesListV2(devices: devices)
                     .roundedBorder()

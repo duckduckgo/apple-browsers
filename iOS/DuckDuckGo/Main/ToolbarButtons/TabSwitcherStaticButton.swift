@@ -19,8 +19,6 @@
 
 import UIKit
 import Core
-import DesignResourcesKitIcons
-import PixelKit
 
 final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
@@ -138,33 +136,16 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
     private func setLongPressMenu() {
         removeGestureRecognizer(longPressRecognizer)
-        let menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "toolbar"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 guard let self else { return }
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                                     PixelParameters.source: "toolbar"
-                                 ]))
-                                 delegate?.launchNewFireTab(self)
-                             },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 guard let self else { return }
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                                     PixelParameters.source: "toolbar"
-                                 ]))
-                                 delegate?.launchNewNormalTab(self)
-                             }
-                ])
+        menu = NewTabLongPressMenu.make(source: .toolbar, actions: .init(
+            onNewFireTab: { [weak self] in
+                guard let self else { return }
+                delegate?.launchNewFireTab(self)
+            },
+            onNewTab: { [weak self] in
+                guard let self else { return }
+                delegate?.launchNewNormalTab(self)
             }
-        ])
-
-        self.menu = menu
+        ))
     }
     
     private func setLongPressGestureRecognizer() {

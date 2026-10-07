@@ -61,5 +61,10 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         button.tabCount = 99
         XCTAssertEqual("99", button.text)
     }
-    
+
+    func testNewTabLongPressMenuItemsAreFireTabThenNewTab() {
+        let items = NewTabLongPressMenu.items(source: .toolbar, actions: .init(onNewFireTab: {}, onNewTab: {}))
+        XCTAssertEqual(items.map(\.title), [UserText.actionNewFireTab, UserText.actionNewTab])
+    }
+
 }

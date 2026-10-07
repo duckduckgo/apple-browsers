@@ -591,31 +591,10 @@ class TabsBarViewController: UIViewController {
             return
         }
 
-        let menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "tabs_bar"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                                     PixelParameters.source: "tabs_bar"
-                                 ]))
-                                 self?.requestNewTab(type: .fire)
-                             },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                                     PixelParameters.source: "tabs_bar"
-                                 ]))
-                                 self?.requestNewTab(type: .normal)
-                             }
-                ])
-            }
-        ])
-
-        addTabButton.menu = menu
+        addTabButton.menu = NewTabLongPressMenu.make(source: .tabsBar, actions: .init(
+            onNewFireTab: { [weak self] in self?.requestNewTab(type: .fire) },
+            onNewTab: { [weak self] in self?.requestNewTab(type: .normal) }
+        ))
         addTabButton.showsMenuAsPrimaryAction = false
     }
 

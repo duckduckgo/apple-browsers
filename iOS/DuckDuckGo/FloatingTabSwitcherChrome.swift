@@ -21,7 +21,6 @@ import UIKit
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import PixelKit
 
 /// The floating ("liquid glass") tab switcher chrome. It uses system bars to render liquid glass
 /// on iOS 26+ and falls back to solid bar backgrounds on earlier versions.
@@ -275,29 +274,10 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             return
         }
 
-        plusItem.menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "tab_switcher"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                        PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                            PixelParameters.source: "tab_switcher"
-                        ]))
-                        self?.actions.onNewFireTabTapped?()
-                    },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                        PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                            PixelParameters.source: "tab_switcher"
-                        ]))
-                        self?.actions.onNewNormalTabTapped?()
-                    }
-                ])
-            }
-        ])
+        plusItem.menu = NewTabLongPressMenu.make(source: .tabSwitcher, actions: .init(
+            onNewFireTab: { [weak self] in self?.actions.onNewFireTabTapped?() },
+            onNewTab: { [weak self] in self?.actions.onNewNormalTabTapped?() }
+        ))
     }
 
     func decorate(theme: Theme) {

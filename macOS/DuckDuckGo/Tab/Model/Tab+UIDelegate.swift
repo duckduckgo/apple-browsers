@@ -18,14 +18,14 @@
 
 import Combine
 import Common
-import FoundationExtensions
-import Foundation
+import CommonObjCExtensions
 import DDGNavigation
+import Foundation
+import FoundationExtensions
+import PDFKit
 import PixelKit
 import UniformTypeIdentifiers
 import WebKit
-import PDFKit
-import CommonObjCExtensions
 
 extension Tab: WKUIDelegate {
 
@@ -90,6 +90,44 @@ extension Tab: WKUIDelegate {
         self.popupHandling?.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
     }
 
+    /// Called by WebKit to get the website's camera / microphone decision, see how getUserMedia works below.
+    ///
+    /// How WebKit (since Safari 26, WebKit commit 75d48825d9) handles getUserMedia before it reaches requestMediaCapturePermissionFor:
+    /// 1. `queryPermission` is called for both "camera" and "microphone" to get the website's stored state.
+    /// 2. `requestSystemValidation` reads `AVCaptureDevice.authorizationStatus(for:)` for each requested media type:
+    ///    `.denied`/`.restricted` rejects the request without calling any other delegate method,
+    ///    `.notDetermined` shows the macOS prompt before ours.
+    /// 3. Only then `requestMediaCapturePermissionFor:` is called.
+    /// With websitePermissionsPrompts on, to show our prompt first (with its System Settings step for denied access),
+    /// step 1 sets a one-shot token making step 2 read `.authorized` (see AVCaptureDevice+SwizzledAuthState.swift),
+    /// step 3 drops this tab's tokens that weren't used.
+    /// `queryPermission` is also called for navigator.permissions.query and enumerateDevices, which skip steps 2-3:
+    /// those tokens are dropped on the next request or when they expire.
+    /// Earlier WebKit calls `checkUserMediaPermissionForURL` below for step 1 and `queryPermission` only for
+    /// navigator.permissions.query.
+    /// https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/UserMediaPermissionRequestManagerProxy.cpp#L620
+    /// https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/Cocoa/UserMediaPermissionRequestManagerProxy.mm#L158
+    @MainActor
+    @available(macOS 13.0, *)
+    @objc(_webView:queryPermission:forOrigin:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 queryPermission name: String,
+                 forOrigin origin: WKSecurityOrigin,
+                 completionHandler: @escaping (WKPermissionDecision) -> Void) {
+        permissions.queryMediaPermission(name)
+        // Always `.prompt`: the actual decision (stored website decision + macOS status) is made in step 3, which
+        // WebKit calls regardless of this answer. `.grant` would mark the origin as having persistent access and
+        // reveal device labels/IDs to enumerateDevices before we've decided, `.deny` would hide the devices,
+        // and both would be reported to the page by navigator.permissions.query.
+        // https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/UserMediaPermissionRequestManagerProxy.cpp#L993
+        completionHandler(.prompt)
+    }
+
+    /// WebKit before Safari 26 (macOS 12–13, and 14–15 without Safari 26): step 1 of the flow above, called instead of
+    /// `queryPermission` without telling the requested media type, so both media types get a token.
+    /// Without website prompts it only observes step 2 to reflect a macOS denial in the address bar.
+    @available(macOS, deprecated: 26.0, message: "Safari 26's WebKit calls _webView:queryPermission:forOrigin:completionHandler: instead. Remove when macOS 26 is the minimum.")
+    @MainActor
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
     func webView(_ webView: WKWebView,
                  checkUserMediaPermissionFor url: NSURL?,
@@ -99,9 +137,10 @@ extension Tab: WKUIDelegate {
         self.permissions.checkUserMediaPermission(for: url as? URL, mainFrameURL: mainFrameURL as? URL, decisionHandler: decisionHandler)
     }
 
-    // https://github.com/WebKit/WebKit/blob/995f6b1595611c934e742a4f3a9af2e678bc6b8d/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegate.h#L147
+    /// Asks for camera and/or microphone access (getUserMedia), step 3 of the flow described at `queryPermission`.
+    /// Decided by `PermissionModel.permissions(_:requestedForDomain:)` for the top-level website: saved decision, prompt, macOS status.
+    /// https://github.com/WebKit/WebKit/blob/995f6b1595611c934e742a4f3a9af2e678bc6b8d/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegate.h#L147
     @objc(webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:)
-
     func webView(_ webView: WKWebView,
                  requestMediaCapturePermissionFor origin: WKSecurityOrigin,
                  initiatedByFrame frame: WKFrameInfo,
@@ -116,7 +155,9 @@ extension Tab: WKUIDelegate {
         self.permissions.permissions(permissions, requestedForDomain: origin.host, decisionHandler: decisionHandler)
     }
 
-    // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L126
+    /// Legacy variant of `requestMediaCapturePermissionFor:`: WebKit only calls it when that one isn't implemented.
+    /// Decided for the requesting frame's host; an unknown device set or host is denied.
+    /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L126
     @objc(_webView:requestUserMediaAuthorizationForDevices:url:mainFrameURL:decisionHandler:)
     func webView(_ webView: WKWebView,
                  requestUserMediaAuthorizationFor devices: UInt,
@@ -134,12 +175,15 @@ extension Tab: WKUIDelegate {
         self.permissions.permissions(permissions, requestedForDomain: host, decisionHandler: decisionHandler)
     }
 
+    /// Camera or microphone capture started, stopped or was muted: updates the address bar permission states.
     @objc(_webView:mediaCaptureStateDidChange:)
     func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: UInt /*_WKMediaCaptureStateDeprecated*/) {
         self.permissions.mediaCaptureStateDidChange()
     }
 
-    // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L131
+    /// Legacy location request: WebKit only calls it when the origin-based variant below isn't implemented.
+    /// Decided for the requesting frame's host.
+    /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L131
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void) {
         let url = frame.safeRequest?.url ?? .empty
@@ -147,7 +191,8 @@ extension Tab: WKUIDelegate {
         self.permissions.permissions(.geolocation, requestedForDomain: host, decisionHandler: decisionHandler)
     }
 
-    // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L132
+    /// Asks for location access (navigator.geolocation), decided for the requesting frame's host.
+    /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L132
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
 
     func webView(_ webView: WKWebView,

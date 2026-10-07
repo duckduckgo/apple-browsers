@@ -80,7 +80,7 @@ enum PermissionAuthorizationType: Equatable {
         }
     }
 
-    /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
+    /// Whether the legacy prompt uses its system-first flow. The new prompt checks PermissionType.requiresSystemPermission.
     var requiresSystemPermission: Bool {
         switch self {
         case .geolocation, .notification:
@@ -179,7 +179,9 @@ enum PermissionAuthorizationType: Equatable {
             return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
         case .microphone:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
-        case .camera, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .cameraAndMicrophone:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")
+        case .popups, .externalScheme:
             return nil
         }
     }

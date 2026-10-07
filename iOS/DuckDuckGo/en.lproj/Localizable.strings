@@ -3412,6 +3412,15 @@ https://duckduckgo.com/mac";
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Enforce Strict Routing (Recommended)";
 
+/* Name field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.name" = "Name";
+
+/* Error shown when saving a favorite fails */
+"new-tab-page.favorite.save-failed" = "Couldn't save favorite.";
+
+/* URL field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.url" = "URL";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";
 

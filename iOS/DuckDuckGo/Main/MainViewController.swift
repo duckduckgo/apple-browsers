@@ -6710,6 +6710,16 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
     }
 
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
+        let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel,
+                                         useUnifiedURLLogic: isUnifiedURLPredictionEnabled)
+        model.onSave = { [weak self] in
+            WidgetCenter.shared.reloadAllTimelines()
+            self?.syncService.scheduler.notifyDataChanged()
+        }
+        present(AddFavoriteViewController(model: model), animated: true)
+    }
+
     func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
     }

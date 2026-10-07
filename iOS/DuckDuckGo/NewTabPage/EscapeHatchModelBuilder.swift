@@ -33,6 +33,14 @@ struct EscapeHatchModelBuilder {
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let instrumentation: NTPAfterIdleInstrumentation
 
+    /// Adds the first after-idle hatch to a kept page; later returns preserve its used or dismissed state.
+    func makeAfterIdleHatchForKeptNewTabPage(router: EscapeHatchActionRouter) -> EscapeHatchModel? {
+        guard let currentTab = tabManager.currentTabsModel.currentTab,
+              currentTab.link == nil,
+              !currentTab.hasPresentedAfterIdleEscapeHatch else { return nil }
+        return makeAfterIdleHatch(router: router)
+    }
+
     /// The hatch to show on an after-idle New Tab Page, or `nil` when none applies.
     func makeAfterIdleHatch(router: EscapeHatchActionRouter) -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else { return nil }
@@ -48,11 +56,13 @@ struct EscapeHatchModelBuilder {
            let targetTab = tabManager.allTabsModel.tabs.first(where: { $0.uid == lastUID }),
            targetTab !== currentTab,
            let model = makeCardModel(targetTab: targetTab, router: router) {
+            currentTab?.hasPresentedAfterIdleEscapeHatch = true
             return model
         }
 
         // No tab to return to. When the shortcut is hidden, still show the expanded pill (even with one tab).
         if !lastTabShortcutAdapter.isEnabled, let currentTab {
+            currentTab.hasPresentedAfterIdleEscapeHatch = true
             return makeTabSwitcherOnly(targetTab: currentTab, router: router)
         }
 

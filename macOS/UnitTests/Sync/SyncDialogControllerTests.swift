@@ -1031,14 +1031,14 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
-    func testSyncWithAnotherDevicePressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
-        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+    func testSyncWithAnotherDevicePressed_whenNoAuthAvailable_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(authenticationResults: [.noAuthAvailable]) {
             await syncDialogController.syncWithAnotherDevicePressed(source: nil)
         }
     }
 
-    func testSyncWithServerPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
-        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+    func testSyncWithServerPressed_whenNoAuthAvailable_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(authenticationResults: [.noAuthAvailable]) {
             await syncDialogController.syncWithServerPressed()
         }
     }
@@ -1067,13 +1067,15 @@ final class SyncDialogControllerTests: XCTestCase {
         }
     }
 
-    func assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(file: StaticString = #file, line: UInt = #line, functionUnderTest: () async -> Void) async {
+    func assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(
+        authenticationResults: [DeviceAuthenticationResult] = [.failure, .noAuthAvailable],
+        file: StaticString = #file,
+        line: UInt = #line,
+        functionUnderTest: () async -> Void
+    ) async {
         let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
         syncDialogController.coordinationDelegate = coordinationDelegate
-        for authenticationResult in [
-            DeviceAuthenticationResult.failure,
-            DeviceAuthenticationResult.noAuthAvailable,
-        ] {
+        for authenticationResult in authenticationResults {
             authenticator.stubAuthenticateUser = authenticationResult
             var didEndFlowCalled = false
             coordinationDelegate.didEndFlowCalled = {

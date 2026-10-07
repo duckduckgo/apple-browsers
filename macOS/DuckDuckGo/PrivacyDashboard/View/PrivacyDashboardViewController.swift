@@ -168,12 +168,6 @@ final class PrivacyDashboardViewController: NSViewController {
         refreshDashboardStyle()
     }
 
-    override func viewWillAppear() {
-        super.viewWillAppear()
-
-        networkSignalsProvider.prefetchSignals()
-    }
-
     override func viewWillDisappear() {
         super.viewWillDisappear()
         if !privacyDashboardDidTriggerDismiss {
@@ -325,6 +319,10 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
         NSApp.delegateTyped.openReportABrowserProblem(nil)
+    }
+
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController) {
+        networkSignalsProvider.prefetchSignals()
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,

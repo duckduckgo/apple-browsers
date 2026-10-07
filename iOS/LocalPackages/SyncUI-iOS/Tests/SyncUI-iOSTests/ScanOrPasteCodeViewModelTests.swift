@@ -28,11 +28,11 @@ final class ScanOrPasteCodeViewModelTests {
     private let delegate = MockScanOrPasteCodeViewModelDelegate()
 
     private func makeSUT(source: CodeCollectionSource = .connect,
-                         requestsCameraPermissionOnAppear: Bool = false) -> ScanOrPasteCodeViewModel {
+                         isImprovedPairingFlowEnabled: Bool = false) -> ScanOrPasteCodeViewModel {
         let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: "code",
                                            qrCodeString: "qr",
                                            source: source,
-                                           requestsCameraPermissionOnAppear: requestsCameraPermissionOnAppear)
+                                           isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled)
         sut.delegate = delegate
         return sut
     }
@@ -54,7 +54,7 @@ final class ScanOrPasteCodeViewModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("Asking for camera permission up front: intro animation completed doesn't request it again", .timeLimit(.minutes(1)))
     func introAnimationCompletedDoesNotRequestCameraPermissionWhenAskedUpFront() {
-        let sut = makeSUT(requestsCameraPermissionOnAppear: true)
+        let sut = makeSUT(isImprovedPairingFlowEnabled: true)
 
         sut.introAnimationCompleted()
 
@@ -64,7 +64,7 @@ final class ScanOrPasteCodeViewModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("Asking for camera permission up front: scan tab appearing requests it", .timeLimit(.minutes(1)))
     func scanTabAppearedRequestsCameraPermissionWhenAskedUpFront() {
-        let sut = makeSUT(requestsCameraPermissionOnAppear: true)
+        let sut = makeSUT(isImprovedPairingFlowEnabled: true)
 
         sut.scanTabAppeared()
 
@@ -75,7 +75,7 @@ final class ScanOrPasteCodeViewModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("Asking for camera permission up front: returning to the foreground checks it again", .timeLimit(.minutes(1)))
     func appWillEnterForegroundRequestsCameraPermissionWhenAskedUpFront() {
-        let sut = makeSUT(requestsCameraPermissionOnAppear: true)
+        let sut = makeSUT(isImprovedPairingFlowEnabled: true)
 
         sut.appWillEnterForeground()
 
@@ -108,7 +108,7 @@ final class ScanOrPasteCodeViewModelTests {
     func canPlayIntroAnimation(requestsUpFront: Bool,
                                permission: ScanOrPasteCodeViewModel.VideoPermission,
                                expected: Bool) {
-        let sut = makeSUT(requestsCameraPermissionOnAppear: requestsUpFront)
+        let sut = makeSUT(isImprovedPairingFlowEnabled: requestsUpFront)
 
         sut.videoPermission = permission
 
@@ -129,7 +129,7 @@ final class ScanOrPasteCodeViewModelTests {
     func showsScanInstructions(requestsUpFront: Bool,
                                permission: ScanOrPasteCodeViewModel.VideoPermission,
                                expected: Bool) {
-        let sut = makeSUT(requestsCameraPermissionOnAppear: requestsUpFront)
+        let sut = makeSUT(isImprovedPairingFlowEnabled: requestsUpFront)
 
         sut.videoPermission = permission
 

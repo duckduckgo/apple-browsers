@@ -620,7 +620,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
             source: CodeCollectionSource(syncSetupSource: source),
-            requestsCameraPermissionOnAppear: featureFlagger.isFeatureOn(.syncImprovedPairingFlow))
+            isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow))
         model.delegate = self
         scanCodeViewModel = model
 

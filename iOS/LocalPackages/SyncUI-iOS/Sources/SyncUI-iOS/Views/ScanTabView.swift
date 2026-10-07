@@ -75,19 +75,48 @@ struct ScanTabView: View {
     }
 
     private var introAnimation: some View {
-        ZStack(alignment: .bottom) {
-            LottieView {
-                try await DotLottieFile.named("SyncScanQRCode", bundle: .module)
+        Group {
+            if model.isImprovedPairingFlowEnabled {
+                introAnimationCard
+            } else {
+                fullPanelIntroAnimation
             }
-            .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-            .animationDidFinish { _ in
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissIntroAnimation()
+        }
+        .transition(.opacity)
+    }
+
+    private var introAnimationCard: some View {
+        VStack(spacing: 16) {
+            introLottie(named: "SyncScanQRCodeCard")
+
+            Button {
                 dismissIntroAnimation()
+            } label: {
+                Text(UserText.simplifiedScanQRGotItButton)
             }
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .padding(.horizontal, 48)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.top, instructionsHeight)
+            .buttonStyle(PrimaryButtonStyle())
+        }
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color(designSystemColor: .surfaceSecondary))
+        )
+        .frame(maxWidth: 360)
+        .padding(.horizontal, 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, instructionsHeight)
+    }
+
+    private var fullPanelIntroAnimation: some View {
+        ZStack(alignment: .bottom) {
+            introLottie(named: "SyncScanQRCode")
+                .padding(.horizontal, 48)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, instructionsHeight)
 
             Button {
                 dismissIntroAnimation()
@@ -99,11 +128,18 @@ struct ScanTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(designSystemColor: .surfaceSecondary))
-        .contentShape(Rectangle())
-        .onTapGesture {
+    }
+
+    private func introLottie(named name: String) -> some View {
+        LottieView {
+            try await DotLottieFile.named(name, bundle: .module)
+        }
+        .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+        .animationDidFinish { _ in
             dismissIntroAnimation()
         }
-        .transition(.opacity)
+        .resizable()
+        .aspectRatio(contentMode: .fit)
     }
 
     private func dismissIntroAnimation() {
@@ -189,7 +225,7 @@ private struct CameraPermissionDeniedView: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
 
     private var content: Content {
-        model.requestsCameraPermissionOnAppear ? .improved : .legacy
+        model.isImprovedPairingFlowEnabled ? .improved : .legacy
     }
 
     var body: some View {
@@ -346,13 +382,13 @@ private struct QRCornerBrackets: Shape {
 private func scanTabPreviewModel(
     permission: ScanOrPasteCodeViewModel.VideoPermission,
     showCamera: Bool,
-    requestsCameraPermissionOnAppear: Bool = false
+    isImprovedPairingFlowEnabled: Bool = false
 ) -> ScanOrPasteCodeViewModel {
     let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
     let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode,
                                          qrCodeString: sampleCode,
                                          source: .connect,
-                                         requestsCameraPermissionOnAppear: requestsCameraPermissionOnAppear)
+                                         isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled)
     model.videoPermission = permission
     model.showCamera = showCamera
     return model
@@ -384,13 +420,19 @@ private struct ScanTabPreview: View {
 }
 
 #Preview("Permission Denied - Improved Pairing Flow") {
-    ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false, requestsCameraPermissionOnAppear: true),
+    ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false, isImprovedPairingFlowEnabled: true),
                    showIntroAnimation: true)
         .environment(\.colorScheme, .dark)
 }
 
 #Preview("Intro Animation") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true), showIntroAnimation: true)
+        .environment(\.colorScheme, .dark)
+}
+
+#Preview("Intro Animation - Improved Pairing Flow") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true, isImprovedPairingFlowEnabled: true),
+                   showIntroAnimation: true)
         .environment(\.colorScheme, .dark)
 }
 

@@ -85,23 +85,23 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
 
     var showQRCodeModel: ShowQRCodeViewModel
     private let source: CodeCollectionSource
-    let requestsCameraPermissionOnAppear: Bool
+    let isImprovedPairingFlowEnabled: Bool
 
     var canPlayIntroAnimation: Bool {
-        !requestsCameraPermissionOnAppear || videoPermission == .authorised
+        !isImprovedPairingFlowEnabled || videoPermission == .authorised
     }
 
     var showsScanInstructions: Bool {
-        !requestsCameraPermissionOnAppear || videoPermission != .denied
+        !isImprovedPairingFlowEnabled || videoPermission != .denied
     }
 
     public init(codeForDisplayOrPasting: String,
                 qrCodeString: String,
                 source: CodeCollectionSource,
-                requestsCameraPermissionOnAppear: Bool = false) {
+                isImprovedPairingFlowEnabled: Bool = false) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
         self.source = source
-        self.requestsCameraPermissionOnAppear = requestsCameraPermissionOnAppear
+        self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -135,7 +135,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func introAnimationCompleted() {
-        guard !requestsCameraPermissionOnAppear else { return }
+        guard !isImprovedPairingFlowEnabled else { return }
         delegate?.requestCameraPermission(for: self)
     }
 
@@ -148,7 +148,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     private func requestCameraPermissionUpFront() {
-        guard requestsCameraPermissionOnAppear else { return }
+        guard isImprovedPairingFlowEnabled else { return }
         delegate?.requestCameraPermission(for: self)
     }
 

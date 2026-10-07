@@ -42,8 +42,8 @@ struct RemoveDeviceView: View {
             VStack(alignment: .center, spacing: 20) {
                 illustration
                     .accessibilityHidden(true)
-                SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitleV2)
-                SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessageV2(device.name))
+                SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitle)
+                SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessage(device.name))
             }
         } buttons: {
             Spacer()
@@ -62,7 +62,7 @@ struct RemoveDeviceView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.removeDeviceConfirmButtonV2)
+                    Text(UserText.removeDeviceConfirmButton)
                 }
             }
             .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),

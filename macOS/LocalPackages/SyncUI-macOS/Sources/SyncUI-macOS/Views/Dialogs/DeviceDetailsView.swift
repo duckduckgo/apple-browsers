@@ -59,7 +59,7 @@ struct DeviceDetailsView: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .center, spacing: 8) {
                     SyncUIViews.DialogTitle(text: title)
-                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatusV2)
+                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatus)
                 }
                 if device.isCurrent {
                     nameField
@@ -77,7 +77,7 @@ struct DeviceDetailsView: View {
 
     private var nameField: some View {
         HStack(spacing: 16) {
-            Text(UserText.deviceDetailsNameLabelV2)
+            Text(UserText.deviceDetailsNameLabel)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             TextField(text: $deviceName) {
@@ -94,7 +94,7 @@ struct DeviceDetailsView: View {
     }
 
     private var destructiveButton: some View {
-        Button(device.isCurrent ? UserText.deviceDetailsTurnOffSyncButtonV2 : UserText.deviceDetailsRemoveDeviceButtonV2) {
+        Button(device.isCurrent ? UserText.deviceDetailsTurnOffSyncButton : UserText.deviceDetailsRemoveDeviceButton) {
             model.delegate?.presentRemoveDeviceConfirmation(device)
         }
         .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),
@@ -111,7 +111,7 @@ struct DeviceDetailsView: View {
                     ProgressView()
                         .controlSize(.small)
                 }
-                Text(device.isCurrent ? UserText.deviceDetailsDoneButtonV2 : UserText.deviceDetailsCloseButtonV2)
+                Text(device.isCurrent ? UserText.deviceDetailsDoneButton : UserText.deviceDetailsCloseButton)
             }
         }
         .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))

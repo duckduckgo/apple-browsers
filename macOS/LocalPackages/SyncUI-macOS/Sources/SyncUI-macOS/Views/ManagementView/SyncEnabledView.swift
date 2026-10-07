@@ -64,29 +64,29 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
         }
 
         // Intro text
-        SyncUIViews.LeadingSecondaryBody(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooterV2 : UserText.syncEnabledFooterWithoutAIChatV2)
+        SyncUIViews.LeadingSecondaryBody(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooter : UserText.syncEnabledFooterWithoutAIChat)
 
         // My Devices
-        PreferencePaneSection(UserText.myDevicesV2) {
+        PreferencePaneSection(UserText.myDevices) {
             SyncedDevicesView<ViewModel>()
                 .environmentObject(model)
 
-            SyncUIViews.LeadingSecondaryBody(text: UserText.myDevicesFooterV2)
+            SyncUIViews.LeadingSecondaryBody(text: UserText.myDevicesFooter)
         }
 
         // Bookmarks
-        PreferencePaneSection(UserText.bookmarksSectionTitleV2) {
-            bookmarkOption(title: UserText.shareFavoritesOptionTitleV2,
-                           caption: UserText.shareFavoritesOptionCaptionV2,
+        PreferencePaneSection(UserText.bookmarksSectionTitle) {
+            bookmarkOption(title: UserText.shareFavoritesOptionTitle,
+                           caption: UserText.shareFavoritesOptionCaption,
                            isOn: $model.isUnifiedFavoritesEnabled)
 
-            bookmarkOption(title: UserText.fetchFaviconsOptionTitleV2,
-                           caption: UserText.fetchFaviconsOptionCaptionV2,
+            bookmarkOption(title: UserText.fetchFaviconsOptionTitle,
+                           caption: UserText.fetchFaviconsOptionCaption,
                            isOn: $model.isFaviconsFetchingEnabled)
         }
 
         // Recovery Code
-        PreferencePaneSection(UserText.recoveryCodeSectionTitleV2) {
+        PreferencePaneSection(UserText.recoveryCodeSectionTitle) {
             recoverySection()
         }
 
@@ -97,7 +97,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                     await model.presentDeleteAccount()
                 }
             } label: {
-                Text(UserText.turnOffAndDeleteServerDataV2)
+                Text(UserText.turnOffAndDeleteServerData)
                     .foregroundColor(Color(designSystemColor: .destructivePrimary))
             }
         }
@@ -126,15 +126,15 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     private func recoveryInstructionsRow() -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Text(UserText.recoveryInstructionsV2)
+            Text(UserText.recoveryInstructions)
                 .fixMultilineScrollableText()
             Spacer()
-            Button(UserText.downloadRecoveryCodeButtonV2, action: model.saveRecoveryPDF)
+            Button(UserText.downloadRecoveryCodeButton, action: model.saveRecoveryPDF)
         }
     }
 
     private func recoveryInstructionsFooter() -> some View {
-        SyncUIViews.LeadingSecondaryBody(text: UserText.recoveryInstructionsFooterV2)
+        SyncUIViews.LeadingSecondaryBody(text: UserText.recoveryInstructionsFooter)
     }
 
     @ViewBuilder

@@ -188,10 +188,10 @@ extension NSAlert {
 
     static func syncCloseSetupConfirmation() -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.syncCloseSetupConfirmationTitleV2
-        alert.informativeText = UserText.syncCloseSetupConfirmationMessageV2
+        alert.messageText = UserText.syncCloseSetupConfirmationTitle
+        alert.informativeText = UserText.syncCloseSetupConfirmationMessage
         alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.syncCloseSetupConfirmationActionV2)
+        alert.addButton(withTitle: UserText.syncCloseSetupConfirmationAction)
         alert.addButton(withTitle: UserText.cancel)
         return alert
     }

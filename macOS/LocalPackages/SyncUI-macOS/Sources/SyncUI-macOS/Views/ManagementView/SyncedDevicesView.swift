@@ -60,7 +60,7 @@ struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
                     Image(nsImage: DesignSystemImages.Glyphs.Size24.qrScan)
                         .resizable()
                         .frame(width: 16, height: 16)
-                    Text(UserText.beginSyncButtonV2)
+                    Text(UserText.beginSyncButton)
                 }
             }
             .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))

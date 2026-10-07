@@ -39,7 +39,7 @@ struct PreparingToSyncView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(UserText.preparingToSyncDialogActionV2)
+            Text(UserText.preparingToSyncDialogAction)
                 .font(.body)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .fixedSize(horizontal: false, vertical: true)
@@ -75,9 +75,9 @@ struct PreparingToSyncView: View {
     private var title: String {
         switch state {
         case .connecting:
-            UserText.preparingToSyncDialogTitleV2
+            UserText.preparingToSyncDialogTitle
         case .waitingForOtherDevice:
-            UserText.preparingToSyncCheckOtherDeviceTitleV2
+            UserText.preparingToSyncCheckOtherDeviceTitle
         }
     }
 

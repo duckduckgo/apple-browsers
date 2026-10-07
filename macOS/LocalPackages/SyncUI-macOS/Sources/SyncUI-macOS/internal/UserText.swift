@@ -24,129 +24,106 @@ enum UserText {
     static let ok = NSLocalizedString("ok", bundle: Bundle.module, value: "OK", comment: "OK button")
     static let notNow = NSLocalizedString("notnow", bundle: Bundle.module, value: "Not Now", comment: "Not Now button")
     static let cancel = NSLocalizedString("cancel", bundle: Bundle.module, value: "Cancel", comment: "Cancel button")
-    static let submit = NSLocalizedString("submit", bundle: Bundle.module, value: "Submit", comment: "Submit button")
-    static let next = NSLocalizedString("next", bundle: Bundle.module, value: "Next", comment: "Next button")
     static let copy = NSLocalizedString("copy", bundle: Bundle.module, value: "Copy", comment: "Copy button")
     static let share = NSLocalizedString("share", bundle: Bundle.module, value: "Share", comment: "Share button")
     static let paste = NSLocalizedString("paste", bundle: Bundle.module, value: "Paste", comment: "Paste button")
-    static let pasteFromClipboard = NSLocalizedString("paste-from-clipboard", bundle: Bundle.module, value: "Paste from Clipboard", comment: "Paste from Clipboard button")
     static let done = NSLocalizedString("done", bundle: Bundle.module, value: "Done", comment: "Done button")
 
-    // Sync Set Up View
-    // Begin Sync card
-    static let beginSyncTitle = NSLocalizedString("preferences.begin-sync.card-title", bundle: Bundle.module, value: "Begin Syncing", comment: "Begin Syncing card title in sync settings")
-    static let beginSyncDescription = NSLocalizedString("preferences.begin-sync.card-description", bundle: Bundle.module, value: "Securely sync bookmarks and passwords between your devices.", comment: "Begin Syncing card description in sync settings")
-    static let beginSyncDescriptionUpdated = NSLocalizedString("preferences.begin-sync.card-description-updated", bundle: Bundle.module, value: "Securely sync bookmarks, autofill data, and Duck.ai chats between your devices.", comment: "Begin Syncing card description in sync settings")
-    static let beginSyncButton = NSLocalizedString("preferences.begin-sync.card-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button text on the Begin Syncing card in sync settings")
-    static let beginSyncFooter = NSLocalizedString("preferences.begin-sync.card-footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted. Nobody but you can see your data, not even us. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Begin Syncing card in sync settings")
-    static let syncFooter = NSLocalizedString("preferences.sync.card-footer", bundle: Bundle.module, value: "Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")
-    static let syncFooterUpdated = NSLocalizedString("preferences.sync.card-footer-updated", bundle: Bundle.module, value: "Support for certain data types varies by platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")
+    // Begin Sync card.
+    static let beginSyncTitle = NSLocalizedString("preferences.begin-sync-v2.card-title", bundle: Bundle.module, value: "Keep DuckDuckGo in sync!", comment: "Begin Syncing card title in sync settings")
+    static let beginSyncDescription = NSLocalizedString("preferences.begin-sync-v2.card-description", bundle: Bundle.module, value: "Your autofill data, bookmarks, and Duck.ai chats, end-to-end encrypted across your DuckDuckGo apps.", comment: "Begin Syncing card description in sync settings")
+    static let beginSyncButton = NSLocalizedString("preferences.begin-sync-v2.card-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button text on the Begin Syncing card in sync settings")
+    static let beginSyncFooter = NSLocalizedString("preferences.begin-sync-v2.card-footer", bundle: Bundle.module, value: "Don’t have DuckDuckGo on another device? [Get the DuckDuckGo app?](https://duckduckgo.com/app/devices)", comment: "Footer under the Begin Syncing card in sync settings. The [text](url) markdown is a link and must be preserved.")
+    static let syncThisDeviceTitle = NSLocalizedString("preferences.sync-this-device-v2.title", bundle: Bundle.module, value: "Sync this Device", comment: "Title of the row to start syncing and backing up this device in sync settings")
+    static let recoverSyncedDataTitle = NSLocalizedString("preferences.recover-synced-data-v2.section-title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Recover Synced Data section title in sync settings")
+    static let recoverCodeButton = NSLocalizedString("preferences.recover-synced-data-v2.button", bundle: Bundle.module, value: "I Have a Recovery Code", comment: "Button to recover synced data with a recovery code in sync settings")
 
-    // Begin Sync card (V2).
-    static let beginSyncTitleV2 = NSLocalizedString("preferences.begin-sync-v2.card-title", bundle: Bundle.module, value: "Keep DuckDuckGo in sync!", comment: "Begin Syncing card title in sync settings (V2)")
-    static let beginSyncDescriptionV2 = NSLocalizedString("preferences.begin-sync-v2.card-description", bundle: Bundle.module, value: "Your autofill data, bookmarks, and Duck.ai chats, end-to-end encrypted across your DuckDuckGo apps.", comment: "Begin Syncing card description in sync settings (V2)")
-    static let beginSyncButtonV2 = NSLocalizedString("preferences.begin-sync-v2.card-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button text on the Begin Syncing card in sync settings (V2)")
-    static let beginSyncFooterV2 = NSLocalizedString("preferences.begin-sync-v2.card-footer", bundle: Bundle.module, value: "Don’t have DuckDuckGo on another device? [Get the DuckDuckGo app?](https://duckduckgo.com/app/devices)", comment: "Footer under the Begin Syncing card in sync settings (V2). The [text](url) markdown is a link and must be preserved.")
-    static let syncThisDeviceTitleV2 = NSLocalizedString("preferences.sync-this-device-v2.title", bundle: Bundle.module, value: "Sync this Device", comment: "Title of the row to start syncing and backing up this device in sync settings (V2)")
-    static let recoverSyncedDataTitleV2 = NSLocalizedString("preferences.recover-synced-data-v2.section-title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Recover Synced Data section title in sync settings (V2)")
-    static let recoverCodeButtonV2 = NSLocalizedString("preferences.recover-synced-data-v2.button", bundle: Bundle.module, value: "I Have a Recovery Code", comment: "Button to recover synced data with a recovery code in sync settings (V2)")
+    // Device selection prompt shown after enabling Sync.
+    static let syncAnotherDevicePromptTitle = NSLocalizedString("preferences.sync.another-device-prompt-v2.title", bundle: Bundle.module, value: "Sync this device with a nearby phone.", comment: "Title of the prompt asking whether to sync with another device or just this device")
+    static let syncAnotherDevicePromptSubtitle = NSLocalizedString("preferences.sync.another-device-prompt-v2.subtitle", bundle: Bundle.module, value: "We’ll help you sync your devices.", comment: "Subtitle of the prompt asking whether to sync with another device or just this device")
+    static let syncThisDeviceOnlyButton = NSLocalizedString("preferences.sync.another-device-prompt-v2.this-device-only-button", bundle: Bundle.module, value: "Sync This Device Only", comment: "Button to enable Sync & Backup on the current device only, without pairing another device")
+    static let syncWithAnotherDeviceButton = NSLocalizedString("preferences.sync.another-device-prompt-v2.another-device-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button to continue to the pairing screen to sync with another device")
 
-    // Device selection prompt shown after enabling Sync (V2).
-    static let syncAnotherDevicePromptTitleV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.title", bundle: Bundle.module, value: "Sync this device with a nearby phone.", comment: "Title of the prompt asking whether to sync with another device or just this device (V2)")
-    static let syncAnotherDevicePromptSubtitleV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.subtitle", bundle: Bundle.module, value: "We’ll help you sync your devices.", comment: "Subtitle of the prompt asking whether to sync with another device or just this device (V2)")
-    static let syncThisDeviceOnlyButtonV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.this-device-only-button", bundle: Bundle.module, value: "Sync This Device Only", comment: "Button to enable Sync & Backup on the current device only, without pairing another device (V2)")
-    static let syncWithAnotherDeviceButtonV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.another-device-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button to continue to the pairing screen to sync with another device (V2)")
+    // Sync with another device dialog.
+    static let syncWithAnotherDeviceScanTitle = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-title", bundle: Bundle.module, value: "Scan QR code to sync", comment: "Title of the Sync with another device dialog when showing the QR code")
+    static let syncWithAnotherDeviceEnterTitle = NSLocalizedString("preferences.sync.sync-with-another-device-v2.enter-title", bundle: Bundle.module, value: "Enter the Sync Code", comment: "Title of the Sync with another device dialog when entering a sync code")
+    static let syncWithAnotherDeviceScanTab = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-tab", bundle: Bundle.module, value: "Scan Code", comment: "Tab that displays a QR code to scan from another device")
+    static let syncWithAnotherDeviceEnterTab = NSLocalizedString("preferences.sync.sync-with-another-device-v2.enter-tab", bundle: Bundle.module, value: "Enter Code", comment: "Tab that lets the user paste a sync code from another device")
+    static let syncWithAnotherDeviceScanStep1Prefix = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-1-prefix", bundle: Bundle.module, value: "On your phone, open the", comment: "First part of the first QR scanning instruction, before the DuckDuckGo product name")
+    static let syncWithAnotherDeviceScanStep1Detail = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-1-detail", bundle: Bundle.module, value: "DuckDuckGo App", comment: "Emphasized DuckDuckGo product name in the first QR scanning instruction")
+    static let syncWithAnotherDeviceStep2Prefix = NSLocalizedString("preferences.sync.sync-with-another-device-v2.step-2-prefix", bundle: Bundle.module, value: "Go to", comment: "First part of the second pairing instruction, before the Settings path")
+    static let syncWithAnotherDeviceStep2Detail = NSLocalizedString("preferences.sync.sync-with-another-device-v2.step-2-detail", bundle: Bundle.module, value: "Settings › Sync & Backup › Sync With Another Device", comment: "Emphasized Settings path in the second pairing instruction")
+    static let syncWithAnotherDeviceScanStep3 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-3", bundle: Bundle.module, value: "Scan this QR code from your phone", comment: "Third pairing instruction when showing the QR code")
+    static let syncWithAnotherDeviceEnterStep3 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.enter-step-3", bundle: Bundle.module, value: "Copy the QR Text Code and click ‘Paste Code’ below:", comment: "Third pairing instruction when entering a code from another device")
+    static let syncWithAnotherDeviceStep4 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.step-4", bundle: Bundle.module, value: "Don’t close this window while connecting", comment: "Fourth pairing instruction, reminding the user to keep the dialog open")
+    static let syncWithAnotherDeviceExampleCode = NSLocalizedString("preferences.sync.sync-with-another-device-v2.example-code", bundle: Bundle.module, value: "Example Code:", comment: "Label above the example sync code in the code entry tab")
+    static let syncWithAnotherDevicePasteCode = NSLocalizedString("preferences.sync.sync-with-another-device-v2.paste-code", bundle: Bundle.module, value: "Paste Code", comment: "Button that pastes a sync code from the clipboard")
+    static let syncWithAnotherDeviceCopied = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copied", bundle: Bundle.module, value: "Copied", comment: "Confirmation shown after copying the sync code")
+    static let syncWithAnotherDeviceCopyConfirmationTitle = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-title", bundle: Bundle.module, value: "Don’t close this page", comment: "Title of the reminder shown after copying the sync code")
+    static let syncWithAnotherDeviceCopyConfirmationMessage = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-message", bundle: Bundle.module, value: "Open DuckDuckGo on your other device and paste the code.", comment: "Message of the reminder shown after copying the sync code")
 
-    // Sync with another device dialog (V2).
-    static let syncWithAnotherDeviceScanTitleV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-title", bundle: Bundle.module, value: "Scan QR code to sync", comment: "Title of the Sync with another device dialog when showing the QR code (V2)")
-    static let syncWithAnotherDeviceEnterTitleV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.enter-title", bundle: Bundle.module, value: "Enter the Sync Code", comment: "Title of the Sync with another device dialog when entering a sync code (V2)")
-    static let syncWithAnotherDeviceScanTabV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-tab", bundle: Bundle.module, value: "Scan Code", comment: "Tab that displays a QR code to scan from another device (V2)")
-    static let syncWithAnotherDeviceEnterTabV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.enter-tab", bundle: Bundle.module, value: "Enter Code", comment: "Tab that lets the user paste a sync code from another device (V2)")
-    static let syncWithAnotherDeviceScanStep1PrefixV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-1-prefix", bundle: Bundle.module, value: "On your phone, open the", comment: "First part of the first QR scanning instruction, before the DuckDuckGo product name (V2)")
-    static let syncWithAnotherDeviceScanStep1DetailV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-1-detail", bundle: Bundle.module, value: "DuckDuckGo App", comment: "Emphasized DuckDuckGo product name in the first QR scanning instruction (V2)")
-    static let syncWithAnotherDeviceStep2PrefixV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.step-2-prefix", bundle: Bundle.module, value: "Go to", comment: "First part of the second pairing instruction, before the Settings path (V2)")
-    static let syncWithAnotherDeviceStep2DetailV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.step-2-detail", bundle: Bundle.module, value: "Settings › Sync & Backup › Sync With Another Device", comment: "Emphasized Settings path in the second pairing instruction (V2)")
-    static let syncWithAnotherDeviceScanStep3V2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-3", bundle: Bundle.module, value: "Scan this QR code from your phone", comment: "Third pairing instruction when showing the QR code (V2)")
-    static let syncWithAnotherDeviceEnterStep3V2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.enter-step-3", bundle: Bundle.module, value: "Copy the QR Text Code and click ‘Paste Code’ below:", comment: "Third pairing instruction when entering a code from another device (V2)")
-    static let syncWithAnotherDeviceStep4V2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.step-4", bundle: Bundle.module, value: "Don’t close this window while connecting", comment: "Fourth pairing instruction, reminding the user to keep the dialog open (V2)")
-    static let syncWithAnotherDeviceExampleCodeV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.example-code", bundle: Bundle.module, value: "Example Code:", comment: "Label above the example sync code in the code entry tab (V2)")
-    static let syncWithAnotherDevicePasteCodeV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.paste-code", bundle: Bundle.module, value: "Paste Code", comment: "Button that pastes a sync code from the clipboard (V2)")
-    static let syncWithAnotherDeviceCopiedV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copied", bundle: Bundle.module, value: "Copied", comment: "Confirmation shown after copying the sync code (V2)")
-    static let syncWithAnotherDeviceCopyConfirmationTitleV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-title", bundle: Bundle.module, value: "Don’t close this page", comment: "Title of the reminder shown after copying the sync code (V2)")
-    static let syncWithAnotherDeviceCopyConfirmationMessageV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-message", bundle: Bundle.module, value: "Open DuckDuckGo on your other device and paste the code.", comment: "Message of the reminder shown after copying the sync code (V2)")
+    // Alert shown when the user cancels the device authentication prompt while setting up Sync.
+    static let syncAuthenticationCancelledTitle = NSLocalizedString("preferences.sync.authentication-cancelled-v2.title", bundle: Bundle.module, value: "Please give it another try!", comment: "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync")
+    static let syncAuthenticationCancelledSubtitle = NSLocalizedString("preferences.sync.authentication-cancelled-v2.subtitle", bundle: Bundle.module, value: "You need to authenticate to turn on Sync & Backup. macOS will ask for an authentication method.", comment: "Subtitle of the alert shown when the user cancels the device authentication prompt while setting up Sync")
+    static let syncAuthenticationCancelledCloseButton = NSLocalizedString("preferences.sync.authentication-cancelled-v2.close-button", bundle: Bundle.module, value: "Close", comment: "Button to dismiss the alert shown when the user cancels the device authentication prompt while setting up Sync")
+    static let syncAuthenticationCancelledTryAgainButton = NSLocalizedString("preferences.sync.authentication-cancelled-v2.try-again-button", bundle: Bundle.module, value: "Try Again", comment: "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync")
 
-    // Alert shown when the user cancels the device authentication prompt while setting up Sync (V2).
-    static let syncAuthenticationCancelledTitleV2 = NSLocalizedString("preferences.sync.authentication-cancelled-v2.title", bundle: Bundle.module, value: "Please give it another try!", comment: "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
-    static let syncAuthenticationCancelledSubtitleV2 = NSLocalizedString("preferences.sync.authentication-cancelled-v2.subtitle", bundle: Bundle.module, value: "You need to authenticate to turn on Sync & Backup. macOS will ask for an authentication method.", comment: "Subtitle of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
-    static let syncAuthenticationCancelledCloseButtonV2 = NSLocalizedString("preferences.sync.authentication-cancelled-v2.close-button", bundle: Bundle.module, value: "Close", comment: "Button to dismiss the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
-    static let syncAuthenticationCancelledTryAgainButtonV2 = NSLocalizedString("preferences.sync.authentication-cancelled-v2.try-again-button", bundle: Bundle.module, value: "Try Again", comment: "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
+    // Sync Enabled View.
+    static let syncEnabledFooter = NSLocalizedString("preferences.sync-enabled-v2.footer", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats, are being synced with end-to-end encryption. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer describing what is being synced in sync settings when sync is enabled. The [text](url) markdown is a link and must be preserved.")
+    static let syncEnabledFooterWithoutAIChat = NSLocalizedString("preferences.sync-enabled-v2.footer-without-ai-chat", bundle: Bundle.module, value: "Your bookmarks and autofill data are being synced with end-to-end encryption. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer describing what is being synced in sync settings when sync is enabled and Duck.ai chat sync is unavailable. The [text](url) markdown is a link and must be preserved.")
+    static let myDevices = NSLocalizedString("preferences.sync.my-devices-v2", bundle: Bundle.module, value: "My Devices", comment: "Synced devices section title in sync settings")
+    static let myDevicesFooter = NSLocalizedString("preferences.sync.my-devices-footer-v2", bundle: Bundle.module, value: "Your data is end-to-end encrypted. Nobody but you can see your data, not even us.", comment: "Footer under the synced devices section in sync settings")
+    static let bookmarksSectionTitle = NSLocalizedString("preferences.sync.bookmarks-section-title-v2", bundle: Bundle.module, value: "Bookmarks", comment: "Bookmarks options section title in sync settings")
+    static let shareFavoritesOptionTitle = NSLocalizedString("preferences.sync.share-favorite-option-title-v2", bundle: Bundle.module, value: "Share Favorites Across Devices", comment: "Title for the share favorites option in sync settings")
+    static let shareFavoritesOptionCaption = NSLocalizedString("preferences.sync.share-favorite-option-caption-v2", bundle: Bundle.module, value: "Use the same favorite bookmarks on mobile and desktop.", comment: "Caption for the share favorites option in sync settings")
+    static let fetchFaviconsOptionTitle = NSLocalizedString("preferences.sync.fetch-favicons-option-title-v2", bundle: Bundle.module, value: "Load Bookmark Icons", comment: "Title for the load bookmark icons option in sync settings")
+    static let fetchFaviconsOptionCaption = NSLocalizedString("preferences.sync.fetch-favicons-option-caption-v2", bundle: Bundle.module, value: "Loads icons from websites you’ve bookmarked. Icon downloads are exposed to your network.", comment: "Caption for the load bookmark icons option in sync settings")
+    static let recoveryCodeSectionTitle = NSLocalizedString("preferences.sync.recovery-code-section-title-v2", bundle: Bundle.module, value: "Recovery Code", comment: "Recovery code section title in sync settings")
+    static let recoveryInstructions = NSLocalizedString("preferences.sync.recovery-instructions-v2", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device.", comment: "Instructions on how to restore synced data in sync settings")
+    static let downloadRecoveryCodeButton = NSLocalizedString("preferences.sync.download-recovery-code-v2", bundle: Bundle.module, value: "Download Recovery Code", comment: "Button to download the recovery code in sync settings")
+    static let recoveryInstructionsFooter = NSLocalizedString("preferences.sync.recovery-instructions-footer-v2", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer on the recovery code section in sync settings. The [text](url) markdown is a link and must be preserved.")
+    static let turnOffAndDeleteServerData = NSLocalizedString("preferences.sync.turn-off-and-delete-data-v2", bundle: Bundle.module, value: "Turn Off and Delete Server Data", comment: "Disable and delete data sync button caption")
 
-    // Sync Enabled View (V2).
-    static let syncEnabledFooterV2 = NSLocalizedString("preferences.sync-enabled-v2.footer", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats, are being synced with end-to-end encryption. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer describing what is being synced in sync settings when sync is enabled (V2). The [text](url) markdown is a link and must be preserved.")
-    static let syncEnabledFooterWithoutAIChatV2 = NSLocalizedString("preferences.sync-enabled-v2.footer-without-ai-chat", bundle: Bundle.module, value: "Your bookmarks and autofill data are being synced with end-to-end encryption. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer describing what is being synced in sync settings when sync is enabled and Duck.ai chat sync is unavailable (V2). The [text](url) markdown is a link and must be preserved.")
-    static let myDevicesV2 = NSLocalizedString("preferences.sync.my-devices-v2", bundle: Bundle.module, value: "My Devices", comment: "Synced devices section title in sync settings (V2)")
-    static let myDevicesFooterV2 = NSLocalizedString("preferences.sync.my-devices-footer-v2", bundle: Bundle.module, value: "Your data is end-to-end encrypted. Nobody but you can see your data, not even us.", comment: "Footer under the synced devices section in sync settings (V2)")
-    static let bookmarksSectionTitleV2 = NSLocalizedString("preferences.sync.bookmarks-section-title-v2", bundle: Bundle.module, value: "Bookmarks", comment: "Bookmarks options section title in sync settings (V2)")
-    static let shareFavoritesOptionTitleV2 = NSLocalizedString("preferences.sync.share-favorite-option-title-v2", bundle: Bundle.module, value: "Share Favorites Across Devices", comment: "Title for the share favorites option in sync settings (V2)")
-    static let shareFavoritesOptionCaptionV2 = NSLocalizedString("preferences.sync.share-favorite-option-caption-v2", bundle: Bundle.module, value: "Use the same favorite bookmarks on mobile and desktop.", comment: "Caption for the share favorites option in sync settings (V2)")
-    static let fetchFaviconsOptionTitleV2 = NSLocalizedString("preferences.sync.fetch-favicons-option-title-v2", bundle: Bundle.module, value: "Load Bookmark Icons", comment: "Title for the load bookmark icons option in sync settings (V2)")
-    static let fetchFaviconsOptionCaptionV2 = NSLocalizedString("preferences.sync.fetch-favicons-option-caption-v2", bundle: Bundle.module, value: "Loads icons from websites you’ve bookmarked. Icon downloads are exposed to your network.", comment: "Caption for the load bookmark icons option in sync settings (V2)")
-    static let recoveryCodeSectionTitleV2 = NSLocalizedString("preferences.sync.recovery-code-section-title-v2", bundle: Bundle.module, value: "Recovery Code", comment: "Recovery code section title in sync settings (V2)")
-    static let recoveryInstructionsV2 = NSLocalizedString("preferences.sync.recovery-instructions-v2", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device.", comment: "Instructions on how to restore synced data in sync settings (V2)")
-    static let downloadRecoveryCodeButtonV2 = NSLocalizedString("preferences.sync.download-recovery-code-v2", bundle: Bundle.module, value: "Download Recovery Code", comment: "Button to download the recovery code in sync settings (V2)")
-    static let recoveryInstructionsFooterV2 = NSLocalizedString("preferences.sync.recovery-instructions-footer-v2", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer on the recovery code section in sync settings (V2). The [text](url) markdown is a link and must be preserved.")
-    static let turnOffAndDeleteServerDataV2 = NSLocalizedString("preferences.sync.turn-off-and-delete-data-v2", bundle: Bundle.module, value: "Turn Off and Delete Server Data", comment: "Disable and delete data sync button caption")
+    // Device details dialogs.
+    static let deviceDetailsSyncedStatus = NSLocalizedString("preferences.sync.device-details-v2.synced-status", bundle: Bundle.module, value: "Synced", comment: "Status shown under the device name on the device details dialog")
+    static let deviceDetailsNameLabel = NSLocalizedString("preferences.sync.device-details-v2.name-label", bundle: Bundle.module, value: "Name", comment: "Label of the editable device name field on the device details dialog")
+    static let deviceDetailsDoneButton = NSLocalizedString("preferences.sync.device-details-v2.done-button", bundle: Bundle.module, value: "Done", comment: "Button that saves the device name and dismisses the device details dialog")
+    static let deviceDetailsCloseButton = NSLocalizedString("preferences.sync.device-details-v2.close-button", bundle: Bundle.module, value: "Close", comment: "Button that dismisses the details dialog of another synced device")
+    static let deviceDetailsTurnOffSyncButton = NSLocalizedString("preferences.sync.device-details-v2.turn-off-sync-button", bundle: Bundle.module, value: "Turn Off Sync & Backup", comment: "Button that turns Sync & Backup off for the current device, on the device details dialog")
+    static let deviceDetailsRemoveDeviceButton = NSLocalizedString("preferences.sync.device-details-v2.remove-device-button", bundle: Bundle.module, value: "Remove Device", comment: "Button that removes another synced device, on the device details dialog")
 
-    // Device details dialogs (V2).
-    static let deviceDetailsSyncedStatusV2 = NSLocalizedString("preferences.sync.device-details-v2.synced-status", bundle: Bundle.module, value: "Synced", comment: "Status shown under the device name on the device details dialog (V2)")
-    static let deviceDetailsNameLabelV2 = NSLocalizedString("preferences.sync.device-details-v2.name-label", bundle: Bundle.module, value: "Name", comment: "Label of the editable device name field on the device details dialog (V2)")
-    static let deviceDetailsDoneButtonV2 = NSLocalizedString("preferences.sync.device-details-v2.done-button", bundle: Bundle.module, value: "Done", comment: "Button that saves the device name and dismisses the device details dialog (V2)")
-    static let deviceDetailsCloseButtonV2 = NSLocalizedString("preferences.sync.device-details-v2.close-button", bundle: Bundle.module, value: "Close", comment: "Button that dismisses the details dialog of another synced device (V2)")
-    static let deviceDetailsTurnOffSyncButtonV2 = NSLocalizedString("preferences.sync.device-details-v2.turn-off-sync-button", bundle: Bundle.module, value: "Turn Off Sync & Backup", comment: "Button that turns Sync & Backup off for the current device, on the device details dialog (V2)")
-    static let deviceDetailsRemoveDeviceButtonV2 = NSLocalizedString("preferences.sync.device-details-v2.remove-device-button", bundle: Bundle.module, value: "Remove Device", comment: "Button that removes another synced device, on the device details dialog (V2)")
-
-    // Remove device confirmation dialog (V2).
-    static let removeDeviceConfirmTitleV2 = NSLocalizedString("preferences.sync.remove-device-v2.title", bundle: Bundle.module, value: "Remove Device?", comment: "Title of the confirmation shown before removing a synced device (V2)")
-    static let removeDeviceConfirmButtonV2 = NSLocalizedString("preferences.sync.remove-device-v2.button", bundle: Bundle.module, value: "Remove Device", comment: "Button that confirms removing a synced device (V2)")
-    static func removeDeviceConfirmMessageV2(_ deviceName: String) -> String {
+    // Remove device confirmation dialog.
+    static let removeDeviceConfirmTitle = NSLocalizedString("preferences.sync.remove-device-v2.title", bundle: Bundle.module, value: "Remove Device?", comment: "Title of the confirmation shown before removing a synced device")
+    static let removeDeviceConfirmButton = NSLocalizedString("preferences.sync.remove-device-v2.button", bundle: Bundle.module, value: "Remove Device", comment: "Button that confirms removing a synced device")
+    static func removeDeviceConfirmMessage(_ deviceName: String) -> String {
         let format = NSLocalizedString("preferences.sync.remove-device-v2.message",
                                        bundle: Bundle.module,
                                        value: "**%@** will no longer be able to access your synced data.\n\nYour autofill data, bookmarks, and duck.ai chats won’t sync across your other devices with DuckDuckGo.",
-                                       comment: "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
+                                       comment: "Message of the confirmation shown before removing a synced device. The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
         return String(format: format, deviceName)
     }
 
-    // Turn off and delete server data confirmation dialog (V2).
-    static let deleteAccountConfirmTitleV2 = NSLocalizedString("preferences.sync.delete-account-v2.title", bundle: Bundle.module, value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")
-    static let deleteAccountConfirmMessageV2 = NSLocalizedString("preferences.sync.delete-account-v2.message", bundle: Bundle.module, value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message of the confirmation shown before turning Sync off and deleting the server data (V2)")
-    static let deleteAccountConfirmButtonV2 = NSLocalizedString("preferences.sync.delete-account-v2.button", bundle: Bundle.module, value: "Delete Server Data", comment: "Button that confirms turning Sync off and deleting the server data (V2)")
+    // Turn off and delete server data confirmation dialog.
+    static let deleteAccountConfirmTitle = NSLocalizedString("preferences.sync.delete-account-v2.title", bundle: Bundle.module, value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data")
+    static let deleteAccountConfirmMessage = NSLocalizedString("preferences.sync.delete-account-v2.message", bundle: Bundle.module, value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message of the confirmation shown before turning Sync off and deleting the server data")
+    static let deleteAccountConfirmButton = NSLocalizedString("preferences.sync.delete-account-v2.button", bundle: Bundle.module, value: "Delete Server Data", comment: "Button that confirms turning Sync off and deleting the server data")
 
-    // Options
-    static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
-    static let syncThisDeviceLink = NSLocalizedString("preferences.sync-this-device.link-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync settings. Title of a link to start setting up sync and backup the device")
-    static let recoverDataLink = NSLocalizedString("preferences.recover-data.link-title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Sync settings. Link to recover synced data.")
+    // Preparing to sync dialog.
+    static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-title", bundle: Bundle.module, value: "Sync & Backup is end-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up")
+    static let preparingToSyncCheckOtherDeviceTitle = NSLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", bundle: Bundle.module, value: "Check your other device...", comment: "Title shown while the joining device waits for the other device during sync set up")
+    static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-action", bundle: Bundle.module, value: "Connecting...", comment: "Status text while preparing to sync")
 
-    // Preparing to sync dialog
-    static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-title", bundle: Bundle.module, value: "Preparing To Sync", comment: "Preparing to sync dialog title during sync set up")
-    static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and autofill data with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
-    static let preparingToSyncDialogSubTitleUpdated = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle-updated", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
-    static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up.")
-    static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
-    static let preparingToSyncDialogTitleV2 = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-title", bundle: Bundle.module, value: "Sync & Backup is end-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up (V2)")
-    static let preparingToSyncCheckOtherDeviceTitleV2 = NSLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", bundle: Bundle.module, value: "Check your other device...", comment: "Title shown while the joining device waits for the other device during sync set up (V2)")
-    static let preparingToSyncDialogActionV2 = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-action", bundle: Bundle.module, value: "Connecting...", comment: "Status text while preparing to sync (V2)")
-
-    // Sync success dialog (V2).
-    static let syncSuccessFallbackDeviceNameV2 = NSLocalizedString("preferences.sync.success-v2.fallback-device-name", bundle: Bundle.module, value: "This device", comment: "Fallback device name in the Sync success dialog when the current device name is unavailable (V2)")
-    static func syncSuccessTitleV2(deviceName: String) -> String {
-        let format = NSLocalizedString("preferences.sync.success-v2.title", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Title in the Sync success dialog. %@ is the name of the device that was added (V2)")
+    // Sync success dialog.
+    static let syncSuccessFallbackDeviceName = NSLocalizedString("preferences.sync.success-v2.fallback-device-name", bundle: Bundle.module, value: "This device", comment: "Fallback device name in the Sync success dialog when the current device name is unavailable")
+    static func syncSuccessTitle(deviceName: String) -> String {
+        let format = NSLocalizedString("preferences.sync.success-v2.title", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Title in the Sync success dialog. %@ is the name of the device that was added")
         return String(format: format, deviceName)
     }
-    static let syncSuccessDescriptionV2 = NSLocalizedString("preferences.sync.success-v2.description", bundle: Bundle.module, value: "Use this code to restore your synced data if you lose access to your devices. Keep it safe.", comment: "Recovery code explanation in the Sync success dialog (V2)")
-    static let syncSuccessRecoveryCodeLabelV2 = NSLocalizedString("preferences.sync.success-v2.recovery-code-label", bundle: Bundle.module, value: "Recovery Code", comment: "Recovery code label in the Sync success dialog (V2)")
-    static let syncSuccessCopyCodeButtonV2 = NSLocalizedString("preferences.sync.success-v2.copy-code-button", bundle: Bundle.module, value: "Copy Code", comment: "Button to copy the recovery code in the Sync success dialog (V2)")
-    static let syncSuccessCopiedCodeButtonV2 = NSLocalizedString("preferences.sync.success-v2.copied-code-button", bundle: Bundle.module, value: "Copied", comment: "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog (V2)")
-    static let syncSuccessDownloadPDFButtonV2 = NSLocalizedString("preferences.sync.success-v2.download-pdf-button", bundle: Bundle.module, value: "Download as PDF", comment: "Button to download the recovery code as a PDF in the Sync success dialog (V2)")
+    static let syncSuccessDescription = NSLocalizedString("preferences.sync.success-v2.description", bundle: Bundle.module, value: "Use this code to restore your synced data if you lose access to your devices. Keep it safe.", comment: "Recovery code explanation in the Sync success dialog")
+    static let syncSuccessRecoveryCodeLabel = NSLocalizedString("preferences.sync.success-v2.recovery-code-label", bundle: Bundle.module, value: "Recovery Code", comment: "Recovery code label in the Sync success dialog")
+    static let syncSuccessCopyCodeButton = NSLocalizedString("preferences.sync.success-v2.copy-code-button", bundle: Bundle.module, value: "Copy Code", comment: "Button to copy the recovery code in the Sync success dialog")
+    static let syncSuccessCopiedCodeButton = NSLocalizedString("preferences.sync.success-v2.copied-code-button", bundle: Bundle.module, value: "Copied", comment: "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog")
+    static let syncSuccessDownloadPDFButton = NSLocalizedString("preferences.sync.success-v2.download-pdf-button", bundle: Bundle.module, value: "Download as PDF", comment: "Button to download the recovery code as a PDF in the Sync success dialog")
 
     // Enter recovery code dialog
     static let enterRecoveryCodeDialogTitle = NSLocalizedString("preferences.enter-recovery-code.dialog-title", bundle: Bundle.module, value: "Enter Code", comment: "Sync enter recovery code dialog title")
@@ -161,95 +138,16 @@ enum UserText {
 
     // Sync Title
     static let sync = NSLocalizedString("preferences.sync", bundle: Bundle.module, value: "Sync & Backup", comment: "Show sync preferences")
-    static let syncRollOutBannerDescription = NSLocalizedString("preferences.sync.rollout-banner.description", bundle: Bundle.module, value: "Sync & Backup is rolling out gradually and may not be available yet within DuckDuckGo on your other devices.", comment: "Description of rollout banner")
 
     static let turnOff = NSLocalizedString("preferences.sync.turn-off", bundle: Bundle.module, value: "Turn Off", comment: "Turn off sync confirmation dialog button title")
-    static let turnOffSync = NSLocalizedString("preferences.sync.turn-off.ellipsis", bundle: Bundle.module, value: "Turn Off Sync…", comment: "Disable sync button caption")
 
-    // Sync Enabled View
     // Turn off sync dialog
     static let turnOffSyncConfirmTitle = NSLocalizedString("preferences.sync.turn-off.confirm.title", bundle: Bundle.module, value: "Turn off sync?", comment: "Turn off sync confirmation dialog title")
     static let turnOffSyncConfirmMessage = NSLocalizedString("preferences.sync.turn-off.confirm.message", bundle: Bundle.module, value: "This device will no longer be able to access your synced data.", comment: "Turn off sync confirmation dialog message")
-    // Delete server data
-    static let turnOffAndDeleteServerData = NSLocalizedString("preferences.sync.turn-off-and-delete-data", bundle: Bundle.module, value: "Turn Off and Delete Server Data…", comment: "Disable and delete data sync button caption")
-    // sync connected
-    static let syncConnected = NSLocalizedString("preferences.sync.connected", bundle: Bundle.module, value: "Sync Enabled", comment: "Sync state is enabled")
-    // synced devices
-    static let syncedDevices = NSLocalizedString("preferences.sync.synced-devices", bundle: Bundle.module, value: "Synced Devices", comment: "Settings section title")
     static let thisDevice = NSLocalizedString("preferences.sync.this-device", bundle: Bundle.module, value: "This Device", comment: "Indicator of a current user's device on the list")
     static let currentDeviceDetails = NSLocalizedString("preferences.sync.current-device-details", bundle: Bundle.module, value: "Details...", comment: "Sync Settings device details button")
-    static let removeDeviceButton = NSLocalizedString("preferences.sync.remove-device", bundle: Bundle.module, value: "Remove...", comment: "Button to remove a device")
 
-    // Remove device dialog
-    static let removeDeviceConfirmTitle = NSLocalizedString("preferences.sync.remove-device-title", bundle: Bundle.module, value: "Remove device?", comment: "Title on remove a device confirmation")
-    static let removeDeviceConfirmButton = NSLocalizedString("preferences.sync.remove-device-button", bundle: Bundle.module, value: "Remove Device", comment: "Button text on remove a device confirmation button")
-    static func removeDeviceConfirmMessage(_ deviceName: String) -> String {
-        let localized = NSLocalizedString("preferences.sync.remove-device-message",
-                                          bundle: Bundle.module, value: "\"%@\" will no longer be able to access your synced data.",
-                                          comment: "Message to confirm the device will no longer be able to access the synced data - devoce name item inserted")
-        return String(format: localized, deviceName)
-    }
-
-    static let recovery = NSLocalizedString("prefrences.sync.recovery", bundle: Bundle.module, value: "Recovery", comment: "Sync settings section title")
-    static let recoveryInstructions = NSLocalizedString("prefrences.sync.recovery-instructions", bundle: Bundle.module, value: "If you lose your device, you will need this recovery code to restore your synced data.", comment: "Instructions on how to restore synced data")
-    static let recoveryInstructionsFooter = NSLocalizedString("preferences.sync.recovery-instructions.footer", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer / caption on the restore synced data section in sync settings")
-
-    // Sync with another device dialog
-    static let syncWithAnotherDeviceTitle = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-title", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync with another device dialog title")
-    static let syncWithAnotherDeviceShowCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-button", bundle: Bundle.module, value: "Show Code", comment: "Text on show code button on Sync with another device dialog")
-    static let syncWithAnotherDeviceScanThisQRCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.scan-qr-code-button", bundle: Bundle.module, value: "Scan This QR Code", comment: "Text on scan QR code button on Sync with another device dialog")
-    static let syncWithAnotherDeviceEnterCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.enter-code-button", bundle: Bundle.module, value: "Enter Code", comment: "Text on enter code button on Sync with another device dialog")
-    static let syncWithAnotherDeviceShowQRCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-qr-code-explanation", bundle: Bundle.module, value: "Scan this QR code to connect.", comment: "Sync with another device dialog show qr code explanation")
-    static let syncWithAnotherDeviceEnterCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.enter-code-explanation", bundle: Bundle.module, value: "Paste the code here to sync.", comment: "Sync with another device dialog enter code explanation")
-    static let syncWithAnotherDeviceShowCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-explanation", bundle: Bundle.module, value: "Share this code to connect with a desktop machine.", comment: "Sync with another device dialog show code explanation")
-    static let syncWithAnotherDeviceShowCodeToPasteExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-to-paste-explanation", bundle: Bundle.module, value: "Paste code in DuckDuckGo App", comment: "Sync with another device dialog show code explanation")
-    static let syncWithAnotherDeviceUseQRCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-qr-code-link", bundle: Bundle.module, value: "Use QR Code Instead", comment: "Sync with another device dialog use qr code link")
-    static let syncWithAnotherDeviceUseTextCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-text-code-link", bundle: Bundle.module, value: "Use Text Code Instead", comment: "Sync with another device dialog view text code link")
-    static let syncWithAnotherDeviceStep1 = NSLocalizedString("preferences.sync.sync-with-another-device.step1", bundle: Bundle.module, value: "On another device, open the [DuckDuckGo App](https://duckduckgo.com/app/devices)", comment: "First instruction for setting up 'Sync with another device'. The [text](url) markdown is a link and must be preserved, keeping 'DuckDuckGo App' as the link text and the URL unchanged.")
-    static let syncWithAnotherDeviceStep2 = NSLocalizedString("preferences.sync.sync-with-another-device.step2", bundle: Bundle.module, value: "Go to **Settings › Sync & Backup › Sync With Another Device**", comment: "Second instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the Settings path.")
-    static let syncWithAnotherDeviceStep3ScanQRCode = NSLocalizedString("preferences.sync.sync-with-another-device.step3-scan-qr-code", bundle: Bundle.module, value: "**Point your phone at this screen** to scan the QR code", comment: "Third instruction for setting up 'Sync with another device', shown while displaying a QR code. **text** markers indicate bold styling, which should be kept around the emphasized phrase.")
-    static let syncWithAnotherDeviceStep3TextCode = NSLocalizedString("preferences.sync.sync-with-another-device.step3-text-code", bundle: Bundle.module, value: "**Copy this code and paste it on your other device**", comment: "Third instruction for setting up 'Sync with another device', shown while displaying a text code to copy. The whole sentence is wrapped in **text** bold markers, which should be preserved.")
-    static let syncWithAnotherDeviceStep3EnterCode = NSLocalizedString("preferences.sync.sync-with-another-device.step3-enter-code", bundle: Bundle.module, value: "**On your other device, copy the code and paste it below**", comment: "Third instruction for setting up 'Sync with another device', shown while entering a code from the other device. The whole sentence is wrapped in **text** bold markers, which should be preserved.")
-    static let syncWithAnotherDeviceStep4 = NSLocalizedString("preferences.sync.sync-with-another-device.step4", bundle: Bundle.module, value: "**Don’t close this window** while connecting", comment: "Fourth instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the emphasized phrase.")
-    static let syncWithAnotherDeviceCopyConfirmationTitle = NSLocalizedString("preferences.sync.sync-with-another-device.copy-confirmation.title", bundle: Bundle.module, value: "Paste the code on your other device", comment: "Title of the reminder shown after the user copies the sync code.")
-    static let syncWithAnotherDeviceCopyConfirmationMessage = NSLocalizedString("preferences.sync.sync-with-another-device.copy-confirmation.message", bundle: Bundle.module, value: "Come back to this device after pasting the code.", comment: "Message of the reminder shown after the user copies the sync code.")
-    static let syncSingleDeviceSetupAction = NSLocalizedString("preferences.sync.single-device-setup.action", bundle: Bundle.module, value: "Sync & Back Up This Device Only", comment: "Button to turn on sync and backup for a single device")
-
-    // Save recovery PDF dialog
-    static let saveRecoveryPDF = NSLocalizedString("prefrences.sync.save-recovery-pdf", bundle: Bundle.module, value: "Save Your Recovery Code", comment: "Caption for a button to save Sync recovery PDF")
-    static let recoveryPDFExplanation = NSLocalizedString("prefrences.sync.recovery-pdf-explanation", bundle: Bundle.module, value: "If you lose access to your devices, you will need this code to recover your synced data. You can save this code to your device as a PDF.", comment: "Sync recovery PDF explanation")
-    static let recoveryPDFCopyCodeButton = NSLocalizedString("prefrences.sync.recovery-pdf-copy-code-button", bundle: Bundle.module, value: "Copy Code", comment: "Sync recovery PDF copy code button")
-    static let recoveryPDFSavePDFButton = NSLocalizedString("prefrences.sync.recovery-pdf-save-pdf-button", bundle: Bundle.module, value: "Save PDF", comment: "Sync recovery PDF save pdf button")
-    static let recoveryPDFWarning = NSLocalizedString("prefrences.sync.recovery-pdf-warning", bundle: Bundle.module, value: "Sync & Backup data can’t be recovered after 18 months of inactivity.", comment: "Sync recovery PDF warning")
-
-    // Sync with server dialog
-    static let syncWithServerTitle = NSLocalizedString("preferences.sync.sync-with-server-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync with server dialog title")
-    static let syncWithServerSubtitle1 = NSLocalizedString("preferences.sync.sync-with-server-subtitle1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Sync with server dialog first subtitle")
-    static let syncWithServerSubtitle1Updated = NSLocalizedString("preferences.sync.sync-with-server-subtitle1-updated", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks, passwords, credit cards, identities, and Duck.ai chats on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Sync with server dialog first subtitle")
-    static let syncWithServerSubtitle2 = NSLocalizedString("preferences.sync.sync-with-server-subtitle2", bundle: Bundle.module, value: "The encryption key is only stored on your device, DuckDuckGo cannot access it.", comment: "Sync with server dialog second subtitle")
-    static let syncWithServerButton = NSLocalizedString("preferences.sync.sync-with-server-button", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Sync with server dialog button")
-
-    // Device synced dialog
-    static let deviceSynced = NSLocalizedString("prefrences.sync.device-synced", bundle: Bundle.module, value: "New device added!", comment: "Sync setup confirmation dialog title")
-
-    // Device details
-    static let deviceDetailsTitle = NSLocalizedString("prefrences.sync.device-details.title", bundle: Bundle.module, value: "Device Details", comment: "The title of the device details dialog")
-    static let deviceDetailsLabel = NSLocalizedString("prefrences.sync.device-details.label", bundle: Bundle.module, value: "Name", comment: "The text entry label to name the device")
-    static let deviceDetailsPrompt = NSLocalizedString("prefrences.sync.device-details.prompt", bundle: Bundle.module, value: "Device name", comment: "The text entry prompt to name the device")
-
-    // Delete Account Dialog
-    static let deleteAccountTitle = NSLocalizedString("prefrences.sync.delete-account.title", bundle: Bundle.module, value: "Delete server data?", comment: "Title for delete account confirmation pop up")
-    static let deleteAccountMessage = NSLocalizedString("prefrences.sync.delete-account.message", bundle: Bundle.module, value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for delete account confirmation pop up")
-    static let deleteAccountButton = NSLocalizedString("prefrences.sync.delete-account.button", bundle: Bundle.module, value: "Delete Data", comment: "Label for delete account button")
-
-    // Sync enabled options
-    static let optionsSectionTitle = NSLocalizedString("prefrences.sync.options-section-title", bundle: Bundle.module, value: "Options", comment: "Title for options settings")
-    static let shareFavoritesOptionTitle = NSLocalizedString("prefrences.sync.share-favorite-option-title", bundle: Bundle.module, value: "Unify Favorites Across Devices", comment: "Title for share favorite option")
-    static let shareFavoritesOptionCaption = NSLocalizedString("prefrences.sync.share-favorite-option-caption", bundle: Bundle.module, value: "Use the same favorite bookmarks on all your devices. Leave off to keep mobile and desktop favorites separate.", comment: "Caption for share favorite option")
-    static let fetchFaviconsOptionTitle = NSLocalizedString("prefrences.sync.fetch-favicons-option-title", bundle: Bundle.module, value: "Auto-Download Icons", comment: "Title for fetch favicons option")
-    static let fetchFaviconsOptionCaption = NSLocalizedString("prefrences.sync.fetch-favicons-option-caption", bundle: Bundle.module, value: "Automatically download icons for synced bookmarks. Icon downloads are exposed to your network.", comment: "Caption for fetch favicons option")
-
-    // sync enabled errors
+    // Sync errors
     static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", bundle: Bundle.module, value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", bundle: Bundle.module, value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
     static let creditCardsLimitExceededAction = NSLocalizedString("prefrences.sync.credit-cards-limit-exceeded-action", value: "Manage credit cards…", comment: "Button title for sync credit cards limits exceeded warning to go to manage payment methods")

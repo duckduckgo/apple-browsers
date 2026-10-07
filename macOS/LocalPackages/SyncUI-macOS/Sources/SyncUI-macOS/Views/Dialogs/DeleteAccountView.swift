@@ -33,8 +33,8 @@ struct DeleteAccountView: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncWarnFeature128)
                     .accessibilityHidden(true)
-                SyncUIViews.DialogTitle(text: UserText.deleteAccountConfirmTitleV2)
-                SyncUIViews.CenteredBody(text: UserText.deleteAccountConfirmMessageV2)
+                SyncUIViews.DialogTitle(text: UserText.deleteAccountConfirmTitle)
+                SyncUIViews.CenteredBody(text: UserText.deleteAccountConfirmMessage)
 
                 SyncedDevicesList(devices: devices)
                     .roundedBorder()
@@ -56,7 +56,7 @@ struct DeleteAccountView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.deleteAccountConfirmButtonV2)
+                    Text(UserText.deleteAccountConfirmButton)
                 }
             }
             .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),

@@ -303,7 +303,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             keyValueStore: UserDefaults.app,
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
-            featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
@@ -1027,10 +1026,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             removeTabHistory(for: tabIDs)
         }
 
-        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            Task {
-                await clearAppSwitcherSnapshots()
-            }
+        Task {
+            await clearAppSwitcherSnapshots()
         }
 
         tabsCacheNeedsCleanup = true

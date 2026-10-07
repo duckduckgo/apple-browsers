@@ -89,6 +89,7 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case mainMenuFileNewChat = "main-menu-file-new-chat"
     case mainMenuSidebar = "main-menu-sidebar"
+    case mainMenuAskAboutPage = "main-menu-ask-about-page"
     case mainMenuOpenDuckAI = "main-menu-open-duck-ai"
     case mainMenuNewChat = "main-menu-new-chat"
     case mainMenuViewAllChats = "main-menu-view-all-chats"
@@ -113,19 +114,31 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case settings = "settings"
 
+    /// Duck.ai reached by navigating to it directly rather than from a Duck.ai surface: typed in the
+    /// address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link
+    /// from another app, or a link on a web page.
+    case directTyped = "direct-typed"
+    case directSuggestion = "direct-suggestion"
+    case directBookmark = "direct-bookmark"
+    case directFavorite = "direct-favorite"
+    case directHistory = "direct-history"
+    case directExternal = "direct-external"
+    case directLink = "direct-link"
+
     /// No native surface opens this one; it is read from the funnel marker duckduckgo.com puts on
     /// the chat URL when its homepage hands a prompt over (`URL.isDuckAIOpenedFromHomepage`).
     case duckduckgoHomepage = "duckduckgo-homepage"
 
-    /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
-    /// direct navigation from an entry point nobody has instrumented yet.
+    /// Named for the attribution gap it measures: a chat no surface stamped and no direct navigation
+    /// explains, such as a session restored at startup or an entry point nobody has instrumented yet.
     case unattributed = "unattributed"
 
     /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept
-    /// only for continuity with dashboards that predate it.
+    /// only for continuity with dashboards that predate it. The main-menu Ask About Page counts
+    /// because it reported as the tab-bar one until it had its own source.
     public var isAskDuckAiButton: Bool {
         switch self {
-        case .tabBarButton, .askAboutPage, .tabBarSidebar, .tabBarChats:
+        case .tabBarButton, .askAboutPage, .tabBarSidebar, .tabBarChats, .mainMenuAskAboutPage:
             return true
         default:
             return false
@@ -140,10 +153,27 @@ public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling
     public typealias DataType = AIChatConversationSource
     private var data: DataType?
 
+    /// The same stamp, kept for the entry-point pixel: the opener reports it as soon as Duck.ai
+    /// opens, while the chat consumes `data` only when it loads.
+    private var unreportedEntry: DataType?
+
     public init() {}
 
     public func setData(_ data: DataType) {
         self.data = data
+        unreportedEntry = data
+    }
+
+    /// Returns the latest stamp for the entry-point pixel, once.
+    public func takeUnreportedEntry() -> DataType? {
+        defer { unreportedEntry = nil }
+        return unreportedEntry
+    }
+
+    /// The open was abandoned, so neither the entry-point pixel nor the next chat may use the stamp.
+    public func discardPendingOpen() {
+        data = nil
+        unreportedEntry = nil
     }
 
     public func consumeData() -> DataType? {

@@ -63,7 +63,7 @@ final class WebViewSnapshotView: NSView {
 
     private func updateDimColor() {
         NSAppearance.withAppAppearance {
-            dimmingView.layer?.backgroundColor = NSColor.windowBackground.withAlphaComponent(1.0).cgColor
+            dimmingView.layer?.backgroundColor = NSColor(resource: .windowBackground).withAlphaComponent(1.0).cgColor
         }
     }
 }

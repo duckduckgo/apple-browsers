@@ -253,6 +253,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelName = newValue }
     }
 
+    var modelIcon: UIImage? {
+        get { toolsToolbar.modelIcon }
+        set { toolsToolbar.modelIcon = newValue }
+    }
+
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }
@@ -1645,7 +1650,8 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateSubmitButtonStyle() {
         toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
-        toolsToolbar.usesAskSubmitButton = handler.usesAskSubmitButton
+        toolsToolbar.termsOfServiceSendButton = handler.termsOfServiceSendButton
+        toolsToolbar.reservesTermsOfServiceSendButton = handler.reservesTermsOfServiceSendButton
     }
 
     private func submitCurrentInput() {
@@ -2051,7 +2057,14 @@ private extension UnifiedToggleInputView {
             }
             .store(in: &cancellables)
 
-        handler.usesAskSubmitButtonPublisher
+        handler.termsOfServiceSendButtonPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.reservesTermsOfServiceSendButtonPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateSubmitButtonStyle()

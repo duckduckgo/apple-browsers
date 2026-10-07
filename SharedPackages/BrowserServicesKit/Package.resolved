@@ -1,13 +1,13 @@
 {
-  "originHash" : "a77403a2837b4fc31b25c83c9b7dfc27d2df09b6a7bc64582b55b3ff18305a82",
+  "originHash" : "cf0ac360690b285f7ee267a1a030825f48081c6ddfff2a3789425e9ee6828aa6",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "e032eac688cc9dd30eae2c60425e915aae1507f6",
-        "version" : "17.18.0"
+        "revision" : "2c2c7e5d5b6902f989cb418d74b0c4a1540ec601",
+        "version" : "17.20.0"
       }
     },
     {
@@ -83,6 +83,15 @@
       }
     },
     {
+      "identity" : "swift-issue-reporting",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
+      "state" : {
+        "revision" : "75b000cea2ca6d7527a57e1b9cc0bdf21a9abe9f",
+        "version" : "2.1.1"
+      }
+    },
+    {
       "identity" : "swifter",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/httpswift/swifter.git",
@@ -107,15 +116,6 @@
       "state" : {
         "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
         "version" : "4.0.0"
-      }
-    },
-    {
-      "identity" : "xctest-dynamic-overlay",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
-      "state" : {
-        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
-        "version" : "1.13.1"
       }
     }
   ],

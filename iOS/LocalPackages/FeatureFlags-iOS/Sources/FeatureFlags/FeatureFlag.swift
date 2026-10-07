@@ -392,9 +392,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
-    case tabTerminationErrorPage
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
 
@@ -463,9 +460,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
-    case appSwitcherSnapshotClearing
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
@@ -557,6 +551,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219175598274067
+    case syncImprovedPairingFlow
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
@@ -828,7 +825,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatContextualAddressBarMenu:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualAddressBarMenu), supportsLocalOverriding: true)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualAddressBarMenu), supportsLocalOverriding: true)
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
@@ -844,7 +841,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualSuggestedPrompts:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:
@@ -889,8 +886,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .tabTerminationTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
-        case .tabTerminationErrorPage:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationErrorPage))
         case .tabEvictionOnMemoryWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
         case .tabLRUEviction:
@@ -931,8 +926,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
-        case .appSwitcherSnapshotClearing:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:
@@ -989,6 +982,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename))
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:

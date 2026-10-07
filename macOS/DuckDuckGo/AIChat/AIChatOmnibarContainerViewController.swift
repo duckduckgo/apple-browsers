@@ -2589,8 +2589,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
 
-        if let borderColor = NSColor(named: "AddressBarBorderColor"), !hostDrawsChrome {
-            backgroundView.borderColor = borderColor
+        if !hostDrawsChrome {
+            backgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             backgroundView.borderColor = .clear
         }
@@ -2609,31 +2609,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // be themed without a deeper rewrite.)
         let focusRingColor = colorsProvider.accentPrimaryColor
         toolsButton.tintColor = toolButtonTintColor
-        toolsButton.hoverBackgroundColor = .buttonMouseOver
-        toolsButton.pressedBackgroundColor = .buttonMouseDown
+        toolsButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        toolsButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         toolsButton.focusRingColor = focusRingColor
         imageGenActiveButton.tintColor = toolButtonTintColor
-        imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
-        imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageGenActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageGenActiveButton.focusRingColor = focusRingColor
         webSearchActiveButton.tintColor = toolButtonTintColor
-        webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
-        webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        webSearchActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         webSearchActiveButton.focusRingColor = focusRingColor
         imageUploadButton.tintColor = toolButtonTintColor
-        imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-        imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageUploadButton.focusRingColor = focusRingColor
         reasoningPickerButton.tintColor = toolButtonTintColor
-        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
-        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        reasoningPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
         // The two borders read as one crisp edge over an opaque fill, but split into a visible
         // double outline over a translucent one.
-        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
+        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(resource: .addressBarInnerBorder)
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
@@ -2650,7 +2650,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap
         panelBottomEdgeStrokeView.cornerRadius = panelRadius
-        panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")
+        panelBottomEdgeStrokeView.strokeColor = NSColor(resource: .addressBarBorder)
         // Re-asserted because `applyTheme` re-runs on appearance changes. Over host-drawn chrome
         // the host owns the outer silhouette, so a shadow round the card falls inside the bar.
         usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
@@ -2661,10 +2661,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
             usageWarningShadowView.shadowColor = colorsProvider.addressBarShadowColor
-            imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-            imageUploadButton.pressedBackgroundColor = .buttonMouseDown
-            modelPickerButton.hoverBackgroundColor = .buttonMouseOver
-            modelPickerButton.pressedBackgroundColor = .buttonMouseDown
+            imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
+            modelPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            modelPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         }
     }
 }

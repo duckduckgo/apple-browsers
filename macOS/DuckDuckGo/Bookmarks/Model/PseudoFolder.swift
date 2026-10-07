@@ -24,7 +24,7 @@ import DesignResourcesKitIcons
 final class PseudoFolder: Equatable {
 
     static let favorites = PseudoFolder(id: UUID().uuidString, name: UserText.favorites, icon: DesignSystemImages.Color.Size16.favorite)
-    static let bookmarks = PseudoFolder(id: UUID().uuidString, name: UserText.bookmarks, icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder)
+    static let bookmarks = PseudoFolder(id: UUID().uuidString, name: UserText.bookmarks, icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : NSImage(resource: .bookmarksFolder))
 
     let id: String
     let name: String

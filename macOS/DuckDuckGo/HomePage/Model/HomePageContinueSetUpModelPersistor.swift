@@ -26,7 +26,6 @@ protocol HomePageContinueSetUpModelPersisting {
     var shouldShowDuckPlayerSetting: Bool { get set }
     var shouldShowEmailProtectionSetting: Bool { get set }
     var shouldShowYouTubeAdBlockingSetting: Bool { get set }
-    var isFirstSession: Bool { get set }
     func clear()
 }
 
@@ -40,7 +39,6 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         case homePageShowDuckPlayer = "home.page.show.duck.player"
         case homePageShowEmailProtection = "home.page.show.email.protection"
         case homePageShowYouTubeAdBlocking = "home.page.show.youtube.ad.blocking"
-        case homePageIsFirstSession = "home.page.is.first.session"
     }
 
     init(keyValueStore: KeyValueStoring) {
@@ -77,11 +75,6 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         set { keyValueStore.set(newValue, forKey: Key.homePageShowYouTubeAdBlocking.rawValue) }
     }
 
-    var isFirstSession: Bool {
-        get { keyValueStore.object(forKey: Key.homePageIsFirstSession.rawValue) as? Bool ?? true }
-        set { keyValueStore.set(newValue, forKey: Key.homePageIsFirstSession.rawValue) }
-    }
-
     func clear() {
         keyValueStore.removeObject(forKey: Key.homePageShowMakeDefault.rawValue)
         keyValueStore.removeObject(forKey: Key.homePageShowAddToDock.rawValue)
@@ -89,6 +82,5 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         keyValueStore.removeObject(forKey: Key.homePageShowDuckPlayer.rawValue)
         keyValueStore.removeObject(forKey: Key.homePageShowEmailProtection.rawValue)
         keyValueStore.removeObject(forKey: Key.homePageShowYouTubeAdBlocking.rawValue)
-        keyValueStore.removeObject(forKey: Key.homePageIsFirstSession.rawValue)
     }
 }

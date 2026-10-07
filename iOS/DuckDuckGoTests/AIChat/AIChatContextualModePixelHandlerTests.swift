@@ -26,6 +26,25 @@ import PixelKit
 @Suite("AI Chat Contextual Mode Pixel Handler Tests", .serialized)
 final class AIChatContextualModePixelHandlerTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Tab collection wait timeouts use contextual pixel forwarding", .timeLimit(.minutes(1)))
+    func tabCollectionWaitTimeoutUsesContextualPixelForwarding() {
+        var firedName: String?
+        var firedParameters: [String: String]?
+        var firedFrequency: PixelKit.Frequency?
+        let handler = AIChatContextualModePixelHandler(firePixelKitEvent: { event, frequency in
+            firedName = event.name
+            firedParameters = event.parameters
+            firedFrequency = frequency
+        })
+        for reason in [MultiTabCollectionWaitTimeoutPixel.Reason.sourceCollection, .crossTabCollection, .both] {
+            handler.fireTabAttachmentCollectionWaitTimedOut(reason: reason)
+            #expect(firedName == "aichat_contextual_tab_attachment_collection_wait_timeout")
+            #expect(firedParameters == ["reason": reason.rawValue])
+            #expect(firedFrequency == .dailyAndCount)
+        }
+    }
+
     // MARK: - Sheet Lifecycle Pixels
 
     @Test("Sheet opened pixel fires correctly")
@@ -575,6 +594,64 @@ final class AIChatContextualModePixelHandlerTests {
         sut.fireAddressBarMenuRecentChatsSelected()
 
         #expect(firedEventNames == ["aichat_contextual_address_bar_menu_all_chats_selected"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Address bar Ask About Search selection fires a daily and count PixelKit event", .timeLimit(.minutes(1)))
+    func address_bar_ask_about_search_selection_fires_pixel() {
+        var firedEventNames: [String] = []
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in Issue.record("Must use PixelKit") },
+            firePixelKitEvent: { event, frequency in
+                #expect(frequency == .dailyAndCount)
+                #expect(event.parameters == nil)
+                firedEventNames.append(event.name)
+            })
+
+        sut.fireAddressBarMenuAskAboutSearchSelected()
+
+        #expect(firedEventNames == ["aichat_contextual_address_bar_menu_ask_about_search_selected"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Page context offer pixels carry the reason the offer was made", .timeLimit(.minutes(1)),
+          arguments: [AIChatContextualPageContextOfferReason.navigation, .detached])
+    func page_context_offer_pixels_carry_reason(reason: AIChatContextualPageContextOfferReason) {
+        var fired: [(name: String, parameters: [String: String]?)] = []
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in Issue.record("Must use PixelKit") },
+            firePixelKitEvent: { event, frequency in
+                #expect(frequency == .dailyAndCount)
+                fired.append((event.name, event.parameters))
+            })
+
+        sut.firePageContextOfferShown(reason: reason)
+        sut.firePageContextOfferAccepted(reason: reason)
+
+        #expect(fired.map(\.name) == [
+            "aichat_contextual_page_context_offer_shown",
+            "aichat_contextual_page_context_offer_accepted"
+        ])
+        #expect(fired.allSatisfy { $0.parameters == ["offer_reason": reason.rawValue] })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Prompt depth is bucketed", .timeLimit(.minutes(1)), arguments: [
+        (1, "1"), (2, "2"), (3, "3-5"), (5, "3-5"), (6, "6-10"), (10, "6-10"), (11, "11+"), (99, "11+")
+    ])
+    func prompt_depth_is_bucketed(promptIndex: Int, expectedBucket: String) {
+        var fired: [(name: String, parameters: [String: String]?)] = []
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in Issue.record("Must use PixelKit") },
+            firePixelKitEvent: { event, frequency in
+                #expect(frequency == .dailyAndCount)
+                fired.append((event.name, event.parameters))
+            })
+
+        sut.firePromptDepth(AIChatContextualPromptDepthBucket(promptIndex: promptIndex))
+
+        #expect(fired.map(\.name) == ["aichat_contextual_prompt_depth"])
+        #expect(fired.first?.parameters == ["depth_bucket": expectedBucket])
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

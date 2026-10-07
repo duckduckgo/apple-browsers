@@ -560,6 +560,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
+
+    /// Enables the Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
+    case chatLimitExtensionPromo
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

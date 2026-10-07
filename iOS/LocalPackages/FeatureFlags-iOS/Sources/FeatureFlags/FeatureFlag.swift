@@ -583,6 +583,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
+
+    /// Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
+    case aiChatLimitExtensionPromo
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1001,6 +1005,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
         case .alwaysShowKeyboardOnNewTabPage:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
+        case .aiChatLimitExtensionPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
         }
     }
 

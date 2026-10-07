@@ -19,10 +19,10 @@
 import SwiftUI
 
 public enum ManagementDialogKind: Equatable {
-    case deleteAccountV2(_ devices: [SyncDevice])
+    case deleteAccount(_ devices: [SyncDevice])
     case turnOffSync
-    case deviceDetailsV2(_ device: SyncDevice)
-    case removeDeviceV2(_ device: SyncDevice)
+    case deviceDetails(_ device: SyncDevice)
+    case removeDevice(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
     case prepareToSync
     case waitForOtherDevice
@@ -83,20 +83,20 @@ public struct ManagementDialog: View {
             switch model.currentDialog {
             case .turnOffSync:
                 TurnOffSyncView()
-            case .deviceDetailsV2(let device):
-                DeviceDetailsViewV2(device: device)
-            case .removeDeviceV2(let device):
-                RemoveDeviceViewV2(device: device)
-            case .deleteAccountV2(let devices):
-                DeleteAccountViewV2(devices: devices)
+            case .deviceDetails(let device):
+                DeviceDetailsView(device: device)
+            case .removeDevice(let device):
+                RemoveDeviceView(device: device)
+            case .deleteAccount(let devices):
+                DeleteAccountView(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
-                SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
             case .prepareToSync:
-                PreparingToSyncViewV2(state: .connecting)
+                PreparingToSyncView(state: .connecting)
             case .waitForOtherDevice:
-                PreparingToSyncViewV2(state: .waitingForOtherDevice)
+                PreparingToSyncView(state: .waitingForOtherDevice)
             case .saveRecoveryCode(let code):
-                SyncSuccessViewV2(code: code)
+                SyncSuccessView(code: code)
             case .syncAnotherDevicePrompt:
                 SyncAnotherDevicePromptView()
             case .syncAuthenticationCancelled:

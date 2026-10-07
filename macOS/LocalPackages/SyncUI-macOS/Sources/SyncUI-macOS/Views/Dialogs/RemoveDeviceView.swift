@@ -1,5 +1,5 @@
 //
-//  RemoveDeviceViewV2.swift
+//  RemoveDeviceView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
 
-struct RemoveDeviceViewV2: View {
+struct RemoveDeviceView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
 
@@ -38,7 +38,7 @@ struct RemoveDeviceViewV2: View {
     }
 
     var body: some View {
-        SyncDialogV2(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 illustration
                     .accessibilityHidden(true)
@@ -80,12 +80,12 @@ struct RemoveDeviceViewV2: View {
 
 #if DEBUG
 #Preview("This Device") {
-    RemoveDeviceViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+    RemoveDeviceView(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
         .environmentObject(ManagementDialogModel())
 }
 
 #Preview("Other Device") {
-    RemoveDeviceViewV2(device: SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"))
+    RemoveDeviceView(device: SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"))
         .environmentObject(ManagementDialogModel())
 }
 #endif

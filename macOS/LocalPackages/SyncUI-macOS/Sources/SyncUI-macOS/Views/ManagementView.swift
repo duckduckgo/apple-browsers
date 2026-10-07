@@ -62,10 +62,10 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
         StatusIndicatorView(status: syncStatus, isLarge: true)
 
         if model.isSyncEnabled {
-            SyncEnabledViewV2<ViewModel>()
+            SyncEnabledView<ViewModel>()
                 .environmentObject(model)
         } else {
-            SyncSetupViewV2<ViewModel>()
+            SyncSetupView<ViewModel>()
                 .environmentObject(model)
         }
     }

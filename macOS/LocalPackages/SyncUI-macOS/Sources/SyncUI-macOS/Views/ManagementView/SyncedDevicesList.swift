@@ -1,5 +1,5 @@
 //
-//  SyncedDevicesListV2.swift
+//  SyncedDevicesList.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import SwiftUIExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-struct SyncedDevicesListV2: View {
+struct SyncedDevicesList: View {
 
     let devices: [SyncDevice]
 
@@ -39,7 +39,7 @@ struct SyncedDevicesListV2: View {
 
             ForEach(Array(devices.enumerated()), id: \.element.id) { index, device in
                 if index > 0 {
-                    SyncedDevicesSeparatorV2()
+                    SyncedDevicesSeparator()
                 }
                 deviceRow(for: device)
             }
@@ -63,7 +63,7 @@ struct SyncedDevicesListV2: View {
 
     private func deviceRowContent(for device: SyncDevice) -> some View {
         SyncPreferencesRow {
-            SyncedDeviceIconV2(kind: device.kind)
+            SyncedDeviceIcon(kind: device.kind)
         } centerContent: {
             HStack {
                 Text(device.name)
@@ -112,7 +112,7 @@ struct SyncedDevicesListV2: View {
     }
 }
 
-struct SyncedDevicesSeparatorV2: View {
+struct SyncedDevicesSeparator: View {
     var body: some View {
         Rectangle()
             .fill(Color(.blackWhite10))
@@ -121,7 +121,7 @@ struct SyncedDevicesSeparatorV2: View {
     }
 }
 
-struct SyncedDeviceIconV2: View {
+struct SyncedDeviceIcon: View {
     var kind: SyncDevice.Kind
 
     private var image: DesignSystemImage {

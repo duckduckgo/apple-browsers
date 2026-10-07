@@ -1,5 +1,5 @@
 //
-//  SyncSuccessViewV2.swift
+//  SyncSuccessView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
-struct SyncSuccessViewV2: View {
+struct SyncSuccessView: View {
 
     @EnvironmentObject private var model: ManagementDialogModel
 
@@ -36,7 +36,7 @@ struct SyncSuccessViewV2: View {
     }
 
     var body: some View {
-        SyncDialogV2(spacing: 20) {
+        SyncSetupDialog(spacing: 20) {
             VStack(spacing: 20) {
                 Image(.syncSetupSuccess)
                     .resizable()
@@ -144,7 +144,7 @@ struct SyncSuccessViewV2: View {
 #Preview("Device Added") {
     let model = ManagementDialogModel()
     model.thisDeviceName = "Dax’s MacBook Pro"
-    return SyncSuccessViewV2(code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ")
+    return SyncSuccessView(code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ")
         .environmentObject(model)
 }
 #endif

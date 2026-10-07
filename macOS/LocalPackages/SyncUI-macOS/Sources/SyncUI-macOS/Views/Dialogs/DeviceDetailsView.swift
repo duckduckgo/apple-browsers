@@ -1,5 +1,5 @@
 //
-//  DeviceDetailsViewV2.swift
+//  DeviceDetailsView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
 
-struct DeviceDetailsViewV2: View {
+struct DeviceDetailsView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
 
@@ -53,7 +53,7 @@ struct DeviceDetailsViewV2: View {
     }
 
     var body: some View {
-        SyncDialogV2(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 illustration
                     .accessibilityHidden(true)
@@ -131,12 +131,12 @@ struct DeviceDetailsViewV2: View {
 
 #if DEBUG
 #Preview("This Device") {
-    DeviceDetailsViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+    DeviceDetailsView(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
         .environmentObject(ManagementDialogModel())
 }
 
 #Preview("Other Device") {
-    DeviceDetailsViewV2(device: SyncDevice(kind: .mobile, name: "Pixel 8", id: "mobile-device"))
+    DeviceDetailsView(device: SyncDevice(kind: .mobile, name: "Pixel 8", id: "mobile-device"))
         .environmentObject(ManagementDialogModel())
 }
 #endif

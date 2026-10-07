@@ -1,5 +1,5 @@
 //
-//  PreparingToSyncViewV2.swift
+//  PreparingToSyncView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import DesignResourcesKit
 import Lottie
 import SwiftUI
 
-struct PreparingToSyncViewV2: View {
+struct PreparingToSyncView: View {
 
     enum State {
         case connecting
@@ -85,10 +85,10 @@ struct PreparingToSyncViewV2: View {
 
 #if DEBUG
 #Preview("Connecting") {
-    PreparingToSyncViewV2(state: .connecting)
+    PreparingToSyncView(state: .connecting)
 }
 
 #Preview("Waiting for Other Device") {
-    PreparingToSyncViewV2(state: .waitingForOtherDevice)
+    PreparingToSyncView(state: .waitingForOtherDevice)
 }
 #endif

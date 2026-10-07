@@ -1,5 +1,5 @@
 //
-//  CriticalPathsV2Tests.swift
+//  CriticalPathsTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import XCTest
 
-final class CriticalPathsV2Tests: XCTestCase {
+final class CriticalPathsTests: XCTestCase {
 
     private enum Timeouts {
         static let syncOperation: Double = 30.0

@@ -1,5 +1,5 @@
 //
-//  SyncEnabledViewV2.swift
+//  SyncEnabledView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -27,7 +27,7 @@ import PreferencesUI_macOS
 import PreviewSnapshots
 #endif
 
-struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
+struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
 
     var body: some View {
@@ -68,7 +68,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
 
         // My Devices
         PreferencePaneSection(UserText.myDevicesV2) {
-            SyncedDevicesViewV2<ViewModel>()
+            SyncedDevicesView<ViewModel>()
                 .environmentObject(model)
 
             SyncUIViews.LeadingSecondaryBody(text: UserText.myDevicesFooterV2)
@@ -289,7 +289,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
 }
 
 #if DEBUG
-struct SyncEnabledViewV2_Previews: PreviewProvider {
+struct SyncEnabledView_Previews: PreviewProvider {
     typealias State = PreviewManagementViewModel
 
     static var previews: some View {
@@ -306,7 +306,7 @@ struct SyncEnabledViewV2_Previews: PreviewProvider {
             ScrollView {
                 PreferencePane {
                     StatusIndicatorView(status: .on, isLarge: true)
-                    SyncEnabledViewV2<PreviewManagementViewModel>()
+                    SyncEnabledView<PreviewManagementViewModel>()
                         .environmentObject(model)
                 }
                 .padding()

@@ -1,5 +1,5 @@
 //
-//  SyncWithAnotherDeviceViewV2.swift
+//  SyncWithAnotherDeviceView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import DesignResourcesKitIcons
 import PreviewSnapshots
 #endif
 
-struct SyncWithAnotherDeviceViewV2: View {
+struct SyncWithAnotherDeviceView: View {
 
     @Environment(\.colorScheme) private var parentColorScheme
     @EnvironmentObject private var model: ManagementDialogModel
@@ -34,7 +34,7 @@ struct SyncWithAnotherDeviceViewV2: View {
     private let codeForDisplayOrPasting: String
     private let stringForQRCode: String
 
-    @State private var selectedTab: PairingTabV2
+    @State private var selectedTab: SyncSetupTab
     @State private var showCopyConfirmation = false
 
     init(codeForDisplayOrPasting: String, stringForQRCode: String) {
@@ -48,7 +48,7 @@ struct SyncWithAnotherDeviceViewV2: View {
     fileprivate init(
         codeForDisplayOrPasting: String,
         stringForQRCode: String,
-        initialTab: PairingTabV2
+        initialTab: SyncSetupTab
     ) {
         self.codeForDisplayOrPasting = codeForDisplayOrPasting
         self.stringForQRCode = stringForQRCode
@@ -74,7 +74,7 @@ struct SyncWithAnotherDeviceViewV2: View {
     }
 
     var body: some View {
-        SyncDialogV2(spacing: .zero) {
+        SyncSetupDialog(spacing: .zero) {
             VStack(spacing: 20) {
                 headerArtwork
                 SyncUIViews.DialogTitle(text: title)
@@ -152,7 +152,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         }
     }
 
-    private func tabButton(_ tab: PairingTabV2, title: String) -> some View {
+    private func tabButton(_ tab: SyncSetupTab, title: String) -> some View {
         Button {
             selectedTab = tab
         } label: {
@@ -180,27 +180,27 @@ struct SyncWithAnotherDeviceViewV2: View {
 
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 10) {
-            InstructionStepV2(
+            InstructionStep(
                 number: 1,
                 prefix: UserText.syncWithAnotherDeviceScanStep1PrefixV2,
                 detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
                 showsAppIcon: true
             )
 
-            InstructionStepV2(
+            InstructionStep(
                 number: 2,
                 prefix: UserText.syncWithAnotherDeviceStep2PrefixV2,
                 detail: UserText.syncWithAnotherDeviceStep2DetailV2
             )
 
-            InstructionStepV2(
+            InstructionStep(
                 number: 3,
                 prefix: selectedTab == .scanCode
                     ? UserText.syncWithAnotherDeviceScanStep3V2
                     : UserText.syncWithAnotherDeviceEnterStep3V2
             )
 
-            InstructionStepV2(
+            InstructionStep(
                 number: 4,
                 prefix: UserText.syncWithAnotherDeviceStep4V2
             )
@@ -355,7 +355,7 @@ struct SyncWithAnotherDeviceViewV2: View {
     }
 }
 
-private struct InstructionStepV2: View {
+private struct InstructionStep: View {
     let number: Int
     let prefix: String
     var detail: String?
@@ -409,7 +409,7 @@ private struct InstructionStepV2: View {
     }
 }
 
-private enum PairingTabV2: Hashable {
+private enum SyncSetupTab: Hashable {
     case scanCode
     case enterCode
 }
@@ -421,7 +421,7 @@ private enum Metrics {
 }
 
 #if DEBUG
-struct SyncWithAnotherDeviceViewV2_Previews: PreviewProvider {
+struct SyncWithAnotherDeviceView_Previews: PreviewProvider {
     enum State: Equatable {
         case scanCode
         case enterCode
@@ -438,9 +438,9 @@ struct SyncWithAnotherDeviceViewV2_Previews: PreviewProvider {
         ],
         configure: { state in
             let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
-            let tab: PairingTabV2 = state == .scanCode ? .scanCode : .enterCode
+            let tab: SyncSetupTab = state == .scanCode ? .scanCode : .enterCode
 
-            return SyncWithAnotherDeviceViewV2(
+            return SyncWithAnotherDeviceView(
                 codeForDisplayOrPasting: sampleCode,
                 stringForQRCode: sampleCode,
                 initialTab: tab

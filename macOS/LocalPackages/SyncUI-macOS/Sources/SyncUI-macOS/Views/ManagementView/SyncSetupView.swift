@@ -1,5 +1,5 @@
 //
-//  SyncSetupViewV2.swift
+//  SyncSetupView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import PreviewSnapshots
 
-struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
+struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
 
     var body: some View {
@@ -70,7 +70,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
                     Text(UserText.beginSyncButtonV2)
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable))
+            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))
             .disabled(!model.isConnectingDevicesAvailable)
             .padding(.bottom, 20)
         }
@@ -134,7 +134,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
 }
 
 #if DEBUG
-struct SyncSetupViewV2_Previews: PreviewProvider {
+struct SyncSetupView_Previews: PreviewProvider {
     typealias State = PreviewManagementViewModel
 
     static var previews: some View {
@@ -154,7 +154,7 @@ struct SyncSetupViewV2_Previews: PreviewProvider {
             ))
         ],
         configure: { model in
-            SyncSetupViewV2<PreviewManagementViewModel>()
+            SyncSetupView<PreviewManagementViewModel>()
                 .environmentObject(model)
                 .frame(width: 544, height: 800, alignment: .top)
                 .padding()

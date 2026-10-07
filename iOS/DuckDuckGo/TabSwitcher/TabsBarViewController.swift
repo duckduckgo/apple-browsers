@@ -210,6 +210,7 @@ class TabsBarViewController: UIViewController {
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
+        (collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)?.currentIndex = { [weak self] in self?.currentIndex }
         collectionView.dragDelegate = self
         collectionView.dropDelegate = self
         collectionView.dragInteractionEnabled = true
@@ -451,8 +452,15 @@ class TabsBarViewController: UIViewController {
     private func scrollToSelectedTab() {
         DispatchQueue.main.async {
             guard let currentIndex = self.currentIndex else { return }
-            self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
+            self.scrollToTab(at: IndexPath(row: currentIndex, section: 0))
         }
+    }
+
+    private func scrollToTab(at indexPath: IndexPath) {
+        // Selection still reveals the tab's original place in the strip, rather than its pinned frame.
+        guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+              let frame = layout.unpinnedFrameForItem(at: indexPath) else { return }
+        collectionView.scrollRectToVisible(frame, animated: true)
     }
 
     /// After a resize/rotation reflows the strip, nudge the current tab fully into view, but only if
@@ -463,7 +471,7 @@ class TabsBarViewController: UIViewController {
             guard let currentIndex = self.currentIndex else { return }
             let indexPath = IndexPath(row: currentIndex, section: 0)
             guard self.isPartiallyClipped(at: indexPath) else { return }
-            self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
+            self.scrollToTab(at: indexPath)
         }
     }
 
@@ -574,11 +582,7 @@ class TabsBarViewController: UIViewController {
         case .currentMode:
             delegate?.tabsBarDidRequestNewTab(self)
         }
-        DispatchQueue.main.async {
-            if let currentIndex = self.currentIndex {
-                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
-            }
-        }
+        scrollToSelectedTab()
     }
 
     private func configureTabSwitcherLongPressMenu() {
@@ -722,6 +726,10 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 
 extension TabsBarViewController: UICollectionViewDelegate {
 
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        flareBackground.update()
+    }
+
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
@@ -818,10 +826,12 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
+        collectionView.collectionViewLayout.invalidateLayout()
         flareBackground.beginReorder()
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        collectionView.collectionViewLayout.invalidateLayout()
         flareBackground.endReorder()
     }
 
@@ -867,6 +877,7 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     }
 
     private func refreshVisibleCellStyles() {
+        collectionView.collectionViewLayout.invalidateLayout()
         let theme = ThemeManager.shared.currentTheme
         let current = currentIndex
         let hidesInactiveCloseButton = isStripOverflowing
@@ -952,7 +963,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
             let indexPath = IndexPath(row: tabIndex, section: 0)
             // Reveal a not-fully-visible tab instead of closing it, guards against accidental taps.
             guard !self.isPartiallyClipped(at: indexPath) else {
-                self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
+                self.scrollToTab(at: indexPath)
                 return
             }
             self.closeTab(at: tabIndex)

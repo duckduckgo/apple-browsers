@@ -154,17 +154,29 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
     }
 
     func refreshEligibility() {
-        isEligibleSubject.send(computeEligibility())
+        refreshEligibility(authState: syncService?.authState)
+    }
+
+    private func refreshEligibility(authState: SyncAuthState?) {
+        isEligibleSubject.send(computeEligibility(authState: authState))
     }
 
     private func subscribeToEligibilityChanges() {
-        syncService?.authStatePublisher
-            .dropFirst()
+        let authStateChanges = syncService?.authStatePublisher.dropFirst()
+
+        authStateChanges?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] authState in
                 MainActor.assumeMainThread {
-                    self?.handleAuthStateChange(authState)
+                    self?.recordActionedIfSyncTurnedOn(authState)
                 }
+            }
+            .store(in: &cancellables)
+
+        authStateChanges?
+            .receive(on: eligibilityQueue)
+            .sink { [weak self] authState in
+                self?.refreshEligibility(authState: authState)
             }
             .store(in: &cancellables)
 
@@ -177,32 +189,23 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
             .store(in: &cancellables)
     }
 
-    private func scheduleEligibilityRefresh() {
-        eligibilityQueue.async { [weak self] in
-            self?.refreshEligibility()
-        }
-    }
-
     @MainActor
-    private func handleAuthStateChange(_ authState: SyncAuthState) {
-        if Self.isSyncTurnedOn(authState), didStartSetupFromPromo {
-            // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
-            didStartSetupFromPromo = false
-            recordResult(content.promoID, .actioned)
-        }
-        scheduleEligibilityRefresh()
+    private func recordActionedIfSyncTurnedOn(_ authState: SyncAuthState) {
+        guard Self.isSyncTurnedOn(authState), didStartSetupFromPromo else { return }
+        // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
+        didStartSetupFromPromo = false
+        recordResult(content.promoID, .actioned)
     }
 
     private static func isSyncTurnedOn(_ authState: SyncAuthState) -> Bool {
         authState == .active || authState == .addingNewDevice
     }
 
-    private func computeEligibility() -> Bool {
+    private func computeEligibility(authState: SyncAuthState?) -> Bool {
         guard featureFlagger.isFeatureOn(content.promoFlag) else { return false }
 
         let privacyConfig = privacyConfigurationManager.privacyConfig
-        guard let syncService,
-              syncService.authState == .inactive,
+        guard authState == .inactive,
               privacyConfig.isSubfeatureEnabled(content.promotionSubfeature),
               privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync) else {
             return false
@@ -235,7 +238,7 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        // Hidden because sync turned on: `handleAuthStateChange` can still record `.actioned`.
+        // Hidden because sync turned on: `recordActionedIfSyncTurnedOn` can still record `.actioned`.
         if syncService?.authState == .inactive {
             didStartSetupFromPromo = false
         }

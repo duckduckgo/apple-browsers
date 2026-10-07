@@ -271,11 +271,10 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
 
         let generation = lifecycleGeneration
-        guard let policy = await documentPolicy(in: frame, webView: webView),
-              generation == lifecycleGeneration,
+        guard let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
               policy.documentID == registration.documentID,
               body["documentID"] as? String == registration.pageDocumentID,
-              await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView),
+              await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView, generation: generation),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true else {
             return (Self.errorPayload(.permissionDenied, message: "Geolocation document is no longer active"), nil)
@@ -309,7 +308,8 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
     }
 
-    /// Cancels watches and permission-status subscriptions, then clears frame registrations.
+    /// Cancels watches and permission-status subscriptions, resolves pending document checks
+    /// with no result, then clears frame registrations.
     /// Call on navigation, process replacement, and tab teardown. The delegate must
     /// separately cancel pending one-shot work.
     @MainActor
@@ -431,9 +431,8 @@ public final class GeolocationUserScript: NSObject, UserScript {
         let generation = lifecycleGeneration
         guard let webView,
               frame.isAssociated(with: webView),
-              let policy = await documentPolicy(in: frame, webView: webView),
-              generation == lifecycleGeneration,
-              await isCurrentDocument(pageDocumentID, in: frame, webView: webView),
+              let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
+              await isCurrentDocument(pageDocumentID, in: frame, webView: webView, generation: generation),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true,
               frame.isAssociated(with: webView),
@@ -452,8 +451,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     @MainActor
     private func documentPolicy(in frame: GeolocationFrame,
-                                webView: WKWebView) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
-        let value = await evaluateDocumentJavaScript { completion in
+                                webView: WKWebView,
+                                generation: UInt64) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
+        let value = await evaluateDocumentJavaScript(generation: generation) { completion in
             webView.callAsyncJavaScript(
                 "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
                 arguments: [:], in: frame.frameInfo, in: .defaultClient, completionHandler: completion)
@@ -466,8 +466,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    private func isCurrentDocument(_ documentID: String, in frame: GeolocationFrame, webView: WKWebView) async -> Bool {
-        let value = await evaluateDocumentJavaScript { completion in
+    private func isCurrentDocument(_ documentID: String,
+                                   in frame: GeolocationFrame,
+                                   webView: WKWebView,
+                                   generation: UInt64) async -> Bool {
+        let value = await evaluateDocumentJavaScript(generation: generation) { completion in
             webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID",
                                        in: frame.frameInfo, in: .page, completionHandler: completion)
         }
@@ -476,8 +479,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     @MainActor
     private func evaluateDocumentJavaScript(
+        generation: UInt64,
         _ evaluate: (@escaping @MainActor @Sendable (Result<Any, Error>) -> Void) -> Void
     ) async -> Any? {
+        // Teardown only resolves waits that already exist, so a stale caller must not start a new one.
+        guard generation == lifecycleGeneration else { return nil }
         let evaluationID = UUID()
         return await withCheckedContinuation { continuation in
             pendingDocumentEvaluations[evaluationID] = continuation

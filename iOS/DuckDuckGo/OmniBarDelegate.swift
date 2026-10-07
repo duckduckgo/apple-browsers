@@ -91,7 +91,7 @@ protocol OmniBarDelegate: AnyObject {
     func onDidEndEditing()
 
     /// SwitchBar
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues)
 
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onEditFavorite(_ favorite: BookmarkEntity)

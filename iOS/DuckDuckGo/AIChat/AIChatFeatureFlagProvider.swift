@@ -49,4 +49,8 @@ struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     func isNativeDataStorageEnabled() -> Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.aiChatNativeStorage)
     }
+
+    func isHomepageChatSuggestionsEnabled() -> Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.aiChatHomepageChatSuggestions)
+    }
 }

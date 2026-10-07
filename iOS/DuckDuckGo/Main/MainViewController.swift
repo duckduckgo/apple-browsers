@@ -247,6 +247,31 @@ class MainViewController: UIViewController {
     private var isAppOpenKeyboardWindowVisible: Bool {
         UIApplication.shared.applicationState == .active && viewIfLoaded?.window?.isHidden == false
     }
+    private var appOpenKeyboardWindowCancellable: AnyCancellable?
+
+    /// App Lock hides this window until an unlock succeeds, which can take more than one attempt
+    /// and can finish before the app is active again. Backgrounding cancels the wait.
+    func runWhenAppOpenKeyboardWindowVisible(_ handler: @escaping () -> Void) {
+        appOpenKeyboardWindowCancellable = nil
+        guard !isAppOpenKeyboardWindowVisible else {
+            handler()
+            return
+        }
+        let requestID = appOpenKeyboardRequestID
+        appOpenKeyboardWindowCancellable = NotificationCenter.default.publisher(for: UIWindow.didBecomeKeyNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                guard appOpenKeyboardRequestID == requestID else {
+                    appOpenKeyboardWindowCancellable = nil
+                    return
+                }
+                guard isAppOpenKeyboardWindowVisible else { return }
+                appOpenKeyboardWindowCancellable = nil
+                handler()
+            }
+    }
 
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true

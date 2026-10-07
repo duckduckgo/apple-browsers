@@ -24,13 +24,11 @@ import Testing
 final class MockAuthenticationService: AuthenticationServiceProtocol {
 
     var authenticateCalled = false
-    var waitUntilUnlockedCallback: (() async -> Void)?
+    var authenticationCallback: (() async -> Void)?
 
-    func authenticate(waitForSuccessfulAuthentication: Bool) async {
+    func authenticate() async {
         authenticateCalled = true
-        if waitForSuccessfulAuthentication {
-            await waitUntilUnlockedCallback?()
-        }
+        await authenticationCallback?()
     }
 
 }
@@ -86,125 +84,6 @@ final class UIInteractionManagerTests {
         launchActionHandler: mockLaunchActionHandler,
         onboardingPresenter: mockOnboardingPresenter
     )
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Cancelling before a flag-on launch starts performs no authentication or callbacks", .timeLimit(.minutes(1)))
-    func cancellationBeforeStartDoesNotAuthenticate() async {
-        let sut = UIInteractionManager(authenticationService: mockAuthService,
-                                       autoClearService: mockAutoClearService,
-                                       launchActionHandler: mockLaunchActionHandler,
-                                       onboardingPresenter: mockOnboardingPresenter,
-                                       waitsForSuccessfulAuthentication: true,
-                                       isApplicationActive: { true })
-        let task = sut.start(launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true),
-                             onWebViewReadyForInteractions: { Issue.record("Cancelled launch called web-view readiness") },
-                             onAppReadyForInteractions: { Issue.record("Cancelled launch called app readiness") })
-        sut.cancelPendingInteractions()
-        await task.value
-        #expect(!mockAuthService.authenticateCalled)
-        #expect(!mockAutoClearService.waitForDataClearedCalled)
-        #expect(!mockLaunchActionHandler.handleLaunchActionCalled)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Flag-on launch waits for unlock and cancels on background", .timeLimit(.minutes(1)), arguments: [false, true])
-    func waitsForUnlockUnlessCancelled(cancelBeforeUnlock: Bool) async {
-        var waitStartedContinuation: AsyncStream<Void>.Continuation!
-        let waitStarted = AsyncStream<Void> { waitStartedContinuation = $0 }
-        var unlockedContinuation: AsyncStream<Void>.Continuation!
-        let unlocked = AsyncStream<Void> { unlockedContinuation = $0 }
-        mockAuthService.waitUntilUnlockedCallback = {
-            waitStartedContinuation.yield(())
-            for await _ in unlocked { }
-        }
-        let sut = UIInteractionManager(authenticationService: mockAuthService,
-                                       autoClearService: mockAutoClearService,
-                                       launchActionHandler: mockLaunchActionHandler,
-                                       onboardingPresenter: mockOnboardingPresenter,
-                                       waitsForSuccessfulAuthentication: true,
-                                       isApplicationActive: { true })
-        var appReady = false
-        let task = sut.start(launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true),
-                             onWebViewReadyForInteractions: { },
-                             onAppReadyForInteractions: { appReady = true })
-        var iterator = waitStarted.makeAsyncIterator()
-        await iterator.next()
-        #expect(!mockLaunchActionHandler.handleLaunchActionCalled)
-        #expect(!appReady)
-
-        if cancelBeforeUnlock {
-            sut.cancelPendingInteractions()
-            // Completion before any unlock proves the cancelled stream does not keep the launch alive.
-            await task.value
-            unlockedContinuation.finish()
-        } else {
-            unlockedContinuation.finish()
-            await task.value
-        }
-        #expect(mockLaunchActionHandler.handleLaunchActionCalled == !cancelBeforeUnlock)
-        #expect(appReady == !cancelBeforeUnlock)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Flag-off launch keeps the first authentication attempt behavior without waiting for activation", .timeLimit(.minutes(1)))
-    func flagOffDoesNotWaitForUnlock() async {
-        mockAuthService.waitUntilUnlockedCallback = { Issue.record("Legacy launch must not wait for successful authentication") }
-        let sut = UIInteractionManager(authenticationService: mockAuthService,
-                                       autoClearService: mockAutoClearService,
-                                       launchActionHandler: mockLaunchActionHandler,
-                                       onboardingPresenter: mockOnboardingPresenter,
-                                       waitsForSuccessfulAuthentication: false,
-                                       isApplicationActive: { false })
-        var appReady = false
-        let task = sut.start(launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true),
-                             onWebViewReadyForInteractions: { },
-                             onAppReadyForInteractions: { appReady = true })
-        await task.value
-        #expect(mockLaunchActionHandler.handleLaunchActionCalled)
-        #expect(appReady)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Successful authentication waits for activation and cancels on background", .timeLimit(.minutes(1)), arguments: [false, true])
-    func waitsForActivationUnlessCancelled(cancelBeforeActivation: Bool) async {
-        let notificationCenter = NotificationCenter()
-        var isApplicationActive = false
-        var stateChecks = 0
-        var waitingContinuation: AsyncStream<Void>.Continuation!
-        let waiting = AsyncStream<Void> { waitingContinuation = $0 }
-        let sut = UIInteractionManager(authenticationService: mockAuthService,
-                                       autoClearService: mockAutoClearService,
-                                       launchActionHandler: mockLaunchActionHandler,
-                                       onboardingPresenter: mockOnboardingPresenter,
-                                       waitsForSuccessfulAuthentication: true,
-                                       notificationCenter: notificationCenter,
-                                       isApplicationActive: {
-                                           stateChecks += 1
-                                           // The second check follows notification registration.
-                                           if stateChecks == 2 { waitingContinuation.yield(()) }
-                                           return isApplicationActive
-                                       })
-        var appReady = false
-        let task = sut.start(launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true),
-                             onWebViewReadyForInteractions: { },
-                             onAppReadyForInteractions: { appReady = true })
-        var iterator = waiting.makeAsyncIterator()
-        await iterator.next()
-        #expect(mockAuthService.authenticateCalled)
-        #expect(!mockLaunchActionHandler.handleLaunchActionCalled)
-        #expect(!appReady)
-
-        if cancelBeforeActivation {
-            sut.cancelPendingInteractions()
-            await task.value
-        }
-        isApplicationActive = true
-        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-        await task.value
-
-        #expect(mockLaunchActionHandler.handleLaunchActionCalled == !cancelBeforeActivation)
-        #expect(appReady == !cancelBeforeActivation)
-    }
 
     @Test("Start method calls onWebViewReadyForInteractions and opens URL")
     func startCallsOnWebViewReadyForInteractionsAndOpensURL() async {

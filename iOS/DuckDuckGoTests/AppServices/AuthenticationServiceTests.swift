@@ -33,8 +33,6 @@ final class MockAuthenticator: Authenticating {
     var authenticateCalled = false
     var isAuthenticationAvailable = true
     var authenticationSucceeds = true
-    var authenticationCallback: (() -> Void)?
-    var authenticationResultProvider: (() async -> Bool)?
 
     func canAuthenticate() -> Bool {
         isAuthenticationAvailable
@@ -42,9 +40,7 @@ final class MockAuthenticator: Authenticating {
     
     func authenticate(reason: String) async -> Bool {
         authenticateCalled = true
-        let result = authenticationSucceeds
-        authenticationCallback?()
-        return await authenticationResultProvider?() ?? result
+        return authenticationSucceeds
     }
 
 }
@@ -65,78 +61,6 @@ final class AuthenticationServiceTests {
                                                       privacyStore: mockPrivacyStore)
     }
 
-    @MainActor
-    @available(iOS 16, macOS 13, *)
-    @Test("A failed authentication holds the launch until retry succeeds or the wait is cancelled",
-          .timeLimit(.minutes(1)), arguments: [false, true])
-    func failedAuthenticationWaitsForSuccessfulRetry(cancelBeforeRetry: Bool) async throws {
-        mockAuthenticator.authenticationSucceeds = false
-        var waitingContinuation: AsyncStream<Void>.Continuation!
-        let waiting = AsyncStream<Void> { waitingContinuation = $0 }
-        mockAuthenticator.authenticationCallback = { waitingContinuation.yield(()) }
-        var completed = false
-        let task = Task { @MainActor in
-            await authenticationService.authenticate(waitForSuccessfulAuthentication: true)
-            completed = true
-        }
-        var iterator = waiting.makeAsyncIterator()
-        await iterator.next()
-        let lockScreen = try #require(mockOverlayWindowManager.lastDisplayedViewController as? AuthenticationViewController)
-        mockOverlayWindowManager.removeOverlayCalled = false
-        #expect(!completed)
-        #expect(!authenticationService.hasCompletedAuthentication)
-
-        if cancelBeforeRetry {
-            task.cancel()
-        } else {
-            mockAuthenticator.authenticationSucceeds = true
-            authenticationService.authenticationViewController(authenticationViewController: lockScreen, didTapWithSender: lockScreen)
-        }
-        await task.value
-        #expect(completed)
-        #expect(mockOverlayWindowManager.removeOverlayCalled == !cancelBeforeRetry)
-        #expect(authenticationService.hasCompletedAuthentication == !cancelBeforeRetry)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @MainActor
-    @Test("A flag-on authentication success arriving after suspend cannot remove the lock overlay", .timeLimit(.minutes(1)))
-    func lateAuthenticationSuccessAfterSuspendKeepsLock() async {
-        var startedContinuation: AsyncStream<Void>.Continuation!
-        let started = AsyncStream<Void> { startedContinuation = $0 }
-        var resultContinuation: AsyncStream<Bool>.Continuation!
-        let result = AsyncStream<Bool> { resultContinuation = $0 }
-        mockAuthenticator.authenticationCallback = { startedContinuation.yield(()) }
-        mockAuthenticator.authenticationResultProvider = {
-            var iterator = result.makeAsyncIterator()
-            return await iterator.next() ?? false
-        }
-        let task = Task { @MainActor in
-            await authenticationService.authenticate(waitForSuccessfulAuthentication: true)
-        }
-        var iterator = started.makeAsyncIterator()
-        await iterator.next()
-        mockOverlayWindowManager.removeOverlayCalled = false
-        // Do not cancel this task: retry tasks are independent of the cancelled launch task.
-        authenticationService.suspend()
-        resultContinuation.yield(true)
-        resultContinuation.finish()
-        await task.value
-        #expect(!mockOverlayWindowManager.removeOverlayCalled)
-        #expect(mockOverlayWindowManager.displayBlankSnapshotWindowCalled)
-        #expect(!authenticationService.hasCompletedAuthentication)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Flag-off authentication still returns after a failed attempt", .timeLimit(.minutes(1)))
-    func flagOffReturnsAfterFailedAuthentication() async {
-        mockAuthenticator.authenticationSucceeds = false
-        await authenticationService.authenticate(waitForSuccessfulAuthentication: false)
-        #expect(mockAuthenticator.authenticateCalled)
-        #expect(mockOverlayWindowManager.lastDisplayedViewController is AuthenticationViewController)
-        #expect(!authenticationService.hasCompletedAuthentication)
-    }
-
     @Test("authenticate() when authentication enabled removes overlay and displays AuthenticationScreen")
     func authenticate() async {
         // Given
@@ -151,7 +75,6 @@ final class AuthenticationServiceTests {
         #expect(mockOverlayWindowManager.displayOverlayCalled)
         #expect(mockAuthenticator.authenticateCalled)
         #expect(mockOverlayWindowManager.lastDisplayedViewController is AuthenticationViewController)
-        #expect(authenticationService.hasCompletedAuthentication)
     }
 
     @Test("authenticate() when authentication disabled does nothing")
@@ -167,7 +90,6 @@ final class AuthenticationServiceTests {
         #expect(!mockOverlayWindowManager.removeOverlayCalled)
         #expect(!mockOverlayWindowManager.displayOverlayCalled)
         #expect(!mockAuthenticator.authenticateCalled)
-        #expect(authenticationService.hasCompletedAuthentication)
     }
 
     @Test("authenticate() when authentication not available does nothing")
@@ -183,7 +105,20 @@ final class AuthenticationServiceTests {
         #expect(!mockOverlayWindowManager.removeOverlayCalled)
         #expect(!mockOverlayWindowManager.displayOverlayCalled)
         #expect(!mockAuthenticator.authenticateCalled)
-        #expect(authenticationService.hasCompletedAuthentication)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Only a successful or unneeded unlock completes authentication", .timeLimit(.minutes(1)),
+          arguments: [(true, true, true), (true, false, false), (false, false, true)])
+    func completesAuthentication(authenticationEnabled: Bool, authenticationSucceeds: Bool, expectedCompletion: Bool) async {
+        mockPrivacyStore.authenticationEnabled = authenticationEnabled
+        mockAuthenticator.authenticationSucceeds = authenticationSucceeds
+        #expect(!authenticationService.hasCompletedAuthentication)
+
+        await authenticationService.authenticate()
+
+        #expect(authenticationService.hasCompletedAuthentication == expectedCompletion)
     }
 
     @Test("suspend() when authentication enabled should display blank snapshot window")

@@ -33,6 +33,16 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
     var allowedKeyboardCallCount = 0
     var keyboardWasShown = true
     var legacyKeyboardCallCount = 0
+    var isWindowVisible = true
+    var windowVisibleHandler: (() -> Void)?
+
+    func runWhenAppOpenKeyboardWindowVisible(_ handler: @escaping () -> Void) {
+        if isWindowVisible {
+            handler()
+        } else {
+            windowVisibleHandler = handler
+        }
+    }
 
     func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
         closeScreensCallCount += 1
@@ -198,5 +208,43 @@ final class KeyboardPresenterTests {
 
         #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A locked app holds the flag-on keyboard until unlock, unless the request is cancelled first",
+          .timeLimit(.minutes(1)), arguments: [false, true])
+    func lockedAppWaitsForUnlock(cancelBeforeUnlock: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.isWindowVisible = false
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+
+        #expect(target.closeScreensCallCount == 0)
+        #expect(scheduledActions.isEmpty)
+
+        if cancelBeforeUnlock {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+        target.dismissalCompletion?()
+        scheduledActions.forEach { $0() }
+
+        #expect(target.closeScreensCallCount == (cancelBeforeUnlock ? 0 : 1))
+        #expect(target.allowedKeyboardCallCount == (cancelBeforeUnlock ? 0 : 1))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag-off requests do not wait for the window", .timeLimit(.minutes(1)))
+    func flagOffDoesNotWaitForWindow() {
+        featureFlagger.enabledFeatureFlags = []
+        onAppLaunch = true
+        target.isWindowVisible = false
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
+        scheduledActions.forEach { $0() }
+
+        #expect(target.windowVisibleHandler == nil)
+        #expect(target.legacyKeyboardCallCount == 1)
     }
 }

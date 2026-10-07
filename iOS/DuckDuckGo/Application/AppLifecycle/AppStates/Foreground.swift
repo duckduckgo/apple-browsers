@@ -114,8 +114,7 @@ struct Foreground: ForegroundHandling {
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
             launchActionHandler: launchActionHandler,
-            onboardingPresenter: appDependencies.mainCoordinator,
-            waitsForSuccessfulAuthentication: appDependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            onboardingPresenter: appDependencies.mainCoordinator
         )
     }
 
@@ -273,22 +272,20 @@ extension Foreground {
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
-        interactionManager.cancelPendingInteractions()
-        return Background(stateContext: StateContext(appDependencies: appDependencies,
-                                                     sceneDependencies: sceneDependencies),
-                          lastBackgroundDateStorage: lastBackgroundDateStorage)
+        Background(stateContext: StateContext(appDependencies: appDependencies,
+                                              sceneDependencies: sceneDependencies),
+                   lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
     /// If confirmed this scenario never occurs, this code should be removed.
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
-        interactionManager.cancelPendingInteractions()
-        return Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
-                                                              appDependencies: appDependencies),
-                         actionToHandle: actionToHandle,
-                         window: window,
-                         lastBackgroundDateStorage: lastBackgroundDateStorage)
+        Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
+                                                       appDependencies: appDependencies),
+                  actionToHandle: actionToHandle,
+                  window: window,
+                  lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

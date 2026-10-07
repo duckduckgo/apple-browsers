@@ -34,6 +34,7 @@ protocol KeyboardPresenting {
 protocol AppOpenKeyboardHandling: AnyObject {
     var isNewTabPageVisible: Bool { get }
     var appOpenKeyboardRequestID: UUID { get }
+    func runWhenAppOpenKeyboardWindowVisible(_ handler: @escaping () -> Void)
     func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void)
     func showKeyboardOnAppOpenIfAllowed() -> Bool
     func enterSearchOnAppOpen()
@@ -116,10 +117,17 @@ final class KeyboardPresenter: KeyboardPresenting {
             }
         }
 
-        if flagOn && isAfterIdleReturn && mainViewController.isNewTabPageVisible {
-            mainViewController.closeScreensOverNewTabPageForIdleReturn(completion: scheduleKeyboard)
-        } else {
+        guard flagOn else {
             scheduleKeyboard()
+            return
+        }
+        mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+            guard isCurrentRequest(requestID) else { return }
+            if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
+                mainViewController.closeScreensOverNewTabPageForIdleReturn(completion: scheduleKeyboard)
+            } else {
+                scheduleKeyboard()
+            }
         }
     }
 

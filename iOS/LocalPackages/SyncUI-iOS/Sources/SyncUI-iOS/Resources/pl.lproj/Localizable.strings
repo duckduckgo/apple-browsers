@@ -215,7 +215,7 @@
 "sync.simplified.enter.code.example.label" = "Przykładowy kod:";
 
 /* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.enter.code.open.app" = "Otwórz inną aplikację %@";
+"sync.simplified.enter.code.open.app" = "Otwórz inną %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Wklej kod Sync";
@@ -323,7 +323,7 @@
 "sync.simplified.sync.code.copy.button" = "Skopiuj kod tekstowy";
 
 /* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.sync.code.sheet.open.app" = "Na innym urządzeniu otwórz aplikację %@";
+"sync.simplified.sync.code.sheet.open.app" = "Na innym urządzeniu otwórz %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Przejdź do **Sync & Backup** › **Synchronizuj z innym urządzeniem** i zeskanuj ten kod:";

@@ -215,7 +215,7 @@
 "sync.simplified.enter.code.example.label" = "Primer kode:";
 
 /* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.enter.code.open.app" = "Odprite svojo drugo aplikacijo %@";
+"sync.simplified.enter.code.open.app" = "Odprite svojo drugo %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Prilepite kodo za sinhronizacijo";

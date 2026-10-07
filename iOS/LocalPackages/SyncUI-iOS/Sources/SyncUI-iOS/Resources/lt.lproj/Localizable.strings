@@ -215,7 +215,7 @@
 "sync.simplified.enter.code.example.label" = "Kodo pavyzdys:";
 
 /* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.enter.code.open.app" = "Atidarykite savo kitą „%@“";
+"sync.simplified.enter.code.open.app" = "Atidarykite savo kitą %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Įklijuoti sinchronizavimo kodą";
@@ -299,7 +299,7 @@
 "sync.simplified.scan.v2.qr.heading" = "Nuskaitykite QR kodą, kad sinchronizuotumėte.";
 
 /* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.scan.v2.qr.open.app" = "Atidarykite „%@“";
+"sync.simplified.scan.v2.qr.open.app" = "Atidarykite %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Galima nuskaityti";
@@ -323,7 +323,7 @@
 "sync.simplified.sync.code.copy.button" = "Kopijuoti tekstinį kodą";
 
 /* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.sync.code.sheet.open.app" = "Kitame įrenginyje atidarykite „%@“";
+"sync.simplified.sync.code.sheet.open.app" = "Kitame įrenginyje atidarykite %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Eikite į **Sync & Backup** › **Sinchronizuoti su kitu įrenginiu** ir nuskaitykite šį kodą:";

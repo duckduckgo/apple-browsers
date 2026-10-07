@@ -1,5 +1,5 @@
 //
-//  DeleteAccountViewV2.swift
+//  DeleteAccountView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
 
-struct DeleteAccountViewV2: View {
+struct DeleteAccountView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
 
@@ -29,14 +29,14 @@ struct DeleteAccountViewV2: View {
     @State private var isDeleting = false
 
     var body: some View {
-        SyncDialogV2(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncWarnFeature128)
                     .accessibilityHidden(true)
                 SyncUIViews.DialogTitle(text: UserText.deleteAccountConfirmTitleV2)
                 SyncUIViews.CenteredBody(text: UserText.deleteAccountConfirmMessageV2)
 
-                SyncedDevicesListV2(devices: devices)
+                SyncedDevicesList(devices: devices)
                     .roundedBorder()
             }
         } buttons: {
@@ -74,7 +74,7 @@ struct DeleteAccountViewV2: View {
 
 #if DEBUG
 #Preview("Two Devices") {
-    DeleteAccountViewV2(devices: [
+    DeleteAccountView(devices: [
         SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"),
         SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device")
     ])
@@ -82,7 +82,7 @@ struct DeleteAccountViewV2: View {
 }
 
 #Preview("Many Devices") {
-    DeleteAccountViewV2(devices: [
+    DeleteAccountView(devices: [
         SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"),
         SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"),
         SyncDevice(kind: .desktop, name: "Home iMac", id: "desktop-device"),

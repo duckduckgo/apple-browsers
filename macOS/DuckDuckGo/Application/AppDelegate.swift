@@ -2679,8 +2679,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] _ in
                 guard let self else { return }
                 promptBarPreferences.pendingMenuBarTip = false
-                let text = UserText.duckAiLauncherMenuBarTip(shortcut: promptBarPreferences.keyboardShortcut.displayString)
-                promptBarMenuBarController?.showTip(text) { [weak self] in
+                promptBarMenuBarController?.showTip(shortcut: promptBarPreferences.keyboardShortcut) { [weak self] in
                     self?.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
                 }
             }

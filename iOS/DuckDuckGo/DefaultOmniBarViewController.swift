@@ -301,6 +301,23 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     // MARK: - Editing Lifecycle Overrides
 
+    func beginEditingOnNewTabPageAppOpen(isRequestValid: @escaping () -> Bool,
+                                         completion: @escaping (Bool) -> Void) {
+        if dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+           unifiedToggleInputOmnibarActivating?.activateFromOmnibarOnAppOpenIfNeeded(
+            currentText: extractCurrentTextForEditing(omniBarView.textField),
+            isRequestValid: isRequestValid,
+            completion: completion) == .intercept {
+            return
+        }
+        guard isRequestValid() else {
+            completion(false)
+            return
+        }
+        super.beginEditing(animated: true, forTextEntryMode: nil)
+        completion(isTextFieldEditing)
+    }
+
     override func setSelectedTextEntryMode(_ mode: TextEntryMode) {
         guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle else {
             super.setSelectedTextEntryMode(mode)

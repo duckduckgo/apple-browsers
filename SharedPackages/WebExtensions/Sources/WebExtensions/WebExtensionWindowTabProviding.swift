@@ -43,11 +43,7 @@ public protocol WebExtensionWindowTabProviding: AnyObject {
     func presentPopup(_ action: WKWebExtension.Action,
                       for context: WKWebExtensionContext) async throws
 
-    /// Dismisses the popup hosted in `popupWebView`, because its page called `window.close()`.
-    ///
-    /// WebKit unloads the web view on its own; this is the platform's chance to take down the
-    /// container it put the web view in. A platform that lets WebKit present the popup has
-    /// nothing to do here, which is what the default implementation does.
+    /// Closes whatever hosts `popupWebView`, whose page called `window.close()`. Does nothing by default.
     func dismissPopup(for popupWebView: WKWebView)
 }
 

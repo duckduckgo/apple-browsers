@@ -124,10 +124,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return
         }
 
-        // `action.popupPopover` is never shown. Its rounded chrome cannot be clipped from
-        // outside on macOS 26, and many extension popups paint a square page
-        // over it, which leaves the frame corners showing. `WebExtensionPopupPresenter` hosts
-        // the same web view in a square panel instead.
+        // Shown in our own panel instead of `action.popupPopover` (see `WebExtensionPopupPanel`).
         let selectedTabPublisher = tabCollectionViewModel.$selectedTabViewModel
             .map { $0?.tab }
             .eraseToAnyPublisher()

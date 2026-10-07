@@ -23,12 +23,8 @@ import os.log
 import WebExtensions
 import WebKit
 
-/// Borderless panel that hosts a web extension popup.
-///
-/// Used in place of `WKWebExtensionAction.popupPopover` so the visible shape stays under our
-/// control. On macOS 26 the popover chrome draws its own rounded corners that we cannot clip
-/// from outside, and many extension popups paint a square page over them, which
-/// leaves the frame corners showing around the page. This panel draws square corners instead.
+/// Borderless, square-cornered panel that hosts a web extension popup, in place of WebKit's popover,
+/// whose rounded corners show around the square pages many popups paint.
 final class WebExtensionPopupPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }
@@ -53,9 +49,7 @@ final class WebExtensionPopupPanel: NSPanel {
     }
 }
 
-/// Presents web extension action popups in a square-cornered panel.
-///
-/// Only one popup is shown at a time, which matches how `NSPopover` behaved before.
+/// Shows web extension popups in a `WebExtensionPopupPanel` under their toolbar button, one at a time.
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionPopupPresenter {
@@ -73,12 +67,8 @@ final class WebExtensionPopupPresenter {
         /// Keeps a popup that reports an extreme size from covering the screen.
         static let maximumSize = NSSize(width: 800, height: 800)
 
-        /// Reads the size the popup page lays itself out at.
-        ///
-        /// An explicit `body` width wins over `scrollWidth`. A page whose `html` fills the
-        /// viewport never reports a `scrollWidth` smaller than the panel, so a popup that wants
-        /// to be narrower than `fallbackSize` could otherwise only ever grow. Bitwarden sets
-        /// `body.style.width` from script, which gives us the width it actually wants.
+        /// Reads the size the popup page lays itself out at. An explicit `body` width wins over
+        /// `scrollWidth`, which never reports less than the panel's width, so popups can shrink.
         static let measurePageScript = """
         (function() {
             var body = document.body;
@@ -93,15 +83,8 @@ final class WebExtensionPopupPresenter {
         /// Name of the script message handler the popup page posts to when its layout changes.
         static let resizeMessageHandlerName = "ddgWebExtensionPopupResize"
 
-        /// Makes the popup page report layout changes, so the panel follows them as they happen.
-        ///
-        /// A popup can change size without loading anything: LastPass swaps its login form for
-        /// its vault in place, and grows the form to show an error banner. A `ResizeObserver`
-        /// catches the page's own boxes changing size, and a `MutationObserver` catches content
-        /// swapped in without resizing `html` or `body`. Reports are coalesced to one per frame,
-        /// and the browser measures the page itself on each, with `measurePageScript`.
-        ///
-        /// Installed once per document: a page that loads again gets it again.
+        /// Makes the popup page report its layout changes, at most once per frame, so the panel
+        /// follows popups that change size without loading. Installed once per document.
         static let observePageScript = """
         (function() {
             if (window.__ddgPopupResizeObserved) { return; }
@@ -174,8 +157,7 @@ final class WebExtensionPopupPresenter {
         let contentView = NSView(frame: NSRect(origin: .zero, size: Constants.fallbackSize))
         contentView.wantsLayer = true
         contentView.layer?.masksToBounds = true
-        // The popup page paints its own background, but only once it loads. An opaque body
-        // keeps the panel visible until then, instead of a fully transparent rectangle.
+        // Opaque until the popup page paints its own background.
         contentView.layer?.backgroundColor = popupBackgroundColor.cgColor
 
         popupWebView.frame = contentView.bounds
@@ -183,9 +165,7 @@ final class WebExtensionPopupPresenter {
         contentView.addSubview(popupWebView)
         panel.contentView = contentView
 
-        // Size the panel from the fallback size, not from the content view. AppKit resizes
-        // the content view to the frame the panel already has, which is the placeholder size
-        // from `WebExtensionPopupPanel.init`.
+        // From the fallback size: AppKit has already resized the content view to the panel's placeholder frame.
         panel.setFrame(frame(forContentSize: Constants.fallbackSize, below: button, in: parentWindow),
                        display: false)
 
@@ -193,9 +173,8 @@ final class WebExtensionPopupPresenter {
         panel.orderFront(nil)
         panel.makeKey()
 
-        // Never drive the extension from here: a call such as `loadBackgroundContent()` makes
-        // WebKit hold the popup back until the background content is ready, and an extension
-        // whose worker never starts then shows no popup. Only observe the page.
+        // Only observe the page: driving the extension, as with `loadBackgroundContent()`, can make
+        // WebKit hold the popup back.
         observePopupSize(of: popupWebView)
         startWatchingForClicksOutside()
         startWatchingForFocusLoss(parentWindow: parentWindow, selectedTabPublisher: selectedTabPublisher)
@@ -207,22 +186,11 @@ final class WebExtensionPopupPresenter {
 
     // MARK: - Size
 
-    /// Resizes the panel to the size the popup page lays itself out at.
-    ///
-    /// WebKit does not tell us that size. The `contentSize` of the popover it would have
-    /// presented stays zero, and the popup web view keeps a zero frame until something sizes
-    /// it, so both are useless as a source. We therefore ask the page itself once it loads.
-    ///
-    /// The popup page may have finished loading before it is presented, in which case `isLoading`
-    /// never changes, so the page is measured and observed right away as well as on the load event.
-    ///
-    /// After that the page reports its own layout changes through `observePageScript`. WebKit
-    /// never resizes the popup web view by itself, so nothing on the native side would notice a
-    /// popup that changes size without loading, such as LastPass swapping its vault for its
-    /// login form on logout.
+    /// Sizes the panel to the popup page, which is the only source of that size: WebKit reports none.
+    /// The page is measured now, in case it has already loaded, on each load, and on each layout
+    /// change it reports.
     private func observePopupSize(of popupWebView: WKWebView) {
-        // Every extension page shares this user content controller, so the handler only
-        // answers messages from the popup it was registered for.
+        // Every extension page shares this controller, so only this popup's messages count.
         let handler = PopupResizeMessageHandler { [weak self, weak popupWebView] webView in
             guard let self, let popupWebView, webView === popupWebView else { return }
             self.measurePageAndResize(popupWebView)
@@ -302,11 +270,8 @@ final class WebExtensionPopupPresenter {
 
     // MARK: - Close
 
-    /// Closes the popup on a click in a browser window that lands neither in the popup nor on its button.
-    ///
-    /// The button needs the exception so that a click on it reaches the button action, which
-    /// closes the popup itself. Without it the popup would close here and the action would
-    /// then reopen it, and the button would never toggle the popup off.
+    /// Closes the popup on a click in a browser window outside it. Clicks on its button are left to
+    /// the button, which closes it itself.
     private func startWatchingForClicksOutside() {
         clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             let clickedWindow = event.window
@@ -320,10 +285,8 @@ final class WebExtensionPopupPresenter {
         }
     }
 
-    /// Closes the popup when its window moves off the tab it opened on, as Chrome and Safari do, or when that window closes.
-    ///
-    /// An extension can open a tab and bring it forward, such as Bitwarden's single sign-on, and
-    /// the popup would otherwise stay over it. A new window does not close the popup.
+    /// Closes the popup when its window switches away from the tab it opened on, as Chrome and Safari
+    /// do, or when that window closes.
     private func startWatchingForFocusLoss(parentWindow: NSWindow,
                                            selectedTabPublisher: AnyPublisher<Tab?, Never>) {
         // The publisher replays the selected tab on subscribing, which is the one the popup opened on.
@@ -365,9 +328,7 @@ final class WebExtensionPopupPresenter {
 
         if clickedWindow === panel { return }
 
-        // Only a click in a browser window dismisses the popup. Web Inspector opens on the
-        // popup page in a window of our own process, and closing the popup when it is clicked
-        // would take down the page being inspected.
+        // Only browser windows: clicking a Web Inspector window must keep the inspected popup open.
         guard clickedWindow is MainWindow else { return }
 
         if let button = anchorButton, clickedWindow === button.window {
@@ -378,8 +339,7 @@ final class WebExtensionPopupPresenter {
         close()
     }
 
-    /// Closes the panel when it hosts `webView`, which is how a popup page's own `window.close()`
-    /// reaches the presenter. A close from any other extension page is ignored.
+    /// Closes the panel if it hosts `webView`, whose page called `window.close()`.
     func close(ifShowing webView: WKWebView) {
         guard popupWebView === webView else { return }
         close()

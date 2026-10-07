@@ -281,7 +281,7 @@ struct NewTabPageSessionInstrumentationTests {
 
     // MARK: - Keyboard raised on arrival
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Arrival focus reports keyboard up without an interaction or resetting the timeout", .timeLimit(.minutes(1)))
     func whenKeyboardRaisedOnArrivalThenVisitReportsKeyboardUp() {
         let (sut, wideEvent, clock) = makeSUT()
@@ -300,7 +300,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.updates.isEmpty)
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("When the user acted first then a raised keyboard leaves the starting mode", .timeLimit(.minutes(1)))
     func whenUserActedFirstThenRaisedKeyboardLeavesStartingMode() {
         let (sut, wideEvent, clock) = makeSUT()
@@ -314,9 +314,9 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(lastCompletion(wideEvent)?.0.launchKeyboardMode == .down)
     }
 
-    @available(iOS 16, *)
-    @Test("When the visit already timed out then a raised keyboard leaves it down", .timeLimit(.minutes(1)))
-    func whenVisitTimedOutThenRaisedKeyboardLeavesItDown() {
+    @available(iOS 16, macOS 13, *)
+    @Test("When the visit already timed out then a raised keyboard still records up", .timeLimit(.minutes(1)))
+    func whenVisitTimedOutThenRaisedKeyboardStillRecordsUp() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
 
@@ -325,7 +325,7 @@ struct NewTabPageSessionInstrumentationTests {
         sut.visitBackgrounded()
 
         let visit = lastCompletion(wideEvent)?.0
-        #expect(visit?.launchKeyboardMode == .down)
+        #expect(visit?.launchKeyboardMode == .up)
         #expect(visit?.terminalAction == .noActionTimeout)
     }
 

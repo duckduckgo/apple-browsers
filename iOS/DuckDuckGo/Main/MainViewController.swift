@@ -2893,6 +2893,11 @@ class MainViewController: UIViewController {
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
+        showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: true, completion: completion)
+    }
+
+    /// In-app landings don't report to the post-idle session, whose `focused` value belongs to the app open.
+    private func showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: Bool, completion: @escaping (Bool) -> Void) {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         let requestID = appOpenKeyboardRequestID
         let tabID = tabManager.currentTabsModel.currentTab?.uid
@@ -2911,7 +2916,9 @@ class MainViewController: UIViewController {
             if onNewTabPage, isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
             }
-            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if reportsPostIdleArrival {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            }
             completion(true)
         }
         if onNewTabPage, let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
@@ -2969,7 +2976,7 @@ class MainViewController: UIViewController {
               !isNewTabPageKeyboardHeldForOnboarding,
               !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
         // A landing restores focus even if a hardware keyboard left the previous input session inactive.
-        showKeyboardOnAppOpenIfAllowed { _ in }
+        showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: false) { _ in }
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {

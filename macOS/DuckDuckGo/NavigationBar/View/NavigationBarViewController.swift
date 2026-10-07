@@ -1828,11 +1828,8 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func showLoginAutosavedFeedback(_ sender: Notification) {
         guard view.window?.isKeyWindow == true,
-              let account = sender.object as? SecureVaultModels.WebsiteAccount else { return }
-
-        guard let domain = account.domain else {
-            return
-        }
+              let account = sender.object as? SecureVaultModels.WebsiteAccount,
+              let domain = account.domain else { return }
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -1860,12 +1857,12 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
         DispatchQueue.main.async { [weak self] in
-            guard self?.view.window?.isKeyWindow == true,
+            guard let self,
+                  self.view.window?.isKeyWindow == true,
                   let topUrl = sender.userInfo?["topUrl"] as? URL,
                   let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool else { return }
 
-            guard let self = self,
-                  self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl,
+            guard self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl,
                   self.addressBarViewController?.addressBarButtonsViewController?.shouldSuppressForAdBlocking(url: topUrl) != true else { return }
 
             let animationType: NavigationBarBadgeAnimationView.AnimationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged

@@ -339,11 +339,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// Enables advanced card ordering for the Next Steps List widget
-    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
-    case nextStepsListAdvancedCardOrdering
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
 
@@ -549,6 +544,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
+    case syncImprovedPairingFlow
 
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
@@ -855,8 +853,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .nextStepsListAdvancedCardOrdering:
-            Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
@@ -982,6 +978,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:

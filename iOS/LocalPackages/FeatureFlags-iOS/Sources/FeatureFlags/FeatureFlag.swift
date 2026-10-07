@@ -461,9 +461,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
-    case appSwitcherSnapshotClearing
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -554,6 +551,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219175598274067
+    case syncImprovedPairingFlow
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
@@ -926,8 +926,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
-        case .appSwitcherSnapshotClearing:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:
@@ -984,6 +982,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename))
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:

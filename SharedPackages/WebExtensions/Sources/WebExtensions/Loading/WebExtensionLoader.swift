@@ -66,6 +66,10 @@ public final class WebExtensionLoader: WebExtensionLoading {
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
     private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
+    /// Whether the third-party scripts are on the controller, which happens when the first third-party extension loads.
+    private var areThirdPartyScriptsInstalled = false
+    /// Writes the permissions third-party extensions lose to the API compatibility log.
+    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
     private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
@@ -115,12 +119,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Notify delegate before loading to allow handler registration
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        do {
-            try controller.load(context)
-        } catch {
-            permissionController?.didUnload(identifier)
-            throw error
-        }
+        try loadWithThirdPartyScripts(context, identifier: identifier, into: controller)
 
         return WebExtensionLoadResult(
             identifier: identifier,
@@ -161,11 +160,55 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Notify delegate before loading to allow handler registration.
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
+        try loadWithThirdPartyScripts(context, identifier: identifier, into: controller)
+    }
+
+    /// Scripts for the pages of third-party extensions. Each returns early in our own extensions.
+    static let thirdPartyScriptSources = [WebExtensionAPICompatibilityScript.source]
+
+    /// Loads `context`, first adding the third-party scripts when it is the first third-party extension to load.
+    ///
+    /// They are user scripts because one on the controller's configuration reaches every page the extension
+    /// owns — background page, popup, options page and iframes — and is exempt from the page's CSP. Those are
+    /// shared by every extension, so each script checks the page's manifest and returns early in our own.
+    /// They are only added once a third-party extension loads, so without one, no page ever runs them. They
+    /// must be added before the context loads, because a user script only reaches documents created after it.
+    @MainActor
+    private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
+        if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
+            installThirdPartyScriptsIfNeeded(on: controller)
+            reportDroppedPermissions(of: context.webExtension)
+        }
+
         do {
             try controller.load(context)
         } catch {
             permissionController?.didUnload(identifier)
             throw error
+        }
+    }
+
+    private func installThirdPartyScriptsIfNeeded(on controller: WKWebExtensionController) {
+        guard !areThirdPartyScriptsInstalled else { return }
+        let userContentController = controller.configuration.webViewConfiguration.userContentController
+        for source in Self.thirdPartyScriptSources {
+            userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        }
+        areThirdPartyScriptsInstalled = true
+    }
+
+    /// WebKit drops manifest permissions it does not implement; the compatibility log lists them.
+    private func reportDroppedPermissions(of webExtension: WKWebExtension) {
+        let webKitPermissions = Set(webExtension.requestedPermissions.union(webExtension.optionalPermissions).map(\.rawValue))
+        let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: webExtension.manifest,
+                                                                                 webKitPermissions: webKitPermissions)
+        for permission in dropped {
+            compatibilityReporter.report(
+                kind: .missing,
+                api: WebExtensionAPICompatibilityClassifier.permissionPrefix + permission,
+                extensionName: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                version: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version)
+            )
         }
     }
 

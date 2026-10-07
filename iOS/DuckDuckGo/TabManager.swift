@@ -1026,10 +1026,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             removeTabHistory(for: tabIDs)
         }
 
-        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            Task {
-                await clearAppSwitcherSnapshots()
-            }
+        Task {
+            await clearAppSwitcherSnapshots()
         }
 
         tabsCacheNeedsCleanup = true

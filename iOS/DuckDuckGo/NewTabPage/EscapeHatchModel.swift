@@ -24,6 +24,7 @@ import SwiftUI
 import Persistence
 import PrivacyConfig
 import Core
+import os.log
 
 /// Source for the live tabs array of a given browsing mode.
 /// Exists so `EscapeHatchModel` can stay testable / previewable without depending on the whole `TabManaging` surface.
@@ -78,6 +79,15 @@ final class EscapeHatchModel: ObservableObject {
     /// `false` for tab-switcher-only hatches, so the card never appears (it would be empty: no tab to return to).
     let hasReturnToTabCard: Bool
     let onCardTap: () -> Void
+    /// The return-to-tab card's latest frame in window coordinates.
+    private(set) var cardFrameInWindow: CGRect?
+    var onCardFrameChange: ((CGRect) -> Void)?
+
+    func reportCardFrame(_ frame: CGRect) {
+        Logger.idleMinimize.debug("reportCardFrame \(String(describing: frame), privacy: .public) model=\(ObjectIdentifier(self).hashValue, privacy: .public)")
+        cardFrameInWindow = frame
+        onCardFrameChange?(frame)
+    }
     let onTabSwitcherTap: () -> Void
     let onCloseTab: () -> Void
     let onBurnTabWithConfirmation: (CGRect) -> Void

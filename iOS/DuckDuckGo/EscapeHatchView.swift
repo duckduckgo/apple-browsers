@@ -29,6 +29,7 @@ struct EscapeHatchView: View {
     var body: some View {
         HStack(spacing: model.isReturnToTabCardVisible ? Metrics.spacing : 0) {
             ReturnToTabCard(model: model, showsBackground: !usesMaterialBackground)
+                .reportsFrameInWindow { model.reportCardFrame($0) }
                 .frame(maxWidth: model.isReturnToTabCardVisible ? .infinity : 0)
                 .clipped()
                 .opacity(model.isReturnToTabCardVisible ? 1 : 0)
@@ -83,3 +84,16 @@ struct EscapeHatchView: View {
 }
 
 #endif
+
+extension View {
+    func reportsFrameInWindow(_ onChange: @escaping (CGRect) -> Void) -> some View {
+        background {
+            GeometryReader { proxy in
+                let frame = proxy.frame(in: .global)
+                Color.clear
+                    .onAppear { onChange(frame) }
+                    .onChange(of: frame) { onChange($0) }
+            }
+        }
+    }
+}

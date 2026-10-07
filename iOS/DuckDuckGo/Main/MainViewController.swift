@@ -8998,3 +8998,186 @@ extension MainViewController {
 extension MainViewController: SearchTokenProviding {
     func currentToken() -> String? { searchTokenFetcher.retrieveToken() }
 }
+
+// MARK: - Idle return minimize POC
+
+extension Logger {
+    static let idleMinimize = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "IdleMinimize")
+}
+
+extension MainViewController {
+
+    /// Covers the window with a snapshot of the current page, runs `showNTP`, then shrinks the snapshot into the return-to-tab card.
+    func minimizeCurrentPageIntoEscapeHatch(while showNTP: () -> Void) {
+        Logger.idleMinimize.debug("minimize start window=\(self.view.window != nil, privacy: .public)")
+        guard let window = view.window else {
+            showNTP()
+            return
+        }
+        let minimizer = IdleReturnPageMinimizer(window: window)
+        showNTP()
+        focusAddressBarWithoutAnimation()
+        Logger.idleMinimize.debug("after newTab hatch=\(self.escapeHatchForEditingState() != nil, privacy: .public) hasCard=\(self.escapeHatchForEditingState()?.hasReturnToTabCard ?? false, privacy: .public)")
+        minimizer.minimize(into: currentNTPEscapeHatchForIdleReturn)
+    }
+
+    private func focusAddressBarWithoutAnimation() {
+        guard KeyboardSettings().onNewTab else { return }
+        UIView.performWithoutAnimation {
+            omniBar.beginEditing(animated: false)
+            view.layoutIfNeeded()
+        }
+    }
+
+    private var currentNTPEscapeHatchForIdleReturn: EscapeHatchModel? {
+        guard let hatch = escapeHatchForEditingState(), hatch.hasReturnToTabCard else { return nil }
+        return hatch
+    }
+}
+
+private final class IdleReturnPageMinimizer {
+
+    private enum Metrics {
+        static let shrinkDuration: CFTimeInterval = 0.38
+        static let tintDuration: CFTimeInterval = 0.2
+        static let revealDuration: TimeInterval = 0.15
+        static let cardFrameTimeout: TimeInterval = 0.6
+        static let screenCornerRadius: CGFloat = 50
+        static let maxCardCornerRadius: CGFloat = 28
+    }
+
+    private let containerView = UIView()
+    private let tintView = UIView()
+    private let startFrame: CGRect
+
+    private var targetFrame: CGRect?
+    private var displayLink: CADisplayLink?
+    private var startTime: CFTimeInterval?
+    private var hatch: EscapeHatchModel?
+    private var hasStarted = false
+
+    init(window: UIWindow) {
+        startFrame = window.bounds
+        containerView.frame = window.bounds
+        containerView.clipsToBounds = true
+        containerView.layer.cornerCurve = .continuous
+
+        let imageView = UIImageView(image: Self.render(window))
+        imageView.frame = containerView.bounds
+        imageView.contentMode = .scaleAspectFill
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        containerView.addSubview(imageView)
+
+        tintView.frame = containerView.bounds
+        tintView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tintView.backgroundColor = UIColor(designSystemColor: .background)
+        let cardFillView = UIView(frame: tintView.bounds)
+        cardFillView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        cardFillView.backgroundColor = UIColor(designSystemColor: .controlsFillSecondary)
+        tintView.addSubview(cardFillView)
+        tintView.alpha = 0
+        containerView.addSubview(tintView)
+
+        window.addSubview(containerView)
+    }
+
+    func minimize(into hatch: EscapeHatchModel?) {
+        guard let hatch else {
+            fadeOut()
+            return
+        }
+        self.hatch = hatch
+        Logger.idleMinimize.debug("known card frame \(String(describing: hatch.cardFrameInWindow), privacy: .public)")
+        hatch.onCardFrameChange = { [self] frame in
+            Logger.idleMinimize.debug("card frame \(String(describing: frame), privacy: .public)")
+            updateTarget(frame)
+        }
+        if let frame = hatch.cardFrameInWindow {
+            updateTarget(frame)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.cardFrameTimeout) { [self] in
+            guard !hasStarted else { return }
+            fadeOut()
+        }
+    }
+
+    private func updateTarget(_ frame: CGRect) {
+        guard !frame.isEmpty else { return }
+        targetFrame = frame
+        guard begin() else { return }
+        Logger.idleMinimize.debug("animate into \(String(describing: frame), privacy: .public)")
+        let link = CADisplayLink(target: self, selector: #selector(step))
+        link.add(to: .main, forMode: .common)
+        displayLink = link
+    }
+
+    @objc private func step(_ link: CADisplayLink) {
+        guard let targetFrame else { return }
+        let now = link.targetTimestamp
+        let start = startTime ?? now
+        startTime = start
+        let elapsed = now - start
+
+        let progress = Self.easeOutQuart(min(elapsed / Metrics.shrinkDuration, 1))
+        containerView.frame = Self.interpolate(startFrame, targetFrame, progress)
+        containerView.layer.cornerRadius = Self.interpolate(Metrics.screenCornerRadius, Self.cornerRadius(for: targetFrame), progress)
+        tintView.alpha = Self.easeOutQuart(min(elapsed / Metrics.tintDuration, 1))
+
+        if elapsed >= Metrics.shrinkDuration {
+            finish()
+        }
+    }
+
+    private func finish() {
+        displayLink?.invalidate()
+        displayLink = nil
+        hatch?.onCardFrameChange = nil
+        reveal()
+    }
+
+    private func reveal() {
+        UIView.animate(withDuration: Metrics.revealDuration) {
+            self.containerView.alpha = 0
+        } completion: { _ in
+            self.containerView.removeFromSuperview()
+        }
+    }
+
+    private func fadeOut() {
+        guard begin() else { return }
+        Logger.idleMinimize.debug("fallback fadeOut")
+        hatch?.onCardFrameChange = nil
+        reveal()
+    }
+
+    private func begin() -> Bool {
+        guard !hasStarted else { return false }
+        hasStarted = true
+        return true
+    }
+
+    private static func easeOutQuart(_ t: CGFloat) -> CGFloat {
+        1 - pow(1 - t, 4)
+    }
+
+    private static func interpolate(_ from: CGFloat, _ to: CGFloat, _ progress: CGFloat) -> CGFloat {
+        from + (to - from) * progress
+    }
+
+    private static func interpolate(_ from: CGRect, _ to: CGRect, _ progress: CGFloat) -> CGRect {
+        CGRect(x: interpolate(from.minX, to.minX, progress),
+               y: interpolate(from.minY, to.minY, progress),
+               width: interpolate(from.width, to.width, progress),
+               height: interpolate(from.height, to.height, progress))
+    }
+
+    private static func cornerRadius(for cardFrame: CGRect) -> CGFloat {
+        min(cardFrame.height / 2, Metrics.maxCardCornerRadius)
+    }
+
+    private static func render(_ window: UIWindow) -> UIImage {
+        UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
+        }
+    }
+}

@@ -116,7 +116,9 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
             let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
+            Logger.idleMinimize.debug("standardLaunch didReturnAfterIdle=\(self.idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate), privacy: .public) timeAwayMs=\(timeAwayMs ?? -1, privacy: .public)")
             if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+                Logger.idleMinimize.debug("treatment=\(String(describing: self.idleReturnEvaluator.treatmentForIdleReturn()), privacy: .public)")
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
                     idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)

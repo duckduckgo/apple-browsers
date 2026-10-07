@@ -943,6 +943,7 @@ extension MainCoordinator: UserActivityHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
+        Logger.idleMinimize.debug("showNTPAfterIdle voice=\(self.voiceSessionStateManager.isVoiceSessionActive, privacy: .public) currentTabHasLink=\(self.tabManager.currentTabsModel.currentTab?.link != nil, privacy: .public)")
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
@@ -964,7 +965,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+            self.controller.minimizeCurrentPageIntoEscapeHatch {
+                self.controller.newTab(reuseExisting: true, allowingKeyboard: false, openedAfterIdle: true)
+            }
         }
     }
 

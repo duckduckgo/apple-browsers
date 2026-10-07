@@ -117,12 +117,6 @@ final class PrivacyDashboardViewController: UIViewController {
         decorate()
     }
 
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        networkSignalsProvider.prefetchSignals()
-    }
-
     private func setupWebView() {
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.preventFlashOnLoad()
@@ -265,6 +259,10 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
         dismiss(animated: true) {
             mainViewController.segueToNegativeFeedbackForm()
         }
+    }
+
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController) {
+        networkSignalsProvider.prefetchSignals()
     }
 
     func privacyDashboardControllerDidRequestShowAlertForMissingDescription(_ privacyDashboardController: PrivacyDashboardController) {

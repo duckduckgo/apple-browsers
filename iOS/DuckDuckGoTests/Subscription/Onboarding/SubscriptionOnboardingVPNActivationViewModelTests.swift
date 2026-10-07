@@ -788,8 +788,6 @@ private final class MockVPNController: SubscriptionOnboardingVPNControlling {
         startCallCount += 1
     }
 
-    func isVPNConfigured() async -> Bool { false }
-
     func simulateConnected() {
         subject.send(true)
     }

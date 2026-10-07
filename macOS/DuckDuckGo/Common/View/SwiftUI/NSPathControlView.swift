@@ -50,7 +50,7 @@ struct NSPathControlView: NSViewRepresentable {
             .publisher(for: \.effectiveAppearance)
             .sink { _ in
                 NSAppearance.withAppAppearance {
-                    newPathControl.layer?.borderColor = NSColor.divider.cgColor
+                    newPathControl.layer?.borderColor = NSColor(resource: .divider).cgColor
                 }
             }
 

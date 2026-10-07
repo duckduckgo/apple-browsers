@@ -41,6 +41,12 @@ class OmniBarViewController: UIViewController, OmniBar {
     /// Empty here (all values `nil`).
     var iPadDuckAIControlValues: IPadDuckAIControlValues { IPadDuckAIControlValuesSnapshot() }
 
+    func bindIPadDraft(to tab: Tab?) {}
+
+    func consumeAIChatControlValues() -> IPadDuckAIControlValues {
+        iPadDuckAIControlValues
+    }
+
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
         set { barView.backButton.isEnabled = newValue }
@@ -838,7 +844,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             }
 
             if selectedTextEntryMode == .aiChat {
-                omniDelegate?.onPromptSubmitted(query, tools: nil)
+                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues(), termsAccepted: false)
                 return
             }
 
@@ -953,7 +959,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onAbortPressed()
     }
 
-    private func onClearButtonPressed() {
+    func onClearButtonPressed() {
         omniDelegate?.onClearTextPressed()
         refreshState(state.onTextClearedState)
     }

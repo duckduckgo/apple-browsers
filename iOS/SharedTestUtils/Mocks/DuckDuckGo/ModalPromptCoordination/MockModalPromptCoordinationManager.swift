@@ -64,4 +64,10 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     func releaseDeferredModal() {
         releaseDeferredModalCallCount += 1
     }
+
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        false
+    }
+
+    func cancelModalPromptCloseHandler() {}
 }

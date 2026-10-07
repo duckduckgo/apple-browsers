@@ -169,9 +169,13 @@ final class KeyboardPresenter: KeyboardPresenting {
     }
 
     /// A page created for an idle return follows New Tab behavior, without the app-open time threshold.
+    /// The page is created behind App Lock; only its keyboard waits for the unlock.
     func showKeyboardOnNewTabPageCreated() {
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
-        scheduleKeyboardFocus(requestID: mainViewController.appOpenKeyboardRequestID, flagOn: true, onAppLaunch: false)
+        let requestID = mainViewController.appOpenKeyboardRequestID
+        scheduleKeyboardWhenWindowVisible(requestID: requestID, isAfterIdleReturn: false, screenLeftOpen: nil) { [self] in
+            scheduleKeyboardFocus(requestID: requestID, flagOn: true, onAppLaunch: false)
+        }
     }
 
     private func scheduleKeyboardFocus(requestID: UUID, flagOn: Bool, onAppLaunch: Bool) {

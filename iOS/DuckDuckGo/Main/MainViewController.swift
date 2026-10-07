@@ -4090,23 +4090,9 @@ class MainViewController: UIViewController {
     }
 
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
-    func prepareForIdleReturnNTP(forAppOpen: Bool = false, completion: @escaping () -> Void) {
+    func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
         // A child of this controller rather than a presented one, so it outlives the dismissal below.
         currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
-        if forAppOpen {
-            // App Lock hides this window until an unlock, and a launch prompt can be presented meanwhile. Close only
-            // the screen left open before then, so the prompt stays and the page is created beneath it.
-            let screenLeftOpen = presentedViewController
-            runWhenAppOpenKeyboardWindowVisible { [weak self] in
-                guard let self else { return }
-                if let presentedViewController, presentedViewController !== screenLeftOpen {
-                    completion()
-                } else {
-                    dismissScreensForAppOpen(completion: completion)
-                }
-            }
-            return
-        }
         guard let presented = presentedViewController, !presented.isBeingDismissed else {
             completion()
             return

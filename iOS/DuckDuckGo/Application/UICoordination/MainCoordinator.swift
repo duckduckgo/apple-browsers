@@ -970,7 +970,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-        controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) { [weak self] in
+        controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
             completion(.openedNewTab)

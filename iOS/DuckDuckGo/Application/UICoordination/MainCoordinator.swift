@@ -942,10 +942,10 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-            return
+            return false
         }
 
         // Already on the NTP — no rebuild needed. This preserves any existing
@@ -957,7 +957,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-            return
+            return true
         }
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
@@ -966,6 +966,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
+        return false
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {

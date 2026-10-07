@@ -822,7 +822,7 @@ class TabViewController: UIViewController {
     let sitePermissionsState = SitePermissionsState()
     var sitePermissionsNavigationTimeout: TimeInterval = 10
     var contentBlockingWaitPixelTimeout: TimeInterval = 10
-    private var contentBlockingWaitTimeoutTasks = [UUID: Task<Void, Never>]()
+    var contentBlockingWaitNotificationCenter: NotificationCenter = .default
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -1706,7 +1706,6 @@ class TabViewController: UIViewController {
 
     func prepareForDataClearing() {
         cancelWebExtensionNavigationWait()
-        cancelContentBlockingWaitTimeoutPixels()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
@@ -3489,9 +3488,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
-            if isSitePermissionsEnabled {
-                sitePermissionsState.cancelContentBlockingWaits()
-            }
+            sitePermissionsState.cancelContentBlockingWaits()
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3810,14 +3807,14 @@ extension TabViewController: WKNavigationDelegate {
 
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
-            // Start the timer now so teardown cancels it even before the wait task runs.
-            let timeoutPixel = isMainFrame ? fireContentBlockingWaitTimeoutPixelAfterDelay() : nil
+            if isMainFrame {
+                startContentBlockingWaitTimeoutPixel(until: userContentController.$contentBlockingAssets.filter { $0 != nil })
+            }
             // Retains the tab until assets install: tab deinit stops asset delivery and would strand WebKit's decision.
             Task {
                 rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
                 showProgressIndicator()
                 await userContentController.awaitContentBlockingAssetsInstalled()
-                timeoutPixel?.cancel()
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
                 completion(true)
             }
@@ -3830,7 +3827,12 @@ extension TabViewController: WKNavigationDelegate {
         showProgressIndicator()
         let waitID = UUID()
         let timeout = sitePermissionsNavigationTimeout
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
+        let geolocationInstalled = userContentController.$contentBlockingAssets
+            .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+        if isMainFrame {
+            startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
+        }
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
@@ -3840,8 +3842,7 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
             // Only readiness may reset the deadline; unrelated asset updates must not extend it.
-            let readiness = userContentController.$contentBlockingAssets
-                .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+            let readiness = geolocationInstalled
                 .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
                 .first()
             var isReady = false
@@ -3855,8 +3856,10 @@ extension TabViewController: WKNavigationDelegate {
                 completion(false)
                 return
             }
+            if isMainFrame {
+                state?.contentBlockingWaitTimeoutPixel = nil
+            }
             if !isReady, isMainFrame {
-                self?.pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
             completion(isReady)
@@ -3864,21 +3867,29 @@ extension TabViewController: WKNavigationDelegate {
         return true
     }
 
-    /// Measures how often waiting for rules compilation blocks a page load; the navigation keeps waiting.
-    private func fireContentBlockingWaitTimeoutPixelAfterDelay() -> Task<Void, Never> {
-        let waitID = UUID()
-        let task = Task { [weak self, pixelFiring, timeout = contentBlockingWaitPixelTimeout] in
-            defer { self?.contentBlockingWaitTimeoutTasks[waitID] = nil }
-            guard (try? await Task.sleep(nanoseconds: UInt64(timeout * Double(NSEC_PER_SEC)))) != nil else { return }
-            pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
-        }
-        contentBlockingWaitTimeoutTasks[waitID] = task
-        return task
-    }
-
-    func cancelContentBlockingWaitTimeoutPixels() {
-        contentBlockingWaitTimeoutTasks.values.forEach { $0.cancel() }
-        contentBlockingWaitTimeoutTasks.removeAll()
+    /// Counts main-frame navigations still waiting for content blocking assets after the timeout in the foreground:
+    /// the stall that could otherwise block page loads indefinitely. Any cancelled wait cancels this too.
+    private func startContentBlockingWaitTimeoutPixel<Ready: Publisher>(until ready: Ready) where Ready.Failure == Never {
+        let notificationCenter = contentBlockingWaitNotificationCenter
+        let timeout = contentBlockingWaitPixelTimeout
+        // Each return to the foreground restarts the timeout, so time in the background never counts.
+        sitePermissionsState.contentBlockingWaitTimeoutPixel = notificationCenter.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .map { _ in false }
+            .merge(with: notificationCenter.publisher(for: UIApplication.willEnterForegroundNotification).map { _ in true })
+            .prepend(UIApplication.shared.applicationState != .background)
+            .map { isForeground in
+                isForeground
+                    ? Just(()).delay(for: .seconds(timeout), scheduler: DispatchQueue.main).eraseToAnyPublisher()
+                    : Empty(completeImmediately: false).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .prefix(untilOutputFrom: ready)
+            .first()
+            .sink(receiveCompletion: { [weak state = sitePermissionsState] _ in
+                state?.contentBlockingWaitTimeoutPixel = nil
+            }, receiveValue: { [pixelFiring] in
+                pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
+            })
     }
 
     private func showSitePermissionsAssetsTimeout(for failedURL: URL) {

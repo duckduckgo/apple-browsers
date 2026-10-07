@@ -129,6 +129,52 @@ class MenuBookmarksViewModelTests: XCTestCase {
         XCTAssertEqual(topLevelCount, anotherLevelCount)
     }
     
+    func testSavingFavoriteUpdatesExistingTitleWithoutRemovingOrDuplicatingBookmark() {
+        for alreadyFavorite in [false, true] {
+            let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let address = url.appendingPathComponent(String(alreadyFavorite))
+            model.createBookmark(title: "Inbox", url: address)
+            if alreadyFavorite {
+                model.createOrToggleFavorite(title: "Inbox", url: address)
+            }
+            let bookmarkID = model.bookmark(for: address)?.objectID
+            let bookmarkCount = model.bookmark(for: address)?.parent?.childrenArray.count
+
+            XCTAssertTrue(model.saveFavorite(title: "Work Mail", url: address))
+
+            let persistedModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let favorite = persistedModel.favorite(for: address)
+            XCTAssertEqual(favorite?.title, "Work Mail")
+            XCTAssertEqual(favorite?.objectID, bookmarkID)
+            XCTAssertEqual(favorite?.parent?.childrenArray.count, bookmarkCount)
+        }
+    }
+
+    func testSavingFavoriteWithoutNamePreservesExistingTitle() {
+        for alreadyFavorite in [false, true] {
+            let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let address = url.appendingPathComponent(String(alreadyFavorite))
+            model.createBookmark(title: "Inbox", url: address)
+            if alreadyFavorite {
+                model.createOrToggleFavorite(title: "Inbox", url: address)
+            }
+
+            XCTAssertTrue(model.saveFavorite(title: nil, url: address))
+
+            let persistedModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+            XCTAssertEqual(persistedModel.favorite(for: address)?.title, "Inbox")
+        }
+    }
+
+    func testSavingNewFavoriteWithoutNameUsesHost() {
+        let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+
+        XCTAssertTrue(model.saveFavorite(title: nil, url: url))
+
+        let persistedModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+        XCTAssertEqual(persistedModel.favorite(for: url)?.title, url.host)
+    }
+
     func testWhenRemovingFavoriteThenBookmarkIsUpdated() {
         let model = MenuBookmarksViewModel(bookmarksDatabase: db)
         

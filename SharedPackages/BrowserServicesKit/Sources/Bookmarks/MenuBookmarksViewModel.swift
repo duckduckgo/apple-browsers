@@ -87,13 +87,32 @@ public class MenuBookmarksViewModel: MenuBookmarksInteracting {
         }
     }
 
-    private func save() {
+    @discardableResult
+    private func save() -> Bool {
         do {
             try context.save()
+            return true
         } catch {
             context.rollback()
             errorEvents?.fire(.saveFailed(.menu), error: error)
+            return false
         }
+    }
+
+    /// Save without toggling an existing favorite off. A nil title preserves an existing bookmark's name.
+    public func saveFavorite(title: String?, url: URL) -> Bool {
+        if let bookmark = favorite(for: url) ?? bookmark(for: url) {
+            if let title {
+                bookmark.title = title
+            }
+            if !bookmark.isFavorite(on: favoritesDisplayMode.displayedFolder) {
+                bookmark.addToFavorites(with: favoritesDisplayMode, in: context)
+            }
+        } else {
+            guard let rootFolder else { return false }
+            makeFavorite(title: title ?? url.host ?? url.absoluteString, url: url, parent: rootFolder)
+        }
+        return save()
     }
 
     public func createOrToggleFavorite(title: String, url: URL) {
@@ -110,14 +129,18 @@ public class MenuBookmarksViewModel: MenuBookmarksInteracting {
                 bookmark.addToFavorites(with: favoritesDisplayMode, in: context)
             }
         } else {
-            let favorite = BookmarkEntity.makeBookmark(title: title,
-                                                       url: url.absoluteString,
-                                                       parent: rootFolder,
-                                                       context: context)
-            favorite.addToFavorites(with: favoritesDisplayMode, in: context)
+            makeFavorite(title: title, url: url, parent: rootFolder)
         }
 
         save()
+    }
+
+    private func makeFavorite(title: String, url: URL, parent: BookmarkEntity) {
+        let favorite = BookmarkEntity.makeBookmark(title: title,
+                                                   url: url.absoluteString,
+                                                   parent: parent,
+                                                   context: context)
+        favorite.addToFavorites(with: favoritesDisplayMode, in: context)
     }
 
     public func createBookmark(title: String, url: URL) {

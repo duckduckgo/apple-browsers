@@ -2008,9 +2008,9 @@ public struct UserText {
     public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
     public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
 
-    public static let newTabPageFavoriteName = NSLocalizedString("new-tab-page.favorite.name", value: "Name", comment: "Name field placeholder in the Add Favorite sheet")
-    public static let newTabPageFavoriteURL = NSLocalizedString("new-tab-page.favorite.url", value: "URL", comment: "URL field placeholder in the Add Favorite sheet")
-    public static let newTabPageFavoriteSaveFailed = NSLocalizedString("new-tab-page.favorite.save-failed", value: "Couldn't save favorite.", comment: "Error shown when saving a favorite fails")
+    public static let newTabPageFavoriteName = NotLocalizedString("new-tab-page.favorite.name", value: "Name", comment: "Name field placeholder in the Add Favorite sheet")
+    public static let newTabPageFavoriteURL = NotLocalizedString("new-tab-page.favorite.url", value: "URL", comment: "URL field placeholder in the Add Favorite sheet")
+    public static let newTabPageFavoriteSaveFailed = NotLocalizedString("new-tab-page.favorite.save-failed", value: "Couldn't save favorite.", comment: "Error shown when saving a favorite fails")
 
     public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")

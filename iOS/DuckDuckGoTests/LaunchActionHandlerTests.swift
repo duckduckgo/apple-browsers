@@ -433,12 +433,15 @@ final class LaunchActionHandlerTests {
         idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
         idleReturnDelegate.showNewTabPageAfterIdleReturnResult = .keptCurrent
 
-        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date,
+                                                               isFirstForeground: false,
+                                                               hasCompletedAuthentication: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+        #expect(!keyboardPresenter.hasCompletedAuthentication)
         #expect(keyboardPresenter.isAfterIdleReturn)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
     }

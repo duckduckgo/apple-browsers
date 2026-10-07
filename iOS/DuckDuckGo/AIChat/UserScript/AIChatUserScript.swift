@@ -111,6 +111,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
@@ -144,7 +145,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - Initialization
 
-    init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
+    init(handler: AIChatUserScriptHandling,
+         debugSettings: AIChatDebugSettingsHandling,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+        self.devicePlatform = devicePlatform
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
@@ -300,6 +304,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .cancelEdit:
             return handler.cancelEdit
+        case .attachmentPrivacyShouldDisplay:
+            guard !devicePlatform.isIphone else { return nil }
+            return handler.attachmentPrivacyShouldDisplay
         default:
             return nil
         }
@@ -476,8 +483,17 @@ final class AIChatUserScript: NSObject, Subfeature {
             guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
                   self.webView === sourceWebView else { return }
 
-            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: request?.validate(contexts) ?? [])
+            let validatedContexts = request?.validate(contexts) ?? []
+            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: validatedContexts)
             guard self.pushPrompt(makePayload(context)) else { return }
+            let totalTabCount: Int
+            switch context {
+            case .multiple(let pages): totalTabCount = pages.count
+            case .single: totalTabCount = 1
+            case nil: totalTabCount = 0
+            }
+            request?.didDispatch(.init(totalTabCount: totalTabCount,
+                                       additionalTabCount: validatedContexts.filter { $0.tabId != nil }.count))
             request?.didConsume()
             didSubmit?()
         }

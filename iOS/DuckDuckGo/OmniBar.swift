@@ -95,6 +95,8 @@ protocol OmniBar: AnyObject {
     /// The values currently selected across the iPad address-bar Duck.ai controls
     var iPadDuckAIControlValues: IPadDuckAIControlValues { get }
 
+    func bindIPadDraft(to tab: Tab?)
+
     func prepareForMoveTransition()
     func moveTransitionCompleted()
 

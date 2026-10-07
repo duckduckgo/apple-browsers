@@ -90,6 +90,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
 
+    /// Controls permission prompts and persistence when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219054712997074?focus=true
+    case webExtensionsPermissions
+
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
     /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
@@ -335,11 +339,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// Enables advanced card ordering for the Next Steps List widget
-    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
-    case nextStepsListAdvancedCardOrdering
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
 
@@ -549,6 +548,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
+    case syncImprovedPairingFlow
+
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
     case simplifiedSyncSetupV2
@@ -565,6 +567,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates reading the Duck.ai usage-limit snapshot from native storage on Duck.ai input activation,
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
+
+    /// Promotes the Duck.ai launcher in the New Tab Page AI-mode drawer, then hints at its shortcut.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
+    case aiChatLauncherPromo
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
@@ -698,6 +704,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+        case .webExtensionsPermissions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:
@@ -848,8 +856,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .nextStepsListAdvancedCardOrdering:
-            Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
@@ -977,12 +983,16 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatLauncherPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.launcherPromo), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

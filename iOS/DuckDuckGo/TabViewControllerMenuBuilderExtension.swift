@@ -33,6 +33,7 @@ import DuckPlayer
 import UIComponents
 import FeatureFlags_iOS
 import PixelKit
+import AIChat
 
 extension TabViewController {
 
@@ -112,9 +113,11 @@ extension TabViewController {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
         }
 
-        if link != nil {
+        if shouldShowReportBrokenSite {
             entries.append(buildReportBrokenSiteEntry())
+        }
 
+        if link != nil {
             if mobileCustomization.isEnabled && !mobileCustomization.hasFireButton {
                 entries.append(.separator)
                 entries.append(buildClearDataEntry(clearTabsAndData: clearTabsAndData))
@@ -494,6 +497,11 @@ extension TabViewController {
         })
     }
     
+    private var shouldShowReportBrokenSite: Bool {
+        guard let link else { return false }
+        return isError || (!link.url.isDuckDuckGo && !link.url.isDuckAIURL)
+    }
+
     private func buildReportBrokenSiteEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         return BrowsingMenuEntry.regular(name: UserText.actionReportBrokenSite,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedbackBlank : DesignSystemImages.Glyphs.Size24.support,
@@ -1200,7 +1208,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeReportBrokenSiteEntry() -> BrowsingMenuEntry? {
-        guard link != nil else { return nil }
+        guard shouldShowReportBrokenSite else { return nil }
         return buildReportBrokenSiteEntry(useSmallIcon: false)
     }
     

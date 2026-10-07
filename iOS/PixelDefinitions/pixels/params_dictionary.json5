@@ -21,6 +21,18 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "aichat_tab_picker_source": {
+        "key": "source",
+        "type": "string",
+        "description": "Selector that was presented.",
+        "enum": ["tab_picker", "mention"]
+    },
+    "aichat_tab_attachment_source": {
+        "key": "source",
+        "type": "string",
+        "description": "Where the tab was originally selected, including when it is later removed through another control.",
+        "enum": ["recent_tabs", "tab_picker", "mention"]
+    },
     "aichat_first_prompt_new_install": {
         "key": "first_prompt_new_install",
         "type": "boolean",
@@ -354,6 +366,18 @@
         "description": "Bucketed number of text selections attached to a submitted Duck.ai prompt. Bounded by the 5-selection cap",
         "enum": ["1", "2", "3-5"]
     },
+    "aiChatPageContextOfferReason": {
+        "key": "offer_reason",
+        "type": "string",
+        "description": "Why Duck.ai offered to attach the current page: navigation means the user moved to another page while a contextual chat was active; detached means the user had just removed the page from the input",
+        "enum": ["navigation", "detached"]
+    },
+    "aiChatPromptDepthBucket": {
+        "key": "depth_bucket",
+        "type": "string",
+        "description": "Bucketed position of a prompt within its Duck.ai contextual chat: 1 is the chat's first prompt, 2 its second, and so on",
+        "enum": ["1", "2", "3-5", "6-10", "11+"]
+    },
     "aiChatHadUnsubmittedSelections": {
         "key": "had_unsubmitted_selections",
         "type": "boolean",
@@ -602,5 +626,40 @@
         "type": "string",
         "description": "Reload operation that failed.",
         "enum": ["unload", "load", "light_load", "full_load", "fallback_load"]
+    },
+    "eventHubAttributionPeriod": {
+        "key": "attributionPeriod",
+        "type": "integer",
+        "description": "Unix timestamp (UTC seconds) denoting the start of the measurement period"
+    },
+    "eventHubBucketedCount": {
+        "key": "count",
+        "type": "string",
+        "description": "Bucketed count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubYouTubeLoginState": {
+        "key": "loginState",
+        "type": "string",
+        "description": "The user's YouTube login state, as percent-encoded JSON, recorded as the last value seen during the period",
+        "enum": ["%22unknown%22", "%22logged-in%22", "%22logged-out%22", "%22premium%22"]
+    },
+    "eventHubBaseline": {
+        "key": "baseline",
+        "type": "string",
+        "description": "Bucketed count of periods in which EventHub ran. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdwallCount": {
+        "key": "adwallCount",
+        "type": "string",
+        "description": "Bucketed adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdmiralAdwallCount": {
+        "key": "admiralAdwallCount",
+        "type": "string",
+        "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
     }
 }

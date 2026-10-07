@@ -701,6 +701,10 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        promoCoordinationService.runOnceModalPromptCloses(while: shouldWait, handler)
+    }
+
     func prepareHomePageMessagesForForegroundIfNeeded() {
         controller.prepareHomePageMessagesForForegroundIfNeeded()
     }
@@ -942,9 +946,10 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+            completion(.suppressed)
             return
         }
 
@@ -957,14 +962,17 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+            completion(.keptCurrent)
             return
         }
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.prepareForIdleReturnNTP { [weak self] in
+        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+        controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            completion(.openedNewTab)
         }
     }
 

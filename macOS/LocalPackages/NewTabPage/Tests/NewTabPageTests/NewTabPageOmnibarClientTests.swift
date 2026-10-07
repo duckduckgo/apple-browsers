@@ -936,6 +936,48 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately outside the browser",
+                                                             secondaryText: " • Add Duck.ai to your menu bar",
+                                                             ctaLabel: "Try Now", dismissible: true)
+        configProvider.launcherPromoResult = promo
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.launcherPromo, promo)
+    }
+
+    @MainActor
+    func testLauncherPromoMessagesAreForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo)
+
+        XCTAssertEqual(configProvider.launcherPromoShownCallCount, 1)
+        XCTAssertEqual(configProvider.selectLauncherPromoCtaCallCount, 1)
+        XCTAssertEqual(configProvider.dismissLauncherPromoCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionPastTheLauncherPromoIsForwarded() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.launcherPromoVisible = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionWithoutTheLauncherPromoLeavesItAlone() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
+    }
+
+    @MainActor
     func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
 

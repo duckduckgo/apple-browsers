@@ -32,6 +32,7 @@ import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
@@ -39,6 +40,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
+    let chromeWebStoreUserScript: Subfeature?
     let hoverUserScript = HoverUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
@@ -72,9 +74,17 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
+        if #available(macOS 15.4, *) {
+            chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
+                NSApp.delegateTyped.webExtensionManager?.chromeWebStore
+            }, buildType: buildType)
+        } else {
+            chromeWebStoreUserScript = nil
+        }
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
@@ -235,6 +245,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
+        if let chromeWebStoreUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
+        }
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)

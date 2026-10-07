@@ -60,54 +60,6 @@ extension PermissionStore {
     }
 }
 
-/// Holds a Fire tab's choices without creating or opening a database.
-final class InMemoryPermissionStore: PermissionStore {
-    private var permissions: [NSManagedObjectID: PermissionEntity] = [:]
-    private let entityDescription: NSEntityDescription = {
-        let entity = NSEntityDescription()
-        entity.name = "TransientPermission"
-        entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
-        return entity
-    }()
-
-    func loadPermissions() throws -> [PermissionEntity] {
-        Array(permissions.values)
-    }
-
-    func add(domain: String,
-             permissionType: PermissionType,
-             decision: PersistedPermissionDecision,
-             lastModified: Date) throws -> StoredPermission {
-        let object = NSManagedObject(entity: entityDescription, insertInto: nil)
-        let permission = StoredPermission(id: object.objectID, decision: decision, lastModified: lastModified)
-        permissions[permission.id] = PermissionEntity(permission: permission, domain: domain, type: permissionType)
-        return permission
-    }
-
-    func update(objectWithId id: NSManagedObjectID,
-                decision: PersistedPermissionDecision?,
-                lastModified: Date?,
-                completionHandler: (@MainActor (Error?) -> Void)?) {
-        if let decision, let entity = permissions[id] {
-            let permission = StoredPermission(id: id, decision: decision, lastModified: lastModified)
-            permissions[id] = PermissionEntity(permission: permission, domain: entity.domain, type: entity.type)
-        } else {
-            permissions[id] = nil
-        }
-        DispatchQueue.main.asyncOrNow { completionHandler?(nil) }
-    }
-
-    func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?) {
-        update(objectWithId: id, decision: nil, lastModified: nil, completionHandler: completionHandler)
-    }
-
-    func clear(except exceptions: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?) {
-        let retainedIDs = Set(exceptions.map(\.id))
-        permissions = permissions.filter { retainedIDs.contains($0.key) }
-        DispatchQueue.main.asyncOrNow { completionHandler?(nil) }
-    }
-}
-
 final class LocalPermissionStore: PermissionStore {
     private let context: NSManagedObjectContext?
 

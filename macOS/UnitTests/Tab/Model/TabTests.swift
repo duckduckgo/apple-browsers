@@ -444,26 +444,6 @@ final class TabTests: XCTestCase {
         XCTAssertTrue(burnerFaviconManagement !== NSApp.delegateTyped.faviconManager)
     }
 
-    @MainActor
-    func testWhenFireTabChangesPermissionThenRegularAndOtherFireTabsAreUnaffected() {
-        let regularManager = PermissionManagerMock()
-        regularManager.setPermission(.deny, forDomain: "example.com", permissionType: .camera)
-        let burnerMode = BurnerMode(isBurner: true)
-        let firstTab = Tab(content: .newtab, permissionManager: regularManager, burnerMode: burnerMode)
-        let secondTab = Tab(content: .newtab, permissionManager: regularManager, burnerMode: burnerMode)
-
-        XCTAssertEqual(firstTab.permissionManager.permission(forDomain: "example.com", permissionType: .camera), .ask)
-
-        for decision in [PersistedPermissionDecision.allow, .deny] {
-            firstTab.permissionManager.setPermission(decision, forDomain: "example.com", permissionType: .camera)
-
-            XCTAssertEqual(firstTab.permissionManager.permission(forDomain: "example.com", permissionType: .camera), decision)
-            XCTAssertEqual(secondTab.permissionManager.permission(forDomain: "example.com", permissionType: .camera), .ask)
-            XCTAssertEqual(regularManager.persistedDecision(forDomain: "example.com", permissionType: .camera), .deny)
-        }
-        XCTAssertEqual(regularManager.setPermissionCalls.count, 1)
-    }
-
     // MARK: - Control Center Media Session enabled
 
     @MainActor func testWhenRegularWindow_mediaSessionEnabled() {

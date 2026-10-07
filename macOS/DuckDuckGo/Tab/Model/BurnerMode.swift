@@ -43,12 +43,4 @@ enum BurnerMode: Equatable {
         }
     }
 
-    /// Fire tabs start without saved site choices and never write into the regular permission store.
-    @MainActor
-    func makePermissionManager(regularPermissionManager: PermissionManagerProtocol) -> PermissionManagerProtocol {
-        guard isBurner else { return regularPermissionManager }
-        return PermissionManager(store: InMemoryPermissionStore(),
-                                 defaultDecisionProvider: regularPermissionManager.defaultDecision(for:))
-    }
-
 }

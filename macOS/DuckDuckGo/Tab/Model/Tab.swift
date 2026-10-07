@@ -298,8 +298,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
          webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?
     ) {
-        let permissionManager = burnerMode.makePermissionManager(regularPermissionManager: permissionManager)
-        self.permissionManager = permissionManager
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
         self.content = content
@@ -747,7 +745,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
     }
     let permissions: PermissionModel
-    let permissionManager: PermissionManagerProtocol
 
     @Published private(set) var isLoading: Bool = false {
         didSet {

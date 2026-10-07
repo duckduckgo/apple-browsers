@@ -75,7 +75,6 @@ final class PermissionManager: PermissionManagerProtocol {
     private var permissions = [String: [PermissionType: StoredPermission]]()
     private let decisionOverride: PermissionDecisionOverriding?
     private let defaults: WebsitePermissionDefaultsProtocol?
-    private let defaultDecisionProvider: ((PermissionType) -> PersistedPermissionDecision)?
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
@@ -86,12 +85,10 @@ final class PermissionManager: PermissionManagerProtocol {
 
     init(store: PermissionStore,
          decisionOverride: PermissionDecisionOverriding? = nil,
-         defaults: WebsitePermissionDefaultsProtocol? = nil,
-         defaultDecisionProvider: ((PermissionType) -> PersistedPermissionDecision)? = nil) {
+         defaults: WebsitePermissionDefaultsProtocol? = nil) {
         self.store = store
         self.decisionOverride = decisionOverride
         self.defaults = defaults
-        self.defaultDecisionProvider = defaultDecisionProvider
         loadPermissions()
     }
 
@@ -145,9 +142,6 @@ final class PermissionManager: PermissionManagerProtocol {
     }
 
     func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision {
-        if let defaultDecisionProvider {
-            return defaultDecisionProvider(permissionType)
-        }
         guard let defaults, let category = WebsitePermissionCategory.category(for: permissionType) else { return .ask }
         return defaults.defaultDecision(for: category)
     }

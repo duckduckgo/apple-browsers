@@ -1214,20 +1214,29 @@ class MainViewController: UIViewController {
                                                         return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
                                                     }) { [weak self] tab in
 
-            guard tab !== self?.tabManager.currentTabsModel.currentTab else {
-                return
+            guard let self else { return }
+            if tab !== tabManager.currentTabsModel.currentTab {
+                PixelKit.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
+                newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
+                currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+                selectTab(tab)
             }
-
-            PixelKit.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
-            self?.newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
-            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.selectTab(tab)
+            // Swiping restores a page's previous focus; it does not start a new keyboard landing.
+            let shouldRestoreFocus = NewTabPageKeyboardPolicy().shouldRestoreInputFocusOnTabSwipe(
+                on: tab, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
+#if DEBUG || ALPHA
+            Logger.unifiedInputState.debug("[NTP focus] Swipe settled: home=\(tab.isHomeTab, privacy: .public) remembered=\(tab.wasInputFocusedBeforeTabSwitch, privacy: .public) restore=\(shouldRestoreFocus, privacy: .public)")
+#endif
+            if shouldRestoreFocus {
+                showKeyboardOnNewTabPageIfAllowed()
+            }
 
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
+            self?.rememberNewTabPageInputFocusForTabSwitch(source: "swipe")
             self?.performCancel(animated: false)
             self?.hideKeyboard(animated: false)
             self?.updatePreviewForCurrentTab()
@@ -2932,6 +2941,17 @@ class MainViewController: UIViewController {
         enterSearch()
     }
 
+    private func rememberNewTabPageInputFocusForTabSwitch(source: String) {
+        guard let tab = tabManager.currentTabsModel.currentTab else { return }
+        // A suspended UTI session can outlive a user dismissal, so remember only actual input focus.
+        let isInputFocused = omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
+        NewTabPageKeyboardPolicy().rememberInputFocusForTabSwitch(
+            on: tab, isInputFocused: isInputFocused, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
+#if DEBUG || ALPHA
+        Logger.unifiedInputState.debug("[NTP focus] Before \(source, privacy: .public): home=\(tab.isHomeTab, privacy: .public) focused=\(isInputFocused, privacy: .public) session=\(self.unifiedToggleInputCoordinator?.isOmnibarSession == true, privacy: .public) remembered=\(tab.wasInputFocusedBeforeTabSwitch, privacy: .public)")
+#endif
+    }
+
     /// Shows the keyboard on the current New Tab Page after Home, tab closing, or tab selection.
     /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
     func showKeyboardOnNewTabPageIfAllowed() {
@@ -2946,7 +2966,11 @@ class MainViewController: UIViewController {
               !isNewTabPageKeyboardHeldForOnboarding,
               !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
         // A landing restores focus even if a hardware keyboard left the previous input session inactive.
-        showKeyboardOnAppOpenIfAllowed { _ in }
+        showKeyboardOnAppOpenIfAllowed { didFocus in
+#if DEBUG || ALPHA
+            Logger.unifiedInputState.debug("[NTP focus] Focus request completed: focused=\(didFocus, privacy: .public)")
+#endif
+        }
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {
@@ -7998,6 +8022,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
         performActionIfAITab { PixelKit.fire(Pixel.Event.aiChatTabSwitcherOpened, frequency: .dailyAndCount) }
 
+        // Opening the switcher hides input programmatically; preserve the focus it had before cancellation.
+        rememberNewTabPageInputFocusForTabSwitch(source: "tab switcher")
         // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
         performCancel(animated: false)
         // Keyboard focus left pending by an earlier switcher that never reported its dismissal is stale now.

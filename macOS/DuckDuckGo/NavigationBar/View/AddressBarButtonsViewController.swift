@@ -956,11 +956,12 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         urlCancellable = tabViewModel.tab.$content
             .combineLatest(tabViewModel.tab.$error)
-            .sink { [weak self] _ in
+            .sink { [weak self] (content, _) in
                 guard let self else { return }
 
                 // Cancel all animations and reset state on navigation
                 stopAnimations()
+                closePermissionAuthorizationPopoverIfNeeded(for: content)
                 lastNotificationType = nil
                 hasShieldAnimationCompleted = false
                 updateTrackerAnimationDomainState(for: self.urlForTrackerAnimation(), tabID: self.tabViewModel?.tab.uuid)
@@ -972,6 +973,17 @@ final class AddressBarButtonsViewController: NSViewController {
                 subscribeToYouTubeAdBlockAnimationTrigger()
                 scheduleYouTubeAdBlockUnavailableNoticeIfNeeded()
             }
+    }
+
+    private func closePermissionAuthorizationPopoverIfNeeded(for content: TabContent) {
+        guard content == .newtab, featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+              let popover = permissionAuthorizationPopover, popover.isShown else { return }
+
+        // Dismiss before the New Tab Page moves the popover's address bar anchor.
+        let animates = popover.animates
+        popover.animates = false
+        popover.close()
+        popover.animates = animates
     }
 
     private func subscribeToTrackerAnimationTrigger() {

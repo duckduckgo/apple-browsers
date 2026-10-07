@@ -49,7 +49,7 @@ final class BookmarkUtilsTests: XCTestCase {
     }
 
     func testURLParsingPreservesRelativeAndCustomSchemeAddresses() {
-        for address in ["", "example.com", "-11", "ftp://example.com", "myapp://open/page"] {
+        for address in ["example.com", "-11", "ftp://example.com", "myapp://open/page"] {
             XCTAssertEqual(BookmarkUtils.url(from: address)?.absoluteString, address)
         }
     }
@@ -58,6 +58,11 @@ final class BookmarkUtilsTests: XCTestCase {
         XCTAssertNil(BookmarkUtils.url(from: nil))
         XCTAssertNil(BookmarkUtils.url(from: "http://["))
         XCTAssertNil(BookmarkUtils.url(from: "https://exa[mple.com"))
+    }
+
+    func testURLParsingPreservesFoundationEmptyAddressBehavior() {
+        // Foundation's handling of empty relative URLs differs between OS versions.
+        XCTAssertEqual(BookmarkUtils.url(from: ""), URL(string: ""))
     }
 
     func testURLParsingEncodesBookmarkletsWithoutDoubleEncoding() {

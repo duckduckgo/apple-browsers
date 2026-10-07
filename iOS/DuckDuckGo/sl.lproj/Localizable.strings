@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Preizkusite";
+"action.title.vpn.free-trial-badge" = "Preizkusite brezplačno";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blokira invazivne sledilnike, še preden se naložijo, s čimer učinkovito odstrani oglase, ki temeljijo na sledenju.";
@@ -295,12 +295,6 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Naenkrat lahko priložite samo toliko slik: %d.";
 
-/* attachment-menu option that opens the Choose Tabs picker */
-"aichat.attachment.option.add.tabs" = "Dodaj zavihke";
-
-/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
-"aichat.attachment.option.ask.about.document" = "Vprašajte o dokumentu";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Vprašajte o strani";
 
@@ -310,17 +304,17 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Dodaj sliko";
 
-/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
-"aichat.attachment.option.continue.in.duckAI" = "Nadaljuj v Duck.ai";
-
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Posnemite fotografijo";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Datoteke se samodejno pregledajo glede nezakonite vsebine. Označeni klepeti imajo omejeno hrambo podatkov. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Več o tem";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "To sporočilo je predolgo za pošiljanje s prilogami.";
-
-/* attachment-menu section title for recently viewed tabs */
-"aichat.attachment.recent-tabs.section-title" = "Nedavni zavihki";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Priloge trenutno niso na voljo. Poskusite znova pozneje.";
@@ -334,17 +328,14 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Ta vrsta datoteke ni podprta, priložite %@.";
 
-/* empty state shown when no tabs match the search query */
-"aichat.choose-tabs.no-matches" = "Brez ujemajočih se zavihkov";
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ne more ustvarjati slik. Brez vpogleda ponudnika ne bo veljalo, dokler ne preklopite nazaj.";
 
-/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
-"aichat.choose-tabs.prompt" = "Izberite največ toliko zavihkov: %d";
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ne podpira ustvarjanja slik.";
 
-/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
-"aichat.choose-tabs.selection-count" = "%1$d od %2$d";
-
-/* title of the tab attachment picker */
-"aichat.choose-tabs.title" = "Dodajte zavihke";
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Zdaj se uporablja model %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Z urejanjem bo odgovor zamenjan z novim.";
@@ -447,12 +438,6 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Preizkusite brezplačno";
-
-/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
-"aichat.multiTab.promotion" = "Novo · Vnesite »@« ali tapnite ikono {attachment}, da dodate zavihek.";
-
-/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
-"aichat.multiTab.promotion.attachment" = "priloga";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitične naloge";
@@ -1470,9 +1455,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfiguracija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potrdi";
@@ -2615,9 +2597,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Vnesite nenegativno število dni. Datum namestitve bo nastavljen pred toliko dnevi.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3070,9 +3049,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Dogodek je bil dodan v Apple Koledar";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Uvozi gesla";
 
@@ -3191,9 +3167,6 @@
 "keyCommandZoomOut" = "Pomanjšaj";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Zadnja obdelava: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Nalaganje razpoložljivih izdelkov ...";
 
 /* No comment provided by engineer. */
@@ -3267,9 +3240,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Ime gostitelja pravilnika za sporočila";
-
-/* No comment provided by engineer. */
-"Messages" = "Sporočila";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3629,13 +3599,7 @@
 "No extensions installed" = "Ni nameščenih razširitev";
 
 /* No comment provided by engineer. */
-"No Logs" = "Ni dnevnikov";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ni zadetkov za »% @«";
-
-/* No comment provided by engineer. */
-"No messages" = "Ni sporočil";
 
 /* No comment provided by engineer. */
 "No results found" = "Ni rezultatov";
@@ -4169,9 +4133,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo ne more naložiti te strani.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Nedavni dnevniki obdelave";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Sorodniki: %@";
 
 /* No comment provided by engineer. */
@@ -4529,25 +4490,25 @@
 "settings.complete.setup" = "Dokončanje nastavitve";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Poskušali bomo izbrati le najbolj zasebne možnosti piškotkov, ki so na voljo za vas, nato pa zapreti ta pojavna okna.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Samodejno upravljanje pojavnih oken za piškotke";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo lahko samodejno upravlja nastavitve piškotkov za povečanje zasebnosti, zmanjšanje števila piškotkov in zapiranje teh pojavnih oken.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Prav tako vam DuckDuckGo prihrani klik tako, da namesto vas sprejme piškotke za zapiranje pojavnih oken, ki vam ne omogočajo zavrnitve.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Pojavna okna brez možnosti zavrnitve";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Izbriši zavihke in podatke";
@@ -4954,9 +4915,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Kaj je novega";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Prikaže dnevnike iz zadnje minute, da pomaga diagnosticirati težave takoj po osvežitvi.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izberite možnost, ki najbolje opisuje težavo, na katero ste naleteli.";
 
@@ -5001,9 +4959,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Status: Neveljaven";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
@@ -5492,9 +5447,6 @@
 "theme.name.light" = "Luč";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Ta seznam vsebuje sporočila, ki so bila prikazana, in največ 1 sporočilo, ki je načrtovano za prikaz. V konfiguraciji je morda več sporočil, ki bodo predstavljena, vendar še niso bila obdelana.";
-
-/* No comment provided by engineer. */
 "Title" = "Naslov";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5517,9 +5469,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Stik je bil dodan";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Različica: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Iskanje";
@@ -5917,20 +5866,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ne more ustvarjati slik. Brez vpogleda ponudnika ne bo veljalo, dokler ne preklopite nazaj.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ ne podpira ustvarjanja slik.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Zdaj se uporablja model %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Vsi klepeti";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Datoteke se samodejno pregledajo glede nezakonite vsebine. Označeni klepeti imajo omejeno hrambo podatkov. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Več o tem";

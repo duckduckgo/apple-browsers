@@ -50,11 +50,7 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
             TextMenuItemHeader(UserText.sync)
                 .padding(.bottom, -22)
 
-            if model.isSimplifiedSyncSetupV2Enabled {
-                simplifiedSyncSetupV2Content
-            } else {
-                legacyContent
-            }
+            syncContent
         }
         .onAppear {
             model.settingsScreenDidAppear()
@@ -62,7 +58,7 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
     }
 
     @ViewBuilder
-    private var simplifiedSyncSetupV2Content: some View {
+    private var syncContent: some View {
         StatusIndicatorView(status: syncStatus, isLarge: true)
 
         if model.isSyncEnabled {
@@ -70,17 +66,6 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
                 .environmentObject(model)
         } else {
             SyncSetupViewV2<ViewModel>()
-                .environmentObject(model)
-        }
-    }
-
-    @ViewBuilder
-    private var legacyContent: some View {
-        if model.isSyncEnabled {
-            SyncEnabledView<ViewModel>()
-                .environmentObject(model)
-        } else {
-            SyncSetupView<ViewModel>()
                 .environmentObject(model)
         }
     }

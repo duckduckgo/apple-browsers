@@ -106,29 +106,13 @@ public struct ManagementDialog: View {
             case .deleteAccountV2(let devices):
                 DeleteAccountViewV2(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
-                } else {
-                    SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
-                }
-            case .prepareToSync(let mode):
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    PreparingToSyncViewV2(state: .connecting)
-                } else {
-                    PreparingToSyncView(mode: mode)
-                }
+                SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+            case .prepareToSync:
+                PreparingToSyncViewV2(state: .connecting)
             case .waitForOtherDevice:
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    PreparingToSyncViewV2(state: .waitingForOtherDevice)
-                } else {
-                    PreparingToSyncView(mode: .twoDevicePairing)
-                }
+                PreparingToSyncViewV2(state: .waitingForOtherDevice)
             case .saveRecoveryCode(let code):
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    SyncSuccessViewV2(code: code)
-                } else {
-                    SaveRecoveryPDFView(code: code)
-                }
+                SyncSuccessViewV2(code: code)
             case .nowSyncing:
                 DeviceSyncedView()
             case .syncWithServer:

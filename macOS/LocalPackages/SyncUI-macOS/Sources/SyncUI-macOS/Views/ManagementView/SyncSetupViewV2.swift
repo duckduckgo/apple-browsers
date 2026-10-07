@@ -144,12 +144,10 @@ struct SyncSetupViewV2_Previews: PreviewProvider {
     static let snapshots = PreviewSnapshots<State>(
         configurations: [
             .init(name: "Off state", state: PreviewManagementViewModel(
-                isSyncEnabled: false,
-                isSimplifiedSyncSetupV2Enabled: true
+                isSyncEnabled: false
             )),
             .init(name: "Sync unavailable", state: PreviewManagementViewModel(
                 isSyncEnabled: false,
-                isSimplifiedSyncSetupV2Enabled: true,
                 isDataSyncingAvailable: false,
                 isConnectingDevicesAvailable: false,
                 isAccountCreationAvailable: false

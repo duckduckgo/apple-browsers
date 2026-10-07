@@ -276,7 +276,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         plusItem.menu = NewTabLongPressMenu.make(source: .tabSwitcher, actions: .init(
             onNewFireTab: { [weak self] in self?.actions.onNewFireTabTapped?() },
-            onNewTab: { [weak self] in self?.actions.onNewNormalTabTapped?() }
+            onNewTab: { [weak self] in self?.actions.onNewNormalTabTapped?() },
+            onNewChat: { [weak self] in self?.actions.onDuckChatTapped?() },
+            isNewChatAvailable: { [weak self] in self?.actions.isNewChatAvailable?() ?? false }
         ))
     }
 

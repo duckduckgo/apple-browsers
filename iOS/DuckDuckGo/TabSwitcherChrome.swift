@@ -40,6 +40,7 @@ struct TabSwitcherChromeActions {
     var onMultiSelectMenuRequested: (() -> UIMenu?)?
     var onCloseTabsTapped: (() -> Void)?
     var onDuckChatTapped: (() -> Void)?
+    var isNewChatAvailable: (() -> Bool)?
 }
 
 /// Abstraction over the tab switcher's bars and layout so the view controller can swap

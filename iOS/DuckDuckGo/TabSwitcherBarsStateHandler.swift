@@ -74,6 +74,7 @@ protocol TabSwitcherBarsStateHandling {
     var onMenuButtonTapped: (() -> UIMenu?)? { get set }
     var onCloseTabsTapped: (() -> Void)? { get set }
     var onDuckChatTapped: (() -> Void)? { get set }
+    var isNewChatAvailable: (() -> Bool)? { get set }
 
     func update(_ state: TabSwitcherToolbarState)
 
@@ -188,6 +189,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     var onMenuButtonTapped: (() -> UIMenu?)?
     var onCloseTabsTapped: (() -> Void)?
     var onDuckChatTapped: (() -> Void)?
+    var isNewChatAvailable: (() -> Bool)?
 
     private static let buttonSize: CGFloat = 44
 
@@ -243,7 +245,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
         button.menu = NewTabLongPressMenu.make(source: .tabSwitcher, actions: .init(
             onNewFireTab: { [weak self] in self?.onNewFireTabTapped?() },
-            onNewTab: { [weak self] in self?.onNewNormalTabTapped?() }
+            onNewTab: { [weak self] in self?.onNewNormalTabTapped?() },
+            onNewChat: { [weak self] in self?.onDuckChatTapped?() },
+            isNewChatAvailable: { [weak self] in self?.isNewChatAvailable?() ?? false }
         ))
         button.showsMenuAsPrimaryAction = false
     }

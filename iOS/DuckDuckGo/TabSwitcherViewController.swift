@@ -471,6 +471,10 @@ class TabSwitcherViewController: UIViewController {
             self.addNewAIChatTab()
         }
 
+        actions.isNewChatAvailable = { [weak self] in
+            self?.aiChatSettings.isAIChatEnabled ?? false
+        }
+
         return actions
     }
 

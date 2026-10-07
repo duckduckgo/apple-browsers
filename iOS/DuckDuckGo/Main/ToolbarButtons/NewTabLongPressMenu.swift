@@ -35,6 +35,9 @@ enum NewTabLongPressMenu {
     struct Actions {
         var onNewFireTab: () -> Void
         var onNewTab: () -> Void
+        var onNewChat: () -> Void
+        /// Read on every presentation, so changing the Duck.ai setting applies without rebuilding the menu.
+        var isNewChatAvailable: () -> Bool
     }
 
     static func make(source: Source, actions: Actions) -> UIMenu {
@@ -50,7 +53,7 @@ enum NewTabLongPressMenu {
 
     static func items(source: Source, actions: Actions) -> [UIAction] {
         let parameters = [PixelParameters.source: source.rawValue]
-        return [
+        var items = [
             UIAction(title: UserText.actionNewFireTab, image: DesignSystemImages.Glyphs.Size16.fireWindow) { _ in
                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters(parameters))
                 actions.onNewFireTab()
@@ -60,5 +63,12 @@ enum NewTabLongPressMenu {
                 actions.onNewTab()
             }
         ]
+        if actions.isNewChatAvailable() {
+            // ponytail: no tap pixel yet, added with the pixel step.
+            items.append(UIAction(title: UserText.actionNewAIChat, image: DesignSystemImages.Glyphs.Size16.aiChat) { _ in
+                actions.onNewChat()
+            })
+        }
+        return items
     }
 }

@@ -5979,6 +5979,14 @@ extension MainViewController: OmniBarDelegate {
         newTab()
     }
 
+    func newChatLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        // The tab is created here, so `openAIChat` would see it blank and report no new tab.
+        newTab(allowingKeyboard: false)
+        // ponytail: borrows the tab switcher source until the pixel step adds a long-press one.
+        openAIChat(source: .tabSwitcher, reportsNewTab: true)
+    }
+
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -7718,6 +7726,14 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
     func launchNewFireTab(_ button: TabSwitcherButton) {
         newFireTabLongPressMenuAction()
+    }
+
+    func launchNewChat(_ button: TabSwitcherButton) {
+        newChatLongPressMenuAction()
+    }
+
+    var isNewChatAvailable: Bool {
+        aiChatSettings.isAIChatEnabled
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {

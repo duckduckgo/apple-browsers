@@ -41,6 +41,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController)
@@ -581,6 +582,10 @@ class TabsBarViewController: UIViewController {
         }
     }
 
+    private func requestNewChat() {
+        delegate?.tabsBarDidRequestNewChat(self)
+    }
+
     private func configureTabSwitcherLongPressMenu() {
         tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
     }
@@ -593,7 +598,9 @@ class TabsBarViewController: UIViewController {
 
         addTabButton.menu = NewTabLongPressMenu.make(source: .tabsBar, actions: .init(
             onNewFireTab: { [weak self] in self?.requestNewTab(type: .fire) },
-            onNewTab: { [weak self] in self?.requestNewTab(type: .normal) }
+            onNewTab: { [weak self] in self?.requestNewTab(type: .normal) },
+            onNewChat: { [weak self] in self?.requestNewChat() },
+            isNewChatAvailable: { [weak self] in self?.isNewChatAvailable ?? false }
         ))
         addTabButton.showsMenuAsPrimaryAction = false
     }
@@ -696,6 +703,14 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 
     func launchNewFireTab(_ button: TabSwitcherButton) {
         requestNewTab(type: .fire)
+    }
+
+    func launchNewChat(_ button: TabSwitcherButton) {
+        requestNewChat()
+    }
+
+    var isNewChatAvailable: Bool {
+        aiChatSettings?.isAIChatEnabled ?? false
     }
 }
 
@@ -1039,6 +1054,10 @@ extension MainViewController: TabsBarDelegate {
         recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
+    }
+
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {
+        newChatLongPressMenuAction()
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {

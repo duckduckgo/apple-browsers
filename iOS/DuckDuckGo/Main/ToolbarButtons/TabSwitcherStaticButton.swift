@@ -144,7 +144,12 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
             onNewTab: { [weak self] in
                 guard let self else { return }
                 delegate?.launchNewNormalTab(self)
-            }
+            },
+            onNewChat: { [weak self] in
+                guard let self else { return }
+                delegate?.launchNewChat(self)
+            },
+            isNewChatAvailable: { [weak self] in self?.delegate?.isNewChatAvailable ?? false }
         ))
     }
     

@@ -27,6 +27,8 @@ protocol SpeechRecognizerDelegate: AnyObject {
 
 enum SpeechRecognizerError: Error {
     case audioInputUnavailable
+    case recognitionUnavailable
+    case modelUnavailable
 }
 
 final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
@@ -39,6 +41,7 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
 
     weak var delegate: SpeechRecognizerDelegate?
     private var audioEngine: AVAudioEngine?
+    private var tapInstalled = false
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let speechRecognizer: SFSpeechRecognizer?
@@ -119,6 +122,11 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
                                                   _ speechDidFinish: Bool) -> Void,
                         volumeCallback: @escaping (_ volume: Float) -> Void) {
         
+        guard speechRecognizer?.supportsOnDeviceRecognition == true, speechRecognizer?.isAvailable == true else {
+            resultHandler(nil, SpeechRecognizerError.recognitionUnavailable, true)
+            return
+        }
+
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         audioEngine = AVAudioEngine()
 
@@ -153,6 +161,7 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
                 volumeCallback(volume)
             }
             
+            tapInstalled = true
             audioEngine.prepare()
             try audioEngine.start()
             
@@ -174,7 +183,6 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
                 resultHandler(transcription, error, isFinal)
 
                 if error != nil || isFinal {
-                    inputNode.removeTap(onBus: 0)
                     self?.stopRecording()
                 }
             }
@@ -192,6 +200,9 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
         try? AVAudioSession.sharedInstance().setActive(false)
         recognitionTask?.cancel()
         audioEngine?.stop()
+        if tapInstalled { audioEngine?.inputNode.removeTap(onBus: 0) }
+        tapInstalled = false
+        audioEngine = nil
         recognitionRequest = nil
         recognitionTask = nil
     }

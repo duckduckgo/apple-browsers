@@ -19,6 +19,9 @@
 
 import Foundation
 import Core
+import Combine
+import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol VoiceSearchHelperProtocol {
     var isSpeechRecognizerAvailable: Bool { get }
@@ -29,28 +32,48 @@ protocol VoiceSearchHelperProtocol {
 
 class VoiceSearchHelper: VoiceSearchHelperProtocol {
     private let speechRecognizer = SpeechRecognizer()
+    private let featureFlagger: FeatureFlagger
+    private let appSettings: AppSettings
+    private var featureFlagUpdates: AnyCancellable?
+    private var analyzerAvailable = false
     
     var isVoiceSearchEnabled: Bool {
-        isSpeechRecognizerAvailable && AppDependencyProvider.shared.appSettings.voiceSearchEnabled
+        isSpeechRecognizerAvailable && appSettings.voiceSearchEnabled
     }
     
-    private(set) var isSpeechRecognizerAvailable: Bool = false {
+    var isSpeechRecognizerAvailable: Bool {
+        legacyAvailable || (analyzerAvailable && featureFlagger.isFeatureOn(.speechAnalyzer))
+    }
+
+    private var legacyAvailable = false {
         didSet {
             notifyAvailabilityChange()
         }
     }
     
-    init() {
+    init(appSettings: AppSettings, featureFlagger: FeatureFlagger) {
+        self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
+        featureFlagUpdates = featureFlagger.updatesPublisher.sink { [weak self] in
+            self?.notifyAvailabilityChange()
+        }
+        if #available(iOS 26, *) {
+            Task { @MainActor [weak self] in
+                let locale = await SpeechAnalyzerRecognizer.supportedLocale()
+                self?.analyzerAvailable = locale != nil
+                self?.notifyAvailabilityChange()
+            }
+        }
 #if targetEnvironment(simulator)
-            isSpeechRecognizerAvailable = true
+            legacyAvailable = true
 #else
             speechRecognizer.delegate = self
-            isSpeechRecognizerAvailable = speechRecognizer.isAvailable
+            legacyAvailable = speechRecognizer.isAvailable
 #endif
     }
     
     func enableVoiceSearch(_ enable: Bool) {
-        AppDependencyProvider.shared.appSettings.voiceSearchEnabled = enable
+        appSettings.voiceSearchEnabled = enable
         notifyAvailabilityChange()
     }
     
@@ -64,8 +87,8 @@ class VoiceSearchHelper: VoiceSearchHelperProtocol {
 extension VoiceSearchHelper: SpeechRecognizerDelegate {
     func speechRecognizer(_ speechRecognizer: SpeechRecognizer, availabilityDidChange available: Bool) {
         // Avoid unnecessary notifications
-        if isSpeechRecognizerAvailable != available {
-            isSpeechRecognizerAvailable = available
+        if legacyAvailable != available {
+            legacyAvailable = available
         }
     }
 }

@@ -45,6 +45,7 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
     }
 
     @Published private(set) var speechFeedback = " "
+    @Published private(set) var errorMessage: String?
     @Published private(set) var animationType: AnimationType = .pulse(scale: 1)
 
     @UserDefaultsWrapper(key: .voiceSearchTargetPreferences, defaultValue: VoiceSearchTarget.SERP.rawValue)
@@ -61,6 +62,7 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
     private let speechRecognizer: SpeechRecognizerProtocol
     private var isSilent = true
     private var hasCompleted = false
+    private var recordingID = UUID()
     private let aiChatSettings: AIChatSettingsProvider
     private let maxWordsCount = 30
     private var recognizedWords: String? {
@@ -94,14 +96,20 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
     }
 
     func startSpeechRecognizer() {
+        guard !hasCompleted else { return }
+        let recordingID = UUID()
+        self.recordingID = recordingID
+        errorMessage = nil
+        recognizedWords = nil
+        speechFeedback = speechRecognizer.requiresPreparation ? UserText.voiceSearchPreparing : " "
         speechRecognizer.startRecording { [weak self] text, error, speechDidFinish in
             DispatchQueue.main.async {
-                guard let self = self, !self.hasCompleted else { return }
+                guard let self = self, !self.hasCompleted, self.errorMessage == nil, self.recordingID == recordingID else { return }
 
-                self.recognizedWords = text
+                if let text { self.recognizedWords = text }
 
                 if speechDidFinish || error != nil || self.hasReachedWordLimit(text) {
-                    if (text ?? "").isEmpty {
+                    if (self.recognizedWords ?? "").isEmpty {
                         // Session ended with no usable transcription: fires no done/cancelled pixel otherwise
                         if let error {
                             PixelKit.fire(Pixel.Event.voiceSearchError.withError(error), frequency: .dailyAndCount)
@@ -109,14 +117,38 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
                             PixelKit.fire(Pixel.Event.voiceSearchNoSpeech, frequency: .dailyAndCount)
                         }
                     }
-                    self.finish()
+                    if let error, (self.recognizedWords ?? "").isEmpty {
+                        self.speechRecognizer.stopRecording()
+                        self.errorMessage = Self.message(for: error)
+                    } else {
+                        self.finish()
+                    }
                 }
             }
 
         } volumeCallback: { [weak self] volume in
             DispatchQueue.main.async {
-                self?.setupAnimationWithVolume(volume)
+                guard let self, !self.hasCompleted, self.errorMessage == nil, self.recordingID == recordingID else { return }
+                if self.recognizedWords == nil { self.speechFeedback = " " }
+                self.setupAnimationWithVolume(volume)
             }
+        }
+    }
+
+    static func message(for error: Error) -> String {
+        switch error as? SpeechRecognizerError {
+        case .recognitionUnavailable:
+            return UserText.voiceSearchRecognitionUnavailable
+        case .audioInputUnavailable:
+            return UserText.voiceSearchAudioUnavailable
+        case .modelUnavailable:
+            return UserText.voiceSearchModelUnavailable
+        case nil:
+            let error = error as NSError
+            if error.domain == "kAFAssistantErrorDomain", error.code == 1101 {
+                return UserText.voiceSearchRecognitionUnavailable
+            }
+            return UserText.voiceSearchFailed
         }
     }
 

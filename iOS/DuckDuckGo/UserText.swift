@@ -604,6 +604,12 @@ public struct UserText {
     public static let noVoicePermissionAlertMessage = NSLocalizedString("voiceSearch.alert.no-permission.message", value: "Please allow Microphone access in iOS System Settings for DuckDuckGo to use voice features.", comment: "Message for alert warning the user about missing microphone permission")
     public static let noVoicePermissionActionSettings = NSLocalizedString("voiceSearch.alert.no-permission.action.settings", value: "Settings", comment: "No microphone permission alert action button to open the settings app")
     public static let voiceSearchCancelButton = NSLocalizedString("voiceSearch.cancel", value: "Cancel", comment: "Cancel button for voice search")
+    public static let voiceSearchRetry = NSLocalizedString("voiceSearch.retry", value: "Try Again", comment: "Retry voice recognition after an error")
+    public static let voiceSearchPreparing = NSLocalizedString("voiceSearch.preparing", value: "Preparing voice search…", comment: "Voice search status or error message")
+    public static let voiceSearchRecognitionUnavailable = NSLocalizedString("voiceSearch.recognition-unavailable", value: "Voice recognition is unavailable. Check that Siri and Dictation are enabled in iOS Settings, then try again.", comment: "Voice search status or error message")
+    public static let voiceSearchAudioUnavailable = NSLocalizedString("voiceSearch.audio-unavailable", value: "Your microphone is unavailable. Check your audio connection and try again.", comment: "Voice search status or error message")
+    public static let voiceSearchModelUnavailable = NSLocalizedString("voiceSearch.model-unavailable", value: "Voice recognition could not download its language files. Check your internet connection and available storage, then try again.", comment: "Voice search status or error message")
+    public static let voiceSearchFailed = NSLocalizedString("voiceSearch.failed", value: "Voice recognition failed. Please try again.", comment: "Voice search status or error message")
     public static let voiceSearchFooterOld = NSLocalizedString("voiceSearch.footer.note.old", value: "Audio is processed on-device. It's not stored or shared with anyone, including DuckDuckGo.", comment: "Voice-search footer note with on-device privacy warning")
     public static let voiceSearchFooter = NSLocalizedString("voiceSearch.footer.note", value: "Add Private Voice Search option to the address bar. Audio is not stored or shared with anyone, including DuckDuckGo.", comment: "Voice-search footer note with on-device privacy warning")
 

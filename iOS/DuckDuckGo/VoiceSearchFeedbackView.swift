@@ -73,17 +73,24 @@ extension VoiceSearchFeedbackView {
     private var voiceFeedbackView: some View {
         VStack {
             Spacer()
-            Text(speechModel.speechFeedback)
+            Text(speechModel.errorMessage ?? speechModel.speechFeedback)
                 .multilineTextAlignment(.center)
                 .foregroundColor(Colors.speechFeedback)
                 .padding(.horizontal)
 
-            ZStack {
-                outerCircle
-                innerCircle
-                micImage
+            if speechModel.errorMessage != nil {
+                Button(UserText.voiceSearchRetry) {
+                    speechModel.startSpeechRecognizer()
+                }
+                .padding(.vertical, voiceCircleVerticalPadding)
+            } else {
+                ZStack {
+                    outerCircle
+                    innerCircle
+                    micImage
+                }
+                .padding(.vertical, voiceCircleVerticalPadding)
             }
-            .padding(.vertical, voiceCircleVerticalPadding)
 
             if speechModel.shouldDisplayAIChatOption {
                 VoiceSearchTargetPicker(target: $speechModel.searchTarget)

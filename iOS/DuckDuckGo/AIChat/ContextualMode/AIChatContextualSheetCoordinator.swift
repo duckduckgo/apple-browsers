@@ -564,9 +564,9 @@ final class AIChatContextualSheetCoordinator {
     /// Dictation opens from whichever surface shows the input; the sheet may not exist yet.
     func presentDictation() {
         if let floatingInputViewController {
-            floatingInputViewController.presentVoiceSearch()
+            floatingInputViewController.presentVoiceSearch(featureFlagger: featureFlagger)
         } else {
-            sheetViewController?.presentVoiceSearch()
+            sheetViewController?.presentVoiceSearch(featureFlagger: featureFlagger)
         }
     }
 

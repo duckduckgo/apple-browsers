@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import PrivacyConfig
 
 /// The surface showing the input hosts dictation for it; the transcript goes back to the input.
 @MainActor
@@ -27,8 +28,9 @@ protocol ContextualDictationPresenting: UIViewController, VoiceSearchViewControl
 
 extension ContextualDictationPresenting {
 
-    func presentVoiceSearch() {
-        let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
+    func presentVoiceSearch(featureFlagger: FeatureFlagger) {
+        let voiceSearchController = VoiceSearchViewController(speechRecognizer: VoiceSearchSpeechRecognizer(featureFlagger: featureFlagger),
+                                                              preferredTarget: .AIChat, hideToggle: true)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen

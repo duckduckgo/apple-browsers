@@ -47,7 +47,7 @@ import FeatureFlags_iOS
 struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
-    private let voiceSearchHelper = VoiceSearchHelper()
+    private let voiceSearchHelper: VoiceSearchHelper
     private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
@@ -69,6 +69,7 @@ struct Launching: LaunchingHandling {
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
+        voiceSearchHelper = VoiceSearchHelper(appSettings: appSettings, featureFlagger: featureFlagger)
 
         // Wire the DesignSystem rebrand singleton to the live feature flag.
         // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer

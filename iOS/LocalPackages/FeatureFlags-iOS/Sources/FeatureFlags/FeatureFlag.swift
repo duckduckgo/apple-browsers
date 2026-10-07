@@ -580,6 +580,9 @@ public enum FeatureFlag: String {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// https://app.asana.com/1/137249556945/project/1214749231578703/task/1210568225770207?focus=true
+    case speechAnalyzer
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -994,6 +997,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.sitePermissions))
+        case .speechAnalyzer:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.speechAnalyzer))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
         }

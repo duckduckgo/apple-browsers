@@ -5284,14 +5284,32 @@ Take back control of your personal information with the browser designed for dat
 /* Title for alert warning the user about missing microphone permission */
 "voiceSearch.alert.no-permission.title" = "Microphone Access Required";
 
+/* Voice search status or error message */
+"voiceSearch.audio-unavailable" = "Your microphone is unavailable. Check your audio connection and try again.";
+
 /* Cancel button for voice search */
 "voiceSearch.cancel" = "Cancel";
+
+/* Voice search status or error message */
+"voiceSearch.failed" = "Voice recognition failed. Please try again.";
 
 /* Voice-search footer note with on-device privacy warning */
 "voiceSearch.footer.note" = "Add Private Voice Search option to the address bar. Audio is not stored or shared with anyone, including DuckDuckGo.";
 
 /* Voice-search footer note with on-device privacy warning */
 "voiceSearch.footer.note.old" = "Audio is processed on-device. It's not stored or shared with anyone, including DuckDuckGo.";
+
+/* Voice search status or error message */
+"voiceSearch.model-unavailable" = "Voice recognition could not download its language files. Check your internet connection and available storage, then try again.";
+
+/* Voice search status or error message */
+"voiceSearch.preparing" = "Preparing voice search…";
+
+/* Voice search status or error message */
+"voiceSearch.recognition-unavailable" = "Voice recognition is unavailable. Check that Siri and Dictation are enabled in iOS Settings, then try again.";
+
+/* Retry voice recognition after an error */
+"voiceSearch.retry" = "Try Again";
 
 /* Cancel action for the alert when the subscription expires */
 "vpn.access-revoked.alert.action.cancel" = "Dismiss";

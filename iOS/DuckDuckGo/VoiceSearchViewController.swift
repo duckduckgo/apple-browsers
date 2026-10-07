@@ -26,7 +26,7 @@ protocol VoiceSearchViewControllerDelegate: AnyObject {
 
 class VoiceSearchViewController: UIViewController {
     weak var delegate: VoiceSearchViewControllerDelegate?
-    private let speechRecognizer = SpeechRecognizer()
+    private let speechRecognizer: SpeechRecognizerProtocol
     private let preferredTarget: VoiceSearchTarget?
     private let hideToggle: Bool
 
@@ -35,7 +35,8 @@ class VoiceSearchViewController: UIViewController {
         return effectView
     }()
 
-    init(preferredTarget: VoiceSearchTarget? = nil, hideToggle: Bool = false) {
+    init(speechRecognizer: SpeechRecognizerProtocol, preferredTarget: VoiceSearchTarget? = nil, hideToggle: Bool = false) {
+        self.speechRecognizer = speechRecognizer
         self.preferredTarget = preferredTarget
         self.hideToggle = hideToggle
         super.init(nibName: nil, bundle: nil)

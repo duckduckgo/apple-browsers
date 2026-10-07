@@ -1103,7 +1103,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
-        presentVoiceSearch()
+        presentVoiceSearch(featureFlagger: featureFlagger)
     }
 
 

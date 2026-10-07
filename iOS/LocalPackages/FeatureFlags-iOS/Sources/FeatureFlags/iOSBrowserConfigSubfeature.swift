@@ -27,6 +27,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
+    /// https://app.asana.com/1/137249556945/project/1214749231578703/task/1210568225770207?focus=true
+    case speechAnalyzer
+
     case widgetReporting
 
     // Local inactivity provisional notifications delivered to Notification Center.

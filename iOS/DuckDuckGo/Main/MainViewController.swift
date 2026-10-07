@@ -3985,7 +3985,8 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.removeTextSelection()
         
         PixelKit.fire(Pixel.Event.openVoiceSearch)
-        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
+        let voiceSearchController = VoiceSearchViewController(speechRecognizer: VoiceSearchSpeechRecognizer(featureFlagger: featureFlagger),
+                                                              preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen

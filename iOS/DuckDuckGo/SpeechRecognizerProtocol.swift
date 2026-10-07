@@ -21,6 +21,7 @@ import Foundation
 
 protocol SpeechRecognizerProtocol {
     var isAvailable: Bool { get }
+    var requiresPreparation: Bool { get }
     static func requestMicAccess(withHandler handler: @escaping (Bool) -> Void)
     func getVolumeLevel(from channelData: UnsafeMutablePointer<Float>) -> Float
     func stopRecording()
@@ -29,4 +30,8 @@ protocol SpeechRecognizerProtocol {
                                                   _ error: Error?, _
                                                   speechDidFinish: Bool) -> Void,
                         volumeCallback: @escaping (_ volume: Float) -> Void)
+}
+
+extension SpeechRecognizerProtocol {
+    var requiresPreparation: Bool { false }
 }

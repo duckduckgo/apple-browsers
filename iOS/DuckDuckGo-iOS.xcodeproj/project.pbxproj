@@ -79,6 +79,8 @@
 		3132928308A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */; };
 		314A3EFC293905EC00D3D4C8 /* BrokenSiteReportingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314A3EFB293905EC00D3D4C8 /* BrokenSiteReportingTests.swift */; };
 		3151F0EA27357FBA00226F58 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3151F0E927357FBA00226F58 /* SpeechRecognizer.swift */; };
+		B8DE5BD3C4DFC8B035DAC242 /* SpeechAnalyzerRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0D40466248E224F36FA917 /* SpeechAnalyzerRecognizer.swift */; };
+		D8914ED1C543A436CA5D211C /* VoiceSearchSpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D551B77E702ED44B1A3AE1 /* VoiceSearchSpeechRecognizer.swift */; };
 		3151F0EC27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3151F0EB27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift */; };
 		3151F0F02735802800226F58 /* VoiceSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3151F0EF2735802800226F58 /* VoiceSearchViewController.swift */; };
 		3157B43827F4C8490042D3D7 /* FaviconsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3157B43727F4C8490042D3D7 /* FaviconsHelper.swift */; };
@@ -1960,6 +1962,8 @@
 		3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiNativeStorageContainerMigrationTests.swift; sourceTree = "<group>"; };
 		314A3EFB293905EC00D3D4C8 /* BrokenSiteReportingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSiteReportingTests.swift; sourceTree = "<group>"; };
 		3151F0E927357FBA00226F58 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		AA0D40466248E224F36FA917 /* SpeechAnalyzerRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechAnalyzerRecognizer.swift; sourceTree = "<group>"; };
+		13D551B77E702ED44B1A3AE1 /* VoiceSearchSpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchSpeechRecognizer.swift; sourceTree = "<group>"; };
 		3151F0EB27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchFeedbackViewModel.swift; sourceTree = "<group>"; };
 		3151F0EF2735802800226F58 /* VoiceSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchViewController.swift; sourceTree = "<group>"; };
 		3157B43727F4C8490042D3D7 /* FaviconsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconsHelper.swift; sourceTree = "<group>"; };
@@ -4134,6 +4138,8 @@
 				3151F0EB27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift */,
 				31DD208327395A5A008FB313 /* VoiceSearchHelper.swift */,
 				3151F0E927357FBA00226F58 /* SpeechRecognizer.swift */,
+				AA0D40466248E224F36FA917 /* SpeechAnalyzerRecognizer.swift */,
+				13D551B77E702ED44B1A3AE1 /* VoiceSearchSpeechRecognizer.swift */,
 				31CB4250273AF50700FA0F3F /* SpeechRecognizerProtocol.swift */,
 			);
 			name = VoiceSearch;
@@ -8973,6 +8979,8 @@
 				985892522260B1B200EEB31B /* ProgressView.swift in Sources */,
 				C1FFBD482C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift in Sources */,
 				3151F0EA27357FBA00226F58 /* SpeechRecognizer.swift in Sources */,
+				B8DE5BD3C4DFC8B035DAC242 /* SpeechAnalyzerRecognizer.swift in Sources */,
+				D8914ED1C543A436CA5D211C /* VoiceSearchSpeechRecognizer.swift in Sources */,
 				31BB23A52D3A969400809ABF /* ControlWidgetConfigurable.swift in Sources */,
 				985AAE4524899369007A43EC /* HomeScreenTransition.swift in Sources */,
 				56C23F692E0AD97300FD63C6 /* MockUnifiedMetadataCollector.swift in Sources */,

@@ -424,10 +424,15 @@
                 "description": "Cached scriptlets version for the ad-blocking web extension"
             },
             {
+                "key": "isNetworkAvailable",
+                "type": "boolean",
+                "description": "Whether the network path is satisfied. Only sent when Page Signals are enabled."
+            },
+            {
                 "key": "networkType",
                 "type": "string",
                 "description": "Active network interface. Only sent when Page Signals are enabled.",
-                "enum": ["wifi", "cellular", "wired", "unavailable", "unknown"]
+                "enum": ["wifi", "cellular", "wired", "unknown"]
             },
             {
                 "key": "isLowDataModeEnabled",
@@ -859,10 +864,15 @@
                 "description": "Cached scriptlets version for the ad-blocking web extension"
             },
             {
+                "key": "isNetworkAvailable",
+                "type": "boolean",
+                "description": "Whether the network path is satisfied. Only sent when Page Signals are enabled."
+            },
+            {
                 "key": "networkType",
                 "type": "string",
                 "description": "Active network interface. Only sent when Page Signals are enabled.",
-                "enum": ["wifi", "cellular", "wired", "unavailable", "unknown"]
+                "enum": ["wifi", "cellular", "wired", "unknown"]
             },
             {
                 "key": "isLowDataModeEnabled",

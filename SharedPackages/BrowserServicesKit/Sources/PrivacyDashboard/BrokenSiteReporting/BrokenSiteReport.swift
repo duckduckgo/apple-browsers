@@ -422,6 +422,7 @@ public struct BrokenSiteReport {
             result["adBlockingExtensionScriptletsVersion"] = adBlockingExtensionScriptletsVersion ?? "nil"
         }
 
+        result["isNetworkAvailable"] = networkSignals?.isNetworkAvailable.description
         result["networkType"] = networkSignals?.networkType.rawValue
         result["isLowDataModeEnabled"] = networkSignals?.isLowDataModeEnabled.description
         result["hasVPNConnectivityIssues"] = networkSignals?.hasVPNConnectivityIssues.description

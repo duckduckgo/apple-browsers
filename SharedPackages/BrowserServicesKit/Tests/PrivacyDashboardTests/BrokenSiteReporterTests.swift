@@ -191,7 +191,7 @@ final class BrokenSiteReporterTests: XCTestCase {
     }
 
     func testWhenSignalsArePresentThenTheyAreIncluded() {
-        let networkSignals = NetworkSignals(networkType: .wifi, isLowDataModeEnabled: true, hasVPNConnectivityIssues: false, pingQuality: .poor)
+        let networkSignals = NetworkSignals(isNetworkAvailable: true, networkType: .wifi, isLowDataModeEnabled: true, hasVPNConnectivityIssues: false, pingQuality: .poor)
         let pageSignals = PageSignals(resourceFailures: ["b.com": [.server], "a.com": [.dns, .certificate]],
                                       blockedDomains: ["x.com": 1, "z.com": 5, "y.com": 1],
                                       blockedLoads: 7)
@@ -202,6 +202,7 @@ final class BrokenSiteReporterTests: XCTestCase {
                                     memoryPressure: .warning,
                                     pageSignals: pageSignals).requestParameters
 
+        XCTAssertEqual(parameters["isNetworkAvailable"], "true")
         XCTAssertEqual(parameters["networkType"], "wifi")
         XCTAssertEqual(parameters["isLowDataModeEnabled"], "true")
         XCTAssertEqual(parameters["hasVPNConnectivityIssues"], "false")
@@ -215,7 +216,7 @@ final class BrokenSiteReporterTests: XCTestCase {
 
     func testWhenSignalsAreAbsentThenTheyAreNotIncluded() {
         let parameters = makeReport(cookieConsentInfo: nil).requestParameters
-        let keys = ["networkType", "isLowDataModeEnabled", "hasVPNConnectivityIssues", "networkPingQuality", "dnsResolution",
+        let keys = ["isNetworkAvailable", "networkType", "isLowDataModeEnabled", "hasVPNConnectivityIssues", "networkPingQuality", "dnsResolution",
                     "memoryPressure", "resourceLoadErrors", "contentBlockedLoads", "contentBlockedDomains"]
 
         for key in keys {

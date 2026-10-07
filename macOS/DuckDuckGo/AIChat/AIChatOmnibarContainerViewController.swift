@@ -285,6 +285,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Another message held the card during this opening, so the promo waits for the next one.
     private var isLauncherPromoDeferred = false
     private var didReportLauncherPromoShown = false
+    /// Set for the Prompt Bar opening that the launcher promo's Try Now caused; outranks every other message.
+    private var launcherIntroductionShortcut: String?
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -1204,8 +1206,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
             omnibarController.usageWarningViewModel?.performAction()
         }
+        usageWarningCardView.onOpenSettings = {
+            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
+        }
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
+            if launcherIntroductionShortcut != nil {
+                launcherIntroductionShortcut = nil
+                refreshUsageCard()
+                return
+            }
             if isShowingLauncherPromo {
                 launcherPromo?.dismiss()
                 refreshUsageCard()
@@ -1278,6 +1288,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
         isShowingLauncherPromo = false
+
+        if let launcherIntroductionShortcut {
+            usageWarningCardView.updateForLauncherIntroduction(shortcut: launcherIntroductionShortcut)
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
 
         // Required > Action > Informational. Out of usage outranks the disclosure: it is the
         // reason Send is disabled.
@@ -1373,6 +1390,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             didReportLauncherPromoShown = true
             launcherPromo?.shown()
         }
+    }
+
+    func showLauncherIntroduction(shortcut: String) {
+        launcherIntroductionShortcut = shortcut
+        refreshUsageCard()
     }
 
     /// Re-resolves the notice and re-applies whichever message wins. The warning half is published,
@@ -1549,6 +1571,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         isShowingLauncherPromo = false
         isLauncherPromoDeferred = false
         didReportLauncherPromoShown = false
+        launcherIntroductionShortcut = nil
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()
     }

@@ -130,14 +130,14 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testTryNowTurnsBothEntryPointsOnAndAsksForTheMenuBarTip() {
+    func testTryNowTurnsBothEntryPointsOnAndAsksToOpenThePromptBar() {
         let promo = makePromo()
 
         promo.tryNow()
 
         XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
         XCTAssertTrue(preferences.isMenuBarIconVisible)
-        XCTAssertTrue(preferences.pendingMenuBarTip)
+        XCTAssertTrue(preferences.pendingLauncherIntroduction)
         XCTAssertEqual(promo.outcome, .triedNow)
     }
 

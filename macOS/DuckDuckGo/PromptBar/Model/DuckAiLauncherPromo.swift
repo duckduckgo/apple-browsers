@@ -133,7 +133,7 @@ final class DuckAiLauncherPromo {
     func tryNow() {
         preferences.isKeyboardShortcutEnabled = true
         preferences.isMenuBarIconVisible = true
-        preferences.pendingMenuBarTip = true
+        preferences.pendingLauncherIntroduction = true
         record(.triedNow)
     }
 

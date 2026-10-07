@@ -224,6 +224,8 @@ private final class MockPromptBarContent: PromptBarContentHosting {
         focusCount += 1
     }
 
+    func showLauncherIntroduction(shortcut: String) {}
+
     func resetAfterDismissal() {
         resetCount += 1
     }

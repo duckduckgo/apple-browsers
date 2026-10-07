@@ -143,7 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var passwordsMenuBarCancellable: AnyCancellable?
     private var promptBarMenuBarController: PromptBarMenuBarController?
     private var promptBarMenuBarCancellable: AnyCancellable?
-    private var promptBarMenuBarTipCancellable: AnyCancellable?
+    private var promptBarLauncherIntroductionCancellable: AnyCancellable?
     private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -2672,16 +2672,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.promptBarMenuBarController?.hide()
                 }
             }
-        // Async: lands after the icon is shown, and clearing the request inside its own emission is re-entrant.
-        promptBarMenuBarTipCancellable = promptBarPreferences.$pendingMenuBarTip
+        // Async: lands after the shortcut is registered, and clearing the request inside its own emission is re-entrant.
+        promptBarLauncherIntroductionCancellable = promptBarPreferences.$pendingLauncherIntroduction
             .receive(on: DispatchQueue.main)
             .filter { $0 }
             .sink { [weak self] _ in
                 guard let self else { return }
-                promptBarPreferences.pendingMenuBarTip = false
-                promptBarMenuBarController?.showTip(shortcut: promptBarPreferences.keyboardShortcut) { [weak self] in
-                    self?.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
-                }
+                promptBarPreferences.pendingLauncherIntroduction = false
+                promptBarCoordinator?.showPromptBarForLauncherPromo()
             }
     }
 

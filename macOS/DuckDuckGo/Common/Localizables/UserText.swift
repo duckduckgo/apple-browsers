@@ -743,17 +743,8 @@ struct UserText {
     static let duckAiLauncherPromoMessage = NotLocalizedString("duckai.launcher-promo.message", value: "Chat privately from anywhere", comment: "Emphasized title of the New Tab Page Duck.ai promo inviting the user to turn on the Duck.ai launcher")
     static let duckAiLauncherPromoAddToMenuBar = NotLocalizedString("duckai.launcher-promo.add-to-menu-bar", value: "Show Duck.ai in the menu bar", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is off")
     static let duckAiLauncherPromoAddKeyboardShortcut = NotLocalizedString("duckai.launcher-promo.add-keyboard-shortcut", value: "Add Duck.ai keyboard shortcut", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off")
-    /// Split around the shortcut, which is drawn as key caps between the two parts.
-    static var duckAiLauncherMenuBarTip: (beforeShortcut: String, afterShortcut: AttributedString) {
-        let settings = NotLocalizedString("duckai.launcher-promo.menu-bar-tip.settings", value: "Settings", comment: "Link in the Duck.ai menu bar tip that opens Duck.ai Settings")
-        let format = NotLocalizedString("duckai.launcher-promo.menu-bar-tip", value: "Now you can access Duck.ai by pressing %1$@. You can change the shortcut in %2$@.", comment: "Popover shown from the Duck.ai menu bar icon after the launcher promo's Try Now. %1$@ is the keyboard shortcut, drawn as key caps, e.g. ⌥ Space; %2$@ is a link reading Settings")
-        let parts = format.components(separatedBy: "%1$@")
-        var after = AttributedString(parts.dropFirst().joined(separator: "%1$@").replacingOccurrences(of: "%2$@", with: settings))
-        if let range = after.range(of: settings, options: .backwards) {
-            after[range].link = URL.settings
-        }
-        return (parts[0], after)
-    }
+    static let duckAiLauncherIntroductionFormat = NotLocalizedString("duckai.launcher-promo.introduction", value: "Now you can access Duck.ai by pressing %1$@. You can change the shortcut in %2$@.", comment: "Message in the Duck.ai floating prompt bar right after the launcher promo's Try Now opened it. %1$@ is the keyboard shortcut, e.g. ⌥Space; %2$@ is a link reading Settings")
+    static let duckAiLauncherIntroductionSettings = NotLocalizedString("duckai.launcher-promo.introduction.settings", value: "Settings", comment: "Link in the Duck.ai prompt bar launcher message that opens Duck.ai Settings")
     static let duckAiLauncherPromoTryNow = NotLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the New Tab Page Duck.ai launcher promo that turns the launcher on")
 
     // Duck.ai main menu

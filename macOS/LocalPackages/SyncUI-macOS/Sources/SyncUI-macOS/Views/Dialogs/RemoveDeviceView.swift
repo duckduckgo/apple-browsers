@@ -1,7 +1,7 @@
 //
 //  RemoveDeviceView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct RemoveDeviceView: View {
 
@@ -25,32 +26,66 @@ struct RemoveDeviceView: View {
 
     let device: SyncDevice
 
-    var removeImageName: String {
-        device.kind == .mobile ? "SyncRemoveDeviceMobile" : "SyncRemoveDeviceDesktop"
+    @State private var isRemoving = false
+
+    private var illustration: Image {
+        switch device.kind {
+        case .current, .desktop:
+            return Image(.syncRemoveDeviceDesktop)
+        case .mobile, .thirdParty:
+            return Image(.syncRemoveDeviceMobile)
+        }
     }
 
     var body: some View {
-        SyncDialog(spacing: 20.0) {
-
-            Image(removeImageName)
-            SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitle)
-            SyncUIViews.TextDetailMultiline(text: UserText.removeDeviceConfirmMessage(device.name))
-
+        SyncSetupDialog(spacing: 20.0) {
+            VStack(alignment: .center, spacing: 20) {
+                illustration
+                    .accessibilityHidden(true)
+                SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitle)
+                SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessage(device.name))
+            }
         } buttons: {
+            Spacer()
 
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+            .disabled(isRemoving)
 
-            Button(UserText.removeDeviceConfirmButton) {
-                model.delegate?.removeDevice(device)
+            Button {
+                remove()
+            } label: {
+                HStack(spacing: 6) {
+                    if isRemoving {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Text(UserText.removeDeviceConfirmButton)
+                }
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
-
+            .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),
+                                                  stateColors: .themedDismissButton))
+            .disabled(isRemoving)
         }
-        .frame(width: 360, height: 250)
-
     }
 
+    private func remove() {
+        guard !isRemoving else { return }
+        isRemoving = true
+        model.delegate?.removeDeviceConfirmed(device)
+    }
 }
+
+#if DEBUG
+#Preview("This Device") {
+    RemoveDeviceView(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+        .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Other Device") {
+    RemoveDeviceView(device: SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"))
+        .environmentObject(ManagementDialogModel())
+}
+#endif

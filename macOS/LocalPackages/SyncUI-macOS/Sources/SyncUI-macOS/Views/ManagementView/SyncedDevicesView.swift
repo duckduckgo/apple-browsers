@@ -1,7 +1,7 @@
 //
 //  SyncedDevicesView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,7 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUI
+import SwiftUIExtensions
+import DesignResourcesKit
+import DesignResourcesKitIcons
+
+#if DEBUG
+import PreviewSnapshots
+#endif
 
 struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
 
@@ -27,10 +35,9 @@ struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             SyncedDevicesList(devices: model.devices,
-                              presentDeviceDetails: model.presentDeviceDetails,
-                              presentRemoveDevice: model.presentRemoveDevice)
+                                presentDeviceDetails: model.presentDeviceDetails)
             .onReceive(timer) { _ in
                 guard isVisible else { return }
                 model.refreshDevices()
@@ -41,116 +48,50 @@ struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
             .onDisappear {
                 isVisible = false
             }
-            Button(UserText.beginSyncButton) {
+
+            SyncedDevicesSeparator()
+
+            Button {
                 Task {
                     await model.syncWithAnotherDevicePressed()
                 }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size24.qrScan)
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                    Text(UserText.beginSyncButton)
+                }
             }
+            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))
             .disabled(!model.isConnectingDevicesAvailable)
-            .padding(.horizontal, 10)
-            .padding(.bottom, 8)
+            .padding(8)
         }
-        .roundedBorder()
+        .syncRoundedBorder(cornerRadius: 12)
     }
 }
 
-struct SyncedDeviceIcon: View {
-    var kind: SyncDevice.Kind
+#if DEBUG
+struct SyncedDevicesView_Previews: PreviewProvider {
+    typealias State = PreviewManagementViewModel
 
-    private var imageResource: ImageResource {
-        switch kind {
-        case .current, .desktop:
-            return .syncedDeviceDesktop
-        case .mobile:
-            return .syncedDeviceMobile
-        case .thirdParty:
-            return .syncAllDevices
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Multiple devices", state: .enabled),
+            .init(name: "Single device", state: .enabledSingleDevice),
+            .init(name: "Loading devices", state: .enabledLoadingDevices)
+        ],
+        configure: { model in
+            SyncedDevicesView<PreviewManagementViewModel>()
+                .environmentObject(model)
+                .frame(width: 512)
+                .padding()
+                .background(Color(nsColor: .windowBackgroundColor))
         }
-    }
-
-    private var accessibilityIdentifier: String {
-        switch kind {
-        case .current, .desktop:
-            return "SyncSettings.syncedDevice.desktop"
-        case .mobile:
-            return "SyncSettings.syncedDevice.mobile"
-        case .thirdParty:
-            return "SyncSettings.syncedDevice.thirdParty"
-        }
-    }
-
-    var body: some View {
-        Image(imageResource)
-            .aspectRatio(contentMode: .fit)
-            .accessibilityIdentifier(accessibilityIdentifier)
-    }
+    )
 }
-
-struct SyncedDevicesList: View {
-
-    let devices: [SyncDevice]
-
-    @State var hoveredDevice: SyncDevice?
-
-    var presentDeviceDetails: ((SyncDevice) async -> Void)?
-    var presentRemoveDevice: ((SyncDevice) -> Void)?
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if devices.isEmpty {
-                ProgressView()
-                    .padding()
-            }
-
-            ForEach(devices) { device in
-                if !device.isCurrent {
-                    Rectangle()
-                        .fill(Color(.blackWhite10))
-                        .frame(height: 1)
-                        .padding(.init(top: 0, leading: 10, bottom: 0, trailing: 10))
-                }
-
-                if device.isCurrent {
-                    SyncPreferencesRow {
-                        SyncedDeviceIcon(kind: device.kind)
-                    } centerContent: {
-                        HStack {
-                            Text(device.name)
-                            Text("(\(UserText.thisDevice))")
-                                .foregroundColor(Color(NSColor.secondaryLabelColor))
-                            Spacer()
-                        }
-                    } rightContent: {
-                        if let presentDeviceDetails {
-                            Button(UserText.currentDeviceDetails) {
-                                Task {
-                                    await presentDeviceDetails(device)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    SyncPreferencesRow {
-                        SyncedDeviceIcon(kind: device.kind)
-                    } centerContent: {
-                        Text(device.name)
-                    } rightContent: {
-                        if let presentRemoveDevice = presentRemoveDevice {
-                            Button(UserText.removeDeviceButton) {
-                                presentRemoveDevice(device)
-                            }
-                            .visibility(hoveredDevice?.id == device.id ? .visible : .gone)
-                        }
-                    }.onHover { hovering in
-                        hoveredDevice = hovering ? device : nil
-                    }
-                }
-            }
-            Rectangle()
-                .fill(Color(.blackWhite10))
-                .frame(height: 1)
-                .padding(.init(top: 0, leading: 10, bottom: 0, trailing: 10))
-        }
-    }
-
-}
+#endif

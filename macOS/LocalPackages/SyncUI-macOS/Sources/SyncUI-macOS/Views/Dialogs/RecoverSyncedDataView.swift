@@ -1,5 +1,5 @@
 //
-//  DeviceSyncedView.swift
+//  RecoverSyncedDataView.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -19,27 +19,27 @@
 import SwiftUI
 import SwiftUIExtensions
 
-struct DeviceSyncedView: View {
+struct RecoverSyncedDataView: View {
     @EnvironmentObject var model: ManagementDialogModel
-    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
 
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
-                Image(.syncSetupSuccess)
-                SyncUIViews.TextHeader(text: UserText.deviceSynced)
+                Image(.syncPair96)
+                SyncUIViews.DialogTitle(text: UserText.reciverSyncedDataDialogTitle)
+                SyncUIViews.DialogMessage(text: UserText.reciverSyncedDataDialogSubitle)
             }
             .frame(width: 320)
         } buttons: {
-            Button(UserText.done) {
-                model.endFlow()
+            Button(UserText.cancel) {
+                model.cancelPressed()
+            }
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+            Button(UserText.reciverSyncedDataDialogButton) {
+                model.delegate?.enterRecoveryCodePressed()
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
-        .frame(width: 360)
-        .onReceive(timer, perform: { _ in
-            model.endFlow()
-        })
     }
 
 }

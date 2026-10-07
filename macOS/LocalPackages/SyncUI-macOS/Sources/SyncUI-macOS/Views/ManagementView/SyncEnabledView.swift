@@ -1,7 +1,7 @@
 //
 //  SyncEnabledView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,16 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUI
+import SwiftUIExtensions
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
+
+#if DEBUG
+import PreviewSnapshots
+#endif
 
 struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
@@ -55,44 +63,58 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
             }
         }
 
-        // Sync Enabled
-        PreferencePaneSection {
-            SyncStatusView<ViewModel>()
-                .environmentObject(model)
-        }
+        // Intro text
+        SyncUIViews.LeadingSecondaryBody(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooter : UserText.syncEnabledFooterWithoutAIChat)
 
-        // Synced Devices
-        PreferencePaneSection(UserText.syncedDevices) {
+        // My Devices
+        PreferencePaneSection(UserText.myDevices) {
             SyncedDevicesView<ViewModel>()
                 .environmentObject(model)
+
+            SyncUIViews.LeadingSecondaryBody(text: UserText.myDevicesFooter)
         }
 
-        // Options
-        PreferencePaneSection(UserText.optionsSectionTitle) {
-            PreferencePaneSubSection {
-                ToggleMenuItem(UserText.fetchFaviconsOptionTitle, isOn: $model.isFaviconsFetchingEnabled)
-                TextMenuItemCaption(UserText.fetchFaviconsOptionCaption)
-            }
+        // Bookmarks
+        PreferencePaneSection(UserText.bookmarksSectionTitle) {
+            bookmarkOption(title: UserText.shareFavoritesOptionTitle,
+                           caption: UserText.shareFavoritesOptionCaption,
+                           isOn: $model.isUnifiedFavoritesEnabled)
 
-            PreferencePaneSubSection {
-                ToggleMenuItem(UserText.shareFavoritesOptionTitle, isOn: $model.isUnifiedFavoritesEnabled)
-                TextMenuItemCaption(UserText.shareFavoritesOptionCaption)
-            }
+            bookmarkOption(title: UserText.fetchFaviconsOptionTitle,
+                           caption: UserText.fetchFaviconsOptionCaption,
+                           isOn: $model.isFaviconsFetchingEnabled)
         }
 
-        // Recovery
-        PreferencePaneSection(UserText.recovery) {
+        // Recovery Code
+        PreferencePaneSection(UserText.recoveryCodeSectionTitle) {
             recoverySection()
         }
 
         // Turn Off and Delete Data
         PreferencePaneSection {
-            Button(UserText.turnOffAndDeleteServerData) {
+            Button {
                 Task {
                     await model.presentDeleteAccount()
                 }
+            } label: {
+                Text(UserText.turnOffAndDeleteServerData)
+                    .foregroundColor(Color(designSystemColor: .destructivePrimary))
             }
         }
+    }
+
+    private func bookmarkOption(title: String, caption: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                SyncUIViews.Caption(text: caption)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .toggleStyle(.checkbox)
+        .rebrandedControlTint()
+        .accessibilityLabel(Text(title))
     }
 
     private func recoverySection() -> some View {
@@ -107,20 +129,19 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
             Text(UserText.recoveryInstructions)
                 .fixMultilineScrollableText()
             Spacer()
-            Button(UserText.saveRecoveryPDF, action: model.saveRecoveryPDF)
+            Button(UserText.downloadRecoveryCodeButton, action: model.saveRecoveryPDF)
         }
     }
 
     private func recoveryInstructionsFooter() -> some View {
-        SyncUIViews.TextDetailSecondary(text: UserText.recoveryInstructionsFooter)
-            .font(.system(size: 11))
+        SyncUIViews.LeadingSecondaryBody(text: UserText.recoveryInstructionsFooter)
     }
 
     @ViewBuilder
     func syncPaused() -> some View {
         if let title = model.syncPausedTitle,
            let message = model.syncPausedMessage,
-           let buttonTitle = model.syncPausedButtonTitle  {
+           let buttonTitle = model.syncPausedButtonTitle {
             if let action = model.syncPausedButtonAction {
                 SyncWarningMessage(title: title, message: message, buttonTitle: buttonTitle) {
                     action()
@@ -129,7 +150,6 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 SyncWarningMessage(title: title, message: message, buttonTitle: buttonTitle)
             }
         }
-
     }
 
     @ViewBuilder
@@ -267,3 +287,33 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
         case identities
     }
 }
+
+#if DEBUG
+struct SyncEnabledView_Previews: PreviewProvider {
+    typealias State = PreviewManagementViewModel
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Enabled", state: .enabled),
+            .init(name: "Loading devices", state: .enabledLoadingDevices),
+            .init(name: "Sync paused", state: .syncPaused)
+        ],
+        configure: { model in
+            ScrollView {
+                PreferencePane {
+                    StatusIndicatorView(status: .on, isLarge: true)
+                    SyncEnabledView<PreviewManagementViewModel>()
+                        .environmentObject(model)
+                }
+                .padding()
+            }
+            .frame(width: 600, height: 900)
+            .background(Color(nsColor: .windowBackgroundColor))
+        }
+    )
+}
+#endif

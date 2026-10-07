@@ -1,5 +1,5 @@
 //
-//  SyncWithAnotherDeviceButtonStyleV2.swift
+//  SyncWithAnotherDeviceButtonStyle.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-struct SyncWithAnotherDeviceButtonStyleV2: ButtonStyle {
+struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
 
     public let enabled: Bool
 

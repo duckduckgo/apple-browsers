@@ -1,7 +1,7 @@
 //
 //  SyncSetupView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,72 +16,111 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
+import DesignResourcesKitIcons
+import PreviewSnapshots
 
 struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 28) {
             VStack(spacing: 8) {
-                syncUnavailableView()
-                syncWithAnotherDeviceView()
-                SyncUIViews.TextDetailSecondary(text: UserText.beginSyncFooter)
-                    .padding(.bottom, 24)
-                    .padding(.horizontal, 60)
-                    .font(.system(size: 11))
+                syncUnavailableView
+                syncWithAnotherDeviceView
+                (Text(.init(UserText.beginSyncFooter))
+                 + Text(verbatim: " ")
+                 + Text(Image(nsImage: DesignSystemImages.Glyphs.Size16.openIn)).baselineOffset(-3.0))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .multilineTextAlignment(.center)
+                .padding(.top, 24)
+                .padding(.horizontal, 24)
+                .font(.system(size: 13))
             }
-            VStack(alignment: .leading, spacing: 12) {
-                SyncUIViews.TextHeader2(text: UserText.otherOptionsSectionTitle)
-                VStack(alignment: .leading, spacing: 8) {
-                    TextButton(UserText.syncThisDeviceLink, weight: .semibold) {
-                        Task {
-                            await model.syncWithServerPressed()
-                        }
-                    }
-                    .disabled(!model.isAccountCreationAvailable)
-
-                    TextButton(UserText.recoverDataLink, weight: .semibold) {
-                        Task {
-                            await model.recoverDataPressed()
-                        }
-                    }
-                    .disabled(!model.isAccountRecoveryAvailable)
-                }
-            }
+            syncThisDeviceView
+            recoverSyncedDataView
         }
     }
 
-    fileprivate func syncWithAnotherDeviceView() -> some View {
-        VStack(alignment: .center, spacing: 16) {
-            Image(.syncPair96)
+    @ViewBuilder
+    fileprivate var syncWithAnotherDeviceView: some View {
+        VStack(alignment: .center, spacing: .zero) {
+            Image(.syncDevices128)
+                .padding(.top, 20)
+                .padding(.bottom, 12)
 
-            VStack(alignment: .center, spacing: 8) {
-                SyncUIViews.TextHeader(text: UserText.beginSyncTitle)
-                SyncUIViews.TextDetailSecondary(text: model.isAIChatSyncEnabled
-                                                ? UserText.beginSyncDescriptionUpdated
-                                                : UserText.beginSyncDescription)
+            VStack(alignment: .center, spacing: 10) {
+                SyncUIViews.CenteredTitle(text: UserText.beginSyncTitle)
+                SyncUIViews.CenteredSecondaryBody(text: UserText.beginSyncDescription)
             }
-            .padding(.bottom, 16)
-            Button(UserText.beginSyncButton) {
+            .padding(.bottom, 20)
+
+            Button {
                 Task {
                     await model.syncWithAnotherDevicePressed()
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size24.qrScan)
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                    Text(UserText.beginSyncButton)
                 }
             }
             .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))
             .disabled(!model.isConnectingDevicesAvailable)
-            .padding(.bottom, 10)
+            .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 264)
-        .roundedBorder()
-        .padding(.top, 20)
+        .syncRoundedBorder(cornerRadius: 24)
     }
 
     @ViewBuilder
-    fileprivate func syncUnavailableView() -> some View {
+    fileprivate var syncThisDeviceView: some View {
+        HStack(spacing: 12) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.deviceLaptop)
+            Text(UserText.syncThisDeviceTitle)
+            Spacer()
+            Toggle(isOn: Binding(
+                get: { false },
+                set: { isOn in
+                    guard isOn else { return }
+                    Task {
+                        await model.syncWithServerPressed()
+                    }
+                }
+            )) {
+                EmptyView()
+            }
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .accessibilityLabel(Text(UserText.syncThisDeviceTitle))
+            .accessibilityIdentifier("SyncSettings.syncThisDeviceToggle")
+            .disabled(!model.isAccountCreationAvailable)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .syncRoundedBorder(cornerRadius: 12)
+    }
+
+    @ViewBuilder
+    fileprivate var recoverSyncedDataView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SyncUIViews.SectionHeading(text: UserText.recoverSyncedDataTitle)
+            Button(UserText.recoverCodeButton) {
+                Task {
+                    await model.recoverDataPressed()
+                }
+            }
+            .disabled(!model.isAccountRecoveryAvailable)
+        }
+    }
+
+    @ViewBuilder
+    fileprivate var syncUnavailableView: some View {
         if !model.isDataSyncingAvailable || !model.isConnectingDevicesAvailable || !model.isAccountCreationAvailable {
             if model.isAppVersionNotSupported {
                 SyncWarningMessage(title: UserText.syncUnavailableTitle, message: UserText.syncUnavailableMessageUpgradeRequired)
@@ -90,32 +129,37 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
                 SyncWarningMessage(title: UserText.syncUnavailableTitle, message: UserText.syncUnavailableMessage)
                     .padding(.top, 16)
             }
-        } else {
-            EmptyView()
         }
     }
 }
 
-private struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
+#if DEBUG
+struct SyncSetupView_Previews: PreviewProvider {
+    typealias State = PreviewManagementViewModel
 
-    public let enabled: Bool
-
-    public init(enabled: Bool) {
-        self.enabled = enabled
+    static var previews: some View {
+        snapshots.previews
     }
 
-    public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
-        let disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
-        let labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
-
-        return configuration.label
-            .lineLimit(1)
-            .font(.body.bold())
-            .frame(height: 32)
-            .padding(.horizontal, 24)
-            .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
-            .foregroundColor(labelColor)
-            .cornerRadius(16)
-    }
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Off state", state: PreviewManagementViewModel(
+                isSyncEnabled: false
+            )),
+            .init(name: "Sync unavailable", state: PreviewManagementViewModel(
+                isSyncEnabled: false,
+                isDataSyncingAvailable: false,
+                isConnectingDevicesAvailable: false,
+                isAccountCreationAvailable: false
+            ))
+        ],
+        configure: { model in
+            SyncSetupView<PreviewManagementViewModel>()
+                .environmentObject(model)
+                .frame(width: 544, height: 800, alignment: .top)
+                .padding()
+                .background(Color(nsColor: .windowBackgroundColor))
+        }
+    )
 }
+#endif

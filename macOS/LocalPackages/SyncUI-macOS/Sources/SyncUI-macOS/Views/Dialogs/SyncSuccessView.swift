@@ -1,5 +1,5 @@
 //
-//  SyncSuccessViewV2.swift
+//  SyncSuccessView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
-struct SyncSuccessViewV2: View {
+struct SyncSuccessView: View {
 
     @EnvironmentObject private var model: ManagementDialogModel
 
@@ -30,13 +30,13 @@ struct SyncSuccessViewV2: View {
     @State private var showCopyConfirmation = false
 
     private var title: String {
-        UserText.syncSuccessTitleV2(
-            deviceName: model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceNameV2
+        UserText.syncSuccessTitle(
+            deviceName: model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceName
         )
     }
 
     var body: some View {
-        SyncDialogV2(spacing: 20) {
+        SyncSetupDialog(spacing: 20) {
             VStack(spacing: 20) {
                 Image(.syncSetupSuccess)
                     .resizable()
@@ -51,7 +51,7 @@ struct SyncSuccessViewV2: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("SyncSuccessTitle")
 
-                Text(UserText.syncSuccessDescriptionV2)
+                Text(UserText.syncSuccessDescription)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .multilineTextAlignment(.center)
@@ -81,7 +81,7 @@ struct SyncSuccessViewV2: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(UserText.syncSuccessRecoveryCodeLabelV2)
+                Text(UserText.syncSuccessRecoveryCodeLabel)
                     .font(.body.weight(.semibold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
@@ -102,7 +102,7 @@ struct SyncSuccessViewV2: View {
                             if showCopyConfirmation {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.check)
                             }
-                            Text(showCopyConfirmation ? UserText.syncSuccessCopiedCodeButtonV2 : UserText.syncSuccessCopyCodeButtonV2)
+                            Text(showCopyConfirmation ? UserText.syncSuccessCopiedCodeButton : UserText.syncSuccessCopyCodeButton)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 2)
@@ -115,7 +115,7 @@ struct SyncSuccessViewV2: View {
                     Button {
                         model.delegate?.syncSuccessSaveRecoveryPDFPressed()
                     } label: {
-                        Text(UserText.syncSuccessDownloadPDFButtonV2)
+                        Text(UserText.syncSuccessDownloadPDFButton)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 2)
                     }
@@ -144,7 +144,7 @@ struct SyncSuccessViewV2: View {
 #Preview("Device Added") {
     let model = ManagementDialogModel()
     model.thisDeviceName = "Dax’s MacBook Pro"
-    return SyncSuccessViewV2(code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ")
+    return SyncSuccessView(code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ")
         .environmentObject(model)
 }
 #endif

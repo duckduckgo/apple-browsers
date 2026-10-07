@@ -1,7 +1,7 @@
 //
 //  DeviceDetailsView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct DeviceDetailsView: View {
 
@@ -25,56 +26,117 @@ struct DeviceDetailsView: View {
 
     let device: SyncDevice
 
-    @State var deviceName = ""
-    @State private var isLoading = false
+    @State private var deviceName = ""
+    @State private var isSaving = false
 
-    var canSave: Bool {
-        !deviceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        deviceName != device.name
+    private var trimmedDeviceName: String {
+        deviceName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    func submit() {
-        guard canSave else { return }
-        model.delegate?.updateDeviceName(deviceName)
+    private var canSave: Bool {
+        !trimmedDeviceName.isEmpty && trimmedDeviceName != device.name
+    }
+
+    private var illustration: Image {
+        switch device.kind {
+        case .current, .desktop:
+            return Image(.desktopSyncAddedFeature128)
+        case .mobile, .thirdParty:
+            return Image(.mobileSyncAddedFeature128)
+        }
+    }
+
+    private var title: String {
+        guard device.isCurrent else { return device.name }
+        let name = trimmedDeviceName.isEmpty ? device.name : trimmedDeviceName
+        return "\(name) (\(UserText.thisDevice))"
     }
 
     var body: some View {
-        if isLoading {
-            ProgressView()
-                .padding()
-        } else {
-            SyncDialog {
-                VStack(spacing: 20) {
-                    SyncUIViews.TextHeader(text: UserText.deviceDetailsTitle)
-                    HStack {
-                        Text(UserText.deviceDetailsLabel)
-                            .font(.system(size: 13, weight: .semibold))
-                        TextField(UserText.deviceDetailsPrompt, text: $deviceName, onCommit: submit)
-                            .textFieldStyle(.themed)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 14.5)
-                    .roundedBorder()
+        SyncSetupDialog(spacing: 20.0) {
+            VStack(alignment: .center, spacing: 20) {
+                illustration
+                    .accessibilityHidden(true)
+                VStack(alignment: .center, spacing: 8) {
+                    SyncUIViews.DialogTitle(text: title)
+                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatus)
                 }
-            } buttons: {
-                Button(UserText.cancel) {
-                    model.cancelPressed()
+                if device.isCurrent {
+                    nameField
                 }
-                .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
-                Button(UserText.ok) {
-                    submit()
-                    isLoading = true
-                }
-                .disabled(!canSave)
-                .buttonStyle(DefaultActionButtonStyle(enabled: canSave, stateColors: .themedActionButton))
             }
-            .frame(width: 360, height: 178)
-            .background(
-                Color(designSystemColor: .surfaceSecondary)
-            )
-            .onAppear {
-                deviceName = device.name
-            }
+        } buttons: {
+            destructiveButton
+            Spacer()
+            dismissButton
+        }
+        .onAppear {
+            deviceName = device.name
         }
     }
+
+    private var nameField: some View {
+        HStack(spacing: 16) {
+            Text(UserText.deviceDetailsNameLabel)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+            TextField(text: $deviceName) {
+                EmptyView()
+            }
+            .labelsHidden()
+            .onSubmit(save)
+            .disabled(isSaving)
+            .accessibilityIdentifier("SyncSettings.deviceDetails.nameField")
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 45)
+        .syncRoundedBorder(cornerRadius: 12)
+    }
+
+    private var destructiveButton: some View {
+        Button(device.isCurrent ? UserText.deviceDetailsTurnOffSyncButton : UserText.deviceDetailsRemoveDeviceButton) {
+            model.delegate?.presentRemoveDeviceConfirmation(device)
+        }
+        .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),
+                                              stateColors: .themedDismissButton))
+        .disabled(isSaving)
+    }
+
+    private var dismissButton: some View {
+        Button {
+            save()
+        } label: {
+            HStack(spacing: 6) {
+                if isSaving {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Text(device.isCurrent ? UserText.deviceDetailsDoneButton : UserText.deviceDetailsCloseButton)
+            }
+        }
+        .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+        .disabled(isSaving)
+    }
+
+    private func save() {
+        guard !isSaving else { return }
+        guard device.isCurrent, canSave else {
+            model.endFlow()
+            return
+        }
+        isSaving = true
+        model.delegate?.updateDeviceName(trimmedDeviceName)
+    }
 }
+
+#if DEBUG
+#Preview("This Device") {
+    DeviceDetailsView(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+        .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Other Device") {
+    DeviceDetailsView(device: SyncDevice(kind: .mobile, name: "Pixel 8", id: "mobile-device"))
+        .environmentObject(ManagementDialogModel())
+}
+#endif

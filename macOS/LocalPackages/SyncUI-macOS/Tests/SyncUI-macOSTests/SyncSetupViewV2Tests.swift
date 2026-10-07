@@ -29,7 +29,7 @@ final class SyncSetupViewV2Tests {
     @Test(.timeLimit(.minutes(1)))
     func testSyncSetupViewV2Snapshots() {
         assertImageSnapshots(
-            SyncSetupViewV2_Previews.snapshots,
+            SyncSetupView_Previews.snapshots,
             size: .intrinsicContentSize
         )
     }

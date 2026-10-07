@@ -666,7 +666,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
@@ -674,7 +673,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
-    case simplifiedSyncSetupV2
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow

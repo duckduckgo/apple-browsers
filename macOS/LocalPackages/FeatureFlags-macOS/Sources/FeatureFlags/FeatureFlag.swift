@@ -161,9 +161,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214232292928824
-    case allowSingleDeviceOnConnectScreen
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615684438
     case exchangeKeysToSyncWithAnotherDevice
 
@@ -548,10 +545,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
     case syncImprovedPairingFlow
 
-    /// Gates the Simplified Sync Setup follow-up screens.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
-    case simplifiedSyncSetupV2
-
     /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
     /// a Duck.ai input.
     case aiChatAttachmentPrivacyDisclosure
@@ -745,8 +738,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.schedulerDeferralHandling), supportsLocalOverriding: true, category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
-        case .allowSingleDeviceOnConnectScreen:
-            Config(source: .remoteReleasable(SyncSubfeature.allowSingleDeviceOnConnectScreen), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:
             Config(source: .remoteReleasable(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice), category: .sync)
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -980,8 +971,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:
             Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
-        case .simplifiedSyncSetupV2:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:

@@ -768,14 +768,6 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testOnPresentRemoveDeviceThenRemoveDeviceShown() {
-        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
-        syncDialogController.presentRemoveDevice(device)
-
-        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
-    }
-
-    @MainActor
     func testPresentRemoveDevice_showsRemoveDeviceV2() {
         let device = SyncDevice(kind: .desktop, name: "test", id: "test")
 
@@ -783,8 +775,6 @@ final class SyncDialogControllerTests: XCTestCase {
 
         XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
     }
-
-    @MainActor
 
     @MainActor
     func testPresentDeviceDetails_whenAuthenticated_showsDeviceDetailsV2() async {
@@ -1540,10 +1530,12 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
-    func testRecoveryCodeNextPressed_showsNowSyncing() {
+    func testRecoveryCodeNextPressed_showsSaveRecoveryCode() {
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+
         syncDialogController.recoveryCodeNextPressed()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .nowSyncing)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
     }
 
     // MARK: - Authentication Flows

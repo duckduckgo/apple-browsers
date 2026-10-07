@@ -170,7 +170,7 @@ struct WebExtensionAPICompatibilityLogView: View {
 /// extension toolbar buttons bring up the same one.
 @available(macOS 15.4, *)
 @MainActor
-enum WebExtensionAPICompatibilityLogWindow {
+enum WebExtensionAPICompatibilityLogWindowPresenter {
 
     static let identifier = NSUserInterfaceItemIdentifier("WebExtensionAPICompatibilityLog")
 

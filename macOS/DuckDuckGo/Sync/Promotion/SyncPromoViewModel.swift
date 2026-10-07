@@ -46,7 +46,7 @@ struct SyncPromoViewModel {
     }
 
     var image: NSImage {
-        .syncStart96
+        NSImage(resource: .syncStart96)
     }
 
     var primaryButtonTitle: String {

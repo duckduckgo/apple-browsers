@@ -94,8 +94,6 @@ public enum WebExtensionAPICompatibilityLog {
 /// Writes the first occurrence of each (extension, version, kind, API) to the log, once per launch.
 final class WebExtensionAPICompatibilityReporter: @unchecked Sendable {
 
-    static let shared = WebExtensionAPICompatibilityReporter()
-
     private let write: (String) -> Void
     private let lock = NSLock()
     private var reported = Set<String>()

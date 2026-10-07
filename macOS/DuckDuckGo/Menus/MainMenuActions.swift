@@ -1408,7 +1408,8 @@ extension MainViewController {
         if tabBarViewController.isDuckAIChatPresented {
             tabBarViewController.closeDuckAIChat()
         } else {
-            tabBarViewController.openDuckAISidebarWithPageAttachment()
+            tabBarViewController.openDuckAISidebarWithPageAttachment(conversationSource: .mainMenuAskAboutPage,
+                                                                     sidebarOpenSource: .mainMenuAskAboutPage)
         }
     }
 

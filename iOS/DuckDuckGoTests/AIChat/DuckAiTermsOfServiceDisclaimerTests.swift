@@ -42,29 +42,42 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
     }
 
     func testWhenNotAcceptedThenTheDisclaimerShowsTheUTICopy() {
-        XCTAssertEqual(makeSUT().message, UTIFooterMessageMapper().termsOfServiceMessage())
+        XCTAssertEqual(makeSUT().message(sendButton: .ask), UTIFooterMessageMapper().termsOfServiceMessage())
     }
 
     func testWhenTheFeatureIsOffThenThereIsNoDisclaimer() {
         feature.isAvailable = false
 
-        XCTAssertNil(makeSUT().message)
+        XCTAssertNil(makeSUT().message(sendButton: .ask))
     }
 
     /// Accepting on the web retires the native disclaimer too.
     func testWhenTheWebReportedAnAcceptanceThenThereIsNoDisclaimer() {
         store.recordWebReport()
 
-        XCTAssertNil(makeSUT().message)
+        XCTAssertNil(makeSUT().message(sendButton: .ask))
     }
 
     func testWhenSentWithTheDisclaimerOnScreenThenTheTermsAreAccepted() {
         let sut = makeSUT()
 
-        XCTAssertTrue(sut.acceptIfShown(sut.message))
+        XCTAssertTrue(sut.acceptIfShown(sut.message(sendButton: .ask)))
 
         XCTAssertTrue(store.hasAccepted)
-        XCTAssertNil(sut.message)
+        XCTAssertNil(sut.message(sendButton: .ask))
+    }
+
+    func testWhenCreateImageIsSelectedThenTheDisclaimerNamesCreate() {
+        XCTAssertEqual(makeSUT().message(sendButton: .create), UTIFooterMessageMapper().termsOfServiceMessage(sendButton: .create))
+    }
+
+    func testWhenSentWithTheCreateDisclaimerOnScreenThenTheTermsAreAccepted() {
+        let sut = makeSUT()
+
+        XCTAssertTrue(sut.isDisclaimer(sut.message(sendButton: .create)))
+        XCTAssertTrue(sut.acceptIfShown(sut.message(sendButton: .create)))
+
+        XCTAssertTrue(store.hasAccepted)
     }
 
     /// Nothing on screen, such as a send made before the card appeared, leaves the web app its own card.
@@ -87,7 +100,7 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
     /// The flag going off after the card showed must not record an acceptance the FE won't be told about.
     func testWhenTheFeatureTurnsOffWhileTheDisclaimerIsOnScreenThenNothingIsAccepted() {
         let sut = makeSUT()
-        let shown = sut.message
+        let shown = sut.message(sendButton: .ask)
         feature.isAvailable = false
 
         XCTAssertFalse(sut.acceptIfShown(shown))

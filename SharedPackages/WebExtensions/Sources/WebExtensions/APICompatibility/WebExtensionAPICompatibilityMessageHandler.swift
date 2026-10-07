@@ -35,7 +35,7 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
 
     private let reporter: WebExtensionAPICompatibilityReporter
 
-    init(reporter: WebExtensionAPICompatibilityReporter = .shared) {
+    init(reporter: WebExtensionAPICompatibilityReporter = WebExtensionAPICompatibilityReporter()) {
         self.reporter = reporter
     }
 

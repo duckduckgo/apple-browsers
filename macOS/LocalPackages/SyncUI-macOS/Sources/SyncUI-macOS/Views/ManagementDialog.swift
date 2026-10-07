@@ -18,25 +18,15 @@
 
 import SwiftUI
 
-public enum PreparingToSyncMode: Equatable {
-    case singleDeviceOrRecovery
-    case twoDevicePairing
-}
-
 public enum ManagementDialogKind: Equatable {
-    case deleteAccount(_ devices: [SyncDevice])
     case deleteAccountV2(_ devices: [SyncDevice])
     case turnOffSync
-    case deviceDetails(_ device: SyncDevice)
     case deviceDetailsV2(_ device: SyncDevice)
-    case removeDevice(_ device: SyncDevice)
     case removeDeviceV2(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
-    case prepareToSync(PreparingToSyncMode)
+    case prepareToSync
     case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
-    case nowSyncing
-    case syncWithServer
     case syncAnotherDevicePrompt
     case syncAuthenticationCancelled
     case enterRecoveryCode(stringForQRCode: String)
@@ -93,16 +83,10 @@ public struct ManagementDialog: View {
             switch model.currentDialog {
             case .turnOffSync:
                 TurnOffSyncView()
-            case .deviceDetails(let device):
-                DeviceDetailsView(device: device)
             case .deviceDetailsV2(let device):
                 DeviceDetailsViewV2(device: device)
-            case .removeDevice(let device):
-                RemoveDeviceView(device: device)
             case .removeDeviceV2(let device):
                 RemoveDeviceViewV2(device: device)
-            case .deleteAccount(let devices):
-                DeleteAccountView(devices: devices)
             case .deleteAccountV2(let devices):
                 DeleteAccountViewV2(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
@@ -113,10 +97,6 @@ public struct ManagementDialog: View {
                 PreparingToSyncViewV2(state: .waitingForOtherDevice)
             case .saveRecoveryCode(let code):
                 SyncSuccessViewV2(code: code)
-            case .nowSyncing:
-                DeviceSyncedView()
-            case .syncWithServer:
-                SyncWithServerView()
             case .syncAnotherDevicePrompt:
                 SyncAnotherDevicePromptView()
             case .syncAuthenticationCancelled:

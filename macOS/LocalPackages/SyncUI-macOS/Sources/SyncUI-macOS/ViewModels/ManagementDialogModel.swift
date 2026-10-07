@@ -23,14 +23,11 @@ import Combine
 public protocol ManagementDialogModelDelegate: AnyObject {
     func turnOffSync()
     func updateDeviceName(_ name: String)
-    func removeDevice(_ device: SyncDevice)
     func presentRemoveDeviceConfirmation(_ device: SyncDevice)
     func removeDeviceConfirmed(_ device: SyncDevice)
     func deleteAccount()
     func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool)
     func saveRecoveryPDF(requiresAuthentication: Bool)
-    func recoveryCodeNextPressed()
-    func turnOnSync()
     func enterRecoveryCodePressed()
     func copyCode(_ code: String)
     func syncAnotherDevicePromptDidAppear()
@@ -53,12 +50,9 @@ public protocol ManagementDialogModelDelegate: AnyObject {
 public final class ManagementDialogModel: ObservableObject {
 
     @Published public var currentDialog: ManagementDialogKind?
-    public var codeForQR: String?
 
     @Published public var shouldShowErrorMessage: Bool = false
     @Published public var syncErrorMessage: SyncErrorMessage?
-    @Published public var isAIChatSyncEnabled: Bool = false
-    @Published public var shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen: Bool = false
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false

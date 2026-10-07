@@ -164,7 +164,6 @@ final class SyncDialogController {
             .sink { [weak self] in
                 guard let self else { return }
                 self.refreshDevices()
-                self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)
 
@@ -178,16 +177,6 @@ final class SyncDialogController {
         Publishers.Merge(screenIsLockedPublisher, screenIsUnlockedPublisher)
             .receive(on: DispatchQueue.main)
             .assign(to: \.isScreenLocked, onWeaklyHeld: self)
-            .store(in: &cancellables)
-
-        featureFlagger.updatesPublisher
-            .prepend(())
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else { return }
-                self.managementDialogModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
-                self.updateSingleDeviceSyncPromoVisibility()
-            }
             .store(in: &cancellables)
     }
 
@@ -205,12 +194,6 @@ final class SyncDialogController {
     }
 
     // MARK: - Private Helper Methods
-
-    private func updateSingleDeviceSyncPromoVisibility() {
-        let isFlagEnabled = featureFlagger.isFeatureOn(.allowSingleDeviceOnConnectScreen)
-        let isSyncInactive = syncService.account == nil
-        managementDialogModel.shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen = isFlagEnabled && isSyncInactive
-    }
 
     @MainActor
     private func presentDialog(for currentDialog: ManagementDialogKind) {
@@ -565,26 +548,6 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
     }
 
-    func recoveryCodeNextPressed() {
-        showSyncSuccess()
-    }
-
-    func turnOnSync() {
-        Task { @MainActor in
-            do {
-                let device = Self.deviceInfo()
-                presentDialog(for: .prepareToSync(.singleDeviceOrRecovery))
-                try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
-                let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
-                PixelKit.fire(GeneralPixel.syncSignupDirect, withAdditionalParameters: additionalParameters)
-                presentDialog(for: .saveRecoveryCode(recoveryCode ?? ""))
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToServer, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncSignupError(error: error)))
-            }
-        }
-    }
-
     func syncAnotherDevicePromptDidAppear() {
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptShown)
     }
@@ -804,7 +767,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
 extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerWillBeginTransmittingRecoveryKey() async {
-        presentDialog(for: .prepareToSync(.twoDevicePairing))
+        presentDialog(for: .prepareToSync)
     }
 
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
@@ -818,13 +781,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidReceiveRecoveryKey() {
-        presentDialog(for: .prepareToSync(.twoDevicePairing))
+        presentDialog(for: .prepareToSync)
     }
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) async {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
-        let mode: PreparingToSyncMode = setupSource == .recovery ? .singleDeviceOrRecovery : .twoDevicePairing
-        presentDialog(for: .prepareToSync(mode))
+        presentDialog(for: .prepareToSync)
     }
 
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
@@ -839,7 +801,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
         let peerName = pairingV2DisplayName(for: peerName)
         let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
-        presentDialog(for: .prepareToSync(.twoDevicePairing))
+        presentDialog(for: .prepareToSync)
         let isConfirmed = await showPairingV2Confirmation(message: message)
         if !isConfirmed {
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)

@@ -1,5 +1,5 @@
 //
-//  RemoveDeviceView.swift
+//  RecoverSyncedDataView.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -19,38 +19,27 @@
 import SwiftUI
 import SwiftUIExtensions
 
-struct RemoveDeviceView: View {
-
+struct RecoverSyncedDataView: View {
     @EnvironmentObject var model: ManagementDialogModel
-
-    let device: SyncDevice
-
-    var removeImageName: String {
-        device.kind == .mobile ? "SyncRemoveDeviceMobile" : "SyncRemoveDeviceDesktop"
-    }
 
     var body: some View {
         SyncDialog(spacing: 20.0) {
-
-            Image(removeImageName)
-            SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitle)
-            SyncUIViews.TextDetailMultiline(text: UserText.removeDeviceConfirmMessage(device.name))
-
+            VStack(alignment: .center, spacing: 20) {
+                Image(.syncPair96)
+                SyncUIViews.TextHeader(text: UserText.reciverSyncedDataDialogTitle)
+                SyncUIViews.TextDetailMultiline(text: UserText.reciverSyncedDataDialogSubitle)
+            }
+            .frame(width: 320)
         } buttons: {
-
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
-
-            Button(UserText.removeDeviceConfirmButton) {
-                model.delegate?.removeDevice(device)
+            Button(UserText.reciverSyncedDataDialogButton) {
+                model.delegate?.enterRecoveryCodePressed()
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
-
         }
-        .frame(width: 360, height: 250)
-
     }
 
 }

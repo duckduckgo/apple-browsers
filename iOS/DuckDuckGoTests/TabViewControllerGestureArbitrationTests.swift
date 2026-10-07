@@ -32,15 +32,13 @@ final class TabViewControllerGestureArbitrationTests: XCTestCase {
 
     private var sut: TabViewController!
     private var chromeDelegate: DuckPlayerBrowserChromeDelegateMock!
-    private var featureFlagger: MockFeatureFlagger!
     private var showBarsTap: StubLocationTapGestureRecognizer!
     private var webContentDoubleTap: UITapGestureRecognizer!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.suppressShowBarsGestureRecogniserDelay])
-        sut = .fake(featureFlagger: featureFlagger)
+        sut = .fake(featureFlagger: MockFeatureFlagger())
         sut.loadViewIfNeeded()
         sut.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         sut.view.layoutIfNeeded()
@@ -65,7 +63,6 @@ final class TabViewControllerGestureArbitrationTests: XCTestCase {
     override func tearDownWithError() throws {
         webContentDoubleTap = nil
         showBarsTap = nil
-        featureFlagger = nil
         chromeDelegate = nil
         sut = nil
         try super.tearDownWithError()
@@ -114,29 +111,12 @@ final class TabViewControllerGestureArbitrationTests: XCTestCase {
         XCTAssertFalse(sut.gestureRecognizer(showBarsTap, shouldBeRequiredToFailBy: webContentDoubleTap))
     }
 
-    func testWhenDelaySuppressionIsDisabledThenShowBarsTapRetainsLegacyPriorityOverWebContent() {
-        featureFlagger.enabledFeatureFlags = []
-        chromeDelegate.isToolbarHidden = false
-        showBarsTap.stubbedLocation = locationInPageContent
-
-        XCTAssertTrue(sut.gestureRecognizer(showBarsTap, shouldBeRequiredToFailBy: webContentDoubleTap))
-    }
-
-    func testWhenDelaySuppressionIsEnabledThenShowBarsTapDoesNotDelayTouchEndDelivery() {
-        let sut = TabViewController.fake(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.suppressShowBarsGestureRecogniserDelay]))
-
-        sut.loadViewIfNeeded()
-
-        XCTAssertFalse(sut.showBarsTapGestureRecogniser.delaysTouchesEnded)
-    }
-
-    func testWhenDelaySuppressionIsDisabledThenShowBarsTapUsesDefaultTouchEndDelay() {
+    func testWhenViewIsLoadedThenShowBarsTapDoesNotDelayTouchEndDelivery() {
         let sut = TabViewController.fake(featureFlagger: MockFeatureFlagger())
 
         sut.loadViewIfNeeded()
 
-        XCTAssertTrue(sut.showBarsTapGestureRecogniser.delaysTouchesEnded)
+        XCTAssertFalse(sut.showBarsTapGestureRecogniser.delaysTouchesEnded)
     }
 
     // MARK: - Revealing hidden chrome from the bottom strip still takes precedence

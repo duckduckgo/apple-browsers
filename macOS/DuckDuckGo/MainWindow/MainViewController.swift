@@ -773,16 +773,16 @@ final class MainViewController: NSViewController {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
-                    mainView.divider.backgroundColor = .bannerViewDivider
+                    mainView.divider.backgroundColor = NSColor(resource: .bannerViewDivider)
                 } else {
                     mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
                     if mainView.isBannerViewShown {
-                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return bookmarksBarIsVisible ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     } else {
-                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return (bookmarksBarIsVisible || isHomePage) ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     }
                 }()
 

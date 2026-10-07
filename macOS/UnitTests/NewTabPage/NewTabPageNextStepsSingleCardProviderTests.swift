@@ -98,47 +98,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Initialization Tests
-
-    func testWhenInitializedThenCardListIsRefreshed_ForNonAppStore() {
-        featureFlagger.enabledFeatureFlags = []
-        let testProvider = createProvider(isAppStoreBuild: false)
-        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultStandardCards
-
-        XCTAssertEqual(testProvider.cards, expectedCards)
-    }
-
-    func testWhenInitializedThenCardListIsRefreshed_ForAppStore() {
-        featureFlagger.enabledFeatureFlags = []
-        let testProvider = createProvider(isAppStoreBuild: true)
-        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultStandardCards.filter { $0 != .addAppToDockMac }
-
-        XCTAssertEqual(testProvider.cards, expectedCards)
-    }
-
-    func testWhenInitializedWithNoVisibleCardsThenContinueSetUpCardsClosedIsSet() {
-        // Set up all conditions to hide all cards
-        let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: true)
-        let testProvider = createProvider(
-            defaultBrowserIsDefault: true,
-            dataImportDidImport: true,
-            dockStatus: true,
-            duckPlayerModeBool: true,
-            emailManagerSignedIn: true,
-            subscriptionCardShouldShow: false,
-            syncConnected: true,
-            appearancePreferences: testAppearancePreferences
-        )
-
-        XCTAssertTrue(testAppearancePreferences.continueSetUpCardsClosed)
-        XCTAssertTrue(testProvider.cards.isEmpty)
-    }
-
     // MARK: - Cards Property Tests
 
     func testWhenCardsViewIsNotOutdatedThenCardsAreReturned() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider(defaultBrowserIsDefault: false)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.isEmpty)
@@ -148,6 +113,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenCardsViewIsOutdatedThenCardsAreEmpty() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = true
         let testProvider = createProvider(defaultBrowserIsDefault: false)
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertTrue(testProvider.cards.isEmpty)
     }
@@ -155,6 +121,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenCardsViewBecomesOutdatedThenCardsBecomeEmpty() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider(defaultBrowserIsDefault: false)
+        triggerNewTabPageView(on: testProvider)
 
         let initialCards = testProvider.cards
         XCTAssertFalse(initialCards.isEmpty)
@@ -168,6 +135,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         appearancePreferences.continueSetUpCardsClosed = true
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider(defaultBrowserIsDefault: false)
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertTrue(testProvider.cards.isEmpty)
     }
@@ -177,16 +145,17 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     @MainActor
     func testWhenCardListChangesThenPublisherEmitsNewCards() {
         let testProvider = createProvider()
+        triggerNewTabPageView(on: testProvider)
         var cardsEvents = [[NewTabPageDataModel.CardID]]()
         let cancellable = testProvider.cardsPublisher
             .sink { cards in
                 cardsEvents.append(cards)
             }
 
-        // Trigger card list refreshes by dismissing cards
+        // Trigger card list refreshes by dismissing visible cards
         testProvider.dismiss(.defaultApp)
-        testProvider.dismiss(.bringStuff)
         testProvider.dismiss(.emailProtection)
+        testProvider.dismiss(.personalizeBrowser)
 
         cancellable.cancel()
 
@@ -239,6 +208,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenCardsViewBecomesOutdatedThenPublisherStopsEmittingCards() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider()
+        triggerNewTabPageView(on: testProvider)
 
         var cardsEvents = [[NewTabPageDataModel.CardID]]()
         let cancellable = testProvider.cardsPublisher
@@ -260,7 +230,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenSubscriptionVisibilityChangesThenCardListRefreshes() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         subscriptionCardVisibilityManager.shouldShowSubscriptionCard = true
+        persistor.orderedCardIDs = [.subscription]
         let testProvider = createProvider()
+        triggerNewTabPageView(on: testProvider)
         XCTAssertTrue(testProvider.cards.contains(.subscription))
 
         var cardsEvents = [[NewTabPageDataModel.CardID]]()
@@ -303,8 +275,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     @MainActor
     func testWhenNewTabPageWebViewAppearsThenTimesShownIsIncrementedForFirstCard() {
         // GIVEN
-        let firstCard = NewTabPageNextStepsSingleCardProvider.defaultStandardCards[0]
-        let secondCard = NewTabPageNextStepsSingleCardProvider.defaultStandardCards[1]
+        let firstCard = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards[0]
+        let secondCard = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards[1]
         persistor.setTimesShown(0, for: firstCard)
         persistor.setTimesShown(0, for: secondCard)
         let testProvider = createProvider()
@@ -369,14 +341,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // Default App Card
     func testWhenDefaultBrowserIsNotDefaultThenDefaultAppCardIsVisible() {
+        persistor.orderedCardIDs = [.defaultApp]
         let testProvider = createProvider(defaultBrowserIsDefault: false)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.contains(.defaultApp))
     }
 
     func testWhenDefaultBrowserIsDefaultThenDefaultAppCardIsNotVisible() {
+        persistor.orderedCardIDs = [.defaultApp]
         let testProvider = createProvider(defaultBrowserIsDefault: true)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.defaultApp))
@@ -384,14 +360,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // Bring Stuff Card
     func testWhenDataImportDidNotImportThenBringStuffCardIsVisible() {
+        persistor.orderedCardIDs = [.bringStuff]
         let testProvider = createProvider(dataImportDidImport: false)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.contains(.bringStuff))
     }
 
     func testWhenDataImportDidImportThenBringStuffCardIsNotVisible() {
+        persistor.orderedCardIDs = [.bringStuff]
         let testProvider = createProvider(dataImportDidImport: true)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.bringStuff))
@@ -399,21 +379,27 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // Add App to Dock Card
     func testWhenAppNotAddedToDockAndNotAppStoreThenAddAppToDockCardIsVisible() {
+        persistor.orderedCardIDs = [.addAppToDockMac]
         let testProvider = createProvider(dockStatus: false, isAppStoreBuild: false)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.contains(.addAppToDockMac))
     }
 
     func testWhenAppNotAddedToDockAndAppStoreThenAddAppToDockCardIsNotVisible() {
+        persistor.orderedCardIDs = [.addAppToDockMac]
         let testProvider = createProvider(dockStatus: false, isAppStoreBuild: true)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.addAppToDockMac))
     }
 
     func testWhenAppAddedToDockThenAddAppToDockCardIsNotVisible() {
+        persistor.orderedCardIDs = [.addAppToDockMac]
         let testProvider = createProvider(dockStatus: true)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.addAppToDockMac))
@@ -421,14 +407,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // Email Protection Card
     func testWhenEmailManagerNotSignedInThenEmailProtectionCardIsVisible() {
+        persistor.orderedCardIDs = [.emailProtection]
         let testProvider = createProvider(emailManagerSignedIn: false)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.contains(.emailProtection))
     }
 
     func testWhenEmailManagerSignedInThenEmailProtectionCardIsNotVisible() {
+        persistor.orderedCardIDs = [.emailProtection]
         let testProvider = createProvider(emailManagerSignedIn: true)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.emailProtection))
@@ -436,14 +426,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // Subscription Card
     func testWhenSubscriptionCardShouldShowThenSubscriptionCardIsVisible() {
+        persistor.orderedCardIDs = [.subscription]
         let testProvider = createProvider(subscriptionCardShouldShow: true)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.contains(.subscription))
     }
 
     func testWhenSubscriptionCardShouldNotShowThenSubscriptionCardIsNotVisible() {
+        persistor.orderedCardIDs = [.subscription]
         let testProvider = createProvider(subscriptionCardShouldShow: false)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.subscription))
@@ -452,27 +446,35 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     // Personalize Browser Card
     func testWhenCustomizationNotChangedThenPersonalizeBrowserCardIsVisible() {
         let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: false)
+        persistor.orderedCardIDs = [.personalizeBrowser]
         let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertTrue(testProvider.cards.contains(.personalizeBrowser))
     }
 
     func testWhenCustomizationChangedThenPersonalizeBrowserCardIsNotVisible() {
         let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: true)
+        persistor.orderedCardIDs = [.personalizeBrowser]
         let testProvider = createProvider(appearancePreferences: testAppearancePreferences)
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertFalse(testProvider.cards.contains(.personalizeBrowser))
     }
 
     // Sync Card
     func testWhenSyncCardShouldShowThenSyncCardIsVisible() {
+        persistor.orderedCardIDs = [.sync]
         let testProvider = createProvider(syncConnected: false)
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertTrue(testProvider.cards.contains(.sync))
     }
 
     func testWhenSyncCardShouldNotShowThenSyncCardIsNotVisible() {
+        persistor.orderedCardIDs = [.sync]
         let testProvider = createProvider(syncConnected: true)
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertFalse(testProvider.cards.contains(.sync))
     }
@@ -482,10 +484,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenCardDismissedMaxTimesThenCardIsPermanentlyDismissed() {
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.setTimesDismissed(1, for: .defaultApp) // maxTimesCardDismissed = 1
+        testPersistor.orderedCardIDs = [.defaultApp]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             persistor: testPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.defaultApp))
@@ -494,10 +498,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenCardDismissedViaLegacySettingThenCardIsPermanentlyDismissed() {
         let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
         testLegacyPersistor.shouldShowMakeDefaultSetting = false
+        persistor.orderedCardIDs = [.defaultApp]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             legacyPersistor: testLegacyPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.defaultApp))
@@ -506,10 +512,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenCardDismissedLessThanMaxTimesThenCardIsNotPermanentlyDismissed() {
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.setTimesDismissed(0, for: .defaultApp) // Less than max
+        testPersistor.orderedCardIDs = [.defaultApp]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             persistor: testPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.contains(.defaultApp))
@@ -518,10 +526,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenDefaultAppCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
         let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
         testLegacyPersistor.shouldShowMakeDefaultSetting = false
+        persistor.orderedCardIDs = [.defaultApp]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             legacyPersistor: testLegacyPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.defaultApp))
@@ -530,11 +540,13 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenAddAppToDockCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
         let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
         testLegacyPersistor.shouldShowAddToDockSetting = false
+        persistor.orderedCardIDs = [.addAppToDockMac]
         let testProvider = createProvider(
             dockStatus: false,
             legacyPersistor: testLegacyPersistor,
             isAppStoreBuild: false
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.addAppToDockMac))
@@ -543,10 +555,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenEmailProtectionCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
         let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
         testLegacyPersistor.shouldShowEmailProtectionSetting = false
+        persistor.orderedCardIDs = [.emailProtection]
         let testProvider = createProvider(
             emailManagerSignedIn: false,
             legacyPersistor: testLegacyPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.emailProtection))
@@ -555,10 +569,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenBringStuffCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
         let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
         testLegacyPersistor.shouldShowImportSetting = false
+        persistor.orderedCardIDs = [.bringStuff]
         let testProvider = createProvider(
             dataImportDidImport: false,
             legacyPersistor: testLegacyPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.bringStuff))
@@ -567,10 +583,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenSubscriptionCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
         let testLegacySubscriptionCardPersistor = MockHomePageSubscriptionCardPersisting()
         testLegacySubscriptionCardPersistor.shouldShowSubscriptionSetting = false
+        persistor.orderedCardIDs = [.subscription]
         let testProvider = createProvider(
             subscriptionCardShouldShow: true,
             legacySubscriptionCardPersistor: testLegacySubscriptionCardPersistor
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.subscription))
@@ -676,6 +694,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         }
 
         let testProvider = createProvider(persistor: testPersistor)
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.isEmpty)
@@ -695,15 +714,15 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             syncConnected: true,
             appearancePreferences: testAppearancePreferences
         )
+        triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertTrue(cards.isEmpty)
     }
 
-    // MARK: - 3-Card Stack Tests (nextStepsListAdvancedCardOrdering enabled)
+    // MARK: - 3-Card Stack Tests
 
-    func testWhenAdvancedOrderingEnabledThenCardsAreEmptyUntilNTPAppears() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenInitializedThenCardsAreEmptyUntilNTPAppears() {
         let testProvider = createProvider(
             adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
             isAppStoreBuild: false
@@ -719,8 +738,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenDismissPrunesWithoutRefill() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testThenDismissPrunesWithoutRefill() {
         persistor.orderedCardIDs = nil
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
@@ -737,8 +755,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenTopCardRotatesToBackOfFullListAndPullsNextCard() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testThenTopCardRotatesToBackOfFullListAndPullsNextCard() {
         persistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac]
         persistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .personalizeBrowser)
         let testProvider = createProvider(defaultBrowserIsDefault: false, isAppStoreBuild: false)
@@ -751,8 +768,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenTwoCardStackRotationPullsFromBacklog() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testThenTwoCardStackRotationPullsFromBacklog() {
         persistor.orderedCardIDs = [.sync, .emailProtection, .personalizeBrowser, .defaultApp]
         persistor.dailyVisibleStack = [.sync, .emailProtection]
         persistor.visibleStackDayIdentifier = 1
@@ -767,8 +783,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenSameDayNTPRevisitDoesNotRefillDismissedSlots() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testThenSameDayNTPRevisitDoesNotRefillDismissedSlots() {
         persistor.orderedCardIDs = nil
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
@@ -786,8 +801,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenNewActiveUsageDayRefillsToThreeCards() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testThenNewActiveUsageDayRefillsToThreeCards() {
         persistor.orderedCardIDs = nil
         persistor.firstCardLevel = .level2
         let mockAppearancePersistor = MockAppearancePreferencesPersistor(
@@ -820,8 +834,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledAndStackClearedThenSectionStaysOpenUntilCardsExhausted() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenStackClearedThenSectionStaysOpenUntilCardsExhausted() {
         persistor.orderedCardIDs = nil
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
@@ -836,8 +849,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(appearancePreferences.continueSetUpCardsClosed)
     }
 
-    func testWhenAdvancedOrderingEnabledAndAllCardsIneligibleThenSectionCloses() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenAllCardsIneligibleThenSectionCloses() {
         let testAppearancePreferences = createAppearancePrefs(didChangeAnyCustomizationSetting: true)
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
@@ -855,10 +867,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertTrue(testAppearancePreferences.continueSetUpCardsClosed)
     }
 
-    // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering enabled)
+    // MARK: - Card Ordering Tests
 
-    func testWhenNoPersistedOrder_WithAdvancedOrderingEnabled_ThenDefaultOrderIsUsed_ForNonAppStore() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenNoPersistedOrder_ThenDefaultOrderIsUsed_ForNonAppStore() {
         persistor.orderedCardIDs = nil
         let testProvider = createProvider(
             adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
@@ -870,8 +881,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
 
-    func testWhenNoPersistedOrder_WithAdvancedOrderingEnabled_ThenDefaultOrderIsUsed_ForAppStore() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenNoPersistedOrder_ThenDefaultOrderIsUsed_ForAppStore() {
         persistor.orderedCardIDs = nil
         let testProvider = createProvider(
             adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
@@ -883,8 +893,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
 
-    func testWhenPersistedOrderExists_WithAdvancedOrderingEnabled_ThenPersistedOrderIsUsed_ForNonAppStore() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenPersistedOrderExists_ThenPersistedOrderIsUsed_ForNonAppStore() {
         let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
         persistor.orderedCardIDs = persistedOrder
         let testProvider = createProvider(isAppStoreBuild: false)
@@ -894,8 +903,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
 
-    func testWhenPersistedOrderExists_WithAdvancedOrderingEnabled_ThenPersistedOrderIsUsed_ForAppStore() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenPersistedOrderExists_ThenPersistedOrderIsUsed_ForAppStore() {
         let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
         persistor.orderedCardIDs = persistedOrder
         let testProvider = createProvider(isAppStoreBuild: true)
@@ -905,8 +913,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
 
-    func testWhenFirstCardLevelIsLevel1AndDaysLessThanMaxDays_WithAdvancedOrderingEnabled_ThenLevel1CardsFirst() throws {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenFirstCardLevelIsLevel1AndDaysLessThanMaxDays_ThenLevel1CardsFirst() throws {
         persistor.firstCardLevel = .level1
         let testAppearancePrefs = createAppearancePrefs(demonstrationDays: 1)
         let testProvider = createProvider(
@@ -919,8 +926,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(cards, [.personalizeBrowser, .emailProtection, .defaultApp])
     }
 
-    func testWhenFirstCardLevelIsLevel1AndDaysGreaterThanOrEqualToMaxDays_WithAdvancedOrderingEnabled_ThenLevel2CardsFirst() throws {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenFirstCardLevelIsLevel1AndDaysGreaterThanOrEqualToMaxDays_ThenLevel2CardsFirst() throws {
         persistor.firstCardLevel = .level1
         let testAppearancePrefs = createAppearancePrefs(demonstrationDays: 2)
         let testProvider = createProvider(
@@ -936,8 +942,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(persistor.firstCardLevel, .level2)
     }
 
-    func testWhenLevelOrderSwaps_WithAdvancedOrderingEnabled_ThenOrderIsPersisted() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenLevelOrderSwaps_ThenOrderIsPersisted() {
         persistor.firstCardLevel = .level1
         let testAppearancePrefs = createAppearancePrefs(demonstrationDays: 3)
         let testProvider = createProvider(
@@ -954,8 +959,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.cards, [.defaultApp, .youtubeAdBlocking, .addAppToDockMac])
     }
 
-    func testWhenDefaultOrderIsUsed_WithAdvancedOrderingEnabled_ThenOrderIsPersisted() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+    func testWhenDefaultOrderIsUsed_ThenOrderIsPersisted() {
         let testProvider = createProvider(defaultBrowserIsDefault: false)
 
         triggerNewTabPageView(on: testProvider)
@@ -967,7 +971,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     @MainActor
     func testWhenCardsAreRefreshedWithNewFirstCardThenTimesShownIsIncrementedForFirstCard() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         persistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
         let testProvider = createProvider()
         triggerNewTabPageView(on: testProvider)
@@ -986,110 +989,28 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(persistor.timesShown(for: .sync), 1)
     }
 
-    // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering disabled)
-
-    @MainActor
-    func testFirstSession_WhenAdvancedOrderingDisabled_ThenCardsFollowDefaultOrder() {
-        let testFeatureFlagger = MockFeatureFlagger()
-        testFeatureFlagger.enabledFeatureFlags = []
-
-        let testProvider = createProvider(
-            featureFlagger: testFeatureFlagger,
-            isFirstSession: true
-        )
-
-        let cards = testProvider.cards
-        XCTAssertFalse(cards.isEmpty, "Should have cards")
-        XCTAssertEqual(cards.first, .emailProtection, "Email protection should be first in first session under default mock state (YouTube ad-blocking hidden)")
-    }
-
-    @MainActor
-    func testSubsequentSession_WhenAdvancedOrderingDisabled_ThenDefaultAppIsFirst() {
-        let testFeatureFlagger = MockFeatureFlagger()
-        testFeatureFlagger.enabledFeatureFlags = []
-
-        let testProvider = createProvider(
-            featureFlagger: testFeatureFlagger,
-            isFirstSession: false
-        )
-
-        let cards = testProvider.cards
-        XCTAssertFalse(cards.isEmpty, "Should have cards")
-        XCTAssertEqual(cards.first, .defaultApp, "DefaultApp should be first in subsequent sessions")
-    }
-
-    func testFirstSession_WhenNewTabPageOpens_ThenCardsAreNotShuffled_AndIsFirstSessionIsSet() {
-        featureFlagger.enabledFeatureFlags = []
-        let testProvider = createProvider(isFirstSession: true)
-        let initialCards = testProvider.standardCards
-        let expectation = XCTestExpectation(description: "New tab page open notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: .newTabPageOpen)
-            .receive(on: DispatchQueue.main)
-            .sink { _ in
-                expectation.fulfill()
-            }
-
-        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-
-        XCTAssertFalse(persistor.isFirstSession)
-        XCTAssertEqual(testProvider.standardCards, initialCards, "Standard cards should remain the same when new tab page open notification is received in the first session")
-    }
-
-    func testSubsequentSession_WhenNewTabPageOpens_ThenCardsAreShuffled() {
-        featureFlagger.enabledFeatureFlags = []
-        let testProvider = createProvider(isFirstSession: false)
-        let initialCards = testProvider.standardCards
-        let expectation = XCTestExpectation(description: "New tab page open notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: .newTabPageOpen)
-            .receive(on: DispatchQueue.main)
-            .sink { _ in
-                expectation.fulfill()
-            }
-
-        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-
-        XCTAssertFalse(persistor.isFirstSession)
-        XCTAssertNotEqual(testProvider.standardCards, initialCards, "Standard cards should be shuffled when new tab page open notification is received in subsequent sessions")
-    }
-
-    func testSubsequentSession_WhenWindowBecomesKey_ThenCardOrderRemainsStable() {
-        featureFlagger.enabledFeatureFlags = []
-        let testProvider = createProvider(isFirstSession: false)
-        let initialCards = testProvider.standardCards
-        let expectation = XCTestExpectation(description: "Window becomes key notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { _ in
-                expectation.fulfill()
-            }
-
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: NSWindow())
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-
-        XCTAssertEqual(testProvider.standardCards, initialCards, "Standard card order should remain the same when window becomes key")
-    }
-
     // MARK: - YouTube Ad Blocking visibility
 
     func testWhenYTAdBlockingFeatureUnavailableThenYTAdBlockingCardIsNotVisible() {
+        persistor.orderedCardIDs = [.youtubeAdBlocking]
         let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: false, isEnabledByUser: true))
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
     }
 
     func testWhenYTAdBlockingUserNotOptedInThenYTAdBlockingCardIsNotVisible() {
+        persistor.orderedCardIDs = [.youtubeAdBlocking]
         let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: false))
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
     }
 
     func testWhenYTAdBlockingFullyEnabledThenYTAdBlockingCardIsVisible() {
+        persistor.orderedCardIDs = [.youtubeAdBlocking]
         let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true))
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertTrue(testProvider.cards.contains(.youtubeAdBlocking))
     }
@@ -1099,10 +1020,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testWhenYouTubeAdBlockingCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
         let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
         testLegacyPersistor.shouldShowYouTubeAdBlockingSetting = false
+        persistor.orderedCardIDs = [.youtubeAdBlocking]
         let testProvider = createProvider(
             legacyPersistor: testLegacyPersistor,
             adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
         )
+        triggerNewTabPageView(on: testProvider)
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
     }
@@ -1110,51 +1033,42 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     // MARK: - Helper Functions
 
     @MainActor
-    func testSkippedNonBlockingPrioritizesDefaultAndDockInBothOrderingModes() {
+    func testSkippedNonBlockingPrioritizesDefaultAndDock() {
         let wasFinished = OnboardingActionsManager.isOnboardingFinished
         defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
         OnboardingActionsManager.isOnboardingFinished = true
-        for advanced in [false, true] {
-            persistor = MockNewTabPageNextStepsCardsPersistor()
-            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-            flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
-            var skipped = false
-            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
-                                          featureFlagger: flags, isAppStoreBuild: false,
-                                          didSkipOnboarding: { skipped })
-            skipped = true
-            NotificationCenter.default.post(name: NonBlockingOnboardingPersistor.outcomeDidChange, object: nil)
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        var skipped = false
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false,
+                                      didSkipOnboarding: { skipped })
+        skipped = true
+        NotificationCenter.default.post(name: NonBlockingOnboardingPersistor.outcomeDidChange, object: nil)
 
-            if advanced { triggerNewTabPageView(on: provider) }
-            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
-            provider.dismiss(.defaultApp)
-            XCTAssertFalse(provider.cards.contains(.defaultApp))
-            XCTAssertEqual(provider.cards.first, .addAppToDockMac)
-            provider.dismiss(.addAppToDockMac)
-        }
+        triggerNewTabPageView(on: provider)
+        XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        provider.dismiss(.defaultApp)
+        XCTAssertFalse(provider.cards.contains(.defaultApp))
+        XCTAssertEqual(provider.cards.first, .addAppToDockMac)
     }
 
     @MainActor
-    func testUnfinishedNonBlockingPrioritizesEligibleDefaultAndDockInBothOrderingModes() {
+    func testUnfinishedNonBlockingPrioritizesEligibleDefaultAndDock() {
         let wasFinished = OnboardingActionsManager.isOnboardingFinished
         defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
         OnboardingActionsManager.isOnboardingFinished = false
 
-        for advanced in [false, true] {
-            persistor = MockNewTabPageNextStepsCardsPersistor()
-            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-            flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
-            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
-                                          featureFlagger: flags, isAppStoreBuild: false)
-            if advanced { triggerNewTabPageView(on: provider) }
-            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        triggerNewTabPageView(on: provider)
+        XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
 
-            provider.dismiss(.defaultApp)
-            XCTAssertFalse(provider.cards.contains(.defaultApp))
-            XCTAssertEqual(provider.cards.first, .addAppToDockMac)
-            provider.dismiss(.addAppToDockMac)
-            XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
-        }
+        provider.dismiss(.defaultApp)
+        XCTAssertFalse(provider.cards.contains(.defaultApp))
+        XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+        provider.dismiss(.addAppToDockMac)
+        XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
     }
 
     @MainActor
@@ -1163,7 +1077,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
         OnboardingActionsManager.isOnboardingFinished = false
         let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
                                       featureFlagger: flags, isAppStoreBuild: false)
         triggerNewTabPageView(on: provider)
@@ -1186,24 +1099,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testStandardOrderingStopsPromotingSetupCardsAfterFiveViewsWithoutHidingThem() {
-        let wasFinished = OnboardingActionsManager.isOnboardingFinished
-        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
-        OnboardingActionsManager.isOnboardingFinished = false
-        legacyPersistor.isFirstSession = true
-        persistor.setTimesShown(5, for: .defaultApp)
-        persistor.setTimesShown(5, for: .addAppToDockMac)
-        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
-                                      featureFlagger: flags, isFirstSession: true, isAppStoreBuild: false)
-
-        XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
-        XCTAssertTrue(provider.cards.contains(.defaultApp))
-        XCTAssertTrue(provider.cards.contains(.addAppToDockMac))
-    }
-
-    @MainActor
-    func testAdvancedLevelSwapPreservesOnlyUnexhaustedSetupPriority() {
+    func testLevelSwapPreservesOnlyUnexhaustedSetupPriority() {
         let wasFinished = OnboardingActionsManager.isOnboardingFinished
         defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
         OnboardingActionsManager.isOnboardingFinished = false
@@ -1213,7 +1109,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         persistor.dailyVisibleStack = [.defaultApp, .personalizeBrowser, .emailProtection]
         persistor.setTimesShown(5, for: .defaultApp)
         let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
                                       featureFlagger: flags, isAppStoreBuild: false)
         triggerNewTabPageView(on: provider)
@@ -1230,7 +1125,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
         OnboardingActionsManager.isOnboardingFinished = true
         let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         var skipped = false
         let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
                                       featureFlagger: flags, isAppStoreBuild: false, didSkipOnboarding: { skipped })
@@ -1255,6 +1149,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let provider = createProvider(defaultBrowserIsDefault: true, dockStatus: true,
                                       featureFlagger: flags, isAppStoreBuild: false)
+        triggerNewTabPageView(on: provider)
         XCTAssertFalse(provider.cards.contains(.defaultApp))
         XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
     }
@@ -1263,12 +1158,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testCompletedNonBlockingAndUnfinishedBlockingUseNormalPriority() {
         let wasFinished = OnboardingActionsManager.isOnboardingFinished
         defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
-        legacyPersistor.isFirstSession = true
         for isNonBlocking in [false, true] {
             OnboardingActionsManager.isOnboardingFinished = isNonBlocking
             let flags = MockFeatureFlagger(resolveCohortStub: isNonBlocking ? FeatureFlag.OnboardingNonBlockingCohort.treatment : FeatureFlag.OnboardingNonBlockingCohort.control)
             let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
-                                          featureFlagger: flags, isFirstSession: true, isAppStoreBuild: false)
+                                          featureFlagger: flags, isAppStoreBuild: false)
+            triggerNewTabPageView(on: provider)
             XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
         }
     }
@@ -1277,6 +1172,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     func testSkippedBlockingOnboardingDoesNotGetCardPriority() {
         let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
                                       isAppStoreBuild: false, didSkipOnboarding: { true })
+        triggerNewTabPageView(on: provider)
         XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
     }
 
@@ -1295,7 +1191,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting? = nil,
         featureFlagger: MockFeatureFlagger? = nil,
         adBlockingAvailability: MockAdBlockingAvailability? = nil,
-        isFirstSession: Bool? = nil,
         isAppStoreBuild: Bool? = nil,
         didSkipOnboarding: @escaping () -> Bool = { false }
     ) -> NewTabPageNextStepsSingleCardProvider {
@@ -1380,10 +1275,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             return buildType
         }()
 
-        if let isFirstSession = isFirstSession {
-            testPersistor.isFirstSession = isFirstSession
-        }
-
         return NewTabPageNextStepsSingleCardProvider(
             cardActionHandler: actionHandler,
             pixelHandler: pixelHandler,
@@ -1439,7 +1330,5 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 }
 
 extension NewTabPageNextStepsSingleCardProvider {
-    static let defaultStandardCards: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
-
     static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .emailProtection, .defaultApp, .youtubeAdBlocking, .addAppToDockMac, .bringStuff, .sync, .subscription]
 }

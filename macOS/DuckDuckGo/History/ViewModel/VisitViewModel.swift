@@ -50,7 +50,7 @@ final class VisitViewModel {
         }
 
         if historyEntry.url.isDuckPlayer {
-            return .duckPlayer
+            return NSImage(resource: .duckPlayer)
         }
 
         return faviconManager.getCachedFavicon(for: historyEntry.url, sizeCategory: .small)?.image

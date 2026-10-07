@@ -147,7 +147,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
                 syncService.updateServerEnvironment(.production)
                 UserDefaults.standard.set(ServerEnvironment.production.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
             },
-            autoRestoreProvider: syncAutoRestoreHandler
+            autoRestoreProvider: syncAutoRestoreHandler,
+            isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow)
         )
         self.viewModel = viewModel
 

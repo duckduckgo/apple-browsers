@@ -100,6 +100,10 @@ final class UnifiedSuggestionsHost {
             showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
             escapeHatch: escapeHatch)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
+        if #available(iOS 16.4, *) {
+            // UIKit already bounds this host with the keyboard guide. Keep only container insets.
+            hosting.safeAreaRegions = [.container]
+        }
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
 

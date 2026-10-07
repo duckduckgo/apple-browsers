@@ -34,7 +34,7 @@ final class AIChatViewAllChatsRowView: NSView {
         static let iconTitleSpacing: CGFloat = 8
         static let trailingSpacing: CGFloat = 6
 
-        static let iconColor: NSColor = .suggestionIcon
+        static let iconColor: NSColor = NSColor(resource: .suggestionIcon)
         static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
 
@@ -81,7 +81,7 @@ final class AIChatViewAllChatsRowView: NSView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyDown
-        imageView.image = NSImage(named: "Arrow-Right-12")
+        imageView.image = NSImage(resource: .arrowRight12)
         imageView.contentTintColor = Constants.iconColor
         return imageView
     }()

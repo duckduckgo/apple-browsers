@@ -67,6 +67,7 @@ final class SiteBreakageDebugMenu: NSMenuItem {
 
     private static func description(for signals: NetworkSignals) -> String {
         """
+        • Network Available: \(signals.isNetworkAvailable)
         • Network Type: \(signals.networkType.rawValue)
         • Low Data Mode: \(signals.isLowDataModeEnabled)
         • VPN Connectivity Issues: \(signals.hasVPNConnectivityIssues)

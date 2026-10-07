@@ -41,11 +41,11 @@ extension NSColor {
     }
 
     static var textEditorBackground: NSColor {
-        .blackWhite5
+        NSColor(resource: .blackWhite5)
     }
 
     static var textEditorBorder: NSColor {
-        .blackWhite10
+        NSColor(resource: .blackWhite10)
     }
 
     // MARK: - Helpers

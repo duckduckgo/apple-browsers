@@ -72,12 +72,21 @@ class TabSwitcherStaticButtonTests: XCTestCase {
                        [UserText.actionNewFireTab, UserText.actionNewTab])
     }
 
+    func testNewChatPixelCarriesMenuSource() {
+        let sources: [(NewTabLongPressMenu.Source, String)] = [(.toolbar, "toolbar"), (.tabSwitcher, "tab_switcher"), (.tabsBar, "tabs_bar")]
+        for (source, expected) in sources {
+            let pixel = NewTabLongPressMenuPixel.newChat(source: source)
+            XCTAssertEqual(pixel.name, "tab_long_press_menu_new_chat")
+            XCTAssertEqual(pixel.parameters, ["source": expected])
+        }
+    }
+
     private func newTabLongPressMenuTitles(isNewChatAvailable: Bool) -> [String] {
         let actions = NewTabLongPressMenu.Actions(onNewFireTab: {},
                                                   onNewTab: {},
                                                   onNewChat: {},
                                                   isNewChatAvailable: { isNewChatAvailable })
-        return NewTabLongPressMenu.items(source: .toolbar, actions: actions).map(\.title)
+        return NewTabLongPressMenu.items(source: .toolbar, actions: actions, pixelFiring: nil).map(\.title)
     }
 
 }

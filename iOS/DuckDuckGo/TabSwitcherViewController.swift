@@ -471,6 +471,10 @@ class TabSwitcherViewController: UIViewController {
             self.addNewAIChatTab()
         }
 
+        actions.onNewChatTapped = { [weak self] in
+            self?.addNewChatFromLongPressMenu()
+        }
+
         actions.isNewChatAvailable = { [weak self] in
             self?.aiChatSettings.isAIChatEnabled ?? false
         }
@@ -629,6 +633,15 @@ class TabSwitcherViewController: UIViewController {
         dismissIfPossible(forceDismissOnEmpty: true)
 
         self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
+    }
+
+    func addNewChatFromLongPressMenu() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        dismissIfPossible(forceDismissOnEmpty: true)
+
+        delegate.tabSwitcherDidRequestNewChatFromLongPressMenu(tabSwitcher: self)
     }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {

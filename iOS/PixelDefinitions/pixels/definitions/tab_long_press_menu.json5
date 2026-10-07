@@ -44,5 +44,20 @@
                 "enum": ["toolbar", "tab_switcher", "tabs_bar"]
             }
         ]
+    },
+    "tab_long_press_menu_new_chat": {
+        "description": "User selected 'New Chat' from the long-press menu, opening Duck.ai in a new tab. Only offered while Duck.ai is enabled.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the menu was triggered from",
+                "enum": ["toolbar", "tab_switcher", "tabs_bar"]
+            }
+        ]
     }
 }

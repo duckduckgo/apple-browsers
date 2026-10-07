@@ -40,18 +40,18 @@ enum NewTabLongPressMenu {
         var isNewChatAvailable: () -> Bool
     }
 
-    static func make(source: Source, actions: Actions) -> UIMenu {
+    static func make(source: Source, actions: Actions, pixelFiring: PixelFiring? = PixelKit.shared) -> UIMenu {
         UIMenu(children: [
             UIDeferredMenuElement.uncached { completion in
                 PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
                     PixelParameters.source: source.rawValue
                 ]))
-                completion(items(source: source, actions: actions))
+                completion(items(source: source, actions: actions, pixelFiring: pixelFiring))
             }
         ])
     }
 
-    static func items(source: Source, actions: Actions) -> [UIAction] {
+    static func items(source: Source, actions: Actions, pixelFiring: PixelFiring?) -> [UIAction] {
         let parameters = [PixelParameters.source: source.rawValue]
         var items = [
             UIAction(title: UserText.actionNewFireTab, image: DesignSystemImages.Glyphs.Size16.fireWindow) { _ in
@@ -64,11 +64,30 @@ enum NewTabLongPressMenu {
             }
         ]
         if actions.isNewChatAvailable() {
-            // ponytail: no tap pixel yet, added with the pixel step.
             items.append(UIAction(title: UserText.actionNewAIChat, image: DesignSystemImages.Glyphs.Size16.aiChat) { _ in
+                pixelFiring?.fire(NewTabLongPressMenuPixel.newChat(source: source))
                 actions.onNewChat()
             })
         }
         return items
     }
+}
+
+enum NewTabLongPressMenuPixel: PixelKit.Event {
+
+    case newChat(source: NewTabLongPressMenu.Source)
+
+    var name: String {
+        switch self {
+        case .newChat: return "tab_long_press_menu_new_chat"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .newChat(let source): return [PixelParameters.source: source.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

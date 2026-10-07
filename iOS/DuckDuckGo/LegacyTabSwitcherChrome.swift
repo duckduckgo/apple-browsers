@@ -200,6 +200,7 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         barsHandler.onMenuButtonTapped = actions.onMultiSelectMenuRequested
         barsHandler.onCloseTabsTapped = actions.onCloseTabsTapped
         barsHandler.onDuckChatTapped = actions.onDuckChatTapped
+        barsHandler.onNewChatTapped = actions.onNewChatTapped
         barsHandler.isNewChatAvailable = actions.isNewChatAvailable
     }
 }

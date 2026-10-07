@@ -44,6 +44,7 @@ final class WarnBeforeQuitOverlayPresenter {
 
     let windowProvider: @MainActor () -> NSWindow?
     let anchorViewProvider: (@MainActor () -> NSView?)?
+    private let makeOverlayWindow: @MainActor () -> NSWindow
 
     // MARK: - Initialization
 
@@ -53,7 +54,8 @@ final class WarnBeforeQuitOverlayPresenter {
          onHoverChange: ((Bool) -> Void)? = nil,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
          anchorViewProvider: (@MainActor () -> NSView?)? = nil,
-         notificationCenter: NotificationCenterProtocol = NotificationCenter.default) {
+         notificationCenter: NotificationCenterProtocol = NotificationCenter.default,
+         makeOverlayWindow: @MainActor @escaping () -> NSWindow = { NSWindow(contentRect: .zero, styleMask: [], backing: .buffered, defer: false) }) {
         self.viewModel = WarnBeforeQuitViewModel(
             action: action,
             startupPreferences: startupPreferences,
@@ -62,6 +64,7 @@ final class WarnBeforeQuitOverlayPresenter {
         self.windowProvider = windowProvider
         self.anchorViewProvider = anchorViewProvider
         self.notificationCenter = notificationCenter
+        self.makeOverlayWindow = makeOverlayWindow
         self.viewModel.onHoverChange = { [weak self] isHovering in
             onHoverChange?(isHovering)
             // Enable/disable mouse events passing through the window to allow clicking the underlying content view
@@ -231,12 +234,7 @@ final class WarnBeforeQuitOverlayPresenter {
     }
 
     private func createOverlayWindow() -> NSWindow {
-        let window = NSWindow(
-            contentRect: .zero,
-            styleMask: [],
-            backing: .buffered,
-            defer: false
-        )
+        let window = makeOverlayWindow()
 
         window.isOpaque = false
         window.level = .floating

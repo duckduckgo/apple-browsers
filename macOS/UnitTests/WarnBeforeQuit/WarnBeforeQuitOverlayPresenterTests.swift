@@ -87,7 +87,9 @@ final class WarnBeforeQuitOverlayPresenterTests: XCTestCase, Sendable {
         focusedWindow.isReleasedWhenClosed = false
         window.addChildWindow(focusedWindow, ordered: .above)
 
-        let presenter = WarnBeforeQuitOverlayPresenter(windowProvider: { focusedWindow }, notificationCenter: notificationCenter)
+        let presenter = WarnBeforeQuitOverlayPresenter(windowProvider: { [weak focusedWindow] in focusedWindow },
+                                                       notificationCenter: notificationCenter,
+                                                       makeOverlayWindow: { OffscreenOverlayWindow() })
         let (stream, continuation) = AsyncStream<WarnBeforeQuitManager.State>.makeStream()
         let context = QuitWarningContext(notificationCenter: notificationCenter, window: window, focusedWindow: focusedWindow,
                                          presenter: presenter, continuation: continuation)
@@ -134,5 +136,37 @@ final class WarnBeforeQuitOverlayPresenterTests: XCTestCase, Sendable {
         context.continuation.yield(.completed(shouldProceed: shouldProceed))
         await fulfillment(of: [didHide], timeout: 2)
         return try XCTUnwrap(result)
+    }
+}
+
+/// Records ordering instead of putting the overlay on screen, which unit tests don't allow.
+private final class OffscreenOverlayWindow: NSWindow {
+
+    private var isOrderedIn = false
+
+    init() {
+        super.init(contentRect: .zero, styleMask: [], backing: .buffered, defer: true)
+    }
+
+    override var isVisible: Bool { isOrderedIn }
+
+    override func makeKeyAndOrderFront(_ sender: Any?) {
+        isOrderedIn = true
+    }
+
+    override func orderFront(_ sender: Any?) {
+        isOrderedIn = true
+    }
+
+    override func orderFrontRegardless() {
+        isOrderedIn = true
+    }
+
+    override func order(_ place: NSWindow.OrderingMode, relativeTo otherWin: Int) {
+        isOrderedIn = place != .out
+    }
+
+    override func orderOut(_ sender: Any?) {
+        isOrderedIn = false
     }
 }

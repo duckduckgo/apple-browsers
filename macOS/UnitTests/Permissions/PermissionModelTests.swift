@@ -1747,14 +1747,16 @@ final class PermissionModelTests: XCTestCase {
     func testWhenLocationServicesAreDisabledThenPromptSelectionRespectsFeatureFlag() throws {
         for isNewPromptEnabled in [false, true] {
             featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = isNewPromptEnabled
-            geolocationProviderMock.isActive = true
             geolocationServiceMock.locationServicesEnabledValue = false
+            geolocationServiceMock.authorizationStatus = .denied
             systemPermissionManagerMock.authorizationStates[.geolocation] = .systemDisabled
             var granted: Bool?
 
             model.permissions(.geolocation, requestedForDomain: "example.com") { (decision: Bool) in
                 granted = decision
             }
+            // WebKit's geolocation provider reports the denied status once the website asks
+            geolocationProviderMock.isActive = true
 
             let query = try XCTUnwrap(model.authorizationQuery)
             defer { query.cancel() }

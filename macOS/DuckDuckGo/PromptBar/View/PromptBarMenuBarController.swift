@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 
@@ -38,6 +39,9 @@ final class PromptBarMenuBarController: NSObject {
     private var statusItem: PromptBarStatusItem?
 
     var onClick: (() -> Void)?
+
+    private var tipPopover: NSPopover?
+    private var onTipLinkClicked: (() -> Void)?
 
     /// - Parameter makeStatusItem: Injectable for testing; defaults to a real menu bar item.
     init(makeStatusItem: @escaping @MainActor () -> PromptBarStatusItem = { NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength) }) {
@@ -92,29 +96,63 @@ final class PromptBarMenuBarController: NSObject {
         guard let keyCapsImage = keyCaps.nsImage else { return }
         keyCapsImage.accessibilityDescription = shortcut.displayString
 
+        // AppKit text rather than SwiftUI: SwiftUI links don't show the pointing hand on macOS.
+        let font = NSFont.systemFont(ofSize: 13)
+        let keyCapsAttachment = NSTextAttachment()
+        keyCapsAttachment.image = keyCapsImage
+        // Centred on the cap height instead of sitting on the baseline.
+        keyCapsAttachment.bounds = CGRect(x: 0,
+                                          y: (font.capHeight - keyCapsImage.size.height) / 2,
+                                          width: keyCapsImage.size.width,
+                                          height: keyCapsImage.size.height)
+
         let tip = UserText.duckAiLauncherMenuBarTip
-        // Offset centres the caps on the line instead of sitting them on the baseline.
-        let text = Text(tip.beforeShortcut) + Text(Image(nsImage: keyCapsImage)).baselineOffset(-4) + Text(tip.afterShortcut)
+        let bodyAttributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.labelColor]
+        let text = NSMutableAttributedString(string: tip.beforeShortcut, attributes: bodyAttributes)
+        text.append(NSAttributedString(attachment: keyCapsAttachment))
+        let afterShortcut = NSMutableAttributedString(attributedString: NSAttributedString(tip.afterShortcut))
+        afterShortcut.addAttributes(bodyAttributes, range: NSRange(location: 0, length: afterShortcut.length))
+        text.append(afterShortcut)
+
+        let width: CGFloat = 260
+        let padding: CGFloat = 12
+        let textView = NSTextView(frame: NSRect(x: padding, y: padding, width: width, height: 0))
+        textView.delegate = self
+        textView.isEditable = false
+        textView.isSelectable = true // Required for link clicks to reach the delegate.
+        textView.drawsBackground = false
+        textView.textContainerInset = .zero
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.linkTextAttributes = [
+            .foregroundColor: NSColor(designSystemColor: .textLink),
+            .cursor: NSCursor.pointingHand
+        ]
+        textView.textStorage?.setAttributedString(text)
+        textView.setAccessibilityLabel(text.string.replacingOccurrences(of: "\u{FFFC}", with: shortcut.displayString))
+        if let layoutManager = textView.layoutManager, let textContainer = textView.textContainer {
+            layoutManager.ensureLayout(for: textContainer)
+            textView.frame.size.height = ceil(layoutManager.usedRect(for: textContainer).height)
+        }
+
+        let viewController = NSViewController()
+        viewController.view = NSView(frame: NSRect(x: 0, y: 0, width: width + padding * 2, height: textView.frame.height + padding * 2))
+        viewController.view.addSubview(textView)
 
         let popover = NSPopover()
-        let content = text
-            .font(.system(size: 13))
-            .frame(width: 260, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(12)
-            .environment(\.openURL, OpenURLAction { [weak popover] _ in
-                popover?.close()
-                onLinkClicked()
-                return .handled
-            })
-        let hostingController = NSHostingController(rootView: content)
-        hostingController.sizingOptions = [.preferredContentSize]
-
         popover.behavior = .transient
-        popover.contentViewController = hostingController
-        // The first SwiftUI popover in the process reports no preferred size in time for `show`.
-        popover.contentSize = hostingController.sizeThatFits(in: NSSize(width: CGFloat.greatestFiniteMagnitude,
-                                                                       height: CGFloat.greatestFiniteMagnitude))
+        popover.contentViewController = viewController
+        popover.contentSize = viewController.view.frame.size
+        tipPopover = popover
+        onTipLinkClicked = onLinkClicked
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+}
+
+extension PromptBarMenuBarController: NSTextViewDelegate {
+
+    func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+        tipPopover?.close()
+        onTipLinkClicked?()
+        return true
     }
 }

@@ -58,37 +58,28 @@ struct PromptCoordinationDebugViewModelTests {
         )
         let scenarios = [
             FormattingScenario(
-                mode: .legacy,
                 owner: nil,
-                expectedMode: "Legacy",
                 expectedOwner: "None",
                 expectedAppearance: "Not applicable"
             ),
             FormattingScenario(
-                mode: .coordinated,
                 owner: modalOwner,
-                expectedMode: "Coordinated",
                 expectedOwner: "Modal (ownership ID: \(modalLease.ownershipIdentity.diagnosticDescription))",
                 expectedAppearance: "Not applicable"
             ),
             FormattingScenario(
-                mode: .coordinated,
                 owner: unconfirmedRemoteMessageOwner,
-                expectedMode: "Coordinated",
                 expectedOwner: "RMF (message ID: message, acquisition ID: \(remoteMessageLease.acquisitionIdentity.diagnosticDescription))",
                 expectedAppearance: "No"
             ),
             FormattingScenario(
-                mode: .coordinated,
                 owner: confirmedRemoteMessageOwner,
-                expectedMode: "Coordinated",
                 expectedOwner: "RMF (message ID: message, acquisition ID: \(remoteMessageLease.acquisitionIdentity.diagnosticDescription))",
                 expectedAppearance: "Yes"
             ),
         ]
         let provider = DiagnosticsProviderSpy(
             snapshot: PromoCoordinationDiagnosticSnapshot(
-                mode: scenarios[0].mode,
                 owner: scenarios[0].owner,
                 cooldown: cooldown,
                 unredeemedAppRatingSlots: 0
@@ -106,14 +97,12 @@ struct PromptCoordinationDebugViewModelTests {
 
         for scenario in scenarios {
             provider.snapshot = PromoCoordinationDiagnosticSnapshot(
-                mode: scenario.mode,
                 owner: scenario.owner,
                 cooldown: cooldown,
                 unredeemedAppRatingSlots: 0
             )
             viewModel.refresh()
 
-            #expect(viewModel.modeDescription == scenario.expectedMode)
             #expect(viewModel.ownerDescription == scenario.expectedOwner)
             #expect(viewModel.remoteMessageAppearanceDescription == scenario.expectedAppearance)
         }
@@ -138,7 +127,6 @@ struct PromptCoordinationDebugViewModelTests {
         let service = PromoCoordinationService(
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: MockModalPromptCoordinationManager(),
-            mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: policy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -171,9 +159,7 @@ struct PromptCoordinationDebugViewModelTests {
 }
 
 private struct FormattingScenario {
-    let mode: PromoCoordinationMode
     let owner: PromoQueueLeaseOwnerSnapshot?
-    let expectedMode: String
     let expectedOwner: String
     let expectedAppearance: String
 }

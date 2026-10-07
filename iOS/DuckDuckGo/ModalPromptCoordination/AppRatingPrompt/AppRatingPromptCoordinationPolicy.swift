@@ -44,12 +44,9 @@ struct AppRatingPromptCoordinationPolicy: AppRatingPromptCoordinationPolicying {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
-    init(promoCoordinationMode: PromoCoordinationMode,
-         featureFlagger: FeatureFlagger,
+    init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
-        // Coordination needs both the queue itself and the prompt's own flag.
-        self.isCoordinationEnabled = promoCoordinationMode == .coordinated
-            && featureFlagger.isFeatureOn(for: FeatureFlag.appRatingPromptCoordination)
+        self.isCoordinationEnabled = featureFlagger.isFeatureOn(for: FeatureFlag.appRatingPromptCoordination)
         self.privacyConfigurationManager = privacyConfigurationManager
     }
 

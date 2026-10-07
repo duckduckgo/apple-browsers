@@ -28,10 +28,8 @@ struct HomeMessagePresentationContext: Hashable {
 @MainActor
 protocol HomePageMessagesConfiguration {
     var homeMessages: [HomeMessage] { get }
-    var mode: PromoCoordinationMode { get }
     var contentDidChangePublisher: AnyPublisher<Void, Never> { get }
 
-    func refresh(openedAfterIdle: Bool)
     func prepareForNTP(openedAfterIdle: Bool)
     func handleAppBackgrounded()
     func handleAppForegrounded()
@@ -44,21 +42,11 @@ protocol HomePageMessagesConfiguration {
 }
 
 extension HomePageMessagesConfiguration {
-    var mode: PromoCoordinationMode {
-        .legacy
-    }
-
     var contentDidChangePublisher: AnyPublisher<Void, Never> {
         Empty(completeImmediately: false).eraseToAnyPublisher()
     }
 
-    func refresh() {
-        refresh(openedAfterIdle: false)
-    }
-
-    func prepareForNTP(openedAfterIdle: Bool) {
-        refresh(openedAfterIdle: openedAfterIdle)
-    }
+    func prepareForNTP(openedAfterIdle: Bool) {}
 
     func handleAppBackgrounded() {}
 

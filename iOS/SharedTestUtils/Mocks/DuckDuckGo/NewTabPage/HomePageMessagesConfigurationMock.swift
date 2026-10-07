@@ -39,11 +39,4 @@ class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
     func dismissHomeMessage(_ homeMessage: HomeMessage) {
         lastDismissedHomeMessage = homeMessage
     }
-
-    private(set) var didRefresh: Bool = false
-    private(set) var lastRefreshOpenedAfterIdle: Bool?
-    func refresh(openedAfterIdle: Bool) {
-        didRefresh = true
-        lastRefreshOpenedAfterIdle = openedAfterIdle
-    }
 }

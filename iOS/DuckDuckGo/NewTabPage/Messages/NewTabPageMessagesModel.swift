@@ -29,57 +29,36 @@ final class NewTabPageMessagesModel: ObservableObject {
     @Published private(set) var homeMessageViewModels: [HomeMessageViewModel] = []
 
     private var messagesCancellable: AnyCancellable?
-    private var legacyNotificationObserver: NSObjectProtocol?
     private var appearedRemoteMessageIdentity: HomeMessageViewModel.ViewIdentity?
     var onMessageVisibilityChanged: (() -> Void)?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
-    private let notificationCenter: NotificationCenter
     private let pixelFiring: (any PixelKitFiring)?
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
-    private let isOpenedAfterIdle: () -> Bool
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
-         notificationCenter: NotificationCenter = .default,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          messageActionHandler: RemoteMessagingActionHandling,
          imageLoader: RemoteMessagingImageLoading,
-         pixelReporter: RemoteMessagingPixelReporting? = nil,
-         isOpenedAfterIdle: @escaping () -> Bool = { false }) {
+         pixelReporter: RemoteMessagingPixelReporting? = nil) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
-        self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
         self.messageActionHandler = messageActionHandler
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
-        self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
     func load() {
-        switch homePageMessagesConfiguration.mode {
-        case .legacy:
-            legacyNotificationObserver = notificationCenter.addObserver(
-                forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    self?.refresh()
-                }
+        messagesCancellable = homePageMessagesConfiguration.contentDidChangePublisher
+            .sink { [weak self] _ in
+                self?.updateHomeMessageViewModel()
             }
-            refresh()
-        case .coordinated:
-            messagesCancellable = homePageMessagesConfiguration.contentDidChangePublisher
-                .sink { [weak self] _ in
-                    self?.updateHomeMessageViewModel()
-                }
-            updateHomeMessageViewModel()
-        }
+        updateHomeMessageViewModel()
     }
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) async {
@@ -103,9 +82,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     var onMessageInteraction: ((NewTabPageMessageInteraction) -> Void)?
 
     func refresh() {
-        if homePageMessagesConfiguration.mode == .legacy {
-            homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle())
-        }
         updateHomeMessageViewModel()
     }
 
@@ -117,9 +93,6 @@ final class NewTabPageMessagesModel: ObservableObject {
             homeMessage,
             presentationContext: presentationContext
         )
-        if homePageMessagesConfiguration.mode == .legacy {
-            updateHomeMessageViewModel()
-        }
     }
 
     private func updateHomeMessageViewModel() {

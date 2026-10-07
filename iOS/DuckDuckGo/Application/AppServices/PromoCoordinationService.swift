@@ -59,7 +59,6 @@ struct ModalPromptProviders {
 }
 
 struct PromoCoordinationDiagnosticSnapshot: Equatable {
-    let mode: PromoCoordinationMode
     let owner: PromoQueueLeaseOwnerSnapshot?
     let cooldown: PromoQueueCooldownSnapshot
     let unredeemedAppRatingSlots: Int
@@ -86,28 +85,22 @@ final class PromoCoordinationService {
     private let promoQueueCooldownPolicy: PromoQueueCooldownPolicying
     private let appRatingPromptCoordinator: AppRatingPromptCoordinating
 
-    let mode: PromoCoordinationMode
-
     init(
         launchSourceManager: LaunchSourceManaging,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging,
-        mode: PromoCoordinationMode,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
         promoQueueCooldownPolicy: PromoQueueCooldownPolicying,
         appRatingPromptCoordinator: AppRatingPromptCoordinating
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
-        self.mode = mode
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.promoQueueCooldownPolicy = promoQueueCooldownPolicy
         self.appRatingPromptCoordinator = appRatingPromptCoordinator
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
-        if mode == .coordinated {
-            modalPromptCoordinationManager.reconcilePresentedModal()
-        }
+        modalPromptCoordinationManager.reconcilePresentedModal()
 
         guard launchSourceManager.source == .standard else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
@@ -128,11 +121,6 @@ final class PromoCoordinationService {
             presentationStatusMessage = "No Modal is currently presented."
         }
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ \(presentationStatusMessage, privacy: .public)")
-
-        guard mode == .coordinated else {
-            modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
-            return
-        }
 
         switch promoQueueLeaseArbiter.acquireModalLease() {
         case .acquired(let lease):
@@ -158,8 +146,6 @@ final class PromoCoordinationService {
 
 extension PromoCoordinationService: PromoGating {
     func tryAcquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLease? {
-        guard mode == .coordinated else { return nil }
-
         modalPromptCoordinationManager.reconcilePresentedModal()
         guard case .acquired(let arbiterLease) = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: messageID) else {
             return nil
@@ -224,7 +210,6 @@ extension PromoCoordinationService: RecentModalPromptStatusProviding {
 extension PromoCoordinationService: PromoCoordinationDiagnosticsProviding {
     var diagnosticSnapshot: PromoCoordinationDiagnosticSnapshot {
         PromoCoordinationDiagnosticSnapshot(
-            mode: mode,
             owner: promoQueueLeaseArbiter.snapshot.owner,
             cooldown: promoQueueCooldownPolicy.snapshot,
             unredeemedAppRatingSlots: appRatingPromptCoordinator.unredeemedSlotCount

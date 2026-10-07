@@ -240,7 +240,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         try super.tearDownWithError()
     }
 
-    func testWhenSuggestionTrayActivatesThenPromoPreparationRespectsCoordinationMode() throws {
+    func testWhenSuggestionTrayActivatesThenPromoIsPreparedBeforeEligibility() throws {
         let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
         let message = RemoteMessageModel(
             id: "message",
@@ -250,24 +250,6 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             exclusionRules: [],
             isMetricsEnabled: false
         )
-        let legacyStore = ActivationRemoteMessagingStore(message: message)
-        let legacyConfiguration = HomePageConfiguration(
-            remoteMessagingStore: legacyStore,
-            subscriptionDataReporter: MockSubscriptionDataReporter(),
-            isStillOnboarding: { false }
-        )
-        let legacyHost = makeHost(legacyConfiguration)
-        let legacyTray = makeSuggestionTraySpy(for: legacyHost, websiteURL: websiteURL)
-        legacyHost.suggestionTrayController = legacyTray
-        let legacyMessagesBeforeFocus = legacyConfiguration.homeMessages
-        legacyStore.resetFetches()
-
-        legacyHost.onTextFieldWillBeginEditing(legacyHost.viewCoordinator.omniBar.barView, tapped: false)
-
-        XCTAssertEqual(legacyTray.eligibilityRequests, [.favorites])
-        XCTAssertTrue(legacyStore.fetchedTriggerFilters.isEmpty)
-        XCTAssertEqual(legacyConfiguration.homeMessages, legacyMessagesBeforeFocus)
-
         let coordinatedStore = ActivationRemoteMessagingStore(message: message)
         let gate = ActivationPromoGate()
         let coordinatedConfiguration = HomePageConfiguration(
@@ -589,7 +571,6 @@ private final class SuggestionTrayEligibilitySpy: SuggestionTrayViewController {
 
 @MainActor
 private final class ActivationPromoGate: PromoGating {
-    let mode = PromoCoordinationMode.coordinated
     private let arbiter = PromoQueueLeaseArbiter()
     private let cooldownPolicy = MockPromoQueueCooldownPolicy()
     private(set) var acquiredMessageIDs: [String] = []
@@ -620,10 +601,6 @@ private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
     init(afterIdleMessage: RemoteMessageModel) {
         self.afterIdleMessage = afterIdleMessage
         noTriggerMessage = nil
-    }
-
-    func resetFetches() {
-        fetchedTriggerFilters.removeAll()
     }
 
     func saveProcessedResult(_ processorResult: RemoteMessagingConfigProcessor.ProcessorResult) async {}

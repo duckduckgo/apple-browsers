@@ -34,12 +34,6 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var redeemDeferredModalCallCount = 0
     private(set) var releaseDeferredModalCallCount = 0
 
-    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
-        didCallPresentModalPromptIfNeeded = true
-        capturedPresenter = presenter
-        callCount += 1
-    }
-
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease

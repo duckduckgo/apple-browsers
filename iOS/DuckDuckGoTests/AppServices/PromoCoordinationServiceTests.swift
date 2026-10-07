@@ -57,7 +57,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -78,7 +77,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -103,7 +101,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -124,7 +121,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -147,7 +143,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -168,7 +163,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -219,7 +213,6 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: manager,
-            mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()

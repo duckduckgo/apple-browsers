@@ -37,7 +37,6 @@ struct PromptCoordinationDebugView: View {
     var body: some View {
         List {
             Section {
-                diagnosticRow(title: "Mode", value: viewModel.modeDescription)
                 diagnosticRow(title: "Owner", value: viewModel.ownerDescription)
                 diagnosticRow(title: "RMF Appearance Confirmed", value: viewModel.remoteMessageAppearanceDescription)
                 diagnosticRow(title: "Unredeemed Rating Slots", value: viewModel.unredeemedAppRatingSlotsDescription)
@@ -122,17 +121,6 @@ final class PromptCoordinationDebugViewModel: ObservableObject {
 
     var canResetCooldowns: Bool {
         cooldownResetter != nil
-    }
-
-    var modeDescription: String {
-        guard let snapshot else { return Text.unavailable }
-
-        switch snapshot.mode {
-        case .legacy:
-            return "Legacy"
-        case .coordinated:
-            return "Coordinated"
-        }
     }
 
     var ownerDescription: String {

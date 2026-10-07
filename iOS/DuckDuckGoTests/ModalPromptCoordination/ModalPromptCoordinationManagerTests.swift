@@ -28,6 +28,7 @@ final class ModalPromptCoordinationManagerTests {
     private let cooldownManagerMock: MockPromptCooldownManager
     private let schedulerMock: MockModalPromptScheduler
     private let presenterMock: MockModalPromptPresenter
+    private let arbiter = PromoQueueLeaseArbiter()
     private var sut: ModalPromptCoordinationManager!
 
     init() {
@@ -53,7 +54,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!provider.didCallProvideModalPrompt)
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(!presenterMock.didCallPresent)
@@ -76,7 +77,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!presenterMock.didCallPresent)
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(provider.didCallProvideModalPrompt)
@@ -106,7 +107,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
@@ -137,7 +138,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
@@ -171,7 +172,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
@@ -205,7 +206,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -237,7 +238,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -259,7 +260,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN
         #expect(schedulerMock.didCallSchedule)
@@ -279,7 +280,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
 
         // THEN (before executing scheduled block)
         #expect(!presenterMock.didCallPresent)
@@ -307,7 +308,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -315,8 +316,8 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @available(iOS 16, *)
-    @Test("Check Session Flag Survives The Legacy Presentation Completion", .timeLimit(.minutes(1)))
-    func whenLegacyPresentationCompletesThenSessionFlagRemainsSet() {
+    @Test("Check Session Flag Survives The Presentation Completion", .timeLimit(.minutes(1)))
+    func whenPresentationCompletesThenSessionFlagRemainsSet() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -326,13 +327,12 @@ final class ModalPromptCoordinationManagerTests {
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        // Held up by the in-flight legacy attempt alone: UIKit has not presented anything yet.
+        presentModalPromptIfNeeded()
+        // Held up by the in-flight attempt alone: UIKit has not presented anything yet.
         #expect(sut.didPresentModalPromptThisSession)
         #expect(!sut.didActuallyPresentModalPromptThisSession)
 
-        // WHEN the scheduled presentation runs, the completion clears that in-flight attempt — so it has to latch
-        // actual session history in the same breath or suppression collapses exactly as the modal appears.
+        // WHEN the scheduled presentation runs, the completion has to latch actual session history.
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -355,7 +355,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -375,7 +375,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -395,7 +395,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -419,7 +419,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -441,12 +441,22 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        presentModalPromptIfNeeded()
         schedulerMock.executeScheduledBlock()
 
         // THEN
         #expect(presenterMock.didCallPresent)
         #expect(provider.didCallDidPresentModal)
+    }
+
+    // MARK: - Helpers
+
+    private func presentModalPromptIfNeeded() {
+        guard case .acquired(let lease) = arbiter.acquireModalLease() else {
+            Issue.record("Expected the test arbiter to grant a modal lease")
+            return
+        }
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
     }
 
 }

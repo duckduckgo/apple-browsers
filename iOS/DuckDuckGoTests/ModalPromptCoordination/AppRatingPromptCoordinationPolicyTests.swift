@@ -27,34 +27,11 @@ import Testing
 @Suite("App Rating Prompt - Coordination Policy")
 struct AppRatingPromptCoordinationPolicyTests {
 
-    struct Scenario: Sendable, CustomTestStringConvertible {
-        let mode: PromoCoordinationMode
-        let isRatingFlagOn: Bool
-        let isCoordinationEnabled: Bool
+    @Test("Coordination follows the rating prompt flag", arguments: [true, false])
+    func coordinationFollowsRatingFlag(_ isRatingFlagOn: Bool) {
+        let policy = makePolicy(enabledFlags: isRatingFlagOn ? [.appRatingPromptCoordination] : [])
 
-        var testDescription: String {
-            "mode: \(mode), ratingFlag: \(isRatingFlagOn) -> \(isCoordinationEnabled)"
-        }
-    }
-
-    @Test(
-        "Coordination requires both the promo queue and the rating prompt flag",
-        arguments: [
-            Scenario(mode: .coordinated, isRatingFlagOn: true, isCoordinationEnabled: true),
-            Scenario(mode: .coordinated, isRatingFlagOn: false, isCoordinationEnabled: false),
-            // The case that matters: the rating flag alone must not opt the prompt into a queue
-            // that is not coordinating, because the legacy route has no lease for it to hold.
-            Scenario(mode: .legacy, isRatingFlagOn: true, isCoordinationEnabled: false),
-            Scenario(mode: .legacy, isRatingFlagOn: false, isCoordinationEnabled: false),
-        ]
-    )
-    func coordinationRequiresBothFlags(_ scenario: Scenario) {
-        let policy = makePolicy(
-            mode: scenario.mode,
-            enabledFlags: scenario.isRatingFlagOn ? [.appRatingPromptCoordination] : []
-        )
-
-        #expect(policy.isCoordinationEnabled == scenario.isCoordinationEnabled)
+        #expect(policy.isCoordinationEnabled == isRatingFlagOn)
     }
 
 
@@ -63,7 +40,6 @@ struct AppRatingPromptCoordinationPolicyTests {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.appRatingPromptCoordination]
         let policy = AppRatingPromptCoordinationPolicy(
-            promoCoordinationMode: .coordinated,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
@@ -72,7 +48,7 @@ struct AppRatingPromptCoordinationPolicyTests {
         featureFlagger.enabledFeatureFlags = []
 
         // A live read turning false while a slot is held would strand the lease and skip the
-        // cooldown, so this follows the promo mode and stays fixed for the session.
+        // cooldown, so this stays fixed for the session.
         #expect(policy.isCoordinationEnabled)
     }
 
@@ -100,13 +76,12 @@ struct AppRatingPromptCoordinationPolicyTests {
         ]
     )
     func maxUnredeemedSlots(_ scenario: MaxUnredeemedSlotsScenario) {
-        let policy = makePolicy(mode: .coordinated, enabledFlags: [], json: scenario.json)
+        let policy = makePolicy(enabledFlags: [], json: scenario.json)
 
         #expect(policy.maxUnredeemedSlots == scenario.expected)
     }
 
     private func makePolicy(
-        mode: PromoCoordinationMode,
         enabledFlags: [FeatureFlag],
         json: String? = nil
     ) -> AppRatingPromptCoordinationPolicying {
@@ -119,7 +94,6 @@ struct AppRatingPromptCoordinationPolicyTests {
         privacyConfigurationManager.privacyConfig = config
 
         return AppRatingPromptCoordinationPolicy(
-            promoCoordinationMode: mode,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager
         )

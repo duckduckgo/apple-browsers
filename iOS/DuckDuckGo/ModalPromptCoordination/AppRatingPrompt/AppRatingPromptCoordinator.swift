@@ -46,8 +46,7 @@ struct AppRatingPromptSlotStore {
 /// `ModalPromptProvider` (foreground) and this protocol (search time).
 @MainActor
 protocol AppRatingPromptCoordinating: AnyObject {
-    /// Whether the prompt participates in the Promo Queue. Already accounts for the queue's own
-    /// mode, so callers need not check it.
+    /// Whether the prompt participates in the Promo Queue.
     var isCoordinationEnabled: Bool { get }
 
     /// Records a page load towards the unique-usage-day counter. Every page, not only searches.

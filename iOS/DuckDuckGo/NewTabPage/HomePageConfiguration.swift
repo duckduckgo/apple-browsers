@@ -73,12 +73,9 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagesCancellable: AnyCancellable?
     private var rmfOwnership: RMFOwnership?
     private var isRMFAdmissionEnabled: Bool
-    private var legacyOpenedAfterIdle = false
-    private var legacySelectedTriggerFilter: TriggerFilter?
     private var visibleRemoteMessage: VisibleRemoteMessage?
 
     var homeMessages: [HomeMessage] = []
-    let mode: PromoCoordinationMode
 
     var contentDidChangePublisher: AnyPublisher<Void, Never> {
         contentDidChangeSubject.eraseToAnyPublisher()
@@ -106,29 +103,13 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         self.isStillOnboarding = isStillOnboarding
         self.promoGate = promoGate
         self.notificationCenter = notificationCenter
-        mode = promoGate?.mode ?? .legacy
         self.isRMFAdmissionEnabled = isRMFAdmissionEnabled
 
-        switch mode {
-        case .legacy:
-            homeMessages = buildLegacyHomeMessages(openedAfterIdle: false)
-        case .coordinated:
-            homeMessages = nonRemoteHomeMessages
-            observeRemoteMessagesChanges()
-        }
-    }
-
-    func refresh(openedAfterIdle: Bool = false) {
-        switch mode {
-        case .legacy:
-            homeMessages = buildLegacyHomeMessages(openedAfterIdle: openedAfterIdle)
-        case .coordinated:
-            prepareForNTP(openedAfterIdle: openedAfterIdle)
-        }
+        homeMessages = nonRemoteHomeMessages
+        observeRemoteMessagesChanges()
     }
 
     func prepareForNTP(openedAfterIdle: Bool) {
-        guard mode == .coordinated else { return }
         guard isRMFAdmissionEnabled else {
             return
         }
@@ -138,18 +119,10 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     func handleAppBackgrounded() {
-        guard mode == .coordinated else {
-            return
-        }
-
         isRMFAdmissionEnabled = false
     }
 
     func handleAppForegrounded() {
-        guard mode == .coordinated else {
-            return
-        }
-
         isRMFAdmissionEnabled = true
         reconcileCoordinatedMessages(reason: .foregroundValidation)
     }
@@ -163,8 +136,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext? {
-        guard mode == .coordinated,
-              case .remoteMessage(let remoteMessage) = homeMessage,
+        guard case .remoteMessage(let remoteMessage) = homeMessage,
               let rmfOwnership,
               rmfOwnership.presentationContext.messageID == remoteMessage.id else {
             return nil
@@ -174,11 +146,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
     func dismissHomeMessage(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) async {
         guard case .remoteMessage(let remoteMessage) = homeMessage else {
-            return
-        }
-
-        guard mode == .coordinated else {
-            await dismissLegacyRemoteMessage(remoteMessage, homeMessage: homeMessage)
             return
         }
 
@@ -199,11 +166,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
     func didAppear(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) {
         guard case .remoteMessage(let remoteMessage) = homeMessage else {
-            return
-        }
-
-        guard mode == .coordinated else {
-            reportRemoteMessageShown(remoteMessage)
             return
         }
 
@@ -235,34 +197,18 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
             return false
         }
 
-        switch mode {
-        case .legacy:
-            guard let triggerFilter = legacySelectedTriggerFilter,
-                  let currentCandidate = self.remoteMessage(triggerFilter: triggerFilter),
-                  currentCandidate.id == publishedRemoteMessage.id,
-                  HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
-                revalidatePublishedRemoteMessage()
-                return false
-            }
-
-            visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
-            didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: nil)
-            return true
-
-        case .coordinated:
-            guard let rmfOwnership,
-                  isCurrent(rmfOwnership.presentationContext, for: publishedRemoteMessage.id),
-                  let currentCandidate = self.remoteMessage(triggerFilter: rmfOwnership.selectedTriggerFilter),
-                  currentCandidate.id == publishedRemoteMessage.id,
-                  HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
-                revalidatePublishedRemoteMessage()
-                return false
-            }
-
-            visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
-            didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: rmfOwnership.presentationContext)
-            return true
+        guard let rmfOwnership,
+              isCurrent(rmfOwnership.presentationContext, for: publishedRemoteMessage.id),
+              let currentCandidate = self.remoteMessage(triggerFilter: rmfOwnership.selectedTriggerFilter),
+              currentCandidate.id == publishedRemoteMessage.id,
+              HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
+            revalidatePublishedRemoteMessage()
+            return false
         }
+
+        visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
+        didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: rmfOwnership.presentationContext)
+        return true
     }
 
     func remoteMessageDidStopBeingVisible(messageID: String) {
@@ -277,20 +223,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         homeMessageStorage.messagesToBeShown
     }
 
-    private func buildLegacyHomeMessages(openedAfterIdle: Bool) -> [HomeMessage] {
-        legacyOpenedAfterIdle = openedAfterIdle
-        legacySelectedTriggerFilter = nil
-        var messages = nonRemoteHomeMessages
-        guard !isStillOnboarding(),
-              let selectedRemoteMessage = selectedRemoteMessage(using: PreparationPolicy(openedAfterIdle: openedAfterIdle)) else {
-            return messages
-        }
-
-        legacySelectedTriggerFilter = selectedRemoteMessage.triggerFilter
-        messages.append(.remoteMessage(remoteMessage: selectedRemoteMessage.message))
-        return messages
-    }
-
     private func observeRemoteMessagesChanges() {
         remoteMessagesCancellable = notificationCenter.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .sink { [weak self] _ in
@@ -301,10 +233,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func handleRemoteMessagesChanged() {
-        guard mode == .coordinated else {
-            return
-        }
-
         reconcileCoordinatedMessages(reason: .storeChanged)
     }
 
@@ -422,15 +350,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
             rmfOwnership.presentationContext == presentationContext
     }
 
-    private func dismissLegacyRemoteMessage(_ remoteMessage: RemoteMessageModel, homeMessage: HomeMessage) async {
-        Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
-        await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
-        if let index = homeMessages.firstIndex(of: homeMessage) {
-            homeMessages.remove(at: index)
-        }
-        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
-    }
-
     private func reportRemoteMessageShown(_ remoteMessage: RemoteMessageModel) {
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
         if remoteMessage.isMetricsEnabled {
@@ -465,16 +384,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func revalidatePublishedRemoteMessage() {
-        switch mode {
-        case .legacy:
-            let previousHomeMessages = homeMessages
-            refresh(openedAfterIdle: legacyOpenedAfterIdle)
-            if homeMessages != previousHomeMessages {
-                notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
-            }
-        case .coordinated:
-            reconcileCoordinatedMessages(reason: .storeChanged)
-        }
+        reconcileCoordinatedMessages(reason: .storeChanged)
     }
 
     private func additionalParameters(for messageID: String) -> [String: String] {

@@ -32,19 +32,10 @@ struct HomePageConfigurationTests {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
 
-        // WHEN
         let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
 
-        // THEN
-        #expect(storeMock.fetchScheduledRemoteMessageCalls == 1)
-        #expect(storeMock.capturedSurfaces == .newTabPage)
-
-        // GIVEN
-        storeMock.fetchScheduledRemoteMessageCalls = 0
-        storeMock.capturedSurfaces = nil
-
         // WHEN
-        sut.refresh()
+        sut.prepareForNTP(openedAfterIdle: false)
 
         // THEN
         #expect(storeMock.fetchScheduledRemoteMessageCalls == 1)
@@ -52,7 +43,7 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed after idle and an idle message exists, triggerFilter is .specific(.afterIdle)", .timeLimit(.minutes(1)))
+    @Test("When prepared after idle and an idle message exists, triggerFilter is .specific(.afterIdle)", .timeLimit(.minutes(1)))
     func refreshAfterIdleWithIdleMessageAvailable() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
@@ -62,14 +53,14 @@ struct HomePageConfigurationTests {
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
-        sut.refresh(openedAfterIdle: true)
+        sut.prepareForNTP(openedAfterIdle: true)
 
         // THEN
         #expect(storeMock.capturedTriggerFilter == .specific(.afterIdle))
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed after idle and no idle message exists, falls back to .noTrigger", .timeLimit(.minutes(1)))
+    @Test("When prepared after idle and no idle message exists, falls back to .noTrigger", .timeLimit(.minutes(1)))
     func refreshAfterIdleFallsBackToNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
@@ -77,14 +68,14 @@ struct HomePageConfigurationTests {
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
-        sut.refresh(openedAfterIdle: true)
+        sut.prepareForNTP(openedAfterIdle: true)
 
         // THEN — no idle message found, so it falls back to .noTrigger
         #expect(storeMock.capturedTriggerFilter == .noTrigger)
     }
 
     @available(iOS 16, *)
-    @Test("When refreshed with openedAfterIdle false, triggerFilter is .noTrigger", .timeLimit(.minutes(1)))
+    @Test("When prepared with openedAfterIdle false, triggerFilter is .noTrigger", .timeLimit(.minutes(1)))
     func refreshWithOpenedAfterIdleFalsePassesNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
@@ -92,22 +83,7 @@ struct HomePageConfigurationTests {
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
-        sut.refresh(openedAfterIdle: false)
-
-        // THEN
-        #expect(storeMock.capturedTriggerFilter == .noTrigger)
-    }
-
-    @available(iOS 16, *)
-    @Test("When refreshed without parameter, triggerFilter is .noTrigger (backward compat)", .timeLimit(.minutes(1)))
-    func refreshWithoutParameterPassesNoTrigger() {
-        // GIVEN
-        let storeMock = MockRemoteMessagingStore()
-        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
-        storeMock.capturedTriggerFilter = nil
-
-        // WHEN
-        sut.refresh()
+        sut.prepareForNTP(openedAfterIdle: false)
 
         // THEN
         #expect(storeMock.capturedTriggerFilter == .noTrigger)
@@ -509,36 +485,6 @@ struct HomePageConfigurationTests {
         #expect(sut.currentRemoteMessageID == nil)
     }
 
-    @Test("A stale legacy message is removed and signals the message model")
-    func staleLegacyMessagePublishesRemoval() {
-        let notificationCenter = NotificationCenter()
-        let message = makeRemoteMessage(id: "message")
-        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
-        let sut = HomePageConfiguration(
-            remoteMessagingStore: store,
-            subscriptionDataReporter: MockSubscriptionDataReporter(),
-            isStillOnboarding: { false },
-            notificationCenter: notificationCenter
-        )
-        var changeNotificationCount = 0
-        let observer = notificationCenter.addObserver(
-            forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
-            object: nil,
-            queue: nil
-        ) { _ in
-            MainActor.assumeIsolated {
-                changeNotificationCount += 1
-            }
-        }
-        defer { notificationCenter.removeObserver(observer) }
-        store.isScheduledMessageExpired = true
-
-        #expect(!sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
-        #expect(changeNotificationCount == 1)
-        #expect(sut.currentRemoteMessageID == nil)
-        #expect(sut.homeMessages.isEmpty)
-    }
-
     @available(iOS 16, *)
     @Test("An owned RMF needs no container teardown callback and survives foreground with one appearance", .timeLimit(.minutes(1)))
     func ownedRemoteMessageSurvivesForegroundWithOneAppearance() {
@@ -589,7 +535,6 @@ struct HomePageConfigurationTests {
         let service = PromoCoordinationService(
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: modalManager,
-            mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: policy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -736,7 +681,6 @@ struct HomePageConfigurationTests {
         let service = PromoCoordinationService(
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: modalManager,
-            mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -782,27 +726,6 @@ struct HomePageConfigurationTests {
         #expect(store.fetchedTriggerFilters == [.noTrigger])
         #expect(gate.acquiredMessageIDs == ["message"])
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
-    }
-
-    @available(iOS 16, *)
-    @Test("Legacy lifecycle hooks leave RMF behavior unchanged", .timeLimit(.minutes(1)))
-    func legacyLifecycleHooksAreNoOp() {
-        let message = makeRemoteMessage(id: "message")
-        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
-        let sut = HomePageConfiguration(
-            remoteMessagingStore: store,
-            subscriptionDataReporter: MockSubscriptionDataReporter(),
-            isStillOnboarding: { false }
-        )
-        let homeMessages = sut.homeMessages
-
-        sut.prepareForNTP(openedAfterIdle: true)
-        sut.handleAppBackgrounded()
-        sut.handleAppForegrounded()
-
-        #expect(sut.homeMessages == homeMessages)
-        #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
-        #expect(store.fetchedTriggerFilters == [.noTrigger])
     }
 
     @available(iOS 16, *)
@@ -1051,20 +974,6 @@ struct HomePageConfigurationTests {
         )
     }
 
-    private func makeMessagesModel(
-        configuration: HomePageMessagesConfiguration,
-        notificationCenter: NotificationCenter
-    ) -> NewTabPageMessagesModel {
-        NewTabPageMessagesModel(
-            homePageMessagesConfiguration: configuration,
-            notificationCenter: notificationCenter,
-            messageActionHandler: RemoteMessagingActionHandler(
-                surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher()
-            ),
-            imageLoader: MockRemoteMessagingImageLoader()
-        )
-    }
-
     private func makePromoCoordinationService(
         arbiter: PromoQueueLeaseArbiter,
         cooldownPolicy: PromoQueueCooldownPolicying
@@ -1072,7 +981,6 @@ struct HomePageConfigurationTests {
         PromoCoordinationService(
             launchSourceManager: MockLaunchSourceManager(),
             modalPromptCoordinationManager: MockModalPromptCoordinationManager(),
-            mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
@@ -1100,7 +1008,6 @@ private final class RecordingPromoQueueRemoteMessageHistory: PromoQueueRemoteMes
 
 @MainActor
 private final class MockPromoGate: PromoGating {
-    let mode = PromoCoordinationMode.coordinated
     let arbiter = PromoQueueLeaseArbiter()
     let cooldownPolicy = MockPromoQueueCooldownPolicy()
     var grantsAcquisition = true

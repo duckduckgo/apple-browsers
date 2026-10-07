@@ -1570,6 +1570,24 @@ extension MainViewController {
         alert.runModal()
     }
 
+    @objc func debugVerifyDNSBlocking(_ sender: Any?) {
+        let host = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.host
+
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "DNS Blocking"
+
+            if let host {
+                let resolution = await DNSBlockDetector().resolution(for: host)
+                alert.informativeText = "\(host): \(resolution.rawValue)"
+            } else {
+                alert.informativeText = "The current tab has no site loaded."
+            }
+
+            await alert.runModal()
+        }
+    }
+
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
         browserTabViewController.showCookiePopupProtectionOptInDialog()
     }

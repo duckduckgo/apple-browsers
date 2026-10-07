@@ -47,6 +47,7 @@ final class PrivacyDashboardViewController: NSViewController {
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
     private let networkSignalsProvider: NetworkSignalsProviding
+    private let featureFlagger: FeatureFlagger
 
     private let scriptStyleProvider: ScriptStyleProviding
     private var cancellables = Set<AnyCancellable>()
@@ -93,7 +94,8 @@ final class PrivacyDashboardViewController: NSViewController {
          permissionManager: PermissionManagerProtocol,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         networkSignalsProvider: NetworkSignalsProviding = NSApp.delegateTyped.networkSignalsProvider
+         networkSignalsProvider: NetworkSignalsProviding = NSApp.delegateTyped.networkSignalsProvider,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -108,6 +110,7 @@ final class PrivacyDashboardViewController: NSViewController {
         self.scriptStyleProvider = ScriptStyleProvider(themeManager: themeManager)
         self.contentBlocking = contentBlocking
         self.networkSignalsProvider = networkSignalsProvider
+        self.featureFlagger = featureFlagger
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
 
@@ -410,8 +413,9 @@ extension PrivacyDashboardViewController {
 
         async let asyncBreakageReportData = collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
         async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
+        async let asyncDNSResolution = resolveDNS(siteURL: currentURL)
 
-        let (breakageReportData, networkSignals) = await (asyncBreakageReportData, asyncNetworkSignals)
+        let (breakageReportData, networkSignals, dnsResolution) = await (asyncBreakageReportData, asyncNetworkSignals, asyncDNSResolution)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance
@@ -477,7 +481,17 @@ extension PrivacyDashboardViewController {
                                                breakageData: breakageData,
                                                loadedWebExtensions: loadedWebExtensions,
                                                adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
-                                               networkSignals: networkSignals)
+                                               networkSignals: networkSignals,
+                                               dnsResolution: dnsResolution)
         return websiteBreakage
+    }
+
+    /// `nil` when page signals are disabled or the URL has no host.
+    private func resolveDNS(siteURL: URL) async -> DNSResolution? {
+        guard featureFlagger.isFeatureOn(.pageSignals), let host = siteURL.host else {
+            return nil
+        }
+
+        return await DNSBlockDetector().resolution(for: host)
     }
 }

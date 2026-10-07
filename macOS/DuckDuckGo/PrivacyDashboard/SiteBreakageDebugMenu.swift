@@ -38,6 +38,7 @@ final class SiteBreakageDebugMenu: NSMenuItem {
         let menu = NSMenu(title: "")
         menu.addItem(NSMenuItem(title: "Show Network Signals", action: #selector(showNetworkSignals), target: self))
         menu.addItem(NSMenuItem(title: "Show Page Signals", action: #selector(MainViewController.debugShowPageSignals)))
+        menu.addItem(NSMenuItem(title: "Verify DNS Blocking", action: #selector(MainViewController.debugVerifyDNSBlocking)))
         return menu
     }
 

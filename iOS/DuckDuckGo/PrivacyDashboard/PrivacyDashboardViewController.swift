@@ -352,8 +352,9 @@ extension PrivacyDashboardViewController {
 
         async let asyncBreakageReportData = collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
         async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
+        async let asyncDNSResolution = resolveDNS(siteURL: breakageAdditionalInfo.currentURL)
 
-        let (breakageReportData, networkSignals) = await (asyncBreakageReportData, asyncNetworkSignals)
+        let (breakageReportData, networkSignals, dnsResolution) = await (asyncBreakageReportData, asyncNetworkSignals, asyncDNSResolution)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance
@@ -412,7 +413,17 @@ extension PrivacyDashboardViewController {
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
                                 adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
-                                networkSignals: networkSignals)
+                                networkSignals: networkSignals,
+                                dnsResolution: dnsResolution)
+    }
+
+    /// `nil` when page signals are disabled or the URL has no host.
+    private func resolveDNS(siteURL: URL) async -> DNSResolution? {
+        guard featureFlagger.isFeatureOn(.pageSignals), let host = siteURL.host else {
+            return nil
+        }
+
+        return await DNSBlockDetector().resolution(for: host)
     }
 
 }

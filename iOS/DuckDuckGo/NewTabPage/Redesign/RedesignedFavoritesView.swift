@@ -44,12 +44,6 @@ struct RedesignedFavoritesView: View {
         Set(model.allFavorites.prefix(collapsedCapacity - 1).map(\.id))
     }
 
-    private var trailingEmptyColumnCount: Int {
-        columns.count - 1 - (model.allFavorites.count + 1) % columns.count
-    }
-
-    private var isAddFavoriteVisible: Bool { onAddFavorite != nil && (!hasOverflow || isExpanded) }
-
     private var collapsedHeight: CGFloat {
         let estimatedRowHeight = Metrics.tileSize + RedesignedFavoriteTileMetrics.iconToTitleSpacing
             + UIFont.daxCaption().lineHeight * CGFloat(RedesignedFavoriteTileMetrics.titleLineLimit)
@@ -118,16 +112,11 @@ struct RedesignedFavoritesView: View {
     private var favoritesGrid: some View {
         LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
             favorites
-            // Retain the slot while editing so See Less does not move when focus changes.
-            addFavoriteButton
-                .revealed(isAddFavoriteVisible, animation: expansionAnimation, value: isExpanded)
+            if onAddFavorite != nil {
+                addFavoriteButton
+                    .revealed(!hasOverflow || isExpanded, animation: expansionAnimation, value: isExpanded)
+            }
             if hasOverflow {
-                // Keep See Less in the trailing column and retain these slots during the reveal.
-                ForEach(0..<trailingEmptyColumnCount, id: \.self) { _ in
-                    Color.clear
-                        .frame(height: 0)
-                        .accessibilityHidden(true)
-                }
                 expansionButton(expands: false)
                     .revealed(isExpanded, animation: expansionAnimation, value: isExpanded)
             }

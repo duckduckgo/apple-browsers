@@ -953,13 +953,14 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
-        // Already on the NTP — attach its first after-idle hatch without rebuilding the page.
-        // Later returns preserve the hatch's existing or consumed state and input focus.
+        // Already on the NTP — no rebuild needed. Behind the keyboard flag, attach its first after-idle
+        // hatch; later returns preserve the hatch's existing or consumed state and input focus.
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            if !controller.showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) {
+            if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                || !controller.showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) {
                 startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             }
             completion(.keptCurrent)

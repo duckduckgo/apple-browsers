@@ -69,7 +69,7 @@ struct SyncPromoView: View {
         HStack {
             Spacer()
             VStack {
-                CloseButton(icon: .close, size: 16) {
+                CloseButton(icon: NSImage(resource: .close), size: 16) {
                     dismissAction()
                 }
                 .padding(6)
@@ -81,7 +81,7 @@ struct SyncPromoView: View {
 
     private var backgroundRectangle: some View {
         RoundedRectangle(cornerRadius: 8)
-            .foregroundColor(isHovering ? Color.black.opacity(0.06) : Color.blackWhite3)
+            .foregroundColor(isHovering ? Color.black.opacity(0.06) : Color(.blackWhite3))
     }
 
     private var image: some View {

@@ -34,6 +34,15 @@ struct UserText {
     static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
 
     // MARK: - Web Extensions
+    static let chromeWebStoreDownloadTitle = NotLocalizedString("webExtensions.store.download.title", value: "Add Extension", comment: "Extension download window title")
+    static let chromeWebStoreDownloadMessage = NotLocalizedString("webExtensions.store.download.message", value: "Downloading and verifying extension…", comment: "Extension download progress message")
+    static let chromeWebStoreRemoveTitle = NotLocalizedString("webExtensions.store.remove.title", value: "Remove “%@”?", comment: "Remove extension title; placeholder is the name")
+    static let chromeWebStoreRemoveMessage = NotLocalizedString("webExtensions.store.remove.message", value: "The extension and its saved permissions will be removed.", comment: "Remove extension confirmation")
+    static let chromeWebStoreRemoveButton = NotLocalizedString("webExtensions.store.remove.button", value: "Remove Extension", comment: "Confirm removing an extension")
+    static let chromeWebStoreErrorTitle = NotLocalizedString("webExtensions.store.error.title", value: "Couldn’t Complete Extension Request", comment: "Extension operation error title")
+    static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
+    static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
+    static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
     static let webExtensionInstallTitle = NotLocalizedString("webExtensions.install.title", value: "Add “%@”?", comment: "Extension installation title; placeholder is the extension name")
     static let webExtensionPermissionTitle = NotLocalizedString("webExtensions.permissions.title", value: "Allow “%@” additional access?", comment: "Extension permissions title; placeholder is the extension name")
     static let webExtensionUnnamedExtension = NotLocalizedString("webExtensions.unnamed", value: "Extension", comment: "Fallback for an unnamed web extension")
@@ -731,6 +740,10 @@ struct UserText {
         return String(format: localized, shortcut, ownerName)
     }
     static let promptBarShortcutSpaceKey = NSLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
+    static let duckAiLauncherPromoMessage = NotLocalizedString("duckai.launcher-promo.message", value: "Chat privately outside the browser", comment: "Emphasized title of the New Tab Page Duck.ai promo inviting the user to turn on the Duck.ai launcher")
+    static let duckAiLauncherPromoAddToMenuBar = NotLocalizedString("duckai.launcher-promo.add-to-menu-bar", value: "Add Duck.ai to your menu bar", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is off")
+    static let duckAiLauncherPromoAddKeyboardShortcut = NotLocalizedString("duckai.launcher-promo.add-keyboard-shortcut", value: "Add a keyboard shortcut to Duck.ai", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off")
+    static let duckAiLauncherPromoTryNow = NotLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the New Tab Page Duck.ai launcher promo that turns the launcher on")
 
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")

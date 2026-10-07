@@ -241,7 +241,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private var accentColor: NSColor {
-        return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
+        return isBurner ? NSColor(resource: .burnerAccent) : NSColor.controlAccentColor
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -1054,11 +1054,11 @@ final class AddressBarViewController: NSViewController {
         let currentTextFieldValue = addressBarTextField.value
         let hasUserTypedContent = currentTextFieldValue.isUserTyped && !currentTextFieldValue.isEmpty
         activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && !hasUserTypedContent && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : colorsProvider.addressBarOutlineShadow
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor(resource: .burnerAccent).withAlphaComponent(0.2) : colorsProvider.addressBarOutlineShadow
 
         if isToggleFocused {
             activeBackgroundView.borderWidth = 1.0
-            activeBackgroundView.borderColor = .addressBarBorder
+            activeBackgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             activeBackgroundView.borderWidth = 2.0
             activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
@@ -1089,7 +1089,7 @@ final class AddressBarViewController: NSViewController {
 
     private func setupInactiveShadowView() {
         if theme.addressBarStyleProvider.shouldAddAddressBarShadowWhenInactive {
-            inactiveAddressBarShadowView.shadowColor = NSColor.shadowPrimary
+            inactiveAddressBarShadowView.shadowColor = NSColor(resource: .shadowPrimary)
             inactiveAddressBarShadowView.shadowOpacity = 1
             inactiveAddressBarShadowView.shadowOffset = CGSize(width: 0, height: 0)
             inactiveAddressBarShadowView.shadowRadius = 3
@@ -1228,7 +1228,7 @@ final class AddressBarViewController: NSViewController {
                 shadowView.shadowColor = colorsProvider.addressBarShadowColor
             } else {
                 shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-                shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
+                shadowView.shadowColor = isSuggestionsWindowVisible ? NSColor(resource: .suggestionsShadow) : .clear
             }
         }
 
@@ -1313,7 +1313,7 @@ final class AddressBarViewController: NSViewController {
             if shouldShowActiveState {
                 if isToggleFocused {
                     activeBackgroundView.borderWidth = 1.0
-                    activeBackgroundView.borderColor = .addressBarBorder
+                    activeBackgroundView.borderColor = NSColor(resource: .addressBarBorder)
                 } else {
                     activeBackgroundView.borderWidth = 2.0
                     activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
@@ -1323,7 +1323,7 @@ final class AddressBarViewController: NSViewController {
 
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
-                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+                activeOuterBorderView.backgroundColor = isBurner ? NSColor(resource: .burnerAccent).withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
 
                 if !themeManager.isAppRebranded {
                     addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
@@ -1945,7 +1945,7 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
         if let tabFavicon = tabViewModel?.tab.favicon {
             favicon = tabFavicon
         } else {
-            favicon = .web
+            favicon = NSImage(resource: .web)
         }
 
         session.draggingFormation = .none

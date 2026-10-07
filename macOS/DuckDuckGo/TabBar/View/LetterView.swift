@@ -73,7 +73,7 @@ final class LetterView: NSView {
 
     private let placeholderView: NSImageView = {
         let imageView = NSImageView()
-        imageView.image = .web
+        imageView.image = NSImage(resource: .web)
         imageView.imageScaling = .scaleProportionallyUpOrDown
         return imageView
     }()

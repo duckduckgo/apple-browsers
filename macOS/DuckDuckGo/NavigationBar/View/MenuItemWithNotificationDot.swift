@@ -37,17 +37,17 @@ struct MenuItemWithNotificationDot: View {
             HStack(spacing: 0) {
                 Image(nsImage: leftImage)
                     .resizable()
-                    .foregroundColor(isHovered ? .white : .blackWhite100)
+                    .foregroundColor(isHovered ? .white : Color(.blackWhite100))
                     .frame(width: 12, height: 12)
                     .padding(.trailing, 6)
                     .padding(.leading, 16)
 
                 Text(title)
-                    .foregroundColor(isHovered ? .white : .blackWhite100.opacity(0.9))
+                    .foregroundColor(isHovered ? .white : Color(.blackWhite100).opacity(0.9))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Circle()
-                    .fill(isHovered ? .white : .updateIndicator)
+                    .fill(isHovered ? .white : Color(.updateIndicator))
                     .frame(width: 7, height: 7)
                     .padding(.trailing, 14)
             }

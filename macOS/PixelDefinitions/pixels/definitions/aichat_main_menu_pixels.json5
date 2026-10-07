@@ -96,5 +96,19 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_application-menu-app-clicked": {
+        "description": "Fired when user opens a new Duck.ai chat from the more options menu",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_application-menu-file-clicked": {
+        "description": "Fired when user opens a new Duck.ai chat from File > New Duck.ai Chat in the main menu",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

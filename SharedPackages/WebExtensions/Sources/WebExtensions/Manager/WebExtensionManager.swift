@@ -81,6 +81,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let storageProvider: WebExtensionStorageProviding
     public let loader: WebExtensionLoading
     public let permissionController: WebExtensionPermissionController?
+    public var chromeWebStore: ChromeWebStoreManaging?
     public let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening
 
@@ -126,6 +127,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
+    /// Receives the API compatibility reports of extension pages.
+    private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
@@ -169,6 +173,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
+
+        // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
+        // reports which unsupported APIs the extension touches, for the API compatibility log.
+        controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
+                                                                                name: WebExtensionAPICompatibilityScript.messageHandlerName)
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -192,6 +202,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        apiCompatibilityHandler.resolveExtension = { [weak self] url in
+            guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }
+            return (WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                    WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version))
+        }
 
         if let scriptletConfiguration {
             let coordinator = WebExtensionScriptletCoordinator(
@@ -255,6 +271,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    // swiftlint:disable:next cyclomatic_complexity
     public func installExtension(from sourceURL: URL,
                                  storeIdentity: WebExtensionStoreIdentity?,
                                  replacing oldIdentifier: String? = nil) async throws {
@@ -270,7 +287,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
-        var embeddedType = metadata.type
+        var embeddedType = storeIdentity == nil ? metadata.type : nil
 
         if embeddedType != nil, let permissionController {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
@@ -340,13 +357,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         notifyUpdate()
+        if let storeIdentity, storeIdentity.store == .chromeWebStore {
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
+                                            userInfo: ["extensionId": storeIdentity.id])
+        }
     }
 
     @MainActor
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
-        let embeddedType = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
+        let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
+        let embeddedType = installedExtension?.embeddedType
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -386,6 +408,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
         pixelFiring.fire(.uninstalled)
         notifyUpdate()
+        if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
+                                            userInfo: ["extensionId": storeIdentity.id])
+        }
     }
 
     @MainActor
@@ -755,7 +781,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
-        contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
+        contexts.first { Self.url(url, isWithin: $0.baseURL) }
+    }
+
+    /// Hosts are case-insensitive, and a security origin's host does not always keep the case the
+    /// extension's base URL was created with, so the prefix is compared without regard to case.
+    static func url(_ url: URL, isWithin baseURL: URL) -> Bool {
+        url.absoluteString.range(of: baseURL.absoluteString, options: [.anchored, .caseInsensitive]) != nil
     }
 
     public func context(for identifier: String) -> WKWebExtensionContext? {
@@ -795,6 +827,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 }
 
 public extension Notification.Name {
+
+    /// Posted after successful installation or removal and the corresponding installation-state update.
+    /// `userInfo["extensionId"]` contains the Chrome Web Store ID, not the local installation UUID.
+    static let chromeWebStoreExtensionChanged = Notification.Name("chromeWebStoreExtensionChanged")
 
     /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
     ///

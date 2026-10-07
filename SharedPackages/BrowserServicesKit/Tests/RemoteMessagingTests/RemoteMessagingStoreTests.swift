@@ -1006,6 +1006,31 @@ class RemoteMessagingStoreTests: XCTestCase {
         }.count, 1)
     }
 
+    func testWhenRecordRemoteMessageImpressionConcurrentlyAtCapThenOnlyOneIsRecorded() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "impression-cap-race"
+            message.status = NSNumber(value: 0)
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"impression-cap-race","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":1}}
+              """
+            try context.save()
+        }
+
+        async let firstResult = store.recordRemoteMessageImpression(withID: "impression-cap-race")
+        async let secondResult = store.recordRemoteMessageImpression(withID: "impression-cap-race")
+        let results = await [firstResult, secondResult]
+
+        XCTAssertEqual(results.filter { if case .recorded = $0 { return true }; return false }.count, 1)
+        XCTAssertEqual(results.filter { $0 == .notRecorded }.count, 1)
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", "impression-cap-race")
+            XCTAssertEqual(try? context.fetch(fetchRequest).first?.impressionCount, 1)
+        }
+    }
+
     func testWhenRecordRemoteMessageImpressionCannotFindMessageThenItIsNotRecorded() async {
         let result = await store.recordRemoteMessageImpression(withID: "missing")
 

@@ -83,11 +83,11 @@ final class FindInPageViewController: NSViewController {
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.alignment = .center
-        button.contentTintColor = .button
+        button.contentTintColor = NSColor(resource: .button)
         // `awakeFromNib` captures this for the nib path; there is no nib here.
         button.normalTintColor = button.contentTintColor
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         button.cornerRadius = Constants.buttonCornerRadius
         button.target = target
         button.action = action
@@ -101,10 +101,10 @@ final class FindInPageViewController: NSViewController {
 
         // `findInPageNext:`/`findInPagePrevious:` were wired to the First Responder in the storyboard,
         // so they travel the responder chain rather than targeting this controller directly.
-        closeButton = makeImageButton(image: .closeLarge, target: self, action: #selector(findInPageDone))
-        previousButton = makeImageButton(image: .findPrevious, target: nil, action: #selector(findInPagePrevious))
+        closeButton = makeImageButton(image: NSImage(resource: .closeLarge), target: self, action: #selector(findInPageDone))
+        previousButton = makeImageButton(image: NSImage(resource: .findPrevious), target: nil, action: #selector(findInPagePrevious))
         previousButton.tag = 1
-        nextButton = makeImageButton(image: .findNext, target: nil, action: #selector(findInPageNext))
+        nextButton = makeImageButton(image: NSImage(resource: .findNext), target: nil, action: #selector(findInPageNext))
         nextButton.tag = 2
 
         focusRingView = FocusRingView(frame: .zero)
@@ -115,11 +115,11 @@ final class FindInPageViewController: NSViewController {
         searchImageButton.setButtonType(.momentaryPushIn)
         searchImageButton.isBordered = false
         searchImageButton.bezelStyle = .shadowlessSquare
-        searchImageButton.image = .findSearch
+        searchImageButton.image = NSImage(resource: .findSearch)
         searchImageButton.imagePosition = .imageOnly
         searchImageButton.imageScaling = .scaleProportionallyUpOrDown
         searchImageButton.alignment = .center
-        searchImageButton.contentTintColor = .button
+        searchImageButton.contentTintColor = NSColor(resource: .button)
 
         textField = NSTextField(frame: .zero)
         textField.translatesAutoresizingMaskIntoConstraints = false

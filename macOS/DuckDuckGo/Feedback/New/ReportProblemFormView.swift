@@ -222,7 +222,7 @@ struct ProblemCategoriesView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 6)
-                .stroke(Color.divider, lineWidth: 1)
+                .stroke(Color(.divider), lineWidth: 1)
         )
         .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 24)
@@ -282,7 +282,7 @@ struct ProblemCategoryView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(isHovered ? Color.controlsFillPrimary : Color.clear)
+        .background(isHovered ? Color(.controlsFillPrimary) : Color.clear)
         .if(isTopCategory) { view in
             view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.topLeft, .topRight])
         }
@@ -296,7 +296,7 @@ struct ProblemCategoryView: View {
 
         if !isLastCategory {
             Rectangle()
-                .fill(shouldShowDivider ? Color.divider : Color.clear)
+                .fill(shouldShowDivider ? Color(.divider) : Color.clear)
                 .frame(height: 1)
                 .padding(.horizontal, 8)
         }
@@ -514,7 +514,7 @@ extension View {
                             VStack {
                                 HStack {
                                     Text(UserText.reportProblemFormPlaceholder)
-                                        .systemLabel(color: .textTertiary)
+                                        .systemLabel(color: Color(.textTertiary))
                                     Spacer()
                                 }
                                 Spacer()

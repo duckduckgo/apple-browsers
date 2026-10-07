@@ -1034,6 +1034,7 @@ extension MainViewController {
         }
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.cancelPendingAppOpenKeyboard()
             self.recordNewTabPageSessionAction { $0.dismissKeyboard() }
             coordinator.dismissOmnibarKeyboard()
         }
@@ -1594,11 +1595,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         })
     }
 
+    /// Opens the chat in a new tab, so the current one stays reachable.
     func aiChatTabChatHeaderDidTapNewChat() {
+        guard let tab = currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        unifiedToggleInputCoordinator?.startNewChat()
-        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
-        currentTab?.submitStartChatAction()
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {

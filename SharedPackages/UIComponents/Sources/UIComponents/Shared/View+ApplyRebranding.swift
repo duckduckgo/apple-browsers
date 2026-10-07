@@ -1,5 +1,5 @@
 //
-//  RebrandedDesignSystem.swift
+//  View+ApplyRebranding.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,30 +18,16 @@
 
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import SwiftUI
 
-package enum RebrandedDesignSystem {
+public extension View {
 
-    package static func force() {
+    func applyRebranding() -> Self {
         AppRebrand.isAppRebranded = { true }
         DesignSystemRebrand.isAppRebranded = { true }
         #if os(iOS)
         DesignSystemPalette.current = .rebranded
         #endif
-    }
-
-    package static func perform(_ body: () -> Void) {
-        let previousIconsRebranded = AppRebrand.isAppRebranded
-        let previousColorsRebranded = DesignSystemRebrand.isAppRebranded
-        let previousPalette = DesignSystemPalette.current
-
-        force()
-
-        defer {
-            AppRebrand.isAppRebranded = previousIconsRebranded
-            DesignSystemRebrand.isAppRebranded = previousColorsRebranded
-            DesignSystemPalette.current = previousPalette
-        }
-
-        body()
+        return self
     }
 }

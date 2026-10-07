@@ -78,8 +78,7 @@ public struct PreviewSnapshots<State> {
     }
 
     public var previews: some View {
-        RebrandedDesignSystem.force()
-        return ForEach(Array(previewConfigurations.enumerated()), id: \.offset) { _, configuration in
+        ForEach(Array(previewConfigurations.enumerated()), id: \.offset) { _, configuration in
             preview(for: configuration)
         }
     }

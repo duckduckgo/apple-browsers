@@ -18,7 +18,6 @@
 
 #if os(macOS)
 import AppKit
-import PreviewSnapshots
 import SnapshotTesting
 import SwiftUI
 import XCTest
@@ -41,28 +40,26 @@ public func assertImageSnapshot(
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
 
-    RebrandedDesignSystem.perform {
-        for configuration in configurations {
-            view.appearance = configuration.appearance.nsAppearance
-            let snapshotSize = resolvedSize(for: view, configuration: configuration, size: size)
+    for configuration in configurations {
+        view.appearance = configuration.appearance.nsAppearance
+        let snapshotSize = resolvedSize(for: view, configuration: configuration, size: size)
 
-            withFixedBackingScale(view, size: snapshotSize) {
-                assertSnapshot(
-                    of: view,
-                    as: .image(
-                        perceptualPrecision: perceptualPrecision,
-                        size: snapshotSize
-                    ),
-                    named: configuration.name,
-                    record: SnapshotRecordMode.snapshotTestingRecord(record: record),
-                    snapshotDirectory: snapshotReferenceDirectory(file: file),
-                    fileID: fileID,
-                    file: file,
-                    testName: testName,
-                    line: line,
-                    column: column
-                )
-            }
+        withFixedBackingScale(view, size: snapshotSize) {
+            assertSnapshot(
+                of: view,
+                as: .image(
+                    perceptualPrecision: perceptualPrecision,
+                    size: snapshotSize
+                ),
+                named: configuration.name,
+                record: SnapshotRecordMode.snapshotTestingRecord(record: record),
+                snapshotDirectory: snapshotReferenceDirectory(file: file),
+                fileID: fileID,
+                file: file,
+                testName: testName,
+                line: line,
+                column: column
+            )
         }
     }
 }
@@ -111,25 +108,23 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
 
-    RebrandedDesignSystem.perform {
-        for configuration in configurations {
-            let rootView = view.environment(\.colorScheme, configuration.appearance.colorScheme)
-            let viewController = NSHostingController(rootView: rootView)
-            viewController.view.appearance = configuration.appearance.nsAppearance
+    for configuration in configurations {
+        let rootView = view.environment(\.colorScheme, configuration.appearance.colorScheme)
+        let viewController = NSHostingController(rootView: rootView)
+        viewController.view.appearance = configuration.appearance.nsAppearance
 
-            assertSwiftUIImageSnapshot(
-                of: viewController,
-                configuration: configuration,
-                size: size,
-                record: record,
-                perceptualPrecision: perceptualPrecision,
-                fileID: fileID,
-                file: file,
-                testName: testName,
-                line: line,
-                column: column
-            )
-        }
+        assertSwiftUIImageSnapshot(
+            of: viewController,
+            configuration: configuration,
+            size: size,
+            record: record,
+            perceptualPrecision: perceptualPrecision,
+            fileID: fileID,
+            file: file,
+            testName: testName,
+            line: line,
+            column: column
+        )
     }
 }
 

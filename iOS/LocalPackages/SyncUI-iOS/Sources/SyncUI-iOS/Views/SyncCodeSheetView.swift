@@ -204,6 +204,7 @@ struct SyncCodeSheetView_Previews: PreviewProvider {
             SyncCodeSheetView(
                 model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
             )
+            .applyRebranding()
         }
     )
 }

@@ -121,6 +121,7 @@ struct ScanQRCodeView_Previews: PreviewProvider {
                 )
             }
             .navigationViewStyle(.stack)
+            .applyRebranding()
         }
     )
 }

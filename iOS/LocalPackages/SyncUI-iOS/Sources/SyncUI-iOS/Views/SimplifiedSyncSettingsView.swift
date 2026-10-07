@@ -637,6 +637,7 @@ struct SimplifiedSyncSettingsView_Previews: PreviewProvider {
                     .navigationTitle(UserText.syncTitle)
                     .navigationBarTitleDisplayMode(.inline)
             }
+            .applyRebranding()
         }
     )
 

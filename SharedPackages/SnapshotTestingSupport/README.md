@@ -176,7 +176,7 @@ xcodebuild test ... SKIP_SNAPSHOT_TESTS=1
 - Function names that start with `test` keep `#function`-derived snapshot paths consistent with the legacy XCTest convention.
 - One `@Suite` per view test file; one `@Test` per view configuration.
 - `*_PreviewMocks.swift` under `#if DEBUG` for preview-only mocks.
-- Snapshots and `PreviewSnapshots` previews always render the **rebranded** design (iOS and macOS): every image assertion and `PreviewSnapshots.previews` force the rebrand flags (plus the rebranded palette on iOS), so previews don't need a `RebrandedPreview` wrapper.
+- This package doesn't know about the design system. To render the **rebranded** design, apply `.applyRebranding()` (from `UIComponents`) inside the `PreviewSnapshots` closure, so both previews and snapshots pick it up.
 
 ## Examples in the repo
 

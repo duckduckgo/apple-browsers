@@ -47,6 +47,7 @@ final class PrivacyDashboardViewController: NSViewController {
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
     private let networkSignalsProvider: NetworkSignalsProviding
+    private let memoryPressureProvider: MemoryPressureProviding
     private let featureFlagger: FeatureFlagger
 
     private let scriptStyleProvider: ScriptStyleProviding
@@ -95,6 +96,7 @@ final class PrivacyDashboardViewController: NSViewController {
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          networkSignalsProvider: NetworkSignalsProviding = NSApp.delegateTyped.networkSignalsProvider,
+         memoryPressureProvider: MemoryPressureProviding = NSApp.delegateTyped.memoryPressureProvider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
@@ -110,6 +112,7 @@ final class PrivacyDashboardViewController: NSViewController {
         self.scriptStyleProvider = ScriptStyleProvider(themeManager: themeManager)
         self.contentBlocking = contentBlocking
         self.networkSignalsProvider = networkSignalsProvider
+        self.memoryPressureProvider = memoryPressureProvider
         self.featureFlagger = featureFlagger
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
@@ -482,7 +485,8 @@ extension PrivacyDashboardViewController {
                                                loadedWebExtensions: loadedWebExtensions,
                                                adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                networkSignals: networkSignals,
-                                               dnsResolution: dnsResolution)
+                                               dnsResolution: dnsResolution,
+                                               memoryPressure: memoryPressureProvider.currentLevel)
         return websiteBreakage
     }
 

@@ -2928,7 +2928,8 @@ class MainViewController: UIViewController {
               !isNewTabPageKeyboardBlockedByDialog,
               !isNewTabPageKeyboardHeldForOnboarding,
               !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
-        enterSearchOnAppOpen()
+        // A landing restores focus even if a hardware keyboard left the previous input session inactive.
+        showKeyboardOnAppOpenIfAllowed { _ in }
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {

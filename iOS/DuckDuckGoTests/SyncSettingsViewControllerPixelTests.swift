@@ -29,6 +29,7 @@ import FoundationExtensions
 import SyncUI_iOS
 import SecureStorage
 @_spi(Testing) import PixelKit
+import AVFoundation
 
 @Suite("Sync Settings scan-flow pixels", .serialized)
 @MainActor
@@ -41,6 +42,7 @@ final class SyncSettingsViewControllerPixelTests {
     private let syncPausedStateManager: CapturingSyncPausedStateManager
     private let syncAutoRestoreHandler: MockSyncAutoRestoreHandler
     private let pixelKitMock = PixelKitMock()
+    private let cameraAuthorization = MockSyncCameraAuthorization()
 
     init() throws {
         let bundle = DDGSync.bundle
@@ -71,6 +73,7 @@ final class SyncSettingsViewControllerPixelTests {
     @available(iOS 16, macOS 13, *)
     @Test("scanQRCodeScreenShown fires the scan-QR screen pixel", .timeLimit(.minutes(1)))
     func scanQRCodeScreenShownFiresScanQRScreenPixel() {
+        cameraAuthorization.authorizationStatus = .authorized
         let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
 
         vc.scanQRCodeScreenShown()
@@ -81,9 +84,121 @@ final class SyncSettingsViewControllerPixelTests {
                 "source": "test_source",
                 "my_kind": "ddg",
                 "flow_version": "v1",
-                "ui_version": "v2"
+                "ui_version": "v2",
+                "camera_permission": "authorized"
             ]
         })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("scanQRCodeScreenShown reports the camera permission",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (AVAuthorizationStatus.authorized, "authorized"),
+            (.notDetermined, "not_determined"),
+            (.denied, "denied"),
+            (.restricted, "denied")
+          ])
+    func scanQRCodeScreenShownReportsCameraPermission(status: AVAuthorizationStatus, expectedValue: String) {
+        cameraAuthorization.authorizationStatus = status
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
+
+        vc.scanQRCodeScreenShown()
+
+        let call = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.syncSetupScanQRScreenShown.name }
+        #expect(call?.additionalParameters?["camera_permission"] == expectedValue)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Granting the camera prompt fires the granted result and authorises the scanner", .timeLimit(.minutes(1)))
+    func grantingCameraPromptFiresGrantedResult() async {
+        cameraAuthorization.authorizationStatus = .notDetermined
+        cameraAuthorization.requestAccessResult = true
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
+        let model = makeScanModel()
+
+        await vc.checkCameraPermission(model: model)
+
+        #expect(cameraAuthorization.requestAccessCallCount == 1)
+        #expect(model.videoPermission == .authorised)
+        #expect(promptResultCalls().map(\.pixel.parameters) == [["result": "granted"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Denying the camera prompt fires the denied result and shows the denied state", .timeLimit(.minutes(1)))
+    func denyingCameraPromptFiresDeniedResult() async {
+        cameraAuthorization.authorizationStatus = .notDetermined
+        cameraAuthorization.requestAccessResult = false
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
+        let model = makeScanModel()
+
+        await vc.checkCameraPermission(model: model)
+
+        #expect(cameraAuthorization.requestAccessCallCount == 1)
+        #expect(model.videoPermission == .denied)
+        #expect(promptResultCalls().map(\.pixel.parameters) == [["result": "denied"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A determined camera permission skips the prompt and its pixel",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (AVAuthorizationStatus.authorized, ScanOrPasteCodeViewModel.VideoPermission.authorised),
+            (.denied, .denied),
+            (.restricted, .denied)
+          ])
+    func determinedCameraPermissionSkipsPrompt(status: AVAuthorizationStatus,
+                                               expectedPermission: ScanOrPasteCodeViewModel.VideoPermission) async {
+        cameraAuthorization.authorizationStatus = status
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
+        let model = makeScanModel()
+
+        await vc.checkCameraPermission(model: model)
+
+        #expect(cameraAuthorization.requestAccessCallCount == 0)
+        #expect(model.videoPermission == expectedPermission)
+        #expect(promptResultCalls().isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A scanned code reports the camera permission from when the scan screen first opened", .timeLimit(.minutes(1)))
+    func scannedCodeReportsCameraPermissionFromFirstScanScreen() {
+        cameraAuthorization.authorizationStatus = .notDetermined
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.scanQRCodeScreenShown()
+        cameraAuthorization.authorizationStatus = .authorized
+        vc.scanQRCodeScreenShown()
+        vc.sendCodeRecognisedPixel(setupSource: .connect, codeSource: .qrCode, codeVersion: .v2)
+
+        let call = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.syncSetupBarcodeScannerSuccess.name }
+        #expect(call?.additionalParameters?["camera_permission"] == "not_determined")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A scanned code omits the camera permission when the scan screen wasn't shown", .timeLimit(.minutes(1)))
+    func scannedCodeOmitsCameraPermissionWithoutScanScreen() {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.sendCodeRecognisedPixel(setupSource: .connect, codeSource: .qrCode, codeVersion: .v2)
+
+        let call = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.syncSetupBarcodeScannerSuccess.name }
+        #expect(call != nil)
+        #expect(call?.additionalParameters?["camera_permission"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A pasted code doesn't report the camera permission", .timeLimit(.minutes(1)))
+    func pastedCodeOmitsCameraPermission() {
+        cameraAuthorization.authorizationStatus = .authorized
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.scanQRCodeScreenShown()
+        vc.sendCodeRecognisedPixel(setupSource: .connect, codeSource: .pastedCode, codeVersion: .v2)
+
+        let call = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.syncSetupManualCodeEnteredSuccess.name }
+        #expect(call != nil)
+        #expect(call?.additionalParameters?["camera_permission"] == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -196,7 +311,28 @@ final class SyncSettingsViewControllerPixelTests {
             source: source,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFeatureFlags),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            pixelFiring: pixelKitMock
+            pixelFiring: pixelKitMock,
+            cameraAuthorization: cameraAuthorization
         )
+    }
+
+    private func makeScanModel() -> ScanOrPasteCodeViewModel {
+        ScanOrPasteCodeViewModel(codeForDisplayOrPasting: "code", qrCodeString: "code", source: .connect)
+    }
+
+    private func promptResultCalls() -> [ExpectedFireCall] {
+        pixelKitMock.actualFireCalls.filter { $0.pixel.name == SyncCameraPermissionPixel.promptResult(granted: true).name }
+    }
+}
+
+private final class MockSyncCameraAuthorization: SyncCameraAuthorizing {
+    var authorizationStatus: AVAuthorizationStatus = .notDetermined
+    var requestAccessResult = false
+    private(set) var requestAccessCallCount = 0
+
+    func requestAccess() async -> Bool {
+        requestAccessCallCount += 1
+        authorizationStatus = requestAccessResult ? .authorized : .denied
+        return requestAccessResult
     }
 }

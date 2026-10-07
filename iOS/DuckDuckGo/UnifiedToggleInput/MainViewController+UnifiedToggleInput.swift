@@ -1340,6 +1340,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.activateFromOmnibar(prefilledText: currentText,
                                         inputMode: inputMode,
                                         cardPosition: position,
+                                        allowsInactiveFocus: true,
                                         isFocusRequestValid: isRequestValid,
                                         onFocus: completion)
         return .intercept

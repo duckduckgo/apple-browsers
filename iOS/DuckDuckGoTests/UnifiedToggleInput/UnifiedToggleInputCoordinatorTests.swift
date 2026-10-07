@@ -1310,6 +1310,65 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
+    func testWhenAutomaticLandingBecomesInactiveBeforeFocusThenInputStillFocuses() {
+        for isFloatingUIEnabled in [false, true] {
+            var scheduledFocus: [() -> Void] = []
+            sut = makeAppOpenCoordinator(isFloatingUIEnabled: isFloatingUIEnabled, schedule: { scheduledFocus.append($0) })
+            showAppOpenInput()
+            var completions: [Bool] = []
+            sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                    allowsInactiveFocus: true, onFocus: { completions.append($0) })
+            seedAppOpenDraftAndTool()
+            sut.updateOmnibarInputVisibility(false)
+            XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+
+            scheduledFocus.removeFirst()()
+
+            XCTAssertEqual(completions, [true])
+            XCTAssertEqual(sut.displayState, .omnibar(.active))
+            XCTAssertTrue(sut.viewController.isInputFirstResponder)
+            assertAppOpenDraftAndToolArePreserved()
+        }
+    }
+
+    func testWhenAutomaticLandingIsCancelledBeforeFocusThenInputStaysInactive() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var isRequestValid = true
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                allowsInactiveFocus: true,
+                                isFocusRequestValid: { isRequestValid }, onFocus: { completions.append($0) })
+        sut.updateOmnibarInputVisibility(false)
+        isRequestValid = false
+
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenAutomaticLandingSessionEndsBeforeFocusThenInputStaysHidden() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                allowsInactiveFocus: true, onFocus: { completions.append($0) })
+        sut.updateOmnibarInputVisibility(false)
+        sut.completeOmnibarDeactivation()
+        XCTAssertEqual(completions, [false])
+
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
     func testWhenOmnibarSessionEndsBeforeQueuedFocusThenPendingCompletionsFail() {
         var scheduledFocus: [() -> Void] = []
         sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })

@@ -31,7 +31,7 @@ import Foundation
 /// before that) sets a one-shot token per media type here, and WebKit's following status check of that type uses it up:
 /// - `authorizeNextStatusCheck`: the check reports `.authorized`, so WebKit reaches the delegate and the website prompt.
 /// - `observeNextStatusCheck` (WebKit before Safari 26, without website prompts): the real status is passed to a callback.
-/// Tokens expire after 1s and are dropped by `resetAuthorizationStatusOverrides(owner:)` once the request reaches the
+/// Tokens expire after 3s and are dropped by `resetAuthorizationStatusOverrides(owner:)` once the request reaches the
 /// delegate, so app reads outside that window get the real macOS status.
 extension AVCaptureDevice {
 

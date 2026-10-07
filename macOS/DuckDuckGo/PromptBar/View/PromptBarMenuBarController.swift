@@ -76,12 +76,29 @@ final class PromptBarMenuBarController: NSObject {
     }
 
     // ponytail: skipped on macOS 12 and when the item has no screen (e.g. hidden behind the notch); no retry.
-    func showTip(_ text: AttributedString, onLinkClicked: @escaping () -> Void) {
+    func showTip(shortcut: PromptBarShortcut, onLinkClicked: @escaping () -> Void) {
         guard #available(macOS 13, *),
               let button = statusItem?.button, button.window?.screen != nil else { return }
 
+        let colorScheme: ColorScheme = button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+        let keyCaps = ImageRenderer(content: HStack(spacing: 3) {
+            ForEach(Array((shortcut.modifierSymbols + [shortcut.keyDisplayString]).enumerated()), id: \.offset) { _, label in
+                PromptBarShortcutRecorderView.KeyCapChip(label: label, compact: true)
+            }
+        }
+        .padding(1)
+        .environment(\.colorScheme, colorScheme))
+        keyCaps.scale = button.window?.backingScaleFactor ?? 2
+        guard let keyCapsImage = keyCaps.nsImage else { return }
+        keyCapsImage.accessibilityDescription = shortcut.displayString
+
+        let tip = UserText.duckAiLauncherMenuBarTip
+        // Offset centres the caps on the line instead of sitting them on the baseline.
+        let text = Text(tip.beforeShortcut) + Text(Image(nsImage: keyCapsImage)).baselineOffset(-4) + Text(tip.afterShortcut)
+
         let popover = NSPopover()
-        let content = Text(text)
+        let content = text
+            .font(.system(size: 13))
             .frame(width: 260, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
             .padding(12)

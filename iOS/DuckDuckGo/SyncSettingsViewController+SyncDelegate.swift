@@ -619,7 +619,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
-            source: CodeCollectionSource(syncSetupSource: source))
+            source: CodeCollectionSource(syncSetupSource: source),
+            requestsCameraPermissionOnAppear: featureFlagger.isFeatureOn(.syncImprovedPairingFlow))
         model.delegate = self
         scanCodeViewModel = model
 

@@ -85,10 +85,23 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
 
     var showQRCodeModel: ShowQRCodeViewModel
     private let source: CodeCollectionSource
+    let requestsCameraPermissionOnAppear: Bool
 
-    public init(codeForDisplayOrPasting: String, qrCodeString: String, source: CodeCollectionSource) {
+    var canPlayIntroAnimation: Bool {
+        !requestsCameraPermissionOnAppear || videoPermission == .authorised
+    }
+
+    var showsScanInstructions: Bool {
+        !requestsCameraPermissionOnAppear || videoPermission != .denied
+    }
+
+    public init(codeForDisplayOrPasting: String,
+                qrCodeString: String,
+                source: CodeCollectionSource,
+                requestsCameraPermissionOnAppear: Bool = false) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
         self.source = source
+        self.requestsCameraPermissionOnAppear = requestsCameraPermissionOnAppear
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -122,6 +135,20 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func introAnimationCompleted() {
+        guard !requestsCameraPermissionOnAppear else { return }
+        delegate?.requestCameraPermission(for: self)
+    }
+
+    func scanTabAppeared() {
+        requestCameraPermissionUpFront()
+    }
+
+    func appWillEnterForeground() {
+        requestCameraPermissionUpFront()
+    }
+
+    private func requestCameraPermissionUpFront() {
+        guard requestsCameraPermissionOnAppear else { return }
         delegate?.requestCameraPermission(for: self)
     }
 

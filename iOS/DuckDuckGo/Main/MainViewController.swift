@@ -2948,13 +2948,13 @@ class MainViewController: UIViewController {
     }
 
     /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because
-    /// focus is decided a moment later, so the visit is told the keyboard came up.
+    /// focus is decided a moment later, so the visit is told the keyboard came up once an input accepts focus.
     func enterSearchOnAppOpen() {
         guard presentedViewController == nil else { return }
-        if isNewTabPageVisible, isAppOpenKeyboardWindowVisible {
+        enterSearch()
+        if isNewTabPageVisible, isAutomaticFocusAccepted {
             newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
         }
-        enterSearch()
     }
 
     private func rememberNewTabPageInputFocusForTabSwitch() {

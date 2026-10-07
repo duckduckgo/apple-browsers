@@ -8336,6 +8336,9 @@ extension MainViewController: FireExecutorDelegate {
             return
         case .autoClearOnLaunch:
             autoClearInProgress = false
+            if fireRequest.options.contains(.tabs), hasLoadedInitialView, autoClearShouldRefreshUIAfterClear {
+                refreshUIAfterClear()
+            }
             autoClearShouldRefreshUIAfterClear = true
         case .autoClearOnForeground:
             autoClearInProgress = false

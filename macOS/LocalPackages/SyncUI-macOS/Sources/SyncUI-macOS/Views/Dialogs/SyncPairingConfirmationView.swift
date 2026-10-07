@@ -1,5 +1,5 @@
 //
-//  SyncPairingConfirmationViewV2.swift
+//  SyncPairingConfirmationView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
-public struct SyncPairingConfirmationViewV2: View {
+public struct SyncPairingConfirmationView: View {
 
     private let title: String
     private let message: String
@@ -49,7 +49,7 @@ public struct SyncPairingConfirmationViewV2: View {
     }
 
     public var body: some View {
-        SyncDialogV2(spacing: 10.0) {
+        SyncSetupDialog(spacing: 10.0) {
             VStack(spacing: 20) {
                 Image(nsImage: DesignSystemImages.Color.Size32.duckDuckGo)
                     .resizable()
@@ -90,7 +90,7 @@ public struct SyncPairingConfirmationViewV2: View {
 
 #if DEBUG
 #Preview("Default") {
-    SyncPairingConfirmationViewV2(
+    SyncPairingConfirmationView(
         title: "Sync new device?",
         message: "\"Dax’s iPhone\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
         cancelButtonTitle: "Cancel",
@@ -101,7 +101,7 @@ public struct SyncPairingConfirmationViewV2: View {
 }
 
 #Preview("Long Device Name") {
-    SyncPairingConfirmationViewV2(
+    SyncPairingConfirmationView(
         title: "Sync new device?",
         message: "\"Dax’s Very Long MacBook Pro Device Name\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
         cancelButtonTitle: "Cancel",

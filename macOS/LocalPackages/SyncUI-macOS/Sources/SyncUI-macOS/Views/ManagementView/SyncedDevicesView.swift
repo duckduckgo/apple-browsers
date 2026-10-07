@@ -1,5 +1,5 @@
 //
-//  SyncedDevicesViewV2.swift
+//  SyncedDevicesView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -27,7 +27,7 @@ import PreviewSnapshots
 import UIComponents
 #endif
 
-struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
+struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     @EnvironmentObject var model: ViewModel
     @State private var isSyncWithAnotherDevicePending = false
@@ -38,7 +38,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            SyncedDevicesListV2(devices: model.devices,
+            SyncedDevicesList(devices: model.devices,
                                 presentDeviceDetails: model.presentDeviceDetails)
             .onReceive(timer) { _ in
                 guard isVisible else { return }
@@ -51,7 +51,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
                 isVisible = false
             }
 
-            SyncedDevicesSeparatorV2()
+            SyncedDevicesSeparator()
 
             Button {
                 isSyncWithAnotherDevicePending = true
@@ -67,7 +67,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
                     Text(UserText.beginSyncButtonV2)
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable && !isSyncWithAnotherDevicePending))
+            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable && !isSyncWithAnotherDevicePending))
             .disabled(!model.isConnectingDevicesAvailable || isSyncWithAnotherDevicePending)
             .padding(8)
         }
@@ -76,7 +76,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
 }
 
 #if DEBUG
-struct SyncedDevicesViewV2_Previews: PreviewProvider {
+struct SyncedDevicesView_Previews: PreviewProvider {
     typealias State = PreviewManagementViewModel
 
     static var previews: some View {
@@ -90,7 +90,7 @@ struct SyncedDevicesViewV2_Previews: PreviewProvider {
             .init(name: "Loading devices", state: .enabledLoadingDevices)
         ],
         configure: { model in
-            SyncedDevicesViewV2<PreviewManagementViewModel>()
+            SyncedDevicesView<PreviewManagementViewModel>()
                 .environmentObject(model)
                 .frame(width: 512)
                 .padding()

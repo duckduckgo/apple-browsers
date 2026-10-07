@@ -28,7 +28,7 @@ struct SyncThisDeviceFallbackView: View {
     }
 
     var body: some View {
-        SyncDialogV2(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.desktopSyncNewFeature128)
                 VStack(alignment: .center, spacing: 8) {

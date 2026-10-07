@@ -31,7 +31,7 @@ struct RecoverSyncedDataView: View {
     }
 
     private var improvedBody: some View {
-        SyncDialogV2(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.clipboardSyncRecoverFeature128)
                 VStack(alignment: .center, spacing: 8) {

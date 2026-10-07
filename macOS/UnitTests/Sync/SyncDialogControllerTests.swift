@@ -768,21 +768,21 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testPresentRemoveDevice_showsRemoveDeviceV2() {
+    func testPresentRemoveDevice_showsRemoveDevice() {
         let device = SyncDevice(kind: .desktop, name: "test", id: "test")
 
         syncDialogController.presentRemoveDevice(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
     }
 
     @MainActor
-    func testPresentDeviceDetails_whenAuthenticated_showsDeviceDetailsV2() async {
+    func testPresentDeviceDetails_whenAuthenticated_showsDeviceDetails() async {
         let device = SyncDevice(kind: .current, name: "test", id: "test")
 
         await syncDialogController.presentDeviceDetails(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
     }
 
     @MainActor
@@ -792,7 +792,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.presentDeviceDetails(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
         XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
     }
 
@@ -804,7 +804,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.presentDeviceDetails(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
         XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
     }
 
@@ -815,7 +815,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.presentRemoveDevice(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
         XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
     }
 
@@ -827,7 +827,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.presentRemoveDevice(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
         XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
     }
 
@@ -858,12 +858,12 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testPresentRemoveDeviceConfirmationThenRemoveDeviceV2Shown() {
+    func testPresentRemoveDeviceConfirmationThenRemoveDeviceShown() {
         let device = SyncDevice(kind: .mobile, name: "test", id: "test")
 
         syncDialogController.presentRemoveDeviceConfirmation(device)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
     }
 
     func testRemoveDeviceConfirmed_forCurrentDevice_turnsSyncOff() async {
@@ -1494,7 +1494,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
     // MARK: - Dialog Flow Management
 
-    func testPresentDeleteAccount_whenAuthenticated_presentsDeleteAccountV2WithDevices() async {
+    func testPresentDeleteAccount_whenAuthenticated_presentsDeleteAccountWithDevices() async {
         let testDevices = [
             SyncDevice(kind: .current, name: "Work Laptop", id: "current"),
             SyncDevice(kind: .mobile, name: "Androidz", id: "mobile")
@@ -1503,7 +1503,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.presentDeleteAccount()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .deleteAccountV2(testDevices))
+        XCTAssertEqual(managementDialogModel.currentDialog, .deleteAccount(testDevices))
     }
 
     func testPresentDeleteAccount_whenAuthenticationCancelled_doesNotPresentDialogAndEndsFlow() async {
@@ -1883,7 +1883,7 @@ final class SyncDialogControllerTests: XCTestCase {
         _ = try await waitForSyncWithAnotherDeviceDialogCodes()
         managementDialogModel.currentDialog = .prepareToSync
         ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
-        let expectation = expectation(description: "V2 recovery-code success dialog presented")
+        let expectation = expectation(description: "recovery-code success dialog presented")
 
         managementDialogModel.$currentDialog
             .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
@@ -1914,7 +1914,7 @@ final class SyncDialogControllerTests: XCTestCase {
         _ = try await waitForSyncWithAnotherDeviceDialogCodes()
         managementDialogModel.currentDialog = .prepareToSync
         ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
-        let successPresented = expectation(description: "V2 recovery-code success dialog presented")
+        let successPresented = expectation(description: "recovery-code success dialog presented")
         successPresented.isInverted = true
 
         managementDialogModel.$currentDialog
@@ -2433,7 +2433,7 @@ final class SyncDialogControllerTests: XCTestCase {
     func testCancellingADialogOutsideSetup_endsTheFlowWithoutConfirming() async {
         let confirmation = StubCloseSetupConfirmation(answer: false)
         makeControllerWithCloseSetupConfirmation(confirmation)
-        managementDialogModel.currentDialog = .removeDeviceV2(SyncDevice(kind: .current, name: "Mac", id: "1"))
+        managementDialogModel.currentDialog = .removeDevice(SyncDevice(kind: .current, name: "Mac", id: "1"))
 
         await managementDialogModel.cancelPressedWithConfirmation()
 
@@ -2783,7 +2783,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
     func testRemoveDeviceConfirmed_forOtherDevice_whenSucceeds_firesRemoveDeviceConfirmedPixel() async {
         let device = SyncDevice(kind: .desktop, name: "Other Device", id: "other-id")
-        managementDialogModel.currentDialog = .removeDeviceV2(device)
+        managementDialogModel.currentDialog = .removeDevice(device)
         let expectation = expectation(description: "remove device flow ended")
         managementDialogModel.$currentDialog.sink {
             if $0 == nil {
@@ -2834,7 +2834,7 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testUpdateDeviceName_whenSucceeds_firesNameUpdatedPixel() async {
-        managementDialogModel.currentDialog = .deviceDetailsV2(SyncDevice(kind: .current, name: "Old Name", id: "test"))
+        managementDialogModel.currentDialog = .deviceDetails(SyncDevice(kind: .current, name: "Old Name", id: "test"))
         let expectation = expectation(description: "device details flow ended")
         managementDialogModel.$currentDialog.sink {
             if $0 == nil {

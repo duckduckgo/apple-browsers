@@ -31,6 +31,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import PixelKit
 
+@MainActor
 final class PermissionModelTests: XCTestCase {
 
     var permissionManagerMock: PermissionManagerMock!
@@ -85,7 +86,7 @@ final class PermissionModelTests: XCTestCase {
     }
 
     override func tearDown() {
-        AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+        AVCaptureDevice.resetAuthorizationStatusOverrides()
         AVCaptureDeviceMock.authorizationStatuses = nil
         webView = nil
         permissionManagerMock = nil
@@ -695,57 +696,61 @@ final class PermissionModelTests: XCTestCase {
                 AVCaptureDeviceMock.authorizationStatuses = [.audio: status, .video: status]
                 model.queryMediaPermission("camera")
 
+                // A camera query only overrides the video status.
+                XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), status)
                 XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), isPromptEnabled ? .authorized : status)
-                XCTAssertEqual(AVCaptureDevice.systemAuthorizationStatus(for: .video), status)
-                XCTAssertEqual(AVCaptureDevice.systemAuthorizationStatus(for: .audio), status)
                 XCTAssertEqual(model.permissions, [:])
 
-                // WebKit's second device check finishes the interception without changing the real status.
-                XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), isPromptEnabled ? .authorized : status)
+                // The override is consumed by WebKit's first check, later reads get the real status.
                 XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), status)
-                XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), status)
             }
         }
     }
 
-    func testWhenSystemAuthorizationIsReadDuringInterceptionThenItKeepsTheOriginalStatus() throws {
-        let originalStatus = AVCaptureDevice.systemAuthorizationStatus(for: .audio)
-        let interceptedStatus: AVAuthorizationStatus = originalStatus == .authorized ? .denied : .authorized
-        let swizzleID = try XCTUnwrap(AVCaptureDevice.swizzleAuthorizationStatusForMediaType { _, status in
-            status = interceptedStatus
-        })
-        defer { AVCaptureDevice.restoreAuthorizationStatusForMediaType(ifMatching: swizzleID) }
+    func testWhenUserMediaPermissionIsCheckedThenBothMediaTypesAreOverriddenUntilRequested() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied, .video: .denied]
+        model.checkUserMediaPermission(for: nil, mainFrameURL: nil) { _, _ in }
 
-        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), interceptedStatus)
-        XCTAssertEqual(AVCaptureDevice.systemAuthorizationStatus(for: .audio), originalStatus)
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), .authorized)
+        XCTAssertEqual(model.permissions, [:])
+        // The request drops the microphone token WebKit didn't use for a camera-only request.
+        model.permissions([.camera], requestedForDomain: "example.com") { (_: Bool) in }
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+
+        model.authorizationQuery?.wasDismissed = true
+        model.authorizationQuery?.cancel()
+    }
+
+    func testWhenAuthorizationStatusOverrideIsOutdatedThenItIsReset() {
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied]
+        AVCaptureDevice.authorizeNextStatusCheck(for: [.audio], owner: ObjectIdentifier(self), timestamp: .distantPast)
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
     }
 
     func testWhenMediaPermissionCallbackDoesNotOwnCurrentOverrideThenItLeavesItInstalled() throws {
         featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
         AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied]
         let model = try XCTUnwrap(self.model)
-        for hasNewerInstallation in [false, true] {
-            let otherModel = PermissionModel(permissionManager: permissionManagerMock,
-                                             geolocationService: geolocationServiceMock,
-                                             systemPermissionManager: systemPermissionManagerMock,
-                                             featureFlagger: featureFlagger)
-            model.queryMediaPermission("microphone")
-            if hasNewerInstallation {
-                AVCaptureDevice.restoreAuthorizationStatusForMediaType()
-            }
-            otherModel.queryMediaPermission("microphone")
+        let otherModel = PermissionModel(permissionManager: permissionManagerMock,
+                                         geolocationService: geolocationServiceMock,
+                                         systemPermissionManager: systemPermissionManagerMock,
+                                         featureFlagger: featureFlagger)
+        model.queryMediaPermission("microphone")
+        // A newer query from another tab takes over the process-wide override.
+        otherModel.queryMediaPermission("microphone")
 
-            let nonOwner = hasNewerInstallation ? model : otherModel
-            let owner = hasNewerInstallation ? otherModel : model
-            nonOwner.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
+        model.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .authorized)
 
-            XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .authorized)
-            owner.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
-            XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
-            for currentModel in [model, otherModel] {
-                currentModel.authorizationQuery?.wasDismissed = true
-                currentModel.authorizationQuery?.cancel()
-            }
+        otherModel.queryMediaPermission("microphone")
+        otherModel.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+
+        for currentModel in [model, otherModel] {
+            currentModel.authorizationQuery?.wasDismissed = true
+            currentModel.authorizationQuery?.cancel()
         }
     }
 
@@ -1908,7 +1913,7 @@ final class PermissionModelTests: XCTestCase {
 
 }
 
-extension PermissionModelTests: WebViewPermissionsDelegate {
+extension PermissionModelTests: @preconcurrency WebViewPermissionsDelegate {
 
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
     func webView(_ webView: WKWebView,

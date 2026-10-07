@@ -185,7 +185,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
     // MARK: - Private Media Implementation
 
     private func mediaAuthorizationState(for mediaType: AVMediaType) -> SystemPermissionAuthorizationState {
-        switch AVCaptureDevice.systemAuthorizationStatus(for: mediaType) {
+        switch AVCaptureDevice.authorizationStatus(for: mediaType) {
         case .notDetermined:
             return .notDetermined
         case .authorized:

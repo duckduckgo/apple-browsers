@@ -182,7 +182,7 @@ struct RedesignedFavoritesView: View {
                           onDragActivityChanged: { isDraggingFavorite = $0 },
                           itemSizeCacheKey: { AnyHashable($0) },
                           isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) },
-                          previewPath: { UIBezierPath(rect: $0) }) { favorite in
+                          previewPath: { UIBezierPath(ovalIn: $0) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
             ZStack(alignment: .top) {
                 Button {
@@ -224,10 +224,8 @@ struct RedesignedFavoritesView: View {
                 collapsedItemHeights[favorite.id] = height
             }
         } preview: { favorite in
-            // The native drag source owns the whole tile, including presses on its title.
-            RedesignedFavoriteTileView(title: favorite.title) {
-                RedesignedFavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
-            }
+            // Match the context-menu preview while keeping the whole tile as the drag source.
+            RedesignedFavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
         } onMove: { from, to in
             haptics.impactOccurred()
             withAnimation { model.moveFavorites(from: from, to: to) }

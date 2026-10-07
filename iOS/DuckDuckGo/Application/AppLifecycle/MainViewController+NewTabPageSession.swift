@@ -87,9 +87,11 @@ extension MainViewController {
         // being put on screen opens a visit.
         guard isNewTabPageVisible, presentedViewController == nil else { return }
 
-        // Not a burn arrival: a burn reports itself through the attach it causes.
+        // Not a burn arrival: a burn reports itself through the attach it causes. Input focus, not the
+        // observed keyboard, which a hardware keyboard hides and which can lag the background cycle.
+        let isInputFocused = omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
         startNewTabPageSessionInstrumentation(isNewTab: false,
-                                              willBeginEditing: keyboardShowing,
+                                              willBeginEditing: isInputFocused,
                                               isAfterFire: false)
     }
 

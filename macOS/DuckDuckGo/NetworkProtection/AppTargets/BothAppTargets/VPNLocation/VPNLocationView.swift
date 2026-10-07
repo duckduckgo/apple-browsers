@@ -209,7 +209,7 @@ private struct CountryItem: View {
 
     @ViewBuilder
     private var picker: some View {
-        Picker("", selection: selectedCityItemBinding) {
+        Picker("" as String, selection: selectedCityItemBinding) {
             Text(itemModel.nearestCityPickerItem.name)
                 .tag(itemModel.nearestCityPickerItem)
             Divider()

@@ -295,15 +295,59 @@ public extension NewTabPageDataModel {
         let enableAiChatDeletion: Bool?
         /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
         let enableSearchSuggestionDeletion: Bool?
+        /// Whether the file-upload privacy disclaimer may still be shown. Native owns the one
+        /// app-wide display; false or `nil` means the omnibar renders nothing.
+        var showAttachmentPrivacyDisclaimer: Bool?
         /// Enables the native-driven Create Image model-switch flow in the web omnibar.
         var enableUpdatedCreateImage: Bool?
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
         var usageLimits: OmnibarUsageLimits?
+        var launcherPromo: OmnibarLauncherPromo?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - Attachment privacy
+
+    /// Which attachment the disclaimer is about. Native never sees the attach, so the page has to
+    /// say, for the pixel.
+    enum OmnibarAttachmentPrivacyKind: String, Codable {
+        case image, file
+    }
+
+    struct OmnibarAttachmentPrivacyDisclaimerShown: Codable, Equatable {
+
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    struct OmnibarOpenAttachmentPrivacyLearnMore: Codable, Equatable {
+
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    struct OmnibarLauncherPromo: Codable, Equatable {
+        public let message: String
+        public let secondaryText: String?
+        public let ctaLabel: String?
+        public let dismissible: Bool?
+
+        public init(message: String, secondaryText: String? = nil, ctaLabel: String? = nil, dismissible: Bool? = nil) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.ctaLabel = ctaLabel
+            self.dismissible = dismissible
+        }
     }
 
     // MARK: - omnibar_selectUsageLimitsCta
@@ -490,6 +534,7 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
+        var launcherPromoVisible: Bool?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

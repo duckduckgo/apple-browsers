@@ -212,6 +212,17 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
     }
 
+    /// Matches the web: the disclaimer names the button the user taps, "Create" while Create Image is selected.
+    func test_termsOfServiceMessage_namesTheSendButton() throws {
+        let ask = sut.termsOfServiceMessage(sendButton: .ask)
+        let create = sut.termsOfServiceMessage(sendButton: .create)
+
+        XCTAssertTrue(ask.title.contains("'Ask'"))
+        XCTAssertTrue(create.title.contains("'Create'"))
+        XCTAssertFalse(create.title.contains("'Ask'"))
+        XCTAssertEqual(create.link, ask.link)
+    }
+
     func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {
         let message = sut.termsOfServiceMessage()
 

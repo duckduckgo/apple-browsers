@@ -630,6 +630,7 @@ struct ExternalSchemeRowView: View {
             button.bezelStyle = .accessoryBarAction
             button.isBordered = true
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            button.setAccessibilityIdentifier("PermissionCenterView.externalSchemeDecisionPopUp")
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
                 let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")

@@ -38,4 +38,8 @@ public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
 
     /// Web-written, native-read. JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
     case usageLimits
+
+    /// Web-written, native-read: `true` once the web app has shown the file-upload privacy
+    /// disclosure. Native adopts it once and owns the count from then on.
+    case fileUploadDisclaimerShown = "duckaiFileUploadDisclaimerShown"
 }

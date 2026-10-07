@@ -47,7 +47,8 @@ final class MultiTabAttachmentContext {
                                              }, onChange: onChange)
     }
 
-    func makeRequest(preparations: [MultiTabAttachmentPreparation]) -> MultiTabAttachmentRequest? {
+    func makeRequest(preparations: [MultiTabAttachmentPreparation],
+                     didDispatch: @escaping @MainActor (MultiTabAttachmentRequest.SubmissionResult) -> Void = { _ in }) -> MultiTabAttachmentRequest? {
         guard !preparations.isEmpty else { return nil }
         return makeRequest {
             MultiTabAttachmentRequest(contexts: {
@@ -67,7 +68,7 @@ final class MultiTabAttachmentContext {
                 contexts.filter { context in
                     preparations.first(where: { $0.tab.uid == context.tabId })?.canDeliverPreparedContext == true
                 }
-            })
+            }, didDispatch: didDispatch)
         }
     }
 
@@ -84,6 +85,9 @@ final class MultiTabAttachmentContext {
         }, cancel: request.cancel, validate: { [feature] contexts in
             guard case .available = feature.state else { return [] }
             return request.validate(contexts)
+        }, didDispatch: { [feature] result in
+            guard case .available = feature.state else { return }
+            request.didDispatch(result)
         })
     }
 }

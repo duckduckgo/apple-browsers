@@ -71,7 +71,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     /// Safety net for a stuck `isActivating` if none of the controller's reset signals ever fire.
-    private static let activationTimeout: TimeInterval = 15
+    private static let activationTimeout: TimeInterval = 60
     private var activationTimeoutTask: Task<Void, Never>?
 
     init(prefetcher: SubscriptionOnboardingPrefetcher,
@@ -168,21 +168,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         await vpnController.start()
     }
 
-    /// Pauses the activation timeout while the system configuration alert is on screen
-    func setConfigAlertShowing(_ isShowing: Bool) {
-        guard isActivating else { return }
-        if isShowing {
-            activationTimeoutTask?.cancel()
-        } else {
-            scheduleActivationTimeout()
-        }
-    }
-
-    /// Whether a VPN configuration is already installed. When it isn't, starting shows the system permission prompt
-    func isVPNConfigured() async -> Bool {
-        await vpnController.isVPNConfigured()
-    }
-
     // MARK: - Connection observing
 
     private func observeConnection() {
@@ -201,6 +186,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                 self?.didDenyVPNPermission = true
                 self?.didFailToStartVPN = false
                 self?.isActivating = false
+                self?.activationTimeoutTask?.cancel()
             }
             .store(in: &cancellables)
 
@@ -214,6 +200,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                 self?.didFailToStartVPN = true
                 self?.didDenyVPNPermission = false
                 self?.isActivating = false
+                self?.activationTimeoutTask?.cancel()
             }
             .store(in: &cancellables)
 
@@ -241,6 +228,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             didDenyVPNPermission = false
             didFailToStartVPN = false
             isActivating = false
+            activationTimeoutTask?.cancel()
             reportCompletionIfNeeded()
         }
     }
@@ -279,8 +267,7 @@ protocol SubscriptionOnboardingVPNControlling {
     /// Carries the user-facing message for a start failure that aborts before the tunnel session exists
     var controllerErrorPublisher: AnyPublisher<String?, Never> { get }
     func start() async
-    /// Whether a VPN configuration is already installed. If not, starting triggers the system permission
-    /// prompt — used to decide whether to show the "Tap allow" hint.
+    /// Whether a VPN configuration is already installed.
     func isVPNConfigured() async -> Bool
 }
 

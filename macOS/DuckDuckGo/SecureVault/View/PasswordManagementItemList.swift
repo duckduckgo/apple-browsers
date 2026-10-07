@@ -430,7 +430,7 @@ private struct PasswordManagementSortButton: View {
                 .frame(width: Constants.buttonSize, height: Constants.buttonSize)
 
             Menu {
-                Picker("", selection: $model.sortDescriptor.parameter) {
+                Picker("" as String, selection: $model.sortDescriptor.parameter) {
                     ForEach(SecureVaultSorting.SortParameter.allCases, id: \.self) { parameter in
                         Text(parameter.title)
                             .tag(parameter)
@@ -441,7 +441,7 @@ private struct PasswordManagementSortButton: View {
 
                 Divider()
 
-                Picker("", selection: $model.sortDescriptor.order) {
+                Picker("" as String, selection: $model.sortDescriptor.order) {
                     ForEach(SecureVaultSorting.SortOrder.allCases, id: \.self) { order in
                         Text(order.title(for: model.sortDescriptor.parameter.type))
                             .tag(order)

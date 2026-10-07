@@ -59,9 +59,9 @@ struct SyncWithAnotherDeviceView: View {
     private var title: String {
         switch selectedTab {
         case .scanCode:
-            UserText.syncWithAnotherDeviceScanTitleV2
+            UserText.syncWithAnotherDeviceScanTitle
         case .enterCode:
-            UserText.syncWithAnotherDeviceEnterTitleV2
+            UserText.syncWithAnotherDeviceEnterTitle
         }
     }
 
@@ -137,8 +137,8 @@ struct SyncWithAnotherDeviceView: View {
 
     private var tabPicker: some View {
         HStack(spacing: .zero) {
-            tabButton(.scanCode, title: UserText.syncWithAnotherDeviceScanTabV2)
-            tabButton(.enterCode, title: UserText.syncWithAnotherDeviceEnterTabV2)
+            tabButton(.scanCode, title: UserText.syncWithAnotherDeviceScanTab)
+            tabButton(.enterCode, title: UserText.syncWithAnotherDeviceEnterTab)
         }
         .padding(1)
         .frame(maxWidth: .infinity)
@@ -183,27 +183,27 @@ struct SyncWithAnotherDeviceView: View {
         VStack(alignment: .leading, spacing: 10) {
             InstructionStep(
                 number: 1,
-                format: UserText.syncWithAnotherDeviceScanStep1V2,
-                detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
+                format: UserText.syncWithAnotherDeviceScanStep1,
+                detail: UserText.syncWithAnotherDeviceScanStep1Detail,
                 showsAppIcon: true
             )
 
             InstructionStep(
                 number: 2,
-                format: UserText.syncWithAnotherDeviceStep2V2,
-                detail: UserText.syncWithAnotherDeviceStep2DetailV2
+                format: UserText.syncWithAnotherDeviceStep2,
+                detail: UserText.syncWithAnotherDeviceStep2Detail
             )
 
             InstructionStep(
                 number: 3,
                 text: selectedTab == .scanCode
-                    ? UserText.syncWithAnotherDeviceScanStep3V2
-                    : UserText.syncWithAnotherDeviceEnterStep3V2
+                    ? UserText.syncWithAnotherDeviceScanStep3
+                    : UserText.syncWithAnotherDeviceEnterStep3
             )
 
             InstructionStep(
                 number: 4,
-                text: UserText.syncWithAnotherDeviceStep4V2
+                text: UserText.syncWithAnotherDeviceStep4
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -246,7 +246,7 @@ struct SyncWithAnotherDeviceView: View {
                         Image(nsImage: showCopyConfirmation
                               ? DesignSystemImages.Glyphs.Size16.check
                               : DesignSystemImages.Glyphs.Size16.copy)
-                        Text(showCopyConfirmation ? UserText.syncWithAnotherDeviceCopiedV2 : UserText.copy)
+                        Text(showCopyConfirmation ? UserText.syncWithAnotherDeviceCopied : UserText.copy)
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 4)
@@ -269,7 +269,7 @@ struct SyncWithAnotherDeviceView: View {
     private var enterCodeCard: some View {
         VStack(spacing: 20) {
             VStack(spacing: 6) {
-                Text(UserText.syncWithAnotherDeviceExampleCodeV2)
+                Text(UserText.syncWithAnotherDeviceExampleCode)
                     .font(.system(size: 10, design: .monospaced))
                     .kerning(-0.08)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -286,7 +286,7 @@ struct SyncWithAnotherDeviceView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(nsImage: DesignSystemImages.Glyphs.Size16.paste)
-                    Text(UserText.syncWithAnotherDevicePasteCodeV2)
+                    Text(UserText.syncWithAnotherDevicePasteCode)
                 }
                 .padding(.vertical, 2)
                 .padding(.horizontal, 6)
@@ -318,10 +318,10 @@ struct SyncWithAnotherDeviceView: View {
 
     private var copyConfirmation: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(UserText.syncWithAnotherDeviceCopyConfirmationTitleV2)
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationTitle)
                 .font(.system(size: 13, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            Text(UserText.syncWithAnotherDeviceCopyConfirmationMessageV2)
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationMessage)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)

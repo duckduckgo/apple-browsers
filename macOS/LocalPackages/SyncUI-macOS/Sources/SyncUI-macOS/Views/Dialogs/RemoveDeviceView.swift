@@ -46,8 +46,8 @@ struct RemoveDeviceView: View {
                     SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitleImproved(device.name))
                     SyncUIViews.CenteredBody(text: UserText.removeDeviceConfirmMessageImproved(device.name))
                 } else {
-                    SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitleV2)
-                    SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessageV2(device.name))
+                    SyncUIViews.DialogTitle(text: UserText.removeDeviceConfirmTitle)
+                    SyncUIViews.CenteredMarkdownBody(text: UserText.removeDeviceConfirmMessage(device.name))
                 }
             }
         } buttons: {
@@ -67,7 +67,7 @@ struct RemoveDeviceView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(model.isImprovedPairingFlowEnabled ? UserText.removeDeviceConfirmButtonImproved : UserText.removeDeviceConfirmButtonV2)
+                    Text(model.isImprovedPairingFlowEnabled ? UserText.removeDeviceConfirmButtonImproved : UserText.removeDeviceConfirmButton)
                 }
             }
             .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),

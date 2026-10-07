@@ -77,7 +77,7 @@ struct DeviceDetailsView: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .center, spacing: 8) {
                     header
-                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatusV2)
+                    SyncUIViews.Caption(text: UserText.deviceDetailsSyncedStatus)
                 }
                 if device.isCurrent {
                     nameField
@@ -95,7 +95,7 @@ struct DeviceDetailsView: View {
 
     private var nameField: some View {
         HStack(spacing: 16) {
-            Text(UserText.deviceDetailsNameLabelV2)
+            Text(UserText.deviceDetailsNameLabel)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             TextField(text: $deviceName) {
@@ -113,9 +113,9 @@ struct DeviceDetailsView: View {
 
     private var destructiveButtonTitle: String {
         guard device.isCurrent, !model.isImprovedPairingFlowEnabled else {
-            return UserText.deviceDetailsRemoveDeviceButtonV2
+            return UserText.deviceDetailsRemoveDeviceButton
         }
-        return UserText.deviceDetailsTurnOffSyncButtonV2
+        return UserText.deviceDetailsTurnOffSyncButton
     }
 
     private var destructiveButton: some View {
@@ -136,7 +136,7 @@ struct DeviceDetailsView: View {
                     ProgressView()
                         .controlSize(.small)
                 }
-                Text(device.isCurrent ? UserText.deviceDetailsDoneButtonV2 : UserText.deviceDetailsCloseButtonV2)
+                Text(device.isCurrent ? UserText.deviceDetailsDoneButton : UserText.deviceDetailsCloseButton)
             }
         }
         .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))

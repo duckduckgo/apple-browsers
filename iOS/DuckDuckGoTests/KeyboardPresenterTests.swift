@@ -351,6 +351,26 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A page created behind App Lock holds its keyboard until unlock", .timeLimit(.minutes(1)))
+    func createdNewTabPageWaitsForUnlock() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.isWindowVisible = false
+
+        presenter.showKeyboardOnNewTabPageCreated()
+        scheduledActions.forEach { $0() }
+
+        #expect(scheduledActions.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
+
+        #expect(target.closeScreensCallCount == 0)
+        #expect(target.allowedKeyboardCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A locked app holds the flag-on keyboard until unlock, unless the request is cancelled first",
           .timeLimit(.minutes(1)), arguments: [false, true])
     func lockedAppWaitsForUnlock(cancelBeforeUnlock: Bool) {

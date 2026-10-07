@@ -23,6 +23,7 @@ enum DeviceLaunchPixel: PixelKit.Event {
     case iPhoneDuoLaunched
 
     var name: String { "iphone-duo-launched" }
-    var parameters: [String: String]? { nil }
+    // Route through PETAL to randomize recorded timestamps.
+    var parameters: [String: String]? { ["petal": "randomize"] }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

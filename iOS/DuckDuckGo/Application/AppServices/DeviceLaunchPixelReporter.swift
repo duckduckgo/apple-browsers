@@ -27,13 +27,18 @@ struct DeviceLaunchPixelReporter {
     private let featureFlagger: FeatureFlagger
     private let machineIdentifier: () -> String?
     private let pixelFiring: PixelFiring?
+    private let schedule: (TimeInterval, @escaping () -> Void) -> Void
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          machineIdentifier: @escaping () -> String? = { Self.hardwareMachine() },
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         schedule: @escaping (TimeInterval, @escaping () -> Void) -> Void = { delay, action in
+             DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: action)
+         }) {
         self.featureFlagger = featureFlagger
         self.machineIdentifier = machineIdentifier
         self.pixelFiring = pixelFiring
+        self.schedule = schedule
     }
 
     static func hardwareMachine() -> String? {
@@ -50,6 +55,10 @@ struct DeviceLaunchPixelReporter {
     func reportLaunch() {
         guard featureFlagger.isFeatureOn(.iPhoneDuoLaunchReporting),
               machineIdentifier() == "iPhone19,4" else { return }
-        pixelFiring?.fire(DeviceLaunchPixel.iPhoneDuoLaunched, frequency: .daily)
+        // Measure daily Duo use without sending at the exact launch time.
+        schedule(TimeInterval.random(in: 1...30)) {
+            guard featureFlagger.isFeatureOn(.iPhoneDuoLaunchReporting) else { return }
+            pixelFiring?.fire(DeviceLaunchPixel.iPhoneDuoLaunched, frequency: .daily)
+        }
     }
 }

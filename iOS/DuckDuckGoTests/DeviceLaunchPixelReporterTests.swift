@@ -26,7 +26,7 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
     func testMatchingDeviceFiresDailyPixelWithExactName() throws {
         let pixelFiring = PixelKitMock()
         let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
-                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring)
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring, schedule: { _, action in action() })
 
         reporter.reportLaunch()
 
@@ -36,42 +36,98 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
         XCTAssertEqual(call.frequency, .daily)
         XCTAssertEqual(call.pixel.namePrefix, .platformDefault)
         XCTAssertEqual(call.pixel.platformSuffixPolicy, .standard)
-        XCTAssertNil(call.pixel.parameters)
+        XCTAssertEqual(call.pixel.parameters, ["petal": "randomize"])
         XCTAssertNil(call.pixel.standardParameters)
     }
 
-    func testPixelKitSendsExactNameOncePerDay() throws {
+    func testPixelKitSendsDailyWithPetalAcrossRecreatedStorage() throws {
         let suiteName = "DeviceLaunchPixelReporterTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting])
         var date = Date(timeIntervalSince1970: 1_800_000_000)
         var names = [String]()
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.0.0",
-                                source: PixelKit.Source.iOS.rawValue,
-                                defaultHeaders: [:],
-                                dateGenerator: { date },
-                                defaults: defaults) { name, _, _, _, _, completion in
-            names.append(name)
-            completion(true, nil)
-        }
-        let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
-                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelKit)
+        var parameters = [[String: String]]()
 
+        func makeReporter() throws -> DeviceLaunchPixelReporter {
+            let pixelKit = PixelKit(dryRun: false,
+                                    appVersion: "1.0.0",
+                                    source: PixelKit.Source.iOS.rawValue,
+                                    defaultHeaders: [:],
+                                    dateGenerator: { date },
+                                    defaults: try XCTUnwrap(UserDefaults(suiteName: suiteName))) { name, _, params, _, _, completion in
+                names.append(name)
+                parameters.append(params)
+                completion(true, nil)
+            }
+            return DeviceLaunchPixelReporter(featureFlagger: featureFlagger,
+                                              machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelKit,
+                                              schedule: { _, action in action() })
+        }
+
+        let reporter = try makeReporter()
         reporter.reportLaunch()
         reporter.reportLaunch()
         XCTAssertEqual(names, ["iphone-duo-launched_daily_ios_phone"])
+        XCTAssertEqual(parameters.first?["petal"], "randomize")
+
+        let relaunchedReporter = try makeReporter()
+        relaunchedReporter.reportLaunch()
+        XCTAssertEqual(names.count, 1)
+
+        featureFlagger.enabledFeatureFlags = []
+        reporter.reportLaunch()
+        featureFlagger.enabledFeatureFlags = [.iPhoneDuoLaunchReporting]
+        reporter.reportLaunch()
+        XCTAssertEqual(names.count, 1)
 
         date.addTimeInterval(24 * 60 * 60)
-        reporter.reportLaunch()
+        relaunchedReporter.reportLaunch()
         XCTAssertEqual(names, ["iphone-duo-launched_daily_ios_phone", "iphone-duo-launched_daily_ios_phone"])
+        XCTAssertEqual(parameters.map { $0["petal"] }, ["randomize", "randomize"])
+    }
+
+    func testPixelWaitsForRandomDelayBetweenOneAndThirtySeconds() throws {
+        let pixelFiring = PixelKitMock()
+        var scheduledDelay: TimeInterval?
+        var pendingAction: (() -> Void)?
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring,
+                                                 schedule: { delay, action in
+            scheduledDelay = delay
+            pendingAction = action
+        })
+
+        reporter.reportLaunch()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertTrue((1...30).contains(try XCTUnwrap(scheduledDelay)))
+        try XCTUnwrap(pendingAction)()
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.frequency, .daily)
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.parameters, ["petal": "randomize"])
+    }
+
+    func testFlagDisabledDuringDelayPreventsPixel() throws {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting])
+        let pixelFiring = PixelKitMock()
+        var pendingAction: (() -> Void)?
+        let reporter = DeviceLaunchPixelReporter(featureFlagger: featureFlagger,
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring,
+                                                 schedule: { _, action in pendingAction = action })
+
+        reporter.reportLaunch()
+        featureFlagger.enabledFeatureFlags = []
+        try XCTUnwrap(pendingAction)()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testOtherDevicesDoNotFirePixel() {
         for identifier in ["iPhone19,3", "iPhone19,40", "iPad16,1", "arm64", ""] {
             let pixelFiring = PixelKitMock()
             let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
-                                                     machineIdentifier: { identifier }, pixelFiring: pixelFiring)
+                                                     machineIdentifier: { identifier }, pixelFiring: pixelFiring, schedule: { _, action in action() })
 
             reporter.reportLaunch()
 
@@ -82,7 +138,7 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
     func testFailedLookupDoesNotFirePixel() {
         let pixelFiring = PixelKitMock()
         let reporter = DeviceLaunchPixelReporter(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.iPhoneDuoLaunchReporting]),
-                                                 machineIdentifier: { nil }, pixelFiring: pixelFiring)
+                                                 machineIdentifier: { nil }, pixelFiring: pixelFiring, schedule: { _, action in action() })
 
         reporter.reportLaunch()
 
@@ -97,7 +153,7 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
                                                  machineIdentifier: {
             lookupCount += 1
             return "iPhone19,4"
-        }, pixelFiring: pixelFiring)
+        }, pixelFiring: pixelFiring, schedule: { _, action in action() })
 
         reporter.reportLaunch()
 
@@ -109,7 +165,7 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         let pixelFiring = PixelKitMock()
         let reporter = DeviceLaunchPixelReporter(featureFlagger: featureFlagger,
-                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring)
+                                                 machineIdentifier: { "iPhone19,4" }, pixelFiring: pixelFiring, schedule: { _, action in action() })
 
         reporter.reportLaunch()
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)

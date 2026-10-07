@@ -63,7 +63,7 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
     public func prefetchSignals() -> Task<Void, Never>? {
         pingLock.withLock { prefetchedPingQuality = .unknown }
 
-        guard isEnabledProvider(), pathProvider.currentPathState.networkType != .unavailable else {
+        guard isEnabledProvider(), pathProvider.currentPathState.isNetworkAvailable else {
             return nil
         }
 
@@ -82,7 +82,8 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
         let pingQuality = pingLock.withLock { prefetchedPingQuality }
         let hasVPNConnectivityIssues = await vpnConnectivityIssuesProvider.isExperiencingVPNConnectivityIssues()
 
-        return NetworkSignals(networkType: pathState.networkType,
+        return NetworkSignals(isNetworkAvailable: pathState.isNetworkAvailable,
+                              networkType: pathState.networkType,
                               isLowDataModeEnabled: pathState.isConstrained,
                               hasVPNConnectivityIssues: hasVPNConnectivityIssues,
                               pingQuality: pingQuality)

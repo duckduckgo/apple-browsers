@@ -671,7 +671,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
         )
 
-        let host = UnifiedSuggestionsHost(config: config)
+        let host = UnifiedSuggestionsHost(
+            config: config,
+            avoidsDuplicateKeyboardInset: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
         host.setEscapeHatch(escapeHatchModel)
         host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in

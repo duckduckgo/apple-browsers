@@ -30,6 +30,7 @@ final class UnifiedSuggestionsHost {
     var onContentChanged: (() -> Void)?
 
     private let config: UnifiedSuggestionsHostConfig
+    private let avoidsDuplicateKeyboardInset: Bool
     private let listViewModel: SuggestionsListViewModel
     private let viewModel: UnifiedSuggestionsViewModel
     /// Tap-ahead arrow direction follows the UTI's live position, so it's mutable (not just the
@@ -62,8 +63,9 @@ final class UnifiedSuggestionsHost {
         favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
     }
 
-    init(config: UnifiedSuggestionsHostConfig) {
+    init(config: UnifiedSuggestionsHostConfig, avoidsDuplicateKeyboardInset: Bool = false) {
         self.config = config
+        self.avoidsDuplicateKeyboardInset = avoidsDuplicateKeyboardInset
         self.favoritesPresentation = FocusedFavoritesPresentation(makeViewController: config.favoritesProvider)
         self.isAddressBarAtBottom = config.isAddressBarAtBottom
         self.listViewModel = SuggestionsListViewModel(source: config.source)
@@ -98,9 +100,10 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
-            escapeHatch: escapeHatch)
+            escapeHatch: escapeHatch,
+            avoidsDuplicateKeyboardInset: avoidsDuplicateKeyboardInset)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
-        if #available(iOS 16.4, *) {
+        if avoidsDuplicateKeyboardInset, #available(iOS 16.4, *) {
             // UIKit already bounds this host with the keyboard guide. Keep only container insets.
             hosting.safeAreaRegions = [.container]
         }
@@ -267,7 +270,8 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false,
-            escapeHatch: escapeHatch)
+            escapeHatch: escapeHatch,
+            avoidsDuplicateKeyboardInset: avoidsDuplicateKeyboardInset)
         NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }
 }

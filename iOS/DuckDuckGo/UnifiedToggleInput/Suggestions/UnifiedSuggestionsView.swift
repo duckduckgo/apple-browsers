@@ -30,6 +30,7 @@ struct UnifiedSuggestionsView: View {
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
     var escapeHatch: EscapeHatchModel?
+    let avoidsDuplicateKeyboardInset: Bool
 
     var body: some View {
         // Chrome stays pinned to the bar except for the redesigned Search escape hatch,
@@ -43,7 +44,7 @@ struct UnifiedSuggestionsView: View {
         }
         // UIKit already bounds this host with its keyboard layout guide. Keep container
         // safe areas and the input-bar inset, without a second SwiftUI keyboard adjustment.
-        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .ignoresSafeArea(avoidsDuplicateKeyboardInset ? .keyboard : [], edges: .bottom)
     }
 
     /// On a fire tab every non-typing state is the full fire screen — favorites/recents/logo never show
@@ -150,7 +151,8 @@ struct UnifiedSuggestionsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .offset(y: targetCenterY - frame.midY)
                 // Match the bar's toggle animation, but keep inactive keyboard restoration instantaneous.
-                .animation(UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil,
+                .animation(avoidsDuplicateKeyboardInset && UIApplication.shared.applicationState != .active
+                           ? nil : .easeInOut(duration: 0.2),
                            value: targetCenterY)
                 // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.

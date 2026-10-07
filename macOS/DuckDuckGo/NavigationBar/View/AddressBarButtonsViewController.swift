@@ -1265,16 +1265,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private func showOrHidePermissionCenterPopoverIfNeeded() {
         guard quitWarningWindow == nil, let tabViewModel else { return }
 
-        // Collect all requested permissions
-        var requestedQueries: [(PermissionType, PermissionAuthorizationQuery)] = []
-        for permission in tabViewModel.usedPermissions.keys {
-            if case .requested(let query) = tabViewModel.usedPermissions[permission] {
-                requestedQueries.append((permission, query))
-            }
-        }
-
-        // If no requested permissions, close popover if shown
-        guard let (_, query) = requestedQueries.first else {
+        // If no pending prompt, close popover if shown.
+        guard let query = tabViewModel.tab.permissions.authorizationQueryForPresentation else {
             if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
                 // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
                 guard !permissionAuthorizationPopover.viewController.isAuthorizationInProgress else { return }

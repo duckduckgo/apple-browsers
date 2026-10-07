@@ -48,6 +48,18 @@ final class PermissionModel {
         }
     }
 
+    /// The new prompt handles system-disabled access itself, so a pending request still needs to be presented.
+    var authorizationQueryForPresentation: PermissionAuthorizationQuery? {
+        if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            guard let authorizationQuery, !authorizationQuery.isComplete else { return nil }
+            return authorizationQuery
+        }
+        return permissions.values.compactMap { state -> PermissionAuthorizationQuery? in
+            guard case .requested(let query) = state else { return nil }
+            return query
+        }.first
+    }
+
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol

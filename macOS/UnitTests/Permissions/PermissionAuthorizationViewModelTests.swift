@@ -343,6 +343,27 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         withExtendedLifetime((viewModel, query)) {}
     }
 
+    func testWhenLocationAccessIsRestoredThenPendingDecisionIsSubmitted() async throws {
+        systemPermissionManager.authorizationStates[.geolocation] = .systemDisabled
+        let query = makeQuery(permissions: [.geolocation])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .allowThisVisit)
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+        XCTAssertNil(result)
+
+        systemPermissionManager.authorizationStates[.geolocation] = .authorized
+        appDidBecomeActive.send()
+        await waitUntil { self.result != nil }
+
+        let output = try XCTUnwrap(try result?.get())
+        XCTAssertTrue(output.granted)
+        XCTAssertEqual(output.remember, false)
+        XCTAssertTrue(query.isComplete)
+        XCTAssertEqual(finishCount, 1)
+        XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
     func testWhenSystemPermissionIsDeniedElsewhereThenReturningShowsSettingsAndPreservesPendingDecision() async throws {
         systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
         let query = makeQuery(permissions: [.notification])

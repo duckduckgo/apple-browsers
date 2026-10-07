@@ -1744,6 +1744,27 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
+    func testWhenLocationServicesAreDisabledThenPromptSelectionRespectsFeatureFlag() throws {
+        for isNewPromptEnabled in [false, true] {
+            featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = isNewPromptEnabled
+            geolocationProviderMock.isActive = true
+            geolocationServiceMock.locationServicesEnabledValue = false
+            systemPermissionManagerMock.authorizationStates[.geolocation] = .systemDisabled
+            var granted: Bool?
+
+            model.permissions(.geolocation, requestedForDomain: "example.com") { (decision: Bool) in
+                granted = decision
+            }
+
+            let query = try XCTUnwrap(model.authorizationQuery)
+            defer { query.cancel() }
+            XCTAssertEqual(model.permissions.geolocation, .disabled(systemWide: true))
+            XCTAssertEqual(model.authorizationQueryForPresentation === query, isNewPromptEnabled)
+            XCTAssertFalse(query.isComplete)
+            XCTAssertNil(granted)
+        }
+    }
+
     func testWhenSystemPermissionAuthorizedThenStoredPermissionIsUsed() {
         // Set system permission as authorized
         systemPermissionManagerMock.authorizationStates[.geolocation] = .authorized

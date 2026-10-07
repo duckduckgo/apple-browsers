@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Testing
 import Core
 import FeatureFlags_iOS
@@ -33,6 +34,8 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
     var allowedKeyboardCallCount = 0
     var keyboardWasShown = true
     var legacyKeyboardCallCount = 0
+    var presentedViewController: UIViewController?
+    var closedScreen: UIViewController?
     var isWindowVisible = true
     var windowVisibleHandler: (() -> Void)?
 
@@ -44,8 +47,9 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
         }
     }
 
-    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
+    func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void) {
         closeScreensCallCount += 1
+        closedScreen = screenLeftOpen
         dismissalCompletion = completion
     }
 
@@ -259,5 +263,21 @@ final class KeyboardPresenterTests {
                                        isAfterIdleReturn: false)
 
         #expect(scheduledActions.count == (flagOn ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An idle return behind App Lock closes only the screen left open before the unlock", .timeLimit(.minutes(1)))
+    func lockedIdleReturnClosesOnlyScreenLeftOpen() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        let settings = UIViewController()
+        target.presentedViewController = settings
+        target.isWindowVisible = false
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+        target.presentedViewController = UIViewController()
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+
+        #expect(target.closedScreen === settings)
     }
 }

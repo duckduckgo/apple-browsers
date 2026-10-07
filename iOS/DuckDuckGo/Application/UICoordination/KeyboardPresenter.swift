@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Core
 import PixelKit
 import PrivacyConfig
@@ -35,7 +36,8 @@ protocol AppOpenKeyboardHandling: AnyObject {
     var isNewTabPageVisible: Bool { get }
     var appOpenKeyboardRequestID: UUID { get }
     func runWhenAppOpenKeyboardWindowVisible(_ handler: @escaping () -> Void)
-    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void)
+    var presentedViewController: UIViewController? { get }
+    func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void)
     func showKeyboardOnAppOpenIfAllowed() -> Bool
     func enterSearchOnAppOpen()
 }
@@ -103,6 +105,8 @@ final class KeyboardPresenter: KeyboardPresenting {
         }
 
         let requestID = mainViewController.appOpenKeyboardRequestID
+        // Captured before any App Lock wait, which a launch prompt can be presented during.
+        let screenLeftOpen = mainViewController.presentedViewController
         let scheduleKeyboard = { [self] in
             guard isAppOpen else { return }
             if flagOn, !isCurrentRequest(requestID) { return }
@@ -126,7 +130,7 @@ final class KeyboardPresenter: KeyboardPresenting {
         mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
             guard isCurrentRequest(requestID) else { return }
             if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
-                mainViewController.closeScreensOverNewTabPageForIdleReturn(completion: scheduleKeyboard)
+                mainViewController.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen, completion: scheduleKeyboard)
             } else {
                 scheduleKeyboard()
             }

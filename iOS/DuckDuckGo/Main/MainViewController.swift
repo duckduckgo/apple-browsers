@@ -3972,9 +3972,10 @@ class MainViewController: UIViewController {
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
 
     /// Finish both input teardown and modal dismissal before starting the visit or raising the keyboard.
-    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
+    /// Only `screenLeftOpen` is closed, so a launch prompt presented while App Lock was showing stays.
+    func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void) {
         guard isAppOpenKeyboardWindowVisible else { return }
-        guard presentedViewController != nil else {
+        guard let presentedViewController, presentedViewController === screenLeftOpen else {
             completion()
             return
         }

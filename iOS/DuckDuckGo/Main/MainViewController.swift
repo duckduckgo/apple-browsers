@@ -2375,7 +2375,9 @@ class MainViewController: UIViewController {
 
     /// Attaches the after-idle treatment without rebuilding the page or changing input focus.
     func showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
-        guard let page = newTabPageViewController,
+        // Same visibility rule as `attachHomeScreen`: no hatch, or its pixels, behind another screen.
+        guard presentedViewController == nil || presentedViewController?.isBeingDismissed == true,
+              let page = newTabPageViewController,
               let currentTab = tabManager.currentTabsModel.currentTab,
               let hatch = escapeHatchModelBuilder.makeAfterIdleHatchForKeptNewTabPage(router: self) else {
             return false
@@ -2492,6 +2494,10 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
+
+        if hasCompletedInitialLoad && !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
+            lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
+        }
 
         configureUnifiedInputEscapeHatch(hatch)
 

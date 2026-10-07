@@ -94,16 +94,19 @@ final class AddressBarButtonsViewController: NSViewController {
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let permissionManager: PermissionManagerProtocol
+    private let notificationCenter: NotificationCenterProtocol
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
+    private weak var quitWarningWindow: NSWindow?
+    private weak var permissionQueryHiddenForQuitWarning: PermissionAuthorizationQuery?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
         return permissionAuthorizationPopover ?? {
             let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
-            NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
-            NotificationCenter.default.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
+            notificationCenter.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
+            notificationCenter.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
             self.permissionAuthorizationPopover = popover
             popover.setAccessibilityIdentifier("AddressBarButtonsViewController.permissionAuthorizationPopover")
             return popover
@@ -330,7 +333,8 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatSettings: AIChatPreferencesStorage,
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
           featureFlagger: FeatureFlagger,
-          adBlockingAvailability: AdBlockingAvailabilityProviding) {
+          adBlockingAvailability: AdBlockingAvailabilityProviding,
+          notificationCenter: NotificationCenterProtocol = NotificationCenter.default) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
@@ -347,6 +351,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.adBlockingAvailability = adBlockingAvailability
         self.privacyConfigurationManager = privacyConfigurationManager
         self.permissionManager = permissionManager
+        self.notificationCenter = notificationCenter
         super.init(coder: coder)
     }
 
@@ -371,6 +376,7 @@ final class AddressBarButtonsViewController: NSViewController {
         setupAnimationViews()
         setupNotificationAnimationView()
         setupSearchModeToggleControl()
+        subscribeToQuitWarning()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkList()
         subscribeToAdBlockingStateChanges()
@@ -639,7 +645,7 @@ final class AddressBarButtonsViewController: NSViewController {
     /// tabs. `DuckAiVoiceChatFailureHandler` only posts this notification when the OS has
     /// already denied mic access, so we route straight to the OS-disabled remediation surface.
     private func subscribeToAIChatVoiceChatPermissionRequests() {
-        NotificationCenter.default.addObserver(
+        notificationCenter.addObserver(
             self,
             selector: #selector(handleAIChatVoiceChatPermissionRequested(_:)),
             name: .aiChatVoiceChatPermissionCenterRequested,
@@ -788,15 +794,15 @@ final class AddressBarButtonsViewController: NSViewController {
     /// harmless: the promo shows at most once, and it re-checks that it can present.
     private func postAutoplayPromoTriggerIfNeeded(_ detectedVideoAutoplay: Bool) {
         guard detectedVideoAutoplay else { return }
-        NotificationCenter.default.post(name: .autoplayPolicyDisplayed, object: nil)
+        notificationCenter.post(name: .autoplayPolicyDisplayed, object: nil)
     }
 
     /// Refresh the address-bar button's icon + tint whenever the ad-blocking state changes from
     /// any surface (Settings toggle, popover dropdown, debug menu remote-disable override) — even
     /// without a navigation that would otherwise trigger `updateButtons()`.
     private func subscribeToAdBlockingStateChanges() {
-        NotificationCenter.default
-            .publisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
+        notificationCenter
+            .notificationPublisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateYouTubeAdBlockButtonAppearance()
@@ -855,6 +861,51 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     // MARK: - Permission Center
+
+    private func subscribeToQuitWarning() {
+        notificationCenter.notificationPublisher(for: WarnBeforeQuitOverlayPresenter.willShowNotification)
+            .sink { [weak self] notification in
+                self?.handleQuitWarningWillShow(notification)
+            }
+            .store(in: &cancellables)
+
+        notificationCenter.notificationPublisher(for: WarnBeforeQuitOverlayPresenter.didHideNotification)
+            .sink { [weak self] notification in
+                self?.handleQuitWarningDidHide(notification)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleQuitWarningWillShow(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+              view.window === window, quitWarningWindow == nil else { return }
+
+        quitWarningWindow = window
+        if let popover = permissionAuthorizationPopover, popover.isShown {
+            permissionQueryHiddenForQuitWarning = popover.viewController.query
+            popover.close()
+        }
+    }
+
+    private func handleQuitWarningDidHide(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              quitWarningWindow === window else { return }
+
+        let query = permissionQueryHiddenForQuitWarning
+        permissionQueryHiddenForQuitWarning = nil
+        // Keep pending presentation callbacks suppressed while the app proceeds with quitting.
+        guard notification.userInfo?[WarnBeforeQuitOverlayPresenter.UserInfoKeys.shouldProceed] as? Bool == false else {
+            return
+        }
+        quitWarningWindow = nil
+
+        guard featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+              view.window === window, window.isVisible,
+              let query, !query.isComplete,
+              tabViewModel?.tab.permissions.authorizationQueries.contains(where: { $0 === query }) == true else { return }
+        openPermissionAuthorizationPopover(for: query)
+    }
 
     private func updatePermissionCenterButton() {
         // Prevent crash if Combine subscriptions outlive view lifecycle
@@ -948,7 +999,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func showOrHidePermissionCenterPopoverIfNeeded() {
-        guard let tabViewModel else { return }
+        guard quitWarningWindow == nil, let tabViewModel else { return }
 
         // Collect all requested permissions
         var requestedQueries: [(PermissionType, PermissionAuthorizationQuery)] = []
@@ -1829,7 +1880,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func openPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
-        guard let button = permissionCenterButton else { return }
+        guard quitWarningWindow == nil, !query.isComplete, let button = permissionCenterButton else { return }
 
         lazy var popover: NSPopover = {
             let popover = self.permissionAuthorizationPopoverCreatingIfNeeded()
@@ -1851,13 +1902,17 @@ final class AddressBarButtonsViewController: NSViewController {
 
         button.backgroundColor = .buttonMouseDown
         button.mouseOverColor = .buttonMouseDown
-        (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
+        if let viewController = popover.contentViewController as? PermissionAuthorizationViewController,
+           viewController.query !== query || !featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            viewController.query = query
+        }
         (popover.contentViewController as? PopupBlockedViewController)?.query = query
         query.wasShownOnce = true
 
         // Wait for the button appearance animation to complete before showing popover
         DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) { [weak self] in
             guard let self, let tabViewModel,
+                  self.quitWarningWindow == nil, !query.isComplete,
                   tabViewModel.tab.permissions.authorizationQueries.contains(where: { $0 === query }),
                   button.isVisible else {
                 // Tab is no longer selected or button became hidden - reset button state
@@ -2136,7 +2191,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.mouseOverColor = .buttonMouseDown
 
         // Register for close notification to reset button state
-        NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
+        notificationCenter.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
 
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
 
@@ -2860,7 +2915,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         switch popover {
         case popovers.bookmarkPopover:
             if popovers.bookmarkPopover?.isNew == true {
-                NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
+                notificationCenter.post(name: .bookmarkAdded, object: nil)
             }
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:

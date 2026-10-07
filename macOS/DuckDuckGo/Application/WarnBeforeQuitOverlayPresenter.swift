@@ -27,11 +27,20 @@ import SwiftUI
 @MainActor
 final class WarnBeforeQuitOverlayPresenter {
 
+    static let willShowNotification = Notification.Name("WarnBeforeQuitOverlayPresenter.willShow")
+    static let didHideNotification = Notification.Name("WarnBeforeQuitOverlayPresenter.didHide")
+
+    enum UserInfoKeys {
+        static let shouldProceed = "shouldProceed"
+    }
+
     // MARK: - Properties
 
     var overlayWindow: NSWindow?
     private let viewModel: WarnBeforeQuitViewModel
+    private let notificationCenter: NotificationCenterProtocol
     private var observationTask: Task<Void, Never>?
+    private weak var quitWarningNotificationWindow: NSWindow?
 
     let windowProvider: @MainActor () -> NSWindow?
     let anchorViewProvider: (@MainActor () -> NSView?)?
@@ -43,7 +52,8 @@ final class WarnBeforeQuitOverlayPresenter {
          buttonHandlers: [WarnBeforeButtonRole: () -> Void] = [:],
          onHoverChange: ((Bool) -> Void)? = nil,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
-         anchorViewProvider: (@MainActor () -> NSView?)? = nil) {
+         anchorViewProvider: (@MainActor () -> NSView?)? = nil,
+         notificationCenter: NotificationCenterProtocol = NotificationCenter.default) {
         self.viewModel = WarnBeforeQuitViewModel(
             action: action,
             startupPreferences: startupPreferences,
@@ -51,6 +61,7 @@ final class WarnBeforeQuitOverlayPresenter {
         )
         self.windowProvider = windowProvider
         self.anchorViewProvider = anchorViewProvider
+        self.notificationCenter = notificationCenter
         self.viewModel.onHoverChange = { [weak self] isHovering in
             onHoverChange?(isHovering)
             // Enable/disable mouse events passing through the window to allow clicking the underlying content view
@@ -103,8 +114,8 @@ final class WarnBeforeQuitOverlayPresenter {
             // Reset progress with quick spring animation (0.3 seconds)
             viewModel.resetProgress()
 
-        case .completed:
-            self.hide()
+        case .completed(let shouldProceed):
+            self.hide(shouldProceed: shouldProceed)
             // Just hide - don't call terminate, the decider framework handles that
         }
     }
@@ -117,6 +128,11 @@ final class WarnBeforeQuitOverlayPresenter {
         }
 
         guard let overlayWindow else { return }
+
+        if viewModel.action == .quit, overlayWindow.parent == nil {
+            quitWarningNotificationWindow = keyWindow.parent ?? keyWindow
+            notificationCenter.post(name: Self.willShowNotification, object: quitWarningNotificationWindow)
+        }
 
         // Make window fill the parent window
         let windowFrame = keyWindow.frame
@@ -156,8 +172,11 @@ final class WarnBeforeQuitOverlayPresenter {
         animateIn(window: overlayWindow)
     }
 
-    private func hide() {
-        guard let overlayWindow else { return }
+    private func hide(shouldProceed: Bool = false) {
+        guard let overlayWindow, !viewModel.shouldHide else { return }
+        let notificationWindow = quitWarningNotificationWindow
+        let action = viewModel.action
+        let notificationCenter = self.notificationCenter
 
         // Trigger view animation
         viewModel.shouldHide = true
@@ -170,11 +189,20 @@ final class WarnBeforeQuitOverlayPresenter {
             // Order out asynchronously to allow content view cleanup
             DispatchQueue.main.async {
                 self?.overlayWindow = nil
+                self?.quitWarningNotificationWindow = nil
                 overlayWindow.parent?.removeChildWindow(overlayWindow)
                 overlayWindow.orderOut(nil)
                 // Reset progress and shouldHide after window is hidden
                 self?.viewModel.resetProgress()
                 self?.viewModel.shouldHide = false
+
+                if action == .quit {
+                    notificationCenter.post(
+                        name: Self.didHideNotification,
+                        object: notificationWindow,
+                        userInfo: [Self.UserInfoKeys.shouldProceed: shouldProceed]
+                    )
+                }
             }
         }
     }

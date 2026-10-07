@@ -22,6 +22,8 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public protocol ChromeWebStoreManaging: AnyObject {
+    /// Identifiers of the extensions the store may offer for install.
+    var catalogExtensionIDs: [String] { get }
     func status(for identifier: String) -> ChromeWebStoreStatus
     func install(identifier: String, downloadURL: URL) async -> Bool
     func remove(identifier: String) async -> Bool
@@ -51,6 +53,10 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         self.catalog = catalog
         self.downloader = downloader
         self.presenter = presenter
+    }
+
+    public var catalogExtensionIDs: [String] {
+        catalog.extensionIDs
     }
 
     public func status(for identifier: String) -> ChromeWebStoreStatus {

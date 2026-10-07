@@ -1182,7 +1182,7 @@ class MainViewController: UIViewController {
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.newTab()
+            self?.newTab(slidesInFromTrailingEdge: false)
         } onSwipeStarted: { [weak self] in
             self?.performCancel(animated: false)
             self?.hideKeyboard(animated: false)
@@ -2321,17 +2321,20 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
+    /// Returns true when the page wants the input focused. With `defersEditing` the caller owns that `beginEditing` call, so a slide-in can finish before the unified input expands over the page.
+    @discardableResult
     fileprivate func attachHomeScreen(isNewTab: Bool = false,
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
                                       openedAfterIdle: Bool = false,
-                                      startsNewTabPageSessionVisit: Bool = true) {
+                                      startsNewTabPageSessionVisit: Bool = true,
+                                      defersEditing: Bool = false) -> Bool {
         reportDuckAISessionCurrentTab()
-        guard !autoClearInProgress else { return }
+        guard !autoClearInProgress else { return false }
 
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
-            return
+            return false
         }
 
         pageBackgroundColorObservation = nil
@@ -2453,11 +2456,12 @@ class MainViewController: UIViewController {
             }
         }
 
-        if willBeginEditing {
+        if willBeginEditing, !defersEditing {
             omniBar.beginEditing(animated: true)
         }
 
         syncService.scheduler.requestSyncImmediately()
+        return willBeginEditing
     }
 
     private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {
@@ -2743,39 +2747,41 @@ class MainViewController: UIViewController {
             viewCoordinator.navigationBarContainer.alpha = 1
             loadViewIfNeeded()
 
-            let hostingTab: Tab
+            performNewTabSlideIn(enabled: true, attach: {
+                let hostingTab: Tab
 
-            // Check if a specific tab ID should be reused.
-            if case .tabWithId(let id) = reuseExisting, let existing = tabManager.first(withId: id) {
-                selectTab(existing)
-                hostingTab = existing
-            }
-            // Check if an existing tab with the same URL should be reused.
-            else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
-                selectTab(existing)
-                completion?(existing)
-                return
-            }
-            // Check if a tab presenting a New Tab page should be reused.
-            else if reuseExisting != .none, let existing = tabManager.firstHomeTab() {
-                if autoClearInProgress {
-                    autoClearShouldRefreshUIAfterClear = false
+                // Check if a specific tab ID should be reused.
+                if case .tabWithId(let id) = reuseExisting, let existing = tabManager.first(withId: id) {
+                    selectTab(existing)
+                    hostingTab = existing
                 }
-                tabManager.select(existing, dismissCurrent: false)
-                loadUrl(url, fromExternalLink: fromExternalLink)
-                hostingTab = existing
-            }
-            // Add a new tab if no existing tab is reused.
-            else {
-                hostingTab = addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
-            }
+                // Check if an existing tab with the same URL should be reused.
+                else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
+                    selectTab(existing)
+                    completion?(existing)
+                    return
+                }
+                // Check if a tab presenting a New Tab page should be reused.
+                else if reuseExisting != .none, let existing = tabManager.firstHomeTab() {
+                    if autoClearInProgress {
+                        autoClearShouldRefreshUIAfterClear = false
+                    }
+                    tabManager.select(existing, dismissCurrent: false)
+                    loadUrl(url, fromExternalLink: fromExternalLink)
+                    hostingTab = existing
+                }
+                // Add a new tab if no existing tab is reused.
+                else {
+                    hostingTab = addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
+                }
 
-            refreshOmniBar()
-            refreshTabIcon()
-            refreshControls()
-            tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-            swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-            completion?(hostingTab)
+                refreshOmniBar()
+                refreshTabIcon()
+                refreshControls()
+                tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+                swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+                completion?(hostingTab)
+            }, completion: {})
         }
 
         if clearInProgress {
@@ -3852,10 +3858,12 @@ class MainViewController: UIViewController {
     /// that opens immediately over it, such as Duck.ai on iPad. Starting a visit there would
     /// discard the visit the user is actually on, and would invent one when they came from a web
     /// page, so the page this tab shows is never a New Tab Page the user sees.
+    /// `slidesInFromTrailingEdge` slides the new tab page in from the right like a swipe-to-new-tab; the swipe path passes false because the drag already did that.
     func newTab(reuseExisting: Bool = false,
                 allowingKeyboard: Bool = true,
                 openedAfterIdle: Bool = false,
-                startsNewTabPageSessionVisit: Bool = true) {
+                startsNewTabPageSessionVisit: Bool = true,
+                slidesInFromTrailingEdge: Bool = true) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -3870,20 +3878,77 @@ class MainViewController: UIViewController {
         dismissSystemFindNavigator(for: previousTab)
         currentTab?.dismiss()
 
-        if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab()
+        var wantsEditing = false
+        let didSlide = performNewTabSlideIn(enabled: slidesInFromTrailingEdge, attach: { [self] in
+            if reuseExisting, let existing = tabManager.firstHomeTab() {
+                tabManager.select(existing, dismissCurrent: false)
+            } else {
+                tabManager.addHomeTab()
+            }
+            wantsEditing = attachHomeScreen(isNewTab: true,
+                                            allowingKeyboard: allowingKeyboard,
+                                            previousTab: previousTab,
+                                            openedAfterIdle: openedAfterIdle,
+                                            startsNewTabPageSessionVisit: startsNewTabPageSessionVisit,
+                                            defersEditing: true)
+            tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            themeColorManager.updateThemeColor()
+            showBars() // In case the browser chrome bars are hidden when calling this method
+            (newTabPageViewController as? RedesignedNewTabPageViewController)?.finishEntranceAnimation()
+        }, completion: { [weak self] in
+            if wantsEditing {
+                self?.omniBar.beginEditing(animated: true)
+            }
+        })
+        if !didSlide, wantsEditing {
+            omniBar.beginEditing(animated: true)
         }
-        attachHomeScreen(isNewTab: true,
-                         allowingKeyboard: allowingKeyboard,
-                         previousTab: previousTab,
-                         openedAfterIdle: openedAfterIdle,
-                         startsNewTabPageSessionVisit: startsNewTabPageSessionVisit)
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        themeColorManager.updateThemeColor()
-        showBars() // In case the browser chrome bars are hidden when calling this method
+    }
+
+    // MARK: - New tab slide-in transition (PoC)
+
+    private enum NewTabTransitionMetrics {
+        static let duration: TimeInterval = 0.5
+    }
+
+    /// Slides the whole screen like a swipe-to-new-tab: a snapshot of the current screen exits left while the live
+    /// view, holding whatever `attach` installed, enters from the right. `attach` always runs; `completion` runs after
+    /// the slide, or not at all when nothing animated (the return value says which).
+    @discardableResult
+    private func performNewTabSlideIn(enabled: Bool, attach: () -> Void, completion: @escaping () -> Void) -> Bool {
+        guard enabled,
+              !UIAccessibility.isReduceMotionEnabled,
+              let window = view.window,
+              view.bounds.width > 0,
+              let outgoing = view.snapshotView(afterScreenUpdates: false) else {
+            attach()
+            return false
+        }
+        outgoing.frame = view.convert(view.bounds, to: window)
+        outgoing.isUserInteractionEnabled = false
+        window.addSubview(outgoing)
+
+        attach()
+
+        let distance = view.bounds.width + SwipeTabsCoordinator.tabGap
+        view.transform = CGAffineTransform(translationX: distance, y: 0)
+        view.isUserInteractionEnabled = false
+
+        let animator = UIViewPropertyAnimator(duration: NewTabTransitionMetrics.duration,
+                                              timingParameters: UISpringTimingParameters(dampingRatio: 1))
+        animator.addAnimations { [view] in
+            view?.transform = .identity
+            outgoing.transform = CGAffineTransform(translationX: -distance, y: 0)
+        }
+        animator.addCompletion { [weak self] _ in
+            outgoing.removeFromSuperview()
+            self?.view.transform = .identity
+            self?.view.isUserInteractionEnabled = true
+            completion()
+        }
+        animator.startAnimation()
+        return true
     }
 
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
@@ -6932,14 +6997,15 @@ extension MainViewController: TabDelegate {
         newTab.openingTab = tab
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
-        newTabAnimation {
-            guard self.tabManager.currentTabsModel.tabs.contains(newTab.tabModel) else { return }
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        performNewTabSlideIn(enabled: true, attach: {
+            guard tabManager.currentTabsModel.tabs.contains(newTab.tabModel) else { return }
 
-            self.dismissOmniBar()
-            self.attachTab(tab: newTab)
-            self.refreshOmniBar()
-            self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
-        }
+            dismissOmniBar()
+            attachTab(tab: newTab)
+            refreshOmniBar()
+            tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        }, completion: {})
 
         return newTab.webView
     }
@@ -7100,11 +7166,10 @@ extension MainViewController: TabDelegate {
         if openedByPage {
             capturePreviewForTab(tab)
             showBars()
-            newTabAnimation {
-                self.loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
-                self.currentTab?.openedByPage = true
-                self.currentTab?.openingTab = tab
-            }
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
+            currentTab?.openedByPage = true
+            currentTab?.openingTab = tab
             tabSwitcherButton?.animateUpdate {
                 self.tabSwitcherButton?.tabCount += 1
             }
@@ -7113,8 +7178,8 @@ extension MainViewController: TabDelegate {
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
-            self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
-            self.currentTab?.openingTab = tab
+            currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
+            currentTab?.openingTab = tab
         }
 
     }
@@ -7417,29 +7482,6 @@ extension MainViewController: TabDelegate {
         showMenuHighlighterIfNeeded()
     }
 
-    private func newTabAnimation(completion: @escaping () -> Void) {
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-
-        let x = view.frame.midX
-        let y = view.frame.midY
-        
-        let theme = ThemeManager.shared.currentTheme
-        let view = UIView(frame: CGRect(x: x, y: y, width: 5, height: 5))
-        view.layer.borderWidth = 1
-        view.layer.cornerRadius = 10
-        view.layer.borderColor = theme.barTintColor.cgColor
-        view.backgroundColor = theme.backgroundColor
-        view.center = self.view.center
-        self.view.addSubview(view)
-        UIView.animate(withDuration: 0.3, animations: {
-            view.frame = self.view.frame
-            view.alpha = 0.9
-        }, completion: { _ in
-            view.removeFromSuperview()
-            completion()
-        })
-    }
-    
     func tab(_ tab: TabViewController, didRequestPresentingAlert alert: UIAlertController) {
         present(alert, animated: true)
     }

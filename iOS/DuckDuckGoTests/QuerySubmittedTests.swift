@@ -329,6 +329,40 @@ class QuerySubmittedTests: XCTestCase {
 final class NewTabPageAppOpenFocusTests {
 
     @available(iOS 16, macOS 13, *)
+    @Test("Automatic New Tab focus follows the keyboard flag as it changes at runtime", .timeLimit(.minutes(1)))
+    func automaticFocusFollowsFlagChanges() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let activation = MockNewTabPageInputActivation()
+        sut.unifiedToggleInputOmnibarActivating = activation
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = sut
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+
+        for flagOn in [false, true, false, true] {
+            featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+            activation.usedAutomaticFocus = false
+            activation.usedOrdinaryFocus = false
+            var didFocus: Bool?
+
+            sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { true }) { didFocus = $0 }
+
+            #expect(activation.usedAutomaticFocus == flagOn)
+            #expect(activation.usedOrdinaryFocus == !flagOn)
+            #expect(didFocus == flagOn)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("App-open fallback focuses mounted legacy input only for a valid request", .timeLimit(.minutes(1)),
           arguments: [false, true], [false, true])
     func appOpenFocusWithoutUnifiedInput(flagOn: Bool, isRequestValid: Bool) {
@@ -354,6 +388,25 @@ final class NewTabPageAppOpenFocusTests {
 
         #expect(sut.barView.textField.isFirstResponder == isRequestValid)
         #expect(actualResult == isRequestValid)
+    }
+}
+
+@MainActor
+private final class MockNewTabPageInputActivation: UnifiedToggleInputOmnibarActivating {
+    var usedAutomaticFocus = false
+    var usedOrdinaryFocus = false
+
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool,
+                                     textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
+        usedOrdinaryFocus = true
+        return .intercept
+    }
+
+    func activateFromOmnibarOnAppOpenIfNeeded(currentText: String?, isRequestValid: @escaping () -> Bool,
+                                              completion: @escaping (Bool) -> Void) -> UnifiedToggleInputActivationDecision {
+        usedAutomaticFocus = true
+        completion(isRequestValid())
+        return .intercept
     }
 }
 

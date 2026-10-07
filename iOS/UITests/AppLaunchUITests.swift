@@ -75,7 +75,6 @@ final class AppLaunchUITests: XCTestCase {
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Tab switcher after automatic tab clearing"
-        screenshot.lifetime = .keepAlways
         add(screenshot)
 
         let newTab = app.buttons["Open new tab"]

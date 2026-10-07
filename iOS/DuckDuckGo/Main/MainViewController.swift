@@ -2354,6 +2354,12 @@ class MainViewController: UIViewController {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
+    /// True right after either input accepted the app's focus request. Unified input applies focus
+    /// asynchronously, but enters its editing state synchronously when it accepts the request.
+    private var isAutomaticFocusAccepted: Bool {
+        omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarEditing == true
+    }
+
     /// Restores the keyboard after an escape-hatch burn that started in focus mode, using the unified-input
     /// session when active (symmetric with `dismissOmniBar`) and the legacy omnibar otherwise.
     private func restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: Bool) {
@@ -2928,7 +2934,7 @@ class MainViewController: UIViewController {
             defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
         } else {
             enterSearchOnAppOpen()
-            focusCompleted(viewCoordinator.omniBar.isTextFieldEditing)
+            focusCompleted(isAutomaticFocusAccepted)
         }
     }
 

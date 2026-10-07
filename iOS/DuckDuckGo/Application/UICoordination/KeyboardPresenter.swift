@@ -45,7 +45,7 @@ protocol AppOpenKeyboardHandling: AnyObject {
 
 /// Keyboard rule for NTP landings behind `.alwaysShowKeyboardOnNewTabPage`: an NTP shows the keyboard
 /// when New Tab is on, unless the user dismissed it or onboarding is running.
-/// Callers check the flag and onboarding; flag-off paths keep their own conditions.
+/// Callers check the flag and onboarding, which after Fire they pass in; flag-off paths keep their own conditions.
 struct NewTabPageKeyboardPolicy {
 
     static let appOpenBackgroundThreshold = TimeInterval(20)
@@ -63,6 +63,13 @@ struct NewTabPageKeyboardPolicy {
     /// New Tab alone decides on an NTP; App Launch keeps its meaning for other tabs.
     func showsKeyboardOnAppOpen(onNewTabPage: Bool) -> Bool {
         onNewTabPage ? onNewTab : onAppLaunch
+    }
+
+    /// After Fire, New Tab decides unless onboarding is still running. A burned Duck.ai chat reopens
+    /// as a new chat that owns its input. The Search & Duck.ai address bar no longer plays a part:
+    /// its old suppression was for onboarding, which now holds the keyboard back for everyone.
+    func showsKeyboardAfterFire(onDuckAITab: Bool, stillOnboarding: Bool) -> Bool {
+        onNewTab && !onDuckAITab && !stillOnboarding
     }
 
 }

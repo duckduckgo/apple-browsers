@@ -50,9 +50,7 @@ final class PromptBarCoordinator {
     }
 
     func showPromptBarForLauncherPromo() {
-        let shortcut = preferences.keyboardShortcut
-        let keys = (shortcut.modifierSymbols + [shortcut.keyDisplayString]).joined(separator: " + ")
-        presenter.showForLauncherPromo(placeholder: UserText.duckAiLauncherPromptBarPlaceholder(shortcut: keys))
+        presenter.showForLauncherPromo(shortcut: preferences.keyboardShortcut.displayString)
     }
 
     private func applyShortcut(_ shortcut: PromptBarShortcut?) {

@@ -67,7 +67,7 @@ protocol PromptBarPresenting: AnyObject {
     var isVisible: Bool { get }
     func show(source: PromptBarPresentationSource)
     /// Opened by the launcher promo rather than an entry point, so no visibility pixel.
-    func showForLauncherPromo(placeholder: String)
+    func showForLauncherPromo(shortcut: String)
     func dismiss(reason: PromptBarDismissReason)
     func toggle(source: PromptBarPresentationSource)
 }
@@ -118,9 +118,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         firePixel(source.shownPixel)
     }
 
-    func showForLauncherPromo(placeholder: String) {
-        content.placeholderOverride = placeholder
+    func showForLauncherPromo(shortcut: String) {
         present()
+        content.showLauncherIntroduction(shortcut: shortcut)
     }
 
     private func present() {

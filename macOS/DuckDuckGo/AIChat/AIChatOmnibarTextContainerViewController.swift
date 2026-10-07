@@ -49,19 +49,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
     private let placeholderLabel = ClickThroughLabel(labelWithString: "")
-
-    /// Replaces the placeholder until cleared, whatever the tool mode.
-    var placeholderOverride: String? {
-        didSet { applyPlaceholder() }
-    }
-
-    private var defaultPlaceholder = UserText.aiChatOmnibarPlaceholder {
-        didSet { applyPlaceholder() }
-    }
-
-    private func applyPlaceholder() {
-        placeholderLabel.stringValue = placeholderOverride ?? defaultPlaceholder
-    }
     private let duckAILogoView = ClickThroughImageView()
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
@@ -212,7 +199,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.setAccessibilityElement(true)
 
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
-        applyPlaceholder()
+        placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
         placeholderLabel.isBezeled = false
         placeholderLabel.drawsBackground = false
         placeholderLabel.isEditable = false
@@ -331,11 +318,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         .sink { [weak self] toolMode, hasAttachments in
             switch toolMode {
             case .imageGeneration where hasAttachments:
-                self?.defaultPlaceholder = UserText.aiChatImageGenWithAttachmentPlaceholder
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenWithAttachmentPlaceholder
             case .imageGeneration:
-                self?.defaultPlaceholder = UserText.aiChatImageGenPlaceholder
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenPlaceholder
             default:
-                self?.defaultPlaceholder = UserText.aiChatOmnibarPlaceholder
+                self?.placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
             }
         }
         .store(in: &cancellables)

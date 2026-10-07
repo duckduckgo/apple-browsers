@@ -217,9 +217,8 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
 
     var viewController: NSViewController { self }
 
-    var placeholderOverride: String? {
-        get { textViewController.placeholderOverride }
-        set { textViewController.placeholderOverride = newValue }
+    func showLauncherIntroduction(shortcut: String) {
+        containerViewController.showLauncherIntroduction(shortcut: shortcut)
     }
 
     var isPresentingAuxiliaryUI: Bool {
@@ -263,7 +262,6 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     func resetAfterDismissal() {
-        placeholderOverride = nil
         textViewController.stopEventMonitoring()
         containerViewController.cleanup()
         draftStore.reset()

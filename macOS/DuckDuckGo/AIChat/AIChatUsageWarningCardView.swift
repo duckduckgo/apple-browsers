@@ -234,6 +234,7 @@ final class AIChatUsageWarningCardView: NSView {
     var onOpenModelPicker: (() -> Void)?
     var onDismiss: (() -> Void)?
     var onLearnMore: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 
     /// The `>`, so a menu opens against the control the user actually clicked.
     var modelPickerAnchor: NSView { actionButton.pickerAnchor }
@@ -368,6 +369,20 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     // MARK: - Content
+
+    func updateForLauncherIntroduction(shortcut: String) {
+        applyGlyph(DesignSystemImages.Glyphs.Size16.info)
+        titleLabel.isHidden = true
+        disclosureTextView.isHidden = false
+        let introduction = Self.attributedLauncherIntroduction(shortcut: shortcut)
+        disclosureTextView.textStorage?.setAttributedString(introduction)
+        disclosureTextView.setAccessibilityLabel(introduction.string)
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        applyCloseButton(isVisible: true)
+    }
 
     func updateForAttachmentPrivacy() {
         applyGlyph(DesignSystemImages.Glyphs.Size16.info)
@@ -510,6 +525,23 @@ final class AIChatUsageWarningCardView: NSView {
     /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
     private static func attributedNotice(_ text: String) -> NSAttributedString {
         NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
+    }
+
+    private static func attributedLauncherIntroduction(shortcut: String) -> NSAttributedString {
+        var bodyAttributes = textAttributes(weight: .regular)
+        bodyAttributes[.cursor] = NSCursor.arrow
+
+        var linkAttributes = bodyAttributes
+        linkAttributes[.link] = URL.settings
+        linkAttributes[.cursor] = NSCursor.pointingHand
+
+        let format = UserText.duckAiLauncherIntroductionFormat.replacingOccurrences(of: "%1$@", with: shortcut)
+        let result = NSMutableAttributedString(string: format, attributes: bodyAttributes)
+        if let placeholder = format.range(of: "%2$@") {
+            result.replaceCharacters(in: NSRange(placeholder, in: format),
+                                     with: NSAttributedString(string: UserText.duckAiLauncherIntroductionSettings, attributes: linkAttributes))
+        }
+        return result
     }
 
     private static func attributedDisclosure() -> NSAttributedString {
@@ -922,7 +954,11 @@ final class AIChatUsageWarningActionButton: NSView {
 extension AIChatUsageWarningCardView: NSTextViewDelegate {
 
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
-        onLearnMore?()
+        if (link as? URL) == URL.settings {
+            onOpenSettings?()
+        } else {
+            onLearnMore?()
+        }
         return true
     }
 }

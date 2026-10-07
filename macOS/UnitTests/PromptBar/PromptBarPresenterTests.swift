@@ -212,7 +212,6 @@ private final class MockPromptBarContent: PromptBarContentHosting {
     var preferredWindowContentSize = NSSize(width: 680, height: 80)
     var onPreferredWindowContentSizeChanged: ((NSSize) -> Void)?
     var onSubmit: (() -> Void)?
-    var placeholderOverride: String?
 
     var viewController: NSViewController { hostedViewController }
 
@@ -223,6 +222,8 @@ private final class MockPromptBarContent: PromptBarContentHosting {
     func focusPromptEditor() {
         focusCount += 1
     }
+
+    func showLauncherIntroduction(shortcut: String) {}
 
     func resetAfterDismissal() {
         resetCount += 1

@@ -25,7 +25,6 @@ import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import os.log
-import PixelKit
 import PrivacyConfig
 
 final class BookmarksBarViewController: NSViewController {
@@ -84,9 +83,7 @@ final class BookmarksBarViewController: NSViewController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
-    private let syncPromo: BookmarksBarSyncPromoPresenting
-    private let pixelFiring: PixelFiring?
-    private var hasFiredSyncPromoImpressionPixel = false
+    let syncButtonModel: DismissableSyncDeviceButtonModel
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -122,8 +119,7 @@ final class BookmarksBarViewController: NSViewController {
          featureFlagger: FeatureFlagger,
          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-         syncPromo: BookmarksBarSyncPromoPresenting? = nil,
-         pixelFiring: PixelFiring? = PixelKit.shared,
+         syncButtonModel: DismissableSyncDeviceButtonModel? = nil,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -131,8 +127,7 @@ final class BookmarksBarViewController: NSViewController {
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
-        self.syncPromo = syncPromo ?? NSApp.delegateTyped.bookmarksBarSyncPromoDelegate
-        self.pixelFiring = pixelFiring
+        self.syncButtonModel = syncButtonModel ?? DismissableSyncDeviceButtonModel(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
@@ -374,8 +369,7 @@ final class BookmarksBarViewController: NSViewController {
     private func setUpSyncButton() {
         syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
-        syncButton.isHidden = true
-        syncButtonZeroWidthConstraint.priority = .required
+        syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = NSColor(resource: .textPrimary)
         syncButtonLabel.stringValue = UserText.bookmarksEmptyStateSyncButtonTitle
@@ -510,11 +504,15 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        syncPromo.isPromoActivePublisher
-            .sink { [weak self] isActive in
-                self?.updateSyncButtonVisibility(isActive)
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            guard let self else { return }
+            syncButton.isHidden = !shouldShow
+            syncButtonZeroWidthConstraint.priority = shouldShow ? .defaultLow : .required
+            if shouldShow {
+                syncButtonModel.syncButtonDidAppear()
             }
-            .store(in: &cancellables)
+        }
+        .store(in: &cancellables)
     }
 
     private func unsubscribeFromEvents() {
@@ -586,16 +584,7 @@ final class BookmarksBarViewController: NSViewController {
     private(set) var syncButtonZeroWidthConstraint: NSLayoutConstraint!
 
     @objc func syncClicked(_ sender: Any) {
-        syncPromo.syncButtonClicked()
-    }
-
-    private func updateSyncButtonVisibility(_ isVisible: Bool) {
-        syncButton.isHidden = !isVisible
-        syncButtonZeroWidthConstraint.priority = isVisible ? .defaultLow : .required
-        if isVisible, !hasFiredSyncPromoImpressionPixel {
-            hasFiredSyncPromoImpressionPixel = true
-            pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, options: .parameters(["source": SyncDeviceButtonTouchpoint.bookmarksBar.rawValue]))
-        }
+        syncButtonModel.syncButtonAction()
     }
 
     @objc private func clippedItemsIndicatorClicked(_ sender: NSButton) {

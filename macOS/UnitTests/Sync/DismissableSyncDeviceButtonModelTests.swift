@@ -20,6 +20,7 @@ import Combine
 import DDGSync
 import FeatureFlags_macOS
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -31,6 +32,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockSyncLauncher: MockSyncDeviceFlowLauncher!
     private var authStateSubject: PassthroughSubject<SyncAuthState, Never>!
+    private var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
@@ -38,6 +40,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockSyncLauncher = MockSyncDeviceFlowLauncher()
         authStateSubject = PassthroughSubject<SyncAuthState, Never>()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
@@ -45,13 +48,14 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         mockFeatureFlagger = nil
         mockSyncLauncher = nil
         authStateSubject = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
     // MARK: - Initialization Tests
 
     func testInit_ProperInitialization() {
-        let model = createModel(source: .bookmarksBar)
+        let model = createModel(source: .bookmarkAdded)
 
         XCTAssertFalse(model.shouldShowSyncButton)
     }
@@ -118,27 +122,6 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
         mockKeyValueStore.set(5, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
         let model = createModel(source: .bookmarkAdded)
-
-        let expectation = expectation(description: "shouldShowSyncButton should remain false")
-        let cancellable = model.$shouldShowSyncButton
-            .dropFirst() // Skip initial value
-            .sink { value in
-                if !value {
-                    expectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.inactive)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-    }
-
-    func testAuthStateChange_InactiveButDateExpired_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let expiredDate = Date().addingTimeInterval(-8 * 24 * 60 * 60) // 8 days ago
-        mockKeyValueStore.set(expiredDate, forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
-        let model = createModel(source: .bookmarksBar)
 
         let expectation = expectation(description: "shouldShowSyncButton should remain false")
         let cancellable = model.$shouldShowSyncButton
@@ -224,19 +207,6 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         XCTAssertFalse(model.shouldShowSyncButton)
     }
 
-    func testViewDidLoad_DateExpired_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarksBar)
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
-
-        let expiredDate = Date().addingTimeInterval(-8 * 24 * 60 * 60) // 8 days ago
-        mockKeyValueStore.set(expiredDate, forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
-
-        model.viewDidLoad()
-
-        XCTAssertFalse(model.shouldShowSyncButton)
-    }
-
     func testViewDidLoad_AllConditionsMet_ShowsButton() {
         mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
         let model = createModel(source: .bookmarkAdded)
@@ -247,18 +217,6 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         model.viewDidLoad()
 
         XCTAssertTrue(model.shouldShowSyncButton)
-    }
-
-    func testViewDidLoad_BookmarksBar_SetsFirstSeenDate() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarksBar)
-
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
-
-        // Now test viewDidLoad - should remain true and set date
-        model.viewDidLoad()
-        XCTAssertTrue(model.shouldShowSyncButton)
-        XCTAssertNotNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkFirstPresentedCount"))
     }
 
     func testViewDidLoad_BookmarkAdded_IncrementsCount() {
@@ -300,29 +258,115 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
 
     func testResetAllState_ClearsAllKeys() {
         // Set up some state
-        mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed")
         mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed")
-        mockKeyValueStore.set(Date(), forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
         mockKeyValueStore.set(3, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
 
         DismissableSyncDeviceButtonModel.resetAllState(from: mockKeyValueStore)
 
-        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed"))
         XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed"))
-        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkFirstPresentedCount"))
         XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount"))
+    }
+
+    // MARK: - Promo-backed Tests
+
+    func testWhenPromoIsActiveThenSyncButtonIsShown() {
+        // Given
+        let promo = MockBookmarksBarSyncPromo()
+        let model = createModel(source: .bookmarksBar, promo: promo)
+
+        // When
+        promo.isPromoActiveSubject.send(true)
+
+        // Then
+        XCTAssertTrue(model.shouldShowSyncButton)
+
+        // When
+        promo.isPromoActiveSubject.send(false)
+
+        // Then
+        XCTAssertFalse(model.shouldShowSyncButton)
+    }
+
+    func testWhenPromoBackedThenAuthStateChangesDoNotShowSyncButton() {
+        // Given
+        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
+        let model = createModel(source: .bookmarksBar, promo: MockBookmarksBarSyncPromo())
+
+        // When
+        authStateSubject.send(.inactive)
+        model.viewDidLoad()
+
+        // Then
+        XCTAssertFalse(model.shouldShowSyncButton)
+    }
+
+    func testWhenPromoBecomesActiveThenDisplayedPixelWaitsForButtonToAppear() {
+        // Given
+        let promo = MockBookmarksBarSyncPromo()
+        let model = createModel(source: .bookmarksBar, promo: promo)
+
+        // When
+        promo.isPromoActiveSubject.send(true)
+
+        // Then
+        XCTAssertTrue(model.shouldShowSyncButton)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenSyncButtonAppearsRepeatedlyThenDisplayedPixelFiresOnce() {
+        // Given
+        let model = createModel(source: .bookmarksBar, promo: MockBookmarksBarSyncPromo())
+
+        // When
+        model.syncButtonDidAppear()
+        model.syncButtonDidAppear()
+
+        // Then
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarksBar"])
+    }
+
+    func testWhenPromoBackedSyncButtonActionThenSetupStartsAndConfirmedPixelFires() {
+        // Given
+        let promo = MockBookmarksBarSyncPromo()
+        let model = createModel(source: .bookmarksBar, promo: promo)
+
+        // When
+        model.syncButtonAction()
+
+        // Then
+        XCTAssertEqual(promo.syncSetupStartedCount, 1)
+        XCTAssertEqual(mockSyncLauncher.startDeviceSyncFlowSources, [.bookmarksBar])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoConfirmed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarksBar"])
+    }
+
+    func testResetAllState_ClearsBookmarksBarLegacyKeys() {
+        // Given
+        mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed")
+        mockKeyValueStore.set(Date(), forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
+
+        // When
+        DismissableSyncDeviceButtonModel.resetAllState(from: mockKeyValueStore)
+
+        // Then
+        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed"))
+        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkFirstPresentedCount"))
     }
 
     // MARK: - Helper Methods
 
-    private func createModel(source: DismissableSyncDeviceButtonModel.DismissableSyncDevicePromoSource) -> DismissableSyncDeviceButtonModel {
+    private func createModel(source: DismissableSyncDeviceButtonModel.DismissableSyncDevicePromoSource,
+                             promo: BookmarksBarSyncPromoPresenting? = nil) -> DismissableSyncDeviceButtonModel {
         return DismissableSyncDeviceButtonModel(
             source: source,
             keyValueStore: mockKeyValueStore,
             authStatePublisher: authStateSubject.eraseToAnyPublisher(),
             initialAuthState: .initializing,
             syncLauncher: mockSyncLauncher,
-            featureFlagger: mockFeatureFlagger
+            featureFlagger: mockFeatureFlagger,
+            pixelFiring: pixelFiring,
+            promo: promo
         )
     }
 
@@ -343,11 +387,13 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-private class MockSyncDeviceFlowLauncher: SyncDeviceFlowLaunching {
+final class MockSyncDeviceFlowLauncher: SyncDeviceFlowLaunching {
     var startDeviceSyncFlowCalled = false
+    private(set) var startDeviceSyncFlowSources: [SyncDeviceButtonTouchpoint] = []
 
     func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
         startDeviceSyncFlowCalled = true
+        startDeviceSyncFlowSources.append(source)
         completion?()
     }
 }

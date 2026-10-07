@@ -18,6 +18,8 @@
 
 import AppKit
 import Combine
+import DDGSync
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
@@ -28,12 +30,14 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
 
     private var syncPromo: MockBookmarksBarSyncPromo!
     private var pixelFiring: PixelKitMock!
+    private var syncLauncher: MockSyncDeviceFlowLauncher!
     private var viewController: BookmarksBarViewController!
 
     override func setUp() {
         super.setUp()
         syncPromo = MockBookmarksBarSyncPromo()
         pixelFiring = PixelKitMock()
+        syncLauncher = MockSyncDeviceFlowLauncher()
         let bookmarkManager = MockBookmarkManager()
         viewController = BookmarksBarViewController(
             tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
@@ -42,8 +46,16 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
             pinningManager: MockPinningManager(),
             featureFlagger: MockFeatureFlagger(),
             appereancePreferences: AppearancePreferencesPersistorMock(),
-            syncPromo: syncPromo,
-            pixelFiring: pixelFiring
+            syncButtonModel: DismissableSyncDeviceButtonModel(
+                source: .bookmarksBar,
+                keyValueStore: MockKeyValueStore(),
+                authStatePublisher: Empty().eraseToAnyPublisher(),
+                initialAuthState: .inactive,
+                syncLauncher: syncLauncher,
+                featureFlagger: MockFeatureFlagger(),
+                pixelFiring: pixelFiring,
+                promo: syncPromo
+            )
         )
         _ = viewController.view
         viewController.viewWillAppear()
@@ -51,6 +63,7 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
 
     override func tearDown() {
         viewController = nil
+        syncLauncher = nil
         pixelFiring = nil
         syncPromo = nil
         super.tearDown()
@@ -85,17 +98,6 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
         XCTAssertEqual(viewController.syncButtonZeroWidthConstraint.priority, .required)
     }
 
-    func testWhenPromoIsShownAgainThenDisplayedPixelFiresOnlyOnce() {
-        // When
-        syncPromo.isPromoActiveSubject.send(true)
-        syncPromo.isPromoActiveSubject.send(false)
-        syncPromo.isPromoActiveSubject.send(true)
-
-        // Then
-        XCTAssertFalse(viewController.syncButton.isHidden)
-        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
-    }
-
     func testWhenBarIsReattachedWhilePromoIsActiveThenDisplayedPixelDoesNotFireAgain() {
         // Given
         syncPromo.isPromoActiveSubject.send(true)
@@ -109,7 +111,25 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
     }
 
-    func testWhenSyncButtonClickedThenPromoIsNotified() {
+    func testWhenPromoBecomesActiveWhileBarIsDetachedThenDisplayedPixelWaitsUntilBarIsShown() {
+        // Given
+        viewController.removeFromParent()
+
+        // When
+        syncPromo.isPromoActiveSubject.send(true)
+
+        // Then
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+
+        // When
+        viewController.viewWillAppear()
+
+        // Then
+        XCTAssertFalse(viewController.syncButton.isHidden)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+    }
+
+    func testWhenSyncButtonClickedThenSyncSetupStarts() {
         // Given
         syncPromo.isPromoActiveSubject.send(true)
 
@@ -117,19 +137,20 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
         viewController.syncClicked(self)
 
         // Then
-        XCTAssertEqual(syncPromo.syncButtonClickCount, 1)
+        XCTAssertEqual(syncPromo.syncSetupStartedCount, 1)
+        XCTAssertEqual(syncLauncher.startDeviceSyncFlowSources, [.bookmarksBar])
     }
 }
 
-private final class MockBookmarksBarSyncPromo: BookmarksBarSyncPromoPresenting {
+final class MockBookmarksBarSyncPromo: BookmarksBarSyncPromoPresenting {
     let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
-    private(set) var syncButtonClickCount = 0
+    private(set) var syncSetupStartedCount = 0
 
     var isPromoActivePublisher: AnyPublisher<Bool, Never> {
         isPromoActiveSubject.removeDuplicates().eraseToAnyPublisher()
     }
 
-    func syncButtonClicked() {
-        syncButtonClickCount += 1
+    func syncSetupStarted() {
+        syncSetupStartedCount += 1
     }
 }

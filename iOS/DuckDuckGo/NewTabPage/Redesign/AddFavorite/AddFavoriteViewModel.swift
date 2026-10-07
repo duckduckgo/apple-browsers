@@ -19,25 +19,24 @@
 
 import Bookmarks
 import Combine
-import Common
 import Foundation
-import FoundationExtensions
 
 @MainActor
 final class AddFavoriteViewModel: ObservableObject {
     @Published var name = ""
     @Published var urlText = "" {
-        didSet { validatedURL = validateURL(urlText) }
+        didSet {
+            let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+            validatedURL = trimmed.isEmpty ? nil : BookmarkUtils.url(from: trimmed)
+        }
     }
     var onSave: (() -> Void)?
 
     private var validatedURL: URL?
     private let bookmarks: MenuBookmarksInteracting
-    private let useUnifiedURLLogic: Bool
 
-    init(bookmarks: MenuBookmarksInteracting, useUnifiedURLLogic: Bool) {
+    init(bookmarks: MenuBookmarksInteracting) {
         self.bookmarks = bookmarks
-        self.useUnifiedURLLogic = useUnifiedURLLogic
     }
 
     var canSave: Bool { validatedURL != nil }
@@ -50,20 +49,4 @@ final class AddFavoriteViewModel: ObservableObject {
         return true
     }
 
-    private func validateURL(_ text: String) -> URL? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        // Preserve explicit schemes, including the omnibar's single-slash normalization.
-        // A domain followed by a port is not an explicit scheme.
-        let hasScheme = trimmed.range(of: "^[a-zA-Z][a-zA-Z0-9+.-]*:/", options: .regularExpression) != nil
-        // Validate the typed input before applying our HTTPS default. Adding a scheme first
-        // would make bare words look like explicitly entered local hostnames.
-        guard let url = URL(trimmedAddressBarString: trimmed, useUnifiedLogic: useUnifiedURLLogic),
-              url.isValid(usingUnifiedLogic: useUnifiedURLLogic),
-              URL.NavigationalScheme.hypertextSchemes.contains(.init(rawValue: url.scheme?.lowercased() ?? "")),
-              let host = url.host,
-              host.isValidHost,
-              host.split(separator: ".").allSatisfy({ !$0.hasPrefix("-") && !$0.hasSuffix("-") }) else { return nil }
-        return hasScheme ? url : url.replacing(scheme: URL.NavigationalScheme.https.rawValue)
-    }
 }

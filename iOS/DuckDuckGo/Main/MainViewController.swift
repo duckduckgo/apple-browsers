@@ -6711,8 +6711,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
-        let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel,
-                                         useUnifiedURLLogic: isUnifiedURLPredictionEnabled)
+        let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
         model.onSave = { [weak self] in
             WidgetCenter.shared.reloadAllTimelines()
             self?.syncService.scheduler.notifyDataChanged()

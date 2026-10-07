@@ -24,101 +24,110 @@ import XCTest
 
 @MainActor
 final class AddFavoriteViewModelTests: XCTestCase {
-    func testSchemeLessURLUsesHTTPSAndBlankNameUsesHost() {
-        for unifiedLogic in [false, true] {
-            let bookmarks = AddFavoriteBookmarksMock()
-            let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: unifiedLogic)
-            model.urlText = "  example.com  "
-            model.name = "  "
+    func testSchemeLessURLIsPreservedAndBlankNameUsesAddress() {
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = "  example.com  "
+        model.name = "  "
 
-            XCTAssertTrue(model.canSave)
-            XCTAssertTrue(model.save())
-            XCTAssertEqual(bookmarks.creations.count, 1)
-            XCTAssertEqual(bookmarks.creations.first?.url.scheme, "https")
-            XCTAssertEqual(bookmarks.creations.first?.url.host, "example.com")
-            XCTAssertEqual(bookmarks.creations.first?.title, "example.com")
-        }
+        XCTAssertTrue(model.canSave)
+        XCTAssertTrue(model.save())
+        XCTAssertEqual(bookmarks.creations.count, 1)
+        XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "example.com")
+        XCTAssertNil(bookmarks.creations.first?.url.scheme)
+        XCTAssertEqual(bookmarks.creations.first?.title, "example.com")
     }
 
     func testExplicitSchemePathAndNameArePreserved() {
-        for unifiedLogic in [false, true] {
-            let bookmarks = AddFavoriteBookmarksMock()
-            let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: unifiedLogic)
-            model.urlText = "http://example.com/page?q=one"
-            model.name = "  My favorite  "
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = "http://example.com/page?q=one"
+        model.name = "  My favorite  "
 
-            XCTAssertTrue(model.save())
-            XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "http://example.com/page?q=one")
-            XCTAssertEqual(bookmarks.creations.first?.title, "My favorite")
+        XCTAssertTrue(model.save())
+        XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "http://example.com/page?q=one")
+        XCTAssertEqual(bookmarks.creations.first?.title, "My favorite")
+    }
+
+    func testInvalidOrBlankURLCannotSaveOrReportSuccess() {
+        for input in ["", "   ", "http://[", "https://exa[mple.com"] {
+            let bookmarks = AddFavoriteBookmarksMock()
+            let model = AddFavoriteViewModel(bookmarks: bookmarks)
+            model.urlText = input
+            model.onSave = { XCTFail("Must not report an invalid favorite as saved") }
+
+            XCTAssertFalse(model.canSave, input)
+            XCTAssertFalse(model.save(), input)
+            XCTAssertTrue(bookmarks.creations.isEmpty, input)
         }
     }
 
-    func testInvalidURLCannotSaveOrReportSuccess() {
-        for unifiedLogic in [false, true] {
-            for input in ["", "   ", "not a URL", "https://", "javascript:alert(1)", "ftp://example.com",
-                          "-11", "hello", "https://-11", "http://example-.com", "https://example.-com"] {
-                let bookmarks = AddFavoriteBookmarksMock()
-                let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: unifiedLogic)
-                model.urlText = input
-                model.onSave = { XCTFail("Must not report an invalid favorite as saved") }
+    func testRelativeURLsAndCustomSchemesMatchBookmarkEditor() {
+        for input in ["-11", "hello", "ftp://example.com", "myapp://open/page"] {
+            let bookmarks = AddFavoriteBookmarksMock()
+            let model = AddFavoriteViewModel(bookmarks: bookmarks)
+            model.urlText = input
 
-                XCTAssertFalse(model.canSave, input)
-                XCTAssertFalse(model.save(), input)
-                XCTAssertTrue(bookmarks.creations.isEmpty, input)
-            }
+            XCTAssertTrue(model.canSave, input)
+            XCTAssertTrue(model.save(), input)
+            XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, input)
+        }
+    }
+
+    func testBookmarkletIsEncodedWithoutDoubleEncoding() {
+        for input in ["javascript:alert('Hello world')", "javascript:alert('Hello%20world')"] {
+            let bookmarks = AddFavoriteBookmarksMock()
+            let model = AddFavoriteViewModel(bookmarks: bookmarks)
+            model.urlText = input
+
+            XCTAssertTrue(model.canSave)
+            XCTAssertTrue(model.save())
+            XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "javascript:alert('Hello%20world')")
         }
     }
 
     func testURLValidationUpdatesAfterEditingAndClearingTheAddress() {
-        for unifiedLogic in [false, true] {
-            let bookmarks = AddFavoriteBookmarksMock()
-            let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: unifiedLogic)
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
 
-            model.urlText = "example.com"
-            XCTAssertTrue(model.canSave)
-            model.name = "Work"
-            XCTAssertTrue(model.canSave)
-            model.urlText = "-11"
-            XCTAssertFalse(model.canSave)
-            XCTAssertFalse(model.save())
-            model.urlText = "https://duckduckgo.com"
-            XCTAssertTrue(model.canSave)
-            model.urlText = ""
-            XCTAssertFalse(model.canSave)
-            XCTAssertFalse(model.save())
-            XCTAssertTrue(bookmarks.creations.isEmpty)
-        }
+        model.urlText = "example.com"
+        XCTAssertTrue(model.canSave)
+        model.name = "Work"
+        XCTAssertTrue(model.canSave)
+        model.urlText = "http://["
+        XCTAssertFalse(model.canSave)
+        XCTAssertFalse(model.save())
+        model.urlText = "https://duckduckgo.com"
+        XCTAssertTrue(model.canSave)
+        model.urlText = ""
+        XCTAssertFalse(model.canSave)
+        XCTAssertFalse(model.save())
+        XCTAssertTrue(bookmarks.creations.isEmpty)
     }
 
-    func testSchemeLessAddressWithPortKeepsPortWhenDefaultingToHTTPS() {
-        for unifiedLogic in [false, true] {
-            let bookmarks = AddFavoriteBookmarksMock()
-            let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: unifiedLogic)
-            model.urlText = "example.com:8443/page"
+    func testAddressWithPortIsSavedAsEntered() {
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = "example.com:8443/page"
 
-            XCTAssertTrue(model.save())
-            XCTAssertEqual(bookmarks.creations.first?.url.scheme, "https")
-            XCTAssertEqual(bookmarks.creations.first?.url.host, "example.com")
-            XCTAssertEqual(bookmarks.creations.first?.url.port, 8443)
-            XCTAssertEqual(bookmarks.creations.first?.url.path, "/page")
-        }
+        XCTAssertTrue(model.save())
+        XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "example.com:8443/page")
     }
 
-    func testInternationalDomainUsesSharedParser() {
-        for unifiedLogic in [false, true] {
-            let bookmarks = AddFavoriteBookmarksMock()
-            let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: unifiedLogic)
-            model.urlText = "例子.测试"
+    func testInternationalDomainUsesBookmarkParser() {
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = "https://例子.测试/page"
 
-            XCTAssertTrue(model.save())
-            XCTAssertEqual(bookmarks.creations.first?.url.scheme, "https")
-            XCTAssertEqual(bookmarks.creations.first?.url.host, "xn--fsqu00a.xn--0zwm56d")
-        }
+        XCTAssertTrue(model.save())
+        XCTAssertEqual(bookmarks.creations.first?.url.scheme, "https")
+        XCTAssertEqual(bookmarks.creations.first?.url.host, "xn--fsqu00a.xn--0zwm56d")
+        XCTAssertEqual(bookmarks.creations.first?.url.path, "/page")
     }
 
     func testSaveCallbackRunsAfterEachSuccessfulSave() {
         let bookmarks = AddFavoriteBookmarksMock()
-        let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: false)
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
         model.urlText = "example.com"
         var events: [String] = []
         bookmarks.onCreate = { events.append("create") }
@@ -133,7 +142,7 @@ final class AddFavoriteViewModelTests: XCTestCase {
     func testFailedCreationDoesNotReportSuccess() {
         let bookmarks = AddFavoriteBookmarksMock()
         bookmarks.shouldCreate = false
-        let model = AddFavoriteViewModel(bookmarks: bookmarks, useUnifiedURLLogic: false)
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
         model.urlText = "example.com"
         model.onSave = { XCTFail("Must not report a failed creation as saved") }
 
@@ -145,7 +154,7 @@ final class AddFavoriteViewModelTests: XCTestCase {
 @MainActor
 final class AddFavoriteViewControllerTests: XCTestCase {
     func testSheetHeightTracksDynamicTypeChanges() {
-        let model = AddFavoriteViewModel(bookmarks: AddFavoriteBookmarksMock(), useUnifiedURLLogic: false)
+        let model = AddFavoriteViewModel(bookmarks: AddFavoriteBookmarksMock())
         let controller = AddFavoriteViewController(model: model)
         let parent = UIViewController()
         parent.addChild(controller)

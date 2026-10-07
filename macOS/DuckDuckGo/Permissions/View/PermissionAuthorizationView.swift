@@ -26,7 +26,6 @@ struct PermissionAuthorizationView: View {
         static let buttonHeight: CGFloat = 32
         static let closeButtonSize: CGFloat = 20
         static let systemPermissionIconSize: CGFloat = 24
-        /// Fills the glyph's exclamation-mark cut-out while staying inside its 20pt disc.
         static let systemPermissionIconMarkSize: CGFloat = 14
         static let systemPermissionButtonHeight: CGFloat = 28
         static let systemPermissionCornerRadius: CGFloat = 16
@@ -35,20 +34,16 @@ struct PermissionAuthorizationView: View {
     @ObservedObject
     var viewModel: PermissionAuthorizationViewModel
 
-    /// Redraws the prompt with the new palette when the browser theme changes while it's open.
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
 
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Status colours use the default palette so the warning looks the same in every theme
-    /// (Cool Gray's dark `statusWarningFillPrimary` is an opaque yellow).
     private var systemPermissionIconColor: Color {
         colorScheme == .dark ?
             Color(designSystemColor: .statusYellowTertiary, palette: .default) :
             Color(designSystemColor: .statusYellowPrimary, palette: .default)
     }
 
-    /// The design keeps the brand blue with white text in dark mode, where `accentPrimary` turns light blue.
     private var systemPermissionButtonColor: Color {
         colorScheme == .dark ?
             Color(designSystemColor: .accentTertiary) :

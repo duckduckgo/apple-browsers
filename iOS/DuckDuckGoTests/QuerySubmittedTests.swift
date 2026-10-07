@@ -260,7 +260,32 @@ class QuerySubmittedTests: XCTestCase {
 
         XCTAssertFalse(shouldChange)
         XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(mock.promptTermsAccepted, false, "Only Ask or Create claims acceptance")
         XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .webSearch)
+    }
+
+    /// Same as iPhone: Ask with the disclaimer on screen accepts, so duck.ai doesn't show its own card for this prompt.
+    func testWhenAskIsTappedWithTheTermsDisclaimerShownInIPadDuckAIModeThenThePromptCarriesTermsAccepted() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+
+        sut.onAIChatSendPressed()
+
+        XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(mock.promptTermsAccepted, true)
+        XCTAssertTrue(termsStore.hasAccepted)
+    }
+
+    func testWhenAskIsTappedAfterAnEarlierAcceptanceInIPadDuckAIModeThenThePromptCarriesTermsAccepted() throws {
+        termsStore.recordWebReport()
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+
+        sut.onAIChatSendPressed()
+
+        XCTAssertEqual(mock.promptTermsAccepted, true)
     }
 
     // MARK: - Helper Methods
@@ -302,6 +327,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     var query: String = ""
     var promptQuery: String = ""
+    var promptTermsAccepted: Bool?
     var suggestion: Suggestion?
     var promptControlValues: IPadDuckAIControlValues?
     var onPromptSubmittedAction: (() -> Void)?
@@ -321,6 +347,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     func clear() {
         query = ""
         promptQuery = ""
+        promptTermsAccepted = nil
         suggestion = nil
         promptControlValues = nil
         onPromptSubmittedAction = nil
@@ -346,10 +373,11 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return nil
     }
 
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues, termsAccepted: Bool) {
         wasOnPromptSubmittedCalled = true
         promptQuery = query
         promptControlValues = controlValues
+        promptTermsAccepted = termsAccepted
         onPromptSubmittedAction?()
     }
 

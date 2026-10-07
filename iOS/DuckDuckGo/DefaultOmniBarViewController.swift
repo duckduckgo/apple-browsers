@@ -517,6 +517,7 @@ extension DefaultOmniBarViewController {
                 if sentWithAsk {
                     termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message)
                 }
+                let termsAccepted = sentWithAsk && termsOfServiceDisclaimer.hasAccepted
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
                 PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
@@ -528,7 +529,7 @@ extension DefaultOmniBarViewController {
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
                 omniBarView.setSearchAreaExpanded(false, animated: false)
                 omniBarView.aiChatTextView.resignFirstResponder()
-                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: controlValues)
+                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: controlValues, termsAccepted: termsAccepted)
             }
         } else {
             omniDelegate?.onOmniQuerySubmitted(query)

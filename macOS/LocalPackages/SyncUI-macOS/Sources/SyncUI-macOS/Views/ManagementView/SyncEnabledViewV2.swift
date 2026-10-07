@@ -65,14 +65,14 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
         }
 
         // Intro text
-        SyncUIViewsV2.TextDetailSecondaryLeftAligned(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooterV2 : UserText.syncEnabledFooterWithoutAIChatV2)
+        SyncUIViews.LeadingSecondaryBody(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooterV2 : UserText.syncEnabledFooterWithoutAIChatV2)
 
         // My Devices
         PreferencePaneSection(UserText.myDevicesV2) {
             SyncedDevicesViewV2<ViewModel>()
                 .environmentObject(model)
 
-            SyncUIViewsV2.TextDetailSecondaryLeftAligned(text: UserText.myDevicesFooterV2)
+            SyncUIViews.LeadingSecondaryBody(text: UserText.myDevicesFooterV2)
         }
 
         // Bookmarks
@@ -108,7 +108,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
         Toggle(isOn: isOn) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                SyncUIViewsV2.TextCaption(text: caption)
+                SyncUIViews.Caption(text: caption)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -135,7 +135,7 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     }
 
     private func recoveryInstructionsFooter() -> some View {
-        SyncUIViewsV2.TextDetailSecondaryLeftAligned(text: UserText.recoveryInstructionsFooterV2)
+        SyncUIViews.LeadingSecondaryBody(text: UserText.recoveryInstructionsFooterV2)
     }
 
     @ViewBuilder

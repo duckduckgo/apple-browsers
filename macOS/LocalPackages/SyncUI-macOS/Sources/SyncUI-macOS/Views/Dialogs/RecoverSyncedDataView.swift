@@ -35,8 +35,8 @@ struct RecoverSyncedDataView: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.clipboardSyncRecoverFeature128)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViewsV2.TextHeader(text: UserText.recoverSyncedDataDialogTitleImproved)
-                    SyncUIViewsV2.TextDetailSecondary(text: UserText.recoverSyncedDataDialogSubtitleImproved)
+                    SyncUIViews.CenteredTitle(text: UserText.recoverSyncedDataDialogTitleImproved)
+                    SyncUIViews.CenteredSecondaryBody(text: UserText.recoverSyncedDataDialogSubtitleImproved)
                 }
             }
         } buttons: {
@@ -60,8 +60,8 @@ struct RecoverSyncedDataView: View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPair96)
-                SyncUIViews.TextHeader(text: UserText.reciverSyncedDataDialogTitle)
-                SyncUIViews.TextDetailMultiline(text: UserText.reciverSyncedDataDialogSubitle)
+                SyncUIViews.DialogTitle(text: UserText.reciverSyncedDataDialogTitle)
+                SyncUIViews.DialogMessage(text: UserText.reciverSyncedDataDialogSubitle)
             }
             .frame(width: 320)
         } buttons: {

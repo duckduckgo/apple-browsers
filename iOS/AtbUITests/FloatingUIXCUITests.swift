@@ -538,6 +538,63 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertConfiguredBarPosition()
     }
 
+    func verifyChromeThemesAcrossPageColors(themes: [String] = ["Light", "Dark", "System Default"]) {
+        openPage(path: "/chrome-colors", heading: "Chrome Color Test")
+
+        for theme in themes {
+            selectTheme(theme)
+            for color in ["White", "Black", "Blue", "Orange"] {
+                let colorButton = app.webViews.buttons[color]
+                XCTAssertTrue(colorButton.waitForHittable(timeout: timeout))
+                colorButton.tap()
+                XCTAssertTrue(app.staticTexts["\(color) page"].waitForExistence(timeout: timeout))
+                assertConfiguredBarPosition()
+                assertChromeButtonsAreUsable()
+                attachChromeScreenshot(name: "\(barPosition.rawValue)-\(theme)-\(color)")
+            }
+        }
+
+        collapseChrome()
+        attachChromeScreenshot(name: "\(barPosition.rawValue)-\(themes.last ?? "System Default")-collapsed")
+        webView.swipeDown(velocity: .fast)
+        webView.swipeDown(velocity: .fast)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        verifyUnifiedToggleInputTransitions()
+    }
+
+    private func selectTheme(_ theme: String) {
+        element(withIdentifier: AccessibilityID.toolbarMenu).tap()
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForHittable(timeout: timeout))
+        settings.tap()
+        let appearance = element(withIdentifier: "Appearance")
+        for _ in 0..<6 {
+            if appearance.isHittable && app.frame.contains(appearance.frame) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(appearance.waitForHittable(timeout: timeout), app.debugDescription)
+        appearance.tap()
+        let picker = app.cells.containing(.staticText, identifier: "Theme").buttons.firstMatch
+        XCTAssertTrue(picker.waitForHittable(timeout: timeout), app.debugDescription)
+        if !picker.label.contains(theme) {
+            picker.tap()
+            let option = app.buttons[theme]
+            XCTAssertTrue(option.waitForHittable(timeout: timeout))
+            option.tap()
+        }
+        XCTAssertTrue(picker.label.contains(theme))
+        app.navigationBars.buttons["Settings"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+    }
+
+    private func attachChromeScreenshot(name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     private var searchField: XCUIElement {
         let fields = app.descendants(matching: .any).matching(identifier: AccessibilityID.searchEntry)
         return fields.allElementsBoundByIndex.first(where: { $0.isHittable }) ?? fields.firstMatch
@@ -567,12 +624,6 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
         ]
-        if let toggleEnabled {
-            app.launchArguments += [
-                "-aichat.settings.isEnabled", "true",
-                "-aichat.settings.showAIChatExperimentalSearchInput", String(toggleEnabled),
-            ]
-        }
         app.launchArguments += additionalArguments
         app.launchEnvironment = [
             "UITEST_MODE": "1",
@@ -588,7 +639,49 @@ class FloatingUIXCUITestCase: XCTestCase {
         if barPosition == .bottom {
             moveAddressBar(to: .bottom)
         }
+        if let toggleEnabled {
+            selectInputToggle(enabled: toggleEnabled)
+        }
         assertConfiguredBarPosition()
+    }
+
+    private func selectInputToggle(enabled: Bool) {
+        element(withIdentifier: AccessibilityID.toolbarMenu).tap()
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForHittable(timeout: timeout))
+        settings.tap()
+        let aiFeatures = app.collectionViews.buttons["AI Features"].firstMatch
+        for _ in 0..<6 {
+            let frame = aiFeatures.frame
+            if frame.width > 0 && frame.height > 0 && app.frame.contains(frame) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(aiFeatures.waitForExistence(timeout: timeout), app.debugDescription)
+        aiFeatures.tap()
+        let enableAI = app.switches["Settings.AIFeatures.EnableToggle"].firstMatch
+        for _ in 0..<6 {
+            if enableAI.exists {
+                let frame = enableAI.frame
+                if frame.width > 0 && frame.height > 0 && app.frame.contains(frame) { break }
+            }
+            app.swipeUp()
+        }
+        XCTAssertTrue(enableAI.waitForHittable(timeout: timeout), app.debugDescription)
+        if enableAI.value as? String == "0" {
+            enableAI.tap()
+        }
+        let identifier = enabled ? "Settings.AIFeatures.Picker.SearchAndDuckAI" : "Settings.AIFeatures.Picker.SearchOnly"
+        let option = element(withIdentifier: identifier)
+        for _ in 0..<4 {
+            let frame = option.frame
+            if frame.width > 0 && frame.height > 0 && app.frame.contains(frame) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(option.waitForHittable(timeout: timeout))
+        option.tap()
+        app.navigationBars.buttons["Settings"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
     }
 
     private func assertConfiguredBarPosition(file: StaticString = #filePath, line: UInt = #line) {
@@ -779,6 +872,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/page-two"] = { _ in
             .ok(.html(Self.pageTwoHTML))
         }
+        server["/chrome-colors"] = { _ in
+            .ok(.html(Self.chromeColorsHTML))
+        }
         server["/long-page"] = { _ in
             .ok(.html(Self.longPageHTML))
         }
@@ -825,6 +921,39 @@ class FloatingUIXCUITestCase: XCTestCase {
     <html lang="en">
       <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page Two</title></head>
       <body><h1>\(Page.twoHeading)</h1><a href="/page-one">Previous page</a></body>
+    </html>
+    """
+
+    private static let chromeColorsHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="white">
+        <title>Chrome Colors</title>
+        <style>
+          body { margin: 0; min-height: 5000px; background: white; }
+          main { position: fixed; top: 35%; left: 16px; right: 16px; padding: 16px; background: #eee; color: #111; }
+          button { min-height: 44px; }
+        </style>
+      </head>
+      <body>
+        <main>
+          <h1>Chrome Color Test</h1>
+          <button onclick="changeColor('White')">White</button>
+          <button onclick="changeColor('Black')">Black</button>
+          <button onclick="changeColor('Blue')">Blue</button>
+          <button onclick="changeColor('Orange')">Orange</button>
+          <p id="status">White page</p>
+        </main>
+        <script>
+          function changeColor(color) {
+            document.body.style.backgroundColor = color.toLowerCase();
+            document.querySelector('meta[name="theme-color"]').content = color.toLowerCase();
+            document.getElementById('status').textContent = color + ' page';
+          }
+        </script>
+      </body>
     </html>
     """
 
@@ -930,6 +1059,9 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .top }
 
+    func testChromeThemesAcrossPageColors() { verifyChromeThemesAcrossPageColors() }
+    func testSystemThemeAcrossPageColors() { verifyChromeThemesAcrossPageColors(themes: ["System Default"]) }
+
     func testExistingSearchReplacementWithToggleEnabled() { verifyExistingSearchReplacement(toggleEnabled: true) }
     func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
 
@@ -961,6 +1093,9 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
 final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .bottom }
+
+    func testChromeThemesAcrossPageColors() { verifyChromeThemesAcrossPageColors() }
+    func testSystemThemeAcrossPageColors() { verifyChromeThemesAcrossPageColors(themes: ["System Default"]) }
 
     func testExistingSearchReplacementWithToggleEnabled() { verifyExistingSearchReplacement(toggleEnabled: true) }
     func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }

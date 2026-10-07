@@ -762,7 +762,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
-    private var pageGlassInterfaceStyle: UIUserInterfaceStyle?
+    private var materialInterfaceStyle: UIUserInterfaceStyle?
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
@@ -773,11 +773,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var desiredGlassInterfaceStyle: UIUserInterfaceStyle {
-        if #available(iOS 26.0, *), !fireMode {
-            return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
-        }
-        if let pageGlassInterfaceStyle {
-            return pageGlassInterfaceStyle
+        if let materialInterfaceStyle {
+            return materialInterfaceStyle
         }
         return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
     }
@@ -786,11 +783,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         var view = UIVisualEffectView()
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
-                let effect = UIGlassEffect(style: .regular)
+                let effect = FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: configuration.interfaceStyle)
                 if configuration.fireMode {
                     effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
                 }
                 view = UIVisualEffectView(effect: effect)
+                if !configuration.fireMode {
+                    FloatingGlassAppearancePolicy.applyGlassBackground(to: view, interfaceStyle: configuration.interfaceStyle)
+                }
                 view.cornerConfiguration = .capsule()
             }
         }
@@ -809,8 +809,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var leadingButtonsGlassView: UIVisualEffectView?
     private var trailingButtonsGlassView: UIVisualEffectView?
     private var isFloatingMinimalChromeBar = false
-    /// Fire-mode state the capsules were built with, so their fixed tint is only rebuilt on change.
     private var minimalChromeGlassFireMode = false
+    private var minimalChromeGlassInterfaceStyle: UIUserInterfaceStyle?
 
     private let opaqueEffect: UIVisualEffectView = {
         let view: UIVisualEffectView
@@ -967,8 +967,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle? = nil) {
+        guard isFloatingUIEnabled else { return }
         if let interfaceStyle {
-            pageGlassInterfaceStyle = interfaceStyle
+            materialInterfaceStyle = interfaceStyle
         }
         glassEffectConfiguration = nil
         updateFireModeAppearance()
@@ -984,7 +985,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             removeMinimalChromeButtonGlass()
         }
         makeGlass()
-        applyPageGlassInterfaceStyle()
+        applyMaterialInterfaceStyle()
         setNeedsLayout()
     }
 
@@ -993,6 +994,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsGlassView = wrapButtonContainerInGlass(leadingButtonsContainer)
         trailingButtonsGlassView = wrapButtonContainerInGlass(trailingButtonsContainer)
         minimalChromeGlassFireMode = fireMode
+        minimalChromeGlassInterfaceStyle = desiredGlassInterfaceStyle
     }
 
     private func removeMinimalChromeButtonGlass() {
@@ -1042,9 +1044,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func makeMinimalChromeGlassView() -> UIVisualEffectView {
         let view: UIVisualEffectView
         if #available(iOS 26.0, *) {
-            let effect = UIGlassEffect(style: .regular)
-            effect.tintColor = fireMode ? UIColor(singleUseColor: .fireModeBackground) : nil
+            let effect = FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: desiredGlassInterfaceStyle)
+            if fireMode {
+                effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+            }
             view = UIVisualEffectView(effect: effect)
+            if !fireMode {
+                FloatingGlassAppearancePolicy.applyGlassBackground(to: view, interfaceStyle: desiredGlassInterfaceStyle)
+            }
             view.cornerConfiguration = .capsule()
         } else {
             view = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
@@ -1054,11 +1061,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }
 
-    /// Rebuilds the button glass when fire mode changes, since `UIGlassEffect`'s tint is fixed at init.
     private func refreshMinimalChromeGlassTint() {
         guard isFloatingMinimalChromeBar,
               leadingButtonsGlassView != nil,
-              minimalChromeGlassFireMode != fireMode else { return }
+              minimalChromeGlassFireMode != fireMode
+                || minimalChromeGlassInterfaceStyle != desiredGlassInterfaceStyle else { return }
         installMinimalChromeButtonGlass()
     }
 
@@ -1366,24 +1373,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingGlassContentHostView.overrideUserInterfaceStyle = style
         }
         refreshMinimalChromeGlassTint()
-        applyPageGlassInterfaceStyle()
+        applyMaterialInterfaceStyle()
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
-    private func applyPageGlassInterfaceStyle() {
-        guard !fireMode, let pageGlassInterfaceStyle else { return }
-        if #available(iOS 26.0, *) {
-            glassEffect.overrideUserInterfaceStyle = .unspecified
-            leadingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
-            trailingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
-            floatingGlassContentHostView.overrideUserInterfaceStyle = shouldUseFloatingTopGlass
-                ? .unspecified
-                : window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
-            return
-        }
-        glassEffect.overrideUserInterfaceStyle = pageGlassInterfaceStyle
-        leadingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
-        trailingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
+    private func applyMaterialInterfaceStyle() {
+        guard isFloatingUIEnabled, !fireMode else { return }
+        let interfaceStyle = desiredGlassInterfaceStyle
+        glassEffect.overrideUserInterfaceStyle = interfaceStyle
+        leadingButtonsGlassView?.overrideUserInterfaceStyle = interfaceStyle
+        trailingButtonsGlassView?.overrideUserInterfaceStyle = interfaceStyle
+        floatingGlassContentHostView.overrideUserInterfaceStyle = interfaceStyle
     }
 
     private func updateShadows() {

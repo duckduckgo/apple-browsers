@@ -138,6 +138,7 @@ final class FloatingDomainCapsuleController {
     }()
     private var centerYConstraint: NSLayoutConstraint?
     private var hasAppliedGlassStyleAtValidSize = false
+    private var materialInterfaceStyle: UIUserInterfaceStyle?
     private var widthConstraint: NSLayoutConstraint?
     private var heightConstraint: NSLayoutConstraint?
 
@@ -302,11 +303,23 @@ final class FloatingDomainCapsuleController {
 
     private func applyGlassStyle() {
         if #available(iOS 26.0, *) {
-            backgroundView.effect = UIGlassEffect(style: .regular)
+            backgroundView.effect = FloatingGlassAppearancePolicy.glassEffect(
+                interfaceStyle: materialInterfaceStyle ?? button.traitCollection.userInterfaceStyle)
+            FloatingGlassAppearancePolicy.applyGlassBackground(
+                to: backgroundView,
+                interfaceStyle: materialInterfaceStyle ?? button.traitCollection.userInterfaceStyle)
         } else {
             backgroundView.effect = UIBlurEffect(style: .systemThinMaterial)
             backgroundView.contentView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.2)
         }
+    }
+
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
+        guard materialInterfaceStyle != interfaceStyle else { return }
+        materialInterfaceStyle = interfaceStyle
+        backgroundView.overrideUserInterfaceStyle = interfaceStyle
+        domainLabel.overrideUserInterfaceStyle = interfaceStyle
+        applyGlassStyle()
     }
 
     @objc

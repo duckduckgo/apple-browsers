@@ -572,57 +572,62 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
         XCTAssertNil(color)
     }
 
-    func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {
+    func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfAppAppearance() {
         let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: true,
-            traitCollection: UITraitCollection(userInterfaceStyle: .light),
-            pageBackgroundColor: .white)
+            traitCollection: UITraitCollection(userInterfaceStyle: .light))
 
         XCTAssertEqual(interfaceStyle, .dark)
     }
 
-    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+    func testWhenNormalModeUsesDarkAppAppearanceThenInterfaceStyleIsDark() {
         let traitCollection = UITraitCollection(userInterfaceStyle: .dark)
 
         XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
-                                                                    traitCollection: traitCollection,
-                                                                    pageBackgroundColor: .black),
+                                                                    traitCollection: traitCollection),
                        .dark)
-        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
-                                                                    traitCollection: traitCollection,
-                                                                    pageBackgroundColor: .white),
-                       .light)
     }
 
-    func testWhenDarkDeviceAppearanceHasNoPageColorThenInterfaceStyleIsDark() {
-        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
-            isFireMode: false,
-            traitCollection: UITraitCollection(userInterfaceStyle: .dark),
-            pageBackgroundColor: nil)
-
-        XCTAssertEqual(interfaceStyle, .dark)
-    }
-
-    func testWhenNormalModeUsesLightDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+    func testWhenNormalModeUsesLightAppAppearanceThenInterfaceStyleIsLight() {
         let traitCollection = UITraitCollection(userInterfaceStyle: .light)
 
         XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
-                                                                    traitCollection: traitCollection,
-                                                                    pageBackgroundColor: .black),
-                       .dark)
-        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
-                                                                    traitCollection: traitCollection,
-                                                                    pageBackgroundColor: .white),
+                                                                    traitCollection: traitCollection),
                        .light)
     }
 
-    func testWhenNormalModeHasNoPageColorThenInterfaceStyleIsLight() {
+    func testWhenAppAppearanceIsUnspecifiedThenInterfaceStyleIsLight() {
         let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: false,
-            traitCollection: UITraitCollection(userInterfaceStyle: .light),
-            pageBackgroundColor: nil)
+            traitCollection: UITraitCollection(userInterfaceStyle: .unspecified))
 
         XCTAssertEqual(interfaceStyle, .light)
+    }
+
+    func testWhenGlassThemeDiffersFromCurrentTraitsThenTintAndBackgroundUseRequestedTheme() {
+        guard #available(iOS 26.0, *) else { return }
+        UITraitCollection(userInterfaceStyle: .dark).performAsCurrent {
+            let effect = FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: .light)
+            let view = UIVisualEffectView(effect: effect)
+            FloatingGlassAppearancePolicy.applyGlassBackground(to: view, interfaceStyle: .light)
+            XCTAssertEqual(effect.tintColor, .white)
+            if #available(iOS 27.0, *) {
+                XCTAssertNil(view.backgroundColor)
+            } else {
+                XCTAssertEqual(view.backgroundColor, .white)
+            }
+        }
+        UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
+            let effect = FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: .dark)
+            let view = UIVisualEffectView(effect: effect)
+            FloatingGlassAppearancePolicy.applyGlassBackground(to: view, interfaceStyle: .dark)
+            XCTAssertEqual(effect.tintColor, .black)
+            if #available(iOS 27.0, *) {
+                XCTAssertNil(view.backgroundColor)
+            } else {
+                XCTAssertEqual(view.backgroundColor, .black)
+            }
+        }
     }
 }
 
@@ -943,20 +948,23 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(glassViewCount(in: barView), baseline)
     }
 
-    func testWhenFloatingMinimalChromeBarShowsLightPageThenGlassUsesSupportedAppearancePolicy() {
+    func testWhenFloatingMinimalChromeThemeChangesThenAllGlassGroupsFollowTheme() {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
         barView.overrideUserInterfaceStyle = .dark
         barView.setFloatingMinimalChromeBar(true)
 
-        barView.refreshMaterialAppearance(interfaceStyle: .light)
+        for style in [UIUserInterfaceStyle.light, .dark, .light] {
+            barView.refreshMaterialAppearance(interfaceStyle: style)
 
-        let glassViews = allGlassViews(in: barView)
-        XCTAssertEqual(glassViews.count, 3)
-        if #available(iOS 26.0, *) {
-            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .unspecified })
-        } else {
-            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .light })
+            let glassViews = allGlassViews(in: barView)
+            XCTAssertEqual(glassViews.count, 3)
+            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == style })
+            if #available(iOS 26.0, *) {
+                XCTAssertTrue(glassViews.allSatisfy {
+                    ($0.effect as? UIGlassEffect)?.tintColor == FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: style).tintColor
+                })
+            }
         }
     }
 
@@ -974,6 +982,23 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.setFloatingMinimalChromeBar(true)
 
         XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
+
+    func testWhenFloatingUIDisabledThenMaterialRefreshDoesNotOverrideControlAppearance() {
+        let barView = makeBarView(isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.overrideUserInterfaceStyle = .light
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        window.layoutIfNeeded()
+        if #available(iOS 17.0, *) {
+            barView.textField.updateTraitsIfNeeded()
+        }
+
+        XCTAssertEqual(barView.textField.traitCollection.userInterfaceStyle, .light)
     }
 
     func testWhenFloatingBarResizesThenFieldGlassMatchesItsContainerBounds() {
@@ -1184,18 +1209,28 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(glassViewCount(in: searchContainer), 0)
     }
 
-    func testWhenTopFloatingFieldUsesAdaptiveGlassThenContentInheritsGlassContrast() throws {
+    func testWhenTopFloatingFieldChangesThemeThenGlassAndContentUseTheSameStyle() throws {
         guard #available(iOS 26.0, *) else { return }
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.overrideUserInterfaceStyle = .light
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
 
-        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        for style in [UIUserInterfaceStyle.dark, .light] {
+            barView.refreshMaterialAppearance(interfaceStyle: style)
+            window.layoutIfNeeded()
 
-        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
-        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
-        XCTAssertTrue(contentHost.superview === glassView.contentView)
-        XCTAssertEqual(contentHost.overrideUserInterfaceStyle, .unspecified)
+            let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+            let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+            XCTAssertTrue(contentHost.superview === glassView.contentView)
+            XCTAssertEqual(glassView.overrideUserInterfaceStyle, style)
+            XCTAssertEqual(contentHost.overrideUserInterfaceStyle, style)
+            barView.textField.updateTraitsIfNeeded()
+            XCTAssertEqual(barView.textField.traitCollection.userInterfaceStyle, style)
+        }
     }
 
     func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToContainer() throws {
@@ -1399,6 +1434,24 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
 
     private var capsuleButton: UIButton? {
         containerView.subviews.compactMap { $0 as? UIButton }.first
+    }
+
+    func testWhenCapsuleThemeChangesThenGlassAndDomainUseTheSameStyle() throws {
+        guard #available(iOS 26.0, *) else { return }
+        for position in [AddressBarPosition.top, .bottom] {
+            update(barsVisibilityPercent: 0, addressBarPosition: position)
+            for style in [UIUserInterfaceStyle.dark, .light] {
+                controller.refreshMaterialAppearance(interfaceStyle: style)
+
+                let glassView = try XCTUnwrap(capsuleButton?.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+                let label = try XCTUnwrap(glassView.contentView.subviews.compactMap { $0 as? UILabel }.first)
+                XCTAssertEqual(glassView.overrideUserInterfaceStyle, style)
+                label.updateTraitsIfNeeded()
+                XCTAssertEqual(label.traitCollection.userInterfaceStyle, style)
+                XCTAssertEqual((glassView.effect as? UIGlassEffect)?.tintColor,
+                               FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: style).tintColor)
+            }
+        }
     }
 
     @discardableResult

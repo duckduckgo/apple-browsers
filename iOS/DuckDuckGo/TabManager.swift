@@ -1016,6 +1016,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
+            tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {
                 removeFromCache(controller)
@@ -1064,6 +1065,8 @@ extension TabManager {
     @MainActor
     func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         let tabsData = tabsRemovalData(browsingMode: browsingMode)
+
+        tabsData.tabsToDelete.forEach { $0.iPadOmnibarDraft.invalidate() }
 
         let previewsResult = previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
         tabsModelProvider.clearTabs(for: browsingMode)

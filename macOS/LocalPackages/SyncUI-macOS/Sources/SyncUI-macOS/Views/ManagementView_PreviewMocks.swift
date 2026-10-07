@@ -27,7 +27,6 @@ final class PreviewManagementViewModel: ManagementViewModel {
     let isAccountRecoveryAvailable = true
     let isAppVersionNotSupported: Bool
     let isAIChatSyncEnabled = true
-    let isSimplifiedSyncSetupV2Enabled: Bool
 
     let isSyncEnabled: Bool
     let isSyncPaused: Bool
@@ -71,7 +70,6 @@ final class PreviewManagementViewModel: ManagementViewModel {
         syncPausedTitle: String? = nil,
         syncPausedMessage: String? = nil,
         syncPausedButtonTitle: String? = nil,
-        isSimplifiedSyncSetupV2Enabled: Bool = false,
         isDataSyncingAvailable: Bool = true,
         isConnectingDevicesAvailable: Bool = true,
         isAccountCreationAvailable: Bool = true,
@@ -83,7 +81,6 @@ final class PreviewManagementViewModel: ManagementViewModel {
         self.syncPausedTitle = syncPausedTitle
         self.syncPausedMessage = syncPausedMessage
         self.syncPausedButtonTitle = syncPausedButtonTitle
-        self.isSimplifiedSyncSetupV2Enabled = isSimplifiedSyncSetupV2Enabled
         self.isDataSyncingAvailable = isDataSyncingAvailable
         self.isConnectingDevicesAvailable = isConnectingDevicesAvailable
         self.isAccountCreationAvailable = isAccountCreationAvailable
@@ -110,13 +107,11 @@ final class PreviewManagementViewModel: ManagementViewModel {
 extension PreviewManagementViewModel {
     static let disabled = PreviewManagementViewModel(
         isSyncEnabled: false,
-        isSimplifiedSyncSetupV2Enabled: true,
         devices: previewDevices
     )
 
     static let enabled = PreviewManagementViewModel(
         isSyncEnabled: true,
-        isSimplifiedSyncSetupV2Enabled: true,
         devices: previewDevices
     )
 
@@ -126,25 +121,21 @@ extension PreviewManagementViewModel {
         syncPausedTitle: "Sync & Backup is Paused",
         syncPausedMessage: "Your data is not currently syncing. Try again to resume Sync & Backup.",
         syncPausedButtonTitle: "Try Again",
-        isSimplifiedSyncSetupV2Enabled: true,
         devices: [SyncDevice(kind: .current, name: "My Mac", id: "current-device")]
     )
 
     static let enabledSingleDevice = PreviewManagementViewModel(
         isSyncEnabled: true,
-        isSimplifiedSyncSetupV2Enabled: true,
         devices: [SyncDevice(kind: .current, name: "My Mac", id: "current-device")]
     )
 
     static let enabledLoadingDevices = PreviewManagementViewModel(
         isSyncEnabled: true,
-        isSimplifiedSyncSetupV2Enabled: true,
         devices: []
     )
 
     static let enabledSyncUnavailable = PreviewManagementViewModel(
         isSyncEnabled: true,
-        isSimplifiedSyncSetupV2Enabled: true,
         isDataSyncingAvailable: false,
         isConnectingDevicesAvailable: false,
         isAccountCreationAvailable: false,
@@ -153,7 +144,6 @@ extension PreviewManagementViewModel {
 
     static let enabledUpgradeRequired = PreviewManagementViewModel(
         isSyncEnabled: true,
-        isSimplifiedSyncSetupV2Enabled: true,
         isDataSyncingAvailable: false,
         isConnectingDevicesAvailable: false,
         isAccountCreationAvailable: false,

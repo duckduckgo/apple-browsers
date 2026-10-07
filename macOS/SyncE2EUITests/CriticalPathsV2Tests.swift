@@ -59,7 +59,6 @@ final class CriticalPathsV2Tests: XCTestCase {
     override func setUp() {
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launchEnvironment["FEATURE_FLAGS"] = "simplifiedSyncSetupV2=true"
         app.launch()
         ensureMainWindowOpen()
         selectDevelopmentEnvironment()

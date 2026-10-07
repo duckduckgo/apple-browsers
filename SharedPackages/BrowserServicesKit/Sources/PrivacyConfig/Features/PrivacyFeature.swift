@@ -674,7 +674,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
-    case simplifiedSyncSetupV2
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {

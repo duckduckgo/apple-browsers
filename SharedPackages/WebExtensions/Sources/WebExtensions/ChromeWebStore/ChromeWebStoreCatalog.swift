@@ -84,9 +84,6 @@ public extension ChromeWebStoreCatalogProviding {
 }
 
 /// This class uses configuration from Privacy Config to decide about supported extensions.
-///
-/// The configuration is read on every call, never cached, so a Privacy Config update
-/// applies to the next store request (e.g. after a page reload).
 @MainActor
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 

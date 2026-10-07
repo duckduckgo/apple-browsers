@@ -33,7 +33,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
             VStack(spacing: 8) {
                 syncUnavailableView
                 syncWithAnotherDeviceView
-                (Text(.init(UserText.beginSyncFooterV2))
+                (Text(.init(UserText.beginSyncFooter))
                  + Text(verbatim: " ")
                  + Text(Image(nsImage: DesignSystemImages.Glyphs.Size16.openIn)).baselineOffset(-3.0))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -55,8 +55,8 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
                 .padding(.bottom, 12)
 
             VStack(alignment: .center, spacing: 10) {
-                SyncUIViews.CenteredTitle(text: UserText.beginSyncTitleV2)
-                SyncUIViews.CenteredSecondaryBody(text: UserText.beginSyncDescriptionV2)
+                SyncUIViews.CenteredTitle(text: UserText.beginSyncTitle)
+                SyncUIViews.CenteredSecondaryBody(text: UserText.beginSyncDescription)
             }
             .padding(.bottom, 20)
 
@@ -71,7 +71,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
                     Image(nsImage: DesignSystemImages.Glyphs.Size24.qrScan)
                         .resizable()
                         .frame(width: 16, height: 16)
-                    Text(UserText.beginSyncButtonV2)
+                    Text(UserText.beginSyncButton)
                 }
             }
             .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable && !isSyncWithAnotherDevicePending))
@@ -86,7 +86,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
     fileprivate var syncThisDeviceView: some View {
         HStack(spacing: 12) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.deviceLaptop)
-            Text(UserText.syncThisDeviceTitleV2)
+            Text(UserText.syncThisDeviceTitle)
             Spacer()
             Toggle(isOn: Binding(
                 get: { false },
@@ -101,7 +101,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
             }
             .labelsHidden()
             .toggleStyle(.switch)
-            .accessibilityLabel(Text(UserText.syncThisDeviceTitleV2))
+            .accessibilityLabel(Text(UserText.syncThisDeviceTitle))
             .accessibilityIdentifier("SyncSettings.syncThisDeviceToggle")
             .disabled(!model.isAccountCreationAvailable)
         }
@@ -113,8 +113,8 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
     @ViewBuilder
     fileprivate var recoverSyncedDataView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SyncUIViews.SectionHeading(text: UserText.recoverSyncedDataTitleV2)
-            Button(UserText.recoverCodeButtonV2) {
+            SyncUIViews.SectionHeading(text: UserText.recoverSyncedDataTitle)
+            Button(UserText.recoverCodeButton) {
                 Task {
                     await model.recoverDataPressed()
                 }

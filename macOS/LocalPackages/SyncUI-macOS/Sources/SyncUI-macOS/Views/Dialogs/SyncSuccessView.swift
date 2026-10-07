@@ -30,8 +30,8 @@ struct SyncSuccessView: View {
     @State private var showCopyConfirmation = false
 
     private var title: String {
-        UserText.syncSuccessTitleV2(
-            deviceName: model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceNameV2
+        UserText.syncSuccessTitle(
+            deviceName: model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceName
         )
     }
 
@@ -52,7 +52,7 @@ struct SyncSuccessView: View {
                     .accessibilityIdentifier("SyncSuccessTitle")
 
                 if let code {
-                    Text(UserText.syncSuccessDescriptionV2)
+                    Text(UserText.syncSuccessDescription)
                         .font(.body)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .multilineTextAlignment(.center)
@@ -83,7 +83,7 @@ struct SyncSuccessView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(UserText.syncSuccessRecoveryCodeLabelV2)
+                Text(UserText.syncSuccessRecoveryCodeLabel)
                     .font(.body.weight(.semibold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
@@ -104,7 +104,7 @@ struct SyncSuccessView: View {
                             if showCopyConfirmation {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.check)
                             }
-                            Text(showCopyConfirmation ? UserText.syncSuccessCopiedCodeButtonV2 : UserText.syncSuccessCopyCodeButtonV2)
+                            Text(showCopyConfirmation ? UserText.syncSuccessCopiedCodeButton : UserText.syncSuccessCopyCodeButton)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 2)
@@ -117,7 +117,7 @@ struct SyncSuccessView: View {
                     Button {
                         model.delegate?.syncSuccessSaveRecoveryPDFPressed()
                     } label: {
-                        Text(UserText.syncSuccessDownloadPDFButtonV2)
+                        Text(UserText.syncSuccessDownloadPDFButton)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 2)
                     }

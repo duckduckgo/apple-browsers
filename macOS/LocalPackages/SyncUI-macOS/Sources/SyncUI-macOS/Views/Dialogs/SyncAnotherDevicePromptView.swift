@@ -32,8 +32,8 @@ struct SyncAnotherDevicePromptView: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPairFeature128)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViews.CenteredTitle(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptTitleImproved : UserText.syncAnotherDevicePromptTitleV2)
-                    SyncUIViews.CenteredSecondaryBody(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptSubtitleImproved : UserText.syncAnotherDevicePromptSubtitleV2)
+                    SyncUIViews.CenteredTitle(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptTitleImproved : UserText.syncAnotherDevicePromptTitle)
+                    SyncUIViews.CenteredSecondaryBody(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptSubtitleImproved : UserText.syncAnotherDevicePromptSubtitle)
                 }
             }
         } buttons: {
@@ -48,7 +48,7 @@ struct SyncAnotherDevicePromptView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.syncThisDeviceOnlyButtonV2)
+                    Text(UserText.syncThisDeviceOnlyButton)
                 }
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
@@ -64,7 +64,7 @@ struct SyncAnotherDevicePromptView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.syncWithAnotherDeviceButtonV2)
+                    Text(UserText.syncWithAnotherDeviceButton)
                 }
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: !isBusy, stateColors: .themedActionButton))

@@ -25,16 +25,16 @@ struct SyncAuthenticationCancelledView: View {
 
     private var buttonTitle: String {
         model.authenticationCancelledPromptOffersRetry
-            ? UserText.syncAuthenticationCancelledTryAgainButtonV2
-            : UserText.syncAuthenticationCancelledCloseButtonV2
+            ? UserText.syncAuthenticationCancelledTryAgainButton
+            : UserText.syncAuthenticationCancelledCloseButton
     }
 
     var body: some View {
         SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.lockDuckDuckGo128)
-                SyncUIViews.CenteredTitle(text: UserText.syncAuthenticationCancelledTitleV2)
-                SyncUIViews.CenteredSecondaryBody(text: UserText.syncAuthenticationCancelledSubtitleV2)
+                SyncUIViews.CenteredTitle(text: UserText.syncAuthenticationCancelledTitle)
+                SyncUIViews.CenteredSecondaryBody(text: UserText.syncAuthenticationCancelledSubtitle)
             }
         } buttons: {
             Spacer()

@@ -177,15 +177,15 @@ extension NSAlert {
 
     static func syncCloseSetupConfirmation(isImprovedPairingFlowEnabled: Bool) -> NSAlert {
         let alert = NSAlert()
-        alert.informativeText = UserText.syncCloseSetupConfirmationMessageV2
+        alert.informativeText = UserText.syncCloseSetupConfirmationMessage
         alert.alertStyle = .informational
         if isImprovedPairingFlowEnabled {
             alert.messageText = UserText.syncCloseSetupConfirmationTitleImproved
             alert.addButton(withTitle: UserText.syncCloseSetupConfirmationConfirmActionImproved)
             alert.addButton(withTitle: UserText.syncCloseSetupConfirmationGoBackActionImproved)
         } else {
-            alert.messageText = UserText.syncCloseSetupConfirmationTitleV2
-            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationActionV2)
+            alert.messageText = UserText.syncCloseSetupConfirmationTitle
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationAction)
             alert.addButton(withTitle: UserText.cancel)
         }
         return alert

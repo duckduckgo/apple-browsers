@@ -42,7 +42,8 @@ struct RedesignedFavoritesView: View {
     }
 
     private var collapsedHeight: CGFloat {
-        let estimatedRowHeight = Metrics.tileSize + Metrics.iconToTitleSpacing + UIFont.daxCaption1().lineHeight * 2
+        let estimatedRowHeight = Metrics.tileSize + RedesignedFavoriteTileMetrics.iconToTitleSpacing
+            + UIFont.daxCaption().lineHeight * CGFloat(RedesignedFavoriteTileMetrics.titleLineLimit)
         return model.allFavorites.prefix(columns.count)
             .compactMap { collapsedItemHeights[$0.id] }
             .max() ?? estimatedRowHeight
@@ -142,7 +143,7 @@ struct RedesignedFavoritesView: View {
                           onDragActivityChanged: { isDraggingFavorite = $0 },
                           itemSizeCacheKey: { AnyHashable($0) },
                           isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) },
-                          previewPath: { UIBezierPath(ovalIn: $0) }) { favorite in
+                          previewPath: { UIBezierPath(rect: $0) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
             ZStack(alignment: .top) {
                 Button {
@@ -184,7 +185,10 @@ struct RedesignedFavoritesView: View {
                 collapsedItemHeights[favorite.id] = height
             }
         } preview: { favorite in
-            RedesignedFavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
+            // The native drag source owns the whole tile, including presses on its title.
+            RedesignedFavoriteTileView(title: favorite.title) {
+                RedesignedFavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
+            }
         } onMove: { from, to in
             haptics.impactOccurred()
             withAnimation { model.moveFavorites(from: from, to: to) }
@@ -198,15 +202,13 @@ struct RedesignedFavoritesView: View {
             guard !isDraggingFavorite else { return }
             model.expansionState.isExpanded = expands
         } label: {
-            VStack(spacing: Metrics.iconToTitleSpacing) {
+            RedesignedFavoriteTileView(title: expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess) {
                 Image(uiImage: expands ? DesignSystemImages.Glyphs.Size24.chevronDownSmall : DesignSystemImages.Glyphs.Size24.chevronUpSmall)
+                    .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                     .background(Color(designSystemColor: .controlsFillPrimary))
                     .clipShape(Circle())
-                Text(expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess)
-                    .daxCaption1()
             }
-            .foregroundColor(Color(designSystemColor: .textPrimary))
         }
         .buttonStyle(.plain)
         .disabled(isDraggingFavorite)
@@ -285,6 +287,5 @@ private enum Metrics {
     static let columnCount = 5
     static let columnSpacing: CGFloat = 8
     static let rowSpacing: CGFloat = 20
-    static let iconToTitleSpacing: CGFloat = 6
     static let tileSize: CGFloat = 48
 }

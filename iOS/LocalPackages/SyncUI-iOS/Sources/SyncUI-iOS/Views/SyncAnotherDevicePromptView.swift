@@ -59,7 +59,7 @@ struct SyncAnotherDevicePromptView: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(model.isConnectingThisDeviceOnly)
+                    .disabled(model.isAnotherDevicePromptInteractionDisabled)
 
                     Button {
                         Task { await model.syncThisDeviceOnlyFromConnectingSheet() }
@@ -72,7 +72,7 @@ struct SyncAnotherDevicePromptView: View {
                         }
                     }
                     .buttonStyle(SecondaryFillButtonStyle())
-                    .disabled(model.isConnectingThisDeviceOnly)
+                    .disabled(model.isAnotherDevicePromptInteractionDisabled)
                 }
                 .padding(.bottom, 20)
             }
@@ -90,7 +90,7 @@ struct SyncAnotherDevicePromptView: View {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     }
                     .accessibilityLabel(UserText.simplifiedScanCloseButton)
-                    .disabled(model.isConnectingThisDeviceOnly)
+                    .disabled(model.isAnotherDevicePromptInteractionDisabled)
                 }
             }
         }

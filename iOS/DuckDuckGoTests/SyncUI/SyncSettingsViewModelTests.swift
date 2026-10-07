@@ -684,6 +684,62 @@ final class SyncSettingsViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.connectingSheetPhase, .syncAnotherDevice(isConnecting: false))
         XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 0)
+        XCTAssertFalse(sut.isBusy)
+    }
+
+    func testWhenImprovedPairingFlowOnAndThisDeviceOnlyAuthenticationPendingThenPromptInteractionIsDisabled() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+        var isInteractionDisabledDuringAuthentication = false
+        delegate.onAuthenticateUserFinished = { [unowned sut] in
+            isInteractionDisabledDuringAuthentication = sut.isAnotherDevicePromptInteractionDisabled
+        }
+
+        await sut.syncThisDeviceOnlyFromConnectingSheet()
+
+        XCTAssertTrue(isInteractionDisabledDuringAuthentication)
+    }
+
+    func testWhenImprovedPairingFlowOnAndSyncAnotherDeviceAuthenticationPendingThenPromptInteractionIsDisabled() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+        var isInteractionDisabledDuringAuthentication = false
+        delegate.onAuthenticateUserFinished = { [unowned sut] in
+            isInteractionDisabledDuringAuthentication = sut.isAnotherDevicePromptInteractionDisabled
+        }
+
+        await sut.syncAnotherDeviceFromConnectingSheet()
+
+        XCTAssertTrue(isInteractionDisabledDuringAuthentication)
+        XCTAssertFalse(sut.isBusy)
+    }
+
+    func testWhenBusyThenSyncAnotherDeviceFromConnectingSheetIsIgnored() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+        sut.isBusy = true
+
+        await sut.syncAnotherDeviceFromConnectingSheet()
+        sut.connectingSheetDidDismiss()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+        XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 0)
+        XCTAssertEqual(sut.connectingSheetPhase, .syncAnotherDevice(isConnecting: false))
+    }
+
+    func testWhenBusyThenAnotherDevicePromptDismissIsIgnored() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+        sut.isBusy = true
+
+        sut.dismissAnotherDevicePrompt()
+
+        XCTAssertEqual(sut.connectingSheetPhase, .syncAnotherDevice(isConnecting: false))
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [])
     }
 
     func testWhenImprovedPairingFlowOnAndPreservedAccountPromptNeededThenAuthenticatesUpFrontAndNotAgainOnChoice() async {

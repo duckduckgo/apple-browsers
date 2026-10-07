@@ -200,6 +200,10 @@ public class SyncSettingsViewModel: ObservableObject {
         connectingSheetPhase == .syncAnotherDevice(isConnecting: true)
     }
 
+    public var isAnotherDevicePromptInteractionDisabled: Bool {
+        isBusy || isConnectingThisDeviceOnly
+    }
+
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
@@ -443,7 +447,11 @@ public class SyncSettingsViewModel: ObservableObject {
     @MainActor
     public func syncAnotherDeviceFromConnectingSheet() async {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.syncAnotherDevice))
-        guard await authenticateDeferredFlowIfNeeded() else { return }
+        guard !isBusy else { return }
+        isBusy = true
+        let isAuthenticated = await authenticateDeferredFlowIfNeeded()
+        isBusy = false
+        guard isAuthenticated else { return }
         postConnectingSheetDismissAction = { [weak self] in
             guard let self else { return }
             guard isConnectingDevicesAvailable else { return }
@@ -485,6 +493,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func dismissAnotherDevicePrompt() {
+        guard !isBusy else { return }
         guard connectingSheetPhase == .syncAnotherDevice(isConnecting: false) else { return }
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
         dismissConnectingSheet()

@@ -73,6 +73,7 @@ protocol ContextualOnboardingLogic {
     func setPrivacyButtonPulseSeen()
 
     func setFireEducationMessageSeen()
+    var fireEducationMessageSeen: Bool { get }
     func fireButtonPulseStarted()
     func fireButtonPulseCancelled()
 
@@ -538,6 +539,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.privacyButtonPulseShown = true
         settings.fireMessageExperimentShown = true
         lastShownDaxDialogType = BrowsingSpec.fire.type
+    }
+
+    var fireEducationMessageSeen: Bool {
+        settings.fireMessageExperimentShown
     }
 
     func clearedBrowserData() {

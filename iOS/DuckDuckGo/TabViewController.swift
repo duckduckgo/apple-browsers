@@ -822,6 +822,7 @@ class TabViewController: UIViewController {
     let sitePermissionsState = SitePermissionsState()
     var sitePermissionsNavigationTimeout: TimeInterval = 10
     var contentBlockingWaitPixelTimeout: TimeInterval = 10
+    private var contentBlockingWaitTimeoutTasks = [UUID: Task<Void, Never>]()
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -1705,6 +1706,7 @@ class TabViewController: UIViewController {
 
     func prepareForDataClearing() {
         cancelWebExtensionNavigationWait()
+        cancelContentBlockingWaitTimeoutPixels()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
@@ -2518,6 +2520,7 @@ class TabViewController: UIViewController {
 
     deinit {
         webExtensionNavigationTask?.cancel()
+        contentBlockingWaitTimeoutTasks.values.forEach { $0.cancel() }
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
@@ -3808,13 +3811,13 @@ extension TabViewController: WKNavigationDelegate {
 
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
-            Task {
-                rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
-                showProgressIndicator()
-                let timeoutPixel = isMainFrame ? fireContentBlockingWaitTimeoutPixelAfterDelay() : nil
-                await userContentController.awaitContentBlockingAssetsInstalled()
+            rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+            showProgressIndicator()
+            let timeoutPixel = isMainFrame ? fireContentBlockingWaitTimeoutPixelAfterDelay() : nil
+            Task { [rulesCompilationMonitor, tabID = tabModel.uid, awaitAssets = userContentController.awaitContentBlockingAssetsInstalled] in
+                await awaitAssets()
                 timeoutPixel?.cancel()
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
                 completion(true)
             }
             return true
@@ -3867,10 +3870,19 @@ extension TabViewController: WKNavigationDelegate {
 
     /// Measures how often waiting for rules compilation blocks a page load; the navigation keeps waiting.
     private func fireContentBlockingWaitTimeoutPixelAfterDelay() -> Task<Void, Never> {
-        Task { [pixelFiring, timeout = contentBlockingWaitPixelTimeout] in
+        let waitID = UUID()
+        let task = Task { [weak self, pixelFiring, timeout = contentBlockingWaitPixelTimeout] in
+            defer { self?.contentBlockingWaitTimeoutTasks[waitID] = nil }
             guard (try? await Task.sleep(nanoseconds: UInt64(timeout * Double(NSEC_PER_SEC)))) != nil else { return }
             pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
         }
+        contentBlockingWaitTimeoutTasks[waitID] = task
+        return task
+    }
+
+    func cancelContentBlockingWaitTimeoutPixels() {
+        contentBlockingWaitTimeoutTasks.values.forEach { $0.cancel() }
+        contentBlockingWaitTimeoutTasks.removeAll()
     }
 
     private func showSitePermissionsAssetsTimeout(for failedURL: URL) {

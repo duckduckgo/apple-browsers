@@ -445,6 +445,46 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTabTearsDownDuringOverlappingLegacyAssetWaitsThenTimeoutPixelsDoNotFire() async throws {
+        for teardown in ["close", "dataClearing", "deinit"] {
+            let pixelFiring = PixelKitMock()
+            var tab: TabViewController? = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+                                                               sitePermissionsEnabled: false, pixelFiring: pixelFiring)
+            defer { tab?.prepareForDataClearing() }
+            tab?.specialErrorPageNavigationHandler.delegate = nil
+            try enableContentBlocking(for: XCTUnwrap(tab))
+            tab?.contentBlockingWaitPixelTimeout = 0.05
+            weak var releasedTab = tab
+            let didDeinit = expectation(description: "Tab releases after \(teardown)")
+            tab?.onDeinit { didDeinit.fulfill() }
+            var decisions = [Bool]()
+            for path in ["first", "second"] {
+                XCTAssertEqual(tab?.shouldWaitUntilContentBlockingIsLoaded({ decisions.append($0) },
+                                                                           for: URL(string: "https://example.com/\(path)")!), true)
+            }
+            await Task.yield()
+            XCTAssertTrue(decisions.isEmpty, "Both legacy navigations must still be waiting before \(teardown)")
+
+            switch teardown {
+            case "close": tab?.closeSitePermissions()
+            case "dataClearing": tab?.prepareForDataClearing()
+            default: tab = nil
+            }
+            if teardown == "deinit" {
+                await fulfillment(of: [didDeinit], timeout: 1)
+                XCTAssertNil(releasedTab, "The legacy asset wait must not retain the tab")
+            }
+            try await Task.sleep(nanoseconds: 300_000_000)
+            XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty, "\(teardown) must cancel every overlapping timeout pixel")
+
+            if teardown != "deinit" {
+                tab = nil
+                await fulfillment(of: [didDeinit], timeout: 1)
+            }
+        }
+    }
+
+    @MainActor
     func testWhenSitePermissionsAssetWaitTimesOutThenTimeoutPixelFires() async throws {
         let pixelFiring = PixelKitMock()
         let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,

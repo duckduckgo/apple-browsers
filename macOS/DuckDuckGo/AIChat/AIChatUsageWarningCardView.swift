@@ -233,6 +233,18 @@ final class AIChatUsageWarningCardView: NSView {
     var onOpenModelPicker: (() -> Void)?
     var onDismiss: (() -> Void)?
     var onLearnMore: (() -> Void)?
+    var onTermsOfServiceLink: (() -> Void)?
+
+    /// The sentence-with-a-link messages, which route their link to their own callback.
+    private enum Disclosure {
+        case attachmentPrivacy
+        case termsOfService
+    }
+
+    private var shownDisclosure: Disclosure?
+
+    /// Whether the card's message is the Terms of Service disclaimer, which an Ask click accepts.
+    var isShowingTermsOfService: Bool { shownDisclosure == .termsOfService }
 
     /// The `>`, so a menu opens against the control the user actually clicked.
     var modelPickerAnchor: NSView { actionButton.pickerAnchor }
@@ -370,11 +382,28 @@ final class AIChatUsageWarningCardView: NSView {
 
     func updateForAttachmentPrivacy() {
         applyInfoIcon()
+        showDisclosure(.attachmentPrivacy,
+                       text: Self.attributedDisclosure(format: UserText.aiChatAttachmentPrivacyDisclosureFormat,
+                                                       linkText: UserText.aiChatAttachmentPrivacyLearnMore,
+                                                       url: URL.aiChatPrivacy))
+    }
+
+    /// Names the button that accepts, which reads "Create" while Create Image is selected.
+    func updateForTermsOfService(sendButton: DuckAiTermsOfServiceSendButton) {
+        applyShieldIcon()
+        showDisclosure(.termsOfService,
+                       text: Self.attributedDisclosure(format: sendButton.disclaimerFormat,
+                                                       linkText: UserText.aiChatTermsOfServiceDisclaimerLink,
+                                                       url: URL.aiChatPrivacyTerms))
+    }
+
+    /// Both are required reading, so neither carries a close button.
+    private func showDisclosure(_ disclosure: Disclosure, text: NSAttributedString) {
+        shownDisclosure = disclosure
         titleLabel.isHidden = true
         disclosureTextView.isHidden = false
-        let disclosure = Self.attributedDisclosure()
-        disclosureTextView.textStorage?.setAttributedString(disclosure)
-        disclosureTextView.setAccessibilityLabel(disclosure.string)
+        disclosureTextView.textStorage?.setAttributedString(text)
+        disclosureTextView.setAccessibilityLabel(text.string)
 
         actionButton.isHidden = true
         actionButton.collapse()
@@ -471,6 +500,16 @@ final class AIChatUsageWarningCardView: NSView {
         }
     }
 
+    private func applyShieldIcon() {
+        ringView.isHidden = true
+        iconImageView.isHidden = false
+        lastShownApproachingPercent = nil
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.shieldCheck
+        NSAppearance.withAppearance(appearance) {
+            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+    }
+
     private func applyModelSwitchIcon() {
         ringView.isHidden = true
         iconImageView.isHidden = false
@@ -502,17 +541,16 @@ final class AIChatUsageWarningCardView: NSView {
         NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
     }
 
-    private static func attributedDisclosure() -> NSAttributedString {
+    private static func attributedDisclosure(format: String, linkText: String, url: URL) -> NSAttributedString {
         var bodyAttributes = textAttributes(weight: .regular)
         bodyAttributes[.cursor] = NSCursor.arrow
 
         var linkAttributes = bodyAttributes
-        linkAttributes[.link] = URL.aiChatPrivacy
+        linkAttributes[.link] = url
         // Set here, not left to `linkTextAttributes`: the body's arrow is in the text storage and wins.
         linkAttributes[.cursor] = NSCursor.pointingHand
 
-        let format = UserText.aiChatAttachmentPrivacyDisclosureFormat
-        let link = NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore, attributes: linkAttributes)
+        let link = NSAttributedString(string: linkText, attributes: linkAttributes)
         let result = NSMutableAttributedString(string: format, attributes: bodyAttributes)
 
         // Substituted rather than appended: where the link sits in the sentence is the translator's.
@@ -545,6 +583,7 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     private func showTitleLabel() {
+        shownDisclosure = nil
         disclosureTextView.isHidden = true
         titleLabel.isHidden = false
     }
@@ -912,7 +951,12 @@ final class AIChatUsageWarningActionButton: NSView {
 extension AIChatUsageWarningCardView: NSTextViewDelegate {
 
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
-        onLearnMore?()
+        switch shownDisclosure {
+        case .termsOfService:
+            onTermsOfServiceLink?()
+        case .attachmentPrivacy, nil:
+            onLearnMore?()
+        }
         return true
     }
 }

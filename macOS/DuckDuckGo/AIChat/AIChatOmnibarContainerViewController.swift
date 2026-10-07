@@ -122,6 +122,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let clipMaskBottomOffset: CGFloat = 14
         static let shadowOverlapHeight: CGFloat = 21
         static let submitButtonSize: CGFloat = 28
+        static let submitButtonTitleHorizontalPadding: CGFloat = 12
+        static let submitButtonTitleFont = NSFont.systemFont(ofSize: 13, weight: .semibold)
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 8
         static let submitButtonBottomInset: CGFloat = 8
@@ -210,6 +212,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Mirrors the card's constraint so the reservation and the layout can't disagree.
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
+
+    /// Widens the send button while it reads "Ask" in place of its arrow.
+    private lazy var submitButtonWidthConstraint = submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize)
+
+    /// The disclaimer on screen is what lets the next Ask click accept the terms, and what makes the button read "Ask".
+    private var isTermsOfServiceDisclaimerShown: Bool {
+        isUsageWarningVisible && usageWarningCardView.isShowingTermsOfService
+    }
+
+    private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton {
+        DuckAiTermsOfServiceSendButton(isImageGenerationMode: omnibarController.isImageGenerationMode)
+    }
 
     private lazy var attachmentPrivacyGate: AttachmentPrivacyDisclosureGate = {
         let gate = AttachmentPrivacyDisclosureGate(
@@ -539,6 +553,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 }
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
                 self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
+                // The disclaimer names the send button, which reads "Create" while Create Image is selected.
+                if self.usageWarningCardView.isShowingTermsOfService {
+                    self.usageWarningCardView.updateForTermsOfService(sendButton: self.termsOfServiceSendButton)
+                }
                 // Re-evaluate the submit button so voice mode is suppressed/restored when
                 // image-generation toggles (voice mode is hidden while image-gen is active).
                 self.updateSubmitButtonState(for: self.omnibarController.currentText)
@@ -568,7 +586,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
         if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
             submitButtonMode = .voice
-            submitButton.image = DesignSystemImages.Glyphs.Size16.voice
+            setSubmitButtonContent(image: DesignSystemImages.Glyphs.Size16.voice)
             submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
             submitButton.setAccessibilityLabel(UserText.aiChatVoiceChatButtonTooltip)
             // Voice has no Enter-on-empty shortcut, so the button must be tab-reachable.
@@ -576,13 +594,35 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             applySubmitButtonAppearance(enabled: true)
         } else {
             submitButtonMode = .submit
-            submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
+            if isTermsOfServiceDisclaimerShown {
+                setSubmitButtonContent(title: termsOfServiceSendButton.title)
+            } else {
+                setSubmitButtonContent(image: DesignSystemImages.Glyphs.Size12.arrowRight)
+            }
             submitButton.toolTip = UserText.aiChatSendButtonTooltip
             submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
             // Enter on the textarea handles submit; skip the button in tab order.
             submitButton.refusesFirstResponder = true
             applySubmitButtonAppearance(enabled: hasContent && !hasBlockingExcess)
         }
+    }
+
+    private func setSubmitButtonContent(image: NSImage) {
+        submitButton.title = ""
+        submitButton.image = image
+        submitButton.imagePosition = .imageOnly
+        submitButtonWidthConstraint.constant = Constants.submitButtonSize
+    }
+
+    /// The word the Terms of Service disclaimer names, in place of the arrow.
+    private func setSubmitButtonContent(title: String) {
+        submitButton.image = nil
+        submitButton.imagePosition = .noImage
+        submitButton.font = Constants.submitButtonTitleFont
+        submitButton.title = title
+        let titleWidth = (title as NSString).size(withAttributes: [.font: Constants.submitButtonTitleFont]).width
+        submitButtonWidthConstraint.constant = max(Constants.submitButtonSize,
+                                                   ceil(titleWidth) + 2 * Constants.submitButtonTitleHorizontalPadding)
     }
 
     private func applySubmitButtonAppearance(enabled requested: Bool) {
@@ -1006,7 +1046,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
             submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
             // Bottom constraint is set in setupSuggestionsView() to be above suggestions
-            submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
+            submitButtonWidthConstraint,
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
 
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
@@ -1215,6 +1255,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onLearnMore = { [weak self] in
             self?.openAttachmentPrivacyLearnMore()
         }
+        usageWarningCardView.onTermsOfServiceLink = { [weak self] in
+            self?.openTermsOfService()
+        }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
@@ -1252,12 +1295,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
+        defer { applyTermsOfServiceDisclaimerState() }
 
-        // Required > Action > Informational. Out of usage outranks the disclosure: it is the
-        // reason Send is disabled.
+        // Required > Action > Informational. Out of usage outranks the disclosures: it is the
+        // reason Send is disabled, so a disclaimer that only Send can accept would deadlock.
         if let warning, warning.blocksInput {
             usageWarningCardView.update(with: warning)
             currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
+        if omnibarController.termsOfServiceDisclaimer.isRequired {
+            usageWarningCardView.updateForTermsOfService(sendButton: termsOfServiceSendButton)
+            currentUsageWarningExposure = nil
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
         }
@@ -1282,6 +1332,22 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         applyHighUsageNotice()
+    }
+
+    // MARK: - Terms of Service disclaimer
+
+    /// The controller decides whether an Ask click accepts, and the send button reads "Ask" only while it would.
+    private func applyTermsOfServiceDisclaimerState() {
+        omnibarController.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
+        updateSubmitButtonState(for: omnibarController.currentText)
+    }
+
+    /// A new tab, so the draft survives.
+    private func openTermsOfService() {
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacyTerms,
+                                                              source: .ui,
+                                                              newTab: true,
+                                                              selected: true)
     }
 
     // MARK: - Attachment privacy disclosure
@@ -1384,6 +1450,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
+        applyTermsOfServiceDisclaimerState()
         // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
         // so without this guard teardown puts it straight back on the window.
         applyTheme(theme: themeManager.theme)
@@ -1570,7 +1637,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func submitButtonClicked() {
         switch submitButtonMode {
         case .submit:
-            omnibarController.submit()
+            omnibarController.submit(sentWithAsk: true)
         case .voice:
             omnibarController.openNewVoiceChat()
         }

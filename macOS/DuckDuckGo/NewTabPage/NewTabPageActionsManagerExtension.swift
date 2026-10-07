@@ -140,7 +140,7 @@ extension NewTabPageActionsManager {
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
             attachmentPrivacyDisclosureStore: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
-            duckAiLauncherPromo: DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore, surface: .newTab),
+            duckAiLauncherPromo: NSApp.delegateTyped.duckAiLauncherPromo,
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },

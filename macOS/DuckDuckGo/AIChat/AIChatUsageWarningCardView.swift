@@ -493,9 +493,6 @@ final class AIChatUsageWarningCardView: NSView {
         applyCloseButton(isVisible: promo.dismissible == true)
     }
 
-    /// Bold headline, regular reset detail, one string so the two can never wrap apart.
-    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
-    /// alert, where a nearly-full ring would say less than the copy already does.
     private func applyGlyph(_ image: NSImage) {
         ringView.isHidden = true
         iconImageView.isHidden = false
@@ -506,6 +503,8 @@ final class AIChatUsageWarningCardView: NSView {
         }
     }
 
+    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
+    /// alert, where a nearly-full ring would say less than the copy already does.
     private func applyIcon(for warning: DuckAiUsageWarning) {
         let isApproaching = warning.message == .approaching
         ringView.isHidden = !isApproaching
@@ -591,6 +590,7 @@ final class AIChatUsageWarningCardView: NSView {
         titleLabel.isHidden = false
     }
 
+    /// Bold headline, regular reset detail, one string so the two can never wrap apart.
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
         let result = NSMutableAttributedString(string: headline, attributes: textAttributes(weight: .semibold))
         result.append(NSAttributedString(string: " ", attributes: textAttributes(weight: .regular)))

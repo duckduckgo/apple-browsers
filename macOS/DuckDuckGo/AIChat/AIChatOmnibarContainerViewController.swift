@@ -1201,7 +1201,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onAction = { [weak self] in
             guard let self else { return }
             if isShowingLauncherPromo {
-                launcherPromo?.tryNow()
+                launcherPromo?.tryNow(on: .addressBar)
                 return
             }
             omnibarController.usageWarningViewModel?.performAction()
@@ -1217,7 +1217,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 return
             }
             if isShowingLauncherPromo {
-                launcherPromo?.dismiss()
+                launcherPromo?.dismiss(on: .addressBar)
                 refreshUsageCard()
                 return
             }
@@ -1264,7 +1264,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         omnibarController.onPromptSubmitted = { [weak self] in
             guard let self, isShowingLauncherPromo, isUsageWarningVisible else { return }
-            launcherPromo?.ignore()
+            launcherPromo?.ignore(on: .addressBar)
         }
         launcherPromoCancellable = launcherPromo?.changesPublisher.sink { [weak self] in
             self?.refreshUsageCard()
@@ -1388,7 +1388,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
         if isUsageWarningVisible, !didReportLauncherPromoShown {
             didReportLauncherPromoShown = true
-            launcherPromo?.shown()
+            launcherPromo?.shown(on: .addressBar)
         }
     }
 

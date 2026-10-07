@@ -61,7 +61,6 @@ final class DuckAiLauncherPromo {
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
     private let keyValueStore: ThrowingKeyValueStoring
-    private let surface: DuckAiLauncherPromoSurface
     private let firePixel: (PromptBarPixel) -> Void
     @Published private var chatCount = 0
     private var chatsCancellable: AnyCancellable?
@@ -70,12 +69,10 @@ final class DuckAiLauncherPromo {
          preferences: PromptBarPreferences,
          chatCountPublisher: AnyPublisher<Int, Never>,
          keyValueStore: ThrowingKeyValueStoring,
-         surface: DuckAiLauncherPromoSurface,
          firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
         self.featureFlagger = featureFlagger
         self.preferences = preferences
         self.keyValueStore = keyValueStore
-        self.surface = surface
         self.firePixel = firePixel
 
         chatsCancellable = chatCountPublisher
@@ -99,7 +96,7 @@ final class DuckAiLauncherPromo {
         ((try? keyValueStore.object(forKey: outcomeKey)) as? String).flatMap(DuckAiLauncherPromoOutcome.init(rawValue:))
     }
 
-    func shown() {
+    func shown(on surface: DuckAiLauncherPromoSurface) {
         firePixel(.promoShown(surface: surface))
     }
 
@@ -130,22 +127,22 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    func tryNow() {
+    func tryNow(on surface: DuckAiLauncherPromoSurface) {
         preferences.isKeyboardShortcutEnabled = true
         preferences.isMenuBarIconVisible = true
         preferences.pendingLauncherIntroduction = true
-        record(.triedNow)
+        record(.triedNow, on: surface)
     }
 
-    func dismiss() {
-        record(.closed)
+    func dismiss(on surface: DuckAiLauncherPromoSurface) {
+        record(.closed, on: surface)
     }
 
-    func ignore() {
-        record(.ignored)
+    func ignore(on surface: DuckAiLauncherPromoSurface) {
+        record(.ignored, on: surface)
     }
 
-    private func record(_ outcome: DuckAiLauncherPromoOutcome) {
+    private func record(_ outcome: DuckAiLauncherPromoOutcome, on surface: DuckAiLauncherPromoSurface) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
         switch outcome {
         case .triedNow: firePixel(.promoTryNow(surface: surface))
@@ -164,7 +161,7 @@ final class DuckAiLauncherPromo {
 extension DuckAiLauncherPromo {
 
     @MainActor
-    convenience init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring, surface: DuckAiLauncherPromoSurface) {
+    convenience init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
         let chatCountPublisher = (NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
             .map(\.count)
             .replaceError(with: 0)
@@ -172,7 +169,6 @@ extension DuckAiLauncherPromo {
         self.init(featureFlagger: featureFlagger,
                   preferences: NSApp.delegateTyped.promptBarPreferences,
                   chatCountPublisher: chatCountPublisher,
-                  keyValueStore: keyValueStore,
-                  surface: surface)
+                  keyValueStore: keyValueStore)
     }
 }

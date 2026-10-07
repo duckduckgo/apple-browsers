@@ -313,6 +313,71 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         XCTAssertNil(staleCommittedSite.presentedViewController)
     }
 
+    @MainActor
+    func testReportBrokenSiteIsHiddenOnDuckDuckGoAndDuckAI() {
+        let urls = [
+            "https://duckduckgo.com",
+            "https://duckduckgo.com/?q=catfood&t=h_&ia=web",
+            "https://www.duckduckgo.com/?q=catfood",
+            "https://duckduckgo.com/?q=catfood&ia=chat",
+            "https://duck.ai",
+            "https://duck.ai/?chat=123"
+        ]
+
+        for urlString in urls {
+            let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: urlString)!))
+            assertReportBrokenSiteEntry(isPresent: false, on: sut)
+        }
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsVisibleOnWebsites() {
+        for urlString in ["https://example.com", "http://example.com", "https://duckduckgo.com.example.com", "https://duck.ai.example.com"] {
+            let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: urlString)!))
+            assertReportBrokenSiteEntry(isPresent: true, on: sut)
+        }
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsVisibleOnErrorPages() {
+        for urlString in ["https://example.com", "https://duckduckgo.com/?q=catfood", "https://duck.ai"] {
+            let url = URL(string: urlString)!
+            let sut = TabViewController.fake(
+                customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
+                link: Link(title: nil, url: url)
+            )
+            sut.error.isHidden = false
+
+            assertReportBrokenSiteEntry(isPresent: true, on: sut)
+
+            sut.error.isHidden = true
+            assertReportBrokenSiteEntry(isPresent: urlString == "https://example.com", on: sut)
+        }
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsHiddenWithoutLink() {
+        let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: "https://example.com")!))
+        sut.url = nil
+
+        assertReportBrokenSiteEntry(isPresent: false, on: sut)
+    }
+
+    @MainActor
+    func testReportBrokenSiteVisibilityUpdatesAfterNavigation() {
+        let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: "https://example.com")!))
+        assertReportBrokenSiteEntry(isPresent: true, on: sut)
+
+        sut.url = URL(string: "https://duckduckgo.com/?q=catfood")!
+        assertReportBrokenSiteEntry(isPresent: false, on: sut)
+
+        sut.url = URL(string: "https://duck.ai")!
+        assertReportBrokenSiteEntry(isPresent: false, on: sut)
+
+        sut.url = URL(string: "https://example.com")!
+        assertReportBrokenSiteEntry(isPresent: true, on: sut)
+    }
+
     // MARK: - Privacy Protection toggle SERP gating
 
     func testToggleProtectionDomainIsNilOnSERP() {
@@ -367,6 +432,33 @@ final class BrowsingMenuBuilderTests: XCTestCase {
 
     private func makeMobileCustomization() -> MobileCustomization {
         MobileCustomization(keyValueStore: MockKeyValueStore(), isPad: false)
+    }
+
+    @MainActor
+    private func assertReportBrokenSiteEntry(
+        isPresent: Bool,
+        on sut: TabViewController,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        for isPad in [false, true] {
+            let mobileCustomization = MobileCustomization(keyValueStore: MockKeyValueStore(), isPad: isPad)
+            let legacyEntries = sut.buildBrowsingMenu(
+                with: MockMenuBookmarksInteractor(),
+                mobileCustomization: mobileCustomization,
+                clearTabsAndData: {}
+            )
+            let sheetSections = sut.buildSheetBrowsingMenu(
+                context: .website,
+                with: MockMenuBookmarksInteractor(),
+                mobileCustomization: mobileCustomization,
+                browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+                clearTabsAndData: {}
+            )?.sections ?? []
+
+            XCTAssertEqual(legacyEntries.compactMap(\.name).contains(UserText.actionReportBrokenSite), isPresent, file: file, line: line)
+            XCTAssertEqual(sheetSections.flatMap(\.items).map(\.name).contains(UserText.actionReportBrokenSite), isPresent, file: file, line: line)
+        }
     }
 
     @MainActor

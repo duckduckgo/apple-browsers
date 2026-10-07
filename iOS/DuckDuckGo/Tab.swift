@@ -149,6 +149,8 @@ public class Tab: NSObject, NSCoding {
     /// NSCoding so reopening the app restores the tab's selected AI settings.
     var unifiedInputState: UnifiedInputTabState
 
+    @MainActor lazy var iPadOmnibarDraft = IPadOmnibarDraft()
+
     var duckAIEntrySource: AIChatEntryPointSource?
 
     /// Type of tab: web or AI Chat, derived from the current URL

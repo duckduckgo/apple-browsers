@@ -67,6 +67,7 @@ final class TabFlareBackgroundController {
         view.topCornerRadius = topCornerRadius
         view.rampSize = rampSize
         view.isHidden = true
+        view.layer.zPosition = 1
         collectionView.insertSubview(view, at: 0)
     }
 

@@ -80,6 +80,11 @@ class TabsBarCell: UICollectionViewCell {
         isPointerHovering = false
     }
 
+    override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
+        super.apply(layoutAttributes)
+        layer.zPosition = CGFloat(layoutAttributes.zIndex)
+    }
+
     private func setUpSubviews() {
         clipsToBounds = true
         contentView.clipsToBounds = true

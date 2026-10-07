@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -111,5 +112,93 @@ final class TabsBarLayoutTests: XCTestCase {
         XCTAssertFalse(result.isFloored)
         XCTAssertEqual(result.addTabButtonLeadingOffset, gap, accuracy: accuracy)
         XCTAssertEqual(result.addTabButtonContentInsetRight, 0, accuracy: accuracy)
+    }
+}
+
+@MainActor
+final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSource {
+
+    func testCurrentTabRemainsVisibleWhenScrolledPastLeadingEdge() throws {
+        let (collectionView, layout) = makeCollectionView(currentIndex: { 0 }, contentOffset: 300)
+        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+        let current = try XCTUnwrap(attributes.first { $0.indexPath.item == 0 })
+
+        XCTAssertEqual(current.frame.minX, 310)
+        XCTAssertEqual(current.zIndex, 2)
+        XCTAssertEqual(layout.layoutAttributesForItem(at: IndexPath(item: 3, section: 0))?.frame.minX, 360)
+
+        let flare = TabFlareBackgroundController(collectionView: collectionView,
+                                                topCornerRadius: TabsBarCell.cornerRadius,
+                                                rampSize: TabsBarViewController.Constants.tabRampSize,
+                                                currentIndex: { 0 },
+                                                fillColor: { .white })
+        flare.update()
+        let cell = try XCTUnwrap(collectionView.cellForItem(at: current.indexPath))
+        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+        XCTAssertFalse(background.isHidden)
+        XCTAssertGreaterThan(cell.layer.zPosition, background.layer.zPosition)
+    }
+
+    func testCurrentTabPinsBeforeTrailingButtonSpaceAndPreservesNaturalFrame() throws {
+        let (collectionView, layout) = makeCollectionView(currentIndex: { 9 })
+        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+        let current = try XCTUnwrap(attributes.first { $0.indexPath.item == 9 })
+
+        XCTAssertEqual(current.frame.maxX, 540)
+        XCTAssertEqual(layout.unpinnedFrameForItem(at: current.indexPath)?.minX, 1080)
+    }
+
+    func testCurrentTabKeepsNaturalPositionWhileFullyVisible() throws {
+        let (collectionView, layout) = makeCollectionView(currentIndex: { 4 }, contentOffset: 200)
+        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+        let current = try XCTUnwrap(attributes.first { $0.indexPath.item == 4 })
+
+        XCTAssertEqual(current.frame.minX, 480)
+        XCTAssertEqual(current.frame, layout.unpinnedFrameForItem(at: current.indexPath))
+    }
+
+    func testChangingCurrentTabReleasesPreviouslyPinnedTab() throws {
+        var currentIndex = 0
+        let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: 300)
+        let previousIndexPath = IndexPath(item: 0, section: 0)
+        XCTAssertEqual(layout.layoutAttributesForItem(at: previousIndexPath)?.frame.minX, 310)
+
+        currentIndex = 9
+        layout.invalidateLayout()
+        collectionView.layoutIfNeeded()
+        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+
+        XCTAssertEqual(layout.layoutAttributesForItem(at: previousIndexPath)?.frame.minX, 0)
+        XCTAssertEqual(layout.layoutAttributesForItem(at: previousIndexPath)?.zIndex, 0)
+        XCTAssertFalse(attributes.contains { $0.indexPath == previousIndexPath })
+        XCTAssertEqual(attributes.first { $0.indexPath.item == 9 }?.frame.maxX, 840)
+    }
+
+    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0)
+        -> (UICollectionView, TabsBarCollectionViewLayout) {
+        let layout = TabsBarCollectionViewLayout()
+        layout.scrollDirection = .horizontal
+        layout.itemSize = CGSize(width: 120, height: 40)
+        layout.minimumLineSpacing = 0
+        layout.minimumInteritemSpacing = 0
+        layout.currentIndex = currentIndex
+        let collectionView = UICollectionView(frame: CGRect(x: 0, y: 0, width: 600, height: 40), collectionViewLayout: layout)
+        collectionView.contentInsetAdjustmentBehavior = .never
+        collectionView.contentInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 60)
+        collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
+        collectionView.dataSource = self
+        collectionView.reloadData()
+        collectionView.layoutIfNeeded()
+        collectionView.contentOffset.x = contentOffset
+        collectionView.layoutIfNeeded()
+        return (collectionView, layout)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        10
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath)
     }
 }

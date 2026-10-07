@@ -40,7 +40,7 @@ final class TabsBarView: UIView {
     }
 
     override init(frame: CGRect) {
-        let layout = UICollectionViewFlowLayout()
+        let layout = TabsBarCollectionViewLayout()
         layout.scrollDirection = .horizontal
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
@@ -96,5 +96,46 @@ final class TabsBarView: UIView {
             buttonsStack.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
             buttonsStack.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+}
+
+/// Keeps the selected tab at the strip's edge while the other tabs scroll underneath it.
+final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
+
+    var currentIndex: (() -> Int?)?
+
+    override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        true
+    }
+
+    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        let attributes = super.layoutAttributesForElements(in: rect)
+        guard let collectionView,
+              let index = currentIndex?(),
+              index < collectionView.numberOfItems(inSection: 0),
+              let current = layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else {
+            return attributes
+        }
+        // Include the selected tab even when its original position is outside the visible rect.
+        return (attributes ?? []).filter { $0.indexPath != current.indexPath } + [current]
+    }
+
+    override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes,
+              let collectionView,
+              indexPath.item == currentIndex?() else {
+            return super.layoutAttributesForItem(at: indexPath)
+        }
+        // The flare sits above inactive tabs and below the selected tab's content.
+        attributes.zIndex = 2
+        guard !collectionView.hasActiveDrag else { return attributes }
+        let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
+        let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
+        attributes.frame.origin.x = min(max(attributes.frame.minX, leading), trailing)
+        return attributes
+    }
+
+    func unpinnedFrameForItem(at indexPath: IndexPath) -> CGRect? {
+        super.layoutAttributesForItem(at: indexPath)?.frame
     }
 }

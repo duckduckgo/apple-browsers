@@ -25,13 +25,29 @@ struct PermissionAuthorizationView: View {
         static let buttonHeight: CGFloat = 32
         static let closeButtonSize: CGFloat = 20
         static let systemPermissionIconSize: CGFloat = 24
+        /// Fills the glyph's exclamation-mark cut-out while staying inside its 20pt disc.
+        static let systemPermissionIconMarkSize: CGFloat = 14
         static let systemPermissionButtonHeight: CGFloat = 28
         static let systemPermissionCornerRadius: CGFloat = 16
-        static let systemPermissionBackground = Color(red: 1, green: 230 / 255, blue: 153 / 255).opacity(0.32)
     }
 
     @ObservedObject
     var viewModel: PermissionAuthorizationViewModel
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var systemPermissionIconColor: Color {
+        colorScheme == .dark ?
+            Color(designSystemColor: .statusYellowTertiary) :
+            Color(designSystemColor: .statusYellowPrimary)
+    }
+
+    /// The design keeps the brand blue with white text in dark mode, where `accentPrimary` turns light blue.
+    private var systemPermissionButtonColor: Color {
+        colorScheme == .dark ?
+            Color(designSystemColor: .accentTertiary) :
+            Color(designSystemColor: .accentPrimary)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -44,7 +60,7 @@ struct PermissionAuthorizationView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Button(action: { viewModel.send(action: .dismiss) }) {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    Image(nsImage: DesignSystemImages.Glyphs.Size12.close)
                         .frame(width: Constants.closeButtonSize, height: Constants.closeButtonSize)
                         .contentShape(Rectangle())
                 }
@@ -108,9 +124,7 @@ struct PermissionAuthorizationView: View {
 
     private func systemPermissionStep(_ step: PermissionAuthorizationViewState.SystemPermissionStep) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size24.exclamationRecolorableInvert)
-                .resizable()
-                .frame(width: Constants.systemPermissionIconSize, height: Constants.systemPermissionIconSize)
+            systemPermissionIcon
 
             VStack(alignment: .leading, spacing: 16) {
                 Text(step.message)
@@ -127,12 +141,27 @@ struct PermissionAuthorizationView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
-                .fill(Constants.systemPermissionBackground)
+                .fill(Color(designSystemColor: .statusWarningFillPrimary))
                 .overlay(
                     RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
-                        .strokeBorder(Constants.systemPermissionBackground, lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .statusWarningFillPrimary), lineWidth: 1)
                 )
         )
+    }
+
+    /// A status-yellow disc with a dark exclamation mark, drawn by filling the solid glyph's cut-out.
+    private var systemPermissionIcon: some View {
+        ZStack {
+            Circle()
+                .fill(Color(designSystemColor: .statusWarningContentPrimary))
+                .frame(width: Constants.systemPermissionIconMarkSize, height: Constants.systemPermissionIconMarkSize)
+
+            Image(nsImage: DesignSystemImages.Glyphs.Size24.exclamationSolid)
+                .renderingMode(.template)
+                .resizable()
+                .foregroundColor(systemPermissionIconColor)
+        }
+        .frame(width: Constants.systemPermissionIconSize, height: Constants.systemPermissionIconSize)
     }
 
     private func systemPermissionButton(_ step: PermissionAuthorizationViewState.SystemPermissionStep) -> some View {
@@ -144,7 +173,7 @@ struct PermissionAuthorizationView: View {
         }) {
             Text(step.buttonTitle)
                 .font(.system(size: 13))
-                .foregroundColor(isEnabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textPrimary))
+                .foregroundColor(isEnabled ? .white : Color(designSystemColor: .textPrimary))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: Constants.systemPermissionButtonHeight)
@@ -162,7 +191,7 @@ struct PermissionAuthorizationView: View {
     private func systemPermissionButtonBackground(isEnabled: Bool) -> some View {
         if isEnabled {
             Capsule()
-                .fill(Color(designSystemColor: .accentPrimary))
+                .fill(systemPermissionButtonColor)
         } else {
             Capsule()
                 .fill(Color(designSystemColor: .controlsRaisedFillPrimary))

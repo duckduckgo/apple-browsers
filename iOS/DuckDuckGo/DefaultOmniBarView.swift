@@ -345,11 +345,26 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.isHidden = true
         button.layer.cornerRadius = Metrics.sendButtonSize / 2
         button.layer.masksToBounds = true
         return button
     }()
+
+    private lazy var aiChatSendButtonWidthConstraint = aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize)
+
+    /// While the Terms of Service disclaimer shows, the send button reads "Ask" and Return adds a new line.
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard oldValue != isTermsOfServiceDisclaimerShown else { return }
+            aiChatTextView.keyboardType = aiChatKeyboardType
+            if aiChatTextView.isFirstResponder { aiChatTextView.reloadInputViews() }
+        }
+    }
+
+    /// The web-search keyboard always draws Return as Go, so only the default one shows a new-line key.
+    private var aiChatKeyboardType: UIKeyboardType { isTermsOfServiceDisclaimerShown ? .default : .webSearch }
 
     var onAIChatSendPressed: (() -> Void)?
 
@@ -514,6 +529,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
     var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
+    var onFooterLinkTapped: ((URL) -> Void)?
 
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
@@ -643,13 +659,29 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return strip
     }()
 
-    private let createImageModelSwitchCard: UTIFooterCardView = {
+    /// One slot below the expanded Duck.ai input, shared by the Terms of Service disclaimer and the
+    /// Create Image model switch notice.
+    private let footerCard: UTIFooterCardView = {
         let card = UTIFooterCardView()
         card.translatesAutoresizingMaskIntoConstraints = false
-        card.alpha = 0
-        card.isHidden = true
         return card
     }()
+
+    /// Gives the footer card the expanded bar's shadow; without it the card looks see-through over a white page.
+    private let footerCardShadowView: CompositeShadowView = {
+        let view = CompositeShadowView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
+        view.layer.cornerRadius = UTIFooterCardView.cornerRadius
+        view.layer.cornerCurve = .continuous
+        view.applyActiveShadow()
+        view.alpha = 0
+        view.isHidden = true
+        return view
+    }()
+
+    /// `nil` whenever the footer card is off screen, including while the input is collapsed.
+    private(set) var visibleFooterMessage: UTIFooterMessage?
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -1050,7 +1082,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
         leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
-        searchAreaAlignmentView.addSubview(createImageModelSwitchCard)
+        searchAreaAlignmentView.addSubview(footerCardShadowView)
+        footerCardShadowView.addSubview(footerCard)
         searchAreaAlignmentView.addSubview(searchAreaContainerView)
 
         if isFloatingUIEnabled {
@@ -1076,8 +1109,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
-        createImageModelSwitchCard.onDismissTap = { [weak self] in
+        // Only the model switch notice carries a close button; the disclaimer is required.
+        footerCard.onDismissTap = { [weak self] in
             self?.onCreateImageModelSwitchNoticeDismissed?()
+        }
+        footerCard.onLinkTap = { [weak self] url in
+            self?.onFooterLinkTapped?(url)
         }
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
@@ -1154,10 +1191,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             // centerX constraint below keep it centered within the available width.
             searchAreaContainerView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
 
-            createImageModelSwitchCard.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            createImageModelSwitchCard.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            createImageModelSwitchCard.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
-                                                            constant: -UTIFooterCardView.overlap),
+            footerCardShadowView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            footerCardShadowView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            footerCardShadowView.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
+                                                      constant: -UTIFooterCardView.overlap),
+            footerCard.topAnchor.constraint(equalTo: footerCardShadowView.topAnchor),
+            footerCard.leadingAnchor.constraint(equalTo: footerCardShadowView.leadingAnchor),
+            footerCard.trailingAnchor.constraint(equalTo: footerCardShadowView.trailingAnchor),
+            footerCard.bottomAnchor.constraint(equalTo: footerCardShadowView.bottomAnchor),
 
             fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
@@ -1428,7 +1469,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
         aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
 
-        aiChatSendButton.accessibilityLabel = "Send message"
+        aiChatSendButton.accessibilityLabel = Constant.aiChatSendAccessibilityLabel
         aiChatSendButton.accessibilityHint = "Sends your message to DuckDuckGo AI"
         aiChatSendButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChatSend"
         aiChatSendButton.accessibilityTraits = .button
@@ -1518,7 +1559,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             attachButton,
             attachmentsStripView,
             aiChatTextView,
-            createImageModelSwitchCard
+            footerCardShadowView
         ]
         return candidates.first { candidate in
             guard !candidate.isHidden, candidate.alpha > 0 else { return false }
@@ -1702,6 +1743,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Vertical gaps around the attachments strip when it grows the expanded search area.
         static let attachmentsStripToButtonRowSpacing: CGFloat = 8.0
         static let attachmentsStripToTextViewSpacing: CGFloat = 4.0
+        static let buttonRowToTextViewSpacing: CGFloat = 4.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
@@ -1724,6 +1766,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private struct Constant {
         static let accessibilityPrefix = "Browser.OmniBar"
+        static let aiChatSendAccessibilityLabel = "Send message"
     }
 
     private func applyOmnibarCornerStyle() {
@@ -1910,18 +1953,19 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView {
 
-    func setCreateImageModelSwitchFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
+    func setFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
         guard let message, isSearchAreaExpanded else {
-            hideCreateImageModelSwitchCard(animated: animated)
+            hideFooterCard(animated: animated)
             return
         }
 
-        createImageModelSwitchCard.configure(with: message, animateIcon: false)
-        createImageModelSwitchCard.isHidden = false
-        searchAreaAlignmentView.sendSubviewToBack(createImageModelSwitchCard)
+        footerCard.configure(with: message, animateIcon: false)
+        footerCardShadowView.isHidden = false
+        visibleFooterMessage = message
+        searchAreaAlignmentView.sendSubviewToBack(footerCardShadowView)
 
         guard animated else {
-            createImageModelSwitchCard.alpha = 1
+            footerCardShadowView.alpha = 1
             layoutIfNeeded()
             return
         }
@@ -1929,25 +1973,26 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.createImageModelSwitchCard.alpha = 1
+            self.footerCardShadowView.alpha = 1
             self.layoutIfNeeded()
         }
     }
 
     func expandedContentMaxY(in view: UIView) -> CGFloat {
-        let isCardVisible = !createImageModelSwitchCard.isHidden && createImageModelSwitchCard.alpha > 0
-        let bottomView = isCardVisible ? createImageModelSwitchCard : searchAreaContainerView
+        let isCardVisible = !footerCardShadowView.isHidden && footerCardShadowView.alpha > 0
+        let bottomView = isCardVisible ? footerCardShadowView : searchAreaContainerView
         return bottomView.convert(bottomView.bounds, to: view).maxY
     }
 
-    private func hideCreateImageModelSwitchCard(animated: Bool) {
-        guard !createImageModelSwitchCard.isHidden else { return }
+    private func hideFooterCard(animated: Bool) {
+        visibleFooterMessage = nil
+        guard !footerCardShadowView.isHidden else { return }
 
         let completion: () -> Void = {
-            self.createImageModelSwitchCard.isHidden = true
+            self.footerCardShadowView.isHidden = true
         }
         guard animated else {
-            createImageModelSwitchCard.alpha = 0
+            footerCardShadowView.alpha = 0
             completion()
             return
         }
@@ -1955,7 +2000,7 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.createImageModelSwitchCard.alpha = 0
+            self.footerCardShadowView.alpha = 0
         } completion: { finished in
             guard finished else { return }
             completion()
@@ -1971,8 +2016,8 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedSearchAreaConstraints() {
-        // The text view fills down to the toolbar row by default; when attachments are present this
-        // is swapped for `textViewBottomToStripConstraint` so the text stops above the strip.
+        // Expanded, the text view stops above the button row (see `applyExpansionConstraints`); when
+        // attachments are present this is swapped for `textViewBottomToStripConstraint` so it stops above the strip.
         let textBottomToContainer = aiChatTextView.bottomAnchor.constraint(
             equalTo: searchAreaContainerView.bottomAnchor,
             constant: -Metrics.duckAITextViewBottomPadding
@@ -1997,7 +2042,7 @@ extension DefaultOmniBarView {
 
             aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
-            aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+            aiChatSendButtonWidthConstraint,
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
 
             modelPickerButton.trailingAnchor.constraint(equalTo: aiChatSendButton.leadingAnchor, constant: -Metrics.modelPickerToSendButtonSpacing),
@@ -2077,7 +2122,7 @@ extension DefaultOmniBarView {
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no
-        aiChatTextView.keyboardType = .webSearch
+        aiChatTextView.keyboardType = aiChatKeyboardType
         aiChatTextView.isScrollEnabled = true
     }
 
@@ -2390,21 +2435,32 @@ extension DefaultOmniBarView {
         let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else if !hasText && attachments.isEmpty {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.voice, allowsAskTitle: false)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
             aiChatSendButton.backgroundColor = .clear
             aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
             aiChatSendButton.isEnabled = false
         }
+    }
+
+    /// The "Ask" label stands in for the arrow only; the voice icon stays.
+    private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
+        let title = allowsAskTitle && isTermsOfServiceDisclaimerShown ? UserText.duckAIAskButtonTitle : nil
+        aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
+        aiChatSendButton.setTitle(title, for: .normal)
+        aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel
+        aiChatSendButtonWidthConstraint.constant = title.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Metrics.sendButtonSize)
+        } ?? Metrics.sendButtonSize
     }
 
     func updateLeftIconForMode(_ mode: TextEntryMode) {
@@ -2421,6 +2477,10 @@ extension DefaultOmniBarView {
     }
 
     private func applyExpansionConstraints() {
+        // The button row sits inside the expanded container, so the text and caret must stop above it.
+        textViewBottomToContainerConstraint?.constant = isSearchAreaExpanded
+            ? -(Metrics.duckAITextViewBottomPadding + Metrics.sendButtonSize + Metrics.buttonRowToTextViewSpacing)
+            : -Metrics.duckAITextViewBottomPadding
         if isSearchAreaExpanded {
             searchFieldBottomEqualConstraint?.isActive = false
             searchAreaCenterYConstraint?.isActive = false

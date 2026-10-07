@@ -283,7 +283,8 @@ extension MainViewController {
                                                    daxDialogsManager: self.daxDialogsManager,
                                                    initialTrackerCountState: initialTrackerCountState,
                                                    duckAIGridContentProvider: duckAIGridContentProvider,
-                                                   duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
+                                                   duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker,
+                                                   floatingUIManager: floatingUIManager)
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self

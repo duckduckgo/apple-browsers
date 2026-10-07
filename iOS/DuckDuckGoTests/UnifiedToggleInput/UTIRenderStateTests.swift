@@ -25,12 +25,16 @@ final class UTIRenderStateTests: XCTestCase {
 
     private var sut: UnifiedToggleInputCoordinator!
 
+    private var termsSuiteName: String { String(describing: self) + ".terms" }
+
     override func setUp() {
         super.setUp()
+        UserDefaults(suiteName: termsSuiteName)?.removePersistentDomain(forName: termsSuiteName)
         sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true)
     }
 
     override func tearDown() {
+        UserDefaults(suiteName: termsSuiteName)?.removePersistentDomain(forName: termsSuiteName)
         sut = nil
         super.tearDown()
     }
@@ -282,6 +286,82 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
+    // MARK: - Terms of Service disclaimer
+
+    func test_omnibarNewAIChat_whenTheDisclaimerIsOnScreen_returnAddsANewLineAndSubmitReadsAsk() {
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        var availabilityChanges = 0
+        sut.onFloatingReturnKeyAvailabilityChanged = { availabilityChanges += 1 }
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
+
+        showFooter([.termsConsent])
+
+        XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertTrue(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertFalse(sut.computeRenderState().isFloatingReturnKeyVisible)
+        XCTAssertEqual(availabilityChanges, 1)
+    }
+
+    func test_omnibarNewAIChat_whenTheDisclaimerLeavesTheScreen_returnSubmitsAgain() {
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
+        showFooter([.termsConsent])
+
+        showFooter([])
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
+    }
+
+    func test_omnibarNewAIChat_whenTermsAreAlreadyAccepted_returnSubmitsAndSubmitKeepsItsIcon() {
+        termsOfServiceStore.recordWebReport()
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
+
+        showFooter([.termsConsent])
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
+    }
+
+    func test_omnibarNewAIChat_whenNativeTermsOfServiceIsOff_returnSubmitsAndSubmitKeepsItsIcon() {
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar, isAvailable: false)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("how")
+
+        showFooter([.termsConsent])
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+    }
+
+    func test_contextualChat_whenTheDisclaimerIsOnScreen_returnAddsANewLineAndSubmitReadsAsk() {
+        sut = makeCoordinatorWithTermsOfService(host: .contextualChat, contextualStart: .expandedPreSubmit)
+        sut.showExpanded()
+
+        showFooter([.termsConsent])
+
+        XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertTrue(sut.viewController.handler.usesAskSubmitButton)
+    }
+
+    func test_contextualChat_whenTermsAreAcceptedOnSend_returnSubmitsAgain() {
+        sut = makeCoordinatorWithTermsOfService(host: .contextualChat, contextualStart: .expandedPreSubmit)
+        sut.showExpanded()
+        showFooter([.termsConsent])
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(termsOfServiceStore.hasAccepted)
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+    }
+
     // MARK: - Content Input Mode
 
     func test_viewConfig_isTopBarPosition_trueForOmnibarTop() {
@@ -348,5 +428,26 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)
+    }
+
+    // MARK: - Helpers
+
+    private var termsOfServiceStore: DuckAiTermsOfServiceStore {
+        DuckAiTermsOfServiceStore(keyValueStore: UserDefaults(suiteName: termsSuiteName)!)
+    }
+
+    private func makeCoordinatorWithTermsOfService(host: UnifiedToggleInputHost,
+                                                   isAvailable: Bool = true,
+                                                   contextualStart: ContextualInputStart = .expandedOnExistingChat) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(host: host,
+                                      isToggleEnabled: host == .omnibar,
+                                      contextualStart: contextualStart,
+                                      nativeTermsOfServiceFeature: StubNativeTermsOfServiceFeature(isAvailable: isAvailable),
+                                      termsOfServiceStore: termsOfServiceStore)
+    }
+
+    /// Stands in for the view reporting which footer rows made it on screen.
+    private func showFooter(_ ids: [UTIFooterItem.ID]) {
+        sut.unifiedToggleInputVC(sut.viewController, didChangeFooterVisibility: ids)
     }
 }

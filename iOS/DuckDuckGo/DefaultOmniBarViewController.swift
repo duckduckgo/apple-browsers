@@ -51,6 +51,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
     private var isUpdatedCreateImageEnabled = false
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private lazy var termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(
+        feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: dependencies.featureFlagger),
+        store: termsOfServiceStore
+    )
 
     override var iPadDuckAIControlValues: IPadDuckAIControlValues {
         IPadDuckAIControlValuesSnapshot(
@@ -62,8 +67,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         )
     }
 
-    init(dependencies: OmnibarDependencyProvider, isFloatingUIEnabled: Bool) {
+    init(dependencies: OmnibarDependencyProvider,
+         isFloatingUIEnabled: Bool,
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.termsOfServiceStore = termsOfServiceStore
         super.init(dependencies: dependencies)
     }
 
@@ -134,11 +142,19 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         setUpModelPickerIfNeeded()
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
+            // Ahead of the delegate, which anchors the suggestions popover below the card.
+            if isExpanded {
+                self.refreshFooterMessage(animated: true)
+            }
             self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
             if !isExpanded {
+                self.refreshFooterMessage(animated: false)
                 self.toolPickerController?.clearModelSwitchNotice()
             }
             self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
+        }
+        omniBarView.onFooterLinkTapped = { [weak self] url in
+            self?.omniDelegate?.onOmniBarFooterLinkTapped(url)
         }
 
         // Handle address bar position changes to set the shadow correctly
@@ -410,6 +426,8 @@ extension DefaultOmniBarViewController {
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
+                // Before the collapse below takes the disclaimer off screen.
+                termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessage)
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
                 PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
@@ -546,7 +564,7 @@ extension DefaultOmniBarViewController {
             if notice != nil {
                 self.attachmentController?.handleModelChanged()
             }
-            self.applyModelSwitchNotice(notice, animated: true)
+            self.refreshFooterMessage(animated: true)
         }
         omniBarView.onSelectedToolClearTapped = { [weak self] in
             self?.toolPickerController?.resetSelection(isUserInitiated: true)
@@ -605,15 +623,23 @@ extension DefaultOmniBarViewController {
         refreshReasoningPicker()
         refreshToolPicker()
         refreshAttachButton()
-        if let notice = toolPickerController?.currentModelSwitchNotice {
-            applyModelSwitchNotice(notice, animated: true)
-        }
     }
 
-    private func applyModelSwitchNotice(_ notice: CreateImageModelSwitchNotice?, animated: Bool) {
-        let message = notice.map { UTIFooterMessageMapper().message(for: $0) }
-        omniBarView.setCreateImageModelSwitchFooterMessage(message, animated: animated)
+    /// The required disclaimer outranks the model switch notice, as it does in the iPhone input.
+    private func refreshFooterMessage(animated: Bool) {
+        let message = termsOfServiceDisclaimer.message
+            ?? toolPickerController?.currentModelSwitchNotice.map { UTIFooterMessageMapper().message(for: $0) }
+        omniBarView.setFooterMessage(message, animated: animated)
+        omniBarView.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
+        let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
+    }
+
+    /// Sending with the disclaimer on screen accepts the terms, so only the Ask button sends and Return adds a new line.
+    private var isTermsOfServiceDisclaimerShown: Bool {
+        guard let visibleMessage = omniBarView.visibleFooterMessage else { return false }
+        return visibleMessage == termsOfServiceDisclaimer.message
     }
 
     private func refreshModelPicker() {
@@ -735,6 +761,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
             if omniDelegate?.onAIChatSuggestionsActivateHighlight() == true {
                 return false
             }
+            guard !isTermsOfServiceDisclaimerShown else { return true }
             submitIPadDuckAIText(from: textView)
             return false
         }

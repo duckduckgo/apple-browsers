@@ -3549,13 +3549,11 @@ extension TabViewController: WKNavigationDelegate {
                                                           navigationAction: WKNavigationAction,
                                                           decisionHandler wrappedHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
-        // There is an `isUserInitiated` var on navigationAction that uses private API
-        //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
-        //  if the user visits the a domain where as a loop has already been detected
-        //  we'll show the error page but that is a small number at this point already.
-        if #available(iOS 18.4, *), navigationAction.buttonNumber.contains(.primary) {
-            safariRedirectHandler.reset()
+        var isUserInitiated = false
+        if #available(iOS 18.4, *) {
+            isUserInitiated = navigationAction.buttonNumber.contains(.primary)
         }
+        safariRedirectHandler.willNavigate(navigationAction, isUserInitiated: isUserInitiated)
 
         if let url = navigationAction.request.url {
             if !tabURLInterceptor.allowsNavigatingTo(url: url) {
@@ -3908,7 +3906,7 @@ extension TabViewController: WKNavigationDelegate {
         let schemeType = SchemeHandler.schemeType(for: url)
         self.blobDownloadTargetFrame = nil
 
-        if safariRedirectHandler.handleRedirect(to: url) {
+        if safariRedirectHandler.handleRedirect(to: url, isMainFrame: navigationAction.targetFrame?.isMainFrame ?? true) {
             completion(.cancel)
             return
         }
@@ -6079,6 +6077,7 @@ extension TabViewController: SafariRedirectHandlerDelegate {
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
+        if case .safariRedirectLoop = actionableErrorPage { return }
         SafariRedirectPixel.loopErrorPageShown.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)

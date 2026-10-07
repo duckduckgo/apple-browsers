@@ -50,7 +50,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
     private lazy var titleLabel = NSTextField(string: "Bookmark/Folder")
     private lazy var countLabel = NSTextField(string: "42")
     private lazy var urlLabel = NSTextField(string: "URL")
-    private lazy var menuButton = NSButton(title: "", image: .settings, target: self, action: #selector(cellMenuButtonClicked))
+    private lazy var menuButton = NSButton(title: "", image: NSImage(resource: .settings), target: self, action: #selector(cellMenuButtonClicked))
     private lazy var favoriteImageView = NSImageView()
 
     private var leadingConstraint = NSLayoutConstraint()
@@ -129,7 +129,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         countLabel.drawsBackground = false
         countLabel.font = .preferredFont(forTextStyle: .body)
         countLabel.alignment = .right
-        countLabel.textColor = .blackWhite60
+        countLabel.textColor = NSColor(resource: .blackWhite60)
         countLabel.lineBreakMode = .byClipping
 
         urlLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -142,7 +142,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         urlLabel.lineBreakMode = .byTruncatingTail
 
         menuButton.translatesAutoresizingMaskIntoConstraints = false
-        menuButton.contentTintColor = .button
+        menuButton.contentTintColor = NSColor(resource: .button)
         menuButton.imagePosition = .imageTrailing
         menuButton.isBordered = false
         menuButton.isHidden = true
@@ -384,7 +384,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         faviconImageView.isHidden = false
         titleLabel.stringValue = folder.title
         titleLabel.isEnabled = true
-        favoriteImageView.image = shouldShowChevron ? .chevronMediumRight16 : nil
+        favoriteImageView.image = shouldShowChevron ? NSImage(resource: .chevronMediumRight16) : nil
         favoriteImageView.isHidden = favoriteImageView.image == nil
         urlLabel.stringValue = ""
         self.toolTip = nil

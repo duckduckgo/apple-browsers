@@ -48,12 +48,12 @@ final class BookmarkListViewController: NSViewController {
     private lazy var titleTextField = NSTextField(string: UserText.bookmarks)
 
     private lazy var stackView = NSStackView()
-    private lazy var newBookmarkButton = MouseOverButton(image: .addBookmark, target: self, action: #selector(newBookmarkButtonClicked))
-    private lazy var newFolderButton = MouseOverButton(image: .addFolder, target: outlineView.menu, action: #selector(FolderMenuItemSelectors.newFolder))
+    private lazy var newBookmarkButton = MouseOverButton(image: NSImage(resource: .addBookmark), target: self, action: #selector(newBookmarkButtonClicked))
+    private lazy var newFolderButton = MouseOverButton(image: NSImage(resource: .addFolder), target: outlineView.menu, action: #selector(FolderMenuItemSelectors.newFolder))
         .withAccessibilityIdentifier("BookmarkListViewController.newFolderButton")
-    private lazy var searchBookmarksButton = MouseOverButton(image: .searchBookmarks, target: self, action: #selector(searchBookmarkButtonClicked))
+    private lazy var searchBookmarksButton = MouseOverButton(image: NSImage(resource: .searchBookmarks), target: self, action: #selector(searchBookmarkButtonClicked))
         .withAccessibilityIdentifier("BookmarkListViewController.searchBookmarksButton")
-    private lazy var sortBookmarksButton = MouseOverButton(image: .bookmarkSortAsc, target: self, action: #selector(sortBookmarksButtonClicked))
+    private lazy var sortBookmarksButton = MouseOverButton(image: NSImage(resource: .bookmarkSortAsc), target: self, action: #selector(sortBookmarksButtonClicked))
         .withAccessibilityIdentifier("BookmarkListViewController.sortBookmarksButton")
 
     private lazy var buttonsDivider = NSBox()
@@ -213,33 +213,33 @@ final class BookmarkListViewController: NSViewController {
 
         newBookmarkButton.bezelStyle = .shadowlessSquare
         newBookmarkButton.cornerRadius = 4
-        newBookmarkButton.normalTintColor = .button
-        newBookmarkButton.mouseDownColor = .buttonMouseDown
-        newBookmarkButton.mouseOverColor = .buttonMouseOver
+        newBookmarkButton.normalTintColor = NSColor(resource: .button)
+        newBookmarkButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        newBookmarkButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         newBookmarkButton.translatesAutoresizingMaskIntoConstraints = false
         newBookmarkButton.toolTip = UserText.newBookmarkTooltip
 
         newFolderButton.bezelStyle = .shadowlessSquare
         newFolderButton.cornerRadius = 4
-        newFolderButton.normalTintColor = .button
-        newFolderButton.mouseDownColor = .buttonMouseDown
-        newFolderButton.mouseOverColor = .buttonMouseOver
+        newFolderButton.normalTintColor = NSColor(resource: .button)
+        newFolderButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        newFolderButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         newFolderButton.translatesAutoresizingMaskIntoConstraints = false
         newFolderButton.toolTip = UserText.newFolderTooltip
 
         searchBookmarksButton.bezelStyle = .shadowlessSquare
         searchBookmarksButton.cornerRadius = 4
-        searchBookmarksButton.normalTintColor = .button
-        searchBookmarksButton.mouseDownColor = .buttonMouseDown
-        searchBookmarksButton.mouseOverColor = .buttonMouseOver
+        searchBookmarksButton.normalTintColor = NSColor(resource: .button)
+        searchBookmarksButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        searchBookmarksButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         searchBookmarksButton.translatesAutoresizingMaskIntoConstraints = false
         searchBookmarksButton.toolTip = UserText.bookmarksSearch
 
         sortBookmarksButton.bezelStyle = .shadowlessSquare
         sortBookmarksButton.cornerRadius = 4
-        sortBookmarksButton.normalTintColor = .button
-        sortBookmarksButton.mouseDownColor = .buttonMouseDown
-        sortBookmarksButton.mouseOverColor = .buttonMouseOver
+        sortBookmarksButton.normalTintColor = NSColor(resource: .button)
+        sortBookmarksButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        sortBookmarksButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         sortBookmarksButton.translatesAutoresizingMaskIntoConstraints = false
         sortBookmarksButton.toolTip = UserText.bookmarksSort
 
@@ -252,14 +252,14 @@ final class BookmarkListViewController: NSViewController {
 
         manageBookmarksButton.bezelStyle = .shadowlessSquare
         manageBookmarksButton.cornerRadius = 4
-        manageBookmarksButton.normalTintColor = .button
-        manageBookmarksButton.mouseDownColor = .buttonMouseDown
-        manageBookmarksButton.mouseOverColor = .buttonMouseOver
+        manageBookmarksButton.normalTintColor = NSColor(resource: .button)
+        manageBookmarksButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        manageBookmarksButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         manageBookmarksButton.translatesAutoresizingMaskIntoConstraints = false
         manageBookmarksButton.font = .systemFont(ofSize: 12)
         manageBookmarksButton.toolTip = UserText.manageBookmarksTooltip
         manageBookmarksButton.image = {
-            let image = NSImage.externalAppScheme
+            let image = NSImage(resource: .externalAppScheme)
             image.alignmentRect = NSRect(x: 0, y: 0, width: image.size.width + 6, height: image.size.height)
             return image
         }()
@@ -508,9 +508,9 @@ final class BookmarkListViewController: NSViewController {
     private func setupSort(mode: BookmarksSortMode) {
         hideSearchBar()
         reloadTreePreservingState(sortMode: mode)
-        sortBookmarksButton.image = (mode == .nameDescending) ? .bookmarkSortDesc : .bookmarkSortAsc
-        sortBookmarksButton.backgroundColor = mode.shouldHighlightButton ? .buttonMouseDown : .clear
-        sortBookmarksButton.mouseOverColor = mode.shouldHighlightButton ? .buttonMouseDown : .buttonMouseOver
+        sortBookmarksButton.image = (mode == .nameDescending) ? NSImage(resource: .bookmarkSortDesc) : NSImage(resource: .bookmarkSortAsc)
+        sortBookmarksButton.backgroundColor = mode.shouldHighlightButton ? NSColor(resource: .buttonMouseDown) : .clear
+        sortBookmarksButton.mouseOverColor = mode.shouldHighlightButton ? NSColor(resource: .buttonMouseDown) : NSColor(resource: .buttonMouseOver)
     }
 
     // MARK: Layout
@@ -538,8 +538,8 @@ final class BookmarkListViewController: NSViewController {
             boxDivider.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 10),
         ])
         searchBar.makeMeFirstResponder()
-        searchBookmarksButton.backgroundColor = .buttonMouseDown
-        searchBookmarksButton.mouseOverColor = .buttonMouseDown
+        searchBookmarksButton.backgroundColor = NSColor(resource: .buttonMouseDown)
+        searchBookmarksButton.mouseOverColor = NSColor(resource: .buttonMouseDown)
     }
 
     private func hideSearchBar() {
@@ -552,7 +552,7 @@ final class BookmarkListViewController: NSViewController {
         searchBar.removeFromSuperview()
         boxDividerTopConstraint.isActive = true
         searchBookmarksButton.backgroundColor = .clear
-        searchBookmarksButton.mouseOverColor = .buttonMouseOver
+        searchBookmarksButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
     }
 
     private func showTreeView() {

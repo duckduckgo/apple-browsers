@@ -34,6 +34,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
     private let simulateCPMBreakageMenuItem = NSMenuItem(title: "", action: #selector(WebExtensionsDebugMenu.toggleCPMBreakageSimulation))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
+    private let apiCompatibilityLogMenuItem = NSMenuItem(title: "JavaScript API Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
 
     init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
         self.webExtensionManager = webExtensionManager
@@ -53,6 +54,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         simulateCPMBreakageMenuItem.setAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.simulateCPMBreakage)
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
+        apiCompatibilityLogMenuItem.target = self
+        apiCompatibilityLogMenuItem.isEnabled = true
 
         addItems()
     }
@@ -73,6 +76,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(processMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
+        addItem(apiCompatibilityLogMenuItem)
 
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
@@ -93,6 +97,10 @@ final class WebExtensionsDebugMenu: NSMenu {
         submenu.addItem(browseItem)
 
         submenu.addItem(.separator())
+
+        let bitwardenItem = NSMenuItem(title: "Install Bitwarden", action: #selector(installBitwarden))
+        bitwardenItem.target = self
+        submenu.addItem(bitwardenItem)
 
         return submenu
     }
@@ -120,6 +128,12 @@ final class WebExtensionsDebugMenu: NSMenu {
         Task {
             try? await webExtensionManager.installExtension(from: url)
         }
+    }
+
+    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
+    @objc func installBitwarden() {
+        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {
@@ -167,6 +181,10 @@ final class WebExtensionsDebugMenu: NSMenu {
         simulateCPMBreakageMenuItem.state = isEnabled ? .on : .off
     }
 
+    @objc func showAPICompatibilityLog() {
+        WebExtensionAPICompatibilityLogWindowPresenter.show()
+    }
+
     @objc func openExtensionsFolderInFinder() {
         let path = webExtensionManager.extensionsDirectory.path
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
@@ -202,8 +220,19 @@ final class WebExtensionSubMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
+            NSMenuItem(title: "Open Folder in Finder", action: #selector(openFolderInFinder), target: self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
+    }
+
+    @objc func openFolderInFinder() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        let folder = webExtensionManager.extensionsDirectory.appendingPathComponent(extensionIdentifier, isDirectory: true)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
     }
 
     @objc func uninstallExtension() {

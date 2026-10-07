@@ -146,7 +146,7 @@ private final class QuickFeedbackTipViewController: NSViewController {
 
         let daxIcon = NSImageView()
         daxIcon.translatesAutoresizingMaskIntoConstraints = false
-        daxIcon.image = NSImage(named: "OnboardingDax")
+        daxIcon.image = NSImage(resource: .onboardingDax)
         daxIcon.imageScaling = .scaleProportionallyDown
 
         let label = NSTextField(wrappingLabelWithString: message)

@@ -25,7 +25,6 @@ protocol NewTabPageNextStepsCardsPersisting {
     var dailyVisibleStack: [NewTabPageDataModel.CardID]? { get set }
     var visibleStackDayIdentifier: Int? { get set }
     var firstCardLevel: NewTabPageDataModel.CardLevel { get set }
-    var isFirstSession: Bool { get set }
     var ntpImpressionCount: Int { get set }
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int
@@ -49,7 +48,6 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
         static let dailyVisibleStack = "new.tab.page.next.steps.daily.visible.stack"
         static let visibleStackDayIdentifier = "new.tab.page.next.steps.visible.stack.day.identifier"
         static let firstCardLevel = "new.tab.page.next.steps.first.card.level"
-        static let isFirstSession = "new.tab.page.next.steps.is.first.session"
         static let ntpImpressionCount = "new.tab.page.next.steps.ntp.impression.count"
     }
 
@@ -143,23 +141,6 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
         }
     }
 
-    var isFirstSession: Bool {
-        get {
-            lock.lock()
-            defer {
-                lock.unlock()
-            }
-            return (try? keyValueStore.object(forKey: Keys.isFirstSession) as? Bool) ?? true
-        }
-        set {
-            lock.lock()
-            defer {
-                lock.unlock()
-            }
-            try? keyValueStore.set(newValue, forKey: Keys.isFirstSession)
-        }
-    }
-
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int {
         lock.lock()
         defer {
@@ -223,7 +204,6 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
         try? keyValueStore.removeObject(forKey: Keys.dailyVisibleStack)
         try? keyValueStore.removeObject(forKey: Keys.visibleStackDayIdentifier)
         try? keyValueStore.removeObject(forKey: Keys.firstCardLevel)
-        try? keyValueStore.removeObject(forKey: Keys.isFirstSession)
         try? keyValueStore.removeObject(forKey: Keys.ntpImpressionCount)
     }
 

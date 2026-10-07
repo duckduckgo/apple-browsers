@@ -38,6 +38,11 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
                       toggleEnabled: Bool)
 
+    /// Updates the New Tab page's recorded starting keyboard state to `.up`.
+    /// Use when the app shows the keyboard after the page appears, such as when the app opens.
+    /// Does not record a user action. Ignored after user interaction or a session timeout.
+    func keyboardRaisedOnArrival()
+
     // MARK: - Actions
     //
     // Repeat calls are cheap, and each one holds off the inactivity timeout. Each also adds a
@@ -215,6 +220,12 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         // The framework consults the sample rate only here. A visit the sampler drops still
         // runs locally, and its later calls no-op.
         wideEvent.startFlow(visit)
+    }
+
+    func keyboardRaisedOnArrival() {
+        lockTerminalIfTimedOut()
+        guard let visit = activeVisit, lockedTerminal == nil, visit.actionCount == 0 else { return }
+        visit.launchKeyboardMode = .up
     }
 
     // MARK: - Actions

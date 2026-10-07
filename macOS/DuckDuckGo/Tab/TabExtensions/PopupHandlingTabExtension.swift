@@ -284,6 +284,9 @@ final class PopupHandlingTabExtension {
 
         let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
         guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }
+        if isUserInitiated {
+            childTab.aiChat?.noteOpenedForLink(from: navigationAction.safeSourceFrame?.safeRequest?.url)
+        }
 
         presentTab(childTab, kind)
 

@@ -445,6 +445,61 @@ struct OnboardingFlowConfiguration {
     }
 }
 
+@Suite("Onboarding - Duck.ai Fire Resume Checkpoint")
+struct DuckAIFireResumeCheckpointTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Completed Fire step clears the Duck.ai answer checkpoint and prompt", .timeLimit(.minutes(1)))
+    func completedFireStepClearsAnswerCheckpoint() {
+        let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        store.resumeStep = .duckAIAnswerStep
+        store.resumeDuckAIQueryPrompt = "test prompt"
+
+        let didClear = OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: store,
+            fireEducationMessageSeen: true
+        )
+
+        #expect(didClear)
+        #expect(store.resumeStep == nil)
+        #expect(store.resumeDuckAIQueryPrompt == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Incomplete Fire step keeps the Duck.ai answer checkpoint", .timeLimit(.minutes(1)))
+    func incompleteFireStepKeepsAnswerCheckpoint() {
+        let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        store.resumeStep = .duckAIAnswerStep
+        store.resumeDuckAIQueryPrompt = "test prompt"
+
+        let didClear = OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: store,
+            fireEducationMessageSeen: false
+        )
+
+        #expect(!didClear)
+        #expect(store.resumeStep == .duckAIAnswerStep)
+        #expect(store.resumeDuckAIQueryPrompt == "test prompt")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Completed Fire step keeps the tailored-flow interlude checkpoint", .timeLimit(.minutes(1)))
+    func completedFireStepKeepsInterludeCheckpoint() {
+        let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
+        store.resumeStep = .interludeDuckAI
+        store.resumeDuckAIQueryPrompt = "test prompt"
+
+        let didClear = OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: store,
+            fireEducationMessageSeen: true
+        )
+
+        #expect(!didClear)
+        #expect(store.resumeStep == .interludeDuckAI)
+        #expect(store.resumeDuckAIQueryPrompt == "test prompt")
+    }
+}
+
 @Suite("Onboarding - Onboarding Steps for Flow")
 struct OnboardingStepsForConfiguredFlow {
 

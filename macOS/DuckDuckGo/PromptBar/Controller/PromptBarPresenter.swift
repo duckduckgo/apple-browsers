@@ -73,7 +73,6 @@ enum PromptBarDismissReason: Equatable {
 protocol PromptBarPresenting: AnyObject {
     var isVisible: Bool { get }
     func show(source: PromptBarPresentationSource)
-    /// Opened by the launcher promo rather than an entry point, so no visibility pixel.
     func showForLauncherPromo(shortcut: String)
     func dismiss(reason: PromptBarDismissReason)
     func toggle(source: PromptBarPresentationSource)
@@ -90,6 +89,7 @@ final class PromptBarPresenter: PromptBarPresenting {
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
+    private var dimWindow: NSWindow?
 
     var isVisible: Bool {
         window?.isVisible ?? false
@@ -140,6 +140,51 @@ final class PromptBarPresenter: PromptBarPresenting {
         content.showLauncherIntroduction(shortcut: shortcut)
     }
 
+    private func animateAppearance(of window: NSWindow) {
+        let duration = 0.25
+        if let contentView = window.contentView, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            contentView.wantsLayer = true
+            let center = CGPoint(x: contentView.bounds.midX, y: contentView.bounds.midY)
+            var start = CATransform3DMakeTranslation(center.x, center.y, 0)
+            start = CATransform3DScale(start, 0.96, 0.96, 1)
+            start = CATransform3DTranslate(start, -center.x, -center.y, 0)
+
+            let zoom = CABasicAnimation(keyPath: "transform")
+            zoom.fromValue = start
+            zoom.toValue = CATransform3DIdentity
+            zoom.duration = duration
+            zoom.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            contentView.layer?.add(zoom, forKey: "appear")
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            window.animator().alphaValue = 1
+        }
+    }
+
+    private static let dimFadeDuration = 0.3
+
+    private func dimScreen() {
+        guard dimWindow == nil, let window, let screen = window.screen else { return }
+
+        let dimWindow = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        dimWindow.isReleasedWhenClosed = false
+        dimWindow.backgroundColor = .black
+        dimWindow.isOpaque = false
+        dimWindow.hasShadow = false
+        dimWindow.ignoresMouseEvents = true
+        dimWindow.level = window.level
+        dimWindow.collectionBehavior = window.collectionBehavior
+        dimWindow.alphaValue = 0
+        dimWindow.order(.below, relativeTo: window.windowNumber)
+        self.dimWindow = dimWindow
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = Self.dimFadeDuration
+            dimWindow.animator().alphaValue = 0.15
+        }
+    }
+
     private func present() {
         content.prepareForPresentation()
 
@@ -148,9 +193,12 @@ final class PromptBarPresenter: PromptBarPresenting {
                                                  in: screenProvider.targetVisibleFrame),
                         display: false)
 
+        window.alphaValue = 0
         // No `NSApp.activate`: it would raise the browser's windows above whatever the user has in front.
         window.orderFrontRegardless()
         window.makeKey()
+        animateAppearance(of: window)
+        dimScreen()
         // First responder only sticks once the window is key.
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.
@@ -165,6 +213,15 @@ final class PromptBarPresenter: PromptBarPresenting {
         let hadText = content.hasPromptText
         resignKeyCancellable = nil
         window.orderOut(nil)
+        if let dimWindow {
+            self.dimWindow = nil
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = Self.dimFadeDuration
+                dimWindow.animator().alphaValue = 0
+            } completionHandler: {
+                dimWindow.orderOut(nil)
+            }
+        }
         content.resetAfterDismissal()
 
         if let cancellation = reason.cancellation {

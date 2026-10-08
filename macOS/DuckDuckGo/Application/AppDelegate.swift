@@ -252,7 +252,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var updateProgressCancellable: AnyCancellable?
 
-    /// One for the whole app: each instance observes every chat to count them.
     @MainActor
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
@@ -2676,7 +2675,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.promptBarMenuBarController?.hide()
                 }
             }
-        // Async: lands after the shortcut is registered, and clearing the request inside its own emission is re-entrant.
         promptBarLauncherIntroductionCancellable = promptBarPreferences.$pendingLauncherIntroduction
             .receive(on: DispatchQueue.main)
             .filter { $0 }

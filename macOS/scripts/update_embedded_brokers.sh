@@ -75,6 +75,13 @@ verifyBrokerDigests() {
 		fi
 	done < <(find "$source_dir" -name '*.json' | sort)
 
+	while IFS= read -r file_name; do
+		if [[ -z "$(find "$source_dir" -name "$file_name" -print -quit)" ]]; then
+			printf "Error: active broker %s is missing from the archive\n" "$file_name"
+			error_found=1
+		fi
+	done <<< "$active_brokers"
+
 	return $error_found
 }
 

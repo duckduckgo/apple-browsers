@@ -62,6 +62,8 @@ enum BrokerProfileJobQueueMode {
 public enum BrokerProfileJobQueueError: Error {
     case cannotInterrupt
     case interrupted
+    /// A broker bundle signing key has been revoked, so no scans or opt-outs run until an app update drops it.
+    case pausedForRevokedSigningKey
 }
 
 public protocol JobQueueManaging {
@@ -172,6 +174,8 @@ public final class JobQueueManager: JobQueueManaging {
                                                           jobDependencies: BrokerProfileJobDependencyProviding,
                                                           errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                           completion: (() -> Void)?) {
+        guard !stopIfPaused(jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion) else { return }
+
         cancelCurrentModeAndResetIfNeeded()
         mode = .immediate(errorHandler: nil, completion: nil)
         let runID = UUID()
@@ -214,6 +218,11 @@ public final class JobQueueManager: JobQueueManaging {
     }
 
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+        guard !jobDependencies.isPausedForRevokedSigningKey else {
+            Logger.dataBrokerProtection.log("✉️ Not adding email confirmation jobs: PIR is paused because a broker bundle signing key was revoked")
+            return
+        }
+
         do {
             let emailConfirmationDependencies = EmailConfirmationJobDependencies(from: jobDependencies)
             let emailJobs = try emailConfirmationJobProvider.createEmailConfirmationJobs(
@@ -282,13 +291,13 @@ private extension JobQueueManager {
             return
         }
 
-        if delegate != nil {
-            jobQueue.addBarrierBlock1 { [weak self] in
-                guard let self, let delegate = self.delegate else { return }
-                delegate.queueManagerWillEnqueueOperations(self)
-            }
+        guard !stopIfPaused(jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion) else {
+            // Added after the running jobs are cancelled, so the delegate's broker update check runs and reports the revoked key
+            addWillEnqueueBarrierIfNeeded()
+            return
         }
 
+        addWillEnqueueBarrierIfNeeded()
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
         let runID = UUID()
@@ -305,6 +314,28 @@ private extension JobQueueManager {
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completion)
+    }
+
+    func addWillEnqueueBarrierIfNeeded() {
+        guard delegate != nil else { return }
+
+        jobQueue.addBarrierBlock1 { [weak self] in
+            guard let self, let delegate = self.delegate else { return }
+            delegate.queueManagerWillEnqueueOperations(self)
+        }
+    }
+
+    /// Returns true, after stopping any running jobs and reporting the pause, if PIR is paused.
+    func stopIfPaused(jobDependencies: BrokerProfileJobDependencyProviding,
+                      errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                      completion: (() -> Void)?) -> Bool {
+        guard jobDependencies.isPausedForRevokedSigningKey else { return false }
+
+        Logger.dataBrokerProtection.log("Not starting jobs: PIR is paused because a broker bundle signing key was revoked")
+        cancelCurrentModeAndResetIfNeeded()
+        errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.pausedForRevokedSigningKey))
+        completion?()
+        return true
     }
 
     func cancelCurrentModeAndResetIfNeeded() {

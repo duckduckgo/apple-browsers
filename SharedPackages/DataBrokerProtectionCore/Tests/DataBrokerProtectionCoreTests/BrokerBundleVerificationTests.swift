@@ -146,11 +146,29 @@ final class BrokerBundleVerificationTests: XCTestCase {
         }
     }
 
-    func testRevokedKeyIsDetected() {
-        XCTAssertTrue(stagingVerifier.hasRevokedKey(revokedKeyIDs: [Self.productionKeyID, Self.stagingKeyID]))
-        XCTAssertTrue(stagingVerifier.hasRevokedKey(revokedKeyIDs: [Self.stagingKeyID.uppercased()]))
-        XCTAssertFalse(stagingVerifier.hasRevokedKey(revokedKeyIDs: [Self.productionKeyID]))
-        XCTAssertFalse(stagingVerifier.hasRevokedKey(revokedKeyIDs: []))
+    func testRevocationCheckerOnlyMatchesKeysForTheCurrentEnvironment() {
+        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings)
+
+        for (revokedKeyIDs, isRevoked) in [([Self.productionKeyID, Self.stagingKeyID], true),
+                                           ([Self.stagingKeyID.uppercased()], true),
+                                           ([Self.productionKeyID], false),
+                                           ([], false)] {
+            privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": revokedKeyIDs]
+            XCTAssertEqual(checker.isAnyKeyRevoked, isRevoked, "\(revokedKeyIDs)")
+        }
+
+        settings.selectedEnvironment = .production
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
+        XCTAssertTrue(checker.isAnyKeyRevoked)
+    }
+
+    func testRevocationCheckerTreatsMissingOrMalformedSettingAsNotRevoked() {
+        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings)
+
+        for dbpSettings: [String: Any] in [[:], ["revokedBundleSigningKeys": Self.stagingKeyID], ["revokedBundleSigningKeys": [1, 2]]] {
+            privacyConfig.featureSettings[.dbp] = dbpSettings
+            XCTAssertFalse(checker.isAnyKeyRevoked)
+        }
     }
 
     func testFixtureBrokersMatchTheirDigests() throws {
@@ -180,7 +198,36 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
         XCTAssertEqual(settings.mainConfigETag, eTag)
         XCTAssertTrue(firedVerificationFailures.isEmpty)
+        XCTAssertEqual(firedVerificationSuccessCount, 1)
         XCTAssertEqual(MockURLProtocol.lastRequest?.url?.path, "/dbp/remote/v0/main_config.json.sig")
+    }
+
+    func testWhenMainConfigIsUnchangedThenVerificationSuccessIsReported() async throws {
+        settings.mainConfigETag = eTag
+        let notModified = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 304, httpVersion: nil, headerFields: [:])!
+        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
+            self?.mainConfigRequests.append(request)
+            return (notModified, nil)
+        }
+
+        try await makeService().checkForUpdates()
+
+        XCTAssertEqual(mainConfigRequests.count, 1)
+        XCTAssertTrue(firedVerificationFailures.isEmpty)
+        XCTAssertEqual(firedVerificationSuccessCount, 1)
+    }
+
+    func testWhenMainConfigRequestFailsThenNoVerificationPixelIsFired() async throws {
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.internalServerError, nil) }
+
+        do {
+            try await makeService().checkForUpdates()
+            XCTFail("Expected an error")
+        } catch RemoteBrokerJSONService.Error.serverError(let code) {
+            XCTAssertEqual(code, 500)
+        }
+        XCTAssertTrue(firedVerificationFailures.isEmpty)
+        XCTAssertEqual(firedVerificationSuccessCount, 0)
     }
 
     func testWhenManifestIsTamperedThenNothingIsStored() async throws {
@@ -289,17 +336,41 @@ final class BrokerBundleVerificationTests: XCTestCase {
         }
     }
 
-    func testWhenSignatureRequestFailsThenItIsNotReportedAsVerificationFailure() async throws {
+    func testWhenSignatureRequestFailsThenOtherIsReported() async throws {
         appendFixtureResponses(signatureResponse: (HTTPURLResponse.internalServerError, nil))
 
-        do {
-            try await makeService().checkForUpdates()
-            XCTFail("Expected an error")
-        } catch RemoteBrokerJSONService.Error.serverError(let code) {
-            XCTAssertEqual(code, 500)
-        }
-        XCTAssertTrue(firedVerificationFailures.isEmpty)
+        await assertCheckForUpdatesFails(with: .other)
         assertNothingMarkedUpToDate()
+    }
+
+    func testWhenSignatureRequestHasNetworkErrorThenOtherIsReported() async throws {
+        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
+            self?.mainConfigRequests.append(request)
+            return (HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 200, httpVersion: nil, headerFields: ["ETag": self?.eTag ?? ""])!,
+                    try? self?.fixture("main_config.json"))
+        }
+        MockURLProtocol.requestHandlerQueue.append { _ in throw URLError(.notConnectedToInternet) }
+
+        await assertCheckForUpdatesFails(with: .other)
+        assertNothingMarkedUpToDate()
+    }
+
+    func testWhenSignedManifestCannotBeParsedThenOtherIsReported() async throws {
+        let manifestVersionKey = "\"manifest_version\""
+        let fixtureManifest = try XCTUnwrap(String(data: try fixture("main_config.json"), encoding: .utf8))
+        let manifestWithoutVersion = Data(fixtureManifest.replacingOccurrences(of: manifestVersionKey, with: "\"renamed_version\"").utf8)
+        XCTAssertNotEqual(manifestWithoutVersion, try fixture("main_config.json"))
+
+        for manifest in [Data("not json".utf8), manifestWithoutVersion] {
+            pixelHandler.clear()
+            let privateKey = P256.Signing.PrivateKey()
+            let signature = try privateKey.signature(for: manifest).derRepresentation.base64EncodedData()
+            appendFixtureResponses(manifest: manifest, signatureResponse: (HTTPURLResponse.ok, signature))
+
+            await assertCheckForUpdatesFails(with: .other,
+                                             signingKeys: .init(production: [], staging: [privateKey.publicKey.derRepresentation.base64EncodedString()]))
+            assertNothingMarkedUpToDate()
+        }
     }
 
     func testWhenManifestVersionIsOlderThanLastSeenForKeyThenRollbackIsRejected() async throws {
@@ -346,92 +417,45 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: extractedDirectoryURL.path), "Download should be discarded so it's fetched again")
     }
 
-    func testWhenBuiltInKeyIsRevokedThenBundledBrokersReplaceNewerStoredBrokers() async throws {
+    func testWhenBuiltInKeyIsRevokedThenUpdateIsSkippedAndStoredDataIsUntouched() async throws {
         privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
         settings.mainConfigETag = "previous"
+        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion]
         vault.shouldReturnNewVersionBroker = true
-        let bundledBroker = try DataBroker.initFromResource(try XCTUnwrap(Bundle.module.url(forResource: "valid-broker",
-                                                                                            withExtension: "json",
-                                                                                            subdirectory: "BundleResources")))
-        resources.brokerResourcesList = [bundledBroker]
+        let olderBundledBroker = try DataBroker.initFromResource(try XCTUnwrap(Bundle.module.url(forResource: "valid-broker",
+                                                                                                 withExtension: "json",
+                                                                                                 subdirectory: "BundleResources")))
+        resources.brokerResourcesList = [olderBundledBroker]
         appendFixtureResponses()
 
         await assertCheckForUpdatesFails(with: .keyRevoked)
 
-        XCTAssertEqual(try vault.fetchBroker(with: "broker.com")?.version, "1.0.1")
-        XCTAssertEqual(vault.lastUpdatedBrokerResource?.broker.version, "0.5.0")
-        XCTAssertEqual(vault.lastUpdatedBrokerResource?.rawJSON, bundledBroker.rawJSON)
-        XCTAssertNil(settings.mainConfigETag)
         XCTAssertEqual(MockURLProtocol.requestHandlerQueue.count, 2, "No remote request should be made")
+        XCTAssertFalse(vault.wasBrokerSavedCalled)
+        XCTAssertFalse(vault.wasBrokerUpdateCalled, "Bundled brokers must not replace stored ones")
+        XCTAssertEqual(try vault.fetchBroker(with: "broker.com")?.version, "1.0.1")
+        XCTAssertEqual(settings.mainConfigETag, "previous")
+        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(firedVerificationSuccessCount, 0)
     }
 
-    func testWhenBuiltInKeyIsRevokedThenBundledBrokersMatchingStoredBrokersAreNotRewritten() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
-        vault.shouldReturnOldVersionBroker = true
-        let storedBroker = try XCTUnwrap(try vault.fetchBroker(with: "broker.com"))
-        resources.brokerResourcesList = [BrokerResource(broker: storedBroker, rawJSON: Data())]
-
-        await assertCheckForUpdatesFails(with: .keyRevoked)
-
-        XCTAssertFalse(vault.wasBrokerUpdateCalled)
-    }
-
-    func testWhenBuiltInKeyIsRevokedThenBrokersThatAreNotBundledAreDisabled() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
-        let bundledBroker = try fixtureBroker("verecor.com.json", id: 1)
-        let remoteOnlyBroker = try fixtureBroker("anywho.com.json", id: 2)
-        var removedBroker = try fixtureBroker("anywho.com.json", id: 3, url: "removed.com")
-        removedBroker = BrokerResource(broker: removedBroker.broker.withRemovedAt(Date.daysAgo(3)), rawJSON: removedBroker.rawJSON)
-        resources.brokerResourcesList = [bundledBroker]
-        vault.brokerResourcesToReturn = [bundledBroker, remoteOnlyBroker, removedBroker]
-
-        await assertCheckForUpdatesFails(with: .keyRevoked)
-
-        let disabledBroker = try XCTUnwrap(vault.updatedBrokerResources.first { $0.broker.url == "anywho.com" })
-        XCTAssertEqual(disabledBroker.broker.id, 2)
-        XCTAssertNotNil(disabledBroker.broker.removedAt)
-        XCTAssertEqual(disabledBroker.broker.version, "0")
-        XCTAssertEqual(disabledBroker.broker.eTag, "")
-        XCTAssertEqual(disabledBroker.rawJSON, remoteOnlyBroker.rawJSON)
-        XCTAssertEqual(vault.updatedBrokerResources.map(\.broker.url), ["anywho.com"], "Bundled and already removed brokers are left alone")
-    }
-
-    func testWhenRevokedKeyIsDroppedThenDisabledBrokersComeBackThroughNormalUpdates() async throws {
-        let storedBroker = try fixtureBroker("anywho.com.json", id: 2)
-        let bundledBroker = try fixtureBroker("verecor.com.json", id: 1)
-        resources.brokerResourcesList = [bundledBroker]
-        vault.brokerResourcesToReturn = [bundledBroker, storedBroker]
+    func testWhenRevokedKeyIsDroppedThenUpdatesResume() async throws {
         privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
         await assertCheckForUpdatesFails(with: .keyRevoked)
-        let disabledBroker = try XCTUnwrap(vault.updatedBrokerResources.first { $0.broker.url == "anywho.com" }?.broker)
 
         /// An app update drops the revoked key, so privacy-config no longer affects this app's keys
         privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
-        vault.brokers = [disabledBroker]
-        vault.brokersByURL = [disabledBroker.url: disabledBroker]
-        vault.updatedBrokerResources.removeAll()
         pixelHandler.clear()
         try stageExtractedBrokers()
         appendFixtureResponses()
 
         try await makeService().checkForUpdates(skipsLimiter: true)
 
-        let restoredBroker = try XCTUnwrap(vault.updatedBrokerResources.first { $0.broker.url == "anywho.com" })
-        XCTAssertEqual(restoredBroker.broker.version, storedBroker.broker.version)
-        XCTAssertNil(restoredBroker.broker.removedAt)
-        XCTAssertNotEqual(restoredBroker.broker.eTag, "")
-        XCTAssertEqual(restoredBroker.rawJSON, try fixture("anywho.com.json"))
+        XCTAssertTrue(vault.wasBrokerSavedCalled)
         XCTAssertEqual(settings.mainConfigETag, eTag)
-    }
-
-    func testWhenBundledBrokersAreUnavailableThenRevocationDoesNotDisableStoredBrokers() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
-        resources.brokerResourcesList = []
-        vault.brokerResourcesToReturn = [try fixtureBroker("anywho.com.json", id: 2)]
-
-        await assertCheckForUpdatesFails(with: .keyRevoked)
-
-        XCTAssertFalse(vault.wasBrokerUpdateCalled)
+        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertTrue(firedVerificationFailures.isEmpty)
+        XCTAssertEqual(firedVerificationSuccessCount, 1)
     }
 
     func testWhenOnlyOtherKeysAreRevokedThenUpdateProceeds() async throws {
@@ -452,6 +476,28 @@ final class BrokerBundleVerificationTests: XCTestCase {
         try await makeService().checkForUpdates()
 
         XCTAssertEqual(settings.mainConfigETag, eTag)
+    }
+
+    func testLastManifestVersionsSurviveResettingBrokerDeliveryData() {
+        settings.mainConfigETag = "previous"
+        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion]
+
+        settings.resetBrokerDeliveryData()
+
+        XCTAssertNil(settings.mainConfigETag)
+        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+    }
+
+    func testBundleVerificationSuccessPixel() {
+        let pixel = DataBrokerProtectionSharedPixels.bundleVerificationSuccess
+        XCTAssertEqual(pixel.parameters, [:])
+        XCTAssertEqual(pixel.platformSuffixPolicy, .standard)
+        XCTAssertEqual(pixel.namePrefix, .none)
+#if os(macOS)
+        XCTAssertEqual(pixel.name, "dbp_bundle_verification_success_macos")
+#else
+        XCTAssertEqual(pixel.name, "dbp_bundle_verification_success")
+#endif
     }
 
     func testBundleVerificationFailurePixel() {
@@ -489,28 +535,18 @@ final class BrokerBundleVerificationTests: XCTestCase {
         }
     }
 
+    private var firedVerificationSuccessCount: Int {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.filter {
+            guard case .bundleVerificationSuccess = $0 else { return false }
+            return true
+        }.count
+    }
+
     private func fixture(_ fileName: String) throws -> Data {
         let url = try XCTUnwrap(Bundle.module.resourceURL?
             .appendingPathComponent("BundleResources/BrokerBundleSigning")
             .appendingPathComponent(fileName))
         return try Data(contentsOf: url)
-    }
-
-    private func fixtureBroker(_ fileName: String, id: Int64, url: String? = nil) throws -> BrokerResource {
-        let resource = try DataBroker.initFromData(try fixture(fileName))
-        let broker = resource.broker
-        return BrokerResource(broker: DataBroker(id: id,
-                                                 name: broker.name,
-                                                 url: url ?? broker.url,
-                                                 steps: broker.steps,
-                                                 version: broker.version,
-                                                 schedulingConfig: broker.schedulingConfig,
-                                                 parent: broker.parent,
-                                                 mirrorSites: broker.mirrorSites,
-                                                 optOutUrl: broker.optOutUrl,
-                                                 eTag: "stored-etag",
-                                                 removedAt: broker.removedAt),
-                              rawJSON: resource.rawJSON)
     }
 
     private func makeService(signingKeys: BrokerBundleSigningKeys = .builtIn) -> RemoteBrokerJSONService {
@@ -586,6 +622,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
             XCTAssertEqual(error as? BrokerBundleVerificationError, expectedError, file: file, line: line)
         }
         XCTAssertEqual(firedVerificationFailures, [expectedError], file: file, line: line)
+        XCTAssertEqual(firedVerificationSuccessCount, 0, file: file, line: line)
     }
 
     private func assertNothingMarkedUpToDate(file: StaticString = #filePath, line: UInt = #line) {
@@ -599,12 +636,4 @@ final class BrokerBundleVerificationTests: XCTestCase {
 private extension HTTPURLResponse {
     static let notFound = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 404, httpVersion: nil, headerFields: [:])!
     static let internalServerError = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 500, httpVersion: nil, headerFields: [:])!
-}
-
-private extension DataBroker {
-    func withRemovedAt(_ removedAt: Date) -> DataBroker {
-        var broker = self
-        broker.removedAt = removedAt
-        return broker
-    }
 }

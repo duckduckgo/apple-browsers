@@ -169,7 +169,22 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
-    private lazy var disclosureTextView: NSTextView = {
+    private lazy var disclosureTextView: NSTextView = makeDisclosureTextView()
+
+    /// The attachment notice's row when it stacks under the Terms of Service disclaimer: both are
+    /// required, so neither waits for the other, as on iOS.
+    private let stackedIconImageView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.image = DesignSystemImages.Glyphs.Size16.info
+        imageView.isHidden = true
+        return imageView
+    }()
+
+    private lazy var stackedDisclosureTextView: NSTextView = makeDisclosureTextView()
+
+    private func makeDisclosureTextView() -> NSTextView {
         let view = NSTextView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.delegate = self
@@ -186,10 +201,13 @@ final class AIChatUsageWarningCardView: NSView {
             .cursor: NSCursor.pointingHand
         ]
         return view
-    }()
+    }
 
     /// Content centres on the visible band, not the card, whose top runs up behind the panel.
     private let contentGuide = NSLayoutGuide()
+    private let stackedContentGuide = NSLayoutGuide()
+    /// Raised by a row while a second message stacks under the first.
+    private var contentGuideBottomConstraint: NSLayoutConstraint?
 
     /// Hidden views still take part in Auto Layout, so footprints collapse explicitly.
     private var closeButtonWidthConstraint: NSLayoutConstraint?
@@ -242,9 +260,15 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     private var shownDisclosure: Disclosure?
+    private var isAttachmentPrivacyStacked = false
 
     /// Whether the card's message is the Terms of Service disclaimer, which an Ask click accepts.
     var isShowingTermsOfService: Bool { shownDisclosure == .termsOfService }
+
+    /// The exposed band a host reserves: one row per message.
+    var bandHeight: CGFloat {
+        Constants.contentHeight * (isAttachmentPrivacyStacked ? 2 : 1)
+    }
 
     /// The `>`, so a menu opens against the control the user actually clicked.
     var modelPickerAnchor: NSView { actionButton.pickerAnchor }
@@ -281,6 +305,10 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(disclosureTextView)
         addSubview(actionButton)
         addSubview(closeButton)
+        addLayoutGuide(stackedContentGuide)
+        addSubview(stackedIconImageView)
+        stackedDisclosureTextView.setAccessibilityIdentifier("AIChatUsageWarningCardView.stackedDisclosureTextView")
+        addSubview(stackedDisclosureTextView)
 
         let iconLeading = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
                                                                  constant: Constants.horizontalPadding)
@@ -297,6 +325,9 @@ final class AIChatUsageWarningCardView: NSView {
                                                                      constant: Constants.actionCloseSpacing)
         actionCloseSpacingConstraint = actionCloseSpacing
 
+        let contentGuideBottom = contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor)
+        contentGuideBottomConstraint = contentGuideBottom
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -310,8 +341,23 @@ final class AIChatUsageWarningCardView: NSView {
 
             contentGuide.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentGuide.trailingAnchor.constraint(equalTo: trailingAnchor),
-            contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor),
+            contentGuideBottom,
             contentGuide.heightAnchor.constraint(equalToConstant: Constants.contentHeight),
+
+            stackedContentGuide.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stackedContentGuide.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stackedContentGuide.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stackedContentGuide.heightAnchor.constraint(equalToConstant: Constants.contentHeight),
+
+            stackedIconImageView.centerXAnchor.constraint(equalTo: iconImageView.centerXAnchor),
+            stackedIconImageView.centerYAnchor.constraint(equalTo: stackedContentGuide.centerYAnchor),
+            stackedIconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            stackedIconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
+            stackedDisclosureTextView.leadingAnchor.constraint(equalTo: disclosureTextView.leadingAnchor),
+            stackedDisclosureTextView.trailingAnchor.constraint(equalTo: disclosureTextView.trailingAnchor),
+            stackedDisclosureTextView.topAnchor.constraint(equalTo: stackedContentGuide.topAnchor),
+            stackedDisclosureTextView.bottomAnchor.constraint(equalTo: stackedContentGuide.bottomAnchor),
 
             iconLeading,
             iconImageView.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
@@ -382,19 +428,37 @@ final class AIChatUsageWarningCardView: NSView {
 
     func updateForAttachmentPrivacy() {
         applyInfoIcon()
-        showDisclosure(.attachmentPrivacy,
-                       text: Self.attributedDisclosure(format: UserText.aiChatAttachmentPrivacyDisclosureFormat,
-                                                       linkText: UserText.aiChatAttachmentPrivacyLearnMore,
-                                                       url: URL.aiChatPrivacy))
+        showDisclosure(.attachmentPrivacy, text: Self.attributedAttachmentPrivacyDisclosure())
+        applyStackedAttachmentPrivacy(false)
     }
 
-    /// Names the button that accepts, which reads "Create" while Create Image is selected.
-    func updateForTermsOfService(sendButton: DuckAiTermsOfServiceSendButton) {
+    /// Names the button that accepts, which reads "Create" while Create Image is selected. The
+    /// attachment notice is required too, so it stacks underneath rather than waiting its turn.
+    func updateForTermsOfService(sendButton: DuckAiTermsOfServiceSendButton, stackingAttachmentPrivacy: Bool) {
         applyShieldIcon()
-        showDisclosure(.termsOfService,
-                       text: Self.attributedDisclosure(format: sendButton.disclaimerFormat,
-                                                       linkText: UserText.aiChatTermsOfServiceDisclaimerLink,
-                                                       url: URL.aiChatPrivacyTerms))
+        showDisclosure(.termsOfService, text: Self.attributedTermsOfServiceDisclaimer(sendButton: sendButton))
+        applyStackedAttachmentPrivacy(stackingAttachmentPrivacy)
+    }
+
+    /// Re-words the disclaimer when Create Image toggles, leaving any notice stacked under it.
+    func updateTermsOfServiceSendButton(_ sendButton: DuckAiTermsOfServiceSendButton) {
+        guard isShowingTermsOfService else { return }
+        showDisclosure(.termsOfService, text: Self.attributedTermsOfServiceDisclaimer(sendButton: sendButton))
+    }
+
+    private func applyStackedAttachmentPrivacy(_ isStacked: Bool) {
+        isAttachmentPrivacyStacked = isStacked
+        stackedIconImageView.isHidden = !isStacked
+        stackedDisclosureTextView.isHidden = !isStacked
+        contentGuideBottomConstraint?.constant = isStacked ? -Constants.contentHeight : 0
+        guard isStacked else { return }
+
+        NSAppearance.withAppearance(appearance) {
+            stackedIconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+        let text = Self.attributedAttachmentPrivacyDisclosure()
+        stackedDisclosureTextView.textStorage?.setAttributedString(text)
+        stackedDisclosureTextView.setAccessibilityLabel(text.string)
     }
 
     /// Both are required reading, so neither carries a close button.
@@ -541,6 +605,18 @@ final class AIChatUsageWarningCardView: NSView {
         NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
     }
 
+    private static func attributedTermsOfServiceDisclaimer(sendButton: DuckAiTermsOfServiceSendButton) -> NSAttributedString {
+        attributedDisclosure(format: sendButton.disclaimerFormat,
+                             linkText: UserText.aiChatTermsOfServiceDisclaimerLink,
+                             url: URL.aiChatPrivacyTerms)
+    }
+
+    private static func attributedAttachmentPrivacyDisclosure() -> NSAttributedString {
+        attributedDisclosure(format: UserText.aiChatAttachmentPrivacyDisclosureFormat,
+                             linkText: UserText.aiChatAttachmentPrivacyLearnMore,
+                             url: URL.aiChatPrivacy)
+    }
+
     private static func attributedDisclosure(format: String, linkText: String, url: URL) -> NSAttributedString {
         var bodyAttributes = textAttributes(weight: .regular)
         bodyAttributes[.cursor] = NSCursor.arrow
@@ -565,25 +641,27 @@ final class AIChatUsageWarningCardView: NSView {
 
     override func layout() {
         super.layout()
-        centreDisclosureText()
+        centreText(in: disclosureTextView)
+        centreText(in: stackedDisclosureTextView)
     }
 
-    private func centreDisclosureText() {
-        guard !disclosureTextView.isHidden,
-              let layoutManager = disclosureTextView.layoutManager,
-              let container = disclosureTextView.textContainer else { return }
+    private func centreText(in textView: NSTextView) {
+        guard !textView.isHidden,
+              let layoutManager = textView.layoutManager,
+              let container = textView.textContainer else { return }
 
         layoutManager.ensureLayout(for: container)
         let textHeight = layoutManager.usedRect(for: container).height
-        let inset = max(0, (disclosureTextView.bounds.height - textHeight) / 2)
+        let inset = max(0, (textView.bounds.height - textHeight) / 2)
         // Setting the inset lays out again, so stop once it is centred.
-        guard abs(disclosureTextView.textContainerInset.height - inset) > Constants.disclosureInsetTolerance else { return }
+        guard abs(textView.textContainerInset.height - inset) > Constants.disclosureInsetTolerance else { return }
 
-        disclosureTextView.textContainerInset = NSSize(width: 0, height: inset)
+        textView.textContainerInset = NSSize(width: 0, height: inset)
     }
 
     private func showTitleLabel() {
         shownDisclosure = nil
+        applyStackedAttachmentPrivacy(false)
         disclosureTextView.isHidden = true
         titleLabel.isHidden = false
     }
@@ -951,10 +1029,9 @@ final class AIChatUsageWarningActionButton: NSView {
 extension AIChatUsageWarningCardView: NSTextViewDelegate {
 
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
-        switch shownDisclosure {
-        case .termsOfService:
+        if textView !== stackedDisclosureTextView, isShowingTermsOfService {
             onTermsOfServiceLink?()
-        case .attachmentPrivacy, nil:
+        } else {
             onLearnMore?()
         }
         return true

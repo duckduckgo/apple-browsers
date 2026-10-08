@@ -211,6 +211,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Mirrors the card's constraint so the reservation and the layout can't disagree.
     private var isUsageWarningVisible = false
+    /// Only the exposed band counts; the rest is behind the panel and costs nothing. Two rows while
+    /// required messages stack.
+    private var usageWarningReservation: CGFloat = 0
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
     /// Widens the send button while it reads "Ask" in place of its arrow.
@@ -242,11 +245,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private lazy var attachmentPrivacyPixelFirer = AttachmentPrivacyDisclosurePixelFirer(
         surface: omnibarController.surface.attachmentPrivacyPixelSurface
     )
-
-    /// Only the exposed band counts; the rest is behind the panel and costs nothing.
-    private var usageWarningReservation: CGFloat {
-        isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
-    }
 
     /// The card's exposed band, for hosts that need to stop their own chrome above it.
     var usageWarningBandHeight: CGFloat { usageWarningReservation }
@@ -554,9 +552,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
                 self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
                 // The disclaimer names the send button, which reads "Create" while Create Image is selected.
-                if self.usageWarningCardView.isShowingTermsOfService {
-                    self.usageWarningCardView.updateForTermsOfService(sendButton: self.termsOfServiceSendButton)
-                }
+                self.usageWarningCardView.updateTermsOfServiceSendButton(self.termsOfServiceSendButton)
                 // Re-evaluate the submit button so voice mode is suppressed/restored when
                 // image-generation toggles (voice mode is hidden while image-gen is active).
                 self.updateSubmitButtonState(for: self.omnibarController.currentText)
@@ -1305,8 +1301,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
         }
+        // Both required, so they stack, as on iOS: claiming the attachment notice's one display here
+        // is right, since it shows under the disclaimer.
         if omnibarController.termsOfServiceDisclaimer.isRequired {
-            usageWarningCardView.updateForTermsOfService(sendButton: termsOfServiceSendButton)
+            usageWarningCardView.updateForTermsOfService(sendButton: termsOfServiceSendButton,
+                                                         stackingAttachmentPrivacy: shouldShowAttachmentPrivacyDisclosure)
             currentUsageWarningExposure = nil
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
@@ -1441,15 +1440,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// not drive a resize on a panel that is going away. Returns whether anything changed.
     @discardableResult
     private func applyUsageWarningVisibility(_ visible: Bool) -> Bool {
-        guard isUsageWarningVisible != visible else { return false }
+        let reservation = visible ? usageWarningCardView.bandHeight : 0
+        guard isUsageWarningVisible != visible || usageWarningReservation != reservation else { return false }
 
         isUsageWarningVisible = visible
+        usageWarningReservation = reservation
         usageWarningCardView.isHidden = !visible
         usageWarningShadowView.isHidden = !visible || hostDrawsChrome
         panelBottomEdgeStrokeView.isHidden = !visible || !hostDrawsChrome
-        backgroundViewBottomConstraint?.constant = visible
-            ? -AIChatUsageWarningCardView.Constants.contentHeight
-            : 0
+        backgroundViewBottomConstraint?.constant = -reservation
         applyTermsOfServiceDisclaimerState()
         // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
         // so without this guard teardown puts it straight back on the window.

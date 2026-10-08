@@ -29,6 +29,9 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
     /// Hosts extension action popups. Exposed so the toolbar button can toggle its own popup.
     let popupPresenter = WebExtensionPopupPresenter()
 
+    /// Keeps the open popover on the app's theme while it changes.
+    private var popupAppearanceObservation: NSKeyValueObservation?
+
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
     }
@@ -111,23 +114,22 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return
         }
 
-        guard let popupWebView = action.popupWebView else {
-            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup web view")
+        guard let popupPopover = action.popupPopover,
+              let popupWebView = action.popupWebView
+        else {
+            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup popover or web view")
             return
         }
 
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
-
-        // The popup is tied to the tab selected in the window that owns the button.
-        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
-            return
+        // WebKit's popover doesn't follow the app's theme on its own, so it takes the app's, also when it changes.
+        popupAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.initial, .new]) { [weak popupPopover, weak popupWebView] app, _ in
+            MainActor.assumeIsolated {
+                popupPopover?.appearance = app.effectiveAppearance
+                popupWebView?.appearance = app.effectiveAppearance
+            }
         }
-
-        // Shown in our own panel instead of `action.popupPopover` (see `WebExtensionPopupPanel`).
-        let selectedTabPublisher = tabCollectionViewModel.$selectedTabViewModel
-            .map { $0?.tab }
-            .eraseToAnyPublisher()
-        popupPresenter.present(action, for: context, from: button, selectedTabPublisher: selectedTabPublisher)
+        popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
 
     func dismissPopup(for popupWebView: WKWebView) {

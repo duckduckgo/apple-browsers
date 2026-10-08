@@ -2304,9 +2304,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    /// Lands a cold start that crossed the idle threshold on the New Tab Page, before the restored
-    /// tab is attached — so the launch screen hands over to the NTP rather than to a page that is
-    /// about to be replaced. Returns whether it took over the initial view.
+    /// Lands a cold start that crossed the idle threshold on the New Tab Page
     private func attachNewTabPageForIdleReturn() -> Bool {
         guard case .afterIdle(.ntp, _) = idleReturnEvaluator.evaluateReturn() else { return false }
         // Clearing tabs on launch owns the landing: the tabs are already gone before this runs and

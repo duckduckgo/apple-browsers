@@ -159,6 +159,8 @@
 		1D645EB02F4CA839009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D645EAF2F4CA836009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift */; };
 		1D645EB12F4CA839009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D645EAF2F4CA836009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift */; };
 		1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */; };
+		7BD5A0232F0A0C0100000023 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0212F0A0C0100000021 /* WebExtensionAPICompatibilityLogWindow.swift */; };
+		7BD504A52E5FA40F008A0646 /* WebExtensionPopupPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DD02DC12C0300A96502 /* WebExtensionPopupPresenter.swift */; };
 		1D69B7192E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
 		1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
 		1D6A492029CF7A490011DF74 /* NSPopoverExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */; };
@@ -319,6 +321,7 @@
 		1E7D3C302F2232620099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C2F2F2232620099611C /* WebExtensions */; };
 		1E7D3C322F2232690099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C312F2232690099611C /* WebExtensions */; };
 		1E7E2E9029029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */; };
+		8FE6246A8D56E71D5B00A3BA /* SiteBreakageDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD1F8B0AE08C5C2EE8CFCBFE /* SiteBreakageDebugMenu.swift */; };
 		1E7E2E942902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */; };
 		1E8995E02DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */; };
 		1E8995E12DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */; };
@@ -597,6 +600,7 @@
 		3706FAD7293F65D500E42796 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D531A27A2F57E00074EC1 /* Feedback.swift */; };
 		3706FAD9293F65D500E42796 /* FirefoxFaviconsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0A63E7289DB58E00378EF7 /* FirefoxFaviconsReader.swift */; };
 		3706FADB293F65D500E42796 /* ContentBlockingRulesUpdateObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */; };
+		45F4E6022F0E5B8EA33EA2EF /* SiteBreakageDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD1F8B0AE08C5C2EE8CFCBFE /* SiteBreakageDebugMenu.swift */; };
 		3706FADC293F65D500E42796 /* FirefoxLoginReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8AC93826B48A5100879451 /* FirefoxLoginReader.swift */; };
 		3706FADD293F65D500E42796 /* AtbParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69B50382726A12400758A2B /* AtbParser.swift */; };
 		3706FADE293F65D500E42796 /* PreferencesDuckPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F19A6428E1B3FB00740DC6 /* PreferencesDuckPlayerView.swift */; };
@@ -964,6 +968,8 @@
 		3706FE1A293F661700E42796 /* BrowserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3F641D27A8D3BD00E0C118 /* BrowserProfileTests.swift */; };
 		3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */; };
 		3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B59CC8B290083240058F2F6 /* ConnectBitwardenViewModelTests.swift */; };
+		7BD5A0322F0A0C0100000032 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */; };
+		7BD5A0312F0A0C0100000031 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */; };
 		3706FE1E293F661700E42796 /* GeolocationProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB426A809E60013B453 /* GeolocationProviderTests.swift */; };
 		3706FE20293F661700E42796 /* CLLocationManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0E226B3E7FA00A9DAD1 /* CLLocationManagerMock.swift */; };
 		3706FE21293F661700E42796 /* DownloadsPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CD54BA27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift */; };
@@ -2080,6 +2086,8 @@
 		5A539014386749A5BA664BFD /* FadeInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9982D6BB85483191A03D2D /* FadeInView.swift */; };
 		5C26B3292853419DA7E820AC /* TabContentDisplayTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6308141E2A1B48C8B5FC059A /* TabContentDisplayTitleTests.swift */; };
 		5E3101604A8E2A8F281BF20B /* AIChatUsageWarningCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */; };
+		745B7C5CAFA2E1C29E8B8F61 /* AIChatUsageWarningCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */; };
+		E248B1EE65B2746DA4F0A0D2 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */; };
 		5FDF4C801FDF14A44C149130 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4CEDF81CD010E256D02F54 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift */; };
 		5FFB5A9B02EB884EACEB7FFD /* (null) in Sources */ = {isa = PBXBuildFile; };
 		604AFF29DF594DC4AF18864C /* PreferencesWebsitePermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637378A7DE5641D7AF4A7BE1 /* PreferencesWebsitePermissionsView.swift */; };
@@ -2396,6 +2404,8 @@
 		7BD1688E2AD4A4C400D24876 /* NetworkExtensionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD1688D2AD4A4C400D24876 /* NetworkExtensionController.swift */; };
 		7BD3AF5D2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD3AF5C2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift */; };
 		7BD5049B2E5FA3EA008A0646 /* WebExtensionsDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */; };
+		7BD5A0222F0A0C0100000022 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0212F0A0C0100000021 /* WebExtensionAPICompatibilityLogWindow.swift */; };
+		7BE33DD12DC12C4E00A96502 /* WebExtensionPopupPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DD02DC12C0300A96502 /* WebExtensionPopupPresenter.swift */; };
 		7BD5049C2E5FA3F3008A0646 /* WebExtensionInternalSiteHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A2B652D2D230000F06679 /* WebExtensionInternalSiteHandler.swift */; };
 		7BD5049E2E5FA40F008A0646 /* WebExtensionNavigationBarUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */; };
 		7BD5049F2E5FA42F008A0646 /* Tab+WKWebExtensionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */; };
@@ -3004,9 +3014,15 @@
 		A1B2C3D52F16000000000001 /* AIChatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D32F16000000000001 /* AIChatSession.swift */; };
 		A1C2E3013B6F000100000002 /* AIChatCreateImageModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */; };
 		A1C2E3013B71000100000002 /* AttachmentPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */; };
+		BCC2FB3B1200D51F9A678F78 /* DuckAiTermsOfServiceChatsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */; };
+		6226E802E90FB3A69565761C /* DuckAiTermsOfServiceDisclaimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4F236305856D8BB4C4E84B /* DuckAiTermsOfServiceDisclaimer.swift */; };
+		90F3350976633CABE2A473BF /* DuckAiTermsOfServiceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363B9EE9C21F04D2628F00C6 /* DuckAiTermsOfServiceStore.swift */; };
 		A1C2E3013B73000100000002 /* AttachmentPrivacyDisclosurePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B73000100000001 /* AttachmentPrivacyDisclosurePixel.swift */; };
 		A1C2E3013B6F000100000003 /* AIChatCreateImageModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */; };
 		A1C2E3013B71000100000003 /* AttachmentPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */; };
+		B2800276EDC88428C9F0B59F /* DuckAiTermsOfServiceChatsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */; };
+		23434096A9BA682D06B32189 /* DuckAiTermsOfServiceDisclaimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4F236305856D8BB4C4E84B /* DuckAiTermsOfServiceDisclaimer.swift */; };
+		958F5578AC852BC1397EE4D7 /* DuckAiTermsOfServiceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363B9EE9C21F04D2628F00C6 /* DuckAiTermsOfServiceStore.swift */; };
 		A1C2E3013B73000100000003 /* AttachmentPrivacyDisclosurePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B73000100000001 /* AttachmentPrivacyDisclosurePixel.swift */; };
 		A1C2E3013B6F000100000005 /* AIChatCreateImagePresentationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B6F000100000004 /* AIChatCreateImagePresentationPolicy.swift */; };
 		A1C2E3013B6F000100000006 /* AIChatCreateImagePresentationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B6F000100000004 /* AIChatCreateImagePresentationPolicy.swift */; };
@@ -3891,9 +3907,15 @@
 		BBC2779F2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */; };
 		BBC277A12FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */; };
 		A1C2E3013B72000100000002 /* AttachmentPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */; };
+		E7A21054F54FD3EC9AD520F8 /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D53E655499DE991A5C79118 /* DuckAiTermsOfServiceChatsObserverTests.swift */; };
+		470D826707379A58EB863F27 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */; };
+		5BB2E889890B37F356D52FA5 /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */; };
 		A1C2E3013B74000100000002 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */; };
 		BBC277A22FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */; };
 		A1C2E3013B72000100000003 /* AttachmentPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */; };
+		1B6DCD57A72F1D27524CD7FD /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D53E655499DE991A5C79118 /* DuckAiTermsOfServiceChatsObserverTests.swift */; };
+		2EB8012D7E6328C4633C02F4 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */; };
+		79CC894C86D2E351DDBEABBF /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */; };
 		A1C2E3013B74000100000003 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */; };
 		BBC386832DE5E6EA0004583A /* SuggestionsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */; };
 		BBC386842DE5E6EA0004583A /* SuggestionsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */; };
@@ -4320,6 +4342,8 @@
 		CCB50000000000000000A102 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */; };
 		CCB50000000000000000A103 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */; };
 		CCBC17F5FE1230434E075AD1 /* AIChatUsageWarningCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */; };
+		DDBEF6F94ACA9D46E81F83C8 /* AIChatUsageWarningCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */; };
+		419EDB33DD235D2E410AA789 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */; };
 		CCBCF38A2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
 		CCBCF38B2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
 		CCC13FF42F6B0C74007DC7CC /* DockCustomizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC13FF32F6B0C74007DC7CC /* DockCustomizerTests.swift */; };
@@ -5188,6 +5212,8 @@
 		1D5C233F2F16CE000055046E /* PassthroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassthroughView.swift; sourceTree = "<group>"; };
 		1D645EAF2F4CA836009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarAiChatsProvider.swift; sourceTree = "<group>"; };
 		1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionsDebugMenu.swift; sourceTree = "<group>"; };
+		7BD5A0212F0A0C0100000021 /* WebExtensionAPICompatibilityLogWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAPICompatibilityLogWindow.swift; sourceTree = "<group>"; };
+		7BE33DD02DC12C0300A96502 /* WebExtensionPopupPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPopupPresenter.swift; sourceTree = "<group>"; };
 		1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSuggestionsProviderTests.swift; sourceTree = "<group>"; };
 		1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPopoverExtension.swift; sourceTree = "<group>"; };
 		1D6D041B2D9437ED005BC23F /* FullscreenController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenController.swift; sourceTree = "<group>"; };
@@ -5270,6 +5296,7 @@
 		1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiePopupProtectionOptInView.swift; sourceTree = "<group>"; };
 		1E7D3C332F2232890099611C /* WebExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WebExtensions; path = ../SharedPackages/WebExtensions; sourceTree = SOURCE_ROOT; };
 		1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingRulesUpdateObserver.swift; sourceTree = "<group>"; };
+		CD1F8B0AE08C5C2EE8CFCBFE /* SiteBreakageDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteBreakageDebugMenu.swift; sourceTree = "<group>"; };
 		1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPermissionHandler.swift; sourceTree = "<group>"; };
 		1E862A882A9FC01200F84D4B /* SubscriptionUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SubscriptionUI; sourceTree = "<group>"; };
 		1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSectionTests.swift; sourceTree = "<group>"; };
@@ -6008,6 +6035,8 @@
 		6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+SearchCompleted.swift"; sourceTree = "<group>"; };
 		723C064CD3E53BDC70788B46 /* NewTabPageOmnibarActionsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarActionsHandlerTests.swift; sourceTree = "<group>"; };
 		7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUsageWarningCopyTests.swift; sourceTree = "<group>"; };
+		00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUsageWarningCardViewTests.swift; sourceTree = "<group>"; };
+		555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarUsageCardLayoutTests.swift; sourceTree = "<group>"; };
 		79BC7E0753A96C3B81E3BCB2 /* UnloadedTabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnloadedTabViewModelTests.swift; sourceTree = "<group>"; };
 		7A1B2C3D4E5F60718293A4B5 /* BookmarksBarMenuPopoverPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuPopoverPresenting.swift; sourceTree = "<group>"; };
 		7B0099802B65C6B300FE7C31 /* MacTransparentProxyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacTransparentProxyProvider.swift; sourceTree = "<group>"; };
@@ -6156,6 +6185,7 @@
 		7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDebugMenu.swift; sourceTree = "<group>"; };
 		7BE207382DCCC4230037394C /* DeveloperID.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = DeveloperID.xcstrings; sourceTree = "<group>"; };
 		7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionNavigationBarUpdater.swift; sourceTree = "<group>"; };
+		7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAPICompatibilityLogViewModelTests.swift; sourceTree = "<group>"; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
 		7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverView.swift; sourceTree = "<group>"; };
 		7BEC20412B0F505F00243D3E /* AddBookmarkFolderPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkFolderPopoverView.swift; sourceTree = "<group>"; };
@@ -6466,6 +6496,9 @@
 		A1B2C3D42E5F600800000008 /* TimedFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedFlag.swift; sourceTree = "<group>"; };
 		A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatCreateImageModelSwitchNotice.swift; sourceTree = "<group>"; };
 		A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosure.swift; sourceTree = "<group>"; };
+		58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceChatsObserver.swift; sourceTree = "<group>"; };
+		5F4F236305856D8BB4C4E84B /* DuckAiTermsOfServiceDisclaimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceDisclaimer.swift; sourceTree = "<group>"; };
+		363B9EE9C21F04D2628F00C6 /* DuckAiTermsOfServiceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceStore.swift; sourceTree = "<group>"; };
 		A1C2E3013B73000100000001 /* AttachmentPrivacyDisclosurePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosurePixel.swift; sourceTree = "<group>"; };
 		A1C2E3013B6F000100000004 /* AIChatCreateImagePresentationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatCreateImagePresentationPolicy.swift; sourceTree = "<group>"; };
 		A1D0FEE100000001A1D0FEE1 /* DuckAiNativeStorageBaseURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiNativeStorageBaseURLTests.swift; sourceTree = "<group>"; };
@@ -7050,6 +7083,9 @@
 		BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatPermissionOverrideTests.swift; sourceTree = "<group>"; };
 		BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatLegacyConsentCleanupTests.swift; sourceTree = "<group>"; };
 		A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosureTests.swift; sourceTree = "<group>"; };
+		9D53E655499DE991A5C79118 /* DuckAiTermsOfServiceChatsObserverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceChatsObserverTests.swift; sourceTree = "<group>"; };
+		EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceDisclaimerTests.swift; sourceTree = "<group>"; };
+		C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceStoreTests.swift; sourceTree = "<group>"; };
 		A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosurePixelTests.swift; sourceTree = "<group>"; };
 		BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsIconsProviding.swift; sourceTree = "<group>"; };
 		BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
@@ -8152,6 +8188,8 @@
 			isa = PBXGroup;
 			children = (
 				1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */,
+				7BD5A0212F0A0C0100000021 /* WebExtensionAPICompatibilityLogWindow.swift */,
+				7BE33DD02DC12C0300A96502 /* WebExtensionPopupPresenter.swift */,
 				DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */,
 				DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */,
 			);
@@ -8322,6 +8360,9 @@
 				31224EF02F9F9922008E0118 /* BurnerDuckAiStorageRegistry.swift */,
 				A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */,
 				A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */,
+				58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */,
+				5F4F236305856D8BB4C4E84B /* DuckAiTermsOfServiceDisclaimer.swift */,
+				363B9EE9C21F04D2628F00C6 /* DuckAiTermsOfServiceStore.swift */,
 				A1C2E3013B73000100000001 /* AttachmentPrivacyDisclosurePixel.swift */,
 				A1C2E3013B6F000100000004 /* AIChatCreateImagePresentationPolicy.swift */,
 				31BFDB692ECA420E00ADFABD /* AIChatOmnibarContainerViewController.swift */,
@@ -8497,6 +8538,8 @@
 				FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */,
 				FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */,
 				7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */,
+				00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */,
+				555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */,
 				EFBACD03AF738C2EFEAAC7EA /* AIChatUsageWarningRingViewTests.swift */,
 				7BAA26BE7A6F97E8A5F4692F /* DuckAiUsageWarningPixelTests.swift */,
 				FB07BAD20000000000000405 /* AIChatOmnibarDuckAILogoLayoutTests.swift */,
@@ -8506,6 +8549,9 @@
 				BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */,
 				BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */,
 				A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */,
+				9D53E655499DE991A5C79118 /* DuckAiTermsOfServiceChatsObserverTests.swift */,
+				EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */,
+				C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */,
 				A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */,
 				BBF17D1F2F7B4D33004AFCF4 /* AIChatMenuTests.swift */,
 				37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */,
@@ -8779,6 +8825,7 @@
 		377DF17E306D48B600CDD6A7 /* WebExtensions */ = {
 			isa = PBXGroup;
 			children = (
+				7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */,
 				DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */,
 			);
 			path = WebExtensions;
@@ -13002,6 +13049,7 @@
 			children = (
 				B6FA893B269C41ED00588ECD /* View */,
 				1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */,
+				CD1F8B0AE08C5C2EE8CFCBFE /* SiteBreakageDebugMenu.swift */,
 				1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */,
 			);
 			path = PrivacyDashboard;
@@ -15915,6 +15963,7 @@
 				37598EF52D5A18FF00720EAF /* HistoryViewPixel.swift in Sources */,
 				3706FAD9293F65D500E42796 /* FirefoxFaviconsReader.swift in Sources */,
 				3706FADB293F65D500E42796 /* ContentBlockingRulesUpdateObserver.swift in Sources */,
+				45F4E6022F0E5B8EA33EA2EF /* SiteBreakageDebugMenu.swift in Sources */,
 				3706FADC293F65D500E42796 /* FirefoxLoginReader.swift in Sources */,
 				3706FADD293F65D500E42796 /* AtbParser.swift in Sources */,
 				3706FADE293F65D500E42796 /* PreferencesDuckPlayerView.swift in Sources */,
@@ -15941,6 +15990,9 @@
 				31BFDB7A2ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */,
 				A1C2E3013B6F000100000002 /* AIChatCreateImageModelSwitchNotice.swift in Sources */,
 				A1C2E3013B71000100000002 /* AttachmentPrivacyDisclosure.swift in Sources */,
+				BCC2FB3B1200D51F9A678F78 /* DuckAiTermsOfServiceChatsObserver.swift in Sources */,
+				6226E802E90FB3A69565761C /* DuckAiTermsOfServiceDisclaimer.swift in Sources */,
+				90F3350976633CABE2A473BF /* DuckAiTermsOfServiceStore.swift in Sources */,
 				A1C2E3013B73000100000002 /* AttachmentPrivacyDisclosurePixel.swift in Sources */,
 				BEFCBA41EF1340FBA6D21F2C /* AIChatOmnibarSubscriptionUpsellPresenter.swift in Sources */,
 				CA57DE500000000000000011 /* CustomizeResponsesMenuRowView.swift in Sources */,
@@ -16673,6 +16725,8 @@
 				1DB5E6212E2920A2009C692F /* Suggestion+GeneralPixel.swift in Sources */,
 				3706FC02293F65D500E42796 /* Downloads.xcdatamodeld in Sources */,
 				7BD5049B2E5FA3EA008A0646 /* WebExtensionsDebugMenu.swift in Sources */,
+				7BD5A0222F0A0C0100000022 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */,
+				7BE33DD12DC12C4E00A96502 /* WebExtensionPopupPresenter.swift in Sources */,
 				DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */,
 				DC2900022FD0000000000005 /* ChromeWebStorePresenter.swift in Sources */,
 				37FC2A192CF903080048E226 /* MockPrivacyStats.swift in Sources */,
@@ -17090,6 +17144,8 @@
 				FB07BAD20000000000000502 /* EphemeralPromptDraftStoreTests.swift in Sources */,
 				FB07BAD20000000000000501 /* DuckAIPromptSurfaceTests.swift in Sources */,
 				CCBC17F5FE1230434E075AD1 /* AIChatUsageWarningCopyTests.swift in Sources */,
+				DDBEF6F94ACA9D46E81F83C8 /* AIChatUsageWarningCardViewTests.swift in Sources */,
+				419EDB33DD235D2E410AA789 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */,
 				321C985EAF5C725987D86DD3 /* AIChatUsageWarningRingViewTests.swift in Sources */,
 				49A10CDD2CD3A472F861351E /* DuckAiUsageWarningPixelTests.swift in Sources */,
 				FB07BAD20000000000000505 /* AIChatOmnibarDuckAILogoLayoutTests.swift in Sources */,
@@ -17277,6 +17333,7 @@
 				1D7694002BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */,
 				3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */,
 				3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */,
+				7BD5A0312F0A0C0100000031 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
 				FFA1DFE4967209A9C47D7160 /* QuitSurveyPromoObserverTests.swift in Sources */,
@@ -17613,6 +17670,9 @@
 				BBC2779E2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */,
 				BBC277A12FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */,
 				A1C2E3013B72000100000002 /* AttachmentPrivacyDisclosureTests.swift in Sources */,
+				E7A21054F54FD3EC9AD520F8 /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */,
+				470D826707379A58EB863F27 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */,
+				5BB2E889890B37F356D52FA5 /* DuckAiTermsOfServiceStoreTests.swift in Sources */,
 				A1C2E3013B74000100000002 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */,
 				1D2EE7092E267D6B00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift in Sources */,
 				2D049148878D2C851AEBE85D /* NewTabPageOmnibarActionsHandlerTests.swift in Sources */,
@@ -18325,6 +18385,7 @@
 				4B0A63E8289DB58E00378EF7 /* FirefoxFaviconsReader.swift in Sources */,
 				84832D992E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */,
 				1E7E2E9029029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift in Sources */,
+				8FE6246A8D56E71D5B00A3BA /* SiteBreakageDebugMenu.swift in Sources */,
 				4B8AC93926B48A5100879451 /* FirefoxLoginReader.swift in Sources */,
 				F18826902BC0105800D9AC4F /* PixelDataRecord.swift in Sources */,
 				B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */,
@@ -18623,6 +18684,9 @@
 				31BFDB792ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */,
 				A1C2E3013B6F000100000003 /* AIChatCreateImageModelSwitchNotice.swift in Sources */,
 				A1C2E3013B71000100000003 /* AttachmentPrivacyDisclosure.swift in Sources */,
+				B2800276EDC88428C9F0B59F /* DuckAiTermsOfServiceChatsObserver.swift in Sources */,
+				23434096A9BA682D06B32189 /* DuckAiTermsOfServiceDisclaimer.swift in Sources */,
+				958F5578AC852BC1397EE4D7 /* DuckAiTermsOfServiceStore.swift in Sources */,
 				A1C2E3013B73000100000003 /* AttachmentPrivacyDisclosurePixel.swift in Sources */,
 				68670FD3ABCC454881CDD750 /* AIChatOmnibarSubscriptionUpsellPresenter.swift in Sources */,
 				CA57DE500000000000000012 /* CustomizeResponsesMenuRowView.swift in Sources */,
@@ -19331,6 +19395,8 @@
 				EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */,
 				AABEE69C24A902BB0043105B /* SuggestionContainer.swift in Sources */,
 				1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */,
+				7BD5A0232F0A0C0100000023 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */,
+				7BD504A52E5FA40F008A0646 /* WebExtensionPopupPresenter.swift in Sources */,
 				DC2900012FD0000000000001 /* WebExtensionPermissionPrompt.swift in Sources */,
 				DC2900022FD0000000000004 /* ChromeWebStorePresenter.swift in Sources */,
 				F1A2E1202DCB9FB00086F538 /* LogExporter.swift in Sources */,
@@ -19496,6 +19562,8 @@
 				FB07BAD20000000000000602 /* EphemeralPromptDraftStoreTests.swift in Sources */,
 				FB07BAD20000000000000601 /* DuckAIPromptSurfaceTests.swift in Sources */,
 				5E3101604A8E2A8F281BF20B /* AIChatUsageWarningCopyTests.swift in Sources */,
+				745B7C5CAFA2E1C29E8B8F61 /* AIChatUsageWarningCardViewTests.swift in Sources */,
+				E248B1EE65B2746DA4F0A0D2 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */,
 				427305A230AFEE6E5265BBAC /* AIChatUsageWarningRingViewTests.swift in Sources */,
 				BB12AF2B7F40A5B073A0BF34 /* DuckAiUsageWarningPixelTests.swift in Sources */,
 				FB07BAD20000000000000605 /* AIChatOmnibarDuckAILogoLayoutTests.swift in Sources */,
@@ -19731,6 +19799,7 @@
 				1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */,
 				B6106BA026A7BE0B0013B453 /* PermissionManagerTests.swift in Sources */,
 				4B59CC8C290083240058F2F6 /* ConnectBitwardenViewModelTests.swift in Sources */,
+				7BD5A0322F0A0C0100000032 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				B68412202B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,
 				BDA764912BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,
@@ -19969,6 +20038,9 @@
 				BBC2779F2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */,
 				BBC277A22FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */,
 				A1C2E3013B72000100000003 /* AttachmentPrivacyDisclosureTests.swift in Sources */,
+				1B6DCD57A72F1D27524CD7FD /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */,
+				2EB8012D7E6328C4633C02F4 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */,
+				79CC894C86D2E351DDBEABBF /* DuckAiTermsOfServiceStoreTests.swift in Sources */,
 				A1C2E3013B74000100000003 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */,
 				56A054162C1C37B0007D8FAB /* CapturingOnboardingNavigation.swift in Sources */,
 				84C1007B2ECC6F3C0083AB11 /* PopupHandlingTabExtensionTests.swift in Sources */,
@@ -21363,7 +21435,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-clocks.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.1.0;
+				version = 1.1.1;
 			};
 		};
 		9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */ = {
@@ -21403,7 +21475,7 @@
 			repositoryURL = "https://github.com/pointfreeco/combine-schedulers.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.2.0;
+				version = 1.2.2;
 			};
 			traits = (
 			);

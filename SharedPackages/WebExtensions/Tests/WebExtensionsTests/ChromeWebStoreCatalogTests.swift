@@ -24,61 +24,82 @@ import XCTest
 @MainActor
 final class ChromeWebStoreCatalogTests: XCTestCase {
     private let identifier = String(repeating: "a", count: 32)
-    private let internalIdentifier = String(repeating: "b", count: 32)
-    private let config = MockPrivacyConfiguration()
+    private let otherIdentifier = String(repeating: "b", count: 32)
+    private let thirdIdentifier = String(repeating: "c", count: 32)
     private let internalUser = MockInternalUserDecider()
 
-    private func makeCatalog() throws -> ChromeWebStoreCatalog {
-        config.isFeatureEnabledCheck = { _, _ in true }
-        config.isSubfeatureEnabledCheck = { _, _ in true }
-        try setCatalog(["catalog": [["id": identifier]], "catalogInternal": [["id": internalIdentifier]]])
-        return ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config, internalUserDecider: internalUser))
-    }
+    // MARK: - Catalog contents
 
-    private func setCatalog(_ settings: [String: Any]) throws {
-        config.subfeatureSettings = String(data: try JSONSerialization.data(withJSONObject: settings), encoding: .utf8)
-    }
-
-    func testPublicCatalogRejectsUnknownAndInvalidIDs() throws {
-        let catalog = try makeCatalog()
+    func testCatalogListsEnabledExtensionsByOrderWithUnorderedLast() throws {
+        let catalog = try makeCatalog(extensions: [
+            "bitwarden": entry(identifier, order: 2),
+            "onePassword": entry(otherIdentifier, order: 1),
+            "lastPass": entry(thirdIdentifier)
+        ])
+        XCTAssertEqual(catalog.extensionIDs, [otherIdentifier, identifier, thirdIdentifier])
         XCTAssertTrue(catalog.contains(identifier))
-        XCTAssertFalse(catalog.contains(internalIdentifier))
         XCTAssertFalse(catalog.contains("invalid"))
     }
 
-    func testInternalCatalogReplacesPublicCatalogAndFallsBackWhenAbsent() throws {
-        let catalog = try makeCatalog()
+    func testEachExtensionIsGatedByItsOwnSubfeatureState() throws {
+        let extensions = [
+            "bitwarden": entry(identifier, order: 1),
+            "onePassword": entry(otherIdentifier, state: "internal", order: 2),
+            "lastPass": entry(thirdIdentifier, state: "disabled", order: 3)
+        ]
+        XCTAssertEqual(try makeCatalog(extensions: extensions).extensionIDs, [identifier])
+
         internalUser.isInternalUser = true
-        XCTAssertTrue(catalog.contains(internalIdentifier))
-        XCTAssertFalse(catalog.contains(identifier))
-        try setCatalog(["catalog": [["id": identifier]]])
-        XCTAssertTrue(catalog.contains(identifier))
-        try setCatalog(["catalog": [["id": identifier]], "catalogInternal": []])
-        XCTAssertFalse(catalog.contains(identifier))
+        XCTAssertEqual(try makeCatalog(extensions: extensions).extensionIDs, [identifier, otherIdentifier])
     }
 
-    func testRemoteGatesAreReevaluatedOnEachRequest() throws {
-        let catalog = try makeCatalog()
-        XCTAssertTrue(catalog.contains(identifier))
+    func testUnknownSubfeaturesAndMalformedEntriesAreIgnored() throws {
+        let catalog = try makeCatalog(extensions: [
+            "bitwarden": entry(identifier),
+            "onePassword": ["state": "enabled", "settings": ["name": "no id"]],
+            "lastPass": entry("invalid"),
+            "someFutureExtension": entry(otherIdentifier)
+        ])
+        XCTAssertEqual(catalog.extensionIDs, [identifier])
+    }
 
-        config.isFeatureEnabledCheck = { feature, _ in feature != .chromeWebstorePatching }
-        XCTAssertFalse(catalog.contains(identifier), PrivacyFeature.chromeWebstorePatching.rawValue)
-        config.isFeatureEnabledCheck = { _, _ in true }
-        XCTAssertTrue(catalog.contains(identifier))
-
-        for disabledSubfeature in [ExtensionManagementSubfeature.isLaunchedExtensions, .curatedExtensions] {
-            config.isSubfeatureEnabledCheck = { subfeature, _ in
-                (subfeature as? ExtensionManagementSubfeature) != disabledSubfeature
-            }
-            XCTAssertFalse(catalog.contains(identifier), disabledSubfeature.rawValue)
-            config.isSubfeatureEnabledCheck = { _, _ in true }
-            XCTAssertTrue(catalog.contains(identifier), disabledSubfeature.rawValue)
+    func testHiddenAndDisabledExtensionsAreExcluded() throws {
+        for key in ["hiddenExtensionIds", "disabledExtensionIds"] {
+            let catalog = try makeCatalog(extensions: ["bitwarden": entry(identifier), "onePassword": entry(otherIdentifier)],
+                                          managementSettings: [key: [identifier]])
+            XCTAssertEqual(catalog.extensionIDs, [otherIdentifier], key)
         }
     }
 
-    func testDisablingSiteProtectionsKeepsCuratedExtensionAvailable() throws {
+    // MARK: - Remote gates
+
+    func testParentFeaturesGateTheWholeCatalog() throws {
+        let extensions = ["bitwarden": entry(identifier)]
+        XCTAssertEqual(try makeCatalog(extensions: extensions, catalogState: "disabled").extensionIDs, [])
+        XCTAssertEqual(try makeCatalog(extensions: extensions, webstoreState: "disabled").extensionIDs, [])
+        XCTAssertEqual(try makeCatalog(extensions: extensions, launchedState: "disabled").extensionIDs, [])
+        XCTAssertEqual(try makeCatalog(extensions: extensions).extensionIDs, [identifier])
+    }
+
+    func testConfigurationUpdatesApplyToTheNextRequest() throws {
+        let manager = MockPrivacyConfigurationManager(
+            privacyConfig: try makeConfiguration(extensions: ["bitwarden": entry(identifier)]),
+            internalUserDecider: internalUser
+        )
+        let catalog = ChromeWebStoreCatalog(configurationManager: manager)
+        XCTAssertEqual(catalog.extensionIDs, [identifier])
+
+        manager.privacyConfig = try makeConfiguration(extensions: [
+            "bitwarden": entry(identifier, state: "disabled"),
+            "onePassword": entry(otherIdentifier)
+        ])
+        XCTAssertEqual(catalog.extensionIDs, [otherIdentifier])
+        XCTAssertFalse(catalog.contains(identifier))
+    }
+
+    func testDisablingSiteProtectionsKeepsCatalogExtensionAvailable() throws {
         let protectionStore = MockDomainsProtectionStore()
-        let config = try makeConfiguration(localProtection: protectionStore)
+        let config = try makeConfiguration(extensions: ["bitwarden": entry(identifier)], localProtection: protectionStore)
         let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
         XCTAssertTrue(catalog.contains(identifier))
 
@@ -90,16 +111,18 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.contains(identifier))
     }
 
-    func testTemporarilyUnprotectedSiteKeepsCuratedExtensionAvailable() throws {
-        let config = try makeConfiguration(unprotectedTemporary: [ChromeWebStoreURL.host])
+    func testTemporarilyUnprotectedSiteKeepsCatalogExtensionAvailable() throws {
+        let config = try makeConfiguration(extensions: ["bitwarden": entry(identifier)],
+                                           unprotectedTemporary: [ChromeWebStoreURL.host])
         let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
         XCTAssertFalse(config.isFeature(.chromeWebstorePatching, enabledForDomain: ChromeWebStoreURL.host))
         XCTAssertTrue(catalog.contains(identifier))
     }
 
-    func testExplicitFeatureExceptionStillRejectsCuratedExtension() throws {
+    func testExplicitFeatureExceptionStillRejectsCatalogExtension() throws {
         let protectionStore = MockDomainsProtectionStore()
-        let config = try makeConfiguration(localProtection: protectionStore, exceptions: [ChromeWebStoreURL.host])
+        let config = try makeConfiguration(extensions: ["bitwarden": entry(identifier)],
+                                           localProtection: protectionStore, exceptions: [ChromeWebStoreURL.host])
         let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
         XCTAssertFalse(catalog.contains(identifier))
 
@@ -107,26 +130,50 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertFalse(catalog.contains(identifier))
     }
 
-    private func makeConfiguration(localProtection: MockDomainsProtectionStore = MockDomainsProtectionStore(),
+    // MARK: - Helpers
+
+    private func entry(_ id: String, state: String = "enabled", order: Int? = nil) -> [String: Any] {
+        var settings: [String: Any] = ["id": id, "name": "Extension"]
+        settings["order"] = order
+        return ["state": state, "settings": settings]
+    }
+
+    private func makeCatalog(extensions: [String: [String: Any]],
+                             catalogState: String = "enabled",
+                             webstoreState: String = "enabled",
+                             launchedState: String = "enabled",
+                             managementSettings: [String: Any] = [:]) throws -> ChromeWebStoreCatalog {
+        let config = try makeConfiguration(extensions: extensions, catalogState: catalogState, webstoreState: webstoreState,
+                                           launchedState: launchedState, managementSettings: managementSettings)
+        return ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config,
+                                                                                           internalUserDecider: internalUser))
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    private func makeConfiguration(extensions: [String: [String: Any]],
+                                   catalogState: String = "enabled",
+                                   webstoreState: String = "enabled",
+                                   launchedState: String = "enabled",
+                                   managementSettings: [String: Any] = [:],
+                                   localProtection: MockDomainsProtectionStore = MockDomainsProtectionStore(),
                                    exceptions: [String] = [],
                                    unprotectedTemporary: [String] = []) throws -> AppPrivacyConfiguration {
         let json: [String: Any] = [
             "features": [
                 "chromeWebstorePatching": [
-                    "state": "enabled",
+                    "state": webstoreState,
                     "exceptions": exceptions.map { ["domain": $0] }
                 ],
                 "extensionManagement": [
                     "state": "enabled",
+                    "settings": managementSettings,
                     "features": [
-                        "isLaunchedExtensions": [
-                            "state": "enabled"
-                        ],
-                        "curatedExtensions": [
-                            "state": "enabled",
-                            "settings": ["catalog": [["id": identifier]]]
-                        ]
+                        "isLaunchedExtensions": ["state": launchedState]
                     ]
+                ],
+                "extensionsCatalog": [
+                    "state": catalogState,
+                    "features": extensions
                 ]
             ],
             "unprotectedTemporary": unprotectedTemporary.map { ["domain": $0] }
@@ -136,18 +183,7 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
                                        internalUserDecider: internalUser)
     }
 
-    func testHiddenDisabledAndRemovedEntriesAreRejected() throws {
-        let catalog = try makeCatalog()
-        for key in ["hiddenExtensionIds", "disabledExtensionIds"] {
-            config.featureSettings = [key: [identifier]]
-            XCTAssertFalse(catalog.contains(identifier))
-        }
-        config.featureSettings = [:]
-        try setCatalog(["catalog": []])
-        XCTAssertFalse(catalog.contains(identifier))
-        config.subfeatureSettings = "{invalid"
-        XCTAssertFalse(catalog.contains(identifier))
-    }
+    // MARK: - Store URLs
 
     func testDownloadURLMatchesScriptContractRegardlessOfQueryOrder() throws {
         let url = try ChromeWebStoreURL.downloadURL(for: identifier)
@@ -155,7 +191,7 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         var components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
         components.queryItems = components.queryItems?.reversed()
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(try XCTUnwrap(components.url), for: identifier))
-        XCTAssertFalse(ChromeWebStoreURL.isValidDownloadURL(url, for: internalIdentifier))
+        XCTAssertFalse(ChromeWebStoreURL.isValidDownloadURL(url, for: otherIdentifier))
     }
 
     func testUntrustedDownloadURLsAreRejected() throws {

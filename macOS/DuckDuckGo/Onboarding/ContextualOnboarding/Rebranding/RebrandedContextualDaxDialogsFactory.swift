@@ -174,19 +174,19 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private static func illustration(for type: ContextualDialogType) -> Image {
         switch type {
         case .tryASearch:
-            return Image("contextual-bg-try-search")
+            return Image(.contextualBgTrySearch)
         case .searchDone:
-            return Image("contextual-bg-search-done")
+            return Image(.contextualBgSearchDone)
         case .tryASite:
-            return Image("contextual-bg-try-site")
+            return Image(.contextualBgTrySite)
         case .trackers:
-            return Image("contextual-bg-trackers")
+            return Image(.contextualBgTrackers)
         case .tryFireButton:
-            return Image("contextual-bg-fire")
+            return Image(.contextualBgFire)
         case .highFive:
-            return Image("contextual-bg-end-of-journey")
+            return Image(.contextualBgEndOfJourney)
         case .subscriptionUpsell:
-            return Image("contextual-bg-subscription-upsell")
+            return Image(.contextualBgSubscriptionUpsell)
         }
     }
 

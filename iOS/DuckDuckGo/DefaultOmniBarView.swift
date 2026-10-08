@@ -529,7 +529,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
     var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
-    var onFooterLinkTapped: ((URL) -> Void)?
+    var onFooterLinkTapped: ((UTIFooterItem.ID, URL) -> Void)?
+    var onFooterVisibilityChanged: (([UTIFooterItem.ID]) -> Void)?
 
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
@@ -642,12 +643,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// The strip of pending attachments shown above the toolbar row when attachments are present.
     let attachmentsStripView: UnifiedToggleInputAttachmentsStripView
 
-    /// One slot below the expanded Duck.ai input, shared by the Terms of Service disclaimer and the
-    /// Create Image model switch notice.
-    private let footerCard: UTIFooterCardView = {
-        let card = UTIFooterCardView()
-        card.translatesAutoresizingMaskIntoConstraints = false
-        return card
+    private let footerCard: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = -UTIFooterCardView.overlap
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
     /// Gives the footer card the expanded bar's shadow; without it the card looks see-through over a white page.
@@ -663,8 +664,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }()
 
-    /// `nil` whenever the footer card is off screen, including while the input is collapsed.
-    private(set) var visibleFooterMessage: UTIFooterMessage?
+    private(set) var visibleFooterMessages: [UTIFooterItem] = []
+    private var renderedFooterMessages: [UTIFooterItem] = []
+    private var reportedFooterIDs: [UTIFooterItem.ID] = []
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -681,6 +683,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         set { aiChatTextView.delegate = newValue }
     }
     var onSearchAreaExpandedStateChanged: ((Bool) -> Void)?
+    /// Called before the expansion is laid out; footer messages set here are revealed together with the bar.
+    var onSearchAreaWillExpand: (() -> Void)?
     var onCollapseAnimationCompleted: (() -> Void)?
     private(set) var isSearchAreaExpanded: Bool = false {
         didSet {
@@ -689,6 +693,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
     private var suppressExpansionUpdate = false
+    private var isPreparingExpansion = false
     private var searchAreaCenterYConstraint: NSLayoutConstraint?
     private var searchAreaTopPinConstraint: NSLayoutConstraint?
     private var expandedHeightConstraint: NSLayoutConstraint?
@@ -822,6 +827,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         return view
     }()
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        reportFooterVisibility()
+    }
 
     static func create(isFloatingUIEnabled: Bool, usesCompactAttachmentLayout: Bool = false) -> Self {
         Self.init(isFloatingUIEnabled: isFloatingUIEnabled, usesCompactAttachmentLayout: usesCompactAttachmentLayout)
@@ -1105,13 +1115,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
-        // Only the model switch notice carries a close button; the disclaimer is required.
-        footerCard.onDismissTap = { [weak self] in
-            self?.onCreateImageModelSwitchNoticeDismissed?()
-        }
-        footerCard.onLinkTap = { [weak self] url in
-            self?.onFooterLinkTapped?(url)
-        }
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
     }
@@ -1300,6 +1303,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         super.layoutSubviews()
         applyOmnibarCornerStyle()
         updateMaskLayer()
+        reportFooterVisibility()
     }
 
     private func setUpCallbacks() {
@@ -1949,29 +1953,88 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView {
 
-    func setFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
-        guard let message, isSearchAreaExpanded else {
+    func setFooterMessages(_ messages: [UTIFooterItem], animated: Bool) {
+        guard !messages.isEmpty, isSearchAreaExpanded else {
             hideFooterCard(animated: animated)
             return
         }
 
-        footerCard.configure(with: message, animateIcon: false)
+        let wasHidden = footerCardShadowView.isHidden
+        let addedRows = updateFooterRows(with: messages)
         footerCardShadowView.isHidden = false
-        visibleFooterMessage = message
+        visibleFooterMessages = messages
         searchAreaAlignmentView.sendSubviewToBack(footerCardShadowView)
+
+        guard !isPreparingExpansion else {
+            if wasHidden { footerCardShadowView.alpha = 0 }
+            return
+        }
 
         guard animated else {
             footerCardShadowView.alpha = 1
             layoutIfNeeded()
+            reportFooterVisibility()
             return
         }
 
+        // New rows start at a zero frame; place them first so they fade in rather than grow out of the corner.
+        UIView.performWithoutAnimation {
+            if wasHidden { layoutIfNeeded() } else { footerCard.layoutIfNeeded() }
+        }
+        if !wasHidden { addedRows.forEach { $0.alpha = 0 } }
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.footerCardShadowView.alpha = 1
+            addedRows.forEach { $0.alpha = 1 }
             self.layoutIfNeeded()
+        } completion: { _ in
+            self.reportFooterVisibility()
         }
+    }
+
+    /// Keeps the rows already in the card, so an unchanged message doesn't rebuild and re-animate. Returns the new rows.
+    private func updateFooterRows(with messages: [UTIFooterItem]) -> [UTIFooterCardView] {
+        guard messages != renderedFooterMessages else { return [] }
+        let existingRows = Dictionary(uniqueKeysWithValues: zip(renderedFooterMessages.map(\.id), footerCard.arrangedSubviews))
+        for item in renderedFooterMessages where !messages.contains(where: { $0.id == item.id }) {
+            if let row = existingRows[item.id] {
+                footerCard.removeArrangedSubview(row)
+                row.removeFromSuperview()
+            }
+        }
+        var addedRows: [UTIFooterCardView] = []
+        for (index, item) in messages.enumerated() {
+            let existingRow = existingRows[item.id] as? UTIFooterCardView
+            let row = existingRow ?? UTIFooterCardView()
+            if existingRow == nil { addedRows.append(row) }
+            row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
+            row.isBelowAnotherCard = index > 0
+            if !renderedFooterMessages.contains(item) {
+                row.configure(with: item.message, animateIcon: false)
+            }
+            row.onDismissTap = { [weak self] in
+                guard item.id == .modelSwitch else { return }
+                self?.onCreateImageModelSwitchNoticeDismissed?()
+            }
+            row.onLinkTap = { [weak self] url in self?.onFooterLinkTapped?(item.id, url) }
+            if footerCard.arrangedSubviews.firstIndex(of: row) != index {
+                footerCard.removeArrangedSubview(row)
+                footerCard.insertArrangedSubview(row, at: index)
+            }
+        }
+        renderedFooterMessages = messages
+        for row in footerCard.arrangedSubviews.reversed() { footerCard.bringSubviewToFront(row) }
+        return addedRows
+    }
+
+    private func reportFooterVisibility() {
+        let isVisible = window?.isHidden == false && !isHidden && isSearchAreaExpanded
+            && !footerCardShadowView.isHidden && footerCardShadowView.alpha > 0
+        let ids = isVisible ? visibleFooterMessages.map(\.id) : []
+        guard ids != reportedFooterIDs else { return }
+        reportedFooterIDs = ids
+        onFooterVisibilityChanged?(ids)
     }
 
     func expandedContentMaxY(in view: UIView) -> CGFloat {
@@ -1981,7 +2044,8 @@ extension DefaultOmniBarView {
     }
 
     private func hideFooterCard(animated: Bool) {
-        visibleFooterMessage = nil
+        visibleFooterMessages = []
+        reportFooterVisibility()
         guard !footerCardShadowView.isHidden else { return }
 
         let completion: () -> Void = {
@@ -2123,10 +2187,12 @@ extension DefaultOmniBarView {
     }
 
     func updateSearchAreaExpansion(animated: Bool) {
+        let revealsFooter = prepareFooterForExpansion()
         applyTextViewVisibility()
 
         guard animated else {
             searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+            footerCardShadowView.alpha = revealsFooter ? 1 : 0
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
@@ -2177,6 +2243,7 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
                 self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+                self.footerCardShadowView.alpha = revealsFooter ? 1 : 0
                 self.aiChatSendButton.alpha = 1
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
@@ -2217,6 +2284,14 @@ extension DefaultOmniBarView {
                 self.aiChatTextView.becomeFirstResponder()
             }
         }
+    }
+
+    private func prepareFooterForExpansion() -> Bool {
+        guard isSearchAreaExpanded else { return false }
+        isPreparingExpansion = true
+        onSearchAreaWillExpand?()
+        isPreparingExpansion = false
+        return !visibleFooterMessages.isEmpty
     }
 
     private func applyTextViewVisibility() {

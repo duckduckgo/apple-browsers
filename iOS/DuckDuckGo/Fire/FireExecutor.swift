@@ -201,7 +201,8 @@ class FireExecutor: FireExecuting {
                                   privacyConfig: privacyConfigurationManager,
                                   websiteDataStore: dataStore,
                                   nativeStorageHandler: nativeHandler,
-                                  featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+                                  featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+                                  onBlobCleanup: AIChatLeftoverImagesPixelReporter(pixelFiring: PixelKit.shared).report)
         }
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -333,7 +334,7 @@ class FireExecutor: FireExecuting {
             fireModeStorageController?.syncWithCurrentFireModeID()
         }
 
-        await clearAppSwitcherSnapshotsIfNeeded()
+        await clearAppSwitcherSnapshots()
 
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
@@ -390,15 +391,9 @@ class FireExecutor: FireExecuting {
     }
 
     @MainActor
-    private func clearAppSwitcherSnapshotsIfNeeded() async {
-        guard featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) else { return }
-        await clearAppSwitcherSnapshots()
-    }
-
-    @MainActor
     private func clearAppSwitcherSnapshotsIfNeeded(after result: Result<Void, Error>) async -> Result<Void, Error> {
         guard case .success = result else { return result }
-        await clearAppSwitcherSnapshotsIfNeeded()
+        await clearAppSwitcherSnapshots()
         return result
     }
 

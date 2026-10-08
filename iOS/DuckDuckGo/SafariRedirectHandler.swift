@@ -69,7 +69,9 @@ protocol SafariRedirectHandling: AnyObject {
     /// Called from decidePolicyFor when an x-safari URL is encountered.
     /// Returns true if the handler consumed the navigation (caller should .cancel).
     @discardableResult
-    func handleRedirect(to url: URL) -> Bool
+    func handleRedirect(to url: URL, isMainFrame: Bool) -> Bool
+
+    func willNavigate(_ navigationAction: NavigationActionProtocol, isUserInitiated: Bool)
 
     /// Full reset including converted load attempts. Called on new top-level navigation.
     func reset()
@@ -89,6 +91,7 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
     private struct HostState {
         var convertedLoadAttemptCount: Int = 0
+        var hasRequestedLoopError = false
 
         var isSafariRedirectSuppressed: Bool {
             convertedLoadAttemptCount > 0
@@ -109,13 +112,33 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         return hostStates[domain]?.isSafariRedirectSuppressed == true
     }
 
-    func handleRedirect(to url: URL) -> Bool {
+    func willNavigate(_ navigationAction: NavigationActionProtocol, isUserInitiated: Bool) {
+        guard navigationAction.isTargetingMainFrame else { return }
+
+        if isUserInitiated {
+            reset()
+            return
+        }
+
+        switch navigationAction.navigationType {
+        case .linkActivated, .formSubmitted, .backForward, .reload, .formResubmitted:
+            reset()
+        default:
+            break
+        }
+    }
+
+    func handleRedirect(to url: URL, isMainFrame: Bool = true) -> Bool {
         guard isSafariRedirectScheme(url.scheme) else { return false }
+        guard isMainFrame else { return true }
 
         guard let host = domain(for: url) else { return false }
         var state = hostStates[host, default: HostState()]
 
         if state.convertedLoadAttemptCount >= Constants.maximumConvertedLoadAttempts {
+            guard !state.hasRequestedLoopError else { return true }
+            state.hasRequestedLoopError = true
+            hostStates[host] = state
             delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
         } else {
             state.convertedLoadAttemptCount += 1

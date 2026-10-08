@@ -18,7 +18,7 @@
 //
 
 import Bookmarks
-import DuckDuckGo
+@testable import DuckDuckGo
 import Foundation
 import Persistence
 import XCTest
@@ -129,6 +129,114 @@ class MenuBookmarksViewModelTests: XCTestCase {
         XCTAssertEqual(topLevelCount, anotherLevelCount)
     }
     
+    func testSavingFavoriteUpdatesExistingTitleWithoutRemovingOrDuplicatingBookmark() {
+        for alreadyFavorite in [false, true] {
+            let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let address = url.appendingPathComponent(String(alreadyFavorite))
+            model.createBookmark(title: "Inbox", url: address)
+            if alreadyFavorite {
+                model.createOrToggleFavorite(title: "Inbox", url: address)
+            }
+            let bookmarkID = model.bookmark(for: address)?.objectID
+            let bookmarkCount = model.bookmark(for: address)?.parent?.childrenArray.count
+
+            XCTAssertTrue(model.saveFavorite(title: "Work Mail", urlString: address.absoluteString))
+
+            let persistedModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let favorite = persistedModel.favorite(for: address)
+            XCTAssertEqual(favorite?.title, "Work Mail")
+            XCTAssertEqual(favorite?.objectID, bookmarkID)
+            XCTAssertEqual(favorite?.parent?.childrenArray.count, bookmarkCount)
+        }
+    }
+
+    func testSavingFavoriteWithoutNamePreservesExistingTitle() {
+        for alreadyFavorite in [false, true] {
+            let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let address = url.appendingPathComponent(String(alreadyFavorite))
+            model.createBookmark(title: "Inbox", url: address)
+            if alreadyFavorite {
+                model.createOrToggleFavorite(title: "Inbox", url: address)
+            }
+
+            XCTAssertTrue(model.saveFavorite(title: nil, urlString: address.absoluteString))
+
+            let persistedModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+            XCTAssertEqual(persistedModel.favorite(for: address)?.title, "Inbox")
+        }
+    }
+
+    @MainActor
+    func testSavingEditedBookmarkletRenamesExistingBookmarkWithoutDuplicatingIt() throws {
+        for alreadyFavorite in [false, true] {
+            let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let originalURL = url.appendingPathComponent(String(alreadyFavorite))
+            model.createBookmark(title: "Original", url: originalURL)
+            if alreadyFavorite {
+                model.createOrToggleFavorite(title: "Original", url: originalURL)
+            }
+
+            let bookmark = try XCTUnwrap(model.bookmark(for: originalURL))
+            let bookmarkCount = bookmark.parent?.childrenArray.count
+            let script = "javascript:alert('Hello world \(alreadyFavorite)')"
+            let editor = BookmarkEditorViewModel(editingEntityID: bookmark.objectID,
+                                                  bookmarksDatabase: db,
+                                                  favoritesDisplayMode: .displayNative(.mobile),
+                                                  errorEvents: nil)
+            editor.bookmark.url = script
+            XCTAssertTrue(editor.canSave)
+            editor.save()
+            let encodedURL = try XCTUnwrap(BookmarkUtils.url(from: script))
+
+            let addFavoriteModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+            let inputModel = AddFavoriteViewModel(bookmarks: addFavoriteModel)
+            inputModel.urlText = script
+            inputModel.name = "Renamed"
+            XCTAssertTrue(inputModel.canSave)
+            XCTAssertTrue(inputModel.save())
+
+            let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
+            let persistedBookmark = try XCTUnwrap(try context.existingObject(with: bookmark.objectID) as? BookmarkEntity)
+            XCTAssertEqual(persistedBookmark.title, "Renamed")
+            XCTAssertEqual(persistedBookmark.url, script)
+            XCTAssertTrue(persistedBookmark.isFavorite(on: .mobile))
+            XCTAssertEqual(persistedBookmark.parent?.childrenArray.count, bookmarkCount)
+            // Existing exact-string lookups retain their behavior.
+            XCTAssertNil(addFavoriteModel.bookmark(for: encodedURL))
+        }
+    }
+
+    func testSavingNewFavoriteWithoutNameUsesHost() {
+        let model = MenuBookmarksViewModel(bookmarksDatabase: db)
+
+        XCTAssertTrue(model.saveFavorite(title: nil, urlString: url.absoluteString))
+
+        let persistedModel = MenuBookmarksViewModel(bookmarksDatabase: db)
+        XCTAssertEqual(persistedModel.favorite(for: url)?.title, url.host)
+    }
+
+    @MainActor
+    func testAddingBookmarkletPreservesEnteredURLAndReusesItOnNextSave() throws {
+        let inputModel = AddFavoriteViewModel(bookmarks: MenuBookmarksViewModel(bookmarksDatabase: db))
+        let script = "javascript:alert('Hello world')"
+        inputModel.urlText = "  \(script)  \n"
+        inputModel.name = "Original"
+        XCTAssertTrue(inputModel.save())
+
+        let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        let root = try XCTUnwrap(BookmarkUtils.fetchRootFolder(context))
+        let bookmark = try XCTUnwrap(root.childrenArray.first { $0.url == script })
+        let bookmarkCount = bookmark.parent?.childrenArray.count
+        XCTAssertEqual(bookmark.url, script)
+        XCTAssertEqual(bookmark.urlObject?.absoluteString, "javascript:alert('Hello%20world')")
+
+        inputModel.name = "Renamed"
+        XCTAssertTrue(inputModel.save())
+        context.refresh(bookmark, mergeChanges: true)
+        XCTAssertEqual(bookmark.title, "Renamed")
+        XCTAssertEqual(bookmark.parent?.childrenArray.count, bookmarkCount)
+    }
+
     func testWhenRemovingFavoriteThenBookmarkIsUpdated() {
         let model = MenuBookmarksViewModel(bookmarksDatabase: db)
         

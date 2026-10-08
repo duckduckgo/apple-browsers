@@ -38,6 +38,7 @@ final class MockOmniBar: OmniBar {
     var text: String?
     var iPadDuckAIControlValues: IPadDuckAIControlValues = IPadDuckAIControlValuesSnapshot()
 
+    func bindIPadDraft(to tab: Tab?) { }
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
     func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}

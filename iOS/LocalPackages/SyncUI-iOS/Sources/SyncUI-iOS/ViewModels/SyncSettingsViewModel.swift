@@ -44,6 +44,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
+    func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
@@ -137,6 +138,13 @@ public class SyncSettingsViewModel: ObservableObject {
         case anotherDevicePromptDismissed
     }
 
+    public enum DeviceDetailsPixelEvent: Equatable {
+        case thisDeviceScreenShown
+        case thisDeviceTurnOffSyncTapped
+        case otherDeviceScreenShown
+        case otherDeviceRemoveDeviceTapped
+    }
+
     public enum SyncAnotherDeviceOption: String {
         case thisDeviceOnly = "this_device_only"
         case syncAnotherDevice = "sync_another_device"
@@ -200,6 +208,10 @@ public class SyncSettingsViewModel: ObservableObject {
         connectingSheetPhase == .syncAnotherDevice(isConnecting: true)
     }
 
+    public var isAnotherDevicePromptInteractionDisabled: Bool {
+        isBusy || isConnectingThisDeviceOnly
+    }
+
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
@@ -215,17 +227,21 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+    private var isFlowAuthenticationDeferred = false
     private var postConnectingSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
+    private let isImprovedPairingFlowEnabled: Bool
 
     public init(
         isOnDevEnvironment: @escaping () -> Bool,
         switchToProdEnvironment: @escaping () -> Void,
-        autoRestoreProvider: SyncAutoRestoreProviding
+        autoRestoreProvider: SyncAutoRestoreProviding,
+        isImprovedPairingFlowEnabled: Bool = false
     ) {
         self.isOnDevEnvironment = isOnDevEnvironment()
         self.autoRestoreProvider = autoRestoreProvider
+        self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
         self.isAutoRestoreFeatureAvailable = autoRestoreProvider.isAutoRestoreFeatureEnabled
         if isAutoRestoreFeatureAvailable {
             self.isAutoRestoreEnabled = autoRestoreProvider.existingDecision() ?? false
@@ -336,9 +352,12 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @MainActor
     private func beginFlow(for continuation: PreservedAccountContinuation) async {
-        guard await commonAuthenticate() else {
-            isBusy = false
-            return
+        isFlowAuthenticationDeferred = shouldDeferAuthentication(for: continuation)
+        if !isFlowAuthenticationDeferred {
+            guard await commonAuthenticate() else {
+                isBusy = false
+                return
+            }
         }
 
         guard delegate?.isPreservedAccountPromptNeeded() != true else {
@@ -349,6 +368,19 @@ public class SyncSettingsViewModel: ObservableObject {
 
         clearPendingPreservedAccountContinuation()
         continueWithoutPreservedAccountPrompt(for: continuation)
+    }
+
+    private func shouldDeferAuthentication(for continuation: PreservedAccountContinuation) -> Bool {
+        guard isImprovedPairingFlowEnabled, continuation != .setup(.pairing) else { return false }
+        return delegate?.isPreservedAccountPromptNeeded() != true
+    }
+
+    @MainActor
+    private func authenticateDeferredFlowIfNeeded() async -> Bool {
+        guard isFlowAuthenticationDeferred else { return true }
+        guard await commonAuthenticate() else { return false }
+        isFlowAuthenticationDeferred = false
+        return true
     }
 
     @MainActor
@@ -377,6 +409,20 @@ public class SyncSettingsViewModel: ObservableObject {
         return RemoveDeviceViewModel(device: device) { [weak self] device in
             self?.delegate?.removeDevice(device)
         }
+    }
+
+    func deviceDetailsShown(for device: Device) {
+        delegate?.fireDeviceDetailsPixel(event: device.isThisDevice ? .thisDeviceScreenShown : .otherDeviceScreenShown)
+    }
+
+    func thisDeviceDetailsTurnOffSyncTapped() {
+        guard !isBusy else { return }
+        delegate?.fireDeviceDetailsPixel(event: .thisDeviceTurnOffSyncTapped)
+        disableSyncToggleTapped()
+    }
+
+    func otherDeviceDetailsRemoveDeviceTapped() {
+        delegate?.fireDeviceDetailsPixel(event: .otherDeviceRemoveDeviceTapped)
     }
 
     public func syncEnabled(recoveryCode: String) {
@@ -420,8 +466,14 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptShown)
     }
 
-    public func syncAnotherDeviceFromConnectingSheet() {
+    @MainActor
+    public func syncAnotherDeviceFromConnectingSheet() async {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.syncAnotherDevice))
+        guard !isBusy else { return }
+        isBusy = true
+        let isAuthenticated = await authenticateDeferredFlowIfNeeded()
+        isBusy = false
+        guard isAuthenticated else { return }
         postConnectingSheetDismissAction = { [weak self] in
             guard let self else { return }
             guard isConnectingDevicesAvailable else { return }
@@ -432,9 +484,14 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @MainActor
-    public func syncThisDeviceOnlyFromConnectingSheet() {
+    public func syncThisDeviceOnlyFromConnectingSheet() async {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.thisDeviceOnly))
         guard !isBusy else { return }
+        isBusy = true
+        guard await authenticateDeferredFlowIfNeeded() else {
+            isBusy = false
+            return
+        }
         connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
         beginSimplifiedSyncSetup()
     }
@@ -458,6 +515,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func dismissAnotherDevicePrompt() {
+        guard !isBusy else { return }
         guard connectingSheetPhase == .syncAnotherDevice(isConnecting: false) else { return }
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
         dismissConnectingSheet()
@@ -519,9 +577,9 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
-    /// Continue from the authenticated recover sheet without a second auth prompt.
     @MainActor
-    public func continueRecoverFlow() {
+    public func continueRecoverFlow() async {
+        guard await authenticateDeferredFlowIfNeeded() else { return }
         delegate?.showRecoveryCodeEntry()
     }
 
@@ -586,5 +644,6 @@ public class SyncSettingsViewModel: ObservableObject {
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
+    func fireDeviceDetailsPixel(event _: SyncSettingsViewModel.DeviceDetailsPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
 }

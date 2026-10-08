@@ -1650,16 +1650,6 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.didMultipleChangesCalled)
         XCTAssertFalse(delegate.didAppendCalled)
     }
-
-    @MainActor
-    func testWhenRemoveAllTabsAndAppendCalledWithNewTab_ThenNewTabPageOpenNotificationIsPosted() {
-        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let expectation = expectation(forNotification: .newTabPageOpen, object: nil)
-
-        tabCollectionViewModel.removeAllTabs(andAppend: Tab(content: .newtab))
-
-        wait(for: [expectation], timeout: 1)
-    }
 }
 
 fileprivate extension TabCollectionViewModel {

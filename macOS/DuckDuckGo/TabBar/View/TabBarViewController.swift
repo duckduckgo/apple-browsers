@@ -295,10 +295,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         button.title = ""
         button.alignment = .center
         button.imageScaling = .scaleProportionallyDown
-        button.contentTintColor = .button
+        button.contentTintColor = NSColor(resource: .button)
         button.normalTintColor = button.contentTintColor
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         button.cornerRadius = LayoutConstants.buttonCornerRadius
         button.target = target
         button.action = action
@@ -321,7 +321,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     override func loadView() {
         let view = TabBarView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
 
-        backgroundColorView = ColorView(frame: .zero, backgroundColor: .windowBackground)
+        backgroundColorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .windowBackground))
         backgroundColorView.translatesAutoresizingMaskIntoConstraints = false
 
         visualEffectBackgroundView = NSVisualEffectView()
@@ -340,7 +340,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         leftScrollButton = MouseOverButton(frame: .zero)
         configureBarButton(leftScrollButton,
-                           image: .tabOverflowBack,
+                           image: NSImage(resource: .tabOverflowBack),
                            target: self,
                            action: #selector(leftScrollButtonAction(_:)))
         leftScrollButton.isHidden = true
@@ -403,7 +403,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         rightScrollButton = MouseOverButton(frame: .zero)
         configureBarButton(rightScrollButton,
-                           image: .tabOverflowForward,
+                           image: NSImage(resource: .tabOverflowForward),
                            target: self,
                            action: #selector(rightScrollButtonAction(_:)))
         rightScrollButton.isHidden = true
@@ -411,7 +411,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightScrollButtonHeight = rightScrollButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
 
         addTabButton = MouseOverButton(frame: .zero)
-        configureBarButton(addTabButton, image: .add, target: nil, action: nil)
+        configureBarButton(addTabButton, image: NSImage(resource: .add), target: nil, action: nil)
         // The Add glyph is already the right size; scaling it down blurs it.
         addTabButton.imageScaling = .scaleNone
         addTabButton.isHidden = true
@@ -424,7 +424,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Sent up the responder chain rather than to this controller, which does not handle it.
         fireButton = MouseOverAnimationButton(frame: .zero)
         configureBarButton(fireButton,
-                           image: .burn,
+                           image: NSImage(resource: .burn),
                            target: nil,
                            action: #selector(MainViewController.fireButtonAction(_:)))
         fireButtonWidthConstraint = fireButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
@@ -438,8 +438,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightSideStackView.spacing = LayoutConstants.rightSideStackSpacing
         rightSideStackView.detachesHiddenViews = true
 
-        rightShadowImageView = makeShadowImageView(image: .tabBarShadowRight)
-        leftShadowImageView = makeShadowImageView(image: .tabBarShadowLeft)
+        rightShadowImageView = makeShadowImageView(image: NSImage(resource: .tabBarShadowRight))
+        leftShadowImageView = makeShadowImageView(image: NSImage(resource: .tabBarShadowLeft))
 
         pinnedTabsWindowDraggingView = WindowDraggingView()
         pinnedTabsWindowDraggingView.translatesAutoresizingMaskIntoConstraints = false
@@ -1647,9 +1647,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func legacySetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
         fireButton.isAnimationEnabled = false
-        fireButton.backgroundColor = NSColor.fireButtonRedBackground
-        fireButton.mouseOverColor = NSColor.fireButtonRedHover
-        fireButton.mouseDownColor = NSColor.fireButtonRedPressed
+        fireButton.backgroundColor = NSColor(resource: .fireButtonRedBackground)
+        fireButton.mouseOverColor = NSColor(resource: .fireButtonRedHover)
+        fireButton.mouseDownColor = NSColor(resource: .fireButtonRedPressed)
         fireButton.normalTintColor = NSColor.white
         fireButton.mouseDownTintColor = NSColor.white
         fireButton.mouseOverTintColor = NSColor.white
@@ -2288,7 +2288,7 @@ extension TabBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
 
-        let fireWindowHoverColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .accentFireGlowSecondary) : .fireButtonRedHover
+        let fireWindowHoverColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .accentFireGlowSecondary) : NSColor(resource: .fireButtonRedHover)
         fireButton.normalTintColor = isFireWindow ? NSColor(designSystemColor: .accentFirePrimary) : colorsProvider.iconsColor
         fireButton.mouseOverColor = isFireWindow ? fireWindowHoverColor : colorsProvider.buttonMouseOverColor
 

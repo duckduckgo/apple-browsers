@@ -132,7 +132,6 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         // Tabs nearer the middle cover the edge tabs. The flare (1) and selected tab (2) stay above them.
         let middle = (leading + trailing + attributes.frame.width) / 2
         attributes.zIndex = indexPath.item == currentIndex?() ? 2 : -Int(abs(attributes.center.x - middle))
-        guard !collectionView.hasActiveDrag else { return attributes }
         attributes.frame.origin.x = min(max(attributes.frame.minX, leading), trailing)
         return attributes
     }

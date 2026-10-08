@@ -87,6 +87,7 @@ class TabsBarViewController: UIViewController {
 
     private var addTabButtonLeadingConstraint: NSLayoutConstraint?
     private var currentLayout: TabsBarLayout?
+    private var draggedTabOriginalFrame: CGRect?
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -821,6 +822,8 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
            cell.removeButton.bounds.contains(session.location(in: cell.removeButton)) {
             return []
         }
+        // Capture before UIKit moves the source cell to make room for an insertion slot.
+        draggedTabOriginalFrame = (collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)?.unpinnedFrameForItem(at: indexPath)
         let item = UIDragItem(itemProvider: NSItemProvider())
         item.localObject = indexPath
         return [item]
@@ -833,9 +836,14 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
     func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
         collectionView.collectionViewLayout.invalidateLayout()
         flareBackground.beginReorder()
+        // A context-menu lift can become a drag after the finger has already left the strip.
+        if !collectionView.bounds.contains(session.location(in: collectionView)), let frame = draggedTabOriginalFrame {
+            collectionView.scrollRectToVisible(frame, animated: !UIAccessibility.isReduceMotionEnabled)
+        }
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        draggedTabOriginalFrame = nil
         collectionView.collectionViewLayout.invalidateLayout()
         flareBackground.endReorder()
     }
@@ -865,13 +873,20 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
         return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
     }
 
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidExit session: UIDropSession) {
+        guard session.localDragSession != nil, let frame = draggedTabOriginalFrame else { return }
+        collectionView.scrollRectToVisible(frame, animated: !UIAccessibility.isReduceMotionEnabled)
+    }
+
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
         guard let item = coordinator.items.first,
               let sourceIndexPath = item.sourceIndexPath,
-              let destinationIndexPath = coordinator.destinationIndexPath,
+              let proposedDestination = coordinator.destinationIndexPath,
               let tabsModel,
               let tab = tabsModel.get(tabAt: sourceIndexPath.row) else { return }
 
+        draggedTabOriginalFrame = nil
+        let destinationIndexPath = IndexPath(item: min(proposedDestination.item, tabsModel.count - 1), section: 0)
         collectionView.performBatchUpdates({
             tabsModel.move(tab: tab, to: destinationIndexPath.row)
             collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)

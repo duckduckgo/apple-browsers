@@ -4,7 +4,9 @@
         "description": "Describe when the pixel fires and its purpose",
         // Github usernames of the people responsible for the pixel.
         "owners": ["nshuba"],
-        "triggers": ["other"],
+        // Classify by the event that fires the pixel — never default to "other". See
+        // https://github.com/duckduckgo/pixel-schema/blob/main/docs/trigger-classification.md
+        "triggers": ["user_interaction"],
         "suffixes": [
             // A suffix is a dynamic part of the pixel name, e.g. "some.pixel.[count|daily]"
             "first_daily_count", // shortcut to a commonly used suffix, defined in common_suffixes.json.

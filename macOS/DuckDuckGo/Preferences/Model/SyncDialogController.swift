@@ -500,14 +500,21 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         if device.isCurrent {
             turnOffSync()
         } else {
-            removeDevice(device)
+            removeDevice(device) { [weak self] in
+                self?.pixelFiring?.fire(SyncSettingsPixelKitEvent.otherDeviceDetailsRemoveDeviceConfirmed)
+            }
         }
     }
 
     func removeDevice(_ device: SyncDevice) {
+        removeDevice(device, onRemoved: {})
+    }
+
+    private func removeDevice(_ device: SyncDevice, onRemoved: @escaping @MainActor () -> Void) {
         Task { @MainActor in
             do {
                 try await syncService.disconnect(deviceId: device.id)
+                onRemoved()
                 refreshDevices()
                 managementDialogModel.endFlow()
             } catch {

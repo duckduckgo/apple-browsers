@@ -316,6 +316,12 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "写真を撮る";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "ファイルは違法なコンテンツがないか自動的にスキャンされます。 フラグが付けられたチャットのデータ保持は制限されます。 %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "詳細情報";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "そのメッセージは長すぎて添付ファイル付きで送信できません。";
 
@@ -345,6 +351,15 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "タブを追加";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@は画像を作成できません。切り替えを元に戻すまで、「プロバイダーの可視性がゼロ」は適用されません。";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@は画像生成に対応していません。";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "%@を使用中";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "編集すると、既存の回答が新しい回答に置き換えられます。";
@@ -1470,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "構成";
 
 /* No comment provided by engineer. */
 "Confirm" = "確認";
@@ -2615,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "負でない日数を入力してください。インストール日はその日数前に設定されます。";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3070,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Appleカレンダーにイベントが追加されました";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "パスワードをインポート";
 
@@ -3191,9 +3197,6 @@
 "keyCommandZoomOut" = "ズームアウト";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "最終処理日：%@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "利用可能な製品を読み込み中...";
 
 /* No comment provided by engineer. */
@@ -3267,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "メッセージポリシーホスト名";
-
-/* No comment provided by engineer. */
-"Messages" = "メッセージ";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3629,13 +3629,7 @@
 "No extensions installed" = "拡張機能はインストールされていません";
 
 /* No comment provided by engineer. */
-"No Logs" = "ログなし";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "「%@」に一致するものはありません";
-
-/* No comment provided by engineer. */
-"No messages" = "メッセージはありません";
 
 /* No comment provided by engineer. */
 "No results found" = "結果が見つかりません";
@@ -4167,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGoはこのページを読み込めません。";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "最近の処理ログ";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "親族：%@";
@@ -4954,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "新着情報";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "直近1分間のログを表示し、リフレッシュ後の問題を即座に診断するために役立ちます。";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "発生した問題を最もよく表すオプションを選択します。";
 
@@ -5001,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "ステータス：無効化されました";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "格納されたホスト名：%@";
@@ -5492,9 +5477,6 @@
 "theme.name.light" = "ライト";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "このリストには、表示済みのメッセージと、表示予定のメッセージが最大1つ含まれます。設定にはさらに多くのメッセージが表示される可能性がありますが、まだ処理されていません。";
-
-/* No comment provided by engineer. */
 "Title" = "タイトル";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5517,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "連絡先が追加されました";
-
-/* No comment provided by engineer. */
-"Version: %@" = "バージョン：%@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "検索";
@@ -5917,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@は画像を作成できません。切り替えを元に戻すまで、「プロバイダーの可視性がゼロ」は適用されません。";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@は画像生成に対応していません。";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "%@を使用中";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "すべてのチャット";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "ファイルは違法なコンテンツがないか自動的にスキャンされます。 フラグが付けられたチャットのデータ保持は制限されます。 %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "詳細情報";

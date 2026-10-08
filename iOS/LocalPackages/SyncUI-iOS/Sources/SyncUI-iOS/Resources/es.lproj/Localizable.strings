@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n %@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Reanuda tu sesión de Sync & Backup para restaurar tus marcadores, contraseñas y más o continúa con una nueva configuración.";
 
@@ -85,9 +82,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "¿Descargar los iconos que faltan?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Descargar automáticamente iconos";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Mantener el desarrollo";
 
@@ -169,11 +163,17 @@
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Carga iconos de los sitios web que has marcado como favoritos. Las descargas de iconos están expuestas a tu red.";
 
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Cargar iconos de marcadores";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Marcadores";
 
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Usa los mismos marcadores favoritos en el móvil y el escritorio.";
+
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Comparte tus favoritos en todos los dispositivos";
 
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup está cifrado de extremo a extremo en todos tus dispositivos.";
@@ -214,8 +214,8 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Código de ejemplo:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Abre tu otro";
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Abre tu otro %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Pegar código de sincronización";
@@ -271,7 +271,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Usa este código para restaurar tus datos si pierdes el acceso a este dispositivo. Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad. [Más información](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "aplicación DuckDuckGo";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +292,14 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Cerrar";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo para escritorio";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Escanea el código QR para sincronizar.";
 
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Abrir";
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Abrir %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Estoy listo para escanear";
@@ -322,8 +322,8 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Copiar código de texto";
 
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "En otro dispositivo, abre";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "En otro dispositivo, abre %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Ve a **Sync & Backup** › **Sincronizar con otro dispositivo** y escanea este código:";
@@ -354,9 +354,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Este dispositivo";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Unifica tus favoritos en todos los dispositivos";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Estás utilizando el entorno de sincronización de desarrollo.";

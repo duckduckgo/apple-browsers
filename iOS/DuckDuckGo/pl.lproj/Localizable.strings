@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klawiatura";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Uruchomienie aplikacji";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nowa karta";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Pokaż klawiaturę";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Wyświetla link umożliwiający powrót do ostatnio używanej karty po uruchomieniu aplikacji po okresie braku aktywności.";
 

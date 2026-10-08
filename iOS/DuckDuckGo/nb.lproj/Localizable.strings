@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Appoversikt";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Ny fane";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Vis tastatur i";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Viser en lenke for å gå tilbake til den sist brukte fanen når du åpner appen igjen etter inaktivitet.";
 

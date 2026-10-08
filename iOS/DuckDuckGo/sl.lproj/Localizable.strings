@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Zagon aplikacije";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nov zavihek";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Pokaži tipkovnico v/pri";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Prikaže povezavo za vrnitev na nazadnje uporabljeni zavihek, ko zaženete aplikacijo po nedejavnosti.";
 

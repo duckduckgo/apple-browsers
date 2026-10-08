@@ -79,20 +79,15 @@ struct KeyboardSettingsView: View {
 
     var body: some View {
         List {
-            Section(header: Text(Self.storyboardString("tGh-di-rfq.headerTitle", value: "Show keyboard on"))) {
-                SettingsCellView(label: Self.storyboardString("Zpg-h0-rYv.text", value: "New Tab"),
+            Section(header: Text(UserText.settingsKeyboardShowOn)) {
+                SettingsCellView(label: UserText.settingsKeyboardNewTab,
                                  accessory: .toggle(isOn: $settings.onNewTab))
-                SettingsCellView(label: Self.storyboardString("13n-KI-KLq.text", value: "App Launch"),
+                SettingsCellView(label: UserText.settingsKeyboardAppLaunch,
                                  accessory: .toggle(isOn: $settings.onAppLaunch))
             }
         }
         .applyInsetGroupedListStyle()
         .navigationBarTitle(UserText.settingsKeyboard, displayMode: .inline)
         .accentColor(Color(designSystemColor: .textPrimary))
-    }
-
-    /// Looks up the Keyboard storyboard's own translations, so this screen adds no strings to translate.
-    private static func storyboardString(_ key: String, value: String) -> String {
-        Bundle.main.localizedString(forKey: key, value: value, table: "Settings")
     }
 }

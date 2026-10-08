@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "キーボード";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "アプリ起動";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "新しいタブ";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "キーボードを表示";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "アプリをしばらく操作せずに起動すると、最後に使用したタブに戻るリンクが表示されます。";
 

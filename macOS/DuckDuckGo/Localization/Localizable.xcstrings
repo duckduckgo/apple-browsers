@@ -34067,6 +34067,78 @@
         }
       }
     },
+    "duckai.launcher-promo.add-keyboard-shortcut" : {
+      "comment" : "Text after the title of the Duck.ai launcher promo (New Tab Page and address bar), shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Duck.ai keyboard shortcut"
+          }
+        }
+      }
+    },
+    "duckai.launcher-promo.add-to-menu-bar" : {
+      "comment" : "Text after the title of the Duck.ai launcher promo (New Tab Page and address bar), shown while the Duck.ai menu bar icon is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai in the menu bar"
+          }
+        }
+      }
+    },
+    "duckai.launcher-promo.introduction" : {
+      "comment" : "Message in the Duck.ai floating prompt bar right after the launcher promo's Try Now opened it. %1$@ is the keyboard shortcut, e.g. ⌥Space; %2$@ is a link reading Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now you can access Duck.ai by pressing %1$@. You can change the shortcut in %2$@."
+          }
+        }
+      }
+    },
+    "duckai.launcher-promo.introduction.settings" : {
+      "comment" : "Link in the Duck.ai prompt bar launcher message that opens Duck.ai Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "duckai.launcher-promo.message" : {
+      "comment" : "Emphasized title of the Duck.ai launcher promo (New Tab Page and address bar) inviting the user to turn on the Duck.ai launcher",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately from anywhere"
+          }
+        }
+      }
+    },
+    "duckai.launcher-promo.try-now" : {
+      "comment" : "Button in the Duck.ai launcher promo (New Tab Page and address bar) that turns the launcher on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Now"
+          }
+        }
+      }
+    },
     "duckai.menu.ask-about-page" : {
       "comment" : "Duck.ai menu item to open the sidebar and attach the current page's content",
       "extractionState" : "extracted_with_value",

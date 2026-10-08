@@ -315,8 +315,8 @@ class MainViewController: UIViewController {
     /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
     /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
     private var isAttachingNewTabPageAfterFire = false
-    /// A New Tab Page visit held back because the page was attached behind the tab switcher, which reports
-    /// a pick before it starts dismissing. Started once the switcher closes.
+    /// The selected New Tab page is installed while the tab switcher still covers it.
+    /// Start its analytics visit after the switcher finishes dismissing.
     private var pendingNewTabPageVisitStart: (isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool)?
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
@@ -1229,6 +1229,7 @@ class MainViewController: UIViewController {
             let shouldRestoreFocus = NewTabPageKeyboardPolicy().shouldRestoreInputFocusOnTabSwipe(
                 on: tab, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
             tab.wasInputFocusedBeforeTabSwitch = false
+            // A cancelled swipe selects the current tab again; only a real switch ends the visit.
             if tab !== tabManager.currentTabsModel.currentTab {
                 pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
@@ -2400,7 +2401,7 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
-    /// Attaches the after-idle treatment without rebuilding the page or changing input focus.
+    /// Adds the after-idle treatment to an already-open New Tab page without rebuilding it or changing input focus.
     func showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
         // Same visibility rule as `attachHomeScreen`: no hatch, or its pixels, behind another screen.
         guard presentedViewController == nil || presentedViewController?.isBeingDismissed == true,

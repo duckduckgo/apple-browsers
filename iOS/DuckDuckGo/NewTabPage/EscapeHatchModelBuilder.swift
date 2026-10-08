@@ -33,7 +33,7 @@ struct EscapeHatchModelBuilder {
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let instrumentation: NTPAfterIdleInstrumentation
 
-    /// Adds the first after-idle hatch to a kept page; later returns preserve its used or dismissed state.
+    /// Adds the first after-idle hatch to an already-open New Tab page; later returns preserve its used or dismissed state.
     func makeAfterIdleHatchForKeptNewTabPage(router: EscapeHatchActionRouter) -> EscapeHatchModel? {
         guard let currentTab = tabManager.currentTabsModel.currentTab,
               currentTab.link == nil,

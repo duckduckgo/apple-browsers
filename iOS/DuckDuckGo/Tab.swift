@@ -134,7 +134,7 @@ public class Tab: NSObject, NSCoding {
     /// Whether this NTP was shown by the idle-return flow. One-shot: cleared when the user leaves the NTP.
     var openedAfterIdle: Bool = false
 
-    /// Runtime-only: a kept NTP must not restore a hatch already presented in this app lifecycle.
+    /// Runtime-only: prevents later app returns from recreating this page's used or dismissed after-idle hatch.
     var hasPresentedAfterIdleEscapeHatch: Bool = false
 
     /// Indicates whether this tab was created after tab history tracking was implemented.

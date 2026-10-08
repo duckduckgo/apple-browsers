@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Lansare aplicație";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Filă nouă";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Afișează tastatura la";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Afișează un link pentru a reveni la ultima filă folosită când lansezi aplicația după o perioadă de inactivitate.";
 

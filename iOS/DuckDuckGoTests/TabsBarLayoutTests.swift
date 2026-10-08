@@ -119,6 +119,7 @@ final class TabsBarLayoutTests: XCTestCase {
 final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSource {
 
     private var itemCount = 10
+    private var selectedIndex: () -> Int? = { nil }
 
     func testCurrentTabRemainsVisibleWhenScrolledPastLeadingEdge() throws {
         let (collectionView, layout) = makeCollectionView(currentIndex: { 0 }, contentOffset: 300)
@@ -261,6 +262,37 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
+    func testReorderAttributesKeepInactiveCellsBelowSelectionAndResetOnReuse() throws {
+        let (collectionView, layout) = makeCollectionView(currentIndex: { 2 }, contentOffset: 10)
+        let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 2, section: 0)) as? TabsBarCell)
+        let inactive = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 0, section: 0)) as? TabsBarCell)
+        let inactiveAttributes = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: 0, section: 0)))
+        let originalOrder = inactive.layer.zPosition
+        XCTAssertLessThan(originalOrder, 0)
+
+        for (cell, index) in [(selected, 2), (inactive, 0)] {
+            let attributes = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: index, section: 0))?.copy() as? UICollectionViewLayoutAttributes)
+            attributes.zIndex = 1000
+            cell.apply(attributes)
+        }
+        XCTAssertEqual(selected.layer.zPosition, 2)
+        XCTAssertEqual(inactive.layer.zPosition, 0)
+        inactive.apply(inactiveAttributes)
+        XCTAssertEqual(inactive.layer.zPosition, originalOrder)
+
+        let theme = ThemeManager.shared.currentTheme
+        inactive.applyCurrentStyle(isCurrent: true, isNextCurrent: false, hidesInactiveCloseButton: false, withTheme: theme)
+        XCTAssertEqual(inactive.layer.zPosition, 2)
+        inactive.applyCurrentStyle(isCurrent: false, isNextCurrent: false, hidesInactiveCloseButton: false, withTheme: theme)
+        XCTAssertEqual(inactive.layer.zPosition, 0)
+        inactive.applyCurrentStyle(isCurrent: true, isNextCurrent: false, hidesInactiveCloseButton: false, withTheme: theme)
+        inactive.contentView.isHidden = true
+        inactive.prepareForReuse()
+        inactive.apply(inactiveAttributes)
+        XCTAssertFalse(inactive.contentView.isHidden)
+        XCTAssertEqual(inactive.layer.zPosition, originalOrder)
+    }
+
     func testFlareAnimatesToSelectedTabWhenReorderEnds() throws {
         var currentIndex = 0
         let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: 300)
@@ -320,6 +352,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
     private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0, itemCount: Int = 10, activeDrag: Bool = false)
         -> (UICollectionView, TabsBarCollectionViewLayout) {
         self.itemCount = itemCount
+        selectedIndex = currentIndex
         let layout = TabsBarCollectionViewLayout()
         layout.scrollDirection = .horizontal
         layout.itemSize = CGSize(width: 120, height: 40)
@@ -344,7 +377,12 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath)
+        (cell as? TabsBarCell)?.applyCurrentStyle(isCurrent: indexPath.item == selectedIndex(),
+                                                isNextCurrent: indexPath.item + 1 == selectedIndex(),
+                                                hidesInactiveCloseButton: false,
+                                                withTheme: ThemeManager.shared.currentTheme)
+        return cell
     }
 }
 

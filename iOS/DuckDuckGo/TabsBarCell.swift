@@ -59,6 +59,7 @@ class TabsBarCell: UICollectionViewCell {
     var onRemove: (() -> Void)?
 
     private weak var model: Tab?
+    private var isCurrent = false
     private var isFireModeEnabled = false
 
     private var hidesCloseButtonUntilHover = false
@@ -79,11 +80,14 @@ class TabsBarCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         isPointerHovering = false
+        isCurrent = false
+        contentView.isHidden = false
     }
 
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
         super.apply(layoutAttributes)
-        layer.zPosition = CGFloat(layoutAttributes.zIndex)
+        // UIKit can raise a displaced tab during reordering; keep its background below the flare.
+        layer.zPosition = isCurrent ? 2 : min(CGFloat(layoutAttributes.zIndex), 0)
         tabPointerInteraction.invalidate()
         removeButton.interactions.compactMap { $0 as? UIPointerInteraction }.forEach { $0.invalidate() }
     }
@@ -218,6 +222,8 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
+        self.isCurrent = isCurrent
+        layer.zPosition = isCurrent ? 2 : min(layer.zPosition, 0)
         // Edge tabs overlap; an opaque inactive tab keeps the covered title from showing through.
         backgroundColor = isCurrent ? .clear : theme.tabsBarBackgroundColor
         if !isCurrent {

@@ -86,7 +86,25 @@ final class PermissionModel {
     /// Returns the domain permissions are saved under for the current webView URL.
     private var currentDomain: String? {
         guard let url = webView?.url else { return nil }
-        return url.isFileURL ? .localFilePermissionDomain : url.host
+        return url.isFileURL ? permissionDomain(for: url) : url.host
+    }
+
+    /// With the new prompts, local files have their own permission key, apart from `localhost`.
+    /// Without them, local files keep their old keys: `localhost` for a page URL, an empty host for a frame origin.
+    private var savesLocalFilePermissionsSeparately: Bool {
+        featureFlagger.isFeatureOn(.websitePermissionsPrompts)
+    }
+
+    /// The domain website permissions are saved under for a page.
+    func permissionDomain(for url: URL) -> String {
+        guard url.isFileURL else { return url.host ?? "" }
+        return savesLocalFilePermissionsSeparately ? .localFilePermissionDomain : .localhost
+    }
+
+    /// The domain website permissions are saved under for a frame's origin.
+    func permissionDomain(for origin: SecurityOrigin) -> String {
+        guard origin.protocol == "file", savesLocalFilePermissionsSeparately else { return origin.host }
+        return .localFilePermissionDomain
     }
 
     /// Creates the model for one tab; pass `webView` now or assign it later to start tracking its permissions.
@@ -751,19 +769,5 @@ extension String {
     /// The name shown for a permission domain in prompts and Settings.
     var permissionDisplayName: String {
         self == .localFilePermissionDomain ? UserText.websitePermissionsLocalFile : self
-    }
-}
-
-extension URL {
-    /// The domain website permissions are saved under for this page.
-    var permissionDomain: String {
-        isFileURL ? .localFilePermissionDomain : (host ?? "")
-    }
-}
-
-extension SecurityOrigin {
-    /// The domain website permissions are saved under for this origin.
-    var permissionDomain: String {
-        self.protocol == "file" ? .localFilePermissionDomain : host
     }
 }

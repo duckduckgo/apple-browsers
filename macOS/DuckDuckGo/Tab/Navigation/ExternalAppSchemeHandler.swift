@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import DDGNavigation
 import WebKit
@@ -24,6 +25,7 @@ import WebKit
 protocol PermissionModelProtocol {
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL?, decisionHandler: @escaping (Bool) -> Void)
     func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool
+    func permissionDomain(for origin: SecurityOrigin) -> String
 }
 extension PermissionModel: PermissionModelProtocol {}
 
@@ -117,7 +119,7 @@ extension ExternalAppSchemeHandler: NavigationResponder {
         let permissionType = PermissionType.externalScheme(scheme: scheme)
         // Check for cross-origin redirects first, then use domain from the url for user-entered app schemes, then use current website domain
         let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host
-        let domain = redirectDomain ?? (navigationAction.isUserEnteredUrl ? navigationAction.url.host ?? "" : navigationAction.sourceFrame.securityOrigin.permissionDomain)
+        let domain = redirectDomain ?? (navigationAction.isUserEnteredUrl ? navigationAction.url.host ?? "" : permissionModel.permissionDomain(for: navigationAction.sourceFrame.securityOrigin))
         permissionModel.permissions([permissionType], requestedForDomain: domain, url: externalUrl) { [workspace] isGranted in
             if isGranted {
                 workspace.open(externalUrl)

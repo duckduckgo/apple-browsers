@@ -2050,15 +2050,24 @@ extension PermissionModelTests {
         }
     }
 
-    func testWhenPageIsALocalFileThenPermissionsUseTheLocalFileDomainApartFromLocalhost() throws {
+    func testWhenNewPromptsAreEnabledThenLocalFilesUseTheirOwnDomainApartFromLocalhost() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
         let fileURL = URL(fileURLWithPath: "/tmp/page.html")
         let localhostURL = try XCTUnwrap(URL(string: "https://localhost:8080/page.html"))
 
-        XCTAssertEqual(fileURL.permissionDomain, .localFilePermissionDomain)
-        XCTAssertEqual(fileURL.securityOrigin.permissionDomain, .localFilePermissionDomain)
-        XCTAssertEqual(localhostURL.permissionDomain, "localhost")
-        XCTAssertEqual(localhostURL.securityOrigin.permissionDomain, "localhost")
+        XCTAssertEqual(model.permissionDomain(for: fileURL), .localFilePermissionDomain)
+        XCTAssertEqual(model.permissionDomain(for: fileURL.securityOrigin), .localFilePermissionDomain)
+        XCTAssertEqual(model.permissionDomain(for: localhostURL), "localhost")
+        XCTAssertEqual(model.permissionDomain(for: localhostURL.securityOrigin), "localhost")
         XCTAssertEqual(String.localFilePermissionDomain.permissionDisplayName, UserText.websitePermissionsLocalFile)
         XCTAssertEqual("localhost".permissionDisplayName, "localhost")
+    }
+
+    func testWhenNewPromptsAreDisabledThenLocalFilesKeepTheirPreviousDomains() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = false
+        let fileURL = URL(fileURLWithPath: "/tmp/page.html")
+
+        XCTAssertEqual(model.permissionDomain(for: fileURL), "localhost")
+        XCTAssertEqual(model.permissionDomain(for: fileURL.securityOrigin), "")
     }
 }

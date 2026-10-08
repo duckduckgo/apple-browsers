@@ -63,6 +63,7 @@ class TabsBarCell: UICollectionViewCell {
 
     private var hidesCloseButtonUntilHover = false
     private var isPointerHovering = false
+    private lazy var tabPointerInteraction = UIPointerInteraction(delegate: self)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -83,6 +84,8 @@ class TabsBarCell: UICollectionViewCell {
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
         super.apply(layoutAttributes)
         layer.zPosition = CGFloat(layoutAttributes.zIndex)
+        tabPointerInteraction.invalidate()
+        removeButton.interactions.compactMap { $0 as? UIPointerInteraction }.forEach { $0.invalidate() }
     }
 
     private func setUpSubviews() {
@@ -115,6 +118,9 @@ class TabsBarCell: UICollectionViewCell {
         removeButton.type = .tabSwitcher
         removeButton.setImage(DesignSystemImages.Glyphs.Size16.close)
         removeButton.isPointerInteractionEnabled = true
+        removeButton.pointerStyleProvider = { [weak self] button, _, _ in
+            self?.pointerStyle(for: button)
+        }
         removeButton.contentHorizontalAlignment = .left
         removeButton.addTarget(self, action: #selector(onRemovePressed), for: .touchUpInside)
 
@@ -122,7 +128,7 @@ class TabsBarCell: UICollectionViewCell {
         contentView.addSubview(titleStackView)
         contentView.addSubview(separatorView)
         contentView.addSubview(removeButton)
-        contentView.addInteraction(UIPointerInteraction(delegate: self))
+        contentView.addInteraction(tabPointerInteraction)
         contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleHover)))
 
         let titleTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
@@ -166,7 +172,8 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
-        let hovering = recognizer.state == .began || recognizer.state == .changed
+        let hovering = (recognizer.state == .began || recognizer.state == .changed)
+            && visiblePointerRect(in: contentView).contains(recognizer.location(in: contentView))
         guard hovering != isPointerHovering else { return }
         isPointerHovering = hovering
         updateCloseButtonVisibility()
@@ -211,6 +218,8 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
+        // Edge tabs overlap; an opaque inactive tab keeps the covered title from showing through.
+        backgroundColor = isCurrent ? .clear : theme.tabsBarBackgroundColor
         if !isCurrent {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
@@ -233,6 +242,7 @@ class TabsBarCell: UICollectionViewCell {
     /// longer exists in the tabs model (e.g. during a desync between the layout and the model). The
     /// cell is left visually empty and non-interactive; a subsequent refresh replaces it.
     func configurePlaceholder(withTheme theme: Theme) {
+        backgroundColor = .clear
         self.model?.removeObserver(self)
         self.model = nil
         onRemove = nil
@@ -301,9 +311,43 @@ extension TabsBarCell: TabObserver {
 
 extension TabsBarCell: UIPointerInteractionDelegate {
 
+    func pointerInteraction(_ interaction: UIPointerInteraction,
+                            regionFor request: UIPointerRegionRequest,
+                            defaultRegion: UIPointerRegion) -> UIPointerRegion? {
+        guard let view = interaction.view else { return nil }
+        let rect = visiblePointerRect(in: view)
+        return rect.contains(request.location) ? UIPointerRegion(rect: rect) : nil
+    }
+
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
         guard let view = interaction.view else { return nil }
-        return .init(effect: .automatic(.init(view: view)))
+        return pointerStyle(for: view)
+    }
+
+    private func pointerStyle(for view: UIView) -> UIPointerStyle? {
+        let rect = visiblePointerRect(in: view)
+        guard !rect.isEmpty else { return nil }
+        let parameters = UIPreviewParameters()
+        parameters.visiblePath = UIBezierPath(roundedRect: rect, cornerRadius: Self.cornerRadius)
+        let preview = UITargetedPreview(view: view, parameters: parameters)
+        return .init(effect: .hover(preview, prefersScaledContent: false))
+    }
+
+    func visiblePointerRect(in view: UIView) -> CGRect {
+        guard let collectionView = superview as? UICollectionView else { return view.bounds }
+        var rect = frame.intersection(collectionView.bounds.inset(by: collectionView.adjustedContentInset))
+        // A pointer preview is drawn above the strip, so explicitly exclude overlapping tabs.
+        for cell in collectionView.visibleCells where cell !== self && cell.layer.zPosition > layer.zPosition {
+            let overlap = rect.intersection(cell.frame)
+            guard !overlap.isEmpty else { continue }
+            if overlap.minX <= rect.minX {
+                rect = CGRect(x: overlap.maxX, y: rect.minY, width: rect.maxX - overlap.maxX, height: rect.height)
+            } else {
+                rect.size.width = overlap.minX - rect.minX
+            }
+        }
+        guard !rect.isEmpty else { return .zero }
+        return view.convert(rect, from: collectionView).intersection(view.bounds)
     }
 
 }

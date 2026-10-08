@@ -99,7 +99,7 @@ final class TabsBarView: UIView {
     }
 }
 
-/// Keeps the selected tab at the strip's edge while the other tabs scroll underneath it.
+/// Overlaps tabs at the strip's edges, keeping the selected tab above the stack.
 final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
 
     var currentIndex: (() -> Int?)?
@@ -109,28 +109,30 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
     }
 
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        let attributes = super.layoutAttributesForElements(in: rect)
+        guard let originalAttributes = super.layoutAttributesForElements(in: rect) else { return nil }
+        let attributes = originalAttributes.compactMap { layoutAttributesForItem(at: $0.indexPath) }
         guard let collectionView,
               let index = currentIndex?(),
               index < collectionView.numberOfItems(inSection: 0),
+              !attributes.contains(where: { $0.indexPath.item == index }),
               let current = layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else {
             return attributes
         }
         // Include the selected tab even when its original position is outside the visible rect.
-        return (attributes ?? []).filter { $0.indexPath != current.indexPath } + [current]
+        return attributes + [current]
     }
 
     override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
         guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes,
-              let collectionView,
-              indexPath.item == currentIndex?() else {
+              let collectionView else {
             return super.layoutAttributesForItem(at: indexPath)
         }
-        // The flare sits above inactive tabs and below the selected tab's content.
-        attributes.zIndex = 2
-        guard !collectionView.hasActiveDrag else { return attributes }
         let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
         let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
+        // Tabs nearer the middle cover the edge tabs. The flare (1) and selected tab (2) stay above them.
+        let middle = (leading + trailing + attributes.frame.width) / 2
+        attributes.zIndex = indexPath.item == currentIndex?() ? 2 : -Int(abs(attributes.center.x - middle))
+        guard !collectionView.hasActiveDrag else { return attributes }
         attributes.frame.origin.x = min(max(attributes.frame.minX, leading), trailing)
         return attributes
     }

@@ -1280,12 +1280,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         assertAppOpenDraftAndToolArePreserved()
     }
 
-    func testWhenOnboardingLocksQueuedFocusThenKeyboardDoesNotActivate() {
+    func testWhenOnboardingLocksQueuedAutomaticFocusThenKeyboardDoesNotActivate() {
         var scheduledFocus: [() -> Void] = []
         sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
         showAppOpenInput()
         var completions: [Bool] = []
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, onFocus: { completions.append($0) })
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, allowsInactiveFocus: true, onFocus: { completions.append($0) })
         sut.setOnboardingControlsLocked(true)
 
         scheduledFocus.removeFirst()()

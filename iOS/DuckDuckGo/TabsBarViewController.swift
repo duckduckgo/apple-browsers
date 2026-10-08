@@ -908,7 +908,10 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
         }, completion: { [weak self] _ in
             self?.refreshVisibleCellStyles()
         })
-        coordinator.drop(item.dragItem, toItemAt: destinationIndexPath)
+        coordinator.drop(item.dragItem, toItemAt: destinationIndexPath).addCompletion { [weak self] position in
+            guard position == .end, self?.tabsModel?.currentTab === tab else { return }
+            self?.scrollToSelectedTab()
+        }
     }
 
     private func refreshVisibleCellStyles() {

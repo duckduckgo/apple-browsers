@@ -167,7 +167,8 @@ extension MainViewController {
 
     func captureRestingNewTabPageSnapshot() {
         restingNewTabPageSnapshot = nil
-        guard let page = newTabPageViewController, page.hasInlineSearchInput else { return }
+        guard let page = newTabPageViewController,
+              (page as? NewTabPageInputTransitionSource)?.canAnimateSearchInput == true else { return }
         (page as? RedesignedNewTabPageViewController)?.finishEntranceAnimation()
         view.layoutIfNeeded()
         let bounds = page.view.bounds
@@ -187,6 +188,10 @@ extension MainViewController {
     }
 
     private func makeRestingNewTabPageSnapshot() -> UIView? {
+        guard (newTabPageViewController as? NewTabPageInputTransitionSource)?.canAnimateSearchInput == true else {
+            restingNewTabPageSnapshot = nil
+            return nil
+        }
         guard let cached = restingNewTabPageSnapshot else { return nil }
         // Layout or favorites changes invalidate the captured page; hand off to the current live page instead.
         let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false

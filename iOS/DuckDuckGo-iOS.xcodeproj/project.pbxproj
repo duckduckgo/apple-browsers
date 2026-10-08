@@ -1750,6 +1750,7 @@
 		FCFC00031F00000000020001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000020001 /* DDGError */; };
 		FCFC00031F00000000030001 /* URLPredictor in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000030001 /* URLPredictor */; };
 		FDEC1A2B30260001000000F1 /* IOSMonthlyFreeTrialDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */; };
+		D68000012026100100000001 /* NewTabPageOnboardingCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68000012026100100000002 /* NewTabPageOnboardingCoordinatorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -3556,6 +3557,7 @@
 		FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardViewTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000102 /* UTIMultiTabPromotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIMultiTabPromotionTests.swift; sourceTree = "<group>"; };
 		FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSMonthlyFreeTrialDeciderTests.swift; sourceTree = "<group>"; };
+		D68000012026100100000002 /* NewTabPageOnboardingCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOnboardingCoordinatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -4771,6 +4773,7 @@
 				9FAB4B752E98C70B00D8298A /* HomeMessageViewModelTests.swift */,
 				DA6A00012026091600000004 /* DaxGreetingActivityStoreTests.swift */,
 				DA6A00012026091600000002 /* DaxGreetingServiceTests.swift */,
+				D68000012026100100000002 /* NewTabPageOnboardingCoordinatorTests.swift */,
 				6F03CB002C32ED42004179A8 /* NewTabPageMessagesModelTests.swift */,
 				D68F00012609160000000001 /* RemoteMessageImpressionReporterTests.swift */,
 				6F40D15C2C34436200BF22F0 /* HomePageDisplayDailyPixelBucketTests.swift */,
@@ -9611,6 +9614,7 @@
 				CCC9F3BA2EA66E0F00D442CA /* VPNSubscriptionPromotionHelperTests.swift in Sources */,
 				DA6A00012026091600000003 /* DaxGreetingActivityStoreTests.swift in Sources */,
 				DA6A00012026091600000001 /* DaxGreetingServiceTests.swift in Sources */,
+				D68000012026100100000001 /* NewTabPageOnboardingCoordinatorTests.swift in Sources */,
 				6F03CB022C32ED47004179A8 /* NewTabPageMessagesModelTests.swift in Sources */,
 				D68F00012609160000000002 /* RemoteMessageImpressionReporterTests.swift in Sources */,
 				D68F00012609160000000004 /* RemoteMessagingModelMigrationTests.swift in Sources */,

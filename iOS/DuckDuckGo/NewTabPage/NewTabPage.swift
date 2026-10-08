@@ -90,6 +90,7 @@ protocol NewTabPage: UIViewController,
 }
 
 protocol NewTabPageInputTransitionSource: AnyObject {
+    var canAnimateSearchInput: Bool { get }
     var searchInputView: UIView? { get }
     func searchInputTransitionFrame(in view: UIView) -> CGRect?
     func setSearchInputEditing(_ isEditing: Bool)

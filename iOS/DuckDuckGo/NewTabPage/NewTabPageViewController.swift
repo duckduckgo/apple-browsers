@@ -61,16 +61,15 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         newTabPageViewModel.isFavoritesHidden = hidden
     }
 
-    private lazy var borderView = StyledTopBottomBorderView()
-
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator
+
+    private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabPageViewModel: NewTabPageViewModel
     let messagesModel: NewTabPageMessagesModel
     let favoritesModel: FavoritesViewModel
     private let associatedTab: Tab
 
-    var isShowingDuckAICompletionDialog: Bool { onboardingCoordinator.isShowingDuckAICompletionDialog }
     private var isBorderSuppressedForChromeLayout = false
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -116,7 +115,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                                onboardingFlowProvider: onboardingFlowProvider,
                                                                floatingUIManager: floatingUIManager,
                                                                tutorialSettings: tutorialSettings,
-                                                               contextualContentProvider: contextualContentProvider)
+                                                               contextualContentProvider: contextualContentProvider,
+                                                               unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.associatedTab = tab
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
@@ -196,8 +196,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        onboardingCoordinator.pageWillDisappear()
         isRemoteMessageSurfacePresented = false
+        onboardingCoordinator.pageWillDisappear()
         notifyRemoteMessageSurfaceChanged()
     }
 
@@ -339,7 +339,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - RMF
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        isRemoteMessageSurfacePresented && hasAppearedRemoteMessage(withID: messageID)
+        isRemoteMessageSurfacePresented && !onboardingCoordinator.isPresentingDialog && hasAppearedRemoteMessage(withID: messageID)
     }
 
     func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
@@ -369,13 +369,14 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 }
 
 extension NewTabPageViewController: NewTabPageOnboardingHosting {
-
-    func setOnboardingContentHidden(_ hidden: Bool) {
-        if hidden {
+    func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
+        // The transparent Duck.ai completion dialog needs the legacy NTP background beneath it.
+        if hidden && dialog == .contextual {
             newTabPageViewModel.startOnboarding()
         } else {
             newTabPageViewModel.finishOnboarding()
         }
+        notifyRemoteMessageSurfaceChanged()
     }
 
     func showNextDaxDialog() {
@@ -388,14 +389,6 @@ extension NewTabPageViewController: NewTabPageOnboardingHosting {
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
         onboardingCoordinator.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message, textEntryMode: textEntryMode)
-    }
-
-    func showDuckAIOnboardingCompletionDialog(message: String) {
-        onboardingCoordinator.showDuckAIOnboardingCompletionDialog(message: message)
-    }
-
-    func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
-        onboardingCoordinator.showNextDaxDialogNew(dialogProvider: dialogProvider, factory: factory)
     }
 
     func refreshContextualOnboardingDialogLayout() {

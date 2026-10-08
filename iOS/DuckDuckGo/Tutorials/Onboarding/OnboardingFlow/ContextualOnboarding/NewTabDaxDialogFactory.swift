@@ -58,7 +58,7 @@ protocol NewTabDaxDialogProviding {
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
-    private var delegate: OnboardingNavigationDelegate?
+    private weak var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping

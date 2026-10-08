@@ -20,6 +20,7 @@ import Foundation
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
+import SwiftUIExtensions
 
 struct PreferencesWebsitePermissionSiteRowView: View {
     private enum Constants {
@@ -40,7 +41,12 @@ struct PreferencesWebsitePermissionSiteRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            FaviconView(url: faviconURL, size: Constants.faviconSize)
+            if let faviconURL {
+                FaviconView(url: faviconURL, size: Constants.faviconSize)
+            } else {
+                // Local files have no website favicon: show the name's letters, as for a site without one
+                LetterIconView(title: domain, size: Constants.faviconSize)
+            }
 
             Text(domain)
                 .font(.system(size: 13, weight: .medium))

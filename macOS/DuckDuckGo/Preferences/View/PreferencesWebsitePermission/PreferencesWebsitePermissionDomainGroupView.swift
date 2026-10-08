@@ -17,6 +17,7 @@
 //
 import DesignResourcesKit
 import SwiftUI
+import SwiftUIExtensions
 
 /// A domain and the permissions stored for it.
 ///
@@ -75,7 +76,12 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
 
     private var domainHeader: some View {
         HStack(spacing: Constants.faviconSpacing) {
-            FaviconView(url: group.faviconURL, size: Constants.faviconSize)
+            if let faviconURL = group.faviconURL {
+                FaviconView(url: faviconURL, size: Constants.faviconSize)
+            } else {
+                // Local files have no website favicon: show the name's letters, as for a site without one
+                LetterIconView(title: group.displayName, size: Constants.faviconSize)
+            }
 
             Text(group.displayName)
                 .font(.system(size: 13, weight: .medium))

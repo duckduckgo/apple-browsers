@@ -145,6 +145,34 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(deviceNameProviderCallCount, 0)
     }
 
+    func testSyncSetupFlowVersionFollowsLocalCapabilities() {
+        for (v2Enabled, v21Enabled, expected) in [
+            (false, false, "v1"), (false, true, "v1"),
+            (true, false, "v2"), (true, true, "v2.1")
+        ] {
+            featureFlagger.isFeatureOn[FeatureFlag.syncCanUseV2ConnectFlow.rawValue] = v2Enabled
+            featureFlagger.isFeatureOn[FeatureFlag.syncCanUseExchangeV2Point1.rawValue] = v21Enabled
+            XCTAssertEqual(syncDialogController.syncSetupFlowVersion, expected)
+        }
+    }
+
+    func testJoinReportPixelHasCountAndDailyFrequencyAndNegotiatedDimensions() {
+        for didSucceed in [true, false] {
+            let report = PairingV2JoinReport(hostHasAccount: false, hostKind: .thirdParty,
+                                            joinerHasAccount: true, joinerKind: .ddg,
+                                            protocolVersion: "2.1", didSucceed: didSucceed)
+            syncDialogController.controllerDidSendPairingV2JoinReport(report)
+
+            let call = pixelKitMock.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "sync_setup_joiner_recovery_code_done_\(didSucceed ? "success" : "failed")_mac")
+            XCTAssertEqual(call?.frequency, .dailyAndCount)
+            XCTAssertEqual(call?.pixel.parameters, [
+                "host_has_account": "false", "host_kind": "3party",
+                "joiner_has_account": "true", "joiner_kind": "ddg", "protocol_version": "2.1"
+            ])
+        }
+    }
+
     func testSyncSetupEndedFailedRelayEventIncludesPairingFailureContext() {
         let context = PairingV2FailureContext(stage: .scannerSendHello, kind: .unavailable)
         let event = SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,

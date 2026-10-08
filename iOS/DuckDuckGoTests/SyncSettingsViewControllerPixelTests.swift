@@ -301,6 +301,35 @@ final class SyncSettingsViewControllerPixelTests {
         })
     }
 
+    @Test("Sync setup flow version follows local capability flags", arguments: [
+        ([FeatureFlag](), "v1"),
+        ([.syncCanUseV2ConnectFlow], "v2"),
+        ([.syncCanUseV2ConnectFlow, .syncCanUseExchangeV2Point1], "v2.1"),
+        ([.syncCanUseExchangeV2Point1], "v1")
+    ])
+    func setupFlowVersion(flags: [FeatureFlag], expected: String) {
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: flags)
+        #expect(vc.syncSetupPixelFlowVersion == expected)
+    }
+
+    @Test("Join report fires the matching count and daily pixel", arguments: [true, false])
+    func joinReportPixel(didSucceed: Bool) {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+        let report = PairingV2JoinReport(hostHasAccount: false, hostKind: .thirdParty,
+                                        joinerHasAccount: true, joinerKind: .ddg,
+                                        protocolVersion: "2.1", didSucceed: didSucceed)
+
+        vc.controllerDidSendPairingV2JoinReport(report)
+
+        let call = pixelKitMock.actualFireCalls.last
+        #expect(call?.pixel.name == "sync_setup_joiner_recovery_code_done_\(didSucceed ? "success" : "failed")")
+        #expect(call?.frequency == .dailyAndCount)
+        #expect(call?.pixel.parameters == [
+            "host_has_account": "false", "host_kind": "3party",
+            "joiner_has_account": "true", "joiner_kind": "ddg", "protocol_version": "2.1"
+        ])
+    }
+
     private func makeViewController(source: String?, enabledFeatureFlags: [FeatureFlag]) -> SyncSettingsViewController {
         SyncSettingsViewController(
             syncService: ddgSyncing,

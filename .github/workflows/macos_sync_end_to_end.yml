@@ -231,6 +231,7 @@ jobs:
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -only-testing:SyncE2EUITests/CriticalPathsV2Tests/testCanSyncData \
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
@@ -244,6 +245,26 @@ jobs:
         if [ -f log_stream.pid ]; then
           kill $(cat log_stream.pid) || true
         fi
+
+    - name: Collect focused Sync diagnostics
+      if: always()
+      working-directory: macOS
+      run: |
+        {
+          echo "commit=${{ github.sha }} runner=${{ matrix.runner }} attempt=${{ github.run_attempt }}"
+          sw_vers
+          xcodebuild -version
+          grep 'SYNC-DIAG' ui-tests.log || true
+          grep 'SYNC-DIAG' app-console.log || true
+        } > sync-diagnostics.log
+
+    - name: Upload focused Sync diagnostics
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: "sync-diagnostics-${{ matrix.runner }}"
+        path: "macOS/sync-diagnostics.log"
+        retention-days: 7
 
     - name: Check for test failures
       id: check-failures

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {
@@ -362,6 +363,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     public func startExchangeMode() async throws -> PairingInfo {
+        logRelayDiagnostics("startExchangeMode")
         guard !isPairingV2PresentationEnabled else {
             return try await startPairingV2PresenterMode()
         }
@@ -375,6 +377,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     public func startConnectMode() async throws -> PairingInfo {
+        logRelayDiagnostics("startConnectMode")
         guard !isPairingV2PresentationEnabled else {
             return try await startPairingV2PresenterMode()
         }
@@ -387,7 +390,15 @@ public class SyncConnectionController: SyncConnectionControlling {
         return pairingInfo
     }
 
+    private func logRelayDiagnostics(_ event: String) {
+        guard ProcessInfo.processInfo.environment["SYNC_RELAY_DIAGNOSTICS"] == "1" else { return }
+        let scanning = isPairingV2ScanningEnabled
+        let code = dependencies.syncFeatureFlags.isPairingV2CodeEnabled()
+        Logger.sync.info("SYNC-DIAG event=\(event, privacy: .public) v2Scanning=\(scanning) v2Code=\(code) hasAccount=\(self.syncService.account != nil)")
+    }
+
     public func cancel() async {
+        logRelayDiagnostics("cancel")
         await state.setCodeHandlingInFlight(false)
         await state.stopConnectMode()
         await state.stopExchangeMode()

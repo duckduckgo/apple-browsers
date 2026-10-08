@@ -57,8 +57,10 @@ final class CriticalPathsV2Tests: XCTestCase {
     var debugMenuBarItem: XCUIElement!
 
     override func setUp() {
+        print("SYNC-DIAG test=\(name) phase=setup time=\(Date().ISO8601Format())")
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
+        app.launchEnvironment["SYNC_RELAY_DIAGNOSTICS"] = "1"
         app.launchEnvironment["FEATURE_FLAGS"] = "simplifiedSyncSetupV2=true"
         app.launch()
         ensureMainWindowOpen()
@@ -67,6 +69,7 @@ final class CriticalPathsV2Tests: XCTestCase {
     }
 
     override func tearDown() {
+        print("SYNC-DIAG test=\(name) phase=teardown time=\(Date().ISO8601Format()) failures=\(testRun?.failureCount ?? 0)")
         cleanupAndResetData()
         app.typeKey(",", modifierFlags: [.command, .option, .shift])
     }

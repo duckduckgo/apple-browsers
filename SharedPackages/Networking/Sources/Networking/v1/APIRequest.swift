@@ -65,6 +65,16 @@ public struct APIRequest {
 
         Logger.networking.debug("Request completed: \(request.httpMethod ?? "") \(request.url?.shortDescription ?? "") response code: \(httpResponse.statusCode)")
 
+        if relayDiagnosticsEnabled {
+            // Allowlist correlation/routing headers only: never log cookies, credentials or message bodies.
+            let headerNames = ["date", "server", "via", "age", "x-cache", "x-request-id", "x-amzn-requestid",
+                               "x-amzn-trace-id", "x-amz-cf-id", "cf-ray", "x-served-by"]
+            let headers = headerNames.compactMap { name in
+                httpResponse.value(forHTTPHeaderField: name).map { "\(name)=\($0)" }
+            }.joined(separator: " ")
+            Logger.networking.info("SYNC-DIAG response method=\(request.httpMethod ?? "", privacy: .public) host=\(httpResponse.url?.host ?? "", privacy: .public) path=\(httpResponse.url?.path ?? "", privacy: .public) status=\(httpResponse.statusCode) bytes=\(data?.count ?? 0) headers=\(headers, privacy: .public)")
+        }
+
         var data = data
         if requirements.contains(.allowHTTPNotModified), httpResponse.httpStatus == .notModified {
             data = nil // avoid returning empty data
@@ -85,8 +95,23 @@ public struct APIRequest {
         return (data, httpResponse)
     }
 
+    private var relayDiagnosticsEnabled: Bool {
+        ProcessInfo.processInfo.environment["SYNC_RELAY_DIAGNOSTICS"] == "1"
+            && request.url?.path.hasPrefix("/sync/v2/exchange/") == true
+    }
+
     @available(*, deprecated, message: "Please use 'APIService' instead.")
     public func fetch() async throws -> APIResponse {
+        let diagnosticStart = ProcessInfo.processInfo.systemUptime
+        if relayDiagnosticsEnabled {
+            Logger.networking.info("SYNC-DIAG start method=\(request.httpMethod ?? "", privacy: .public) host=\(request.url?.host ?? "", privacy: .public) path=\(request.url?.path ?? "", privacy: .public) cachePolicy=\(request.cachePolicy.rawValue)")
+        }
+        defer {
+            if relayDiagnosticsEnabled {
+                let elapsed = ProcessInfo.processInfo.systemUptime - diagnosticStart
+                Logger.networking.info("SYNC-DIAG end method=\(request.httpMethod ?? "", privacy: .public) path=\(request.url?.path ?? "", privacy: .public) elapsedSeconds=\(elapsed)")
+            }
+        }
         Logger.networking.debug("Requesting \(request.httpMethod ?? "") \(request.url?.shortDescription ?? ""), headers \(String(describing: request.allHTTPHeaderFields ?? [:]))")
         let (data, response) = try await fetch(for: request)
         return try validateAndUnwrap(data: data, response: response)

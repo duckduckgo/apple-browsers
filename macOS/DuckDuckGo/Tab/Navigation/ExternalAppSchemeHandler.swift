@@ -132,16 +132,18 @@ extension ExternalAppSchemeHandler: NavigationResponder {
 
     /// The website the app link's permission is saved for.
     private func permissionDomain(for navigationAction: NavigationAction) -> String {
-        // Cross-origin redirect: the website that redirected to the app
-        if let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host {
-            return redirectDomain
+        let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host
+
+        return if let redirectDomain {
+            // Cross-origin redirect: the website that redirected to the app
+            redirectDomain
+        } else if navigationAction.isUserEnteredUrl {
+            // Typed in the address bar: the app link's own host, if any
+            navigationAction.url.host ?? ""
+        } else {
+            // Link on a page: the website it was clicked on
+            permissionModel.permissionDomain(for: navigationAction.sourceFrame.securityOrigin)
         }
-        // Typed in the address bar: the app link's own host, if any
-        if navigationAction.isUserEnteredUrl {
-            return navigationAction.url.host ?? ""
-        }
-        // Link on a page: the website it was clicked on
-        return permissionModel.permissionDomain(for: navigationAction.sourceFrame.securityOrigin)
     }
 
     func navigationDidFinish(_ navigation: Navigation) {

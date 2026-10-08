@@ -55,6 +55,13 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     /// One reply is enough for `sendNativeMessage`, so the wait has a bound.
     private static let singleMessageTimeout: TimeInterval = 10
 
+    /// Where an extension came from, which gives the Chrome identifier of a Web Store install.
+    private let installationStore: InstalledWebExtensionStoring?
+
+    init(installationStore: InstalledWebExtensionStoring? = nil) {
+        self.installationStore = installationStore
+    }
+
     /// Sessions of open ports, keyed by the port that owns each one.
     private var sessions: [ObjectIdentifier: NativeMessagingHostSession] = [:]
 
@@ -214,7 +221,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     private func callerOrigin(for context: WKWebExtensionContext,
                               hostName: String,
                               manifest: NativeMessagingHostManifest) throws -> String {
-        let chromeOrigin = context.webExtension.chromeExtensionOrigin
+        let chromeOrigin = context.webExtension.chromeExtensionOrigin ?? webStoreOrigin(of: context)
 
         // An empty list is still a list: it trusts nobody, so it must not fall through.
         if let allowedOrigins = manifest.allowedOrigins {
@@ -226,5 +233,13 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         }
 
         return chromeOrigin ?? context.baseURL.absoluteString
+    }
+
+    /// The Chrome origin of an extension installed from the Chrome Web Store, whose manifest carries no `key`:
+    /// the Web Store keeps it in the package header instead.
+    private func webStoreOrigin(of context: WKWebExtensionContext) -> String? {
+        guard let identity = installationStore?.installedExtension(withUniqueIdentifier: context.uniqueIdentifier)?.storeIdentity,
+              identity.store == .chromeWebStore else { return nil }
+        return "chrome-extension://\(identity.id)/"
     }
 }

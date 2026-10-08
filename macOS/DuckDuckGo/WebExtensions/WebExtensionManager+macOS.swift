@@ -118,7 +118,7 @@ enum WebExtensionManagerFactory {
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
-            nativeMessagingHandler: NativeMessagingHandler(),
+            nativeMessagingHandler: NativeMessagingHandler(installationStore: installationStore),
             scriptletConfiguration: scriptletConfiguration
         )
 

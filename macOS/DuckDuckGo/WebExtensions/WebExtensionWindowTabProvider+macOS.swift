@@ -102,6 +102,9 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         case "password-manager":
             windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
             return true
+        case "extensions" where Application.appDelegate.internalUserDecider.isInternalUser:
+            windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
+            return true
         default:
             return false
         }

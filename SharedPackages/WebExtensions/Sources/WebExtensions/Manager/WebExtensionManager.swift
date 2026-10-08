@@ -133,6 +133,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Receives the API compatibility reports of extension pages.
     private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
 
+#if os(macOS)
+    /// The keyboard shortcuts the user picked for extension commands.
+    public let commandShortcuts = WebExtensionCommandShortcutStore()
+#endif
+
     /// Records the Chrome pages extensions try to open, which the browser doesn't have.
     private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
 
@@ -872,6 +877,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     func notifyUpdate() {
+#if os(macOS)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            commandShortcuts.apply(to: loadedExtensions)
+        }
+#endif
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)

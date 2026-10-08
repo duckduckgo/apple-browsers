@@ -38,11 +38,14 @@ final class PrivacyDashboardViewController: UIViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingManager: ContentBlockerRulesManager
+    private let networkSignalsProvider: NetworkSignalsProviding
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let featureFlagger: FeatureFlagger
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
+    private lazy var brokenSiteReporter: BrokenSiteReporter = { [featureFlagger] in
         BrokenSiteReporter(pixelHandler: { parameters in
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: parameters, featureFlagger: featureFlagger)
             PixelKit.fire(Pixel.Event.brokenSiteReport,
                           options: PixelKit.Options(additionalParameters: parameters,
                                                     allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
@@ -76,7 +79,9 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          networkSignalsProvider: NetworkSignalsProviding = AppDependencyProvider.shared.networkSignalsProvider,
+          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -87,8 +92,10 @@ final class PrivacyDashboardViewController: UIViewController {
                                                                 eventMapping: privacyDashboardEvents)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
+        self.networkSignalsProvider = networkSignalsProvider
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.featureFlagger = featureFlagger
 
         super.init(nibName: nil, bundle: nil)
 
@@ -254,6 +261,10 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
         }
     }
 
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController) {
+        networkSignalsProvider.prefetchSignals()
+    }
+
     func privacyDashboardControllerDidRequestShowAlertForMissingDescription(_ privacyDashboardController: PrivacyDashboardController) {
         let alert = UIAlertController(title: UserText.brokenSiteReportMissingDescriptionAlertTitle,
                                       message: UserText.brokenSiteReportMissingDescriptionAlertDescription,
@@ -337,7 +348,10 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        async let asyncBreakageReportData = collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
+
+        let (breakageReportData, networkSignals) = await (asyncBreakageReportData, asyncNetworkSignals)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance
@@ -395,7 +409,8 @@ extension PrivacyDashboardViewController {
                                 isAfterTabTermination: breakageAdditionalInfo.isAfterTabTermination,
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
-                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion)
+                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
+                                networkSignals: networkSignals)
     }
 
 }

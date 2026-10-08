@@ -60,9 +60,10 @@ protocol TabDelegate: AnyObject {
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
+    /// Prompts in the new tab are attributed to `entrySource`; nil leaves them unattributed.
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource)
+             entrySource: AIChatEntryPointSource?)
 
     /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
     /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.

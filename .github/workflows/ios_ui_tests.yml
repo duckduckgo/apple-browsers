@@ -36,7 +36,7 @@ jobs:
     name: UI Tests
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
-    runs-on: [image:osx-tahoe-26, ui-tests]
+    runs-on: [image:osx-tahoe-27, ui-tests]
     timeout-minutes: 45
 
     steps:
@@ -60,7 +60,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
+        preferred-versions: "27.0"
 
     - name: Record simulator runtime diagnostics
       continue-on-error: true

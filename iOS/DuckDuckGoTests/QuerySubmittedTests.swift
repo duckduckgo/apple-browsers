@@ -22,6 +22,8 @@ import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
+import Testing
+import FeatureFlags_iOS
 
 @testable import DuckDuckGo
 
@@ -225,6 +227,18 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertGreaterThan(sendButton.bounds.width, titleWidth)
     }
 
+    func testWhenTheTermsDisclaimerNamesCreateInIPadDuckAIModeThenSendReadsCreate() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+
+        omniBarView.termsOfServiceSendButton = .create
+        omniBarView.updateAIChatSendButton(hasText: true)
+
+        XCTAssertEqual(omniBarView.aiChatSendButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+        XCTAssertEqual(omniBarView.aiChatSendButton.accessibilityLabel, UserText.duckAICreateButtonTitle)
+        XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .default, "Return still adds a new line")
+    }
+
     func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenAnEmptyPromptKeepsTheVoiceButton() throws {
         let sut = makeSUTShowingTermsOfService()
         let omniBarView = try expandDuckAIPanel(of: sut)
@@ -248,7 +262,32 @@ class QuerySubmittedTests: XCTestCase {
 
         XCTAssertFalse(shouldChange)
         XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(mock.promptTermsAccepted, false, "Only Ask or Create claims acceptance")
         XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .webSearch)
+    }
+
+    /// Same as iPhone: Ask with the disclaimer on screen accepts, so duck.ai doesn't show its own card for this prompt.
+    func testWhenAskIsTappedWithTheTermsDisclaimerShownInIPadDuckAIModeThenThePromptCarriesTermsAccepted() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+
+        sut.onAIChatSendPressed()
+
+        XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(mock.promptTermsAccepted, true)
+        XCTAssertTrue(termsStore.hasAccepted)
+    }
+
+    func testWhenAskIsTappedAfterAnEarlierAcceptanceInIPadDuckAIModeThenThePromptCarriesTermsAccepted() throws {
+        termsStore.recordWebReport()
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+
+        sut.onAIChatSendPressed()
+
+        XCTAssertEqual(mock.promptTermsAccepted, true)
     }
 
     // MARK: - Helper Methods
@@ -286,11 +325,46 @@ class QuerySubmittedTests: XCTestCase {
     }
 }
 
+@MainActor
+final class NewTabPageAppOpenFocusTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("App-open fallback focuses mounted legacy input only for a valid request", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func appOpenFocusWithoutUnifiedInput(flagOn: Bool, isRequestValid: Bool) {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = sut
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        defer {
+            sut.barView.textField.resignFirstResponder()
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+        #expect(sut.barView.textField.window != nil)
+        var actualResult: Bool?
+
+        sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { isRequestValid }) { actualResult = $0 }
+
+        #expect(sut.barView.textField.isFirstResponder == isRequestValid)
+        #expect(actualResult == isRequestValid)
+    }
+}
+
 final class MockOmniBarDelegate: OmniBarDelegate {
 
     var query: String = ""
     var promptQuery: String = ""
+    var promptTermsAccepted: Bool?
     var suggestion: Suggestion?
+    var promptControlValues: IPadDuckAIControlValues?
+    var onPromptSubmittedAction: (() -> Void)?
     var wasOnOmniQuerySubmittedCalled = false
     var wasOnPromptSubmittedCalled = false
     var wasOnOmniSuggestionSelectedCalled = false
@@ -307,7 +381,10 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     func clear() {
         query = ""
         promptQuery = ""
+        promptTermsAccepted = nil
         suggestion = nil
+        promptControlValues = nil
+        onPromptSubmittedAction = nil
         wasOnOmniQuerySubmittedCalled = false
         wasOnPromptSubmittedCalled = false
         wasOnOmniSuggestionSelectedCalled = false
@@ -330,9 +407,12 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return nil
     }
 
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues, termsAccepted: Bool) {
         wasOnPromptSubmittedCalled = true
         promptQuery = query
+        promptControlValues = controlValues
+        promptTermsAccepted = termsAccepted
+        onPromptSubmittedAction?()
     }
 
     func onAbortPressed() {

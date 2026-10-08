@@ -60,6 +60,7 @@ import PixelKit
 import WideEvent
 import SERPSettings
 import PrivacyConfig
+import PrivacyDashboard
 import PrivacyStats
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -174,6 +175,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
 
     @MainActor
+    private(set) lazy var autofillImportPromoObserver = AutofillImportPromoObserver(
+        loginImportStateProvider: AutofillLoginImportState(featureFlagger: featureFlagger)
+    )
+
+    @MainActor
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
@@ -284,7 +290,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
         promptHandler: AIChatPromptHandler.shared,
-        aiChatTabManaging: windowControllersManager
+        aiChatTabManaging: windowControllersManager,
+        entryPointReporter: AIChatEntryPointReporter(sourceHandler: aiChatConversationSourceHandler)
     )
     /// App-scoped mailbox that carries the surface that opened a Duck.ai chat to the conversation pixels.
     /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
@@ -384,6 +391,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - VPN
 
     public let vpnSettings = VPNSettings(defaults: .netP)
+    let networkSignalsProvider: NetworkSignalsProviding
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
         featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
@@ -715,6 +723,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        // Created at launch so the VPN issues observer catches notifications before the first report
+        networkSignalsProvider = NetworkSignalsProvider(
+            pathProvider: NetworkPathMonitor(),
+            vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
+            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
+            isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
@@ -1515,6 +1530,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // MARK: perform first time launch logic here
         }
 
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: LocalStatisticsStore())
+
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
 
@@ -1559,7 +1576,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
             quitSurveyPromoObserver: quitSurveyPromoObserver,
             vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
-            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
+            autofillImportPromoObserver: autofillImportPromoObserver
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1702,6 +1720,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAIChatSettingsStatePixel()
         fireDailyAIFeaturesStatePixel()
         fireDailyPromptBarStatePixel()
         fireDailyAdBlockingPixel()
@@ -1754,6 +1773,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    private func fireDailyAIChatSettingsStatePixel() {
+        AIChatSettingsStatePixelSender(
+            preferencesStorage: DefaultAIChatPreferencesStorage(),
+            menuConfiguration: aiChatMenuConfiguration,
+            chromeButtonsVisibilityManager: LocalDuckAIChromeButtonsVisibilityManager(),
+            featureFlagger: featureFlagger,
+            isGlobalShortcutEnabled: { [promptBarPreferences] in promptBarPreferences.isKeyboardShortcutEnabled },
+            isMenuBarIconVisible: { [promptBarPreferences] in promptBarPreferences.isMenuBarIconVisible },
+            isNewTabPageSearchBoxVisible: { [appearancePreferences] in appearancePreferences.isOmnibarVisible },
+            newTabPageOmnibarMode: { [keyValueStore] in NewTabPageOmnibarConfigProvider.storedMode(in: keyValueStore) }
+        ).firePixel()
     }
 
     /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
@@ -2177,6 +2209,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Create manager synchronously so it's available during state restoration.
             // Tabs restored before the manager exists won't have webExtensionController attached.
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                keyValueStore: keyValueStore,
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
                 darkReaderExcludedDomainsProvider: darkReaderSettings,
@@ -2211,6 +2244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,

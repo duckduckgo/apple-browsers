@@ -80,6 +80,27 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
         XCTAssertEqual(all["lang"] as? String, "fr")
     }
 
+    /// The web's one-time entries migration replaces everything with localStorage, which can lack an acceptance native recorded.
+    func testWhenReplaceAllEntriesWithoutTermsAcceptanceThenTheRecordedAcceptanceIsKept() throws {
+        let termsKey = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        try handler.putEntry(key: termsKey, value: "true")
+        try handler.putEntry(key: "theme", value: "dark")
+        try handler.replaceAllEntries(["lang": "fr"])
+
+        let all = try handler.getAllEntries()
+        XCTAssertEqual(all[termsKey] as? String, "true")
+        XCTAssertNil(all["theme"])
+        XCTAssertEqual(all["lang"] as? String, "fr")
+    }
+
+    func testWhenReplaceAllEntriesWithTermsAcceptanceThenTheIncomingValueWins() throws {
+        let termsKey = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        try handler.putEntry(key: termsKey, value: "true")
+        try handler.replaceAllEntries([termsKey: "false"])
+
+        XCTAssertEqual(try handler.getEntry(key: termsKey) as? String, "false")
+    }
+
     func testWhenDeleteAllEntriesThenAllCleared() throws {
         try handler.putEntry(key: "theme", value: "dark")
         try handler.deleteAllEntries()

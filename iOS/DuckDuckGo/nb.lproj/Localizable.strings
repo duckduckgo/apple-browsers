@@ -295,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Du kan bare legge ved %d bilder av gangen.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Legg til faner";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Spør om dokumentet";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Spør om siden";
 
@@ -304,11 +310,23 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Legg til bilde";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Fortsett i Duck.ai";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ta bilde";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Filer skannes automatisk for ulovlig innhold. Flaggede chatter har begrenset datalagring. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Finn ut mer";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Den meldingen er for lang til å sendes med vedlegg.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Nylige faner";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Vedlegg er midlertidig utilgjengelige. Prøv igjen senere.";
@@ -321,6 +339,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Denne filtypen støttes ikke. Legg heller ved en %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Ingen treff i faner";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Velg opptil %d faner";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d av %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Legg til faner";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke lage bilder. At leverandøren ikke har innsyn, gjelder ikke før du bytter tilbake.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ støtter ikke bildegenerering.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Bruker nå %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Redigering vil erstatte svaret med et nytt.";
@@ -423,6 +462,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Prøv gratis";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Nytt · Skriv «@» eller trykk på {attachment}-ikonet for å legge til en fane.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "vedlegg";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske oppgaver";
@@ -1440,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfigurasjon";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bekreft";
@@ -2585,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Skriv inn et antall dager som ikke er negativt. Installasjonsdatoen blir satt til for det antallet dager siden.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Hendelsen er lagt til i Apple-kalenderen";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importer passord";
 
@@ -3161,9 +3197,6 @@
 "keyCommandZoomOut" = "Zoom ut";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Sist behandlet: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Laster inn tilgjengelige produkter...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Vertsnavn for meldingspolicy";
-
-/* No comment provided by engineer. */
-"Messages" = "Meldinger";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3629,7 @@
 "No extensions installed" = "Ingen utvidelser er installert";
 
 /* No comment provided by engineer. */
-"No Logs" = "Ingen logger";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ingen treff for «%@»";
-
-/* No comment provided by engineer. */
-"No messages" = "Ingen meldinger";
 
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater ble funnet";
@@ -4137,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo kan ikke laste inn denne siden.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Nylige behandlingslogger";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Slektninger: %@";
@@ -4924,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Dette er nytt";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Viser logger fra det siste minuttet for å prøve å diagnostisere problemer umiddelbart etter en oppdatering.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Velg alternativet som best beskriver problemet du opplevde.";
 
@@ -4971,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Status: ugyldig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";
@@ -5462,9 +5477,6 @@
 "theme.name.light" = "Lyst";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Denne listen inneholder meldinger som er blitt vist, pluss maksimalt én melding som er planlagt for visning. Det kan være flere meldinger i konfigurasjonen som skal vises, men de er ikke behandlet ennå.";
-
-/* No comment provided by engineer. */
 "Title" = "Tittel";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5487,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt lagt til";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versjon: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Søk";
@@ -5887,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke lage bilder. At leverandøren ikke har innsyn, gjelder ikke før du bytter tilbake.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ støtter ikke bildegenerering.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Bruker nå %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Alle chatter";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Filer skannes automatisk for ulovlig innhold. Flaggede chatter har begrenset datalagring. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Finn ut mer";

@@ -22,6 +22,11 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
+#if DEBUG
+import PreviewSnapshots
+import UIComponents
+#endif
+
 struct SyncSuccessView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
@@ -183,22 +188,38 @@ private extension SyncSettingsViewModel {
     }
 }
 
-#Preview("Device Added") {
-    RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: false)
-    }
-}
+struct SyncSuccessView_Previews: PreviewProvider {
 
-#Preview("Device Added – No Auto-Restore") {
-    RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
+    enum State {
+        case deviceAdded
+        case deviceAddedNoAutoRestore
+        case recoveryComplete
     }
-}
 
-#Preview("Recovery Complete") {
-    RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: true)
+    static var previews: some View {
+        snapshots.previews
     }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Device Added", state: .deviceAdded),
+            .init(name: "Device Added – No Auto-Restore", state: .deviceAddedNoAutoRestore, scope: .previews),
+            .init(name: "Recovery Complete", state: .recoveryComplete, scope: .previews)
+        ],
+        configure: { state in
+            Group {
+                switch state {
+                case .deviceAdded:
+                    SyncSuccessView(model: .syncSuccessPreview(), isRecovery: false)
+                case .deviceAddedNoAutoRestore:
+                    SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
+                case .recoveryComplete:
+                    SyncSuccessView(model: .syncSuccessPreview(), isRecovery: true)
+                }
+            }
+            .applyRebranding()
+        }
+    )
 }
 
 #endif

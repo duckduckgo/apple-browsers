@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Δωρεάν δοκιμή";
+"action.title.vpn.free-trial-badge" = "Δοκιμάστε το δωρεάν";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Αποκλείει επεμβατικά προγράμματα παρακολούθησης προτού φορτώσουν, εξαλείφοντας αποτελεσματικά διαφημίσεις που βασίζονται σε παρακολούθηση.";
@@ -295,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες κάθε φορά.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Προσθήκη καρτελών";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Ρωτήστε για το έγγραφο";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
 
@@ -304,11 +310,23 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Προσθήκη εικόνας";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Συνέχεια στο Duck.ai";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Τραβήξτε φωτογραφία";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Τα αρχεία ελέγχονται αυτόματα για παράνομο περιεχόμενο. Οι επισημασμένες συνομιλίες έχουν περιορισμένη διατήρηση δεδομένων. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Μάθε περισσότερα";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Αυτό το μήνυμα είναι πολύ μεγάλο για να σταλεί με συνημμένα.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Πρόσφατες καρτέλες";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Τα συνημμένα δεν είναι προσωρινά διαθέσιμα. Προσπαθήστε πάλι αργότερα.";
@@ -321,6 +339,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισυνάψτε %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Δεν υπάρχουν αντίστοιχες καρτέλες";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Επίλεξε έως %d καρτέλες";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d από %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Προσθήκη καρτελών";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "Το %@ δεν μπορεί να δημιουργήσει εικόνες. Η μηδενική ορατότητα από τον πάροχο δεν θα ισχύει μέχρι να επιστρέψεις.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ δεν υποστηρίζει τη δημιουργία εικόνων.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Τώρα χρησιμοποιείται το %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Η επεξεργασία θα αντικαταστήσει την απάντηση με μια νέα.";
@@ -423,6 +462,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Δοκιμάστε το δωρεάν";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Νέο · Πληκτρολόγησε «@» ή πάτησε το εικονίδιο {attachment} για να προσθέσεις μια καρτέλα.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "συνημμένο";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
@@ -1440,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Διαμόρφωση";
 
 /* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
@@ -2585,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Εισαγάγετε έναν μη αρνητικό αριθμό ημερών. Η ημερομηνία εγκατάστασης θα οριστεί σε αυτήν πριν από πολλές ημέρες.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Το συμβάν προστέθηκε στο Ημερολόγιο Apple";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "Αναγνωριστικό: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Εισαγωγή κωδικών πρόσβασης";
 
@@ -3161,9 +3197,6 @@
 "keyCommandZoomOut" = "Σμίκρυνση";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Τελευταία επεξεργασία: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Φόρτωση διαθέσιμων προϊόντων...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Όνομα κεντρικού υπολογιστή πολιτικής μηνυμάτων";
-
-/* No comment provided by engineer. */
-"Messages" = "Μηνύματα";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3629,7 @@
 "No extensions installed" = "Δεν έχουν εγκατασταθεί επεκτάσεις";
 
 /* No comment provided by engineer. */
-"No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
-
-/* No comment provided by engineer. */
-"No messages" = "Δεν υπάρχουν μηνύματα";
 
 /* No comment provided by engineer. */
 "No results found" = "Δεν βρέθηκαν αποτελέσματα";
@@ -4137,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "Το DuckDuckGo δεν μπορεί να φορτώσει τη σελίδα αυτή.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Πρόσφατα αρχεία καταγραφής επεξεργασίας";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Συγγενείς: %@";
@@ -4924,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Τι νέο υπάρχει";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Εμφανίζει αρχεία καταγραφής από το τελευταίο λεπτό, για να βοηθήσει στη διάγνωση προβλημάτων αμέσως μετά από μια ανανέωση.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Επιλέξτε αυτό που περιγράφει καλύτερα το πρόβλημα που αντιμετωπίσατε.";
 
@@ -4971,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Κατάσταση: Καταστάθηκε μη έγκυρο";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
@@ -5462,9 +5477,6 @@
 "theme.name.light" = "Φωτεινό";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Η λίστα αυτή περιέχει μηνύματα που έχουν εμφανιστεί συν το πολύ 1 μήνυμα που έχει προγραμματιστεί προς εμφάνιση. Ενδέχεται να υπάρχουν και άλλα μηνύματα στη διαμόρφωση που θα παρουσιαστούν, ωστόσο δεν έχουν ακόμη υποβληθεί σε επεξεργασία.";
-
-/* No comment provided by engineer. */
 "Title" = "Τίτλος";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5487,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Προστέθηκε επαφή";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Έκδοση: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Αναζήτηση";
@@ -5887,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "Το %@ δεν μπορεί να δημιουργήσει εικόνες. Η μηδενική ορατότητα από τον πάροχο δεν θα ισχύει μέχρι να επιστρέψεις.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ δεν υποστηρίζει τη δημιουργία εικόνων.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Τώρα χρησιμοποιείται το %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Όλες οι συνομιλίες";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Τα αρχεία ελέγχονται αυτόματα για παράνομο περιεχόμενο. Οι επισημασμένες συνομιλίες έχουν περιορισμένη διατήρηση δεδομένων. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Μάθε περισσότερα";

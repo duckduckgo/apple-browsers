@@ -24,6 +24,7 @@ final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     var supportsSyncChatsUpdateResult = true
     var isNativeDataAccessEnabledResult = false
     var isNativeDataStorageEnabledResult = false
+    var isHomepageChatSuggestionsEnabledResult = false
 
     func isAIChatSyncEnabled() -> Bool {
         return isAIChatSyncEnabledResult
@@ -43,5 +44,9 @@ final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
     func isNativeDataStorageEnabled() -> Bool {
         isNativeDataStorageEnabledResult
+    }
+
+    func isHomepageChatSuggestionsEnabled() -> Bool {
+        isHomepageChatSuggestionsEnabledResult
     }
 }

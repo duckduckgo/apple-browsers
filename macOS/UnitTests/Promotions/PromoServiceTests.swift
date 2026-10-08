@@ -358,8 +358,11 @@ final class PromoServiceTests: XCTestCase {
         triggerSubject.send(.appLaunched)
         triggerSubject.send(.newTabPageAppeared)
         await fulfillment(of: [bothShownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        delegate2.completeShow(with: .actioned)
+        // Serialize mock completion with show()'s main-actor continuation setup.
+        await MainActor.run {
+            delegate1.completeShow(with: .actioned)
+            delegate2.completeShow(with: .actioned)
+        }
         await fulfillment(of: [hideExpectation], timeout: timeout)
 
         // Then: Promo history records contain expected history

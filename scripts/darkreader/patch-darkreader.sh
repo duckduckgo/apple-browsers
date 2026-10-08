@@ -24,6 +24,7 @@
 #   - Detects Wikipedia's automatic/system dark theme
 #   - Adds a DuckDuckGo patch component to the manifest version
 #   - Adds browser_specific_settings for DuckDuckGo extension ID
+#   - Marks the extension for extraction on install (WebKit otherwise unzips it on every load)
 
 set -euo pipefail
 
@@ -536,7 +537,8 @@ else:
 
 manifest['browser_specific_settings'] = {
     'duckduckgo': {
-        'id': 'org.duckduckgo.web-extension.darkreader'
+        'id': 'org.duckduckgo.web-extension.darkreader',
+        'appleRequiresExtraction': True
     }
 }
 print('  ✓ browser_specific_settings → duckduckgo')

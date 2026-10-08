@@ -99,7 +99,8 @@ final class PromoRegistryTests: XCTestCase {
                 featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
-            )
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState())
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

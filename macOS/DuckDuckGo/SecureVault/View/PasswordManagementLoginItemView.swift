@@ -175,7 +175,7 @@ private struct UsernameView: View {
 
             if model.isEditing || model.isNew {
 
-                TextField("", text: $model.username)
+                TextField("" as String, text: $model.username)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.bottom, interItemSpacing)
                     .accessibility(identifier: "Username TextField")
@@ -186,7 +186,7 @@ private struct UsernameView: View {
                     UsernameLabel(isHovering: $isHovering)
                     Spacer()
                     if model.shouldShowPrivateEmailToggle {
-                        Toggle("", isOn: $model.privateEmailStatusBool)
+                        Toggle("" as String, isOn: $model.privateEmailStatusBool)
                             .frame(width: 40)
                             .toggleStyle(.switch)
                     }
@@ -409,7 +409,7 @@ private struct WebsiteView: View {
 
         if model.isEditing || model.isNew {
 
-            TextField("", text: $model.domain)
+            TextField("" as String, text: $model.domain)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.bottom, interItemSpacing)
                 .accessibility(identifier: "Website TextField")

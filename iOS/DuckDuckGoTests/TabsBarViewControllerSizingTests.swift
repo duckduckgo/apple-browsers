@@ -379,6 +379,58 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
+    func testSelectingFoldedTabKeepsFlareAlignedBeforeAndDuringReveal() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousKeyWindow = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let wereAnimationsEnabled = UIView.areAnimationsEnabled
+        UIView.setAnimationsEnabled(true)
+        defer {
+            UIView.setAnimationsEnabled(wereAnimationsEnabled)
+            window.isHidden = true
+            previousKeyWindow?.makeKey()
+        }
+        for isTrailingEdge in [false, true] {
+            let (controller, model) = makeOverflowingController()
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            window.layoutIfNeeded()
+            let collectionView = controller.collectionView
+            let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
+            let indexPath = IndexPath(item: isTrailingEdge ? 10 : 6, section: 0)
+            let naturalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: indexPath))
+            collectionView.contentOffset.x = isTrailingEdge
+                ? naturalFrame.maxX - collectionView.bounds.width + collectionView.adjustedContentInset.right
+                : naturalFrame.minX - collectionView.adjustedContentInset.left
+            collectionView.layoutIfNeeded()
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: indexPath))
+            XCTAssertNotEqual(cell.frame, naturalFrame)
+            let tab = try XCTUnwrap(model.get(tabAt: indexPath.item))
+            let initialOffset = collectionView.contentOffset
+            CATransaction.flush()
+
+            model.select(tab: tab)
+            controller.refreshStyleInPlace(tabsModel: model, scrollToSelected: true)
+
+            let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+            XCTAssertEqual(background.frame, cell.frame.insetBy(dx: -TabsBarViewController.Constants.tabRampSize.width, dy: 0))
+            var maximumMisalignment: CGFloat = 0
+            var sampledFrames = 0
+            for _ in 0..<30 {
+                try await Task.sleep(nanoseconds: 16_666_667)
+                if let cellFrame = cell.layer.presentation()?.frame,
+                   let backgroundFrame = background.layer.presentation()?.frame {
+                    maximumMisalignment = max(maximumMisalignment, abs(cellFrame.midX - backgroundFrame.midX))
+                    sampledFrames += 1
+                }
+            }
+            XCTAssertGreaterThan(sampledFrames, 0)
+            XCTAssertLessThan(maximumMisalignment, 1)
+            XCTAssertNotEqual(collectionView.contentOffset, initialOffset)
+        }
+    }
+
+    @MainActor
     func testScrollCallbackKeepsFlareAlignedWithPinnedSelectedCellBeforeNextLayoutPass() throws {
         let controller = TabsBarViewController.create()
         controller.loadViewIfNeeded()

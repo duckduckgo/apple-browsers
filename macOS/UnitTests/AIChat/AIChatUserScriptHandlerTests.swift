@@ -2097,6 +2097,9 @@ struct AIChatConversationSourcePixelTests {
         "direct-external",
         "direct-link",
         "duckduckgo-homepage",
+        "session-restore",
+        "reopened-tab",
+        "tab-copy",
         "unattributed"
     ]
 

@@ -301,6 +301,42 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     // MARK: - Editing Lifecycle Overrides
 
+    struct InputFocusState {
+        let mode: TextEntryMode
+        let text: String
+    }
+
+    var inputFocusState: InputFocusState? {
+        if omniBarView.isSearchAreaExpanded, omniBarView.aiChatTextView.isFirstResponder {
+            return InputFocusState(mode: selectedTextEntryMode, text: omniBarView.aiChatTextView.text ?? "")
+        }
+        guard omniBarView.textField.isFirstResponder else { return nil }
+        return InputFocusState(mode: selectedTextEntryMode, text: omniBarView.textField.text ?? "")
+    }
+
+    func restoreInputFocus(_ focus: InputFocusState,
+                           isRequestValid: () -> Bool,
+                           completion: (Bool) -> Void) {
+        guard dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage), isRequestValid() else {
+            completion(false)
+            return
+        }
+        setSelectedTextEntryMode(focus.mode)
+        if focus.mode == .aiChat {
+            iPadDraft.text = focus.text
+            omniBarView.setSearchAreaExpanded(true, animated: false)
+            omniBarView.aiChatTextView.becomeFirstResponder()
+            restoreIPadDraft()
+            refreshState(focus.text.isEmpty ? state.onTextClearedState : state.onTextEnteredState)
+        } else {
+            super.beginEditing(animated: false, forTextEntryMode: nil)
+            // Settle the editing state now so the queued didBeginEditing callback cannot clear the restored draft.
+            refreshState(focus.text.isEmpty ? state.onEditingStartedState : state.onTextEnteredState)
+            omniBarView.textField.text = focus.text
+        }
+        completion(isRequestValid() && isInputFirstResponder)
+    }
+
     func beginEditingOnNewTabPageAppOpen(isRequestValid: @escaping () -> Bool,
                                          completion: @escaping (Bool) -> Void) {
         if dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),

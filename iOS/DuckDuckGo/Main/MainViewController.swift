@@ -237,10 +237,22 @@ class MainViewController: UIViewController {
     private(set) var appOpenKeyboardRequestID = UUID()
     /// Prevents automatic screen dismissal from cancelling the pending app-open keyboard request.
     private var isClearingNavigationForAppOpen = false
+    private var newTabPageInputFocusBeforeBackground: (tabID: String, pageID: ObjectIdentifier, legacyInput: DefaultOmniBarViewController.InputFocusState?)?
+
+    var shouldRestoreNewTabPageInputFocus: Bool {
+        guard let savedFocus = newTabPageInputFocusBeforeBackground,
+              let page = newTabPageViewController else { return false }
+        return tabManager.currentTabsModel.currentTab?.uid == savedFocus.tabID
+            && tabManager.currentTabsModel.currentTab?.isHomeTab == true
+            && ObjectIdentifier(page) == savedFocus.pageID
+    }
 
     func cancelPendingAppOpenKeyboard() {
         // Automatic dismissal can end editing or select the tab switcher's browsing mode.
         guard !isClearingNavigationForAppOpen else { return }
+        if isAppOpenKeyboardWindowVisible {
+            newTabPageInputFocusBeforeBackground = nil
+        }
         appOpenKeyboardRequestID = UUID()
     }
 
@@ -1818,6 +1830,10 @@ class MainViewController: UIViewController {
 
     private func registerForAppBackgroundNotification() {
         NotificationCenter.default.addObserver(self,
+                                               selector: #selector(rememberNewTabPageInputFocusBeforeBackground),
+                                               name: UIApplication.willResignActiveNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
                                                selector: #selector(onAppDidEnterBackground),
                                                name: UIApplication.didEnterBackgroundNotification,
                                                object: nil)
@@ -1828,6 +1844,19 @@ class MainViewController: UIViewController {
                 guard AppWidthObserver.shared.isPad else { return }
                 self?.refreshCurrentWebViewViewportAfterForeground()
             }
+    }
+
+    @objc private func rememberNewTabPageInputFocusBeforeBackground() {
+        // App Lock can resign active again while the browser is hidden; keep its original departure state.
+        guard viewIfLoaded?.window?.isHidden == false else { return }
+        newTabPageInputFocusBeforeBackground = nil
+        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              presentedViewController == nil,
+              let tab = tabManager.currentTabsModel.currentTab, tab.isHomeTab,
+              let page = newTabPageViewController else { return }
+        let legacyInput = (omniBar as? DefaultOmniBarViewController)?.inputFocusState
+        guard legacyInput != nil || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true else { return }
+        newTabPageInputFocusBeforeBackground = (tab.uid, ObjectIdentifier(page), legacyInput)
     }
 
     @objc private func onAppDidEnterBackground() {
@@ -2632,6 +2661,7 @@ class MainViewController: UIViewController {
 
     fileprivate func removeHomeScreen() {
         cancelPendingAppOpenKeyboard()
+        newTabPageInputFocusBeforeBackground = nil
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
         restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
@@ -2915,17 +2945,18 @@ class MainViewController: UIViewController {
     }
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
-    func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
-        showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: true, completion: completion)
+    func showKeyboardOnAppOpenIfAllowed(restoringFocus: Bool = false, completion: @escaping (Bool) -> Void) {
+        showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: true, restoringFocus: restoringFocus, completion: completion)
     }
 
     /// In-app landings don't report to the post-idle session, whose `focused` value belongs to the app open.
-    private func showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: Bool, completion: @escaping (Bool) -> Void) {
+    private func showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: Bool, restoringFocus: Bool = false, completion: @escaping (Bool) -> Void) {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         let requestID = appOpenKeyboardRequestID
         let tabID = tabManager.currentTabsModel.currentTab?.uid
         let isRequestValid = { [weak self] in
             self?.isAppOpenKeyboardRequestValid(requestID, tabID: tabID, onNewTabPage: onNewTabPage) == true
+                && (!restoringFocus || self?.shouldRestoreNewTabPageInputFocus == true)
         }
         guard isRequestValid() else {
             completion(false)
@@ -2944,11 +2975,19 @@ class MainViewController: UIViewController {
             }
             completion(true)
         }
+        if restoringFocus, omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true {
+            focusCompleted(true)
+            return
+        }
         if onNewTabPage, let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
             if unifiedToggleInputCoordinator?.isOmnibarSession != true {
                 showBars()
             }
-            defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
+            if restoringFocus, let input = newTabPageInputFocusBeforeBackground?.legacyInput {
+                defaultOmniBar.restoreInputFocus(input, isRequestValid: isRequestValid, completion: focusCompleted)
+            } else {
+                defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
+            }
         } else {
             enterSearchOnAppOpen()
             focusCompleted(isAutomaticFocusAccepted)
@@ -8396,6 +8435,7 @@ extension MainViewController: TabManagerFireModeDelegate {
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
+        newTabPageInputFocusBeforeBackground = nil
         switch fireRequest.trigger {
         case .manualFire:
             showBurningOverlay()

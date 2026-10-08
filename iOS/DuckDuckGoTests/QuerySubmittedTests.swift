@@ -325,8 +325,97 @@ class QuerySubmittedTests: XCTestCase {
     }
 }
 
+@Suite(.serialized)
 @MainActor
 final class NewTabPageAppOpenFocusTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Short returns restore the focused legacy input and draft only while allowed", .timeLimit(.minutes(1)),
+          arguments: [false, true], ["", "Draft to preserve"])
+    func shortReturnRestoresLegacyInput(aiChat: Bool, draft: String) async throws {
+        let mode: TextEntryMode = aiChat ? .aiChat : .search
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.alwaysShowKeyboardOnNewTabPage])
+        let sut = DefaultOmniBarViewController(
+            dependencies: MockOmnibarDependency(
+                featureFlagger: featureFlagger,
+                aiChatSettings: MockAIChatSettingsProvider(isAIChatSearchInputUserSettingsEnabled: true),
+                userInterfaceIdiomProvider: FocusTestIPadIdiomProvider()),
+            isFloatingUIEnabled: false)
+        let delegate = MockOmniBarDelegate()
+        sut.omniDelegate = delegate
+        sut.loadViewIfNeeded()
+        sut.enterPadState()
+        let bar = try #require(sut.barView as? DefaultOmniBarView)
+        bar.setLayoutMode(.expandedPad)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = sut
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        defer {
+            sut.endEditing()
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+        #expect(sut.inputFocusState == nil)
+        sut.beginEditing(animated: false)
+        await drainEditingCallbacks()
+        sut.selectedTextEntryMode = .aiChat
+        bar.textField.text = draft
+        #expect(sut.inputFocusState?.mode == .aiChat)
+        #expect(sut.inputFocusState?.text == draft)
+        sut.endEditing()
+        sut.setSelectedTextEntryMode(mode)
+        if mode == .aiChat {
+            bar.setSearchAreaExpanded(true, animated: false)
+        } else {
+            sut.beginEditing(animated: false)
+        }
+        await drainEditingCallbacks()
+        if mode == .aiChat {
+            bar.aiChatTextView.text = draft
+            sut.textViewDidChange(bar.aiChatTextView)
+        } else {
+            sut.updateQuery(draft)
+        }
+        let focus = try #require(sut.inputFocusState)
+        #expect(focus.mode == mode)
+        #expect(focus.text == draft)
+
+        for flagOn in [false, true, false, true] {
+            featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+            for isRequestValid in [false, true] {
+                sut.endEditing()
+                sut.setSelectedTextEntryMode(mode == .aiChat ? .search : .aiChat)
+                await drainEditingCallbacks()
+                #expect(sut.inputFocusState == nil)
+                delegate.updatedQueries = []
+                var didFocus: Bool?
+
+                sut.restoreInputFocus(focus, isRequestValid: { isRequestValid }) { didFocus = $0 }
+                await drainEditingCallbacks()
+
+                let shouldRestore = flagOn && isRequestValid
+                #expect(didFocus == shouldRestore)
+                #expect(sut.isInputFirstResponder == shouldRestore)
+                let didNotReportTextEntry = delegate.updatedQueries.allSatisfy { $0.isEmpty }
+                #expect(didNotReportTextEntry)
+                if shouldRestore {
+                    #expect(sut.inputFocusState?.mode == mode)
+                    #expect(sut.inputFocusState?.text == draft)
+                    #expect(bar.isSearchAreaExpanded == (mode == .aiChat))
+                }
+            }
+        }
+    }
+
+    private func drainEditingCallbacks() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
 
     @available(iOS 16, macOS 13, *)
     @Test("Legacy input focus includes the iPad Duck.ai text view", .timeLimit(.minutes(1)), arguments: [false, true])
@@ -451,6 +540,10 @@ private final class MockNewTabPageInputActivation: UnifiedToggleInputOmnibarActi
     }
 }
 
+private struct FocusTestIPadIdiomProvider: UserInterfaceIdiomProviding {
+    let userInterfaceIdiom: UIUserInterfaceIdiom = .pad
+}
+
 final class MockOmniBarDelegate: OmniBarDelegate {
 
     var query: String = ""
@@ -462,6 +555,15 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     var wasOnOmniQuerySubmittedCalled = false
     var wasOnPromptSubmittedCalled = false
     var wasOnOmniSuggestionSelectedCalled = false
+    var updatedQueries: [String] = []
+
+    func onOmniQueryUpdated(_ query: String) {
+        updatedQueries.append(query)
+    }
+
+    func onAIChatQueryUpdated(_ query: String) {
+        updatedQueries.append(query)
+    }
 
     func onOmniQuerySubmitted(_ query: String) {
         wasOnOmniQuerySubmittedCalled = true
@@ -482,6 +584,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         wasOnOmniQuerySubmittedCalled = false
         wasOnPromptSubmittedCalled = false
         wasOnOmniSuggestionSelectedCalled = false
+        updatedQueries = []
     }
 
     func selectedSuggestion() -> Suggestion? {

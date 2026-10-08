@@ -28,10 +28,12 @@ import FeatureFlags_iOS
 @MainActor
 private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
     var isNewTabPageVisible = true
+    var shouldRestoreNewTabPageInputFocus = false
     var appOpenKeyboardRequestID = UUID()
     var dismissalCompletion: (() -> Void)?
     var closeScreensCallCount = 0
     var allowedKeyboardCallCount = 0
+    var restoredFocus: Bool?
     var keyboardWasShown = true
     var legacyKeyboardCallCount = 0
     var presentedViewController: UIViewController?
@@ -55,8 +57,9 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
         dismissalCompletion = completion
     }
 
-    func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
+    func showKeyboardOnAppOpenIfAllowed(restoringFocus: Bool, completion: @escaping (Bool) -> Void) {
         allowedKeyboardCallCount += 1
+        restoredFocus = restoringFocus
         if completesFocusImmediately {
             completion(keyboardWasShown)
         } else {
@@ -134,6 +137,125 @@ final class KeyboardPresenterTests {
         #expect(pixelFiring.actualFireCalls.count == (!flagOn && secondsInBackground == 25 ? 1 : 0))
         scheduledActions.forEach { $0() }
         #expect(pixelFiring.actualFireCalls.count == (secondsInBackground == 25 ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A short return restores prior New Tab focus only with the flag on", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func shortReturnRestoresPriorFocus(flagOn: Bool, wasFocused: Bool) {
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        let presenter = self.presenter
+        target.shouldRestoreNewTabPageInputFocus = wasFocused
+        onAppLaunch = true
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-5))
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == (flagOn && wasFocused ? 1 : 0))
+        #expect(target.restoredFocus == (flagOn && wasFocused ? true : nil))
+        #expect(target.legacyKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A longer return remains an app open even when previous focus was saved", .timeLimit(.minutes(1)))
+    func longReturnDoesNotUseSavedFocus() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.shouldRestoreNewTabPageInputFocus = true
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-25))
+        target.shouldRestoreNewTabPageInputFocus = false
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 1)
+        #expect(target.restoredFocus == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A visible interaction before a delayed launch clears saved focus", .timeLimit(.minutes(1)))
+    func shortReturnRejectsSnapshotClearedBeforeLaunch() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.shouldRestoreNewTabPageInputFocus = true
+        let presenter = self.presenter
+        target.shouldRestoreNewTabPageInputFocus = false
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-5))
+
+        #expect(scheduledActions.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Short-return focus rechecks the saved page before its scheduled execution", .timeLimit(.minutes(1)), arguments: [false, true])
+    func shortReturnRechecksSavedPage(changedTab: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.shouldRestoreNewTabPageInputFocus = true
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-5))
+        #expect(scheduledActions.count == 1)
+
+        if changedTab {
+            target.isNewTabPageVisible = false
+        } else {
+            target.shouldRestoreNewTabPageInputFocus = false
+        }
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Short-return restoration waits for both App Lock and a launch prompt", .timeLimit(.minutes(1)))
+    func shortReturnWaitsForWindowAndPrompt() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.shouldRestoreNewTabPageInputFocus = true
+        target.isWindowVisible = false
+        promptPending = true
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-5))
+        #expect(scheduledActions.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
+        #expect(promptCloseHandler != nil)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        promptCloseHandler?()
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
+        #expect(target.restoredFocus == true)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Losing saved focus or disabling the flag cancels a short-return wait", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func shortReturnWaitIsCancelled(waitingForPrompt: Bool, disableFlag: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.shouldRestoreNewTabPageInputFocus = true
+        target.isWindowVisible = waitingForPrompt
+        promptPending = waitingForPrompt
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-5))
+        scheduledActions.forEach { $0() }
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.shouldRestoreNewTabPageInputFocus = false
+        }
+        if waitingForPrompt {
+            #expect(promptRequestIsValid?() == false)
+            promptCloseHandler?()
+        } else {
+            target.isWindowVisible = true
+            target.windowVisibleHandler?()
+        }
+        scheduledActions.forEach { $0() }
+        afterPromptActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(target.legacyKeyboardCallCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -146,7 +146,7 @@ struct ManageDeviceView: View {
             model.isSyncEnabled
         } set: { newValue in
             if !newValue {
-                model.disableSyncToggleTapped()
+                model.thisDeviceDetailsTurnOffSyncTapped()
             }
         }
     }
@@ -163,6 +163,7 @@ struct ManageDeviceView: View {
     private var removeSection: some View {
         Section {
             Button(role: .destructive) {
+                model.otherDeviceDetailsRemoveDeviceTapped()
                 isShowingRemoveConfirmation = true
             } label: {
                 Text(UserText.removeDeviceButton)

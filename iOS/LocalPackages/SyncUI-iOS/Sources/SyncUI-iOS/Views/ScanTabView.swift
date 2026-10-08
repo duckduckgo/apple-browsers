@@ -144,13 +144,7 @@ struct ScanTabView: View {
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(UserText.simplifiedScanQROpenInstruction)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-
-                    SyncAppNameChip(name: UserText.simplifiedScanQRAppName)
-                }
+                SyncOpenAppInstruction(format: UserText.simplifiedScanQROpenInstruction, appName: UserText.simplifiedScanQRAppName)
 
                 SyncInstructionText(markdown: UserText.simplifiedScanQRStepsInstruction)
             }

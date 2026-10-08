@@ -28,9 +28,6 @@ enum IdleReturnTreatment {
     case lut
 }
 
-/// What this return to the foreground amounts to: either it crossed the idle threshold and a
-/// treatment applies, or it is an ordinary return. Both carry the time away, so a caller never
-/// has to ask a second question to report one.
 enum IdleReturnOutcome: Equatable {
 
     case afterIdle(treatment: IdleReturnTreatment, timeAwayMs: Int?)
@@ -52,7 +49,6 @@ enum IdleReturnOutcome: Equatable {
 }
 
 protocol IdleReturnEvaluating {
-    /// Resolves the return from a single read of the last-background date.
     func evaluateReturn() -> IdleReturnOutcome
 }
 
@@ -117,8 +113,6 @@ struct IdleReturnThresholdResolver {
     }
 }
 
-/// Owns the last-background clock so every caller reads the same value from the same place:
-/// the decision, the treatment and the time away all derive from a single read.
 final class IdleReturnEvaluator: IdleReturnEvaluating {
 
     private let eligibilityManager: IdleReturnEligibilityManaging

@@ -89,7 +89,6 @@ extension MainViewController {
 
         // Not a burn arrival: a burn reports itself through the attach it causes. Input focus, not the
         // observed keyboard, which a hardware keyboard hides and which can lag the background cycle.
-        let isInputFocused = omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
         startNewTabPageSessionInstrumentation(isNewTab: false,
                                               willBeginEditing: isInputFocused,
                                               isAfterFire: false)

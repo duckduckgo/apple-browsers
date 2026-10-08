@@ -2359,13 +2359,16 @@ class MainViewController: UIViewController {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
+    /// Either input is first responder. Unlike the observed keyboard, a hardware keyboard doesn't change this.
+    var isInputFocused: Bool {
+        omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
+    }
+
     /// True right after either input accepted the app's focus request. Unified input applies a new session's
     /// focus asynchronously, but enters its editing state synchronously when it accepts the request; resuming
     /// a suspended session takes first responder synchronously and enters the editing state later.
     private var isAutomaticFocusAccepted: Bool {
-        omniBar.isInputFirstResponder
-            || unifiedToggleInputCoordinator?.isOmnibarEditing == true
-            || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
+        unifiedToggleInputCoordinator?.isOmnibarEditing == true || isInputFocused
     }
 
     /// Restores the keyboard after an escape-hatch burn that started in focus mode, using the unified-input
@@ -2412,8 +2415,7 @@ class MainViewController: UIViewController {
         currentNTPEscapeHatch = hatch
         configureUnifiedInputEscapeHatch(hatch)
         postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        let focused = omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
-        fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: focused)
+        fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: isInputFocused)
         return true
     }
 
@@ -2919,11 +2921,16 @@ class MainViewController: UIViewController {
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
-        showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: true, completion: completion)
+        showKeyboardIfAllowed { [weak self] didShowKeyboard in
+            if didShowKeyboard {
+                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            }
+            completion(didShowKeyboard)
+        }
     }
 
-    /// In-app landings don't report to the post-idle session, whose `focused` value belongs to the app open.
-    private func showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: Bool, completion: @escaping (Bool) -> Void) {
+    /// In-app landings call this directly: the post-idle session's `focused` value belongs to the app open.
+    private func showKeyboardIfAllowed(completion: @escaping (Bool) -> Void) {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         let requestID = appOpenKeyboardRequestID
         let tabID = tabManager.currentTabsModel.currentTab?.uid
@@ -2941,9 +2948,6 @@ class MainViewController: UIViewController {
             }
             if onNewTabPage, isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
-            }
-            if reportsPostIdleArrival {
-                postIdleSessionInstrumentation.keyboardRaisedOnArrival()
             }
             completion(true)
         }
@@ -2984,26 +2988,18 @@ class MainViewController: UIViewController {
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
               let tab = tabManager.currentTabsModel.currentTab else { return }
         // A suspended UTI session can outlive a user dismissal, so remember only actual input focus.
-        let isInputFocused = omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
-        NewTabPageKeyboardPolicy().rememberInputFocusForTabSwitch(
-            on: tab, isInputFocused: isInputFocused, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
+        NewTabPageKeyboardPolicy().rememberInputFocusForTabSwitch(on: tab, isInputFocused: isInputFocused)
     }
 
     /// Shows the keyboard on the current New Tab Page after Home, tab closing, or tab selection.
     /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
     func showKeyboardOnNewTabPageIfAllowed() {
-        // The tab switcher can close after the page's dialog appears. The final onboarding dialog marks
-        // itself as seen on appearance, so also check whether a dialog remains visible.
+        // New Tab, onboarding and dialog rules are checked in `isAppOpenKeyboardRequestValid`.
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-              isAppOpenKeyboardWindowVisible,
               isNewTabPageVisible,
-              tabManager.currentTabsModel.currentTab?.isHomeTab == true,
-              NewTabPageKeyboardPolicy().onNewTab,
-              !isNewTabPageKeyboardBlockedByDialog,
-              !isNewTabPageKeyboardHeldForOnboarding,
-              !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
+              tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
         // A landing restores focus even if a hardware keyboard left the previous input session inactive.
-        showKeyboardOnAppOpenIfAllowed(reportsPostIdleArrival: false) { _ in }
+        showKeyboardIfAllowed { _ in }
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {
@@ -4114,8 +4110,10 @@ class MainViewController: UIViewController {
             completion()
             return
         }
-        dismissScreensForAppOpen(screenLeftOpen: screenLeftOpen) { [weak self] in
-            guard let self else { return }
+        let requestID = appOpenKeyboardRequestID
+        clearNavigationStack(dismissing: screenLeftOpen) { [weak self] in
+            // Backgrounding also replaces the request, so nothing starts for a return the user already left.
+            guard let self, appOpenKeyboardRequestID == requestID else { return }
             // Foregrounding skipped this visit while another screen covered the page.
             if isNewTabPageVisible, presentedViewController == nil {
                 startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
@@ -4133,14 +4131,6 @@ class MainViewController: UIViewController {
             return
         }
         presented.dismiss(animated: true, completion: completion)
-    }
-
-    private func dismissScreensForAppOpen(screenLeftOpen: UIViewController, completion: @escaping () -> Void) {
-        let requestID = appOpenKeyboardRequestID
-        clearNavigationStack(forAppOpen: true, dismissing: screenLeftOpen) { [weak self] in
-            guard let self, appOpenKeyboardRequestID == requestID else { return }
-            completion()
-        }
     }
     
     func updateFindInPage() {
@@ -7865,11 +7855,7 @@ extension MainViewController: TabSwitcherDelegate {
             && tab?.isHomeTab == true && tab?.viewed == false
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         updateCurrentTab()
-        if shouldFocusKeyboard, let tab {
-            pendingTabSwitcherKeyboard = (tab, appOpenKeyboardRequestID)
-        } else {
-            pendingTabSwitcherKeyboard = nil
-        }
+        pendingTabSwitcherKeyboard = shouldFocusKeyboard ? tab.map { ($0, appOpenKeyboardRequestID) } : nil
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
@@ -8132,14 +8118,16 @@ extension MainViewController: GestureToolbarButtonDelegate {
 
 extension MainViewController {
 
-    func clearNavigationStack(forAppOpen: Bool = false, dismissing screenLeftOpen: UIViewController? = nil, completion: (() -> Void)? = nil) {
+    /// With `screenLeftOpen`, an app open closes only that screen and keeps any pending keyboard request.
+    func clearNavigationStack(dismissing screenLeftOpen: UIViewController? = nil, completion: (() -> Void)? = nil) {
+        let forAppOpen = screenLeftOpen != nil
         isClearingNavigationForAppOpen = forAppOpen
         defer { isClearingNavigationForAppOpen = false }
         dismissOmniBar(animated: !forAppOpen)
 
         if let presented = presentedViewController, !forAppOpen || presented === screenLeftOpen {
             presented.dismiss(animated: false) { [weak self] in
-                self?.clearNavigationStack(forAppOpen: forAppOpen, dismissing: screenLeftOpen, completion: completion)
+                self?.clearNavigationStack(dismissing: screenLeftOpen, completion: completion)
             }
         } else {
             completion?()

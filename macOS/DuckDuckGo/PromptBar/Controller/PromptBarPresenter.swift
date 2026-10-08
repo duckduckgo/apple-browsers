@@ -124,7 +124,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     }
 
     private func animateAppearance(of window: NSWindow) {
-        let duration = 0.15
+        let duration = 0.25
         if let contentView = window.contentView, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             contentView.wantsLayer = true
             let center = CGPoint(x: contentView.bounds.midX, y: contentView.bounds.midY)

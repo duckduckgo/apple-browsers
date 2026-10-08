@@ -21,10 +21,10 @@ import Testing
 import WebKit
 @testable import DuckDuckGo
 
-@available(iOS 16, macOS 13, *)
 @Suite("Tab navigation decisions")
 struct TabNavigationDecisionTests {
 
+    @available(iOS 16, macOS 13, *)
     @Test("Allowing app links uses WebKit's ordinary allow policy", .timeLimit(.minutes(1)))
     func whenAppLinksAreEnabledThenWebKitPolicyIsAllow() {
         let decision = TabNavigationDecision.allow(appLinks: .enabled)
@@ -32,6 +32,7 @@ struct TabNavigationDecisionTests {
         #expect(decision.webKitPolicy == .allow)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Suppressing app links uses WebKit's allow-without-app-links policy", .timeLimit(.minutes(1)))
     func whenAppLinksAreDisabledThenWebKitPolicyAllowsWithoutAppLinks() {
         let decision = TabNavigationDecision.allow(appLinks: .disabled)
@@ -39,6 +40,7 @@ struct TabNavigationDecisionTests {
         #expect(decision.webKitPolicy.rawValue == 3)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Cancelling navigation uses WebKit's cancel policy", .timeLimit(.minutes(1)))
     func whenNavigationIsCancelledThenWebKitPolicyIsCancel() {
         #expect(TabNavigationDecision.cancel.webKitPolicy == .cancel)

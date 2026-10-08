@@ -76,9 +76,9 @@ final class AppPrivacyFeatures: PrivacyFeaturesProtocol {
         }
     }
     private static var embeddedBloomFilterResources: EmbeddedBloomFilterResources {
-        EmbeddedBloomFilterResources(bloomSpecification: Bundle.main.url(forResource: "httpsMobileV2BloomSpec", withExtension: "json")!,
-                                     bloomFilter: Bundle.main.url(forResource: "httpsMobileV2Bloom", withExtension: "bin")!,
-                                     excludedDomains: Bundle.main.url(forResource: "httpsMobileV2FalsePositives", withExtension: "json")!)
+        EmbeddedBloomFilterResources(bloomSpecification: Bundle.module.url(forResource: "httpsMobileV2BloomSpec", withExtension: "json")!,
+                                     bloomFilter: Bundle.module.url(forResource: "httpsMobileV2Bloom", withExtension: "bin")!,
+                                     excludedDomains: Bundle.module.url(forResource: "httpsMobileV2FalsePositives", withExtension: "json")!)
     }
 
     convenience init(contentBlocking: AnyContentBlocking, database: CoreDataDatabase) {

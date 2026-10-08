@@ -24,7 +24,7 @@ import XCTest
 
 class BookmarkManagedObjectTests: XCTestCase {
 
-    var container: NSPersistentContainer! = CoreData.legacyBookmarkContainer()
+    var container: NSPersistentContainer! = CoreData.legacyBookmarkContainer(bundle: .module)
 
     override func tearDown() {
         container = nil

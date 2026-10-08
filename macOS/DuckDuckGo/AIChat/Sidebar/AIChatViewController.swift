@@ -658,7 +658,6 @@ private final class FloatingWindowTitleDragButton: MouseOverButton {
     }
 }
 
-#if DEBUG || REVIEW
 // MARK: - Browser tools debug panel in the sidebar
 
 extension AIChatViewController {
@@ -688,4 +687,3 @@ extension AIChatViewController {
         ])
     }
 }
-#endif

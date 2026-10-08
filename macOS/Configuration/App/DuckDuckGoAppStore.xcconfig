@@ -55,14 +55,14 @@ REVIEW_BUILD_DESTINATION = $(REVIEW_BUILD_DESTINATION_$(OVERRIDE_REVIEW_CODE_SIG
 
 PRODUCT_BUNDLE_IDENTIFIER = $(MAIN_BUNDLE_IDENTIFIER)
 
-CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGoAppStore.entitlements
-CODE_SIGN_ENTITLEMENTS[config=Debug][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreDebug.entitlements
-CODE_SIGN_ENTITLEMENTS[config=CI][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreCI.entitlements
-CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreAlpha.entitlements
+CODE_SIGN_ENTITLEMENTS = DuckDuckGoAppBundle/DuckDuckGoAppStore.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Debug][arch=*][sdk=*] = DuckDuckGoAppBundle/DuckDuckGoAppStoreDebug.entitlements
+CODE_SIGN_ENTITLEMENTS[config=CI][arch=*][sdk=*] = DuckDuckGoAppBundle/DuckDuckGoAppStoreCI.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGoAppBundle/DuckDuckGoAppStoreAlpha.entitlements
 
 // decide entitlements based on the review build destination
-CODE_SIGN_ENTITLEMENTS_review_appstore = DuckDuckGo/DuckDuckGoAppStoreReview.entitlements
-CODE_SIGN_ENTITLEMENTS_review_ui_tests = DuckDuckGo/DuckDuckGoAppStoreReviewUITests.entitlements
+CODE_SIGN_ENTITLEMENTS_review_appstore = DuckDuckGoAppBundle/DuckDuckGoAppStoreReview.entitlements
+CODE_SIGN_ENTITLEMENTS_review_ui_tests = DuckDuckGoAppBundle/DuckDuckGoAppStoreReviewUITests.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Review][arch=*][sdk=*] = $(CODE_SIGN_ENTITLEMENTS_review_$(REVIEW_BUILD_DESTINATION))
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = 3rd Party Mac Developer Application
@@ -78,7 +78,7 @@ ENABLE_APP_SANDBOX = YES
 
 MACOSX_DEPLOYMENT_TARGET = 12.3
 
-INFOPLIST_FILE = DuckDuckGo/AppStoreInfo.plist
+INFOPLIST_FILE = DuckDuckGoAppBundle/AppStoreInfo.plist
 
 PRODUCT_MODULE_NAME = $(APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE:default=$(DEFAULT_PRODUCT_MODULE_NAME))
 PRODUCT_NAME_PREFIX = DuckDuckGo App Store

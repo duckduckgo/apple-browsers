@@ -105,13 +105,13 @@ struct PrivacyIconViewModel {
 
     private static let lettersAqua: [Character: CGImage] = {
         Character.reduceCharacters(from: "a", to: "z", into: [:]) {
-            $0[$1] = NSImage(named: "\($1)")!.cgImage(forProposedRect: nil, context: .current, hints: nil)
+            $0[$1] = Bundle.module.image(forResource: "\($1)")!.cgImage(forProposedRect: nil, context: .current, hints: nil)
         }
     }()
 
     private static let lettersDark: [Character: CGImage] = {
         Character.reduceCharacters(from: "a", to: "z", into: [:]) {
-            $0[$1] = NSImage(named: "\($1)_dark")!.cgImage(forProposedRect: nil, context: .current, hints: nil)
+            $0[$1] = Bundle.module.image(forResource: "\($1)_dark")!.cgImage(forProposedRect: nil, context: .current, hints: nil)
         }
     }()
 

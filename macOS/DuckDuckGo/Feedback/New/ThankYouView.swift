@@ -93,7 +93,7 @@ private struct DaxHeartAnimation: NSViewRepresentable {
     private let animationView = LottieAnimationView()
 
     init() {
-        self.animation = LottieAnimation.named("pictogramDaxHeart")
+        self.animation = LottieAnimation.named("pictogramDaxHeart", bundle: .module)
     }
 
     func makeNSView(context: Context) -> some NSView {

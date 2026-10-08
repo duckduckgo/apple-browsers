@@ -1,4 +1,7 @@
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//
+//  main.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,18 +16,6 @@
 //  limitations under the License.
 //
 
-#include "../Common.xcconfig"
+import DuckDuckGo_Privacy_Browser
 
-BUNDLE_LOADER=$(TEST_HOST)
-
-CODE_SIGN_STYLE = Automatic
-CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] =
-
-DEAD_CODE_STRIPPING = YES
-
-INFOPLIST_FILE = DuckDuckGoAppBundle/Info.plist
-
-LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
-
-PRODUCT_NAME = $(TARGET_NAME)
-
+AppMain.main()

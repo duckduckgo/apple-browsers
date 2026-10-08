@@ -69,7 +69,7 @@ enum ViewHighlighter {
 private extension LottieAnimationView {
 
     static func makePulseAnimationView() -> LottieAnimationView {
-        let animation = LottieAnimation.named("view_highlight")
+        let animation = LottieAnimation.named("view_highlight", bundle: .module)
         let animationView = LottieAnimationView(animation: animation)
         animationView.contentMode = .scaleToFill
         animationView.loopMode = .loop

@@ -863,7 +863,6 @@ private extension AIChatCoordinator {
     }
 }
 
-#if DEBUG || REVIEW
 extension AIChatCoordinator {
 
     /// Opens the sidebar on the current tab if needed, then swaps its chat for the browser tools panel.
@@ -878,4 +877,3 @@ extension AIChatCoordinator {
         sessionStore.sessions[currentTabID]?.chatViewController?.showBrowserToolsDebugPanel()
     }
 }
-#endif

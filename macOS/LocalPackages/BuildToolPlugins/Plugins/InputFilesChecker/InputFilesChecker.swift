@@ -87,19 +87,17 @@ let temporarilyAllowedMisplacedFiles: Set<String> = [
     // Stage F: remove UserDefaultsWrapper after KeyedStoring migration.
     "DuckDuckGo/Common/Utilities/UserDefaultsWrapper.swift",
 
-    // Shared app icons, VPN assets, configuration, and localizations.
+]
+
+// Resources in the macOS/DuckDuckGo package folder that the Xcode targets bundle: they're excluded from the package
+// (Package.swift) because the app and the helper targets read them from their own main bundle.
+// Everything else in macOS/DuckDuckGo belongs to the package; an Xcode target bundling it would ship a second copy.
+let packageFolderResourcesBundledByXcodeTargets: Set<String> = [
     "DuckDuckGo/AppIcons/AppIcon-Alpha.icon",
     "DuckDuckGo/AppIcons/AppIcon-Debug.icon",
     "DuckDuckGo/AppIcons/AppIcon-Review.icon",
     "DuckDuckGo/AppIcons/AppIcon.icon",
     "DuckDuckGo/ContentBlocker/Resources/macos-config.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/privacypro_devices_legacy.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/sparkleloop_wide_legacy.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_loop.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_reveal.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-animation.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-dark-mode.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-light-mode.json",
     "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/Localizable.xcstrings",
     "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/NetworkProtectionLocalizable.xcstrings",
 ]
@@ -179,7 +177,8 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
     private func validateTargetSourceFolders(allTargets: [XcodeTarget], projectDirectory: Path) throws {
         var errors = [Error]()
         var misplacedFiles: [String: MisplacedInputFile] = [:]
-        var unobservedTemporaryExceptions = temporarilyAllowedMisplacedFiles
+        let allowedMisplacedFiles = temporarilyAllowedMisplacedFiles.union(packageFolderResourcesBundledByXcodeTargets)
+        var unobservedTemporaryExceptions = allowedMisplacedFiles
         let projectURL = URL(fileURLWithPath: projectDirectory.string).standardizedFileURL
         let projectPathPrefix = projectURL.path + "/"
         let builtProductsPath = projectURL.appendingPathComponent("build").path
@@ -205,7 +204,7 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
 
                 if filePath.hasPrefix(projectPathPrefix) {
                     let relativePath = String(filePath.dropFirst(projectPathPrefix.count))
-                    if temporarilyAllowedMisplacedFiles.contains(relativePath) {
+                    if allowedMisplacedFiles.contains(relativePath) {
                         unobservedTemporaryExceptions.remove(relativePath)
                         continue
                     }
@@ -265,7 +264,9 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         case "DBPE2ETests":
             return ["DBPE2ETests"]
         case let name where name.starts(with: "DuckDuckGo Privacy Browser"):
-            return ["DuckDuckGo"]
+            // DuckDuckGoAppBundle holds the entry point, Info.plist, entitlements and app bundle resources;
+            // the browser code is the macOS/DuckDuckGo package (see packageFolderResourcesBundledByXcodeTargets).
+            return ["DuckDuckGoAppBundle"]
         case "tests-server":
             return ["tests-server"]
         // HelperTargetsShared holds sources compiled into more than one helper target, never into the app.

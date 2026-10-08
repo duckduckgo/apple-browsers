@@ -1184,7 +1184,7 @@ private struct FirePictogramAnimation: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 
     private func attachAnimation(to container: NSView) {
-        guard let animation = LottieAnimation.asset(assetName, bundle: .main) else {
+        guard let animation = LottieAnimation.asset(assetName, bundle: .module) else {
             return
         }
         let view = LottieAnimationView(animation: animation)

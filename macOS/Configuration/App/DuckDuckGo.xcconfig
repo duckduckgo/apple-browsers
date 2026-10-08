@@ -17,6 +17,8 @@
 #include "Sparkle.xcconfig"
 #include "../DeveloperID.xcconfig"
 
+PRODUCT_MODULE_NAME = $(DEFAULT_PRODUCT_MODULE_NAME)
+
 ASSETCATALOG_COMPILER_APPICON_NAME[config=Debug][sdk=*] = AppIcon-Debug
 ASSETCATALOG_COMPILER_APPICON_NAME[config=CI][sdk=*] = AppIcon-Debug
 ASSETCATALOG_COMPILER_APPICON_NAME[config=Review][sdk=*] = AppIcon-Review
@@ -24,14 +26,14 @@ ASSETCATALOG_COMPILER_APPICON_NAME[config=Alpha][sdk=*] = AppIcon-Alpha
 
 PRODUCT_BUNDLE_IDENTIFIER = $(MAIN_BUNDLE_IDENTIFIER)
 
-CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGo.entitlements
-CODE_SIGN_ENTITLEMENTS[config=Debug][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoDebug.entitlements
-CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAlpha.entitlements
+CODE_SIGN_ENTITLEMENTS = DuckDuckGoAppBundle/DuckDuckGo.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Debug][arch=*][sdk=*] = DuckDuckGoAppBundle/DuckDuckGoDebug.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGoAppBundle/DuckDuckGoAlpha.entitlements
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application
 CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
 
-INFOPLIST_FILE = DuckDuckGo/Info.plist
+INFOPLIST_FILE = DuckDuckGoAppBundle/Info.plist
 
 PRODUCT_NAME_PREFIX = DuckDuckGo
 

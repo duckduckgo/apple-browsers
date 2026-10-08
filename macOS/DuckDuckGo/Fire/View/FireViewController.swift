@@ -510,7 +510,7 @@ private actor FireAnimationViewLoader {
     private let animationName: String
 
     private var animation: LottieAnimation? {
-        LottieAnimation.named(animationName, animationCache: LottieAnimationCache.shared)
+        LottieAnimation.named(animationName, bundle: .module, animationCache: LottieAnimationCache.shared)
     }
 }
 

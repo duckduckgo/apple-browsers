@@ -23,6 +23,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 struct SyncWithAnotherDeviceViewV2: View {
@@ -454,6 +455,7 @@ struct SyncWithAnotherDeviceViewV2_Previews: PreviewProvider {
             .environmentObject(RecoveryCodeViewModel())
             .padding()
             .background(Color(nsColor: .windowBackgroundColor))
+            .applyRebranding()
         }
     )
 }

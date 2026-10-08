@@ -22,6 +22,11 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
+#if DEBUG
+import PreviewSnapshots
+import UIComponents
+#endif
+
 struct EnterCodeTabView: View {
 
     @ObservedObject var model: ScanOrPasteCodeViewModel
@@ -132,28 +137,39 @@ struct EnterCodeTabView: View {
 }
 
 #if DEBUG
-#Preview {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+struct EnterCodeTabView_Previews: PreviewProvider {
 
-    return RebrandedPreview(isRebranded: true) {
-        EnterCodeTabView(
-            model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-        )
-        .background(SimplifiedSyncStyle.screenBackground)
-        .environment(\.colorScheme, .dark)
+    enum State {
+        case empty
+        case verifying
     }
-}
 
-#Preview("Verifying") {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
-    let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-    model.manuallyEnteredCode = sampleCode
-    model.isValidating = true
+    static let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
 
-    return RebrandedPreview(isRebranded: true) {
-        EnterCodeTabView(model: model)
-            .background(SimplifiedSyncStyle.screenBackground)
-            .environment(\.colorScheme, .dark)
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Enter Code", state: .empty),
+            .init(name: "Verifying", state: .verifying, scope: .previews)
+        ],
+        configure: { state in
+            EnterCodeTabView(model: model(for: state))
+                .background(SimplifiedSyncStyle.screenBackground)
+                .environment(\.colorScheme, .dark)
+                .applyRebranding()
+        }
+    )
+
+    private static func model(for state: State) -> ScanOrPasteCodeViewModel {
+        let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+        if state == .verifying {
+            model.manuallyEnteredCode = sampleCode
+            model.isValidating = true
+        }
+        return model
     }
 }
 #endif

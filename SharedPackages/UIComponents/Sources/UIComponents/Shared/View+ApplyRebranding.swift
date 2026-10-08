@@ -1,6 +1,5 @@
 //
-//  ScanQRCodeViewTests.swift
-//  DuckDuckGo
+//  View+ApplyRebranding.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,21 +16,18 @@
 //  limitations under the License.
 //
 
-import SnapshotTestingSupport
-import Testing
-@testable import SyncUI_iOS
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import SwiftUI
 
-@MainActor
-@Suite("Scan QR Code View Tests")
-final class ScanQRCodeViewTests {
+public extension View {
 
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func testScanQRCodeViewiPhoneScreenSnapshots() {
-        assertImageSnapshots(
-            ScanQRCodeView_Previews.snapshots,
-            strategy: .iPhoneSingle(.dark),
-            size: .screen
-        )
+    func applyRebranding() -> Self {
+        AppRebrand.isAppRebranded = { true }
+        DesignSystemRebrand.isAppRebranded = { true }
+        #if os(iOS)
+        DesignSystemPalette.current = .rebranded
+        #endif
+        return self
     }
 }

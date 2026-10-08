@@ -1,5 +1,5 @@
 //
-//  ScanQRCodeViewTests.swift
+//  EnterCodeTabViewTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,14 +22,14 @@ import Testing
 @testable import SyncUI_iOS
 
 @MainActor
-@Suite("Scan QR Code View Tests")
-final class ScanQRCodeViewTests {
+@Suite("Enter Code Tab View Tests")
+final class EnterCodeTabViewTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func testScanQRCodeViewiPhoneScreenSnapshots() {
+    func testEnterCodeTabViewSnapshots() {
         assertImageSnapshots(
-            ScanQRCodeView_Previews.snapshots,
+            EnterCodeTabView_Previews.snapshots,
             strategy: .iPhoneSingle(.dark),
             size: .screen
         )

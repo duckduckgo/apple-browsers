@@ -878,6 +878,7 @@ final class TabCollectionViewModel: NSObject {
             shouldLoadInBackground: true,
             burnerMode: tab.burnerMode
         )
+        tabCopy.aiChat?.noteRecreated(as: .tabCopy)
 
         if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
             guard let loadedTab = materialize(at: tabIndex) else { return }

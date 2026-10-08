@@ -81,6 +81,7 @@ final class PromptBarPresenter: PromptBarPresenting {
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
+    private var dimWindow: NSWindow?
 
     var isVisible: Bool {
         window?.isVisible ?? false
@@ -120,6 +121,28 @@ final class PromptBarPresenter: PromptBarPresenting {
     func showForLauncherPromo(shortcut: String) {
         present()
         content.showLauncherIntroduction(shortcut: shortcut)
+        dimScreen()
+    }
+
+    private func dimScreen() {
+        guard dimWindow == nil, let window, let screen = window.screen else { return }
+
+        let dimWindow = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        dimWindow.isReleasedWhenClosed = false
+        dimWindow.backgroundColor = .black
+        dimWindow.isOpaque = false
+        dimWindow.hasShadow = false
+        dimWindow.ignoresMouseEvents = true
+        dimWindow.level = window.level
+        dimWindow.collectionBehavior = window.collectionBehavior
+        dimWindow.alphaValue = 0
+        dimWindow.order(.below, relativeTo: window.windowNumber)
+        self.dimWindow = dimWindow
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            dimWindow.animator().alphaValue = 0.15
+        }
     }
 
     private func present() {
@@ -147,6 +170,8 @@ final class PromptBarPresenter: PromptBarPresenting {
         let hadText = content.hasPromptText
         resignKeyCancellable = nil
         window.orderOut(nil)
+        dimWindow?.orderOut(nil)
+        dimWindow = nil
         content.resetAfterDismissal()
 
         if let cancellation = reason.cancellation {

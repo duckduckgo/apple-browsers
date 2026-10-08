@@ -100,6 +100,8 @@ final class TabManagerTests: XCTestCase {
         mock.onRemovePreviewsWithIdNotIn = { previewsCleanedUp.fulfill() }
 
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        // Only this post may find excess previews: the host app's own first activation can land while we await.
+        mock.totalStoredPreviewsReturnValue = nil
         await fulfillment(of: [previewsCleanedUp], timeout: 5.0)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
         mock.onRemovePreviewsWithIdNotIn = nil
@@ -784,6 +786,12 @@ final class TabManagerTests: XCTestCase {
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+
+        // The web view outlives its controller until WebKit's pending main run loop work finishes. Wait for it here,
+        // or its 4s dealloc assertion can fire in a later suite that does not spin the run loop in time.
+        let webViewReleased = XCTestExpectation(description: "Web view released")
+        controller.webView.onDeinit { webViewReleased.fulfill() }
+        addTeardownBlock { self.wait(for: [webViewReleased], timeout: 3.0) }
     }
 
     func testWhenReportingFromTabTerminationErrorPageThenDirectFeedbackFormEntryPointIsUsed() throws {

@@ -107,9 +107,9 @@ struct NewTabPageKeyboardPolicyTests {
         let url = try #require(URL(string: "https://example.com"))
         let website = Tab(link: Link(title: nil, url: url), fireTab: false)
 
-        policy.rememberInputFocusForTabSwitch(on: newTab, isInputFocused: isInputFocused, isEnabled: isEnabled)
+        policy.rememberInputFocusForTabSwitch(on: newTab, isInputFocused: isInputFocused)
         // The tab switcher's programmatic dismissal is separate from the captured user focus.
-        policy.rememberInputFocusForTabSwitch(on: website, isInputFocused: false, isEnabled: isEnabled)
+        policy.rememberInputFocusForTabSwitch(on: website, isInputFocused: false)
 
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: website, isEnabled: isEnabled) == false)
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: otherNewTab, isEnabled: isEnabled) == false)
@@ -121,30 +121,24 @@ struct NewTabPageKeyboardPolicyTests {
     func whenLeavingPageWithDismissedInputThenPreviousFocusIsCleared() {
         let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
         let tab = Tab(fireTab: false)
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: true)
+        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
 
         // An inactive unified-input session has no first responder, even while its editor exists.
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: false, isEnabled: true)
+        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: false)
 
         #expect(tab.wasInputFocusedBeforeTabSwitch == false)
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true) == false)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Runtime flag changes are checked on capture and swipe restoration", .timeLimit(.minutes(1)))
+    @Test("Runtime flag changes are checked on swipe restoration", .timeLimit(.minutes(1)))
     func whenFlagChangesThenSwipeRestorationUsesCurrentFlagState() {
         let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
         let tab = Tab(fireTab: false)
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: true)
+        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: false) == false)
-
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: false)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true) == false)
-
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: true)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -153,7 +147,7 @@ struct NewTabPageKeyboardPolicyTests {
     func whenSwipingBackThenKeyboardFollowsNewTabSetting(onNewTab: Bool, onAppLaunch: Bool) {
         let policy = NewTabPageKeyboardPolicy(onNewTab: onNewTab, onAppLaunch: onAppLaunch)
         let tab = Tab(fireTab: false)
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: true)
+        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
 
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true) == onNewTab)
     }
@@ -163,7 +157,7 @@ struct NewTabPageKeyboardPolicyTests {
     func whenTabNavigatesThenRememberedInputFocusIsCleared() throws {
         let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
         let tab = Tab(fireTab: false)
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: true)
+        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
         let url = try #require(URL(string: "https://example.com"))
 
         tab.link = Link(title: nil, url: url)
@@ -178,7 +172,7 @@ struct NewTabPageKeyboardPolicyTests {
     func whenTabIsArchivedThenRememberedInputFocusIsNotPersisted() throws {
         let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
         let tab = Tab(fireTab: false)
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true, isEnabled: true)
+        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
 
         let data = try NSKeyedArchiver.archivedData(withRootObject: tab, requiringSecureCoding: false)
         let restoredTab = try #require(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)

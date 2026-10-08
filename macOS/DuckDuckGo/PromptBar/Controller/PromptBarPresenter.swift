@@ -121,7 +121,6 @@ final class PromptBarPresenter: PromptBarPresenting {
     func showForLauncherPromo(shortcut: String) {
         present()
         content.showLauncherIntroduction(shortcut: shortcut)
-        dimScreen()
     }
 
     private func animateAppearance(of window: NSWindow) {
@@ -182,6 +181,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         window.orderFrontRegardless()
         window.makeKey()
         animateAppearance(of: window)
+        dimScreen()
         // First responder only sticks once the window is key.
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.

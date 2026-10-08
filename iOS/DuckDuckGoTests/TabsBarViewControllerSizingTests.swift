@@ -141,6 +141,36 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertFalse(source.contentView.isHidden)
         XCTAssertEqual(model.tabs, tabs)
     }
+
+    @MainActor
+    func testScrollCallbackKeepsFlareAlignedWithPinnedSelectedCellBeforeNextLayoutPass() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+        controller.view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+        controller.view.layoutIfNeeded()
+        let tabs = (0..<17).map { _ in Tab(desktop: true, fireTab: false) }
+        let model = TabsModel(tabs: tabs, currentIndex: 8, desktop: true)
+        controller.refresh(tabsModel: model)
+        let collectionView = controller.collectionView
+        collectionView.layoutIfNeeded()
+        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+        let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
+        let indexPath = IndexPath(item: 8, section: 0)
+        let rampWidth = TabsBarViewController.Constants.tabRampSize.width
+
+        for (initialOffset, direction) in [(CGFloat(0), CGFloat(1)), (1200, -1)] {
+            collectionView.contentOffset.x = initialOffset
+            collectionView.layoutIfNeeded()
+            controller.scrollViewDidScroll(collectionView)
+            let selected = try XCTUnwrap(collectionView.cellForItem(at: indexPath))
+            XCTAssertNotEqual(selected.frame, layout.unpinnedFrameForItem(at: indexPath))
+            for distance in [CGFloat(20), 40, 60] {
+                collectionView.contentOffset.x = initialOffset + direction * distance
+                controller.scrollViewDidScroll(collectionView)
+                XCTAssertEqual(background.frame, selected.frame.insetBy(dx: -rampWidth, dy: 0))
+            }
+        }
+    }
 }
 
 @MainActor

@@ -734,6 +734,8 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // Apply the pinned cell frames before positioning the selection background.
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 

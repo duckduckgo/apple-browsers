@@ -35,6 +35,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.window = window
             window.layer.speed = AppUserDefaults().slowAnimationsEnabled ? AppUserDefaults.slowAnimationsLayerSpeed : 1.0
             appStateMachine.handle(.willConnectToWindow(window: window))
+#if DEBUG
+            if SceneReconnectRepro.mode == .connected {
+                simulateSecondWindowConnect(in: windowScene, replacing: window)
+            }
+#endif
         }
 
         if let shortcutItem = connectionOptions.shortcutItem {
@@ -64,6 +69,16 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     /// See: `Foreground.swift` -> `onTransition()`
     func sceneDidBecomeActive(_ scene: UIScene) {
         appStateMachine.handle(.didBecomeActive)
+#if DEBUG
+        if SceneReconnectRepro.mode == .foreground, !SceneReconnectRepro.didFire,
+           let windowScene = scene as? UIWindowScene, let window {
+            SceneReconnectRepro.didFire = true
+            // Simulated event timeline for the repro, not a timing workaround.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.simulateSecondWindowConnect(in: windowScene, replacing: window)
+            }
+        }
+#endif
     }
 
     /// See: `Foreground.swift` -> `willLeave()`
@@ -111,3 +126,26 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
 }
+
+#if DEBUG
+/// Repro harness: `-sceneReconnectRepro connected|foreground` launch argument.
+enum SceneReconnectRepro: String {
+    case connected, foreground
+
+    static let mode = UserDefaults.standard.string(forKey: "sceneReconnectRepro").flatMap(SceneReconnectRepro.init)
+    static var didFire = false
+}
+
+extension SceneDelegate {
+
+    /// Mimics iOS handing over a new window for the scene; the old window is hidden as if its scene went away.
+    func simulateSecondWindowConnect(in windowScene: UIWindowScene, replacing oldWindow: UIWindow) {
+        Logger.lifecycle.debug("[SceneRepro] second willConnectToWindow, mode=\(String(describing: SceneReconnectRepro.mode), privacy: .public)")
+        oldWindow.isHidden = true
+        let newWindow = UIWindow(windowScene: windowScene)
+        window = newWindow
+        appStateMachine.handle(.willConnectToWindow(window: newWindow))
+        Logger.lifecycle.debug("[SceneRepro] after: newWindow.root=\(String(describing: newWindow.rootViewController), privacy: .public) isKey=\(newWindow.isKeyWindow, privacy: .public) hidden=\(newWindow.isHidden, privacy: .public)")
+    }
+}
+#endif

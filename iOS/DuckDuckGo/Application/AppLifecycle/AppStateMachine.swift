@@ -245,6 +245,7 @@ final class AppStateMachine {
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)
+            Logger.lifecycle.debug("[SceneRepro] Connected state got willConnectToWindow, windowChanged=\(windowChanged, privacy: .public) - only firing pixel")
             PixelKit.fire(Pixel.Event.sceneWillConnectToWindowCalledInConnectedState,
                           frequency: .dailyAndCount,
                           options: .parameters([PixelParameters.windowChanged: String(windowChanged)]))
@@ -265,6 +266,7 @@ final class AppStateMachine {
         case .willResignActive:
             foreground.willLeave()
         case .willConnectToWindow(let window): // Please remove once we stop supporting iOS 16
+            Logger.lifecycle.debug("[SceneRepro] Foreground state got willConnectToWindow - reattaching to new window")
             storeWindowIdentifier(window)
             currentState = .connected(foreground.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:

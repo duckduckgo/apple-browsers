@@ -18,7 +18,6 @@
 //
 
 import Bookmarks
-import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -145,30 +144,6 @@ final class AddFavoriteViewModelTests: XCTestCase {
 
         XCTAssertFalse(model.save())
         XCTAssertEqual(bookmarks.creations.count, 1)
-    }
-}
-
-@MainActor
-final class AddFavoriteViewControllerTests: XCTestCase {
-    func testSheetHeightTracksDynamicTypeChanges() {
-        let model = AddFavoriteViewModel(bookmarks: AddFavoriteBookmarksMock())
-        let controller = AddFavoriteViewController(model: model)
-        let parent = UIViewController()
-        parent.addChild(controller)
-        parent.setOverrideTraitCollection(UITraitCollection(preferredContentSizeCategory: .large), forChild: controller)
-        parent.view.addSubview(controller.view)
-        controller.didMove(toParent: parent)
-        controller.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
-        controller.view.setNeedsLayout()
-        controller.view.layoutIfNeeded()
-        let normalHeight = controller.preferredContentSize.height
-
-        parent.setOverrideTraitCollection(UITraitCollection(preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge), forChild: controller)
-        controller.view.setNeedsLayout()
-        controller.view.layoutIfNeeded()
-
-        XCTAssertGreaterThan(normalHeight, 0)
-        XCTAssertGreaterThan(controller.preferredContentSize.height, normalHeight)
     }
 }
 

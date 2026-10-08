@@ -54,6 +54,7 @@ final class TabFlareBackgroundController {
 
     private var isReordering = false
     private var reorderTrackingDisplayLink: CADisplayLink?
+    private var lastContentOffset: CGPoint?
 
     init(collectionView: UICollectionView,
          topCornerRadius: CGFloat,
@@ -76,7 +77,7 @@ final class TabFlareBackgroundController {
     }
 
     /// Positions the flare over the current tab.
-    func update() {
+    func update(animated: Bool = false) {
         // The display link owns the frame during a reorder.
         guard !isReordering else { return }
         guard let collectionView,
@@ -85,7 +86,7 @@ final class TabFlareBackgroundController {
             view.isHidden = true
             return
         }
-        view.frame = attributes.frame.insetBy(dx: -rampWidth, dy: 0)
+        updateFrame(attributes.frame, animated: animated)
         view.fillColor = fillColor()
         view.isHidden = false
         applyAlpha()
@@ -117,7 +118,7 @@ final class TabFlareBackgroundController {
     func endReorder() {
         stopReorderTracking()
         isReordering = false
-        update()
+        update(animated: true)
     }
 
     // Preview hiding takes precedence over scroll hiding.
@@ -141,7 +142,7 @@ final class TabFlareBackgroundController {
         reorderTrackingDisplayLink = nil
     }
 
-    /// Follows the current tab cell's live frame during a reorder.
+    /// Animates between insertion slots instead of copying the placeholder's jumps.
     private func trackToCurrentTabCell() {
         guard let collectionView else {
             endReorder()
@@ -154,7 +155,24 @@ final class TabFlareBackgroundController {
         }
         guard let index = currentIndex(),
               let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
-        let cellFrame = cell.layer.presentation()?.frame ?? cell.frame
-        view.frame = cellFrame.insetBy(dx: -rampWidth, dy: 0)
+        updateFrame(cell.frame, animated: true)
+    }
+
+    private func updateFrame(_ cellFrame: CGRect, animated: Bool) {
+        let frame = cellFrame.insetBy(dx: -rampWidth, dy: 0)
+        let contentOffset = collectionView?.contentOffset
+        // Scrolling already moves the flare; only animate changes between insertion slots.
+        let shouldAnimate = animated && contentOffset == lastContentOffset && !UIAccessibility.isReduceMotionEnabled
+        lastContentOffset = contentOffset
+        guard view.frame != frame else { return }
+        let position = view.layer.presentation()?.position ?? view.layer.position
+        view.layer.removeAnimation(forKey: "reorder")
+        view.frame = frame
+        guard shouldAnimate else { return }
+        let animation = CABasicAnimation(keyPath: "position")
+        animation.fromValue = position
+        animation.duration = 0.15
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        view.layer.add(animation, forKey: "reorder")
     }
 }

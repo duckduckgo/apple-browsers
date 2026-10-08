@@ -249,7 +249,75 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
-    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0, itemCount: Int = 10)
+    func testActiveDragKeepsAccordionTabsInsideVisibleStrip() throws {
+        let (collectionView, layout) = makeCollectionView(currentIndex: { 0 }, contentOffset: 300, activeDrag: true)
+        XCTAssertTrue(collectionView.hasActiveDrag)
+        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+        XCTAssertEqual(attributes.first { $0.indexPath.item == 0 }?.frame.minX, 310)
+        XCTAssertGreaterThan(collectionView.visibleCells.count, 1)
+        for cell in collectionView.visibleCells {
+            XCTAssertGreaterThanOrEqual(cell.frame.minX, 310)
+            XCTAssertLessThanOrEqual(cell.frame.maxX, 840)
+        }
+    }
+
+    func testFlareAnimatesToSelectedTabWhenReorderEnds() throws {
+        var currentIndex = 0
+        let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: 300)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousKeyWindow = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = collectionView.frame
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(collectionView)
+        window.makeKeyAndVisible()
+        let wereAnimationsEnabled = UIView.areAnimationsEnabled
+        UIView.setAnimationsEnabled(true)
+        defer {
+            UIView.setAnimationsEnabled(wereAnimationsEnabled)
+            window.isHidden = true
+            previousKeyWindow?.makeKey()
+        }
+        let flare = TabFlareBackgroundController(collectionView: collectionView,
+                                                topCornerRadius: TabsBarCell.cornerRadius,
+                                                rampSize: TabsBarViewController.Constants.tabRampSize,
+                                                currentIndex: { currentIndex },
+                                                fillColor: { .white })
+        flare.update()
+        window.layoutIfNeeded()
+        CATransaction.flush()
+        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+        XCTAssertEqual(background.frame, CGRect(x: 300, y: 0, width: 140, height: 40))
+
+        flare.beginReorder()
+        currentIndex = 5
+        layout.invalidateLayout()
+        collectionView.layoutIfNeeded()
+        flare.endReorder()
+        CATransaction.flush()
+
+        XCTAssertEqual(background.frame, CGRect(x: 590, y: 0, width: 140, height: 40))
+        let animationKeys = background.layer.animationKeys() ?? []
+        let positionAnimations = animationKeys.compactMap { background.layer.animation(forKey: $0) as? CAPropertyAnimation }
+            .filter { $0.keyPath == "position" }
+        if UIAccessibility.isReduceMotionEnabled {
+            XCTAssertTrue(positionAnimations.isEmpty)
+        } else {
+            let animation = try XCTUnwrap(positionAnimations.first, "Expected a position animation; registered keys: \(animationKeys)")
+            XCTAssertGreaterThan(animation.duration, 0)
+        }
+
+        collectionView.contentOffset.x = 700
+        collectionView.layoutIfNeeded()
+        flare.update(animated: true)
+        CATransaction.flush()
+
+        XCTAssertEqual(background.frame, CGRect(x: 700, y: 0, width: 140, height: 40))
+        let remainingAnimations = (background.layer.animationKeys() ?? []).compactMap { background.layer.animation(forKey: $0) as? CAPropertyAnimation }
+        XCTAssertFalse(remainingAnimations.contains { $0.keyPath == "position" })
+    }
+
+    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0, itemCount: Int = 10, activeDrag: Bool = false)
         -> (UICollectionView, TabsBarCollectionViewLayout) {
         self.itemCount = itemCount
         let layout = TabsBarCollectionViewLayout()
@@ -258,7 +326,8 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
         layout.currentIndex = currentIndex
-        let collectionView = UICollectionView(frame: CGRect(x: 0, y: 0, width: 600, height: 40), collectionViewLayout: layout)
+        let collectionView = DraggingTabsCollectionView(frame: CGRect(x: 0, y: 0, width: 600, height: 40), collectionViewLayout: layout)
+        collectionView.activeDrag = activeDrag
         collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.contentInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 60)
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
@@ -277,4 +346,10 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath)
     }
+}
+
+@MainActor
+private final class DraggingTabsCollectionView: UICollectionView {
+    var activeDrag = false
+    override var hasActiveDrag: Bool { activeDrag }
 }

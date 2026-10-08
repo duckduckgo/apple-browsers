@@ -153,13 +153,17 @@ final class KeyboardPresenter: KeyboardPresenting {
                                                    scheduleKeyboard: @escaping () -> Void) {
         // A launch task can finish after its foreground ended; replacing the next foreground's wait would drop its keyboard.
         guard isCurrentRequest(requestID) else { return }
-        mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+        let waitForWindow = { [self] in
             guard isCurrentRequest(requestID) else { return }
-            if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
-                mainViewController.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen, completion: scheduleKeyboard)
-            } else {
+            mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+                guard isCurrentRequest(requestID) else { return }
                 scheduleKeyboard()
             }
+        }
+        if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
+            mainViewController.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen, completion: waitForWindow)
+        } else {
+            waitForWindow()
         }
     }
 

@@ -371,7 +371,7 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A locked app holds the flag-on keyboard until unlock, unless the request is cancelled first",
+    @Test("A locked idle return closes the old screen before waiting for unlock and respects cancellation",
           .timeLimit(.minutes(1)), arguments: [false, true])
     func lockedAppWaitsForUnlock(cancelBeforeUnlock: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
@@ -379,7 +379,11 @@ final class KeyboardPresenterTests {
 
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
 
-        #expect(target.closeScreensCallCount == 0)
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.windowVisibleHandler == nil)
+        #expect(scheduledActions.isEmpty)
+        target.dismissalCompletion?()
+        #expect(target.windowVisibleHandler != nil)
         #expect(scheduledActions.isEmpty)
 
         if cancelBeforeUnlock {
@@ -387,10 +391,9 @@ final class KeyboardPresenterTests {
         }
         target.isWindowVisible = true
         target.windowVisibleHandler?()
-        target.dismissalCompletion?()
         scheduledActions.forEach { $0() }
 
-        #expect(target.closeScreensCallCount == (cancelBeforeUnlock ? 0 : 1))
+        #expect(target.closeScreensCallCount == 1)
         #expect(target.allowedKeyboardCallCount == (cancelBeforeUnlock ? 0 : 1))
     }
 
@@ -422,7 +425,7 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("An idle return behind App Lock closes only the screen left open before the unlock", .timeLimit(.minutes(1)))
+    @Test("A locked idle return prepares the old screen before a launch prompt and waits for that prompt", .timeLimit(.minutes(1)))
     func lockedIdleReturnClosesOnlyScreenLeftOpen() {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         let settings = UIViewController()
@@ -430,11 +433,27 @@ final class KeyboardPresenterTests {
         target.isWindowVisible = false
 
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.closedScreen === settings)
+        #expect(target.windowVisibleHandler == nil)
+        target.dismissalCompletion?()
+
         target.presentedViewController = UIViewController()
+        promptPending = true
         target.isWindowVisible = true
         target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
 
+        #expect(target.closeScreensCallCount == 1)
         #expect(target.closedScreen === settings)
+        #expect(promptCloseHandler != nil)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        target.presentedViewController = nil
+        promptPending = false
+        promptCloseHandler?()
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)

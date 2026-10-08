@@ -140,9 +140,10 @@ final class LaunchActionHandler: LaunchActionHandling {
                         guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
                         switch result {
                         case .keptCurrent:
+                            // Preparation already closed the old screen; don't dismiss a newly presented launch prompt.
                             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
                                                                    hasCompletedAuthentication: hasCompletedAuthentication,
-                                                                   isAfterIdleReturn: true)
+                                                                   isAfterIdleReturn: false)
                         case .openedNewTab:
                             keyboardPresenter.showKeyboardOnNewTabPageCreated()
                         case .suppressed:

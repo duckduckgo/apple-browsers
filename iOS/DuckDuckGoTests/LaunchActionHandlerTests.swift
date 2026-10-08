@@ -443,7 +443,28 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == (isFirstForeground ? nil : date))
         #expect(!keyboardPresenter.hasCompletedAuthentication)
-        #expect(keyboardPresenter.isAfterIdleReturn)
+        #expect(!keyboardPresenter.isAfterIdleReturn)
+        #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A kept New Tab Page finishes preparation before requesting focus without another dismissal", .timeLimit(.minutes(1)))
+    func keptNewTabPageWaitsForPreparation() throws {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
+        idleReturnDelegate.completesNewTabPageImmediately = false
+        let date = Date().addingTimeInterval(-25)
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
+
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+        let completion = try #require(idleReturnDelegate.newTabPageCompletion)
+        completion(.keptCurrent)
+
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == date)
+        #expect(!keyboardPresenter.isAfterIdleReturn)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
     }
 

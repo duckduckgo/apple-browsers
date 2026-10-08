@@ -103,6 +103,10 @@ protocol OmniBar: AnyObject {
 }
 
 extension OmniBar {
+    var isInputFirstResponder: Bool {
+        barView.textField.isFirstResponder || (barView as? ExpandableOmniBarView)?.aiChatTextView.isFirstResponder == true
+    }
+
     /// Begins editing without overriding the selected mode.
     func beginEditing(animated: Bool) {
         beginEditing(animated: animated, forTextEntryMode: nil)

@@ -271,6 +271,7 @@
 		56D0602D2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D0602C2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift */; };
 		56D2D65C2D5F748200C59354 /* NetworkProtectionDNSSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D2D65B2D5F748200C59354 /* NetworkProtectionDNSSettingsViewModelTests.swift */; };
 		56D7792C2CFF476800B619EF /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D664C7DC2B28A02800CBFA76 /* StoreKit.framework */; };
+		F99DD29E130B41378BBF5F70 /* TabViewController+PageSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFDCDD2426645DB9226497F /* TabViewController+PageSignals.swift */; };
 		56F2C3E60CB746C88FFFE45F /* TabViewController+SitePermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C39CFCEC2D40D5A16FF7D1 /* TabViewController+SitePermissions.swift */; };
 		5A42818D271DCBB511C163EA /* SubscriptionPromoExistingUserCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE011B99901B24D8BE93DA1F /* SubscriptionPromoExistingUserCoordinator.swift */; };
 		5AB12C3D4E5F60718293A4BF /* MockChatHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */; };
@@ -3529,6 +3530,7 @@
 		F505ACF205934E868F011C16 /* NotificationServiceManagerInactivityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceManagerInactivityTests.swift; sourceTree = "<group>"; };
 		F5B8A4C2A6FBE678C5A92ABF /* SearchTokenFetcherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SearchTokenFetcherTests.swift; sourceTree = "<group>"; };
 		F7594859CB2334A38D629EF5 /* SafariRedirectHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariRedirectHandlerTests.swift; sourceTree = "<group>"; };
+		9DFDCDD2426645DB9226497F /* TabViewController+PageSignals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabViewController+PageSignals.swift"; sourceTree = "<group>"; };
 		F7C39CFCEC2D40D5A16FF7D1 /* TabViewController+SitePermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabViewController+SitePermissions.swift"; sourceTree = "<group>"; };
 		F99D6557A506491EFDAD68A2 /* DBPIOSContentBlockingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DBPIOSContentBlockingTests.swift; sourceTree = "<group>"; };
 		FA57C0DE0000000000000016 /* HangMetrics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HangMetrics; path = ../SharedPackages/HangMetrics; sourceTree = SOURCE_ROOT; };
@@ -7081,6 +7083,7 @@
 				C13830FB2DCD3F1400A29B3C /* WebView.swift */,
 				F1386BA31E6846C40062FC3C /* TabDelegate.swift */,
 				F159BDA31F0BDB5A00B4A01D /* TabViewController.swift */,
+				9DFDCDD2426645DB9226497F /* TabViewController+PageSignals.swift */,
 				F7C39CFCEC2D40D5A16FF7D1 /* TabViewController+SitePermissions.swift */,
 				E1A4A4D42F2A111100AA11BB /* TabViewController+UI.swift */,
 				6F4BFD3D2DE06F1F00E754EB /* StyledTopBottomBorderView.swift */,
@@ -8763,6 +8766,7 @@
 				1E1626072968413B0004127F /* ViewExtension.swift in Sources */,
 				859DB8132CE6263C001F7210 /* TextZoomStorage.swift in Sources */,
 				D65625952C22D382006EF297 /* TabViewController.swift in Sources */,
+				F99DD29E130B41378BBF5F70 /* TabViewController+PageSignals.swift in Sources */,
 				56F2C3E60CB746C88FFFE45F /* TabViewController+SitePermissions.swift in Sources */,
 				E1A4A4D52F2A111100AA11BB /* TabViewController+UI.swift in Sources */,
 				CBB6055E30081648003607EA /* MinimalChromeModeDecision.swift in Sources */,

@@ -40,9 +40,10 @@ final class AddFavoriteViewModel: ObservableObject {
     var canSave: Bool { validatedURL != nil }
 
     func save() -> Bool {
-        guard let url = validatedURL else { return false }
+        guard canSave else { return false }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard bookmarks.saveFavorite(title: trimmedName.isEmpty ? nil : trimmedName, url: url) else { return false }
+        let trimmedURL = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard bookmarks.saveFavorite(title: trimmedName.isEmpty ? nil : trimmedName, urlString: trimmedURL) else { return false }
         onSave?()
         return true
     }

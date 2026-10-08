@@ -77,7 +77,7 @@ public protocol MenuBookmarksInteracting {
 
     func createOrToggleFavorite(title: String, url: URL)
 
-    func saveFavorite(title: String?, url: URL) -> Bool
+    func saveFavorite(title: String?, urlString: String) -> Bool
 
     func createBookmark(title: String, url: URL)
 

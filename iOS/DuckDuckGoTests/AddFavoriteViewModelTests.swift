@@ -33,8 +33,7 @@ final class AddFavoriteViewModelTests: XCTestCase {
         XCTAssertTrue(model.canSave)
         XCTAssertTrue(model.save())
         XCTAssertEqual(bookmarks.creations.count, 1)
-        XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "example.com")
-        XCTAssertNil(bookmarks.creations.first?.url.scheme)
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "example.com")
         XCTAssertEqual(bookmarks.creations.first?.title, "example.com")
     }
 
@@ -45,7 +44,7 @@ final class AddFavoriteViewModelTests: XCTestCase {
         model.name = "  My favorite  "
 
         XCTAssertTrue(model.save())
-        XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "http://example.com/page?q=one")
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "http://example.com/page?q=one")
         XCTAssertEqual(bookmarks.creations.first?.title, "My favorite")
     }
 
@@ -70,19 +69,19 @@ final class AddFavoriteViewModelTests: XCTestCase {
 
             XCTAssertTrue(model.canSave, input)
             XCTAssertTrue(model.save(), input)
-            XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, input)
+            XCTAssertEqual(bookmarks.creations.first?.urlString, input)
         }
     }
 
-    func testBookmarkletIsEncodedWithoutDoubleEncoding() {
+    func testBookmarkletIsSavedAsEntered() {
         for input in ["javascript:alert('Hello world')", "javascript:alert('Hello%20world')"] {
             let bookmarks = AddFavoriteBookmarksMock()
             let model = AddFavoriteViewModel(bookmarks: bookmarks)
-            model.urlText = input
+            model.urlText = "  \(input)  \n"
 
             XCTAssertTrue(model.canSave)
             XCTAssertTrue(model.save())
-            XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "javascript:alert('Hello%20world')")
+            XCTAssertEqual(bookmarks.creations.first?.urlString, input)
         }
     }
 
@@ -111,18 +110,16 @@ final class AddFavoriteViewModelTests: XCTestCase {
         model.urlText = "example.com:8443/page"
 
         XCTAssertTrue(model.save())
-        XCTAssertEqual(bookmarks.creations.first?.url.absoluteString, "example.com:8443/page")
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "example.com:8443/page")
     }
 
-    func testInternationalDomainUsesBookmarkParser() {
+    func testInternationalDomainIsSavedAsEntered() {
         let bookmarks = AddFavoriteBookmarksMock()
         let model = AddFavoriteViewModel(bookmarks: bookmarks)
         model.urlText = "https://例子.测试/page"
 
         XCTAssertTrue(model.save())
-        XCTAssertEqual(bookmarks.creations.first?.url.scheme, "https")
-        XCTAssertEqual(bookmarks.creations.first?.url.host, "xn--fsqu00a.xn--0zwm56d")
-        XCTAssertEqual(bookmarks.creations.first?.url.path, "/page")
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "https://例子.测试/page")
     }
 
     func testSaveCallbackRunsAfterEachSuccessfulSave() {
@@ -178,15 +175,15 @@ final class AddFavoriteViewControllerTests: XCTestCase {
 private final class AddFavoriteBookmarksMock: MenuBookmarksInteracting {
     var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.mobile)
     var shouldCreate = true
-    var creations: [(title: String, url: URL)] = []
+    var creations: [(title: String, urlString: String)] = []
     var onCreate: (() -> Void)?
 
     func createOrToggleFavorite(title: String, url: URL) {
         XCTFail("Must save without toggling a favorite")
     }
 
-    func saveFavorite(title: String?, url: URL) -> Bool {
-        creations.append((title ?? url.host ?? url.absoluteString, url))
+    func saveFavorite(title: String?, urlString: String) -> Bool {
+        creations.append((title ?? BookmarkUtils.url(from: urlString)?.host ?? urlString, urlString))
         onCreate?()
         return shouldCreate
     }

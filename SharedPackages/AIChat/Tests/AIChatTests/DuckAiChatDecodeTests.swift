@@ -198,7 +198,8 @@ final class DuckAiChatDecodeTests: XCTestCase {
 
     func testWhenLastMessageHasEmptyContentAndTextPartThenLastMessageContentIsExtractedFromParts() throws {
         // Reasoning models (e.g. `gpt-5-mini`) ship assistant responses with `content == ""`
-        // and the visible text inside `parts[].text` where `type == "text"`.
+        // and the visible text inside `parts[].text` where `type == "text"`. Consecutive text
+        // parts are streaming chunks, which the web app shows as one block.
         let json = """
             {
               "chatId": "c1",
@@ -207,15 +208,15 @@ final class DuckAiChatDecodeTests: XCTestCase {
                 {"role":"user","content":"hello"},
                 {"role":"assistant","content":"","parts":[
                   {"type":"reasoning","encryptedText":"opaque"},
-                  {"type":"text","text":"the actual reply"},
-                  {"type":"text","text":"second line"}
+                  {"type":"text","text":"the actual "},
+                  {"type":"text","text":"reply"}
                 ]}
               ]
             }
             """
 
         let decoded = try DuckAiChat.decode(from: Data(json.utf8))
-        XCTAssertEqual(decoded.lastMessageContent, "the actual reply\n\nsecond line")
+        XCTAssertEqual(decoded.lastMessageContent, "the actual reply")
     }
 
     func testWhenLastMessageHasContentAndTextPartThenContentWins() throws {
@@ -324,23 +325,27 @@ final class DuckAiChatDecodeTests: XCTestCase {
         XCTAssertTrue(decoded.chat.isImageGeneration)
     }
 
-    func testIsImageGeneration_trueWhenCanonicalAssistantContentHasGeneratedImagePart() throws {
+    func testWhenCanonicalTextPartsAreSplitByToolCallThenEachRunIsOneBlock() throws {
+        // The web app shows consecutive text parts (streaming chunks) as one block, and starts a
+        // new block after a tool call or search results.
         let json = """
             {
               "chatId": "c1",
-              "model": "gpt-5-mini",
               "messages": [
-                {"id":"m1","role":"user","createdAt":"2026-10-01T10:00:00.000Z",
-                 "content":[{"type":"text","text":"draw a duck"}]},
-                {"id":"m2","role":"assistant","createdAt":"2026-10-01T10:00:05.000Z","content":[
-                  {"type":"generated-image","id":"gi1","width":1024,"height":1024,"format":"png"}
+                {"id":"m1","role":"assistant","createdAt":"2026-10-01T10:00:05.000Z","content":[
+                  {"type":"text","text":"Let me "},
+                  {"type":"text","text":"look that up."},
+                  {"type":"tool-call","toolCallId":"tc1","toolName":"web_search","toolArguments":"{}"},
+                  {"type":"tool-result","toolCallId":"tc1","result":"ok"},
+                  {"type":"text","text":"Here's what "},
+                  {"type":"text","text":"I found."}
                 ]}
               ]
             }
             """
 
         let decoded = try DuckAiChat.decode(from: Data(json.utf8))
-        XCTAssertTrue(decoded.chat.isImageGeneration)
+        XCTAssertEqual(decoded.lastMessageContent, "Let me look that up.\n\nHere's what I found.")
     }
 
     func testWhenMessageContentHasUnknownShapeThenChatStillDecodesWithoutPreviews() throws {

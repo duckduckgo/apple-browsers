@@ -376,17 +376,10 @@ final class NewTabPageAppOpenFocusTests {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
         let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
                                                isFloatingUIEnabled: false)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
-        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows).first(where: \.isKeyWindow)
-        window.rootViewController = sut
-        window.makeKeyAndVisible()
-        window.layoutIfNeeded()
+        let removeWindow = hostInKeyWindow(sut, size: CGSize(width: 1024, height: 768))
         defer {
             sut.endEditing()
-            window.isHidden = true
-            window.rootViewController = nil
-            previousKeyWindow?.makeKey()
+            removeWindow()
         }
         let omnibar: any OmniBar = sut
         #expect(!omnibar.isInputFirstResponder)
@@ -419,17 +412,8 @@ final class NewTabPageAppOpenFocusTests {
                                                isFloatingUIEnabled: false)
         let activation = MockNewTabPageInputActivation()
         sut.unifiedToggleInputOmnibarActivating = activation
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows).first(where: \.isKeyWindow)
-        window.rootViewController = sut
-        window.makeKeyAndVisible()
-        window.layoutIfNeeded()
-        defer {
-            window.isHidden = true
-            window.rootViewController = nil
-            previousKeyWindow?.makeKey()
-        }
+        let removeWindow = hostInKeyWindow(sut, size: CGSize(width: 390, height: 844))
+        defer { removeWindow() }
 
         for flagOn in [false, true, false, true] {
             featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
@@ -452,17 +436,10 @@ final class NewTabPageAppOpenFocusTests {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
         let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
                                                isFloatingUIEnabled: false)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows).first(where: \.isKeyWindow)
-        window.rootViewController = sut
-        window.makeKeyAndVisible()
-        window.layoutIfNeeded()
+        let removeWindow = hostInKeyWindow(sut, size: CGSize(width: 390, height: 844))
         defer {
             sut.barView.textField.resignFirstResponder()
-            window.isHidden = true
-            window.rootViewController = nil
-            previousKeyWindow?.makeKey()
+            removeWindow()
         }
         #expect(sut.barView.textField.window != nil)
         var actualResult: Bool?
@@ -471,6 +448,21 @@ final class NewTabPageAppOpenFocusTests {
 
         #expect(sut.barView.textField.isFirstResponder == isRequestValid)
         #expect(actualResult == isRequestValid)
+    }
+
+    /// Makes a window hosting `viewController` key and returns the closure that hides it and restores the previous key window.
+    private func hostInKeyWindow(_ viewController: UIViewController, size: CGSize) -> () -> Void {
+        let window = UIWindow(frame: CGRect(origin: .zero, size: size))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = viewController
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        return {
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
     }
 }
 

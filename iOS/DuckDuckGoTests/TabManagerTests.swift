@@ -24,7 +24,6 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import Core
-import FeatureFlags_iOS
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
@@ -903,31 +902,28 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
     }
 
-    func testKeptNewTabPageRestoresPersistedFireTargetOnColdStartWithEitherKeyboardFlagState() throws {
-        for keyboardFlagOn in [false, true] {
-            let ntp = Tab()
-            ntp.hasPresentedAfterIdleEscapeHatch = true
-            let fireTab = Tab(link: Link(title: "Private page", url: URL(string: "https://example.com")!), fireTab: true)
-            let data = try NSKeyedArchiver.archivedData(withRootObject: [ntp, fireTab], requiringSecureCoding: false)
-            let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? [Tab])
-            let store = MockKeyValueStore()
-            LastActiveTabStore(store: store).recordActiveTab(uid: fireTab.uid)
-            let flags = MockFeatureFlagger(enabledFeatureFlags: keyboardFlagOn ? [.fireMode, .alwaysShowKeyboardOnNewTabPage] : [.fireMode])
-            let manager = try makeManager(TabsModel(tabs: [restored[0]], desktop: false),
-                                          fireModel: TabsModel(tabs: [restored[1]], desktop: false, mode: .fire),
-                                          featureFlagger: flags)
-            let builder = makeEscapeHatchBuilder(manager: manager, lastActiveTabStore: LastActiveTabStore(store: store))
-            let router = EscapeHatchRouterStub()
+    func testKeptNewTabPageRestoresPersistedFireTargetOnColdStart() throws {
+        let ntp = Tab()
+        ntp.hasPresentedAfterIdleEscapeHatch = true
+        let fireTab = Tab(link: Link(title: "Private page", url: URL(string: "https://example.com")!), fireTab: true)
+        let data = try NSKeyedArchiver.archivedData(withRootObject: [ntp, fireTab], requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? [Tab])
+        let store = MockKeyValueStore()
+        LastActiveTabStore(store: store).recordActiveTab(uid: fireTab.uid)
+        let manager = try makeManager(TabsModel(tabs: [restored[0]], desktop: false),
+                                      fireModel: TabsModel(tabs: [restored[1]], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let builder = makeEscapeHatchBuilder(manager: manager, lastActiveTabStore: LastActiveTabStore(store: store))
+        let router = EscapeHatchRouterStub()
 
-            let hatch = try XCTUnwrap(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+        let hatch = try XCTUnwrap(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
 
-            XCTAssertFalse(restored[0].openedAfterIdle)
-            XCTAssertTrue(restored[0].hasPresentedAfterIdleEscapeHatch)
-            XCTAssertTrue(hatch.targetTab === restored[1])
-            XCTAssertEqual(hatch.tabType, .fire)
-            XCTAssertEqual(hatch.title, UserText.escapeHatchFireTabTitle)
-            XCTAssertEqual(manager.currentBrowsingMode, .normal)
-        }
+        XCTAssertFalse(restored[0].openedAfterIdle)
+        XCTAssertTrue(restored[0].hasPresentedAfterIdleEscapeHatch)
+        XCTAssertTrue(hatch.targetTab === restored[1])
+        XCTAssertEqual(hatch.tabType, .fire)
+        XCTAssertEqual(hatch.title, UserText.escapeHatchFireTabTitle)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
     }
 
     func testKeptNewTabPageGetsFirstWarmIdleHatchAndPreservesConsumedState() throws {
@@ -997,24 +993,6 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: EscapeHatchRouterStub()))
         XCTAssertFalse(fireNTP.hasPresentedAfterIdleEscapeHatch)
         XCTAssertEqual(manager.currentBrowsingMode, .fire)
-    }
-
-    func testEscapeHatchIsIndependentOfKeyboardFlagChangesWhileRunning() throws {
-        let ntp = Tab()
-        let website = Tab(link: Link(title: "Page", url: URL(string: "https://example.com")!))
-        let flags = MockFeatureFlagger(enabledFeatureFlags: [])
-        let manager = try makeManager(TabsModel(tabs: [ntp, website], currentIndex: 0, desktop: false), featureFlagger: flags)
-        let store = LastActiveTabStore(store: MockKeyValueStore())
-        store.recordActiveTab(uid: website.uid)
-        let builder = makeEscapeHatchBuilder(manager: manager, lastActiveTabStore: store)
-        let router = EscapeHatchRouterStub()
-
-        for enabledFlags: [FeatureFlag] in [[], [.alwaysShowKeyboardOnNewTabPage], []] {
-            flags.enabledFeatureFlags = enabledFlags
-            flags.triggerUpdate()
-            XCTAssertTrue(try XCTUnwrap(builder.makeAfterIdleHatch(router: router)).targetTab === website)
-        }
-        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
     }
 
     private func makeEscapeHatchBuilder(manager: TabManager,

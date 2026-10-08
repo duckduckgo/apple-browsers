@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
-import SwiftUIExtensions
 
 /// A domain and the permissions stored for it.
 ///
@@ -79,8 +79,11 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
             if let faviconURL = group.faviconURL {
                 FaviconView(url: faviconURL, size: Constants.faviconSize)
             } else {
-                // Local files have no website favicon: show the name's letters, as for a site without one
-                LetterIconView(title: group.displayName, size: Constants.faviconSize)
+                // Local files have no website favicon
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                    .frame(width: Constants.faviconSize, height: Constants.faviconSize)
             }
 
             Text(group.displayName)

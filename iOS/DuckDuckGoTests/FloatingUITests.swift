@@ -1650,6 +1650,81 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
+    func testTopBounceDefersInsetsUntilScrollingSettlesOrMovesBackIntoPage() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset.top = 97.33333333333334
+
+        for state in [BounceScrollView.State.tracking, .dragging, .decelerating, .idle] {
+            scrollView.state = state
+            for offsetY: CGFloat in [-156, -97.33333333333333, -96] {
+                scrollView.contentOffset.y = offsetY
+                XCTAssertEqual(WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(scrollView),
+                               state != .idle && offsetY < -97,
+                               "state=\(state), offsetY=\(offsetY)")
+            }
+        }
+    }
+
+    func testDeferredTopAlignmentUsesNativeAnimationInsteadOfSnapping() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset.top = 97.33333333333334
+        let initialOffset = CGPoint(x: 4, y: -97.33333333333333)
+        scrollView.contentOffset = initialOffset
+        let finalInsets = UIEdgeInsets(top: 122, left: 0, bottom: 96, right: 0)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: finalInsets, animated: true)
+
+        XCTAssertEqual(scrollView.contentInset, finalInsets)
+        XCTAssertEqual(scrollView.contentOffset, initialOffset)
+        XCTAssertEqual(scrollView.animatedTarget, CGPoint(x: 4, y: -122))
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, finalInsets)
+    }
+
+    func testScrollIndicatorsFollowChromeDuringBounceWithoutChangingPageGeometry() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        let contentInsets = UIEdgeInsets(top: 97.33333333333334, left: 0, bottom: 34, right: 0)
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: contentInsets)
+        scrollView.contentOffset.y = -156
+        scrollView.state = .decelerating
+
+        for topInset: CGFloat in [110, 122, 110, 97.33333333333334] {
+            let indicatorInsets = UIEdgeInsets(top: topInset, left: 0, bottom: 96, right: 0)
+
+            WebViewScrollViewInsetUpdater.updateScrollIndicatorInsets(scrollView, insets: indicatorInsets)
+
+            XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, indicatorInsets)
+            XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, indicatorInsets)
+            XCTAssertEqual(scrollView.contentInset, contentInsets)
+            XCTAssertEqual(scrollView.contentOffset.y, -156)
+            XCTAssertNil(scrollView.animatedTarget)
+            XCTAssertTrue(WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(scrollView))
+        }
+    }
+
+    private final class BounceScrollView: UIScrollView {
+        enum State { case idle, tracking, dragging, decelerating }
+        var state: State = .idle
+        var animatedTarget: CGPoint?
+
+        override var isTracking: Bool { state == .tracking }
+        override var isDragging: Bool { state == .dragging }
+        override var isDecelerating: Bool { state == .decelerating }
+
+        override func setContentOffset(_ contentOffset: CGPoint, animated: Bool) {
+            if animated {
+                animatedTarget = contentOffset
+            } else {
+                super.setContentOffset(contentOffset, animated: false)
+            }
+        }
+    }
+
     func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
         let scrollView = UIScrollView()
         scrollView.contentInsetAdjustmentBehavior = .automatic

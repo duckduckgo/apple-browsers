@@ -134,6 +134,10 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }
 
+    func noteRestoredFromPreviousSession() {
+        aiTab.aiChat?.noteRecreated(as: .sessionRestore)
+    }
+
     public var pageContextRequestedPublisher: AnyPublisher<Void, Never>? {
         aiTab.aiChat?.pageContextRequestedPublisher
     }

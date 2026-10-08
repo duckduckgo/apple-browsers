@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Obnov reláciu Sync & Backup, aby si obnovil/-a záložky, heslá a ďalšie údaje, alebo pokračuj s novým nastavením.";
 
@@ -85,9 +82,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Chcete si stiahnuť chýbajúce ikony?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Ikony automatického sťahovania";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Udržiavanie vývoja";
 
@@ -169,11 +163,17 @@
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Načíta ikony z webových stránok, ktoré si uložil/-a do záložiek. Stiahnuté ikony sú vystavené tvojej sieti.";
 
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Načítať ikony záložiek";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Záložky";
 
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Používaj tie isté obľúbené záložky na mobile aj v počítači.";
+
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Zdieľať obľúbené položky medzi zariadeniami";
 
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Služba Sync & Backup je na všetkých tvojich zariadeniach šifrovaná spôsobom end-to-end.";
@@ -214,8 +214,8 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Vzorový kód:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Otvor svoje druhé";
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Otvor svoje druhé %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Vložiť kód synchronizácie";
@@ -271,7 +271,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Použi tento kód na obnovenie údajov, ak stratíš prístup k tomuto zariadeniu. Údaje zo služby Sync & Backup nie je možné obnoviť po 18 mesiacoch nečinnosti. [Zisti viac](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikácia DuckDuckGo";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +292,14 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Zatvoriť";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo pre počítač";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Na synchronizovanie naskenuj QR kód.";
 
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Otvorené";
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Otvor %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Som pripravený/-á na skenovanie";
@@ -322,8 +322,8 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Kopírovať textový kód";
 
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "Na inom zariadení otvor";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "Na inom zariadení otvor %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Prejdi do časti **Sync & Backup** › **Synchronizácia s iným zariadením** a naskenuj tento kód:";
@@ -354,9 +354,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Toto zariadenie";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Zjednotenie obľúbených položiek medzi zariadeniami";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Používate vývojárske prostredie Sync";

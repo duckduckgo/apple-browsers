@@ -112,4 +112,59 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
                                                                  for: IndexPath(item: 0, section: 0))
         XCTAssertTrue(cell is TabsBarCell)
     }
+
+    @MainActor
+    func testDragReentryHidesSourceBeforeInsertionSlotChangesAndExitRestoresIt() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+        controller.view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+        controller.view.layoutIfNeeded()
+        let tabs = (0..<4).map { _ in Tab(desktop: true, fireTab: false) }
+        let model = TabsModel(tabs: tabs, desktop: true)
+        controller.refresh(tabsModel: model)
+        let collectionView = controller.collectionView
+        collectionView.layoutIfNeeded()
+        let sourceIndex = IndexPath(item: 0, section: 0)
+        let source = try XCTUnwrap(collectionView.cellForItem(at: sourceIndex) as? TabsBarCell)
+        let session = TabsDragDropSession(locationView: collectionView,
+                                          point: CGPoint(x: source.frame.minX + 20, y: source.frame.midY))
+        session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: sourceIndex)
+        XCTAssertEqual(session.items.count, 1)
+
+        controller.collectionView(collectionView, dragSessionWillBegin: session)
+        XCTAssertTrue(source.contentView.isHidden)
+        controller.collectionView(collectionView, dropSessionDidExit: session)
+        XCTAssertFalse(source.contentView.isHidden)
+        controller.collectionView(collectionView, dropSessionDidEnter: session)
+        XCTAssertTrue(source.contentView.isHidden)
+        controller.collectionView(collectionView, dragSessionDidEnd: session)
+        XCTAssertFalse(source.contentView.isHidden)
+        XCTAssertEqual(model.tabs, tabs)
+    }
+}
+
+@MainActor
+private final class TabsDragDropSession: NSObject, UIDragSession, UIDropSession {
+    var items: [UIDragItem] = []
+    var localContext: Any?
+    var localDragSession: UIDragSession? { self }
+    var allowsMoveOperation: Bool { true }
+    var isRestrictedToDraggingApplication: Bool { true }
+    var progressIndicatorStyle: UIDropSessionProgressIndicatorStyle = .none
+    var progress = Progress(totalUnitCount: 0)
+    private let locationView: UIView
+    private let point: CGPoint
+
+    init(locationView: UIView, point: CGPoint) {
+        self.locationView = locationView
+        self.point = point
+    }
+
+    func location(in view: UIView) -> CGPoint { view.convert(point, from: locationView) }
+    func hasItemsConforming(toTypeIdentifiers typeIdentifiers: [String]) -> Bool { false }
+    func canLoadObjects(ofClass aClass: NSItemProviderReading.Type) -> Bool { false }
+    func loadObjects(ofClass aClass: NSItemProviderReading.Type, completion: @escaping ([NSItemProviderReading]) -> Void) -> Progress {
+        completion([])
+        return progress
+    }
 }

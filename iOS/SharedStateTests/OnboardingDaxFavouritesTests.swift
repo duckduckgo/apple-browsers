@@ -38,6 +38,7 @@ import AIChatTestingUtilities
 
 private final class MockIdleReturnEvaluatorForMainVC: IdleReturnEvaluating {
     func evaluateReturn() -> IdleReturnOutcome { .ordinary(timeAwayMs: nil) }
+    func markReturnLandedAtLaunch() {}
 }
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {

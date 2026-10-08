@@ -307,11 +307,6 @@ class MainViewController: UIViewController {
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     private let idleReturnEvaluator: IdleReturnEvaluating
-
-    /// Set when the launch landed this return on the New Tab Page, so the launch action — which runs
-    /// afterwards — records the arrival instead of opening a second page.
-    /// One-shot: reading it clears it, so later returns are handled normally.
-    private var didLandOnNewTabPageForIdleReturnAtLaunch = false
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
@@ -2307,14 +2302,9 @@ class MainViewController: UIViewController {
     /// Lands a cold start that crossed the idle threshold on the New Tab Page
     private func attachNewTabPageForIdleReturn() -> Bool {
         guard case .afterIdle(.ntp, _) = idleReturnEvaluator.evaluateReturn() else { return false }
-        // Clearing tabs on launch owns the landing: the tabs are already gone before this runs and
-        // the burn replaces what is left behind us, so taking over here would only mark a tab that
-        // is about to be discarded — and the ordinary path then starts a second, untreated session.
-        // `autoClearInProgress` is no use as a guard here: the burn is dispatched after this point.
+        // Clearing tabs on launch owns the landing; the burn is dispatched after this, so check the setting.
         guard AutoClearSettingsModel(settings: appSettings)?.action.contains(.tabs) != true else { return false }
-        // A burn that has already begun makes `attachHomeScreen` a no-op, which would leave a tab
-        // selected with nothing attached. Clearing data alone does not replace the tabs, so the
-        // ordinary path can still handle this return.
+        // A burn in progress makes `attachHomeScreen` a no-op.
         guard !autoClearInProgress else { return false }
 
         if tabManager.currentTabsModel.currentTab?.link != nil {
@@ -2325,17 +2315,10 @@ class MainViewController: UIViewController {
             }
         }
 
-        // Only the page is put up here. The launch action records the arrival and raises the keyboard
-        // once authentication is done, as it does when it opens the page itself.
+        // The launch action records the arrival and raises the keyboard.
         attachHomeScreen(isNewTab: true, openedAfterIdle: true, recordsArrival: false)
-        didLandOnNewTabPageForIdleReturnAtLaunch = true
+        idleReturnEvaluator.markReturnLandedAtLaunch()
         return true
-    }
-
-    /// Whether the launch already applied the after-idle treatment for this return. Clears on read.
-    func consumeIdleReturnTreatmentAppliedAtLaunch() -> Bool {
-        defer { didLandOnNewTabPageForIdleReturnAtLaunch = false }
-        return didLandOnNewTabPageForIdleReturnAtLaunch
     }
 
     private func loadInitialViewIfNeeded() {
@@ -2571,8 +2554,7 @@ class MainViewController: UIViewController {
             && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
     }
 
-    /// Records the arrival on the New Tab Page the launch put up for an idle return, at the point the
-    /// launch action would otherwise have opened one, and raises the keyboard as `newTab` would.
+    /// Records the arrival on the NTP the launch put up, as `newTab` would.
     func recordNewTabPageArrivalForIdleReturnAtLaunch(allowingKeyboard: Bool) {
         let willBeginEditing = willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {

@@ -31,25 +31,29 @@ enum IdleReturnTreatment {
 enum IdleReturnOutcome: Equatable {
 
     case afterIdle(treatment: IdleReturnTreatment, timeAwayMs: Int?)
+    /// An after-idle NTP return the launch already put the page up for.
+    case landedAtLaunch(timeAwayMs: Int?)
     case ordinary(timeAwayMs: Int?)
 
     var timeAwayMs: Int? {
         switch self {
-        case .afterIdle(_, let timeAwayMs), .ordinary(let timeAwayMs):
+        case .afterIdle(_, let timeAwayMs), .landedAtLaunch(let timeAwayMs), .ordinary(let timeAwayMs):
             return timeAwayMs
         }
     }
 
     /// True for any return that crossed the threshold, whichever treatment applies.
     var isAfterIdle: Bool {
-        if case .afterIdle = self { return true }
-        return false
+        if case .ordinary = self { return false }
+        return true
     }
 
 }
 
 protocol IdleReturnEvaluating {
     func evaluateReturn() -> IdleReturnOutcome
+    /// Until the app next goes to the background, `evaluateReturn` reports this return as `.landedAtLaunch`.
+    func markReturnLandedAtLaunch()
 }
 
 /// Key namespace for idle-return NTP debug overrides (typed storage, no dotted keys).
@@ -118,6 +122,7 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
     private let eligibilityManager: IdleReturnEligibilityManaging
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
     private let now: () -> Date
+    private var landedBackgroundDate: Date?
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>,
@@ -128,7 +133,8 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
     }
 
     func evaluateReturn() -> IdleReturnOutcome {
-        let timeAway = timeAwaySinceLastBackground()
+        let lastBackgroundDate = self.lastBackgroundDate()
+        let timeAway = lastBackgroundDate.map { now().timeIntervalSince($0) }
         let timeAwayMs = timeAway.map { Int($0 * 1000) }
 
         guard eligibilityManager.isFeatureAvailable(),
@@ -136,14 +142,19 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
               timeAway >= Double(eligibilityManager.idleThresholdSeconds()) else {
             return .ordinary(timeAwayMs: timeAwayMs)
         }
+        // Each background writes a new date, so a mark never outlives the return it was made for.
+        if lastBackgroundDate == landedBackgroundDate {
+            return .landedAtLaunch(timeAwayMs: timeAwayMs)
+        }
         return .afterIdle(treatment: treatment(), timeAwayMs: timeAwayMs)
     }
 
-    private func timeAwaySinceLastBackground() -> TimeInterval? {
-        guard let lastBackgroundDate = (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil else {
-            return nil
-        }
-        return now().timeIntervalSince(lastBackgroundDate)
+    func markReturnLandedAtLaunch() {
+        landedBackgroundDate = lastBackgroundDate()
+    }
+
+    private func lastBackgroundDate() -> Date? {
+        (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil
     }
 
     private func treatment() -> IdleReturnTreatment {

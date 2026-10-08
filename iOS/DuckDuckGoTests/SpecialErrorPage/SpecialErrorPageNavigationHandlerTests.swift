@@ -50,6 +50,39 @@ final class SpecialErrorPageNavigationHandlerTests {
         // WKNavigationResponse.restoreDealloc()
     }
 
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("Tab navigation still starts malicious site detection when Universal Links are suppressed",
+          .timeLimit(.minutes(1)), arguments: [WKNavigationType.linkActivated, .backForward])
+    func whenUniversalLinksAreSuppressedThenTabStartsMaliciousSiteDetection(navigationType: WKNavigationType) throws {
+        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
+                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+                                        specialErrorPageNavigationHandler: sut)
+        tab.specialErrorPageNavigationHandler.delegate = nil
+        defer { tab.prepareForDataClearing() }
+        let config = try #require(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        config.enabledFeaturesForVersions = [:]
+        // Force the same policy used when "Open Links in Apps" is disabled, without changing shared settings.
+        tab.preventUniversalLinksOnce = true
+
+        let url = try #require(URL(string: "https://example.com"))
+        var request = URLRequest(url: url)
+        request.mainDocumentURL = url
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", request: request)
+        let navigationAction = MockNavigationAction(request: request, navigationType: navigationType, targetFrame: frame)
+        var decisions = [WKNavigationActionPolicy]()
+
+        tab.webView(tab.webView, decidePolicyFor: navigationAction) { policy in
+            decisions.append(policy)
+        }
+
+        #expect(decisions.count == 1)
+        #expect(decisions.first?.rawValue == 3)
+        #expect(maliciousSiteProtectionNavigationHandler.didCallHandleMaliciousSiteProtectionForNavigationAction)
+        #expect(maliciousSiteProtectionNavigationHandler.capturedNavigationAction === navigationAction)
+        #expect(maliciousSiteProtectionNavigationHandler.capturedWebView === tab.webView)
+    }
+
     @MainActor
     @Test("Decide Policy For Navigation Action forwards event to Malicious Site Protection Handler")
     func whenHandleDecidePolicyForNavigationActionIsCalledThenAskMaliciousSiteProtectionNavigationHandlerToHandleTheDecision() throws {

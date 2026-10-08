@@ -147,7 +147,10 @@ final class PermissionModel {
             // await permission deactivation and transition to .none
             permissions[permission].willReload()
         }
+        let pendingQueries = authorizationQueries
         authorizationQueries = []
+        // A presenter can still hold a query, and its popover stays open until the query completes.
+        pendingQueries.forEach { $0.cancel() }
         temporarilyAllowedExternalSchemes.removeAll()
         removedPermissions.removeAll()
         deniedByCategoryDefault.removeAll()

@@ -560,6 +560,19 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(model.permissions, [.geolocation: .reloading])
     }
 
+    func testWhenPageNavigatesThenPendingQueryHeldByPresenterIsCompleted() throws {
+        var granted: Bool?
+        model.permissions([.externalScheme(scheme: "mailto")], requestedForDomain: "example.com") { (decision: Bool) in granted = decision }
+        // The prompt's presenter can still hold the query after the model drops it.
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        model.tabDidStartNavigation()
+
+        XCTAssertTrue(query.isComplete)
+        XCTAssertEqual(granted, false)
+        XCTAssertNil(model.authorizationQuery)
+    }
+
     func testWhenExternalSchemePermissionQueryIsResetThenItTriggersDecisionHandler() {
         let c = model.$authorizationQuery.sink {
             if $0 != nil {

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Configuration
 import Persistence
 import PrivacyConfig
 import Common
@@ -106,6 +107,11 @@ public final class LaunchOptionsHandler {
     }
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
+    /// `-privacyConfigURL <url>` or `-privacyConfigURL reset`. Applied for internal users only.
+    public var privacyConfigurationOverride: PrivacyConfigurationOverrideCommand? {
+        PrivacyConfigurationOverrideCommand(userDefaults: userDefaults)
+    }
+
     public var isAutomationSession: Bool {
 #if DEBUG || ALPHA
         isWebDriverAutomationSession || isUITesting

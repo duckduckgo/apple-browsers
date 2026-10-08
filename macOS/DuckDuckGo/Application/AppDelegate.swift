@@ -420,6 +420,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var configurationStore = ConfigurationStore()
     var configurationManager: ConfigurationManager
     var configurationURLProvider: CustomConfigurationURLProviding
+    private var privacyConfigurationOverrideReporter: PrivacyConfigurationOverrideReporter?
 
     // MARK: - VPN
 
@@ -1203,7 +1204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
-            httpsUpgrade: privacyFeatures.httpsUpgrade
+            httpsUpgrade: privacyFeatures.httpsUpgrade,
+            configurationURLProvider: configurationURLProvider
         )
 
         onboardingContextualDialogsManager = ContextualDialogsManager(
@@ -1582,7 +1584,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             WebKitPasskeyRequestCanceller.install()
         }
 
-        configurationManager.start()
+        startConfigurationManager()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1762,6 +1764,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard #available(macOS 26, *) else { return }
         Task {
             await ScreenTimeDataCleaner().removeScreenTimeData()
+        }
+    }
+
+    /// Handles `-privacyConfigURL` before starting scheduled refreshes, so they can't race the override fetch.
+    private func startConfigurationManager() {
+        let contentBlockingManager = privacyFeatures.contentBlocking.contentBlockingManager
+        let reporter = PrivacyConfigurationOverrideReporter(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            urlProvider: configurationURLProvider,
+            contentBlockingUpdates: contentBlockingManager.updatesPublisher.map(\.completionTokens).eraseToAnyPublisher(),
+            scheduleCompilation: { contentBlockingManager.scheduleCompilation() }
+        )
+        privacyConfigurationOverrideReporter = reporter
+
+        let configurationManager = configurationManager
+        guard let command = launchOptionsHandler.privacyConfigurationOverride,
+              let fetchTask = reporter.handle(command, fetch: { try await configurationManager.fetchPrivacyConfiguration(isDebug: true) }) else {
+            configurationManager.start()
+            return
+        }
+        Task {
+            await fetchTask.value
+            configurationManager.start()
         }
     }
 

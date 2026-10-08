@@ -29,7 +29,6 @@ let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 ///
 /// - `DuckDuckGoBrowser` (static) is linked into the "DuckDuckGo Privacy Browser" app targets,
 ///   which only add the entry point, Info.plist, entitlements and bundle resources.
-/// - `DuckDuckGoBrowserDynamic` is built by `swift build` for running from VSCode/Cursor.
 ///
 /// Bundle resources (strings, JSON, scripts, storyboards, app icons) stay in the app targets and are
 /// read from `Bundle.main`. Asset catalogs and Core Data models are processed here, so that their
@@ -42,7 +41,6 @@ let package = Package(
     ],
     products: [
         .library(name: "DuckDuckGoBrowser", type: .static, targets: ["DuckDuckGo_Privacy_Browser"]),
-        .library(name: "DuckDuckGoBrowserDynamic", type: .dynamic, targets: ["DuckDuckGo_Privacy_Browser"]),
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/BareBonesBrowser.git", exact: "0.1.0"),

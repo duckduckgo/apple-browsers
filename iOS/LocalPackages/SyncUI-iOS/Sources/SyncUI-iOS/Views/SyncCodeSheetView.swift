@@ -65,13 +65,7 @@ struct SyncCodeSheetView: View {
     private var instructions: some View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(UserText.simplifiedSyncCodeSheetOpenInstruction)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-
-                    SyncAppNameChip()
-                }
+                SyncOpenAppInstruction(format: UserText.simplifiedSyncCodeSheetOpenInstruction)
 
                 SyncInstructionText(markdown: UserText.simplifiedSyncCodeSheetScanInstruction)
             }

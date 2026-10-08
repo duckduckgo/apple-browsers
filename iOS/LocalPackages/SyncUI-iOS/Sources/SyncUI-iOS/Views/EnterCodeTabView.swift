@@ -47,13 +47,7 @@ struct EnterCodeTabView: View {
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(UserText.simplifiedEnterCodeOpenInstruction)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-
-                    SyncAppNameChip()
-                }
+                SyncOpenAppInstruction(format: UserText.simplifiedEnterCodeOpenInstruction)
 
                 SyncInstructionText(markdown: UserText.simplifiedEnterCodeStepsInstruction)
             }

@@ -27,6 +27,8 @@ struct PermissionAuthorizationQueryInfo {
     var shouldShowAlwaysAllowCheckbox: Bool = false
     var shouldShowCancelInsteadOfDeny: Bool = false
     var isSystemPermissionDisabled: Bool = false
+    /// Saves Always allow for the site without answering the request, which waits for macOS.
+    var saveAlwaysAllow: () -> Void = {}
     /// Keep the pending system permission flow alive while its popover is hidden or reused for another request.
     var authorizationViewModel: PermissionAuthorizationViewModel?
 }
@@ -58,6 +60,10 @@ extension PermissionAuthorizationQuery {
     var isSystemPermissionDisabled: Bool {
         get { parameters.isSystemPermissionDisabled }
         set { parameters.isSystemPermissionDisabled = newValue }
+    }
+
+    func saveAlwaysAllow() {
+        parameters.saveAlwaysAllow()
     }
 
     convenience init(domain: String, url: URL?, permissions: [PermissionType], decisionHandler: @escaping (CallbackResult) -> Void) {

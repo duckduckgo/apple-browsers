@@ -207,10 +207,23 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         let wasWaiting = currentSystemPermission == permission && viewState.systemPermissionStep?.phase == .waiting
         currentSystemPermission = permission
         if blockedPermission != nil {
+            saveAlwaysAllowWhileSystemPermissionIsBlocked()
             showSystemPermissionPhase(.openSettings)
         } else if !wasWaiting || requestCompleted {
             showSystemPermissionPhase(.request)
         }
+    }
+
+    /// Saves Always allow right away, as Never allow is, although macOS blocks access for now.
+    /// The request stays pending and is granted once macOS allows.
+    private func saveAlwaysAllowWhileSystemPermissionIsBlocked() {
+        guard pendingDecision == .alwaysAllow, !isResumingStoredDecision, let query else { return }
+        for permission in permissions {
+            pixelFiring?.fire(PermissionPixel.authorizationDecision(permissionType: permission, decision: .allow))
+        }
+        // The site is now set to Always allow: granting later reports no new decision.
+        isResumingStoredDecision = true
+        query.saveAlwaysAllow()
     }
 
     private func showSystemPermissionPhase(_ phase: PermissionAuthorizationViewState.SystemPermissionStep.Phase) {

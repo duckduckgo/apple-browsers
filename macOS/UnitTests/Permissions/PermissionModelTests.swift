@@ -618,6 +618,24 @@ final class PermissionModelTests: XCTestCase {
         }
     }
 
+    func testWhenAllowIsPersistedWhileMacOSBlocksThePermissionThenPendingQueryWaitsForMacOS() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        webView.urlValue = URL.duckDuckGo
+        let domain = try XCTUnwrap(URL.duckDuckGo.host)
+        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.denied)
+        var granted: Bool?
+        model.permissions([.notification], requestedForDomain: domain) { (decision: Bool) in granted = decision }
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        permissionManagerMock.setPermission(.allow, forDomain: domain, permissionType: .notification)
+        permissionManagerMock.permissionSubject.send((domain, .notification, .decisionChanged(.allow)))
+
+        // The prompt grants it once macOS allows.
+        XCTAssertNil(granted)
+        XCTAssertFalse(query.isComplete)
+        query.cancel()
+    }
+
     func testWhenDenyPermissionIsPersistedThenPermissionQueryIsDenied() {
         let e = expectation(description: "Permission denied")
         self.webView.urlValue = URL.duckDuckGo

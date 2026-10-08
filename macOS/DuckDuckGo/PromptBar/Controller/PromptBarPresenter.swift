@@ -77,6 +77,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let content: PromptBarContentHosting
     private let screenProvider: PromptBarScreenProviding
     private let makeWindow: (NSRect) -> PromptBarWindow
+    private let makeDimWindow: (NSRect) -> NSWindow
     private let firePixel: (PromptBarPixel) -> Void
 
     private var window: PromptBarWindow?
@@ -91,10 +92,12 @@ final class PromptBarPresenter: PromptBarPresenting {
     init(content: PromptBarContentHosting,
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
+         makeDimWindow: @escaping (NSRect) -> NSWindow = { NSWindow(contentRect: $0, styleMask: .borderless, backing: .buffered, defer: false) },
          firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
         self.content = content
         self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
         self.makeWindow = makeWindow
+        self.makeDimWindow = makeDimWindow
         self.firePixel = firePixel
 
         self.content.onSubmit = { [weak self] in
@@ -150,7 +153,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private func dimScreen() {
         guard dimWindow == nil, let window, let screen = window.screen else { return }
 
-        let dimWindow = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        let dimWindow = makeDimWindow(screen.frame)
         dimWindow.isReleasedWhenClosed = false
         dimWindow.backgroundColor = .black
         dimWindow.isOpaque = false

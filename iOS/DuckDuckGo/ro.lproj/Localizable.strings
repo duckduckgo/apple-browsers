@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Încearcă gratis";
+"action.title.vpn.free-trial-badge" = "Încearcă gratuit";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blochează tehnologiile de urmărire invazive înainte de a se încărca, eliminând eficient reclamele care se bazează pe urmărire.";
@@ -316,6 +316,12 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fă o fotografie";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Fișierele sunt scanate automat pentru depistarea conținutului ilegal. Conversațiile semnalate au o perioadă limitată de păstrare a datelor. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Află mai multe";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Acel mesaj este prea lung pentru a fi trimis cu atașări.";
 
@@ -345,6 +351,15 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "Adaugă file";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nu poate crea imagini. Vizibilitatea zero din partea furnizorului nu se va aplica până când nu revii.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nu acceptă crearea de imagini.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Acum folosești %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Editarea va înlocui răspunsul cu unul nou.";
@@ -1470,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Configurație";
 
 /* No comment provided by engineer. */
 "Confirm" = "Confirmare";
@@ -2615,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Completează un număr nenegativ de zile. Data instalării va fi setată cu acel număr de zile în urmă.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3070,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Eveniment adăugat în Calendarul Apple";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "Identificator: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importă parolele";
 
@@ -3191,9 +3197,6 @@
 "keyCommandZoomOut" = "Micșorează";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Ultima procesare: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Se încarcă produsele disponibile...";
 
 /* No comment provided by engineer. */
@@ -3267,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Nume gazdă pentru politica de mesaje";
-
-/* No comment provided by engineer. */
-"Messages" = "Mesaje";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3629,13 +3629,7 @@
 "No extensions installed" = "Nu sunt instalate extensii";
 
 /* No comment provided by engineer. */
-"No Logs" = "Niciun jurnal";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
-
-/* No comment provided by engineer. */
-"No messages" = "Niciun mesaj";
 
 /* No comment provided by engineer. */
 "No results found" = "Nu s-a găsit niciun rezultat";
@@ -4167,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo nu poate încărca această pagină.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Jurnale de procesare recente";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Rude: %@";
@@ -4954,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Ce este nou";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Afișează jurnalele din ultimul minut pentru a contribui la diagnosticarea problemelor imediat după o reîmprospătare.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selectează opțiunea care descrie cel mai bine problema cu care te-ai confruntat.";
 
@@ -5001,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Stare: invalidat";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
@@ -5492,9 +5477,6 @@
 "theme.name.light" = "Lumină";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Această listă conține mesaje care au fost afișate plus cel mult 1 mesaj programat pentru afișare. Este posibil să existe mai multe mesaje în configurare care vor fi prezentate, dar acestea nu au fost încă prelucrate.";
-
-/* No comment provided by engineer. */
 "Title" = "Titlu";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5517,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Contact adăugat";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versiune: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Caută";
@@ -5917,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nu poate crea imagini. Vizibilitatea zero din partea furnizorului nu se va aplica până când nu revii.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ nu acceptă crearea de imagini.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Acum folosești %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Toate chaturile";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Fișierele sunt scanate automat pentru depistarea conținutului ilegal. Conversațiile semnalate au o perioadă limitată de păstrare a datelor. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Află mai multe";

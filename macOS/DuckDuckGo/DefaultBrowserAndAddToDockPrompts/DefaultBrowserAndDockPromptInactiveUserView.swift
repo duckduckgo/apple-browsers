@@ -21,6 +21,7 @@ import Utilities
 
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 final class DefaultBrowserAndDockPromptInactiveUserViewModel {
@@ -157,6 +158,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView_Previews: PreviewProvider {
                 viewModel: $0,
                 browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart())
             )
+            .applyRebranding()
         }
     )
 }

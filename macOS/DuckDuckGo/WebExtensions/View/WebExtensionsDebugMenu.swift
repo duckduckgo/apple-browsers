@@ -36,7 +36,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
     private let simulateCPMBreakageMenuItem = NSMenuItem(title: "", action: #selector(WebExtensionsDebugMenu.toggleCPMBreakageSimulation))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
-    private let apiCompatibilityLogMenuItem = NSMenuItem(title: "JavaScript API Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
+    private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
 
     init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
         self.webExtensionManager = webExtensionManager

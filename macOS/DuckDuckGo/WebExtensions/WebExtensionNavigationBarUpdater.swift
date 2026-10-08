@@ -313,7 +313,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         if !menu.items.isEmpty {
             menu.addItem(.separator())
         }
-        let item = NSMenuItem(title: "JavaScript API Compatibility…", action: #selector(showAPICompatibilityLog))
+        let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
         item.target = self
         menu.addItem(item)
     }

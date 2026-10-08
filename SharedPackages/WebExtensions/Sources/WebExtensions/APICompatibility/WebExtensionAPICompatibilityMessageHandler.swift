@@ -64,7 +64,7 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
         if kind == Self.errorKind {
             issue = (payload["message"] as? String).flatMap(WebExtensionAPICompatibilityClassifier.classify(errorMessage:))
         } else if let kind = WebExtensionAPICompatibilityKind(rawValue: kind),
-                  kind != .invalidArgs,
+                  kind == .missing || kind == .stubbed,
                   let api = payload["api"] as? String {
             issue = WebExtensionAPICompatibilityClassifier.issue(kind: kind, reportedAPI: api)
         } else {

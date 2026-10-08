@@ -1,5 +1,5 @@
 //
-//  PromoServiceFactory+BookmarksBarSync.swift
+//  PromoServiceFactory+SyncBookmarks.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -33,6 +33,21 @@ extension PromoServiceFactory {
             context: .global,
             canShowDuringOnboarding: true,
             delegate: dependencies.bookmarksBarSyncPromoDelegate
+        )
+    }
+
+    static let bookmarkAddedSyncPromoID = "bookmark-added-sync"
+
+    /// The "Sync Bookmarks Across Devices" button in the ★ popover and the Add/Edit Bookmark dialog.
+    @MainActor
+    static func bookmarkAddedSync(dependencies: PromoDependencies) -> Promo {
+        InternalPromo(
+            id: bookmarkAddedSyncPromoID,
+            triggers: [.bookmarkPanelShown],
+            initiated: .user,
+            promoType: PromoType(.nudgeButton),
+            context: .global,
+            delegate: dependencies.bookmarkAddedSyncPromoDelegate
         )
     }
 }

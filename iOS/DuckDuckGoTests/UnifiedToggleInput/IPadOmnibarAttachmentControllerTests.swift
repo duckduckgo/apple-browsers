@@ -461,6 +461,123 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         XCTAssertEqual(tappedURL, url)
     }
 
+    func testWhenFooterAppearsAnimatedThenCardFadesInPlaceInsteadOfGrowingFromZero() throws {
+        let (sut, window) = makeExpandedOmnibarInWindow()
+        defer { window.isHidden = true }
+
+        sut.setFooterMessages([termsItem()], animated: true)
+
+        let card = try XCTUnwrap(footerCards(in: sut).first)
+        XCTAssertNotEqual(card.frame.size, .zero)
+        XCTAssertEqual(geometryAnimationKeys(in: card), [])
+    }
+
+    func testWhenFooterReappearsWithSameMessagesThenCardIsKeptAndNotAnimated() throws {
+        let (sut, window) = makeExpandedOmnibarInWindow()
+        defer { window.isHidden = true }
+        sut.setFooterMessages([termsItem()], animated: false)
+        let card = try XCTUnwrap(footerCards(in: sut).first)
+
+        sut.setFooterMessages([termsItem()], animated: true)
+        XCTAssertTrue(try XCTUnwrap(footerCards(in: sut).first) === card)
+        XCTAssertEqual(geometryAnimationKeys(in: card), [])
+
+        sut.setFooterMessages([], animated: false)
+        sut.setFooterMessages([termsItem()], animated: true)
+        XCTAssertTrue(try XCTUnwrap(footerCards(in: sut).first) === card)
+        XCTAssertEqual(geometryAnimationKeys(in: card), [])
+    }
+
+    func testWhenFooterMessageChangesThenExistingCardIsReconfigured() throws {
+        let (sut, window) = makeExpandedOmnibarInWindow()
+        defer { window.isHidden = true }
+        sut.setFooterMessages([termsItem()], animated: false)
+        let card = try XCTUnwrap(footerCards(in: sut).first)
+
+        let createItem = termsItem(sendButton: .create)
+        sut.setFooterMessages([createItem], animated: true)
+
+        XCTAssertTrue(try XCTUnwrap(footerCards(in: sut).first) === card)
+        XCTAssertEqual(sut.visibleFooterMessages, [createItem])
+        XCTAssertTrue(allLabelText(in: card).contains("Create"))
+    }
+
+    func testWhenSearchAreaExpandsAnimatedThenFooterFadesInWithTheExpansion() throws {
+        let (sut, window) = makeCollapsedOmnibarInWindow()
+        defer { window.isHidden = true }
+        sut.onSearchAreaWillExpand = { sut.setFooterMessages([self.termsItem()], animated: false) }
+
+        sut.setSearchAreaExpanded(true, animated: true)
+
+        let card = try XCTUnwrap(footerCards(in: sut).first)
+        let footer = try XCTUnwrap(card.superview?.superview)
+        XCTAssertEqual(sut.visibleFooterMessages, [termsItem()])
+        XCTAssertEqual(footer.alpha, 1)
+        XCTAssertNotNil(footer.layer.animation(forKey: "opacity"))
+        XCTAssertNotEqual(card.frame.size, .zero)
+        XCTAssertEqual(geometryAnimationKeys(in: card), [])
+    }
+
+    func testWhenSearchAreaExpandsWithoutAnimationThenFooterIsAlreadyVisible() throws {
+        let (sut, window) = makeCollapsedOmnibarInWindow()
+        defer { window.isHidden = true }
+        sut.onSearchAreaWillExpand = { sut.setFooterMessages([self.termsItem()], animated: false) }
+
+        sut.setSearchAreaExpanded(true, animated: false)
+
+        let footer = try XCTUnwrap(footerCards(in: sut).first?.superview?.superview)
+        XCTAssertEqual(footer.alpha, 1)
+        XCTAssertNil(footer.layer.animation(forKey: "opacity"))
+    }
+
+    func testAttachmentLandingDuringExpansionAnimationStaysVisibleWhenItFinishes() throws {
+        let (sut, window) = makeCollapsedOmnibarInWindow()
+        defer { window.isHidden = true }
+        sut.setSearchAreaExpanded(true, animated: true)
+
+        sut.attachmentsStripView.addAttachment(.file(AIChatFileAttachment(data: Data([1]), fileName: "late.pdf", mimeType: "application/pdf")))
+        sut.updateAttachmentsLayout(animated: true)
+        let expansionFinished = expectation(description: "expansion animation finished")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { expansionFinished.fulfill() }
+        wait(for: [expansionFinished], timeout: 2)
+
+        XCTAssertTrue(sut.isSearchAreaExpanded)
+        XCTAssertFalse(sut.attachmentsStripView.isHidden)
+        XCTAssertEqual(sut.attachmentsStripView.alpha, 1)
+    }
+
+    private func makeCollapsedOmnibarInWindow() -> (DefaultOmniBarView, UIWindow) {
+        let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        sut.setLayoutMode(.expandedPad)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.addSubview(sut)
+        window.makeKeyAndVisible()
+        sut.layoutIfNeeded()
+        return (sut, window)
+    }
+
+    private func termsItem(sendButton: DuckAiTermsOfServiceSendButton = .ask) -> UTIFooterItem {
+        UTIFooterItem(id: .termsConsent, message: UTIFooterMessageMapper().termsOfServiceMessage(sendButton: sendButton))
+    }
+
+    private func makeExpandedOmnibarInWindow() -> (DefaultOmniBarView, UIWindow) {
+        let (sut, window) = makeCollapsedOmnibarInWindow()
+        sut.setSearchAreaExpanded(true, animated: false)
+        sut.layoutIfNeeded()
+        return (sut, window)
+    }
+
+    private func geometryAnimationKeys(in view: UIView) -> [String] {
+        let keys = (view.layer.animationKeys() ?? []).filter { $0.hasPrefix("position") || $0.hasPrefix("bounds") }
+        return keys + view.subviews.flatMap { geometryAnimationKeys(in: $0) }
+    }
+
+    private func allLabelText(in view: UIView) -> String {
+        let own = (view as? UILabel)?.text ?? (view as? UITextView)?.text ?? ""
+        return ([own] + view.subviews.map { allLabelText(in: $0) }).joined(separator: " ")
+    }
+
     private func footerCards(in view: UIView) -> [UTIFooterCardView] {
         let children = (view as? UIStackView)?.arrangedSubviews ?? view.subviews
         return children.flatMap { child -> [UTIFooterCardView] in

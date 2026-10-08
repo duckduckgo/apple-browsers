@@ -87,6 +87,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     var onUserScrolled: (() -> Void)?
+    var onScrollStateChanged: (() -> Void)?
 
     private let animator = BarsAnimator()
     
@@ -134,6 +135,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView === attachedScrollView else { return }
+        if delegate?.isFloatingChromeEnabled == true {
+            onScrollStateChanged?()
+        }
         guard !scrollView.isZooming else { return }
 
         let isFloatingDeceleration = delegate?.isFloatingChromeEnabled == true
@@ -210,12 +214,19 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         }
         guard delegate?.isFloatingChromeEnabled == true, !decelerate else { return }
         finishFloatingScrolling(in: scrollView)
+        // UIKit can still report dragging/tracking inside didEndDragging. Retry after it clears them.
+        DispatchQueue.main.async { [weak self, weak scrollView] in
+            guard let self, let scrollView, scrollView === self.attachedScrollView,
+                  !self.isFloatingUserScrollActive else { return }
+            self.onScrollStateChanged?()
+        }
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         guard scrollView === attachedScrollView else { return }
         isFloatingUserScrollActive = false
         guard delegate?.isFloatingChromeEnabled == true else { return }
+        onScrollStateChanged?()
         finishFloatingScrolling(in: scrollView)
     }
 

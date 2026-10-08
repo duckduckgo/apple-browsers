@@ -231,7 +231,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertNil(submitButton.title(for: .normal))
     }
 
-    func test_termsOfServiceSendButton_keepsTheVoiceButtonOnAnEmptyInput() throws {
+    func testWhenTheTermsLabelShowsOnAnEmptyInputThenItReplacesTheVoiceButtonDisabledUntilTyping() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = false
         sut.isAIVoiceChatActive = true
@@ -239,9 +239,28 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         sut.termsOfServiceSendButton = .ask
 
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        XCTAssertNil(submitButton.image(for: .normal))
+        XCTAssertFalse(submitButton.isEnabled)
+
+        sut.isSubmitEnabled = true
+
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        XCTAssertTrue(submitButton.isEnabled)
+    }
+
+    func testWhenTheTermsLabelGoesAwayOnAnEmptyInputThenTheVoiceButtonReturns() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isAIVoiceChatActive = true
+        sut.termsOfServiceSendButton = .create
+
+        sut.termsOfServiceSendButton = nil
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
         XCTAssertNil(submitButton.title(for: .normal))
         XCTAssertNotNil(submitButton.image(for: .normal))
-        XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
+        XCTAssertTrue(submitButton.isEnabled)
     }
 
     func test_termsOfServiceSendButton_widensTheButtonToFitTheTitleAndKeepsItTappable() throws {

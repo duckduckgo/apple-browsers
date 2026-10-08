@@ -64,6 +64,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: dependencies.featureFlagger),
         store: termsOfServiceStore
     )
+    private let termsOfServiceMeasurement = DuckAiTermsOfServiceMeasurement(
+        pixelFiring: DuckAiTermsOfServicePixelAdapter(surface: { .addressBar })
+    )
 
     private let attachmentPrivacyDisclosureOverride: AttachmentPrivacyDisclosure?
     private let attachmentPrivacyPixelFiring: PixelFiring?
@@ -187,10 +190,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                 self.refreshFooterMessage(animated: false)
                 self.toolPickerController?.clearModelSwitchNotice()
             }
+            self.syncTermsOfServiceSession()
             self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
         }
         omniBarView.onFooterLinkTapped = { [weak self] id, url in
             guard let self else { return }
+            recordTermsOfServiceLinkTapped(id)
             if id == .attachmentPrivacy {
                 saveIPadDraftText()
                 fireAttachmentPrivacyPixel(.learnMoreTapped)
@@ -199,6 +204,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
         omniBarView.onFooterVisibilityChanged = { [weak self] ids in
             guard let self else { return }
+            recordTermsOfServiceVisibility(ids)
             if ids.contains(.attachmentPrivacy) {
                 if attachmentPrivacyNotice.recordDisplay() {
                     fireAttachmentPrivacyPixel(.shown)
@@ -214,6 +220,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(addressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(appDidEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(appWillEnterForeground),
+                                               name: UIApplication.willEnterForegroundNotification,
                                                object: nil)
     }
 
@@ -329,6 +343,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
 
         handleIPadModeToggleTransition(to: mode)
+        syncTermsOfServiceSession()
     }
 
     override func endEditing() {
@@ -492,6 +507,15 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         updateShadowAppearanceByApplyingLayerMask()
     }
 
+    @objc private func appDidEnterBackground() {
+        termsOfServiceMeasurement.inputSessionEnded()
+    }
+
+    /// An input still open on return is a new session.
+    @objc private func appWillEnterForeground() {
+        syncTermsOfServiceSession()
+    }
+
     // MARK: - Private Helper Methods
 
     private func updateShadowAppearanceByApplyingLayerMask() {
@@ -535,8 +559,10 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 // Before the collapse below takes the disclaimer off screen.
-                if sentWithAsk {
-                    termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message)
+                termsOfServiceMeasurement.promptSubmitted(DuckAiTermsOfServiceSendMethod(sentWithAsk: sentWithAsk))
+                if sentWithAsk,
+                   termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message) {
+                    termsOfServiceMeasurement.acceptedInNativeInput()
                 }
                 let termsAccepted = sentWithAsk && termsOfServiceDisclaimer.hasAccepted
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
@@ -787,6 +813,25 @@ extension DefaultOmniBarViewController {
         omniBarView.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? sendButton : nil
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
+    }
+
+    private func recordTermsOfServiceVisibility(_ visibleIDs: [UTIFooterItem.ID]) {
+        guard visibleIDs.contains(.termsConsent) else { return }
+        termsOfServiceMeasurement.disclaimerBecameVisible()
+    }
+
+    private func recordTermsOfServiceLinkTapped(_ id: UTIFooterItem.ID) {
+        guard id == .termsConsent else { return }
+        termsOfServiceMeasurement.linkTapped()
+    }
+
+    /// Only Duck.ai mode expands the search area, which is the Duck.ai input.
+    private func syncTermsOfServiceSession() {
+        guard omniBarView.isSearchAreaExpanded, selectedTextEntryMode == .aiChat else {
+            termsOfServiceMeasurement.inputSessionEnded()
+            return
+        }
+        termsOfServiceDisclaimer.startMeasurementSession(termsOfServiceMeasurement, isDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.

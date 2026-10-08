@@ -26,10 +26,13 @@ struct DuckAiTermsOfServiceStore {
     enum Key: String {
         case hasAccepted = "aichat.hasAcceptedTermsAndConditions"
         case isAwaitingWebReport = "aichat.terms-of-service.accepted-natively.awaiting-web-report"
+        case hasExistingChats = "aichat.terms-of-service.has-existing-chats"
     }
 
     enum WebReportOutcome: Equatable {
         case firstAcceptance
+        /// The report a native acceptance owed the web: the same acceptance, not a new one.
+        case confirmsNativeAcceptance
         case alreadyAccepted
     }
 
@@ -44,9 +47,16 @@ struct DuckAiTermsOfServiceStore {
         keyValueStore.object(forKey: Key.hasAccepted.rawValue) as? Bool == true
     }
 
+    /// For measurement: chats prove an earlier acceptance in both groups, though only native Terms of Service
+    /// records one, so users the web app never asks count as accepted with the flag off too.
+    var hasAcceptedOrExistingChats: Bool {
+        hasAccepted || keyValueStore.object(forKey: Key.hasExistingChats.rawValue) as? Bool == true
+    }
+
     /// Sending from an input that showed the disclaimer. The web reports the same acceptance once the
-    /// prompt reaches it, and that report must not read as a repeat.
-    func recordAcceptedInNativeInput() {
+    /// prompt reaches it, and that report must not read as a repeat. Returns whether this is the first acceptance.
+    @discardableResult
+    func recordAcceptedInNativeInput() -> Bool {
         recordAcceptedNatively()
     }
 
@@ -56,24 +66,32 @@ struct DuckAiTermsOfServiceStore {
         recordAcceptedNatively()
     }
 
+    func recordExistingChats() {
+        keyValueStore.set(true, forKey: Key.hasExistingChats.rawValue)
+    }
+
     @discardableResult
     func recordWebReport() -> WebReportOutcome {
         let wasAccepted = hasAccepted
         let wasAwaitingWebReport = keyValueStore.object(forKey: Key.isAwaitingWebReport.rawValue) as? Bool == true
         keyValueStore.removeObject(forKey: Key.isAwaitingWebReport.rawValue)
         keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
-        return wasAccepted && !wasAwaitingWebReport ? .alreadyAccepted : .firstAcceptance
+        guard wasAccepted else { return .firstAcceptance }
+        return wasAwaitingWebReport ? .confirmsNativeAcceptance : .alreadyAccepted
     }
 
-    private func recordAcceptedNatively() {
-        guard !hasAccepted else { return }
+    @discardableResult
+    private func recordAcceptedNatively() -> Bool {
+        guard !hasAccepted else { return false }
         keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
         keyValueStore.set(true, forKey: Key.isAwaitingWebReport.rawValue)
+        return true
     }
 
     /// Native only: the web app keeps its own copy until Duck.ai data is cleared.
     func resetForDebugging() {
         keyValueStore.removeObject(forKey: Key.hasAccepted.rawValue)
         keyValueStore.removeObject(forKey: Key.isAwaitingWebReport.rawValue)
+        keyValueStore.removeObject(forKey: Key.hasExistingChats.rawValue)
     }
 }

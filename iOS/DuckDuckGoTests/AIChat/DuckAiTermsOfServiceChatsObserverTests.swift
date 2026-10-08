@@ -110,11 +110,31 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         XCTAssertEqual(storage.chatsPublisherRequests, 0)
     }
 
-    func testWhenNativeTermsOfServiceIsOffThenNothingIsObserved() {
-        XCTAssertNil(DuckAiTermsOfServiceChatsObserver(storageHandler: storage,
-                                                       feature: StubNativeTermsOfServiceFeature(isAvailable: false),
-                                                       store: store,
-                                                       queue: queue))
+    /// The measurement qualifies users the same way in both groups, so chats count with the flag off too.
+    func testWhenNativeTermsOfServiceIsOffAndChatsExistThenOnlyTheChatsAreRecorded() throws {
+        storage.chats.send([chat])
+
+        start(isNativeTermsOfServiceOn: false)
+
+        XCTAssertFalse(store.hasAccepted)
+        XCTAssertTrue(store.hasAcceptedOrExistingChats)
+        XCTAssertNil(try storage.getEntry(key: termsKey))
+    }
+
+    func testWhenNativeTermsOfServiceIsOffAndChatsWereRecordedThenChatsAreNotRead() {
+        store.recordExistingChats()
+
+        start(isNativeTermsOfServiceOn: false)
+
+        XCTAssertEqual(storage.chatsPublisherRequests, 0)
+    }
+
+    func testWhenNativeTermsOfServiceIsOffAndTheWebAcceptedThenChatsAreNotRead() {
+        store.recordWebReport()
+
+        start(isNativeTermsOfServiceOn: false)
+
+        XCTAssertEqual(storage.chatsPublisherRequests, 0)
     }
 
     func testWhenNativeStorageIsUnavailableThenNothingIsObserved() {
@@ -124,9 +144,9 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
                                                        queue: queue))
     }
 
-    private func start() {
+    private func start(isNativeTermsOfServiceOn: Bool = true) {
         sut = DuckAiTermsOfServiceChatsObserver(storageHandler: storage,
-                                                feature: StubNativeTermsOfServiceFeature(isAvailable: true),
+                                                feature: StubNativeTermsOfServiceFeature(isAvailable: isNativeTermsOfServiceOn),
                                                 store: store,
                                                 queue: queue)
         sut?.start()

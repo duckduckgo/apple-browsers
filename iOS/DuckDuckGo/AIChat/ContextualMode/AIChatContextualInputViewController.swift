@@ -85,6 +85,7 @@ final class AIChatContextualInputViewController: UIViewController {
     private let showsWelcomeMessage: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let termsOfServiceMeasurement: DuckAiTermsOfServiceMeasurement
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
         if showsBasicNativeInput {
@@ -124,6 +125,7 @@ final class AIChatContextualInputViewController: UIViewController {
         card.isHidden = true
         card.onLinkTap = { [weak self] url in
             guard let self else { return }
+            termsOfServiceMeasurement.linkTapped()
             delegate?.contextualInputViewController(self, didTapLink: url)
         }
         return card
@@ -150,11 +152,13 @@ final class AIChatContextualInputViewController: UIViewController {
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          showsBasicNativeInput: Bool = true,
          showsWelcomeMessage: Bool = true,
-         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer()) {
+         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(),
+         termsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring = DuckAiTermsOfServicePixelAdapter(surface: { .contextualChat })) {
         self.showsBasicNativeInput = showsBasicNativeInput
         self.showsWelcomeMessage = showsWelcomeMessage
         self.voiceSearchHelper = voiceSearchHelper
         self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
+        self.termsOfServiceMeasurement = DuckAiTermsOfServiceMeasurement(pixelFiring: termsOfServicePixelFiring)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -174,6 +178,7 @@ final class AIChatContextualInputViewController: UIViewController {
         if showsBasicNativeInput {
             configureBasicNativeInput()
             setupKeyboardObservers()
+            setupAppLifecycleObservers()
             refreshTermsOfServiceDisclaimer()
         }
         configureQuickActions()
@@ -188,6 +193,16 @@ final class AIChatContextualInputViewController: UIViewController {
         super.viewWillAppear(animated)
         updateBottomPaddingForOrientation()
         refreshTermsOfServiceDisclaimer()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        startTermsOfServiceSession()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        termsOfServiceMeasurement.inputSessionEnded()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -287,9 +302,21 @@ final class AIChatContextualInputViewController: UIViewController {
     @discardableResult
     func acceptTermsIfDisclaimerShown() -> Bool {
         if termsOfServiceDisclaimer.acceptIfShown(visibleTermsOfServiceMessage) {
+            termsOfServiceMeasurement.acceptedInNativeInput()
             refreshTermsOfServiceDisclaimer()
         }
         return termsOfServiceDisclaimer.hasAccepted
+    }
+
+    /// Call before `acceptTermsIfDisclaimerShown()`, for every prompt the basic input sends.
+    func recordPromptSubmitted(_ sendMethod: DuckAiTermsOfServiceSendMethod) {
+        termsOfServiceMeasurement.promptSubmitted(sendMethod)
+    }
+
+    private func startTermsOfServiceSession() {
+        guard showsBasicNativeInput, viewIfLoaded?.window != nil else { return }
+        termsOfServiceDisclaimer.startMeasurementSession(termsOfServiceMeasurement,
+                                                         isDisclaimerShown: visibleTermsOfServiceMessage != nil)
     }
 
     private var visibleTermsOfServiceMessage: UTIFooterMessage? {
@@ -396,6 +423,7 @@ private extension AIChatContextualInputViewController {
         }
         displayedTermsOfServiceMessage = message
         termsOfServiceCard.isHidden = message == nil
+        if visibleTermsOfServiceMessage != nil { termsOfServiceMeasurement.disclaimerBecameVisible() }
         basicNativeInputViewController.submitButtonTitle = message == nil ? nil : UserText.duckAIAskButtonTitle
 
         // The outgoing pin goes first, so the two are never active together.
@@ -527,6 +555,30 @@ private extension AIChatContextualInputViewController {
             name: UIResponder.keyboardWillHideNotification,
             object: nil
         )
+    }
+
+    /// Going to the background ends the session; an input still on screen on return starts a new one.
+    private func setupAppLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    @objc private func appDidEnterBackground() {
+        termsOfServiceMeasurement.inputSessionEnded()
+    }
+
+    @objc private func appWillEnterForeground() {
+        startTermsOfServiceSession()
     }
 
     @objc func keyboardWillShow(_ notification: Notification) {

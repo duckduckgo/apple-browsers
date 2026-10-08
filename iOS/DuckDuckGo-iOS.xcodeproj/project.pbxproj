@@ -1247,6 +1247,7 @@
 		AA2000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift */; };
 		AA2000060000000000000006 /* PrivacyStats in Frameworks */ = {isa = PBXBuildFile; productRef = AA3000060000000000000006 /* PrivacyStats */; };
 		AABB00010001000100010003 /* UTIRenderStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010004 /* UTIRenderStateTests.swift */; };
+		C289F68679366FCC2F7FC34C /* UnifiedToggleInputTermsOfServiceMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D1C9DA5897B87F2E1D3CAAF /* UnifiedToggleInputTermsOfServiceMeasurementTests.swift */; };
 		AABB00010001000100010009 /* UTIAttachmentPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000A /* UTIAttachmentPolicyTests.swift */; };
 		AABB0001000100010001000D /* UTIModelStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000E /* UTIModelStoreTests.swift */; };
 		AABB00010001000100010101 /* UnifiedToggleInputViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010100 /* UnifiedToggleInputViewTests.swift */; };
@@ -1577,6 +1578,7 @@
 		D6E0C1892B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0C1882B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift */; };
 		DA19AC9ABF6B4AD98E1887EE /* LegacyPixelStateMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CDC8DDC4354433A6952FF0 /* LegacyPixelStateMigration.swift */; };
 		DA1E70510000000000000002 /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */; };
+		37453BE585A09445DD5FB374 /* DuckAiTermsOfServicePixelAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDDF18F14668B2DD075948D /* DuckAiTermsOfServicePixelAdapterTests.swift */; };
 		1A1CD2D3261FD04D73BD83A6 /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467FF68FE3ADE941909B3E35 /* DuckAiTermsOfServiceChatsObserverTests.swift */; };
 		DA1E70510000000000000004 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1E70510000000000000003 /* DuckAiTermsOfServiceDisclaimerTests.swift */; };
 		DA46CDBDABEE6B9945F597C3 /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */; };
@@ -2988,6 +2990,7 @@
 		AA1000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTrackerCountViewModelTests.swift; sourceTree = "<group>"; };
 		AA10B5012FA0000100AB12CD /* WebExtensionAvailabilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebExtensionAvailabilityTests.swift; sourceTree = "<group>"; };
 		AABB00010001000100010004 /* UTIRenderStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIRenderStateTests.swift; sourceTree = "<group>"; };
+		8D1C9DA5897B87F2E1D3CAAF /* UnifiedToggleInputTermsOfServiceMeasurementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputTermsOfServiceMeasurementTests.swift; sourceTree = "<group>"; };
 		AABB0001000100010001000A /* UTIAttachmentPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentPolicyTests.swift; sourceTree = "<group>"; };
 		AABB0001000100010001000E /* UTIModelStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIModelStoreTests.swift; sourceTree = "<group>"; };
 		AABB00010001000100010100 /* UnifiedToggleInputViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputViewTests.swift; sourceTree = "<group>"; };
@@ -3357,6 +3360,7 @@
 		D6E0C1882B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopDownloadViewModel.swift; sourceTree = "<group>"; };
 		D9978912B1022C989EF9C224 /* IPadOmnibarAttachmentControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarAttachmentControllerTests.swift; sourceTree = "<group>"; };
 		DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceStoreTests.swift; sourceTree = "<group>"; };
+		ADDDF18F14668B2DD075948D /* DuckAiTermsOfServicePixelAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServicePixelAdapterTests.swift; sourceTree = "<group>"; };
 		467FF68FE3ADE941909B3E35 /* DuckAiTermsOfServiceChatsObserverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceChatsObserverTests.swift; sourceTree = "<group>"; };
 		DA1E70510000000000000003 /* DuckAiTermsOfServiceDisclaimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceDisclaimerTests.swift; sourceTree = "<group>"; };
 		DA35D7D938024631AF5D5BE6 /* SitePermissions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SitePermissions; sourceTree = "<group>"; };
@@ -4102,6 +4106,7 @@
 				3105BCF42DF2154800EB755E /* MockAIChatPixelMetricHandler.swift */,
 				319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */,
 				DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */,
+				ADDDF18F14668B2DD075948D /* DuckAiTermsOfServicePixelAdapterTests.swift */,
 				467FF68FE3ADE941909B3E35 /* DuckAiTermsOfServiceChatsObserverTests.swift */,
 				DA1E70510000000000000003 /* DuckAiTermsOfServiceDisclaimerTests.swift */,
 				312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */,
@@ -6288,6 +6293,7 @@
 				AABB0001000100010001000E /* UTIModelStoreTests.swift */,
 				FBA1C0DE0000000000000004 /* IPadOmnibarModelPickerControllerTests.swift */,
 				AABB00010001000100010004 /* UTIRenderStateTests.swift */,
+				8D1C9DA5897B87F2E1D3CAAF /* UnifiedToggleInputTermsOfServiceMeasurementTests.swift */,
 				33CC9145E578E99B3052757F /* UnifiedToggleInputModelMenuTests.swift */,
 				C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */,
 				C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */,
@@ -9468,6 +9474,7 @@
 				AABB0001000100010001000D /* UTIModelStoreTests.swift in Sources */,
 				FBA1C0DE0000000000000003 /* IPadOmnibarModelPickerControllerTests.swift in Sources */,
 				AABB00010001000100010003 /* UTIRenderStateTests.swift in Sources */,
+				C289F68679366FCC2F7FC34C /* UnifiedToggleInputTermsOfServiceMeasurementTests.swift in Sources */,
 				275A9E842551836ECC9E6873 /* UnifiedToggleInputModelMenuTests.swift in Sources */,
 				9FA8A629300EFDA3000DF5DE /* OnboardingPersonalizationAdBlockingTests.swift in Sources */,
 				C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */,
@@ -9516,6 +9523,7 @@
 				981FED7422046017008488D7 /* AutoClearTests.swift in Sources */,
 				319BE1092D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				DA1E70510000000000000002 /* DuckAiTermsOfServiceStoreTests.swift in Sources */,
+				37453BE585A09445DD5FB374 /* DuckAiTermsOfServicePixelAdapterTests.swift in Sources */,
 				1A1CD2D3261FD04D73BD83A6 /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */,
 				DA1E70510000000000000004 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */,
 				80483EF12F4D5C0100563037 /* MockAutoconsentManagement.swift in Sources */,

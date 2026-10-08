@@ -36,6 +36,7 @@ final class UTIFooterController {
     var onInputBlockChanged: ((Bool) -> Void)?
     /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
+    var onTermsOfServiceAccepted: (() -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
@@ -208,7 +209,7 @@ final class UTIFooterController {
     func acceptTermsIfDisclaimerShown() -> Bool {
         guard let termsOfServiceStore else { return false }
         if visibleIDs.contains(.termsConsent) {
-            termsOfServiceStore.recordAcceptedInNativeInput()
+            if termsOfServiceStore.recordAcceptedInNativeInput() { onTermsOfServiceAccepted?() }
             Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
             applyCurrentState()
         }

@@ -1,0 +1,165 @@
+// Duck.ai Terms of Service disclaimer pixels - the native disclaimer under the Duck.ai omnibar and
+// Prompt Bar, gated by the `aiChatNativeTermsOfService` feature flag. Named for name with iOS.
+//
+// The question is whether seeing the disclaimer changes if a user who hasn't accepted sends a prompt
+// or bounces. Each native input session for such a user joins one group: `shown` once the disclaimer
+// renders, or `not_shown` at the start when the flag is off and nothing blocks sending. A user who
+// has accepted, or has Duck.ai chats on the device, is left out of both groups.
+//
+// Each session reports one outcome: its first prompt (`_prompt_submitted`) or `_abandoned` when the
+// input closes, collapses or switches to search without one. `_accepted` closes the funnel: with the
+// flag off, a native send still meets the web app's own Terms of Service card.
+{
+    "aichat_terms_of_service_shown_macos": {
+        "description": "Fires when the Terms of Service disclaimer renders under the Duck.ai omnibar or Prompt Bar, once per input session, for a user who hasn't accepted.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the session.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_shown_prompt_submitted_macos": {
+        "description": "Fires on the first prompt sent in an input session that showed the Terms of Service disclaimer.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the session.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            },
+            {
+                "key": "send_method",
+                "description": "How the prompt was sent: the Ask button, or Return. Only Ask accepts the Terms of Service.",
+                "type": "string",
+                "enum": ["ask", "return"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_shown_abandoned_macos": {
+        "description": "Fires when an input session that showed the Terms of Service disclaimer ends without a prompt: the input closed, lost focus, or switched to search.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the session.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_not_shown_macos": {
+        "description": "Fires when the Duck.ai omnibar or Prompt Bar opens for a user who hasn't accepted the Terms of Service while the native disclaimer is off and nothing blocks sending. The control group for `aichat_terms_of_service_shown_macos`.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the session.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_not_shown_prompt_submitted_macos": {
+        "description": "Fires on the first prompt sent in an input session counted as `aichat_terms_of_service_not_shown_macos`. The web app still shows its own Terms of Service card for that prompt.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the session.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            },
+            {
+                "key": "send_method",
+                "description": "How the prompt was sent: the Ask button, or Return.",
+                "type": "string",
+                "enum": ["ask", "return"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_not_shown_abandoned_macos": {
+        "description": "Fires when an input session counted as `aichat_terms_of_service_not_shown_macos` ends without a prompt: the input closed, lost focus, or switched to search.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the session.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_link_tapped_macos": {
+        "description": "Fires when the user clicks the Privacy Policy and Terms of Service link in the native disclaimer.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input showed the disclaimer.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_accepted_macos": {
+        "description": "Fires when the user first accepts Duck.ai's Terms of Service: by clicking Ask with the native disclaimer on screen, or on the web app's own card. Not fired for the web's report of an acceptance already made natively, nor for users with Duck.ai chats on the device.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input the user accepted in. Only sent when `source` is `native_input`.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            },
+            {
+                "key": "source",
+                "description": "Where the user accepted: the native disclaimer, or the web app.",
+                "type": "string",
+                "enum": ["native_input", "web"]
+            },
+            {
+                "key": "native_disclaimer",
+                "description": "Whether the native disclaimer feature was on when the user accepted.",
+                "type": "string",
+                "enum": ["enabled", "disabled"]
+            }
+        ]
+    }
+}

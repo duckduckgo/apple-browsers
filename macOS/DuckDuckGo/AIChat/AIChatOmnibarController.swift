@@ -173,9 +173,21 @@ final class AIChatOmnibarController {
     @Published var isInputBlockedByUsageLimit = false
 
     let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let termsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring?
+
+    /// Whether seeing the disclaimer changes if a user who hasn't accepted sends a prompt or bounces.
+    private(set) lazy var termsOfServiceMeasurement = DuckAiTermsOfServiceMeasurement(
+        pixelFiring: termsOfServicePixelFiring ?? DuckAiTermsOfServicePixelAdapter(surface: surface.usageWarningPixelSurface)
+    )
 
     /// Set by the container VC from the card it renders: an Ask click accepts the terms only while it's on screen.
-    var isTermsOfServiceDisclaimerShown = false
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard isTermsOfServiceDisclaimerShown, !oldValue else { return }
+            termsOfServiceMeasurement.disclaimerBecameVisible()
+        }
+    }
 
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
@@ -355,7 +367,8 @@ final class AIChatOmnibarController {
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        termsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -375,6 +388,8 @@ final class AIChatOmnibarController {
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.usageLimitsStore = usageLimitsStore
         self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.termsOfServiceStore = termsOfServiceStore
+        self.termsOfServicePixelFiring = termsOfServicePixelFiring
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -490,6 +505,7 @@ final class AIChatOmnibarController {
 
         fetchModels()
         refreshUsageWarnings()
+        startTermsOfServiceSession()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -499,6 +515,17 @@ final class AIChatOmnibarController {
 
         if shouldFetchSuggestions {
             fetchSuggestionsIfNeeded(query: currentText)
+        }
+    }
+
+    /// After the refresh, which applies the card synchronously: whether it shows the disclaimer or blocks
+    /// the input is settled by now.
+    private func startTermsOfServiceSession() {
+        termsOfServiceMeasurement.inputSessionStarted(hasAccepted: termsOfServiceStore.hasAcceptedOrExistingChats,
+                                                      isDisclaimerEnabled: featureFlagger.isFeatureOn(.aiChatNativeTermsOfService),
+                                                      isInputBlocked: isInputBlockedByUsageLimit)
+        if isTermsOfServiceDisclaimerShown {
+            termsOfServiceMeasurement.disclaimerBecameVisible()
         }
     }
 
@@ -1205,6 +1232,7 @@ final class AIChatOmnibarController {
         hasBeenActivated = false
         // Whatever the user was going to do about the card, they have now done it.
         usageWarningMeasurement.inputSessionEnded()
+        termsOfServiceMeasurement.inputSessionEnded()
         usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -1395,8 +1423,9 @@ final class AIChatOmnibarController {
         firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
-        if sentWithAsk {
-            termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
+        termsOfServiceMeasurement.promptSubmitted(sentWithAsk ? .ask : .return)
+        if sentWithAsk, termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown) {
+            termsOfServiceMeasurement.acceptedInNativeInput()
         }
 
         // Snapshot everything that could change between now and when the async submit Task

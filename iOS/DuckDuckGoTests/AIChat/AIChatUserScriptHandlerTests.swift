@@ -84,7 +84,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
                                              attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
                                              installDateProvider: @escaping () -> Date? = { nil },
-                                             installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
+                                             installTypeProvider: @escaping () -> AIChatInstallType = { .new },
+                                             termsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring = NullDuckAiTermsOfServicePixelFiring()) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger)
         return AIChatUserScriptHandler(
             experimentalAIChatManager: experimentalAIChatManager,
@@ -100,7 +101,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults),
             attachmentPrivacyWebKeySource: attachmentPrivacyWebKeySource,
             installDateProvider: installDateProvider,
-            installTypeProvider: installTypeProvider
+            installTypeProvider: installTypeProvider,
+            termsOfServicePixelFiring: termsOfServicePixelFiring
         )
     }
 
@@ -1311,6 +1313,50 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertEqual(mockUserDefaults.object(forKey: termsAcceptedKey) as? Bool, true)
+    }
+
+    func testWhenTheWebReportsAFirstAcceptanceThenItIsMeasuredWithTheDisclaimerState() async {
+        let firing = RecordingTermsOfServicePixelFiring()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(termsOfServicePixelFiring: firing)
+
+        await reportTermsAccepted()
+
+        XCTAssertEqual(firing.events, [.accepted(.web, isNativeDisclaimerEnabled: false)])
+    }
+
+    /// The native acceptance was already measured where Ask was tapped.
+    func testWhenTheWebConfirmsANativeAcceptanceThenItIsNotMeasuredAgain() async {
+        let firing = RecordingTermsOfServicePixelFiring()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(termsOfServicePixelFiring: firing)
+        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
+
+        await reportTermsAccepted()
+
+        XCTAssertEqual(firing.events, [])
+    }
+
+    /// Users with chats are left out of both groups, so their acceptance isn't part of the funnel.
+    func testWhenChatsExistThenAWebAcceptanceIsNotMeasured() async {
+        let firing = RecordingTermsOfServicePixelFiring()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(termsOfServicePixelFiring: firing)
+        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordExistingChats()
+
+        await reportTermsAccepted()
+
+        XCTAssertEqual(firing.events, [])
+    }
+
+    private func reportTermsAccepted() async {
+        _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": "userDidAcceptTermsAndConditions"],
+                                                       message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+}
+
+private final class RecordingTermsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring {
+    private(set) var events: [DuckAiTermsOfServiceMeasurementEvent] = []
+
+    func fire(_ event: DuckAiTermsOfServiceMeasurementEvent) {
+        events.append(event)
     }
 }
 

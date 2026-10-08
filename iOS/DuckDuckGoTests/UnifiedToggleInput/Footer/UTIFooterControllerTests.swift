@@ -1591,6 +1591,19 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(sut.acceptTermsIfDisclaimerShown())
     }
 
+    func test_acceptTermsIfDisclaimerShown_reportsOnlyTheFirstAcceptance() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        var acceptanceCount = 0
+        sut.onTermsOfServiceAccepted = { acceptanceCount += 1 }
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertEqual(acceptanceCount, 1)
+    }
+
     func test_refresh_presentsNothingOnceTheTermsAreAccepted() {
         termsStore.recordWebReport()
         sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)

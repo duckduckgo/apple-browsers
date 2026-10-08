@@ -1275,7 +1275,14 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
     /// A report owed for an acceptance made natively is the same acceptance, not a duplicate.
     private func handleTermsAccepted() {
-        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
+        // Read first: the report records the acceptance. Users with chats are left out in both groups.
+        let wasCountedAsAccepted = termsOfServiceStore.hasAcceptedOrExistingChats
+        let outcome = termsOfServiceStore.recordWebReport()
+        if outcome == .firstAcceptance, !wasCountedAsAccepted {
+            DuckAiTermsOfServicePixelAdapter(surface: nil, pixelFiring: pixelFiring)
+                .fire(.accepted(.web, isNativeDisclaimerEnabled: featureFlagger.isFeatureOn(.aiChatNativeTermsOfService)))
+        }
+        guard outcome == .alreadyAccepted else { return }
 
         let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
         let pixel: AIChatPixel = syncIsOn

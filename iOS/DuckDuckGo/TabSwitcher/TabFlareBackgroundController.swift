@@ -30,8 +30,8 @@ final class TabFlareBackgroundController {
             self.target = target
         }
 
-        @objc func tick() {
-            target?.trackToCurrentTabCell()
+        @objc func tick(_ link: CADisplayLink) {
+            target?.trackToCurrentTabCell(elapsedTime: link.targetTimestamp - link.timestamp)
         }
     }
 
@@ -55,6 +55,7 @@ final class TabFlareBackgroundController {
     private var isReordering = false
     private var reorderTrackingDisplayLink: CADisplayLink?
     private var lastContentOffset: CGPoint?
+    private var onReorderTick: ((TimeInterval) -> Void)?
 
     init(collectionView: UICollectionView,
          topCornerRadius: CGFloat,
@@ -107,16 +108,18 @@ final class TabFlareBackgroundController {
         applyAlpha()
     }
 
-    func beginReorder() {
+    func beginReorder(onTick: ((TimeInterval) -> Void)? = nil) {
         // A long-press preview can convert into a drag without firing its dismiss callback.
         previewedTabIndex = nil
         isReordering = true
+        onReorderTick = onTick
         applyAlpha()
         startReorderTracking()
     }
 
     func endReorder() {
         stopReorderTracking()
+        onReorderTick = nil
         isReordering = false
         update(animated: true)
     }
@@ -132,7 +135,7 @@ final class TabFlareBackgroundController {
 
     private func startReorderTracking() {
         stopReorderTracking()
-        let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick))
+        let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick(_:)))
         link.add(to: .main, forMode: .common)
         reorderTrackingDisplayLink = link
     }
@@ -143,7 +146,7 @@ final class TabFlareBackgroundController {
     }
 
     /// Animates between insertion slots instead of copying the placeholder's jumps.
-    private func trackToCurrentTabCell() {
+    private func trackToCurrentTabCell(elapsedTime: TimeInterval) {
         guard let collectionView else {
             endReorder()
             return
@@ -153,6 +156,7 @@ final class TabFlareBackgroundController {
             endReorder()
             return
         }
+        onReorderTick?(elapsedTime)
         guard let index = currentIndex(),
               let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
         updateFrame(cell.frame, animated: true)

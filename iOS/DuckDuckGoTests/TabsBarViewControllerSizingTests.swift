@@ -143,6 +143,147 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
+    func testDraggedTabPreviewHasOpaqueBackgroundAndFourRoundedCorners() throws {
+        let (controller, model) = makeOverflowingController()
+        defer { withExtendedLifetime(model) {} }
+        let collectionView = controller.collectionView
+        let indexPath = IndexPath(item: 0, section: 0)
+        let cell = try XCTUnwrap(collectionView.cellForItem(at: indexPath))
+        let parameters = try XCTUnwrap(controller.collectionView(collectionView, dragPreviewParametersForItemAt: indexPath))
+        let path = try XCTUnwrap(parameters.visiblePath)
+
+        XCTAssertGreaterThan(parameters.backgroundColor.cgColor.alpha, 0.5)
+        XCTAssertEqual(path.bounds, cell.bounds)
+        for x in [cell.bounds.minX + 1, cell.bounds.maxX - 1] {
+            for y in [cell.bounds.minY + 1, cell.bounds.maxY - 1] {
+                XCTAssertFalse(path.contains(CGPoint(x: x, y: y)))
+            }
+        }
+        XCTAssertTrue(path.contains(CGPoint(x: cell.bounds.midX, y: cell.bounds.midY)))
+        XCTAssertTrue(path.contains(CGPoint(x: cell.bounds.midX, y: cell.bounds.maxY - 1)))
+    }
+
+    @MainActor
+    func testReorderScrollsInsideBothEdgesAndStopsOnExitAndEnd() throws {
+        let (controller, model) = makeOverflowingController()
+        let collectionView = controller.collectionView
+        collectionView.contentOffset.x = 400
+        collectionView.layoutIfNeeded()
+        let source = IndexPath(item: 4, section: 0)
+        let cell = try XCTUnwrap(collectionView.cellForItem(at: source))
+        let session = TabsDragDropSession(locationView: collectionView,
+                                         point: CGPoint(x: cell.frame.minX + 20, y: cell.frame.midY))
+        session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+        XCTAssertEqual(session.items.count, 1)
+        let currentTab = model.currentTab
+
+        for direction in [CGFloat(-1), 1] {
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            session.point = CGPoint(x: direction < 0 ? viewport.minX + 60 : viewport.maxX - 60, y: viewport.midY)
+            _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: source)
+            let previousOffset = collectionView.contentOffset.x
+            controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+            XCTAssertGreaterThan(direction * (collectionView.contentOffset.x - previousOffset), 0)
+        }
+
+        session.point = CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY)
+        let centerOffset = collectionView.contentOffset
+        controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+        XCTAssertEqual(collectionView.contentOffset, centerOffset)
+
+        controller.collectionView(collectionView, dropSessionDidExit: session)
+        let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+        session.point = CGPoint(x: viewport.maxX - 60, y: viewport.midY)
+        let exitOffset = collectionView.contentOffset
+        controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+        XCTAssertEqual(collectionView.contentOffset, exitOffset)
+
+        controller.collectionView(collectionView, dropSessionDidEnter: session)
+        controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+        XCTAssertGreaterThan(collectionView.contentOffset.x, exitOffset.x)
+        controller.collectionView(collectionView, dragSessionDidEnd: session)
+        let endOffset = collectionView.contentOffset
+        controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+        XCTAssertEqual(collectionView.contentOffset, endOffset)
+        XCTAssertIdentical(model.currentTab, currentTab)
+    }
+
+    @MainActor
+    func testReorderScrollingClampsAtBothContentEnds() throws {
+        let (controller, model) = makeOverflowingController()
+        defer { withExtendedLifetime(model) {} }
+        let collectionView = controller.collectionView
+        let source = IndexPath(item: 0, section: 0)
+        let cell = try XCTUnwrap(collectionView.cellForItem(at: source))
+        let session = TabsDragDropSession(locationView: collectionView,
+                                         point: CGPoint(x: cell.frame.minX + 20, y: cell.frame.midY))
+        session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+        XCTAssertEqual(session.items.count, 1)
+        let minimumOffset = -collectionView.adjustedContentInset.left
+        let maximumOffset = collectionView.contentSize.width - collectionView.bounds.width + collectionView.adjustedContentInset.right
+
+        for (limit, direction) in [(minimumOffset, CGFloat(-1)), (maximumOffset, CGFloat(1))] {
+            collectionView.contentOffset.x = limit - direction
+            collectionView.layoutIfNeeded()
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            session.point = CGPoint(x: direction < 0 ? viewport.minX + 1 : viewport.maxX - 1, y: viewport.midY)
+            _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: source)
+            controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+            XCTAssertEqual(collectionView.contentOffset.x, limit, accuracy: 0.001)
+            controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+            XCTAssertEqual(collectionView.contentOffset.x, limit, accuracy: 0.001)
+        }
+        controller.collectionView(collectionView, dragSessionDidEnd: session)
+    }
+
+    @MainActor
+    func testDroppingInactiveTabAtEdgeRevealsItsNeighborWithoutSelectingIt() async throws {
+        let (controller, model) = makeOverflowingController()
+        let collectionView = controller.collectionView
+        collectionView.contentOffset.x = 400
+        collectionView.layoutIfNeeded()
+        let source = IndexPath(item: 4, section: 0)
+        let destination = IndexPath(item: 2, section: 0)
+        let movedTab = try XCTUnwrap(model.get(tabAt: source.item))
+        let selectedTab = model.currentTab
+        let session = TabsDragDropSession(locationView: collectionView, point: CGPoint(x: 500, y: 20))
+        session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+        _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: destination)
+        let item = TabsCollectionDropItem(sourceIndexPath: source)
+        let coordinator = TabsCollectionDropCoordinator(item: item, destination: destination, session: session)
+        let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
+        let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: destination))
+        let revealed = keyValueObservingExpectation(for: collectionView, keyPath: "contentOffset") { _, _ in
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            return viewport.contains(revealFrame)
+        }
+
+        controller.collectionView(collectionView, performDropWith: coordinator)
+        let dropOffset = collectionView.contentOffset
+        controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+        XCTAssertEqual(collectionView.contentOffset, dropOffset)
+        coordinator.animator.completion?(.end)
+
+        await fulfillment(of: [revealed], timeout: 2)
+        XCTAssertIdentical(model.currentTab, selectedTab)
+        XCTAssertIdentical(model.get(tabAt: destination.item), movedTab)
+        XCTAssertEqual(coordinator.droppedIndexPath, destination)
+    }
+
+    @MainActor
+    private func makeOverflowingController() -> (TabsBarViewController, TabsModel) {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+        controller.view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+        controller.view.layoutIfNeeded()
+        let tabs = (0..<17).map { _ in Tab(desktop: true, fireTab: false) }
+        let model = TabsModel(tabs: tabs, currentIndex: 8, desktop: true)
+        controller.refresh(tabsModel: model)
+        controller.collectionView.layoutIfNeeded()
+        return (controller, model)
+    }
+
+    @MainActor
     func testScrollCallbackKeepsFlareAlignedWithPinnedSelectedCellBeforeNextLayoutPass() throws {
         let controller = TabsBarViewController.create()
         controller.loadViewIfNeeded()
@@ -183,7 +324,7 @@ private final class TabsDragDropSession: NSObject, UIDragSession, UIDropSession 
     var progressIndicatorStyle: UIDropSessionProgressIndicatorStyle = .none
     var progress = Progress(totalUnitCount: 0)
     private let locationView: UIView
-    private let point: CGPoint
+    var point: CGPoint
 
     init(locationView: UIView, point: CGPoint) {
         self.locationView = locationView
@@ -197,4 +338,51 @@ private final class TabsDragDropSession: NSObject, UIDragSession, UIDropSession 
         completion([])
         return progress
     }
+}
+
+@MainActor
+private final class TabsCollectionDropItem: NSObject, UICollectionViewDropItem {
+    let dragItem = UIDragItem(itemProvider: NSItemProvider())
+    let sourceIndexPath: IndexPath?
+    let previewSize = CGSize(width: 120, height: 40)
+
+    init(sourceIndexPath: IndexPath) {
+        self.sourceIndexPath = sourceIndexPath
+    }
+}
+
+@MainActor
+private final class TabsDropAnimator: NSObject, UIDragAnimating {
+    var completion: ((UIViewAnimatingPosition) -> Void)?
+
+    func addAnimations(_ animations: @escaping () -> Void) { animations() }
+    func addCompletion(_ completion: @escaping (UIViewAnimatingPosition) -> Void) { self.completion = completion }
+}
+
+@MainActor
+private final class TabsCollectionDropCoordinator: NSObject, UICollectionViewDropCoordinator {
+    let items: [UICollectionViewDropItem]
+    let destinationIndexPath: IndexPath?
+    let proposal = UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+    let session: UIDropSession
+    let animator = TabsDropAnimator()
+    private(set) var droppedIndexPath: IndexPath?
+
+    init(item: UICollectionViewDropItem, destination: IndexPath, session: UIDropSession) {
+        items = [item]
+        destinationIndexPath = destination
+        self.session = session
+    }
+
+    func drop(_ dragItem: UIDragItem, toItemAt indexPath: IndexPath) -> UIDragAnimating {
+        droppedIndexPath = indexPath
+        return animator
+    }
+
+    func drop(_ dragItem: UIDragItem, to placeholder: UICollectionViewDropPlaceholder) -> UICollectionViewDropPlaceholderContext {
+        fatalError("Placeholder drops are not used by these tests")
+    }
+
+    func drop(_ dragItem: UIDragItem, intoItemAt indexPath: IndexPath, rect: CGRect) -> UIDragAnimating { animator }
+    func drop(_ dragItem: UIDragItem, to target: UIDragPreviewTarget) -> UIDragAnimating { animator }
 }

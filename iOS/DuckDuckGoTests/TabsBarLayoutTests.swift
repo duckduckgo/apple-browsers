@@ -359,6 +359,22 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
+    func testRevealingInactiveEdgeTabLeavesNeighborExposedBesidePinnedCurrentTab() throws {
+        for (currentIndex, revealedIndex, neighborIndex, offset) in [(0, 20, 19, CGFloat(2600)), (99, 20, 21, CGFloat(2000))] {
+            let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: offset, itemCount: 100)
+            let indexPath = IndexPath(item: revealedIndex, section: 0)
+            let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
+            collectionView.scrollRectToVisible(revealFrame, animated: false)
+            collectionView.layoutIfNeeded()
+
+            let revealed = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
+            let neighbor = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighborIndex, section: 0)) as? TabsBarCell)
+            XCTAssertEqual(revealed.visiblePointerRect(in: revealed.contentView), revealed.contentView.bounds)
+            XCTAssertGreaterThan(neighbor.visiblePointerRect(in: neighbor.contentView).width, 0)
+            XCTAssertLessThanOrEqual(revealFrame.width, collectionView.bounds.inset(by: collectionView.adjustedContentInset).width)
+        }
+    }
+
     func testRevealFrameRespectsContentEndsAndNarrowStripWithoutOverscroll() throws {
         for (width, expectedRevealWidth) in [(CGFloat(600), CGFloat(180)), (230, 140), (200, 125), (180, 120)] {
             let (collectionView, layout) = makeCollectionView(currentIndex: { nil }, contentOffset: 300)

@@ -24,40 +24,33 @@ import Testing
 struct PageResourceLoadErrorTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("URL errors map to their category", .timeLimit(.minutes(1)), arguments: [
-        (URLError.Code.cannotFindHost, PageResourceLoadError.dns),
-        (.dnsLookupFailed, .dns),
-        (.timedOut, .connection),
-        (.notConnectedToInternet, .connection),
-        (.serverCertificateUntrusted, .certificate),
-        (.clientCertificateRequired, .certificate)
-    ])
-    func urlErrorsAreClassified(code: URLError.Code, expected: PageResourceLoadError) {
-        let error = NSError(domain: NSURLErrorDomain, code: code.rawValue)
-
-        #expect(PageResourceLoadError.resourceLoadError(from: error, response: nil) == expected)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Unclassified errors are ignored", .timeLimit(.minutes(1)), arguments: [
+    @Test("Errors are wrapped as-is", .timeLimit(.minutes(1)), arguments: [
+        NSError(domain: NSURLErrorDomain, code: URLError.cannotFindHost.rawValue),
         NSError(domain: NSURLErrorDomain, code: URLError.cancelled.rawValue),
-        NSError(domain: "WebKitErrorDomain", code: URLError.cannotFindHost.rawValue)
+        NSError(domain: "WebKitErrorDomain", code: 102)
     ])
-    func unclassifiedErrorsAreIgnored(error: NSError) {
-        #expect(PageResourceLoadError.resourceLoadError(from: error, response: nil) == nil)
+    func errorsAreWrapped(error: NSError) {
+        #expect(PageResourceLoadError.resourceLoadError(from: error, response: nil) == .error(error))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("HTTP status codes map to their category", .timeLimit(.minutes(1)), arguments: [
+    @Test("Non-2xx status codes are captured", .timeLimit(.minutes(1)), arguments: [
         (200, nil),
-        (304, nil),
-        (404, PageResourceLoadError.client),
-        (503, .server)
+        (204, nil),
+        (304, PageResourceLoadError.statusCode(304)),
+        (404, .statusCode(404)),
+        (503, .statusCode(503))
     ])
-    func statusCodesAreClassified(statusCode: Int, expected: PageResourceLoadError?) {
+    func statusCodesAreCaptured(statusCode: Int, expected: PageResourceLoadError?) {
         let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: statusCode, httpVersion: nil, headerFields: nil)
 
         #expect(PageResourceLoadError.resourceLoadError(from: nil, response: response) == expected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Missing error and response yields nil", .timeLimit(.minutes(1)))
+    func missingInputsYieldNil() {
+        #expect(PageResourceLoadError.resourceLoadError(from: nil, response: nil) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -66,6 +59,13 @@ struct PageResourceLoadErrorTests {
         let error = NSError(domain: NSURLErrorDomain, code: URLError.timedOut.rawValue)
         let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 500, httpVersion: nil, headerFields: nil)
 
-        #expect(PageResourceLoadError.resourceLoadError(from: error, response: response) == .connection)
+        #expect(PageResourceLoadError.resourceLoadError(from: error, response: response) == .error(error))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("String value encodes domain or status code", .timeLimit(.minutes(1)))
+    func stringValueEncoding() {
+        #expect(PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: -1003)).stringValue == "(NSURLErrorDomain,-1003)")
+        #expect(PageResourceLoadError.statusCode(404).stringValue == "(statusCode,404)")
     }
 }

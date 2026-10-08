@@ -36,10 +36,10 @@ public struct PageSignals {
 
 public extension PageSignals {
 
-    /// Returns comma-separated domain:error pairs, sorted alphabetically and capped to `maxEntries`.
+    /// Returns comma-separated domain:(errorDomain,code) or domain:(statusCode,code) pairs, sorted alphabetically and capped to `maxEntries`.
     func formattedResourceLoadErrors(maxEntries: Int) -> String {
         resourceFailures
-            .flatMap { domain, errors in errors.map { "\(domain):\($0.rawValue)" } }
+            .flatMap { domain, errors in Set(errors.map(\.stringValue)).map { "\(domain):\($0)" } }
             .sorted()
             .prefix(maxEntries)
             .joined(separator: ",")

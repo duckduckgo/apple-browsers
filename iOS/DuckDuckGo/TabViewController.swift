@@ -96,6 +96,9 @@ enum WebViewPreviewSnapshotPolicy {
 
 enum WebViewScrollViewInsetUpdater {
 
+    // WebKit's resting offset and adjusted inset can differ by floating-point rounding.
+    private static let topPositionTolerance: CGFloat = 0.001
+
     struct AdjustmentBehavior {
         let contentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
         let automaticallyAdjustsScrollIndicatorInsets: Bool
@@ -116,15 +119,24 @@ enum WebViewScrollViewInsetUpdater {
         scrollView.automaticallyAdjustsScrollIndicatorInsets = behavior.automaticallyAdjustsScrollIndicatorInsets
     }
 
-    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
+    static func shouldDeferDuringTopBounce(_ scrollView: UIScrollView) -> Bool {
+        (scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating)
+            && scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+    }
+
+    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, animated: Bool = false) {
         if scrollView.contentInset != insets {
-            let isPinnedToTop = scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+            let isPinnedToTop = scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
             scrollView.contentInset = insets
             if isPinnedToTop {
-                scrollView.contentOffset.y = -insets.top
+                scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
             }
         }
 
+        updateScrollIndicatorInsets(scrollView, insets: insets)
+    }
+
+    static func updateScrollIndicatorInsets(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
         if scrollView.verticalScrollIndicatorInsets != insets {
             scrollView.verticalScrollIndicatorInsets = insets
         }
@@ -326,6 +338,7 @@ class TabViewController: UIViewController {
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
                                                                   isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
     private var hasAppliedFloatingUIScrollViewInsets = false
+    private var hasDeferredFloatingUIInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -822,6 +835,8 @@ class TabViewController: UIViewController {
 
     let sitePermissionsState = SitePermissionsState()
     var sitePermissionsNavigationTimeout: TimeInterval = 10
+    var contentBlockingWaitPixelTimeout: TimeInterval = 10
+    var contentBlockingWaitNotificationCenter: NotificationCenter = .default
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -1188,6 +1203,12 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: barsVisibilityPercent)
     }
 
+    func applyDeferredFloatingUIInsetsIfNeeded() {
+        guard hasDeferredFloatingUIInsets, let webView,
+              !WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) else { return }
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent)
+    }
+
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
         updateWebViewBottomConstraint(for: barsVisibilityPercent)
 
@@ -1288,17 +1309,38 @@ class TabViewController: UIViewController {
         if additionalSafeAreaInsets != .zero {
             additionalSafeAreaInsets = .zero
         }
-        if WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+        // Indicators follow the visible chrome even while page geometry is held for a bounce.
+        // Apply after WebKit's inset setters as well, so they cannot leave stale indicator insets.
+        defer {
+            WebViewScrollViewInsetUpdater.updateScrollIndicatorInsets(webView.scrollView, insets: obscuredInsets)
+        }
+        // WebKit clamps overscroll when obscuredContentInsets changes, even for bottom-only changes.
+        // Keep both inset types stable until the bounce ends or the gesture moves back into the page.
+        if hasAppliedFloatingUIScrollViewInsets,
+           WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) {
+            hasDeferredFloatingUIInsets = true
+            return
+        }
+        let hadDeferredInsets = hasDeferredFloatingUIInsets
+        let animateTopAlignment = hadDeferredInsets
+            && !webView.scrollView.isTracking && !webView.scrollView.isDragging && !webView.scrollView.isDecelerating
+        let shouldUpdateScrollInsets = WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
-        ) {
-            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
+        )
+        // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
+        hasDeferredFloatingUIInsets = false
+        if shouldUpdateScrollInsets {
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
         }
         setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+        // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
+        hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        hasDeferredFloatingUIInsets = false
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
@@ -3491,9 +3533,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
-            if isSitePermissionsEnabled {
-                sitePermissionsState.cancelContentBlockingWaits()
-            }
+            sitePermissionsState.cancelContentBlockingWaits()
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3812,6 +3852,10 @@ extension TabViewController: WKNavigationDelegate {
 
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            if isMainFrame {
+                startContentBlockingWaitTimeoutPixel(until: userContentController.$contentBlockingAssets.filter { $0 != nil })
+            }
+            // Retains the tab until assets install: tab deinit stops asset delivery and would strand WebKit's decision.
             Task {
                 rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
                 showProgressIndicator()
@@ -3828,7 +3872,12 @@ extension TabViewController: WKNavigationDelegate {
         showProgressIndicator()
         let waitID = UUID()
         let timeout = sitePermissionsNavigationTimeout
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
+        let geolocationInstalled = userContentController.$contentBlockingAssets
+            .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+        if isMainFrame {
+            startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
+        }
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
@@ -3838,8 +3887,7 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
             // Only readiness may reset the deadline; unrelated asset updates must not extend it.
-            let readiness = userContentController.$contentBlockingAssets
-                .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+            let readiness = geolocationInstalled
                 .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
                 .first()
             var isReady = false
@@ -3853,12 +3901,40 @@ extension TabViewController: WKNavigationDelegate {
                 completion(false)
                 return
             }
+            if isMainFrame {
+                state?.contentBlockingWaitTimeoutPixel = nil
+            }
             if !isReady, isMainFrame {
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
             completion(isReady)
         }
         return true
+    }
+
+    /// Counts main-frame navigations still waiting for content blocking assets after the timeout in the foreground:
+    /// the stall that could otherwise block page loads indefinitely. Any cancelled wait cancels this too.
+    private func startContentBlockingWaitTimeoutPixel<Ready: Publisher>(until ready: Ready) where Ready.Failure == Never {
+        let notificationCenter = contentBlockingWaitNotificationCenter
+        let timeout = contentBlockingWaitPixelTimeout
+        // Each return to the foreground restarts the timeout, so time in the background never counts.
+        sitePermissionsState.contentBlockingWaitTimeoutPixel = notificationCenter.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .map { _ in false }
+            .merge(with: notificationCenter.publisher(for: UIApplication.willEnterForegroundNotification).map { _ in true })
+            .prepend(UIApplication.shared.applicationState != .background)
+            .map { isForeground in
+                isForeground
+                    ? Just(()).delay(for: .seconds(timeout), scheduler: DispatchQueue.main).eraseToAnyPublisher()
+                    : Empty(completeImmediately: false).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .prefix(untilOutputFrom: ready)
+            .first()
+            .sink(receiveCompletion: { [weak state = sitePermissionsState] _ in
+                state?.contentBlockingWaitTimeoutPixel = nil
+            }, receiveValue: { [pixelFiring] in
+                pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
+            })
     }
 
     private func showSitePermissionsAssetsTimeout(for failedURL: URL) {

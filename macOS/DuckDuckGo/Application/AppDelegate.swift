@@ -249,6 +249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
     let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring = AttachmentPrivacyDisclosureStore()
+    private let duckAiTermsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -998,6 +999,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             duckAiNativeStorageHandler = nil
             burnerDuckAiStorageRegistry = nil
         }
+
+        duckAiTermsOfServiceChatsObserver = DuckAiTermsOfServiceChatsObserver(storageHandler: duckAiNativeStorageHandler,
+                                                                              featureFlagger: featureFlagger)
+        duckAiTermsOfServiceChatsObserver?.start()
 
         // Runs independently of `aiChatNativeStorage`. The native-storage handler is an optional
         // dependency used to clear the legacy in-app voice-mode consent for users who had a

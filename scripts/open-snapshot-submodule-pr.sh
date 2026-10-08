@@ -24,7 +24,7 @@ fi
 
 DIRTY="$(git -C "$SUBMODULE_PATH" status --porcelain)"
 SUBMODULE_HEAD="$(git -C "$SUBMODULE_PATH" rev-parse HEAD)"
-COMMITTED_SUBMODULE_HEAD="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
+BASE_SUBMODULE_HEAD="$(git rev-parse "$(git merge-base HEAD "origin/$BASE_BRANCH"):$SUBMODULE_PATH")"
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [ "$BRANCH" = "HEAD" ] || [ "$BRANCH" = "$BASE_BRANCH" ]; then
@@ -32,7 +32,7 @@ if [ "$BRANCH" = "HEAD" ] || [ "$BRANCH" = "$BASE_BRANCH" ]; then
 	exit 1
 fi
 
-if [ -z "$DIRTY" ] && [ "$SUBMODULE_HEAD" = "$COMMITTED_SUBMODULE_HEAD" ]; then
+if [ -z "$DIRTY" ] && [ "$SUBMODULE_HEAD" = "$BASE_SUBMODULE_HEAD" ]; then
 	echo "ℹ️  $SUBMODULE_PATH has no changes to sync."
 	exit 0
 fi

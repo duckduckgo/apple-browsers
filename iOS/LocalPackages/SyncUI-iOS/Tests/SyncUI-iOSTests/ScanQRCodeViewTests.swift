@@ -30,7 +30,7 @@ final class ScanQRCodeViewTests {
     func testScanQRCodeViewiPhoneScreenSnapshots() {
         assertImageSnapshots(
             ScanQRCodeView_Previews.snapshots,
-            strategy: .custom([SnapshotImageConfiguration(appearance: .dark, device: .iPhoneDefault)]),
+            strategy: .iPhoneSingle(.dark),
             size: .screen
         )
     }

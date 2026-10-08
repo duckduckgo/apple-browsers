@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
@@ -91,6 +92,7 @@ struct SyncedDevicesViewV2_Previews: PreviewProvider {
                 .frame(width: 512)
                 .padding()
                 .background(Color(nsColor: .windowBackgroundColor))
+                .applyRebranding()
         }
     )
 }

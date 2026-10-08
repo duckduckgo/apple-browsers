@@ -20,6 +20,7 @@ import XCTest
 import Combine
 import AIChat
 import FeatureFlags_macOS
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
@@ -162,6 +163,80 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(mockDelegate.didRequestNavigationToURLCalled)
         XCTAssertNotNil(mockDelegate.lastNavigationURL)
         XCTAssertEqual(mockDelegate.lastNavigationURL?.host, "github.com")
+    }
+
+    // MARK: - Terms of Service
+
+    func testWhenSubmittedWithAskWhileDisclaimerIsShown_ThenTermsAreAcceptedAndPromptCarriesIt() async {
+        let termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
+        let controller = makeTermsOfServiceController(store: termsOfServiceStore)
+        controller.isTermsOfServiceDisclaimerShown = true
+        controller.updateText("what is privacy")
+
+        controller.submit(sentWithAsk: true)
+        await Task.yield()
+
+        XCTAssertTrue(termsOfServiceStore.hasAccepted)
+        XCTAssertFalse(controller.termsOfServiceDisclaimer.isRequired)
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData()?.termsAccepted, true)
+    }
+
+    /// Return sends without accepting; the web app shows its own card for that prompt.
+    func testWhenSubmittedWithReturnWhileDisclaimerIsShown_ThenTermsAreNotAccepted() async {
+        let termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
+        let controller = makeTermsOfServiceController(store: termsOfServiceStore)
+        controller.isTermsOfServiceDisclaimerShown = true
+        controller.updateText("what is privacy")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(termsOfServiceStore.hasAccepted)
+        XCTAssertTrue(controller.termsOfServiceDisclaimer.isRequired)
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData()?.termsAccepted, false)
+    }
+
+    func testWhenSubmittedWithAskWithoutTheDisclaimerShown_ThenTermsAreNotAccepted() async {
+        let termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
+        let controller = makeTermsOfServiceController(store: termsOfServiceStore)
+        controller.updateText("what is privacy")
+
+        controller.submit(sentWithAsk: true)
+        await Task.yield()
+
+        XCTAssertFalse(termsOfServiceStore.hasAccepted)
+    }
+
+    /// Navigating away is not a prompt, so nothing is sent that could carry the acceptance.
+    func testWhenURLIsSubmittedWithAskWhileDisclaimerIsShown_ThenTermsAreNotAccepted() {
+        let termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
+        let controller = makeTermsOfServiceController(store: termsOfServiceStore)
+        controller.isTermsOfServiceDisclaimerShown = true
+        controller.updateText("duckduckgo.com")
+
+        controller.submit(sentWithAsk: true)
+
+        XCTAssertFalse(termsOfServiceStore.hasAccepted)
+    }
+
+    private func makeTermsOfServiceController(store: DuckAiTermsOfServiceStore) -> AIChatOmnibarController {
+        featureFlagger.enabledFeatureFlags.append(.aiChatNativeTermsOfService)
+        let controller = AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: pixelHandler,
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            termsOfServiceStore: store
+        )
+        controller.delegate = mockDelegate
+        return controller
     }
 
     // MARK: - AI Chat Query Tests

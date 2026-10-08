@@ -19,12 +19,9 @@
 import Foundation
 import FoundationExtensions
 
-public enum PageResourceLoadError: String, Error, Hashable {
-    case dns
-    case certificate
-    case connection
-    case client     /// HTTP 4xx
-    case server     /// HTTP 5xx
+public enum PageResourceLoadError: Error, Hashable {
+    case error(NSError)
+    case statusCode(Int)
 }
 
 extension PageResourceLoadError {
@@ -33,7 +30,7 @@ extension PageResourceLoadError {
     ///
     static func resourceLoadError(from error: NSError?, response: URLResponse?) -> PageResourceLoadError? {
         if let error {
-            return resourceLoadError(from: error)
+            return .error(error)
         }
 
         if let response = response as? HTTPURLResponse {
@@ -44,45 +41,26 @@ extension PageResourceLoadError {
     }
 }
 
-private extension PageResourceLoadError {
+public extension PageResourceLoadError {
 
-    static func resourceLoadError(from error: NSError) -> PageResourceLoadError? {
-        guard error.domain == NSURLErrorDomain else {
-            return nil
-        }
-
-        switch URLError.Code(rawValue: error.code) {
-        case .cannotFindHost,
-                .dnsLookupFailed:
-            return .dns
-        case .cannotConnectToHost,
-                .timedOut,
-                .networkConnectionLost,
-                .notConnectedToInternet,
-                .dataNotAllowed,
-                .internationalRoamingOff:
-            return .connection
-        case .secureConnectionFailed,
-                .serverCertificateHasBadDate,
-                .serverCertificateUntrusted,
-                .serverCertificateHasUnknownRoot,
-                .serverCertificateNotYetValid,
-                .clientCertificateRejected,
-                .clientCertificateRequired:
-            return .certificate
-        default:
-            return nil
+    /// Encodes as `(errorDomain,code)` or `(statusCode,code)`.
+    var stringValue: String {
+        switch self {
+        case .error(let error):
+            return "(\(error.domain),\(error.code))"
+        case .statusCode(let statusCode):
+            return "(statusCode,\(statusCode))"
         }
     }
+}
+
+private extension PageResourceLoadError {
 
     static func resourceLoadError(response: HTTPURLResponse) -> PageResourceLoadError? {
-        switch response.statusCode {
-        case 400...499:
-            return .client
-        case 500...599:
-            return .server
-        default:
+        guard !(200...299).contains(response.statusCode) else {
             return nil
         }
+
+        return .statusCode(response.statusCode)
     }
 }

@@ -192,7 +192,7 @@ final class BrokenSiteReporterTests: XCTestCase {
 
     func testWhenSignalsArePresentThenTheyAreIncluded() {
         let networkSignals = NetworkSignals(isNetworkAvailable: true, networkType: .wifi, isLowDataModeEnabled: true, hasVPNConnectivityIssues: false, pingQuality: .poor)
-        let pageSignals = PageSignals(resourceFailures: ["b.com": [.server], "a.com": [.dns, .certificate]],
+        let pageSignals = PageSignals(resourceFailures: ["b.com": [.statusCode(500)], "a.com": [Self.dnsError, Self.certificateError]],
                                       blockedDomains: ["x.com": 1, "z.com": 5, "y.com": 1],
                                       blockedLoads: 7)
 
@@ -209,7 +209,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         XCTAssertEqual(parameters["networkPingQuality"], "poor")
         XCTAssertEqual(parameters["dnsResolution"], "blocked")
         XCTAssertEqual(parameters["memoryPressure"], "warning")
-        XCTAssertEqual(parameters["resourceLoadErrors"], "a.com:certificate,a.com:dns,b.com:server")
+        XCTAssertEqual(parameters["resourceLoadErrors"], "a.com:(NSURLErrorDomain,-1003),a.com:(NSURLErrorDomain,-1202),b.com:(statusCode,500)")
         XCTAssertEqual(parameters["contentBlockedLoads"], "7")
         XCTAssertEqual(parameters["contentBlockedDomains"], "z.com:5,x.com:1,y.com:1")
     }
@@ -225,16 +225,19 @@ final class BrokenSiteReporterTests: XCTestCase {
     }
 
     func testWhenPageSignalsExceedMaxEntriesThenListsAreCapped() {
-        let pageSignals = PageSignals(resourceFailures: ["a.com": [.dns, .server], "b.com": [.client]],
+        let pageSignals = PageSignals(resourceFailures: ["a.com": [Self.dnsError, .statusCode(500)], "b.com": [.statusCode(404)]],
                                       blockedDomains: ["a.com": 1, "y.com": 2, "x.com": 3],
                                       blockedLoads: 6)
 
         let parameters = makeReport(cookieConsentInfo: nil, pageSignals: pageSignals, pageSignalsEntryLimit: 2).requestParameters
 
-        XCTAssertEqual(parameters["resourceLoadErrors"], "a.com:dns,a.com:server")
+        XCTAssertEqual(parameters["resourceLoadErrors"], "a.com:(NSURLErrorDomain,-1003),a.com:(statusCode,500)")
         XCTAssertEqual(parameters["contentBlockedDomains"], "x.com:3,y.com:2")
         XCTAssertEqual(parameters["contentBlockedLoads"], "6")
     }
+
+    private static let dnsError = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost))
+    private static let certificateError = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted))
 
     private func makeReport(cookieConsentInfo: CookieConsentInfo?,
                             reportFlow: BrokenSiteReport.Source = .appMenu,

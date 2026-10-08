@@ -47,6 +47,39 @@ public enum DuckAiTermsOfServiceMeasurementEvent: Equatable {
     case accepted(DuckAiTermsOfServiceAcceptanceSource, isNativeDisclaimerEnabled: Bool)
 }
 
+public extension DuckAiTermsOfServiceMeasurementEvent {
+
+    /// The same on every platform; macOS appends `_macos`.
+    var pixelName: String {
+        switch self {
+        case .sessionStarted(.shown): return "aichat_terms_of_service_shown"
+        case .sessionStarted(.notShown): return "aichat_terms_of_service_not_shown"
+        case .promptSubmitted(.shown, _): return "aichat_terms_of_service_shown_prompt_submitted"
+        case .promptSubmitted(.notShown, _): return "aichat_terms_of_service_not_shown_prompt_submitted"
+        case .abandoned(.shown): return "aichat_terms_of_service_shown_abandoned"
+        case .abandoned(.notShown): return "aichat_terms_of_service_not_shown_abandoned"
+        case .linkTapped: return "aichat_terms_of_service_link_tapped"
+        case .accepted: return "aichat_terms_of_service_accepted"
+        }
+    }
+
+    /// `surface` is the native input, which the web's acceptance doesn't have.
+    func pixelParameters(surface: String?) -> [String: String] {
+        var parameters: [String: String] = [:]
+        parameters["surface"] = surface
+        switch self {
+        case .promptSubmitted(_, let sendMethod):
+            parameters["send_method"] = sendMethod.rawValue
+        case .accepted(let source, let isNativeDisclaimerEnabled):
+            parameters["source"] = source.rawValue
+            parameters["native_disclaimer"] = isNativeDisclaimerEnabled ? "enabled" : "disabled"
+        case .sessionStarted, .abandoned, .linkTapped:
+            break
+        }
+        return parameters
+    }
+}
+
 public protocol DuckAiTermsOfServicePixelFiring {
     func fire(_ event: DuckAiTermsOfServiceMeasurementEvent)
 }

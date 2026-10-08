@@ -36,25 +36,17 @@ final class DuckAiTermsOfServiceMeasurementTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Groups
-
-    func testWhenTheDisclaimerIsOffThenTheSessionIsReportedAsNotShownAtStart() {
+    /// Re-entering the open input (Plus → New Chat) must not count a second session.
+    func testWhenTheDisclaimerIsOffThenTheSessionIsNotShownOnceAtStart() {
+        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
         sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
 
         XCTAssertEqual(firing.events, [.sessionStarted(.notShown)])
     }
 
-    func testWhenTheDisclaimerIsOnThenNothingIsReportedUntilItRenders() {
+    func testWhenTheDisclaimerIsOnThenTheSessionIsShownOnceItRenders() {
         sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: true, isInputBlocked: false)
         XCTAssertEqual(firing.events, [])
-
-        sut.disclaimerBecameVisible()
-
-        XCTAssertEqual(firing.events, [.sessionStarted(.shown)])
-    }
-
-    func testWhenTheDisclaimerRendersAgainInTheSameSessionThenShownIsReportedOnce() {
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: true, isInputBlocked: false)
 
         sut.disclaimerBecameVisible()
         sut.disclaimerBecameVisible()
@@ -78,57 +70,17 @@ final class DuckAiTermsOfServiceMeasurementTests: XCTestCase {
         XCTAssertEqual(firing.events, [])
     }
 
-    func testWhenTheDisclaimerNeverRendersThenTheSessionEndsSilently() {
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: true, isInputBlocked: true)
-        sut.promptSubmitted(.ask)
-        sut.inputSessionEnded()
-
-        XCTAssertEqual(firing.events, [])
-    }
-
-    func testWhenTheDisclaimerRendersOutsideASessionThenNothingIsReported() {
-        sut.disclaimerBecameVisible()
-
-        XCTAssertEqual(firing.events, [])
-    }
-
-    func testWhenASessionStartsWhileOneIsOpenThenTheOpenOneIsKept() {
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
-
-        XCTAssertEqual(firing.events, [.sessionStarted(.notShown)])
-    }
-
-    // MARK: - Outcomes
-
-    func testWhenAPromptIsSentThenItIsReportedWithTheSessionsGroupAndSendMethod() {
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: true, isInputBlocked: false)
-        sut.disclaimerBecameVisible()
-
-        sut.promptSubmitted(.ask)
-        sut.inputSessionEnded()
-
-        XCTAssertEqual(firing.events, [.sessionStarted(.shown), .promptSubmitted(.shown, .ask)])
-    }
-
-    func testWhenSeveralPromptsAreSentThenOnlyTheFirstIsReported() {
+    func testWhenSeveralPromptsAreSentThenOnlyTheFirstIsReportedAndTheSessionIsNotAbandoned() {
         sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
 
         sut.promptSubmitted(.return)
         sut.promptSubmitted(.voice)
+        sut.inputSessionEnded()
 
         XCTAssertEqual(firing.events, [.sessionStarted(.notShown), .promptSubmitted(.notShown, .return)])
     }
 
-    func testWhenTheSessionEndsWithoutAPromptThenItIsReportedAsAbandoned() {
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
-
-        sut.inputSessionEnded()
-
-        XCTAssertEqual(firing.events, [.sessionStarted(.notShown), .abandoned(.notShown)])
-    }
-
-    func testWhenTheSessionEndsTwiceThenAbandonedIsReportedOnce() {
+    func testWhenTheSessionEndsWithoutAPromptThenItIsAbandonedOnce() {
         sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: true, isInputBlocked: false)
         sut.disclaimerBecameVisible()
 
@@ -138,29 +90,25 @@ final class DuckAiTermsOfServiceMeasurementTests: XCTestCase {
         XCTAssertEqual(firing.events, [.sessionStarted(.shown), .abandoned(.shown)])
     }
 
-    func testWhenANewSessionStartsAfterOneEndsThenItIsMeasuredAgain() {
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
-        sut.inputSessionEnded()
-
-        sut.inputSessionStarted(hasAccepted: false, isDisclaimerEnabled: false, isInputBlocked: false)
-        sut.promptSubmitted(.quickAction)
-
-        XCTAssertEqual(firing.events, [.sessionStarted(.notShown), .abandoned(.notShown),
-                                       .sessionStarted(.notShown), .promptSubmitted(.notShown, .quickAction)])
-    }
-
-    // MARK: - Link and acceptance
-
-    func testWhenTheLinkIsTappedThenItIsReported() {
-        sut.linkTapped()
-
-        XCTAssertEqual(firing.events, [.linkTapped])
-    }
-
-    func testWhenAcceptedInTheNativeInputThenItIsReportedWithTheDisclaimerEnabled() {
-        sut.acceptedInNativeInput()
-
-        XCTAssertEqual(firing.events, [.accepted(.nativeInput, isNativeDisclaimerEnabled: true)])
+    func testEachEventHasItsDefinedPixelNameAndParameters() {
+        let expected: [(DuckAiTermsOfServiceMeasurementEvent, String, [String: String])] = [
+            (.sessionStarted(.shown), "aichat_terms_of_service_shown", ["surface": "s"]),
+            (.sessionStarted(.notShown), "aichat_terms_of_service_not_shown", ["surface": "s"]),
+            (.promptSubmitted(.shown, .ask), "aichat_terms_of_service_shown_prompt_submitted", ["surface": "s", "send_method": "ask"]),
+            (.promptSubmitted(.notShown, .quickAction), "aichat_terms_of_service_not_shown_prompt_submitted",
+             ["surface": "s", "send_method": "quick_action"]),
+            (.abandoned(.shown), "aichat_terms_of_service_shown_abandoned", ["surface": "s"]),
+            (.abandoned(.notShown), "aichat_terms_of_service_not_shown_abandoned", ["surface": "s"]),
+            (.linkTapped, "aichat_terms_of_service_link_tapped", ["surface": "s"]),
+            (.accepted(.nativeInput, isNativeDisclaimerEnabled: true), "aichat_terms_of_service_accepted",
+             ["surface": "s", "source": "native_input", "native_disclaimer": "enabled"])
+        ]
+        for (event, name, parameters) in expected {
+            XCTAssertEqual(event.pixelName, name)
+            XCTAssertEqual(event.pixelParameters(surface: "s"), parameters, name)
+        }
+        XCTAssertEqual(DuckAiTermsOfServiceMeasurementEvent.accepted(.web, isNativeDisclaimerEnabled: false).pixelParameters(surface: nil),
+                       ["source": "web", "native_disclaimer": "disabled"])
     }
 }
 

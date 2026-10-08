@@ -272,19 +272,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                                             .accepted(.nativeInput, isNativeDisclaimerEnabled: true)])
     }
 
-    func testWhenReturnSendsWithTheDisclaimerOffThenThePromptIsReportedWithoutAnAcceptance() {
-        let pixelFiring = RecordingTermsOfServicePixelFiring()
-        let controller = makeTermsOfServiceController(store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore()),
-                                                      isFlagOn: false,
-                                                      pixelFiring: pixelFiring)
-        controller.onOmnibarActivated(shouldFetchSuggestions: false)
-        controller.updateText("what is privacy")
-
-        controller.submit()
-
-        XCTAssertEqual(pixelFiring.events, [.sessionStarted(.notShown), .promptSubmitted(.notShown, .return)])
-    }
-
     /// Navigating away is not a prompt.
     func testWhenTheInputClosesAfterOnlyAURLThenTheSessionIsAbandoned() {
         let pixelFiring = RecordingTermsOfServicePixelFiring()

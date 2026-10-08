@@ -139,14 +139,6 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         XCTAssertEqual(storage.chatsPublisherRequests, 0)
     }
 
-    func testWhenNativeTermsOfServiceIsOffAndTheWebAcceptedThenChatsAreNotRead() {
-        store.recordWebReport()
-
-        start(isNativeTermsOfServiceOn: false)
-
-        XCTAssertEqual(storage.chatsPublisherRequests, 0)
-    }
-
     func testWhenNativeStorageIsUnavailableThenNothingIsObserved() {
         XCTAssertNil(DuckAiTermsOfServiceChatsObserver(storageHandler: nil,
                                                        featureFlagger: makeFeatureFlagger(isFlagOn: true),

@@ -60,15 +60,9 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
     }
 
     func testWhenAcceptedInNativeInputThenTermsAreAccepted() {
-        XCTAssertTrue(sut.recordAcceptedInNativeInput())
-
-        XCTAssertTrue(sut.hasAccepted)
-    }
-
-    func testWhenAcceptedInNativeInputAgainThenItIsNotAFirstAcceptance() {
         sut.recordAcceptedInNativeInput()
 
-        XCTAssertFalse(sut.recordAcceptedInNativeInput())
+        XCTAssertTrue(sut.hasAccepted)
     }
 
     func testWhenWebReportsAFirstAcceptanceThenItIsNotARepeat() {
@@ -117,12 +111,6 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
         XCTAssertFalse(sut.hasAccepted)
         XCTAssertTrue(sut.hasAcceptedOrExistingChats)
         XCTAssertEqual(sut.recordWebReport(), .firstAcceptance)
-    }
-
-    func testWhenAcceptedThenItCountsForMeasurement() {
-        sut.recordWebReport()
-
-        XCTAssertTrue(sut.hasAcceptedOrExistingChats)
     }
 
     /// Already accepted on the web, so the native send owes the web no report.

@@ -523,7 +523,8 @@ struct AIChatUserScriptHandlerTests {
         await reportTermsAccepted(to: testHandler)
 
         #expect(testPixelFiring.actualFireCalls == [
-            .init(pixel: DuckAiTermsOfServicePixel.accepted(surface: nil, source: .web, isNativeDisclaimerEnabled: false),
+            .init(pixel: DuckAiTermsOfServicePixel(name: "aichat_terms_of_service_accepted_macos",
+                                                   parameters: ["source": "web", "native_disclaimer": "disabled"]),
                   frequency: .dailyAndCount)
         ])
     }

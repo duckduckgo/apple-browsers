@@ -559,7 +559,7 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 // Before the collapse below takes the disclaimer off screen.
-                termsOfServiceMeasurement.promptSubmitted(DuckAiTermsOfServiceSendMethod(sentWithAsk: sentWithAsk))
+                termsOfServiceMeasurement.promptSubmitted(sentWithAsk ? .ask : .return)
                 if sentWithAsk,
                    termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message) {
                     termsOfServiceMeasurement.acceptedInNativeInput()

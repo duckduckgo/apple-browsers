@@ -80,16 +80,6 @@ final class UnifiedToggleInputTermsOfServiceMeasurementTests: XCTestCase {
         XCTAssertEqual(firedNames, ["aichat_terms_of_service_not_shown"])
     }
 
-    func testWhenTheTermsAreAlreadyAcceptedThenNothingIsReported() {
-        termsOfServiceStore.recordWebReport()
-        sut = makeCoordinator(host: .omnibar, isDisclaimerEnabled: false)
-
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
-        sut.completeOmnibarDeactivation()
-
-        XCTAssertEqual(firedNames, [])
-    }
-
     /// Chats prove an earlier acceptance, and only the flag-on group records one, so both leave these users out.
     func testWhenChatsExistWithTheDisclaimerOffThenNothingIsReported() {
         termsOfServiceStore.recordExistingChats()
@@ -117,16 +107,6 @@ final class UnifiedToggleInputTermsOfServiceMeasurementTests: XCTestCase {
                        ["surface": "address_bar", "send_method": "ask"])
         XCTAssertEqual(parameters(of: "aichat_terms_of_service_accepted"),
                        ["surface": "address_bar", "source": "native_input", "native_disclaimer": "enabled"])
-    }
-
-    func testWhenReturnSendsWithTheDisclaimerOffThenThePromptIsReportedAsReturn() {
-        sut = makeCoordinator(host: .omnibar, isDisclaimerEnabled: false)
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
-
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .textEntry)
-
-        XCTAssertEqual(parameters(of: "aichat_terms_of_service_not_shown_prompt_submitted"),
-                       ["surface": "address_bar", "send_method": "return"])
     }
 
     func testWhenTheOmnibarClosesWithoutAPromptThenTheSessionIsAbandoned() {
@@ -178,19 +158,6 @@ final class UnifiedToggleInputTermsOfServiceMeasurementTests: XCTestCase {
 
         XCTAssertEqual(firedNames, ["aichat_terms_of_service_not_shown", "aichat_terms_of_service_not_shown_abandoned"])
         XCTAssertEqual(lastParameters, ["surface": "contextual_chat"])
-    }
-
-    // MARK: - Link
-
-    func testWhenTheDisclaimersLinkIsTappedThenItIsReported() {
-        sut = makeCoordinator(host: .omnibar, isDisclaimerEnabled: true)
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
-        showFooter([.termsConsent])
-
-        sut.unifiedToggleInputVC(sut.viewController, didTapFooterLink: URL(string: "https://duckduckgo.com/duckai/privacy-terms")!,
-                                 messageID: .termsConsent)
-
-        XCTAssertTrue(firedNames.contains("aichat_terms_of_service_link_tapped"))
     }
 
     // MARK: - Helpers

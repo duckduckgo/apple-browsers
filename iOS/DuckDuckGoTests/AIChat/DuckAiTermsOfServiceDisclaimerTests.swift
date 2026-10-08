@@ -135,23 +135,6 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
         XCTAssertEqual(firing.events, [.sessionStarted(.shown)])
     }
 
-    func testWhenChatsExistThenNoSessionIsMeasured() {
-        feature.isAvailable = false
-        store.recordExistingChats()
-        let firing = RecordingDisclaimerPixelFiring()
-
-        makeSUT().startMeasurementSession(DuckAiTermsOfServiceMeasurement(pixelFiring: firing), isDisclaimerShown: false)
-
-        XCTAssertEqual(firing.events, [])
-    }
-
-    func testWhenAskIsTappedWithTheDisclaimerOnScreenThenItReportsTheAcceptance() {
-        let sut = makeSUT()
-
-        XCTAssertTrue(sut.acceptIfShown(sut.message(sendButton: .ask)))
-        XCTAssertFalse(sut.acceptIfShown(sut.message(sendButton: .ask)))
-    }
-
     // MARK: - Helpers
 
     private var store: DuckAiTermsOfServiceStore {

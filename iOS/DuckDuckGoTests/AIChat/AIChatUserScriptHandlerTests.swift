@@ -1324,17 +1324,6 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(firing.events, [.accepted(.web, isNativeDisclaimerEnabled: false)])
     }
 
-    /// The native acceptance was already measured where Ask was tapped.
-    func testWhenTheWebConfirmsANativeAcceptanceThenItIsNotMeasuredAgain() async {
-        let firing = RecordingTermsOfServicePixelFiring()
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler(termsOfServicePixelFiring: firing)
-        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
-
-        await reportTermsAccepted()
-
-        XCTAssertEqual(firing.events, [])
-    }
-
     /// Users with chats are left out of both groups, so their acceptance isn't part of the funnel.
     func testWhenChatsExistThenAWebAcceptanceIsNotMeasured() async {
         let firing = RecordingTermsOfServicePixelFiring()

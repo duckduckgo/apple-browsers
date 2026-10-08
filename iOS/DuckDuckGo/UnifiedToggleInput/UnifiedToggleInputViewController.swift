@@ -200,6 +200,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
     }
 
+    var tabAttachmentsRequirePromptText: Bool {
+        get { inputBarView.tabAttachmentsRequirePromptText }
+        set { inputBarView.tabAttachmentsRequirePromptText = newValue }
+    }
+
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
     /// controls that would offer one.
     var isInputBlockedByUsageLimit: Bool = false {

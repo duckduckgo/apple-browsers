@@ -359,7 +359,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    private func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
+    func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
         let mode = tab.mode
         return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
             self?.tabsModel(for: mode).tabs ?? []
@@ -782,6 +782,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tabAttachmentControllerChanges.send()
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
+        controller.cancelPendingAIChatTabAttachmentPrompt()
         controller.closeSitePermissions()
         controller.dismiss()
     }

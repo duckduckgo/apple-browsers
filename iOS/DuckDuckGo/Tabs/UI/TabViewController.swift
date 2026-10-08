@@ -1532,6 +1532,9 @@ class TabViewController: UIViewController {
         pageContextRestoredPageNeedsLoad = false
         pageContextProcessTerminated = false
         let isReplacingWebView = webView != nil
+        if isReplacingWebView {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
@@ -1700,6 +1703,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1713,6 +1717,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -1757,6 +1762,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
@@ -2547,6 +2553,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -2571,6 +2578,9 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        if let request = initialAIChatTabAttachmentPrompt?.request {
+            Task { @MainActor in request.cancel() }
+        }
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
@@ -2586,6 +2596,27 @@ class TabViewController: UIViewController {
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
+    }
+
+    private var initialAIChatTabAttachmentPrompt: (prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest)?
+    private var awaitsInitialAIChatTabAttachmentNavigation = false
+    private var aiChatTabAttachmentNavigation: WKNavigation?
+
+    func setInitialAIChatTabAttachmentPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest) {
+        cancelPendingAIChatTabAttachmentPrompt()
+        awaitsInitialAIChatTabAttachmentNavigation = true
+        if let userScript = userScripts?.aiChatUserScript {
+            userScript.setInitialTabAttachmentPrompt(prompt, request: request)
+        } else {
+            initialAIChatTabAttachmentPrompt = (prompt, request)
+        }
+    }
+
+    func cancelPendingAIChatTabAttachmentPrompt() {
+        initialAIChatTabAttachmentPrompt?.request.cancel()
+        initialAIChatTabAttachmentPrompt = nil
+        awaitsInitialAIChatTabAttachmentNavigation = false
+        userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -2847,6 +2878,15 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView {
+            if awaitsInitialAIChatTabAttachmentNavigation {
+                awaitsInitialAIChatTabAttachmentNavigation = false
+            } else {
+                cancelPendingAIChatTabAttachmentPrompt()
+                userScripts?.aiChatUserScript.resetTabAttachmentPromptForNavigation()
+            }
+            aiChatTabAttachmentNavigation = navigation
+        }
         if floatingUIManager.isFloatingUIEnabled {
             floatingPageBackgroundColor = nil
         }
@@ -3385,6 +3425,10 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
+        if webView === self.webView, let navigation,
+           aiChatTabAttachmentNavigation === navigation, !awaitsInitialAIChatTabAttachmentNavigation {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3440,6 +3484,10 @@ extension TabViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
+        if webView === self.webView, let navigation,
+           aiChatTabAttachmentNavigation === navigation, !awaitsInitialAIChatTabAttachmentNavigation {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -4686,6 +4734,7 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
         }
 
@@ -4963,6 +5012,10 @@ extension TabViewController: UserContentControllerDelegate {
                             handler: self.duckAiFireModeStorageHandler)
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
+        if let initial = initialAIChatTabAttachmentPrompt {
+            initialAIChatTabAttachmentPrompt = nil
+            userScripts.aiChatUserScript.setInitialTabAttachmentPrompt(initial.prompt, request: initial.request)
+        }
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages

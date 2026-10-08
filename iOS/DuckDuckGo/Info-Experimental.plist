@@ -11,6 +11,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.duckduckgo.app.configurationRefresh</string>
+		<string>com.duckduckgo.app.idleReturnSnapshotRefresh</string>
 		<string>com.duckduckgo.app.remoteMessageRefresh</string>
 		<string>com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh</string>
 		<string>com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh</string>

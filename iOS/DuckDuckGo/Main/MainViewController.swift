@@ -19,6 +19,7 @@
 
 import AIChat
 import AVFoundation
+import BackgroundTasks
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
@@ -927,6 +928,7 @@ class MainViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        IdleReturnSnapshotRefresh.switchToNewTabPage = { [weak self] in self?.switchToNewTabPageForSnapshot() }
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -9021,6 +9023,16 @@ extension MainViewController {
         minimizer.minimize(into: currentNTPEscapeHatchForIdleReturn)
     }
 
+    func switchToNewTabPageForSnapshot() {
+        guard tabManager.currentTabsModel.currentTab?.link != nil else {
+            Logger.idleMinimize.debug("snapshot refresh: already on NTP")
+            return
+        }
+        newTab(reuseExisting: true, allowingKeyboard: false, openedAfterIdle: true)
+        view.layoutIfNeeded()
+        Logger.idleMinimize.debug("snapshot refresh: switched to NTP")
+    }
+
     private func focusAddressBarWithoutAnimation() {
         guard KeyboardSettings().onNewTab else { return }
         UIView.performWithoutAnimation {
@@ -9179,5 +9191,61 @@ private final class IdleReturnPageMinimizer {
         UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
         }
+    }
+}
+
+// MARK: - Idle return snapshot refresh POC
+
+enum IdleReturnSnapshotRefresh {
+
+    static let taskIdentifier = "com.duckduckgo.app.idleReturnSnapshotRefresh"
+    static let delay: TimeInterval = 60
+    static var switchToNewTabPage: (() -> Void)?
+
+    static func register() {
+        let registered = BGTaskScheduler.shared.register(forTaskWithIdentifier: taskIdentifier, using: .main) { task in
+            performRefresh()
+            task.setTaskCompleted(success: true)
+        }
+        Logger.idleMinimize.debug("snapshot refresh registered=\(registered, privacy: .public)")
+    }
+
+    static func schedule() {
+        #if targetEnvironment(simulator)
+        simulateBackgroundWake()
+        #else
+        submitRequest()
+        #endif
+    }
+
+    private static func performRefresh() {
+        Logger.idleMinimize.debug("snapshot refresh fired, state=\(UIApplication.shared.applicationState.rawValue, privacy: .public)")
+        switchToNewTabPage?()
+        requestSnapshotRefresh()
+    }
+
+    private static func simulateBackgroundWake() {
+        var taskID = UIBackgroundTaskIdentifier.invalid
+        taskID = UIApplication.shared.beginBackgroundTask { UIApplication.shared.endBackgroundTask(taskID) }
+        Logger.idleMinimize.debug("snapshot refresh simulated, firing in 5s")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            performRefresh()
+            UIApplication.shared.endBackgroundTask(taskID)
+        }
+    }
+
+    private static func submitRequest() {
+        let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: delay)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+            Logger.idleMinimize.debug("snapshot refresh scheduled")
+        } catch {
+            Logger.idleMinimize.error("snapshot refresh schedule failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private static func requestSnapshotRefresh() {
+        UIApplication.shared.openSessions.forEach { UIApplication.shared.requestSceneSessionRefresh($0) }
     }
 }

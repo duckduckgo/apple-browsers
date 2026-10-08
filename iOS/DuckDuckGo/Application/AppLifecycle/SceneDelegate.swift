@@ -79,6 +79,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     /// See: `Background.swift` -> `onTransition()`
     func sceneDidEnterBackground(_ scene: UIScene) {
         appStateMachine.handle(.didEnterBackground)
+        IdleReturnSnapshotRefresh.schedule()
     }
 
     func scene(_ scene: UIScene, willContinueUserActivity userActivity: NSUserActivity) -> Bool {

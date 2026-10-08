@@ -42,8 +42,8 @@ public struct DuckAiChat: Equatable {
     public let reasoningMode: String?
 
     /// True when any assistant message in the chat carries a `ui-component` part named
-    /// `generate-image` or a canonical `generated-image` part — i.e. the chat produced
-    /// generated images via a tool call, regardless of the chat's `model` field.
+    /// `generate-image` — i.e. the chat produced generated images via a tool call,
+    /// regardless of the chat's `model` field.
     public let isImageGeneration: Bool
 
     public init(
@@ -105,7 +105,7 @@ extension DuckAiChat {
             pinned: blob.pinned ?? false,
             fileRefs: blob.fileRefs ?? [],
             reasoningMode: blob.reasoningMode,
-            isImageGeneration: blob.hasGeneratedImage
+            isImageGeneration: blob.hasGenerateImageUiComponent
         )
 
         let firstUserMessage = blob.messages?
@@ -151,14 +151,13 @@ private struct ChatBlob: Decodable {
         messages = try? container.decodeIfPresent([MessageBlob].self, forKey: .messages)
     }
 
-    /// True when any assistant message carries a `ui-component` part named `generate-image`,
-    /// or a canonical `generated-image` part.
-    var hasGeneratedImage: Bool {
+    /// True when any assistant message carries a `ui-component` part named `generate-image`.
+    var hasGenerateImageUiComponent: Bool {
         guard let messages else { return false }
         return messages.contains { message in
             guard message.role == "assistant" else { return false }
             return message.allParts.contains { part in
-                part.type == "generated-image" || (part.type == "ui-component" && part.name == "generate-image")
+                part.type == "ui-component" && part.name == "generate-image"
             }
         }
     }
@@ -180,20 +179,31 @@ private struct MessageBlob: Decodable {
     }
 
     /// Returns the visible text of the message. Prefers a legacy `content` string (used by most
-    /// legacy chats and by all legacy user messages); falls back to concatenating the `text` of
-    /// `type == "text"` parts, because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship
-    /// with `content == ""` and carry the actual response in `parts`, and canonical chats carry
-    /// every message's text in parts. Returns `nil` when neither path produces text.
+    /// legacy chats and by all legacy user messages); falls back to the `text` of `type == "text"`
+    /// parts, because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship with
+    /// `content == ""` and carry the actual response in `parts`, and canonical chats carry every
+    /// message's text in parts. As in the web app, consecutive text parts are streaming chunks of
+    /// one block and join as-is, while any other part between them (a tool call, search results)
+    /// starts a new block. Returns `nil` when neither path produces text.
     var effectiveTextContent: String? {
         if let direct = content?.textValue, !direct.isEmpty {
             return direct
         }
-        let textParts = allParts.compactMap { part -> String? in
-            guard part.type == "text", let text = part.text, !text.isEmpty else { return nil }
-            return text
+        var blocks: [String] = []
+        var block = ""
+        for part in allParts {
+            if part.type == "text" {
+                block += part.text ?? ""
+            } else if !block.isEmpty {
+                blocks.append(block)
+                block = ""
+            }
         }
-        guard !textParts.isEmpty else { return nil }
-        return textParts.joined(separator: "\n\n")
+        if !block.isEmpty {
+            blocks.append(block)
+        }
+        guard !blocks.isEmpty else { return nil }
+        return blocks.joined(separator: "\n\n")
     }
 }
 

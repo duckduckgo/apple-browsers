@@ -706,6 +706,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         host.start(in: containerView,
                    parentViewController: self,
+                   isFloatingUIEnabled: isFloatingUIEnabled,
                    textPublisher: searchTextPublisher)
         // The top offset rides the container constraint (UIKit glide); the hosting view keeps no
         // top safe-area inset of its own.

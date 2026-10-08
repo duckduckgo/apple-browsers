@@ -109,7 +109,9 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
     }
 
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        guard let originalAttributes = super.layoutAttributesForElements(in: rect) else { return nil }
+        // The outgoing tab remains exposed until its neighbor finishes folding over it.
+        let expandedRect = rect.insetBy(dx: -itemSize.width / 2, dy: 0)
+        guard let originalAttributes = super.layoutAttributesForElements(in: expandedRect) else { return nil }
         let attributes = originalAttributes.compactMap { layoutAttributesForItem(at: $0.indexPath) }
         guard let collectionView,
               let index = currentIndex?(),
@@ -129,11 +131,27 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         }
         let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
         let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
+        let isCurrent = indexPath.item == currentIndex?()
         // Tabs nearer the middle cover the edge tabs. The flare (1) and selected tab (2) stay above them.
         let middle = (leading + trailing + attributes.frame.width) / 2
-        attributes.zIndex = indexPath.item == currentIndex?() ? 2 : -Int(abs(attributes.center.x - middle))
-        attributes.frame.origin.x = min(max(attributes.frame.minX, leading), trailing)
+        attributes.zIndex = isCurrent ? 2 : -Int(abs(attributes.center.x - middle))
+        let foldRange = min(attributes.frame.width / 2, (trailing - leading) / 2)
+        var origin = attributes.frame.minX
+        if !isCurrent, foldRange > 0 {
+            if indexPath.item > 0, origin < leading + foldRange {
+                origin = leading + foldedDistance(origin - leading, range: foldRange)
+            } else if indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1, origin > trailing - foldRange {
+                origin = trailing - foldedDistance(trailing - origin, range: foldRange)
+            }
+        }
+        attributes.frame.origin.x = min(max(origin, leading), trailing)
         return attributes
+    }
+
+    private func foldedDistance(_ distance: CGFloat, range: CGFloat) -> CGFloat {
+        // Start easing the next tab when the outer tab is halfway covered.
+        let remaining = max(0, distance + range)
+        return remaining * remaining / (4 * range)
     }
 
     func unpinnedFrameForItem(at indexPath: IndexPath) -> CGRect? {

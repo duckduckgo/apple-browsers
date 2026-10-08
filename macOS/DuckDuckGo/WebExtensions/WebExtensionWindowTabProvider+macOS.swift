@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import os.log
 import WebExtensions
 import WebKit
@@ -27,6 +28,8 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
     /// Keeps the open popover on the app's theme while it changes.
     private var popupAppearanceObservation: NSKeyValueObservation?
+    /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab.
+    private var popupSelectedTabCancellable: AnyCancellable?
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -126,6 +129,16 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             }
         }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+
+        popupSelectedTabCancellable = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+            .$selectedTabViewModel
+            .map { $0?.tab }
+            .removeDuplicates(by: ===)
+            .dropFirst()
+            .first()
+            .sink { _ in
+                action.closePopup()
+            }
     }
 
     // MARK: - Private Helpers

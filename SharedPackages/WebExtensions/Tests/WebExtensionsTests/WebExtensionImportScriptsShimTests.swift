@@ -48,7 +48,7 @@ final class WebExtensionImportScriptsShimTests: XCTestCase {
             error: function(message) { consoleMessages.push(message); }
         };
 
-        \(JSContextPolyfills.url)
+        \(JSContextTestPolyfills.url)
 
         globalThis.location = { href: "chrome-extension://abc/ddg-background-page.html" };
         globalThis.document = { scripts: [{ src: "chrome-extension://abc/719.background.js" }] };

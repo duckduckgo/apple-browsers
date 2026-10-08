@@ -179,7 +179,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
         switchToTabArrowView = NSImageView()
         switchToTabArrowView.translatesAutoresizingMaskIntoConstraints = false
-        switchToTabArrowView.image = .arrowRight12
+        switchToTabArrowView.image = NSImage(resource: .arrowRight12)
         switchToTabArrowView.imageScaling = .scaleProportionallyDown
         switchToTabArrowView.imageAlignment = .alignLeft
         switchToTabArrowView.refusesFirstResponder = true
@@ -187,7 +187,7 @@ final class SuggestionTableCellView: NSTableCellView {
         switchToTabArrowView.contentTintColor = .labelColor
         switchToTabArrowView.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        switchToTabBox = ColorView(frame: .zero, backgroundColor: .buttonMouseOver, cornerRadius: 6)
+        switchToTabBox = ColorView(frame: .zero, backgroundColor: NSColor(resource: .buttonMouseOver), cornerRadius: 6)
         switchToTabBox.translatesAutoresizingMaskIntoConstraints = false
         switchToTabBox.setContentHuggingPriority(.init(251), for: .horizontal)
         switchToTabBox.setContentHuggingPriority(.init(251), for: .vertical)
@@ -211,7 +211,7 @@ final class SuggestionTableCellView: NSTableCellView {
         removeButton.setButtonType(.momentaryPushIn)
         removeButton.isBordered = false
         removeButton.bezelStyle = .shadowlessSquare
-        removeButton.image = .trash
+        removeButton.image = NSImage(resource: .trash)
         removeButton.imagePosition = .imageOnly
         removeButton.title = ""
         removeButton.alignment = .center
@@ -417,7 +417,7 @@ final class SuggestionTableCellView: NSTableCellView {
         if isSelected {
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
-            switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
+            switchToTabBox.backgroundColor = usesTransparentBox ? .clear : NSColor(resource: .buttonMouseOver)
         }
 
         updateKeyboardShortcutVisibility()

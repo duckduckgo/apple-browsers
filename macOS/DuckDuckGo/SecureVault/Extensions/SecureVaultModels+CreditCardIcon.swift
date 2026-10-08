@@ -28,21 +28,21 @@ extension SecureVaultModels.CreditCard {
 
         switch cardType {
         case .amex:
-            return .creditCardBankAmexColor32
+            return NSImage(resource: .creditCardBankAmexColor32)
         case .dinersClub:
-            return .creditCardBankDinersClubColor32
+            return NSImage(resource: .creditCardBankDinersClubColor32)
         case .discover:
-            return .creditCardBankDiscoverColor32
+            return NSImage(resource: .creditCardBankDiscoverColor32)
         case .mastercard:
-            return .creditCardBankMastercardColor32
+            return NSImage(resource: .creditCardBankMastercardColor32)
         case .jcb:
-            return .creditCardBankJCBColor32
+            return NSImage(resource: .creditCardBankJCBColor32)
         case .unionPay:
-            return .creditCardBankUnionpayColor32
+            return NSImage(resource: .creditCardBankUnionpayColor32)
         case .visa:
-            return .creditCardBankVisaColor32
+            return NSImage(resource: .creditCardBankVisaColor32)
         case .unknown:
-            return .card
+            return NSImage(resource: .card)
         }
     }
 }

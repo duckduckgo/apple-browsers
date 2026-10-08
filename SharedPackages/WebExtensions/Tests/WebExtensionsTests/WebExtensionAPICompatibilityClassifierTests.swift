@@ -149,14 +149,7 @@ final class WebExtensionAPICompatibilityClassifierTests: XCTestCase {
         let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: manifest,
                                                                                 webKitPermissions: ["storage", "idle"])
 
-        XCTAssertEqual(dropped, ["notifications"])
-    }
-
-    func testWhenTheStubScriptProvidesAPermission_ThenItIsNotListed() {
-        let manifest: [String: Any] = ["permissions": ["privacy", "offscreen", "idle", "downloads"]]
-
-        XCTAssertEqual(WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: manifest, webKitPermissions: []),
-                       ["downloads"])
+        XCTAssertEqual(dropped, ["notifications", "privacy"])
     }
 
     func testWhenWebKitKeepsEveryPermission_ThenNothingIsListed() {

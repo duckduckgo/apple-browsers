@@ -63,7 +63,12 @@ final class UserScripts: UserScriptsProvider {
     var specialErrorPageUserScript: SpecialErrorPageUserScript?
 
     private(set) var faviconScript = FaviconUserScript()
-    private(set) var findInPageScript = FindInPageUserScript()
+    private(set) var findInPageScript: FindInPageUserScript? = {
+        if #available(iOS 26, *) {
+            return nil
+        }
+        return FindInPageUserScript()
+    }()
 
     private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
@@ -134,7 +139,8 @@ final class UserScripts: UserScriptsProvider {
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
                                                           featureFlagger: featureFlagger,
-                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable)
+                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+                                                          attachmentPrivacyWebKeySource: duckAiNativeStorageHandler)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))

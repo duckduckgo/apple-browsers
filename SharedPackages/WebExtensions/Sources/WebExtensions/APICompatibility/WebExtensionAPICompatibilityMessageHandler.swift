@@ -19,7 +19,7 @@
 import Foundation
 import WebKit
 
-/// Receives the reports the API stub script posts and writes them to the compatibility log.
+/// Receives the reports extension pages post and writes them to the compatibility log.
 ///
 /// The script sends `{kind: "stubbed" | "missing", api}` for what it can name itself and
 /// `{kind: "error", message}` for errors it observed. The message is only classified, never kept.
@@ -35,7 +35,7 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
 
     private let reporter: WebExtensionAPICompatibilityReporter
 
-    init(reporter: WebExtensionAPICompatibilityReporter = .shared) {
+    init(reporter: WebExtensionAPICompatibilityReporter = WebExtensionAPICompatibilityReporter()) {
         self.reporter = reporter
     }
 
@@ -45,7 +45,7 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
     }
 
     func handle(_ message: WKScriptMessage) {
-        guard message.name == WebExtensionAPIStubScript.compatibilityMessageHandlerName else { return }
+        guard message.name == WebExtensionAPICompatibilityScript.messageHandlerName else { return }
         let origin = message.frameInfo.securityOrigin
         handle(body: message.body, originProtocol: origin.protocol, originHost: origin.host)
     }

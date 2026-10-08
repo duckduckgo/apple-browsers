@@ -132,22 +132,10 @@ final class WebExtensionsDebugMenu: NSMenu {
         }
     }
 
-    /// Downloads the latest Bitwarden from the Chrome Web Store and installs it, replacing any installed copy.
+    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
     @objc func installBitwarden() {
-        let installer = BitwardenExtensionInstaller(webExtensionManager: webExtensionManager)
-        Task { @MainActor in
-            let alert = NSAlert()
-            do {
-                try await installer.install()
-                alert.messageText = "Bitwarden installed"
-            } catch {
-                Logger.webExtensions.error("Failed to install Bitwarden: \(error.localizedDescription)")
-                alert.alertStyle = .warning
-                alert.messageText = "Failed to install Bitwarden"
-                alert.informativeText = error.localizedDescription
-            }
-            _ = await alert.runModal()
-        }
+        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {
@@ -196,7 +184,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func showAPICompatibilityLog() {
-        WebExtensionAPICompatibilityLogPresenter.shared.show()
+        WebExtensionAPICompatibilityLogWindowPresenter.show()
     }
 
     @objc func openExtensionsFolderInFinder() {
@@ -234,8 +222,19 @@ final class WebExtensionSubMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
+            NSMenuItem(title: "Open Folder in Finder", action: #selector(openFolderInFinder), target: self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
+    }
+
+    @objc func openFolderInFinder() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        let folder = webExtensionManager.extensionsDirectory.appendingPathComponent(extensionIdentifier, isDirectory: true)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
     }
 
     @objc func uninstallExtension() {

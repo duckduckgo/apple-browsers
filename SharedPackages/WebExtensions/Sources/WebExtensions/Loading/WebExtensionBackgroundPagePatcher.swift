@@ -18,47 +18,43 @@
 
 import Foundation
 import os.log
+import ZIPFoundation
 
-/// Rewrites a Manifest V3 `background.service_worker` declaration into an equivalent
-/// `background.page` declaration in an installed extension's manifest.
+/// Makes Chrome extensions start their background script in WebKit.
 ///
-/// Our `WKWebExtension` host does start a `service_worker` background — measured on macOS 26.6.2 —
-/// but it is unforgiving: a throw at the top level of the worker aborts its registration outright,
-/// so `loadBackgroundContent()` never completes and `WKWebExtensionContext` reports error code 6. A
-/// background page running the same script survives the same throw and keeps whatever the script
-/// managed to set up before it.
+/// Chrome's Manifest V3 extensions run their background code in a service worker
+/// (`"background": { "service_worker": "background.js" }`). In WebKit, if that script throws
+/// while starting, for example because it calls a Chrome API WebKit doesn't have, the whole
+/// background is discarded and the extension doesn't work.
 ///
-/// The conversion therefore buys two things:
-/// - a top-level exception in a Chrome build becomes survivable rather than fatal;
-/// - the generated page is a manifest-level place to load scripts *before* the extension's own
-///   code, which a module service worker offers no hook for, so a classic worker's `importScripts`
-///   can be served without editing the extension's own sources.
+/// A background page doesn't have that problem: when its script throws, the page stays loaded.
+/// So when a third-party extension loads, this rewrites the manifest of a copy of it to load the same
+/// script from a generated page, `ddg-background-page.html`.
 ///
-/// The patch is deliberately generic and conservative:
-/// - it never touches one of our own extensions (a manifest with a recognized
-///   `browser_specific_settings.duckduckgo.id`), whatever its background looks like — the content
-///   blocker, for one, declares a service worker;
-/// - it only applies when `background.service_worker` is the *only* background declaration, so a
-///   manifest that already uses `background.scripts` or `background.page` is left byte-for-byte
-///   untouched;
-/// - it is idempotent, because a patched manifest no longer declares a service worker.
+/// It leaves the manifest unchanged when:
+/// - the extension is one of ours (its manifest has `browser_specific_settings.duckduckgo`);
+/// - the background is not just a service worker (it already uses `scripts` or `page`).
 ///
-/// For a classic (non-module) worker the generated page also loads `WebExtensionImportScriptsShim`
-/// plus the bundle's split chunks ahead of the extension's own script, so a worker bundle calling
-/// `importScripts` still bootstraps. `WebExtensionAPIStubScript`, which keeps a Chrome build's
-/// top-level startup code alive when it touches a `chrome.*` namespace WebKit does not implement,
-/// reaches this page like any other extension page: as a user script on the extension controller's
-/// configuration (see `WebExtensionManager`).
+/// Running it twice is harmless: after the first run there is no service worker left to rewrite.
 ///
-/// The same pass also restores a missing Chrome Web Store `key`, see `WebExtensionManifestKeyPatcher`.
-/// That part is independent of the background rewrite and runs even when the manifest declares no
-/// service worker at all.
+/// The installation itself is never changed: the rewrite applies to a copy that WebKit loads instead
+/// (see `loadableExtensionURL(for:installFolder:)`). That also covers extensions installed as a ZIP.
+///
+/// Some service workers load extra files with `importScripts`, which pages don't have. For those,
+/// the page first loads `WebExtensionImportScriptsShim` and the extra files, then the
+/// extension's script.
 struct WebExtensionBackgroundPagePatcher {
 
     /// Name of the generated background page, written next to `manifest.json`.
     static let backgroundPageFilename = "ddg-background-page.html"
 
     private static let manifestFilename = "manifest.json"
+
+    /// Name of the folder, inside the extension's install folder, holding the rewritten copy WebKit loads.
+    static let loadableFolderName = "loadable"
+
+    /// File in the loadable folder recording the modification date of the installation it was copied from.
+    private static let sourceDateFilename = ".ddg-source-date"
 
     private enum ManifestKey {
         static let background = "background"
@@ -70,15 +66,116 @@ struct WebExtensionBackgroundPagePatcher {
     }
 
     private let fileManager: FileManager
-    private let keyPatcher: WebExtensionManifestKeyPatcher
 
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
-        self.keyPatcher = WebExtensionManifestKeyPatcher(fileManager: fileManager)
+    }
+
+    /// Returns the URL WebKit should load the installed extension from.
+    ///
+    /// The installation itself is never changed. When a third-party extension's background must be
+    /// rewritten, its files — from a ZIP or a folder — are copied into `loadableFolderName` inside
+    /// `installFolder`, the copy is rewritten, and WebKit loads the copy. The copy is reused until the
+    /// installation changes, removed when no rewrite is needed, and removed with the install folder on
+    /// uninstall. Any failure loads the installation as it is.
+    /// - Parameters:
+    ///   - installedExtensionURL: The installed ZIP or folder, as `WebExtensionStorageProviding.resolveInstalledExtension` resolved it.
+    ///   - installFolder: The extension's own folder in the extensions directory, which holds the installation.
+    func loadableExtensionURL(for installedExtensionURL: URL, installFolder: URL) -> URL {
+        let loadableURL = installFolder.appendingPathComponent(Self.loadableFolderName, isDirectory: true)
+        let isArchive = installedExtensionURL.pathExtension.lowercased() == "zip"
+
+        do {
+            guard let manifest = try isArchive ? Self.manifest(inArchiveAt: installedExtensionURL) : manifest(inDirectory: installedExtensionURL),
+                  !declaresDuckDuckGoSettings(inManifest: manifest),
+                  Self.hasServiceWorkerOnlyBackground(manifest) else {
+                if fileManager.fileExists(atPath: loadableURL.path) {
+                    try fileManager.removeItem(at: loadableURL)
+                }
+                return installedExtensionURL
+            }
+
+            try copyIfNeeded(installedExtensionURL, isArchive: isArchive, to: loadableURL)
+            guard let extensionDirectory = extensionDirectory(in: loadableURL) else {
+                return installedExtensionURL
+            }
+
+            patchIfNeeded(installedExtensionURL: extensionDirectory)
+            return extensionDirectory
+        } catch {
+            Logger.webExtensions.error("❌ Failed to prepare \(installedExtensionURL.path) for its background rewrite: \(error.localizedDescription)")
+            return installedExtensionURL
+        }
+    }
+
+    /// Copies the installation into `loadableURL`, unless it already holds this version of it. A ZIP is
+    /// unpacked; a folder is copied without the loadable folder itself, which sits inside a flat install.
+    private func copyIfNeeded(_ installedExtensionURL: URL, isArchive: Bool, to loadableURL: URL) throws {
+        // Read from disk each time: `URL` resource values are cached and would miss an update. A folder
+        // install changes with its manifest.
+        let sourceURL = isArchive ? installedExtensionURL : installedExtensionURL.appendingPathComponent(Self.manifestFilename)
+        let sourceDate = try fileManager.attributesOfItem(atPath: sourceURL.path)[.modificationDate] as? Date
+        let dateStamp = sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
+        let stampURL = loadableURL.appendingPathComponent(Self.sourceDateFilename)
+        if let copiedStamp = try? String(contentsOf: stampURL, encoding: .utf8), copiedStamp == dateStamp {
+            return
+        }
+
+        if fileManager.fileExists(atPath: loadableURL.path) {
+            try fileManager.removeItem(at: loadableURL)
+        }
+        try fileManager.createDirectory(at: loadableURL, withIntermediateDirectories: true)
+        if isArchive {
+            try fileManager.unzipItem(at: installedExtensionURL, to: loadableURL)
+        } else {
+            let items = try fileManager.contentsOfDirectory(at: installedExtensionURL, includingPropertiesForKeys: nil)
+            for item in items where item.standardizedFileURL != loadableURL.standardizedFileURL {
+                try fileManager.copyItem(at: item, to: loadableURL.appendingPathComponent(item.lastPathComponent))
+            }
+        }
+        try dateStamp.write(to: stampURL, atomically: true, encoding: .utf8)
+    }
+
+    /// The folder holding `manifest.json`: `directory` itself, or the single top-level folder an archive
+    /// wrapped its contents in.
+    private func extensionDirectory(in directory: URL) -> URL? {
+        if let manifestDirectory = manifestDirectory(in: directory) {
+            return manifestDirectory
+        }
+        let contents = (try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil,
+                                                              options: [.skipsHiddenFiles])) ?? []
+        return contents.lazy.compactMap { manifestDirectory(in: $0) }.first
+    }
+
+    private func manifest(inDirectory directory: URL) throws -> [String: Any]? {
+        let manifestURL = directory.appendingPathComponent(Self.manifestFilename)
+        guard fileManager.fileExists(atPath: manifestURL.path) else { return nil }
+        return try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any]
+    }
+
+    /// The manifest of an archived extension, at its root or inside a single top-level folder.
+    private static func manifest(inArchiveAt archiveURL: URL) throws -> [String: Any]? {
+        let archive = try Archive(url: archiveURL, accessMode: .read)
+        let entry = archive[manifestFilename]
+            ?? archive.first { $0.type == .file && $0.path.split(separator: "/").count == 2 && $0.path.hasSuffix("/" + manifestFilename) }
+        guard let entry else { return nil }
+
+        var data = Data()
+        _ = try archive.extract(entry) { data.append($0) }
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    /// Whether the manifest declares a service worker and no other background, which is what gets rewritten.
+    private static func hasServiceWorkerOnlyBackground(_ manifest: [String: Any]) -> Bool {
+        guard let background = manifest[ManifestKey.background] as? [String: Any],
+              let serviceWorkerPath = background[ManifestKey.serviceWorker] as? String else {
+            return false
+        }
+        return !serviceWorkerPath.isEmpty && background[ManifestKey.scripts] == nil && background[ManifestKey.page] == nil
     }
 
     /// Patches the manifest of the extension installed at `installedExtensionURL`: rewrites a
-    /// service-worker-only background into a background page, and restores a missing Web Store `key`.
+    /// service-worker-only background into a background page.
     /// - Parameter installedExtensionURL: The installed extension directory, as
     ///   `WebExtensionStorageProviding.resolveInstalledExtension` resolved it — so the manifest sits
     ///   directly in it, and any top-level wrapper folder an archive carried is already unwrapped.
@@ -100,15 +197,12 @@ struct WebExtensionBackgroundPagePatcher {
             }
 
             // Only third-party extensions get the Chrome-compatibility rewrite. This runs before a
-            // `WKWebExtension` exists, so it reads the raw manifest the way `needsChromeCompatibility` does.
+            // `WKWebExtension` exists, so it reads the raw manifest.
             guard !declaresDuckDuckGoSettings(inManifest: manifest) else {
                 return false
             }
 
-            let backgroundWasPatched = try patchBackground(in: &manifest, manifestDirectory: manifestDirectory)
-            let keyWasPatched = keyPatcher.insertKnownPublicKeyIfNeeded(in: &manifest, manifestDirectory: manifestDirectory)
-
-            guard backgroundWasPatched || keyWasPatched else {
+            guard try patchBackground(in: &manifest, manifestDirectory: manifestDirectory) else {
                 return false
             }
 
@@ -126,11 +220,9 @@ struct WebExtensionBackgroundPagePatcher {
     /// scripts it loads, when the manifest declares a service worker and nothing else.
     /// - Returns: `true` when `manifest` was changed.
     private func patchBackground(in manifest: inout [String: Any], manifestDirectory: URL) throws -> Bool {
-        guard var background = manifest[ManifestKey.background] as? [String: Any],
-              let serviceWorkerPath = background[ManifestKey.serviceWorker] as? String,
-              !serviceWorkerPath.isEmpty,
-              background[ManifestKey.scripts] == nil,
-              background[ManifestKey.page] == nil else {
+        guard Self.hasServiceWorkerOnlyBackground(manifest),
+              var background = manifest[ManifestKey.background] as? [String: Any],
+              let serviceWorkerPath = background[ManifestKey.serviceWorker] as? String else {
             return false
         }
 
@@ -164,13 +256,11 @@ struct WebExtensionBackgroundPagePatcher {
         return true
     }
 
-    /// Chunk files a classic worker bundle would load with `importScripts`, as extension-root-relative
-    /// paths sorted by chunk id.
+    /// Finds the extra files a webpack-built service worker loads with `importScripts`.
     ///
-    /// webpack names a split chunk `<chunk id>.<worker basename>` and emits it next to the worker, so
-    /// `background.js` is accompanied by `719.background.js`. The bundle computes that name at runtime
-    /// from an id we cannot see from here, which is why the page preloads every candidate it finds
-    /// rather than the one file a given `importScripts` call asks for.
+    /// webpack names them `<number>.<worker file name>` and puts them next to the worker, so
+    /// `background.js` comes with files like `719.background.js`. We can't tell which ones the worker
+    /// will ask for, so this returns all of them, sorted by number, as paths from the extension folder.
     private func chunkScriptPaths(forWorkerAt normalizedWorkerPath: String, in manifestDirectory: URL) -> [String] {
         let workerFilename = (normalizedWorkerPath as NSString).lastPathComponent
         let workerDirectoryPath = (normalizedWorkerPath as NSString).deletingLastPathComponent
@@ -202,7 +292,7 @@ struct WebExtensionBackgroundPagePatcher {
     /// Returns `directory` when it is a directory holding `manifest.json`, and `nil` otherwise.
     ///
     /// The directory check is not redundant: an installed extension can also be an archive file,
-    /// which has no manifest to patch.
+    /// which `loadableExtensionURL(for:installFolder:)` unpacks first.
     private func manifestDirectory(in directory: URL) -> URL? {
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
@@ -229,13 +319,13 @@ struct WebExtensionBackgroundPagePatcher {
         return normalizedPath
     }
 
-    /// Builds a background page that loads `normalizedWorkerPath` with a root-absolute `src`, so the
-    /// page resolves the script the same way the manifest's service worker path did.
+    /// Builds the HTML of the background page.
     ///
-    /// Every script the page adds is classic and non-deferred, so all of them finish executing before
-    /// the extension's own script starts — whether that one is a module (always deferred) or a classic
-    /// deferred script. Order matters: the `importScripts` shim first (which the chunks do not need
-    /// but the bundle does), then the chunk payloads the shim will replay, then the bundle itself.
+    /// For a classic worker, the page loads the `importScripts` shim, then the extra files, then the
+    /// extension's script. The extension's script is deferred, so it runs only after the others.
+    /// A module worker loads its extra files itself, so its page loads only the extension's script.
+    ///
+    /// Paths start with `/` so they resolve from the extension folder, like the manifest's path does.
     private static func backgroundPage(loading normalizedWorkerPath: String,
                                        asModule isModule: Bool,
                                        preloadingChunksAt chunkPaths: [String]) -> String {

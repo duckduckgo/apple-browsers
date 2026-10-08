@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import ZIPFoundation
 @testable import WebExtensions
 
 final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
@@ -214,86 +215,6 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         XCTAssertEqual(try loadImportScriptsShim(in: extensionDirectory), WebExtensionImportScriptsShim.source)
     }
 
-    // MARK: - Known Public Keys
-
-    func testWhenNameIsALocalizationPlaceholder_ThenShortNameResolvesTheKey() throws {
-        // Bitwarden's own shape: `name` is a placeholder for the store listing title, `short_name`
-        // is the product name.
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "__MSG_extName__",
-            "short_name": "Bitwarden"
-        }
-        """)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        let manifest = try loadManifest(in: extensionDirectory)
-        XCTAssertEqual(manifest["key"] as? String, WebExtensionManifestKeyPatcher.knownPublicKeys["Bitwarden"])
-    }
-
-    func testWhenNoCandidateNameIsKnown_ThenNoKeyIsInserted() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "__MSG_extName__",
-            "short_name": "Bitwarden Password Manager"
-        }
-        """)
-        let originalManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
-
-        XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), originalManifest)
-    }
-
-    func testWhenKnownExtensionAlreadyHasKey_ThenManifestIsUntouched() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "Bitwarden",
-            "key": "AN-EXISTING-KEY"
-        }
-        """)
-        let originalManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
-
-        XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), originalManifest)
-    }
-
-    func testWhenExtensionIsUnknown_ThenNoKeyIsInserted() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "Some Other Password Manager",
-            "short_name": "Other"
-        }
-        """)
-        let originalManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
-
-        XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), originalManifest)
-    }
-
-    func testWhenKeyIsInsertedTwice_ThenSecondRunChangesNothing() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "Bitwarden"
-        }
-        """)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-        let patchedManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
-
-        XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), patchedManifest)
-    }
-
     // MARK: - Manifests Left Untouched
 
     func testWhenManifestDeclaresBackgroundScripts_ThenManifestIsUntouched() throws {
@@ -346,6 +267,119 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         """)
     }
 
+    // MARK: - Loadable Copies
+
+    private let serviceWorkerManifest = """
+    { "manifest_version": 3, "name": "Copied", "version": "1.0", "background": { "service_worker": "background.js" } }
+    """
+
+    private let duckDuckGoManifest = """
+    { "manifest_version": 3, "name": "Ours", "version": "1.0", "background": { "service_worker": "background.js" },
+      "browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.test" } } }
+    """
+
+    func testWhenArchiveDeclaresServiceWorker_ThenARewrittenCopyIsLoadedAndTheArchiveIsUntouched() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": serviceWorkerManifest, "background.js": "1;"])
+        let archiveData = try Data(contentsOf: archiveURL)
+
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL))
+
+        XCTAssertEqual(loadableURL.standardizedFileURL, loadableFolder(of: archiveURL).standardizedFileURL)
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: loadableURL.appendingPathComponent("background.js").path))
+        XCTAssertEqual(try Data(contentsOf: archiveURL), archiveData)
+    }
+
+    func testWhenArchiveWrapsItsFilesInAFolder_ThenThatFolderOfTheCopyIsLoaded() throws {
+        let archiveURL = try makeArchive(files: ["bitwarden/manifest.json": serviceWorkerManifest, "bitwarden/background.js": "1;"])
+
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL))
+
+        XCTAssertEqual(loadableURL.standardizedFileURL,
+                       loadableFolder(of: archiveURL).appendingPathComponent("bitwarden").standardizedFileURL)
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+    }
+
+    func testWhenFolderDeclaresServiceWorker_ThenARewrittenCopyIsLoadedAndTheFolderIsUntouched() throws {
+        let installFolder = try makeInstallFolder()
+        let extensionDirectory = installFolder.appendingPathComponent("extension")
+        try writeFiles(["manifest.json": serviceWorkerManifest, "background.js": "1;"], in: extensionDirectory)
+
+        let loadableURL = patcher.loadableExtensionURL(for: extensionDirectory, installFolder: installFolder)
+
+        XCTAssertEqual(loadableURL.standardizedFileURL,
+                       installFolder.appendingPathComponent(WebExtensionBackgroundPagePatcher.loadableFolderName).standardizedFileURL)
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+        XCTAssertEqual(try backgroundSection(in: extensionDirectory)["service_worker"] as? String, "background.js")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: backgroundPageURL(in: extensionDirectory).path))
+    }
+
+    func testWhenFolderIsTheInstallFolder_ThenTheCopyLeavesItselfOut() throws {
+        let installFolder = try makeInstallFolder()
+        try writeFiles(["manifest.json": serviceWorkerManifest, "background.js": "1;"], in: installFolder)
+
+        let loadableURL = patcher.loadableExtensionURL(for: installFolder, installFolder: installFolder)
+        _ = patcher.loadableExtensionURL(for: installFolder, installFolder: installFolder)
+
+        let copiedItems = try FileManager.default.contentsOfDirectory(atPath: loadableURL.path)
+        XCTAssertFalse(copiedItems.contains(WebExtensionBackgroundPagePatcher.loadableFolderName))
+        XCTAssertEqual(try backgroundSection(in: installFolder)["service_worker"] as? String, "background.js")
+    }
+
+    func testWhenExtensionIsOneOfOurs_ThenItIsLoadedAsIs() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": duckDuckGoManifest])
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL)), archiveURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: loadableFolder(of: archiveURL).path))
+    }
+
+    func testWhenExtensionNeedsNoRewrite_ThenItIsLoadedAsIsAndAnOldCopyIsRemoved() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": """
+        { "manifest_version": 3, "name": "Page", "version": "1.0", "background": { "page": "background.html" } }
+        """])
+        try FileManager.default.createDirectory(at: loadableFolder(of: archiveURL), withIntermediateDirectories: true)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL)), archiveURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: loadableFolder(of: archiveURL).path))
+    }
+
+    func testWhenInstallationIsUnchanged_ThenTheCopyIsReused() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": serviceWorkerManifest, "background.js": "1;"])
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL))
+        let markerURL = loadableURL.appendingPathComponent("marker")
+        try Data().write(to: markerURL)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL)), loadableURL)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: markerURL.path))
+    }
+
+    func testWhenInstallationChanges_ThenItIsCopiedAgain() throws {
+        let archiveURL = try makeArchive(files: ["manifest.json": serviceWorkerManifest, "background.js": "1;"])
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL))
+        let markerURL = loadableURL.appendingPathComponent("marker")
+        try Data().write(to: markerURL)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(60)], ofItemAtPath: archiveURL.path)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL, installFolder: installFolder(of: archiveURL)), loadableURL)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+        XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
+    }
+
+    @available(macOS 15.4, iOS 18.4, *)
+    func testWhenAFolderInstallHasACopy_ThenTheInstallationIsStillResolved() throws {
+        let installFolder = try makeInstallFolder()
+        let extensionDirectory = installFolder.appendingPathComponent("extension")
+        try writeFiles(["manifest.json": serviceWorkerManifest, "background.js": "1;"], in: extensionDirectory)
+        _ = patcher.loadableExtensionURL(for: extensionDirectory, installFolder: installFolder)
+        let storage = ExtensionsDirectoryStorage(extensionsDirectory: installFolder.deletingLastPathComponent())
+
+        let resolvedURL = storage.resolveInstalledExtension(identifier: installFolder.lastPathComponent)
+
+        XCTAssertEqual(resolvedURL?.standardizedFileURL, extensionDirectory.standardizedFileURL)
+    }
+
     // MARK: - Helpers
 
     private func assertManifestIsUntouched(_ manifest: String,
@@ -383,6 +417,40 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
             }
             searchStart = range.upperBound
         }
+    }
+
+    private func makeInstallFolder() throws -> URL {
+        let installFolder = temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: installFolder, withIntermediateDirectories: true)
+        return installFolder
+    }
+
+    private func writeFiles(_ files: [String: String], in directory: URL) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for (name, contents) in files {
+            try Data(contents.utf8).write(to: directory.appendingPathComponent(name))
+        }
+    }
+
+    /// An archive in its own install folder, like the ones the Chrome Web Store flow stores.
+    private func makeArchive(files: [String: String]) throws -> URL {
+        let archiveURL = try makeInstallFolder().appendingPathComponent("extension.zip")
+        let archive = try Archive(url: archiveURL, accessMode: .create)
+        for (path, contents) in files.sorted(by: { $0.key < $1.key }) {
+            let data = Data(contents.utf8)
+            try archive.addEntry(with: path, type: .file, uncompressedSize: Int64(data.count)) { position, size in
+                data.subdata(in: Int(position)..<Int(position) + size)
+            }
+        }
+        return archiveURL
+    }
+
+    private func installFolder(of archiveURL: URL) -> URL {
+        archiveURL.deletingLastPathComponent()
+    }
+
+    private func loadableFolder(of archiveURL: URL) -> URL {
+        installFolder(of: archiveURL).appendingPathComponent(WebExtensionBackgroundPagePatcher.loadableFolderName)
     }
 
     private func makeExtensionDirectory(manifest: String) throws -> URL {
@@ -427,5 +495,16 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
 
     private func loadImportScriptsShim(in directory: URL) throws -> String {
         try String(contentsOf: importScriptsShimURL(in: directory), encoding: .utf8)
+    }
+}
+
+/// The default storage behavior over a given extensions directory.
+@available(macOS 15.4, iOS 18.4, *)
+private final class ExtensionsDirectoryStorage: WebExtensionStorageProviding {
+    let fileManager = FileManager.default
+    let extensionsDirectory: URL
+
+    init(extensionsDirectory: URL) {
+        self.extensionsDirectory = extensionsDirectory
     }
 }

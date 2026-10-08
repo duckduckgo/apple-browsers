@@ -154,16 +154,13 @@ enum WebExtensionAPICompatibilityClassifier {
         return String(string[range])
     }
 
-    /// Permissions the stub script provides itself, so a manifest asking for them lacks nothing.
-    private static let permissionsProvidedByShims: Set<String> = ["privacy", "offscreen", "idle"]
-
     /// Permissions a manifest asks for that WebKit dropped because it does not implement them.
-    /// Host patterns are not API permissions and are skipped, as are the ones the stub script provides.
+    /// Host patterns are not API permissions and are skipped.
     static func droppedPermissions(inManifest manifest: [String: Any], webKitPermissions: Set<String>) -> [String] {
         let declared = ["permissions", "optional_permissions"]
             .flatMap { manifest[$0] as? [String] ?? [] }
             .filter { !isHostPattern($0) && matches(permissionNamePattern, $0) }
-        return Set(declared).subtracting(webKitPermissions).subtracting(permissionsProvidedByShims).sorted()
+        return Set(declared).subtracting(webKitPermissions).sorted()
     }
 
     private static func isHostPattern(_ permission: String) -> Bool {

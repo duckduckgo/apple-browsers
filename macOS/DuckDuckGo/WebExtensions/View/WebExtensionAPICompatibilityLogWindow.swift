@@ -121,11 +121,11 @@ struct WebExtensionAPICompatibilityLogView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Button("Refresh") { viewModel.refresh() }
-                Button("Copy") { viewModel.copyToPasteboard() }
+                Button("Refresh" as String) { viewModel.refresh() }
+                Button("Copy" as String) { viewModel.copyToPasteboard() }
                     .disabled(viewModel.filteredRows.isEmpty)
-                Picker("Extension", selection: $viewModel.selectedExtension) {
-                    Text("All Extensions").tag(String?.none)
+                Picker("Extension" as String, selection: $viewModel.selectedExtension) {
+                    Text(verbatim: "All Extensions").tag(String?.none)
                     ForEach(viewModel.extensionLabels, id: \.self) { label in
                         Text(label).tag(String?.some(label))
                     }
@@ -156,42 +156,56 @@ struct WebExtensionAPICompatibilityLogView: View {
 
     private var header: some View {
         HStack {
-            Text("Time").frame(width: 90, alignment: .leading)
-            Text("Extension").frame(width: 200, alignment: .leading)
-            Text("Kind").frame(width: 90, alignment: .leading)
-            Text("API")
+            Text(verbatim: "Time").frame(width: 90, alignment: .leading)
+            Text(verbatim: "Extension").frame(width: 200, alignment: .leading)
+            Text(verbatim: "Kind").frame(width: 90, alignment: .leading)
+            Text(verbatim: "API")
             Spacer()
         }
         .font(.headline)
     }
 }
 
-/// Owns the single compatibility log window, so the Debug Menu and the extension toolbar buttons open the same one.
+/// Opens the compatibility log window. The window is found by its identifier, so the Debug Menu and the
+/// extension toolbar buttons bring up the same one.
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionAPICompatibilityLogPresenter {
+enum WebExtensionAPICompatibilityLogWindowPresenter {
 
-    static let shared = WebExtensionAPICompatibilityLogPresenter()
-
-    private let viewModel = WebExtensionAPICompatibilityLogViewModel()
-    private var window: NSWindow?
+    static let identifier = NSUserInterfaceItemIdentifier("WebExtensionAPICompatibilityLog")
 
     /// Opens the window, limited to the given extension (as the log names it) or showing all of them.
-    func show(extensionName: String? = nil, version: String? = nil) {
-        if window == nil {
-            let window = NSWindow(contentViewController: NSHostingController(
-                rootView: WebExtensionAPICompatibilityLogView(viewModel: viewModel)))
-            window.title = "JavaScript API Compatibility Log"
-            window.isReleasedWhenClosed = false
-            window.center()
-            self.window = window
+    static func show(extensionName: String? = nil, version: String? = nil) {
+        let window = NSApp.windows.first { $0.identifier == identifier } ?? makeWindow()
+        guard let viewModel = (window.contentViewController as? LogViewController)?.rootView.viewModel else {
+            return
         }
+
         if let extensionName, let version {
             viewModel.selectedExtension = WebExtensionAPICompatibilityLogViewModel.extensionLabel(name: extensionName, version: version)
         } else {
             viewModel.selectedExtension = nil
         }
         viewModel.refresh()
-        window?.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private static func makeWindow() -> NSWindow {
+        let window = NSWindow(contentViewController: LogViewController(
+            rootView: WebExtensionAPICompatibilityLogView(viewModel: WebExtensionAPICompatibilityLogViewModel())))
+        window.identifier = identifier
+        window.title = "JavaScript API Compatibility Log"
+        window.isReleasedWhenClosed = false
+        window.center()
+        return window
+    }
+}
+
+/// Hosts the log view, and closes the window on ⌘W, which the main menu binds to Close Tab.
+@available(macOS 15.4, *)
+private final class LogViewController: NSHostingController<WebExtensionAPICompatibilityLogView> {
+
+    @objc func closeTab(_ sender: Any?) {
+        view.window?.performClose(sender)
     }
 }

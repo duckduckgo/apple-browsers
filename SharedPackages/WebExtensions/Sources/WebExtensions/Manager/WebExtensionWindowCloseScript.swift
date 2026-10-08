@@ -19,18 +19,9 @@
 import Foundation
 import WebKit
 
-/// JavaScript injected at document start into every page an extension owns, which reports a
-/// `window.close()` call to the browser before WebKit acts on it.
-///
-/// An action popup closes itself with `window.close()` once it has done its job — Bitwarden does
-/// so after it fills a login from the popup. Chrome then dismisses the popup. WebKit reacts too, but
-/// only on its own terms: `WKWebExtension.Action` closes the popover *it* would have shown and
-/// unloads the popup web view. A browser that hosts that web view in a panel of its own, as the
-/// macOS app does, is not told, and is left with an empty panel. The public API offers no
-/// notification for the dismissal, so the page reports the call itself through a script message.
-///
-/// The script does nothing on a page with no `webkit.messageHandlers` entry of the expected name,
-/// so a platform that never registers `WebExtensionWindowCloseMessageHandler` is unaffected.
+/// JavaScript that reports an extension page's `window.close()` call to the browser, so a popup
+/// hosted in a panel of our own can close the panel; WebKit only unloads the page. It does nothing
+/// without a `WebExtensionWindowCloseMessageHandler`.
 enum WebExtensionWindowCloseScript {
 
     /// Name of the script message handler the page posts to.
@@ -44,8 +35,7 @@ enum WebExtensionWindowCloseScript {
             return;
         }
 
-        // Our own extensions declare `browser_specific_settings.duckduckgo` and need no Chrome
-        // shims. Keep in sync with `WKWebExtension.needsChromeCompatibility`.
+        // Our own extensions declare `browser_specific_settings.duckduckgo` and are left alone.
         try {
             var api = globalThis.chrome || globalThis.browser;
             var settings = api && api.runtime && typeof api.runtime.getManifest === "function"

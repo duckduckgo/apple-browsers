@@ -36,7 +36,8 @@ struct SubscriptionOnboardingVPNTipsView: View {
             title: title,
             navigationButton: navigationButton ?? .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
-            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { onNext() })) {
+            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { onNext() }),
+            footerBlur: true) {
             VPNTipsCarousel()
                 .padding(.top, 24)
         }

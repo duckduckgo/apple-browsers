@@ -70,7 +70,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     private struct InstalledExtensionsLoadSummary {
-        var failedIdentifiers: [String] = []
+        var failures: [(identifier: String, error: Error)] = []
         var successCount = 0
         var firstError: Error?
     }
@@ -80,8 +80,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let installationStore: InstalledWebExtensionStoring
     public let storageProvider: WebExtensionStorageProviding
     public let loader: WebExtensionLoading
+    public let permissionController: WebExtensionPermissionController?
+    public var chromeWebStore: ChromeWebStoreManaging?
     public let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening
+
+    /// Resolves shipped extension resources; tests can supply temporary fixtures.
+    let bundledExtensionURL: (EmbeddedWebExtensionDescriptor) -> URL?
 
     /// Platform-specific window/tab operations.
     public let windowTabProvider: WebExtensionWindowTabProviding
@@ -125,7 +130,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
-    /// Receives the API compatibility reports of extension pages, including the ones in tabs.
+    /// Receives the API compatibility reports of extension pages.
     private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
 
 #if os(macOS)
@@ -161,6 +166,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 windowTabProvider: WebExtensionWindowTabProviding,
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
+                permissionController: WebExtensionPermissionController? = nil,
                 loader: WebExtensionLoading? = nil,
                 eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
@@ -172,27 +178,23 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
-                scriptletConfiguration: ScriptletConfiguration? = nil) {
+                scriptletConfiguration: ScriptletConfiguration? = nil,
+                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
-        // WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a
-        // top-level reference to one aborts an extension's background script. The stub script
-        // defines them. A user script on the controller's configuration reaches every page the
-        // extension owns — the background page, the action popup, the options page and, with
-        // `forMainFrameOnly: false`, the offscreen iframe the stub script creates — where a
-        // `<script>` tag in a generated page reaches only that page. A user script is also
-        // exempt from the page's CSP, which such a tag is not. The stubs return early when
-        // neither `chrome` nor `browser` is defined, so a page that is not an extension page
-        // is left alone.
-        let stubScript = WKUserScript(source: WebExtensionAPIStubScript.source,
-                                      injectionTime: .atDocumentStart,
-                                      forMainFrameOnly: false)
-        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(stubScript)
+        // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
+        // reports which unsupported APIs the extension touches, for the API compatibility log.
+        controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
+                                                                                name: WebExtensionAPICompatibilityScript.messageHandlerName)
 
-        // A popup page closes itself with `window.close()`. WebKit unloads the web view but tells
-        // nobody, so the page reports the call through a script message, and the window/tab
-        // provider takes down whatever it hosted the popup in.
+#if os(macOS)
+        // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
+#endif
+
+        // Popup pages report `window.close()`, so the window/tab provider can close what hosts them.
         let windowCloseScript = WKUserScript(source: WebExtensionWindowCloseScript.source,
                                              injectionTime: .atDocumentStart,
                                              forMainFrameOnly: true)
@@ -201,23 +203,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         controllerConfiguration.webViewConfiguration.userContentController.add(windowCloseHandler,
                                                                                 name: WebExtensionWindowCloseScript.messageHandlerName)
 
-        // The stub script also reports which unsupported APIs an extension touches, for the
-        // API compatibility log.
-        controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
-                                                                                name: WebExtensionAPIStubScript.compatibilityMessageHandlerName)
-
-#if os(macOS)
-        // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
-        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
-            idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
-#endif
-
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
         self.storageProvider = storageProvider
         self.installationStore = installationStore
-        self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider, isInspectable: configuration.isInspectable)
+        self.permissionController = permissionController
+        self.bundledExtensionURL = bundledExtensionURL
+        self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
+                                                   isInspectable: configuration.isInspectable,
+                                                   permissionController: permissionController)
         self.eventsListener = eventsListener
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
@@ -305,11 +300,42 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     // MARK: - Install/Uninstall
 
+    @MainActor
     public func installExtension(from sourceURL: URL) async throws {
+        try await installExtension(from: sourceURL, storeIdentity: nil, replacing: nil)
+    }
+
+    @MainActor
+    // swiftlint:disable:next cyclomatic_complexity
+    public func installExtension(from sourceURL: URL,
+                                 storeIdentity: WebExtensionStoreIdentity?,
+                                 replacing oldIdentifier: String? = nil) async throws {
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
+
+        if let oldIdentifier {
+            guard let storeIdentity,
+                  let installed = installationStore.installedExtension(withUniqueIdentifier: oldIdentifier),
+                  installed.storeIdentity == storeIdentity else {
+                throw WebExtensionError.updateIdentityMismatch
+            }
+        }
 
         let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
+        var embeddedType = storeIdentity == nil ? metadata.type : nil
+
+        if embeddedType != nil, let permissionController {
+            // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
+            let isBundled = EmbeddedWebExtensionRegistry.all.contains {
+                bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
+            }
+            if isBundled {
+                permissionController.trustedInstallations.insert(identifier)
+            } else {
+                embeddedType = nil
+            }
+        }
+        defer { permissionController?.trustedInstallations.remove(identifier) }
 
         if metadata.requiresExtraction {
             _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
@@ -320,57 +346,89 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
         do {
+            if let oldIdentifier {
+                try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
+            }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
-            await unloadGuard.recordLoad(of: identifier)
+            unloadGuard.recordLoad(of: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
                 name: loadResult.displayName,
                 version: loadResult.version,
-                embeddedType: metadata.type
+                embeddedType: embeddedType,
+                storeIdentity: storeIdentity
             )
 
             installationStore.add(installedExtension)
-            await reportLifecycleEvent(.loaded(identifier: identifier, type: metadata.type))
+            reportLifecycleEvent(.loaded(identifier: identifier, type: embeddedType))
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed)
 
-            if let type = metadata.type {
+            if let type = embeddedType {
                 await scriptletCoordinator?.onExtensionEnabled(for: type)
             }
         } catch {
-            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)
+            do {
+                try permissionController?.forget(identifier)
+            } catch {
+                Logger.webExtensions.error("Failed to remove extension consent after installation failure: \(error.localizedDescription)")
+            }
             try? storageProvider.removeExtension(identifier: identifier)
+
+            if let preparationError = error as? WebExtensionLoader.PermissionPreparationError,
+               let permissionError = preparationError.underlyingError as? WebExtensionPermissionController.PermissionError,
+               case .installationDenied = permissionError {
+                Logger.webExtensions.info("Extension installation cancelled by the user (\(identifier))")
+                throw WebExtensionError.installationCancelled
+            }
+
+            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             pixelFiring.fire(.installError(error: error))
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
         notifyUpdate()
+        if let storeIdentity, storeIdentity.store == .chromeWebStore {
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
+                                            userInfo: ["extensionId": storeIdentity.id])
+        }
     }
 
     @MainActor
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
-        let embeddedType = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
-        installationStore.remove(uniqueIdentifier: identifier)
-
-        if let embeddedType {
-            scriptletCoordinator?.onExtensionDisabled(for: embeddedType)
-        }
-
-        unregisterHandlers(for: identifier)
+        let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
+        let embeddedType = installedExtension?.embeddedType
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
             Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
+            if context(for: identifier) != nil {
+                throw WebExtensionError.failedToUnloadWebExtension(error)
+            }
             Logger.webExtensions.debug("⚠️ Extension '\(identifier)' was not loaded in memory: \(error.localizedDescription)")
             cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
+        }
+
+        do {
+            try permissionController?.forget(identifier)
+        } catch {
+            // Consent cleanup must not leave an unloaded extension installed.
+            Logger.webExtensions.error("Could not remove extension permissions during uninstall: \(error.localizedDescription)")
+        }
+        installationStore.remove(uniqueIdentifier: identifier)
+        unloadedExtensionsCache.removeValue(forKey: identifier)
+        dataClearingReloadIdentifiers.remove(identifier)
+        unregisterHandlers(for: identifier)
+        if let embeddedType {
+            scriptletCoordinator?.onExtensionDisabled(for: embeddedType)
         }
 
         do {
@@ -385,6 +443,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
         pixelFiring.fire(.uninstalled)
         notifyUpdate()
+        if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
+                                            userInfo: ["extensionId": storeIdentity.id])
+        }
     }
 
     @MainActor
@@ -417,7 +479,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             pixelFiring.fire(.uninstalledAll)
         }
 
-        storageProvider.cleanupOrphanedExtensions(keeping: [])
+        storageProvider.cleanupOrphanedExtensions(keeping: Set(installationStore.installedExtensions.map(\.uniqueIdentifier)))
 
         return results
     }
@@ -437,6 +499,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: .dataClearing))
             do {
                 try controller.unload(context)
+                permissionController?.didUnload(identifier)
                 cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
@@ -587,7 +650,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let summary = processInstalledExtensionLoadResults(extensions: extensions, results: results, lifecycle: lifecycle)
 
-        for identifier in summary.failedIdentifiers {
+        for (identifier, error) in summary.failures {
+            // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
+            if installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false,
+               permissionController != nil,
+               error is WebExtensionLoader.PermissionPreparationError
+            {
+                continue
+            }
             do {
                 try uninstallExtension(identifier: identifier)
             } catch {
@@ -595,13 +665,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
         }
 
-        if summary.failedIdentifiers.isEmpty {
+        if summary.failures.isEmpty {
             Logger.webExtensions.info("✅ Extension loading completed: \(summary.successCount) loaded")
             if summary.successCount > 0 {
                 pixelFiring.fire(.loaded)
             }
         } else {
-            Logger.webExtensions.error("❌ Extension loading completed with errors: \(summary.successCount) loaded, \(summary.failedIdentifiers.count) failed and removed")
+            Logger.webExtensions.error("❌ Extension loading completed with errors: \(summary.successCount) loaded, \(summary.failures.count) failed")
             if let firstError = summary.firstError {
                 pixelFiring.fire(.loadError(error: firstError))
             }
@@ -646,7 +716,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 ) {
                     reportLifecycleEvent(event)
                 }
-                summary.failedIdentifiers.append(installedExtension.uniqueIdentifier)
+                summary.failures.append((identifier: installedExtension.uniqueIdentifier, error: error))
                 summary.firstError = summary.firstError ?? error
                 if let failureContext = lifecycle.reloadFailureContext(for: installedExtension.uniqueIdentifier) {
                     pixelFiring.fire(.reloadError(type: installedExtension.embeddedType,
@@ -807,6 +877,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
 public extension Notification.Name {
 
+    /// Posted after successful installation or removal and the corresponding installation-state update.
+    /// `userInfo["extensionId"]` contains the Chrome Web Store ID, not the local installation UUID.
+    static let chromeWebStoreExtensionChanged = Notification.Name("chromeWebStoreExtensionChanged")
+
     /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
     ///
     /// Unlike `extensionUpdates`, which an `AsyncStream` limits to a single consumer,
@@ -863,27 +937,33 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         try await windowTabProvider.presentPopup(action, for: extensionContext)
     }
 
-    // MARK: - Permissions (sensible defaults)
+    // MARK: - Permissions
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        promptForPermissions permissions: Set<WKWebExtension.Permission>,
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
-        (permissions, nil)
+        guard let permissionController else { return (permissions, nil) }
+        let granted = await permissionController.request(WebExtensionPermissionRequest(permissions: permissions), for: extensionContext)
+        return (granted ? permissions : [], nil)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        promptForPermissionToAccess urls: Set<URL>,
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<URL>, Date?) {
-        (urls, nil)
+        guard let permissionController else { return (urls, nil) }
+        let granted = await permissionController.request(WebExtensionPermissionRequest(urls: urls), for: extensionContext)
+        return (granted ? urls : [], nil)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        promptForPermissionMatchPatterns matchPatterns: Set<WKWebExtension.MatchPattern>,
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.MatchPattern>, Date?) {
-        (matchPatterns, nil)
+        guard let permissionController else { return (matchPatterns, nil) }
+        let granted = await permissionController.request(WebExtensionPermissionRequest(matchPatterns: matchPatterns), for: extensionContext)
+        return (granted ? matchPatterns : [], nil)
     }
 }
 

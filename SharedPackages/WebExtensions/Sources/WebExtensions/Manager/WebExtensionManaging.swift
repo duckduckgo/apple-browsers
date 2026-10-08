@@ -22,6 +22,10 @@ import WebKit
 /// Protocol defining the interface for managing web extensions.
 public protocol WebExtensionManaging: AnyObject {
 
+    /// Shared Chrome Web Store service, available only when installation is supported.
+    @available(macOS 15.4, iOS 18.4, *)
+    var chromeWebStore: ChromeWebStoreManaging? { get }
+
     /// The set of currently loaded extension contexts.
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
@@ -89,7 +93,18 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func installExtension(from sourceURL: URL) async throws
 
+    /// Installs a store extension, optionally preparing a replacement for an existing installation.
+    /// The caller must verify that the downloaded package belongs to the supplied store identity.
+    /// A replacement requires the same stored identity and copies consent before loading, leaving
+    /// the old installation intact on failure. After success, the updater can uninstall the old UUID.
+    /// Newly requested permissions are not automatically granted by copying existing consent.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws
+
     /// Uninstalls an extension with the given identifier.
+    /// Removes its saved consent when the permission controller is enabled. During an update, use
+    /// `installExtension(from:storeIdentity:replacing:)` first, then uninstall the old identifier
+    /// only after the replacement succeeds. The replacement retains its own copy of consent.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func uninstallExtension(identifier: String) throws
@@ -182,6 +197,8 @@ public struct ScriptletDebugInfo: Identifiable {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+
+    var chromeWebStore: ChromeWebStoreManaging? { nil }
 
     /// Whether the embedded autoconsent web extension is loaded and active.
     var isAutoconsentExtensionLoaded: Bool {

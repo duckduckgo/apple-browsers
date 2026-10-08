@@ -122,7 +122,7 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
             let viewController = PopoverMessageViewController(
                 title: UserText.autoconsentStatsPopoverTitle(count: Int(totalBlocked)),
                 message: UserText.autoconsentStatsPopoverMessage,
-                image: NSImage(named: "Cookies-Blocked-Color-24"),
+                image: NSImage(resource: .cookiesBlockedColor24),
                 popoverStyle: .featureDiscovery,
                 // The promo queue owns the auto-dismiss timing (`PromoType.timeoutInterval`); don't double-arm it here.
                 autoDismissDuration: nil,

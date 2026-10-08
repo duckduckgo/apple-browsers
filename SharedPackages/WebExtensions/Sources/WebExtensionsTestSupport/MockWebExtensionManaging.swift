@@ -42,14 +42,9 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
 
     public func loadInstalledExtensions() async {}
     public func reloadInstalledExtensions() async {}
-    public var installExtensionHandler: ((URL) async throws -> Void)?
-    public var uninstalledIdentifiers: [String] = []
-    public func installExtension(from sourceURL: URL) async throws {
-        try await installExtensionHandler?(sourceURL)
-    }
-    @MainActor public func uninstallExtension(identifier: String) throws {
-        uninstalledIdentifiers.append(identifier)
-    }
+    public func installExtension(from sourceURL: URL) async throws {}
+    public func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
+    @MainActor public func uninstallExtension(identifier: String) throws {}
 
     @MainActor
     @discardableResult

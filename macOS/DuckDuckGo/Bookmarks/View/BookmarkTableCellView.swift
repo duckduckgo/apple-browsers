@@ -28,15 +28,15 @@ import DesignResourcesKitIcons
 
 final class BookmarkTableCellView: NSTableCellView {
 
-    private lazy var faviconImageView = NSImageView(image: .bookmark)
+    private lazy var faviconImageView = NSImageView(image: NSImage(resource: .bookmark))
 
     private lazy var titleLabel = NSTextField(string: "Bookmark")
     private lazy var bookmarkURLLabel = NSTextField(string: "URL")
-    private lazy var accessoryImageView = NSImageView(image: .forward)
+    private lazy var accessoryImageView = NSImageView(image: NSImage(resource: .forward))
 
     private lazy var containerView = NSView()
 
-    private lazy var menuButton = NSButton(title: "", image: .settings, target: self, action: #selector(cellMenuButtonClicked))
+    private lazy var menuButton = NSButton(title: "", image: NSImage(resource: .settings), target: self, action: #selector(cellMenuButtonClicked))
 
     @objc func cellMenuButtonClicked(_ sender: NSButton) {
         delegate?.bookmarkTableCellViewRequestedMenu(sender, cell: self)
@@ -112,7 +112,7 @@ final class BookmarkTableCellView: NSTableCellView {
         containerView.addSubview(menuButton)
         containerView.addSubview(accessoryImageView)
 
-        faviconImageView.contentTintColor = .suggestionIcon
+        faviconImageView.contentTintColor = NSColor(resource: .suggestionIcon)
         faviconImageView.wantsLayer = true
         faviconImageView.layer?.cornerRadius = 2.0
         faviconImageView.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
@@ -135,7 +135,7 @@ final class BookmarkTableCellView: NSTableCellView {
 
         accessoryImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        menuButton.contentTintColor = .button
+        menuButton.contentTintColor = NSColor(resource: .button)
         menuButton.translatesAutoresizingMaskIntoConstraints = false
         menuButton.isBordered = false
         menuButton.isHidden = true
@@ -245,7 +245,7 @@ final class BookmarkTableCellView: NSTableCellView {
         self.entity = folder
 
         faviconImageView.image = theme.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
-        accessoryImageView.image = .chevronMediumRight16
+        accessoryImageView.image = NSImage(resource: .chevronMediumRight16)
         primaryTitleLabelValue = folder.title
         tertiaryTitleLabelValue = nil
     }

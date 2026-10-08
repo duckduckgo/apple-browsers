@@ -79,7 +79,7 @@ extension DefaultExcludedAppsModel: ExcludedAppsModel {
     /// as the app's name.
     ///
     func getAppInfo(bundleID: String) -> AppInfo {
-        appInfoRetriever.getAppInfo(bundleID: bundleID) ?? AppInfo(bundleID: bundleID, name: bundleID, icon: NSImage.window16)
+        appInfoRetriever.getAppInfo(bundleID: bundleID) ?? AppInfo(bundleID: bundleID, name: bundleID, icon: NSImage(resource: .window16))
     }
 
     func reloadVPN() {

@@ -548,6 +548,74 @@ final class URLExtensionTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("URL.addingOrReplacing adds a query item to a URL without a query", .timeLimit(.minutes(1)))
+    func testAddingQueryItemToEmptyURL() throws {
+        let url = try #require(URL(string: "https://example.com"))
+        let queryItem = URLQueryItem(name: "key", value: "value")
+        let result = url.addingOrReplacing(queryItem)
+
+        #expect(result.scheme == "https")
+        #expect(result.host == "example.com")
+        #expect(result.getQueryItems() == [queryItem])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.addingOrReplacing replaces an existing query item", .timeLimit(.minutes(1)))
+    func testReplacingExistingQueryItem() throws {
+        let url = try #require(URL(string: "https://example.com?key=oldValue"))
+        let queryItem = URLQueryItem(name: "key", value: "newValue")
+        let result = url.addingOrReplacing(queryItem)
+
+        #expect(result.scheme == "https")
+        #expect(result.host == "example.com")
+        #expect(result.getQueryItems() == [queryItem])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.addingOrReplacing preserves existing items when adding a query item", .timeLimit(.minutes(1)))
+    func testAddingQueryItemToExistingQuery() throws {
+        let url = try #require(URL(string: "https://example.com?existingKey=existingValue"))
+        let queryItem = URLQueryItem(name: "newKey", value: "newValue")
+        let result = url.addingOrReplacing(queryItem)
+
+        #expect(result.scheme == "https")
+        #expect(result.host == "example.com")
+        #expect(result.getQueryItems() == [URLQueryItem(name: "existingKey", value: "existingValue"), queryItem])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.addingOrReplacing preserves other query items when replacing an item", .timeLimit(.minutes(1)))
+    func testReplacingOneOfMultipleQueryItems() throws {
+        let url = try #require(URL(string: "https://example.com?key1=value1&key2=value2"))
+        let queryItem = URLQueryItem(name: "key1", value: "newValue1")
+        let result = url.addingOrReplacing(queryItem)
+
+        #expect(result.scheme == "https")
+        #expect(result.host == "example.com")
+        #expect(result.getQueryItems() == [URLQueryItem(name: "key2", value: "value2"), queryItem])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.addingOrReplacing leaves a URL without a query unchanged for a nil value", .timeLimit(.minutes(1)))
+    func testAddingQueryItemWithNilValue() throws {
+        let url = try #require(URL(string: "https://example.com"))
+        let queryItem = URLQueryItem(name: "key", value: nil)
+        let result = url.addingOrReplacing(queryItem)
+
+        #expect(result == url)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.addingOrReplacing leaves an existing query item unchanged for a nil value", .timeLimit(.minutes(1)))
+    func testReplacingQueryItemWithNilValue() throws {
+        let url = try #require(URL(string: "https://example.com?key=value"))
+        let queryItem = URLQueryItem(name: "key", value: nil)
+        let result = url.addingOrReplacing(queryItem)
+
+        #expect(result == url)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("URL.getQueryItem returns the correct query item when it exists", .timeLimit(.minutes(1)))
     func queryItemWithNameAndURLHasQueryItemReturnsQueryItem() throws {
         // GIVEN

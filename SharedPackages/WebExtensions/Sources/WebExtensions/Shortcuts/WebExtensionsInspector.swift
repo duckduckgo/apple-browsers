@@ -238,8 +238,15 @@ public struct WebExtensionsInspector {
             return button;
         }
 
+        function cancelRecording() {
+            if (!recording) { return; }
+            recording.button.textContent = recording.title;
+            recording.button.classList.remove("recording");
+            recording = null;
+        }
+
         function startRecording(button, extension, command) {
-            if (recording) { recording.button.textContent = recording.title; recording.button.classList.remove("recording"); }
+            cancelRecording();
             recording = { button, extension, command, title: button.textContent };
             button.textContent = "Type shortcut…";
             button.classList.add("recording");
@@ -257,9 +264,7 @@ public struct WebExtensionsInspector {
             event.preventDefault();
             event.stopPropagation();
             if (event.key === "Escape") {
-                recording.button.textContent = recording.title;
-                recording.button.classList.remove("recording");
-                recording = null;
+                cancelRecording();
                 return;
             }
             if (!(event.metaKey || event.ctrlKey || event.altKey)) { return; }
@@ -274,6 +279,10 @@ public struct WebExtensionsInspector {
             recording = null;
             request("/api/set", { extension: extension.id, command: command.id, key, modifiers: modifiers.join(",") });
         }, true);
+
+        // Switching tabs, windows or apps cancels recording, so a later key press can't change a shortcut.
+        window.addEventListener("blur", cancelRecording);
+        document.addEventListener("visibilitychange", cancelRecording);
 
         render();
         </script>

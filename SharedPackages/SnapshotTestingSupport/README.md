@@ -164,7 +164,7 @@ After re-recording, inspect every diff and commit only the intentional ones.
 
 `SKIP_SNAPSHOT_TESTS=1` in the test scheme's env turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
 
-The app schemes (`iOS Browser`, `macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `0`, so snapshots run locally and in CI. To pause snapshots for one platform, set the value to `1` in that platform's schemes.
+The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `1` because the CI runners are still on macOS 26, while macOS references are pinned to macOS 27. To pause or resume snapshots for a platform, change the value in that platform's schemes.
 
 ## Conventions
 

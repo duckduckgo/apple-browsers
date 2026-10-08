@@ -449,7 +449,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "SKIP_SNAPSHOT_TESTS"
-            value = "0"
+            value = "1"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

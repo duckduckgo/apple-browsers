@@ -239,12 +239,30 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .default, "Return still adds a new line")
     }
 
-    func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenAnEmptyPromptKeepsTheVoiceButton() throws {
+    func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenAnEmptyPromptShowsADisabledAskUntilTyping() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        let sendButton = omniBarView.aiChatSendButton
+
+        XCTAssertEqual(sendButton.title(for: .normal), UserText.duckAIAskButtonTitle, "Ask stands in for the voice button")
+        XCTAssertNil(sendButton.image(for: .normal))
+        XCTAssertFalse(sendButton.isEnabled)
+
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+        omniBarView.updateAIChatSendButton(hasText: true)
+
+        XCTAssertEqual(sendButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        XCTAssertTrue(sendButton.isEnabled)
+    }
+
+    func testWhenTermsAreAlreadyAcceptedThenAnEmptyIPadDuckAIPromptShowsTheVoiceButton() throws {
+        termsStore.recordWebReport()
         let sut = makeSUTShowingTermsOfService()
         let omniBarView = try expandDuckAIPanel(of: sut)
 
         XCTAssertNil(omniBarView.aiChatSendButton.title(for: .normal))
         XCTAssertNotNil(omniBarView.aiChatSendButton.image(for: .normal))
+        XCTAssertTrue(omniBarView.aiChatSendButton.isEnabled)
     }
 
     func testWhenTermsAreAlreadyAcceptedThenIPadDuckAIReturnSubmitsAndSendKeepsItsArrow() throws {

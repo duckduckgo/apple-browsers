@@ -40,7 +40,7 @@ struct PreferencesWebsitePermissionSiteRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            FaviconView(url: faviconURL, size: Constants.faviconSize, placeholder: .globe)
+            FaviconView(url: faviconURL, size: Constants.faviconSize, placeholder: faviconURL == nil ? .globe : .letters)
 
             Text(domain)
                 .font(.system(size: 13, weight: .medium))

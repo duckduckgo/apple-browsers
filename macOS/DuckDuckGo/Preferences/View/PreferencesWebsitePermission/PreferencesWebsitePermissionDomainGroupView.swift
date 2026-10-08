@@ -75,7 +75,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
 
     private var domainHeader: some View {
         HStack(spacing: Constants.faviconSpacing) {
-            FaviconView(url: group.faviconURL, size: Constants.faviconSize, placeholder: .globe)
+            FaviconView(url: group.faviconURL, size: Constants.faviconSize, placeholder: group.faviconURL == nil ? .globe : .letters)
 
             Text(group.displayName)
                 .font(.system(size: 13, weight: .medium))

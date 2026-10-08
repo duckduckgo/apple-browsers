@@ -77,18 +77,22 @@ extension KeyboardSettingsViewController {
 struct KeyboardSettingsView: View {
     @State private var settings = KeyboardSettings()
 
-    // Reuse the existing storyboard translations for this screen's header and toggle labels.
     var body: some View {
         List {
-            Section(header: Text(NSLocalizedString("tGh-di-rfq.headerTitle", tableName: "Settings", value: "Show keyboard on", comment: ""))) {
-                SettingsCellView(label: NSLocalizedString("Zpg-h0-rYv.text", tableName: "Settings", value: "New Tab", comment: ""),
+            Section(header: Text(Self.storyboardString("tGh-di-rfq.headerTitle", value: "Show keyboard on"))) {
+                SettingsCellView(label: Self.storyboardString("Zpg-h0-rYv.text", value: "New Tab"),
                                  accessory: .toggle(isOn: $settings.onNewTab))
-                SettingsCellView(label: NSLocalizedString("13n-KI-KLq.text", tableName: "Settings", value: "App Launch", comment: ""),
+                SettingsCellView(label: Self.storyboardString("13n-KI-KLq.text", value: "App Launch"),
                                  accessory: .toggle(isOn: $settings.onAppLaunch))
             }
         }
         .applyInsetGroupedListStyle()
         .navigationBarTitle(UserText.settingsKeyboard, displayMode: .inline)
         .accentColor(Color(designSystemColor: .textPrimary))
+    }
+
+    /// Looks up the Keyboard storyboard's own translations, so this screen adds no strings to translate.
+    private static func storyboardString(_ key: String, value: String) -> String {
+        Bundle.main.localizedString(forKey: key, value: value, table: "Settings")
     }
 }

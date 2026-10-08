@@ -2262,9 +2262,7 @@ extension DefaultOmniBarView {
             self.attachmentsStripView.alpha = showStrip ? 1 : 0
             self.layoutIfNeeded()
         } completion: { _ in
-            if !showStrip {
-                self.attachmentsStripView.isHidden = true
-            }
+            self.hideAttachmentsStripIfEmpty()
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
                 self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
@@ -2477,10 +2475,15 @@ extension DefaultOmniBarView {
             self.attachmentsStripView.alpha = showStrip ? 1 : 0
             self.layoutIfNeeded()
         } completion: { _ in
-            if !showStrip {
-                self.attachmentsStripView.isHidden = true
-            }
+            self.hideAttachmentsStripIfEmpty()
         }
+    }
+
+    /// Re-evaluated at completion rather than captured at animation start: an attachment can land, and the
+    /// bar re-expand, while a collapse is still animating, and that collapse must not hide the strip.
+    private func hideAttachmentsStripIfEmpty() {
+        guard !isSearchAreaExpanded || attachmentsStripView.attachments.isEmpty else { return }
+        attachmentsStripView.isHidden = true
     }
 
     /// Toggles the textField's visibility so its placeholder shows through

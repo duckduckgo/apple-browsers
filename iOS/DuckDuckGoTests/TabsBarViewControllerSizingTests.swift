@@ -209,6 +209,101 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
+    func testReorderScrollsEarlyAndContinuouslyWithStationaryFingerAtEitherEdge() throws {
+        let (controller, model) = makeOverflowingController()
+        defer { withExtendedLifetime(model) {} }
+        let collectionView = controller.collectionView
+        let source = IndexPath(item: 4, section: 0)
+        let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
+        let tabWidth = layout.itemSize.width
+
+        for direction in [CGFloat(-1), 1] {
+            collectionView.contentOffset.x = 400
+            collectionView.layoutIfNeeded()
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: source))
+            let session = TabsDragDropSession(locationView: controller.view,
+                                             point: cell.convert(CGPoint(x: tabWidth / 2, y: cell.bounds.midY), to: controller.view))
+            session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+            XCTAssertEqual(session.items.count, 1)
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            let fingerX = direction < 0 ? viewport.minX + tabWidth * 1.5 : viewport.maxX - tabWidth * 1.5
+            session.point = collectionView.convert(CGPoint(x: fingerX, y: viewport.midY), to: controller.view)
+            _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: source)
+
+            for _ in 0..<10 {
+                let previousOffset = collectionView.contentOffset.x
+                controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+                XCTAssertGreaterThan(direction * (collectionView.contentOffset.x - previousOffset), 0)
+            }
+            controller.collectionView(collectionView, dragSessionDidEnd: session)
+        }
+    }
+
+    @MainActor
+    func testReorderScrollingDependsOnPreviewEdgesInsteadOfFingerGrabPosition() throws {
+        let (controller, model) = makeOverflowingController()
+        defer { withExtendedLifetime(model) {} }
+        let collectionView = controller.collectionView
+        let source = IndexPath(item: 4, section: 0)
+        var distances: [CGFloat] = []
+
+        for grabOffset in [CGFloat(20), 60] {
+            collectionView.contentOffset.x = 400
+            collectionView.layoutIfNeeded()
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: source))
+            let session = TabsDragDropSession(locationView: controller.view,
+                                             point: cell.convert(CGPoint(x: grabOffset, y: cell.bounds.midY), to: controller.view))
+            session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+            XCTAssertEqual(session.items.count, 1)
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            let previewMinX = viewport.minX + cell.bounds.width
+            session.point = collectionView.convert(CGPoint(x: previewMinX + grabOffset, y: viewport.midY), to: controller.view)
+            _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: source)
+            let previousOffset = collectionView.contentOffset.x
+            controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+            distances.append(collectionView.contentOffset.x - previousOffset)
+            controller.collectionView(collectionView, dragSessionDidEnd: session)
+        }
+        XCTAssertLessThan(distances[0], 0)
+        XCTAssertEqual(distances[0], distances[1], accuracy: 0.001)
+    }
+
+    @MainActor
+    func testReorderScrollingUsesPreviewEdgesInNarrowStrips() throws {
+        for width in [CGFloat(600), 300] {
+            let (controller, model) = makeOverflowingController()
+            defer { withExtendedLifetime(model) {} }
+            controller.view.frame.size.width = width
+            controller.view.layoutIfNeeded()
+            controller.refresh(tabsModel: model)
+            let collectionView = controller.collectionView
+            collectionView.contentOffset.x = 400
+            collectionView.layoutIfNeeded()
+            let source = IndexPath(item: 8, section: 0)
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: source))
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            XCTAssertLessThan(viewport.width, cell.bounds.width * 11 / 3)
+            XCTAssertGreaterThan(viewport.width, 0)
+            let session = TabsDragDropSession(locationView: controller.view,
+                                             point: cell.convert(CGPoint(x: 20, y: cell.bounds.midY), to: controller.view))
+            session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+            XCTAssertEqual(session.items.count, 1)
+            let fingerX = viewport.midX - cell.bounds.width / 2 + 20
+            session.point = collectionView.convert(CGPoint(x: fingerX, y: viewport.midY), to: controller.view)
+            _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: source)
+            let previousOffset = collectionView.contentOffset
+            for _ in 0..<10 {
+                controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+            }
+            XCTAssertEqual(collectionView.contentOffset.x, previousOffset.x, accuracy: 0.001)
+            session.point.x += 20
+            controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
+            XCTAssertGreaterThan(collectionView.contentOffset.x, previousOffset.x)
+            controller.collectionView(collectionView, dragSessionDidEnd: session)
+        }
+    }
+
+    @MainActor
     func testReorderScrollingClampsAtBothContentEnds() throws {
         let (controller, model) = makeOverflowingController()
         defer { withExtendedLifetime(model) {} }

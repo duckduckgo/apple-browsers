@@ -240,6 +240,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var tabAttachmentsRequirePromptText = false {
+        didSet { updateSubmitButtonAvailability() }
+    }
+
     var isInputBlockedByUsageLimit: Bool = false {
         didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
     }
@@ -1644,6 +1648,8 @@ final class UnifiedToggleInputView: UIView {
         let hasValidAttachment = isAIChatMode && attachmentsStrip.attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
 
+        toolsToolbar.isSubmitBlockedByMissingPromptText = tabAttachmentsRequirePromptText && isAIChatMode
+            && !hasText && hasValidAttachment && attachmentsStrip.attachments.allSatisfy(\.isTab)
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
         updateSubmitButtonStyle()
     }

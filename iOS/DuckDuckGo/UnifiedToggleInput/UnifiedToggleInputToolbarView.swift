@@ -67,6 +67,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    var isSubmitBlockedByMissingPromptText = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
     /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
     var isInputBlockedByUsageLimit: Bool = false {
         didSet {
@@ -776,7 +780,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing && !isSubmitBlockedByMissingPromptText
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -795,12 +799,12 @@ private extension UnifiedToggleInputToolbarView {
         submitButtonWidthConstraint.constant = labelTitle.map {
             AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.toolButtonSize)
         } ?? Constants.toolButtonSize
-        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
+        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard && !isSubmitBlockedByMissingPromptText
         let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
         // The blocked button keeps its icon and takes the inactive submit fill: the voice and
         // return-key styles have no disabled state of their own.
-        if isInputBlockedByUsageLimit {
+        if isInputBlockedByUsageLimit || isSubmitBlockedByMissingPromptText {
             submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
         } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
@@ -844,6 +848,7 @@ private extension UnifiedToggleInputToolbarView {
         onReasoningPickerShown?()
     }
     @objc private func submitTapped() {
+        guard !isSubmitBlockedByMissingPromptText else { return }
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()
         } else {

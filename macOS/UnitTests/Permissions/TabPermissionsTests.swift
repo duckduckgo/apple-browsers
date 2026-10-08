@@ -471,8 +471,6 @@ final class TabPermissionsTests: XCTestCase {
 
     // MARK: - App link helpers
 
-    private static let appLinkSourcePageURL = URL(string: "https://page.example/")!
-
     @MainActor
     private func makeAppLinkHandler() -> (ExternalAppSchemeHandler, PermissionModelMock) {
         let workspace = WorkspaceMock()
@@ -483,7 +481,7 @@ final class TabPermissionsTests: XCTestCase {
     }
 
     private func makeNavigationAction(to url: URL, navigationType: NavigationType, redirectHistory: [NavigationAction]? = nil) -> NavigationAction {
-        let pageURL = Self.appLinkSourcePageURL
+        let pageURL = URL(string: "https://page.example/")!
         let sourceFrame = FrameInfo(webView: nil, handle: FrameHandle(rawValue: 1 as UInt64)!, isMainFrame: true, url: pageURL, securityOrigin: pageURL.securityOrigin)
         return NavigationAction(request: URLRequest(url: url), navigationType: navigationType, currentHistoryItemIdentity: nil,
                                 redirectHistory: redirectHistory, isUserInitiated: true, sourceFrame: sourceFrame, targetFrame: nil,

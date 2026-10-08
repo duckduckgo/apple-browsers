@@ -478,6 +478,11 @@ class TabsBarViewController: UIViewController {
     /// Excludes the sticky button's reserved contentInset, else a tab under it reads as "visible".
     private func isPartiallyClipped(at indexPath: IndexPath) -> Bool {
         guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else { return false }
+        if indexPath.item != currentIndex,
+           let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+           layout.unpinnedFrameForItem(at: indexPath) != attributes.frame {
+            return true
+        }
         let visibleSize = CGSize(
             width: collectionView.bounds.width - collectionView.contentInset.right,
             height: collectionView.bounds.height
@@ -792,7 +797,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
         return UITargetedPreview(view: cell, parameters: parameters)
     }
 
-    /// Half-opaque so an inactive tab (clear cell) reads as a card, not transparent, when lifted.
+    /// Gives the lifted tab a card background.
     private var tabLiftBackgroundColor: UIColor {
         ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.5)
     }

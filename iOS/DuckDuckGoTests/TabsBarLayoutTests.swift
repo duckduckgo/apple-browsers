@@ -118,6 +118,8 @@ final class TabsBarLayoutTests: XCTestCase {
 @MainActor
 final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSource {
 
+    private var itemCount = 10
+
     func testCurrentTabRemainsVisibleWhenScrolledPastLeadingEdge() throws {
         let (collectionView, layout) = makeCollectionView(currentIndex: { 0 }, contentOffset: 300)
         let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
@@ -168,14 +170,88 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         collectionView.layoutIfNeeded()
         let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
 
-        XCTAssertEqual(layout.layoutAttributesForItem(at: previousIndexPath)?.frame.minX, 0)
-        XCTAssertEqual(layout.layoutAttributesForItem(at: previousIndexPath)?.zIndex, 0)
+        let previous = try XCTUnwrap(layout.layoutAttributesForItem(at: previousIndexPath))
+        let middle = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: 5, section: 0)))
+        XCTAssertEqual(previous.frame.minX, 310)
+        XCTAssertLessThan(previous.zIndex, middle.zIndex)
         XCTAssertFalse(attributes.contains { $0.indexPath == previousIndexPath })
         XCTAssertEqual(attributes.first { $0.indexPath.item == 9 }?.frame.maxX, 840)
     }
 
-    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0)
+    func testEdgeStacksStayInsideTabViewportWithManyTabs() throws {
+        var sawLeadingOverlap = false
+        var sawTrailingOverlap = false
+        for offset in [CGFloat(30), 5790, 11460] {
+            let (collectionView, layout) = makeCollectionView(currentIndex: { 50 }, contentOffset: offset, itemCount: 100)
+            let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+            let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
+            let trailing = collectionView.bounds.maxX - collectionView.adjustedContentInset.right
+            XCTAssertLessThan(attributes.count, 15)
+            XCTAssertEqual(attributes.filter { $0.indexPath.item == 50 }.count, 1)
+            XCTAssertFalse(collectionView.visibleCells.isEmpty)
+            for cell in collectionView.visibleCells {
+                XCTAssertGreaterThanOrEqual(cell.frame.minX, leading)
+                XCTAssertLessThanOrEqual(cell.frame.maxX, trailing)
+            }
+            let reservedPoint = CGPoint(x: trailing + 1, y: collectionView.bounds.midY)
+            XCTAssertTrue(collectionView.hitTest(reservedPoint, with: nil) === collectionView)
+
+            let inactive = attributes.filter { $0.indexPath.item != 50 }.sorted { $0.indexPath.item < $1.indexPath.item }
+            for (left, right) in zip(inactive, inactive.dropFirst()) where left.frame.intersects(right.frame) {
+                if left.frame.minX == leading {
+                    sawLeadingOverlap = true
+                    XCTAssertLessThan(left.zIndex, right.zIndex)
+                }
+                if right.frame.maxX == trailing {
+                    sawTrailingOverlap = true
+                    XCTAssertGreaterThan(left.zIndex, right.zIndex)
+                }
+            }
+        }
+        XCTAssertTrue(sawLeadingOverlap)
+        XCTAssertTrue(sawTrailingOverlap)
+    }
+
+    func testPointerBoundsExcludeCoveredPartsOfEdgeTabsAndCloseButton() throws {
+        let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 10)
+        let window = UIWindow(frame: collectionView.frame)
+        window.addSubview(collectionView)
+        defer { window.subviews.forEach { $0.removeFromSuperview() } }
+        let leading = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 0, section: 0)) as? TabsBarCell)
+        let trailing = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)) as? TabsBarCell)
+        let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 2, section: 0)) as? TabsBarCell)
+        let covered = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)) as? TabsBarCell)
+        for cell in [leading, trailing, selected, covered] {
+            cell.layoutIfNeeded()
+        }
+
+        let leadingRect = CGRect(x: 0, y: 0, width: 100, height: 40)
+        let trailingRect = CGRect(x: 50, y: 0, width: 70, height: 40)
+        XCTAssertEqual(leading.visiblePointerRect(in: leading.contentView), leadingRect)
+        XCTAssertEqual(trailing.visiblePointerRect(in: trailing.contentView), trailingRect)
+        XCTAssertEqual(selected.visiblePointerRect(in: selected.contentView), selected.contentView.bounds)
+        XCTAssertTrue(covered.visiblePointerRect(in: covered.contentView).isEmpty)
+        XCTAssertEqual(leading.visiblePointerRect(in: leading.removeButton), CGRect(x: 0, y: 0, width: 20, height: 40))
+
+        let interaction = try XCTUnwrap(covered.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
+        let region = UIPointerRegion(rect: covered.contentView.bounds, identifier: nil)
+        XCTAssertNil(covered.pointerInteraction(interaction, styleFor: region))
+
+        if #available(iOS 17, *) {
+            for (cell, expectedRect) in [(leading, leadingRect), (trailing, trailingRect)] {
+                let pointer = try XCTUnwrap(cell.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
+                let style = try XCTUnwrap(cell.pointerInteraction(pointer, styleFor: UIPointerRegion(rect: cell.contentView.bounds)))
+                // Inspect UIKit's Objective-C effect; the Swift hover-style overlay erases its concrete type.
+                let effect = try XCTUnwrap(style.__effect as? __UIPointerHoverEffect)
+                XCTAssertEqual(effect.preview.parameters.visiblePath?.bounds, expectedRect)
+                XCTAssertFalse(effect.prefersScaledContent)
+            }
+        }
+    }
+
+    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0, itemCount: Int = 10)
         -> (UICollectionView, TabsBarCollectionViewLayout) {
+        self.itemCount = itemCount
         let layout = TabsBarCollectionViewLayout()
         layout.scrollDirection = .horizontal
         layout.itemSize = CGSize(width: 120, height: 40)
@@ -195,7 +271,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        10
+        itemCount
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {

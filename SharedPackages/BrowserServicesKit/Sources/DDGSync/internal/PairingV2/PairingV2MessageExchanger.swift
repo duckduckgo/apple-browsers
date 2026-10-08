@@ -39,13 +39,19 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
     /// creation time to propagate). Nanoseconds; default is 0.2s then 0.5s — two retries.
     private let firstMessagePostChannelUnavailableRetryDelays: [UInt64]
     private var channelsWithCompletedFirstMessagePost: Set<String> = []
+    /// Retry delays for an initial message GET when this channel hasn't propagated yet.
+    /// Nanoseconds; default is 0.2s then 0.5s — two retries.
+    private let initialMessageGetChannelUnavailableRetryDelays: [UInt64]
+    private var channelsWithSuccessfulMessageGet: Set<String> = []
 
     init(endpoints: Endpoints,
          api: RemoteAPIRequestCreating,
-         firstMessagePostChannelUnavailableRetryDelays: [UInt64] = [200_000_000, 500_000_000]) {
+         firstMessagePostChannelUnavailableRetryDelays: [UInt64] = [200_000_000, 500_000_000],
+         initialMessageGetChannelUnavailableRetryDelays: [UInt64] = [200_000_000, 500_000_000]) {
         self.endpoints = endpoints
         self.api = api
         self.firstMessagePostChannelUnavailableRetryDelays = firstMessagePostChannelUnavailableRetryDelays
+        self.initialMessageGetChannelUnavailableRetryDelays = initialMessageGetChannelUnavailableRetryDelays
     }
 
     func openChannel(_ channelID: String) async throws {
@@ -76,7 +82,7 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
                                         parameters: ["after": String(sequence)],
                                         body: nil,
                                         contentType: nil)
-        let result = try await executeRelayRequest(request)
+        let result = try await executeInitialMessageGet(request, from: channelID)
         guard let body = result.data else {
             throw SyncError.noResponseBody
         }
@@ -147,6 +153,29 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
             } catch let error as PairingV2RelayRequestError {
                 if error.kind == .unavailable,
                    !channelsWithCompletedFirstMessagePost.contains(channelID),
+                   !retryDelays.isEmpty {
+                    let retryDelay = retryDelays.removeFirst()
+                    if retryDelay > 0 {
+                        try await Task.sleep(nanoseconds: retryDelay)
+                    }
+                    continue
+                }
+                throw error
+            }
+        }
+    }
+
+    private func executeInitialMessageGet(_ request: HTTPRequesting, from channelID: String) async throws -> HTTPResult {
+        var retryDelays = channelsWithSuccessfulMessageGet.contains(channelID) ? [] : initialMessageGetChannelUnavailableRetryDelays
+
+        while true {
+            do {
+                let result = try await executeRelayRequest(request)
+                channelsWithSuccessfulMessageGet.insert(channelID)
+                return result
+            } catch let error as PairingV2RelayRequestError {
+                if error.kind == .unavailable,
+                   !channelsWithSuccessfulMessageGet.contains(channelID),
                    !retryDelays.isEmpty {
                     let retryDelay = retryDelays.removeFirst()
                     if retryDelay > 0 {

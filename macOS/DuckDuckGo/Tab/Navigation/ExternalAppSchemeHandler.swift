@@ -117,9 +117,7 @@ extension ExternalAppSchemeHandler: NavigationResponder {
         }
 
         let permissionType = PermissionType.externalScheme(scheme: scheme)
-        // Check for cross-origin redirects first, then use domain from the url for user-entered app schemes, then use current website domain
-        let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host
-        let domain = redirectDomain ?? (navigationAction.isUserEnteredUrl ? navigationAction.url.host ?? "" : permissionModel.permissionDomain(for: navigationAction.sourceFrame.securityOrigin))
+        let domain = permissionDomain(for: navigationAction)
         permissionModel.permissions([permissionType], requestedForDomain: domain, url: externalUrl) { [workspace] isGranted in
             if isGranted {
                 workspace.open(externalUrl)
@@ -130,6 +128,20 @@ extension ExternalAppSchemeHandler: NavigationResponder {
             }
         }
         return .cancel
+    }
+
+    /// The website the app link's permission is saved for.
+    private func permissionDomain(for navigationAction: NavigationAction) -> String {
+        // Cross-origin redirect: the website that redirected to the app
+        if let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host {
+            return redirectDomain
+        }
+        // Typed in the address bar: the app link's own host, if any
+        if navigationAction.isUserEnteredUrl {
+            return navigationAction.url.host ?? ""
+        }
+        // Link on a page: the website it was clicked on
+        return permissionModel.permissionDomain(for: navigationAction.sourceFrame.securityOrigin)
     }
 
     func navigationDidFinish(_ navigation: Navigation) {

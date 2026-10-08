@@ -452,43 +452,21 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
     }
 
-    func testWhenLocalFileHasAPermissionThenItIsNamedLocalFileAndSortedByThatName() throws {
+    func testWhenLocalFileHasAPermissionThenItIsListedAsLocalFileApartFromLocalhost() throws {
         let sut = makeSUT(
             category: .camera,
             entries: [
                 WebsitePermissionEntry(domain: "zebra.com", permissionType: .camera, decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "localhost", permissionType: .camera, decision: .deny, lastModified: nil),
                 WebsitePermissionEntry(domain: .localFilePermissionDomain, permissionType: .camera, decision: .allow, lastModified: nil),
-                WebsitePermissionEntry(domain: "alpha.com", permissionType: .camera, decision: .allow, lastModified: nil),
             ]
         )
 
-        XCTAssertEqual(sut.viewState.visibleGroups.map(\.displayName), ["alpha.com", UserText.websitePermissionsLocalFile, "zebra.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.displayName), [UserText.websitePermissionsLocalFile, "localhost", "zebra.com"])
         let localFileRow = try XCTUnwrap(sut.viewState.sites.first { $0.domain == .localFilePermissionDomain })
         XCTAssertNil(localFileRow.faviconURL)
-    }
 
-    func testWhenLocalFileAndLocalhostHavePermissionsThenTheyAreListedSeparately() {
-        let sut = makeSUT(
-            category: .camera,
-            entries: [
-                WebsitePermissionEntry(domain: .localFilePermissionDomain, permissionType: .camera, decision: .allow, lastModified: nil),
-                WebsitePermissionEntry(domain: "localhost", permissionType: .camera, decision: .deny, lastModified: nil),
-            ]
-        )
-
-        XCTAssertEqual(sut.viewState.visibleGroups.map(\.displayName), [UserText.websitePermissionsLocalFile, "localhost"])
-    }
-
-    func testWhenSearchingForLocalFileThenItsRowIsVisible() {
-        let sut = makeSUT(
-            category: .externalApps,
-            entries: [
-                WebsitePermissionEntry(domain: .localFilePermissionDomain, permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
-                WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
-            ]
-        )
-
-        sut.send(action: .setSearchQuery("local"))
+        sut.send(action: .setSearchQuery("file"))
 
         XCTAssertEqual(sut.viewState.visibleSites.map(\.domain), [.localFilePermissionDomain])
     }

@@ -2363,7 +2363,7 @@ class MainViewController: UIViewController {
     /// focus asynchronously, but enters its editing state synchronously when it accepts the request; resuming
     /// a suspended session takes first responder synchronously and enters the editing state later.
     private var isAutomaticFocusAccepted: Bool {
-        omniBar.isTextFieldEditing
+        omniBar.isInputFirstResponder
             || unifiedToggleInputCoordinator?.isOmnibarEditing == true
             || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
     }
@@ -2412,7 +2412,7 @@ class MainViewController: UIViewController {
         currentNTPEscapeHatch = hatch
         configureUnifiedInputEscapeHatch(hatch)
         postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        let focused = omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
+        let focused = omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
         fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: focused)
         return true
     }
@@ -2984,7 +2984,7 @@ class MainViewController: UIViewController {
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
               let tab = tabManager.currentTabsModel.currentTab else { return }
         // A suspended UTI session can outlive a user dismissal, so remember only actual input focus.
-        let isInputFocused = omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
+        let isInputFocused = omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
         NewTabPageKeyboardPolicy().rememberInputFocusForTabSwitch(
             on: tab, isInputFocused: isInputFocused, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
     }
@@ -4105,16 +4105,16 @@ class MainViewController: UIViewController {
     /// Finish both input teardown and modal dismissal before starting the visit or raising the keyboard.
     /// Only `screenLeftOpen` is closed, so a launch prompt presented while App Lock was showing stays.
     func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void) {
-        guard isAppOpenKeyboardWindowVisible else { return }
-        guard let presentedViewController, presentedViewController === screenLeftOpen else {
+        guard let screenLeftOpen, presentedViewController === screenLeftOpen else {
             completion()
             return
         }
         // Dismissing a tab switcher on an empty Fire page switches to Fire mode with no tab to show.
         if let tabSwitcherController, !tabSwitcherController.canDismissOnEmpty, tabSwitcherController.tabsModel.isEmpty {
+            completion()
             return
         }
-        dismissScreensForAppOpen { [weak self] in
+        dismissScreensForAppOpen(screenLeftOpen: screenLeftOpen) { [weak self] in
             guard let self else { return }
             // Foregrounding skipped this visit while another screen covered the page.
             if isNewTabPageVisible, presentedViewController == nil {
@@ -4135,11 +4135,10 @@ class MainViewController: UIViewController {
         presented.dismiss(animated: true, completion: completion)
     }
 
-    private func dismissScreensForAppOpen(completion: @escaping () -> Void) {
-        guard isAppOpenKeyboardWindowVisible else { return }
+    private func dismissScreensForAppOpen(screenLeftOpen: UIViewController, completion: @escaping () -> Void) {
         let requestID = appOpenKeyboardRequestID
-        clearNavigationStack(forAppOpen: true) { [weak self] in
-            guard let self, appOpenKeyboardRequestID == requestID, isAppOpenKeyboardWindowVisible else { return }
+        clearNavigationStack(forAppOpen: true, dismissing: screenLeftOpen) { [weak self] in
+            guard let self, appOpenKeyboardRequestID == requestID else { return }
             completion()
         }
     }
@@ -5586,7 +5585,7 @@ extension MainViewController: BrowserChromeDelegate {
 
         case .openTab(title: _, url: let url, tabId: let tabId, _):
             if newTabPageViewController != nil, let tab = tabManager.currentTabsModel.currentTab {
-                self.closeTab(tab)
+                self.closeTab(tab, allowingKeyboard: false)
             }
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
@@ -6105,7 +6104,6 @@ extension MainViewController: OmniBarDelegate {
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
                 self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
-                self?.showKeyboardOnNewTabPageIfAllowed()
             }
         ))
     }
@@ -6647,7 +6645,7 @@ extension MainViewController: OmniBarDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: .returnToPageTapped)
         viewCoordinator.omniBar.endEditing()
         if let currentTab {
-            closeTab(currentTab)
+            closeTab(currentTab, allowingKeyboard: false)
         }
         selectTab(tab)
     }
@@ -7003,7 +7001,7 @@ extension MainViewController: NewTabPageControllerDelegate {
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
         postIdleSessionInstrumentation.sessionEnded(reason: .returnToPageTapped)
         if let currentTab {
-            closeTab(currentTab)
+            closeTab(currentTab, allowingKeyboard: false)
         }
         selectTab(tab)
         clearEscapeHatch()
@@ -7220,9 +7218,11 @@ extension MainViewController: TabDelegate {
     func tabDidRequestClose(_ tab: Tab,
                             behavior: TabClosingBehavior,
                             clearTabHistory: Bool) {
+        // Fire owns focus after its burn completes, including preserving an escape-hatch dismissal.
         closeTab(tab,
                  behavior: behavior,
-                 clearTabHistory: clearTabHistory)
+                 clearTabHistory: clearTabHistory,
+                 allowingKeyboard: behavior != .createOrReuseEmptyTab)
     }
 
     func tabLoadingStateDidChange(tab: TabViewController) {
@@ -7896,7 +7896,9 @@ extension MainViewController: TabSwitcherDelegate {
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true,
-                  refreshInPlace: Bool = false) {
+                  refreshInPlace: Bool = false,
+                  allowingKeyboard: Bool = true) {
+        let closesCurrentTab = tab === tabManager.currentTabsModel.currentTab
         newTabPageControllerStore.removePage(for: tab)
         recordDuckAISessionCloseIfNeeded(closingTabs: [tab])
 
@@ -7947,6 +7949,9 @@ extension MainViewController: TabSwitcherDelegate {
         } else {
             updateCurrentTab()
             refreshTabBar()
+        }
+        if closesCurrentTab && allowingKeyboard {
+            showKeyboardOnNewTabPageIfAllowed()
         }
     }
 
@@ -8127,14 +8132,14 @@ extension MainViewController: GestureToolbarButtonDelegate {
 
 extension MainViewController {
 
-    func clearNavigationStack(forAppOpen: Bool = false, completion: (() -> Void)? = nil) {
+    func clearNavigationStack(forAppOpen: Bool = false, dismissing screenLeftOpen: UIViewController? = nil, completion: (() -> Void)? = nil) {
         isClearingNavigationForAppOpen = forAppOpen
         defer { isClearingNavigationForAppOpen = false }
         dismissOmniBar(animated: !forAppOpen)
 
-        if let presented = presentedViewController {
+        if let presented = presentedViewController, !forAppOpen || presented === screenLeftOpen {
             presented.dismiss(animated: false) { [weak self] in
-                self?.clearNavigationStack(forAppOpen: forAppOpen, completion: completion)
+                self?.clearNavigationStack(forAppOpen: forAppOpen, dismissing: screenLeftOpen, completion: completion)
             }
         } else {
             completion?()
@@ -9140,7 +9145,6 @@ extension MainViewController {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
             self.closeTab(tab, behavior: .createEmptyTabAtSamePosition)
-            self.showKeyboardOnNewTabPageIfAllowed()
 
         case .newTab:
             self.newTab()
@@ -9254,7 +9258,6 @@ extension MainViewController {
         case .home:
             guard let tab = currentTab?.tabModel else { return }
             closeTab(tab, behavior: .createEmptyTabAtSamePosition)
-            showKeyboardOnNewTabPageIfAllowed()
 
         case .newTab:
             newTab()

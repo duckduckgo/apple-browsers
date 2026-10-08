@@ -329,6 +329,47 @@ class QuerySubmittedTests: XCTestCase {
 final class NewTabPageAppOpenFocusTests {
 
     @available(iOS 16, macOS 13, *)
+    @Test("Legacy input focus includes the iPad Duck.ai text view", .timeLimit(.minutes(1)), arguments: [false, true])
+    func legacyInputFocusIncludesIPadDuckAI(flagOn: Bool) throws {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = sut
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        defer {
+            sut.endEditing()
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+        let omnibar: any OmniBar = sut
+        #expect(!omnibar.isInputFirstResponder)
+
+        sut.beginEditing(animated: false)
+        #expect(sut.barView.textField.isFirstResponder)
+        #expect(omnibar.isTextFieldEditing)
+        #expect(omnibar.isInputFirstResponder)
+
+        let expandable = try #require(sut.expandableBarView)
+        expandable.setSearchAreaExpanded(true, animated: false)
+        #expect(expandable.aiChatTextView.isFirstResponder)
+        #expect(!omnibar.isTextFieldEditing)
+        #expect(omnibar.isInputFirstResponder)
+
+        var didFocus: Bool?
+        sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { true }) { didFocus = $0 }
+        #expect(didFocus == true)
+        #expect(omnibar.isInputFirstResponder)
+
+        sut.endEditing()
+        #expect(!omnibar.isInputFirstResponder)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Automatic New Tab focus follows the keyboard flag as it changes at runtime", .timeLimit(.minutes(1)))
     func automaticFocusFollowsFlagChanges() {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])

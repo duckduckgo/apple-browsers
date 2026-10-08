@@ -319,7 +319,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return
         }
         super.beginEditing(animated: true, forTextEntryMode: nil)
-        completion(isTextFieldEditing)
+        completion(isInputFirstResponder)
     }
 
     override func setSelectedTextEntryMode(_ mode: TextEntryMode) {

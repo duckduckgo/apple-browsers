@@ -42,13 +42,4 @@ public protocol WebExtensionWindowTabProviding: AnyObject {
     /// Presents the action popup for the given extension context.
     func presentPopup(_ action: WKWebExtension.Action,
                       for context: WKWebExtensionContext) async throws
-
-    /// Closes whatever hosts `popupWebView`, whose page called `window.close()`. Does nothing by default.
-    func dismissPopup(for popupWebView: WKWebView)
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-public extension WebExtensionWindowTabProviding {
-
-    func dismissPopup(for popupWebView: WKWebView) {}
 }

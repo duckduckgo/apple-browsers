@@ -172,6 +172,11 @@ final class AIChatOmnibarController {
     /// inert alongside the buttons.
     @Published var isInputBlockedByUsageLimit = false
 
+    let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+
+    /// Set by the container VC from the card it renders: an Ask click accepts the terms only while it's on screen.
+    var isTermsOfServiceDisclaimerShown = false
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
@@ -349,7 +354,8 @@ final class AIChatOmnibarController {
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        usageLimitsStore: DuckAiUsageLimitsStore? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -368,6 +374,7 @@ final class AIChatOmnibarController {
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.usageLimitsStore = usageLimitsStore
+        self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -1359,7 +1366,9 @@ final class AIChatOmnibarController {
         return nil
     }
 
-    func submit() {
+    /// `sentWithAsk` is a send-button click rather than Return. Only that click accepts the Terms of Service,
+    /// and only with the disclaimer on screen; the prompt carries it to the web app either way.
+    func submit(sentWithAsk: Bool = false) {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasSendableAttachments else {
             return
         }
@@ -1386,6 +1395,9 @@ final class AIChatOmnibarController {
         firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
+        if sentWithAsk {
+            termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
+        }
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1488,7 +1500,7 @@ final class AIChatOmnibarController {
                 pageContext: pageContextPayload,
                 mode: mode,
                 reasoningEffort: reasoningEffort
-            )
+            ).withTermsAccepted(sentWithAsk)
 
             if surface.routesSubmissionThroughHost {
                 delegate?.aiChatOmnibarController(self, requestsSubmissionOf: trimmedText, payload: prompt)

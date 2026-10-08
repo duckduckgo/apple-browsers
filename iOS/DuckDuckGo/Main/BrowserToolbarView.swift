@@ -494,15 +494,6 @@ final class BrowserToolbarView: UIView {
     func setFloatingStyleEnabled(_ enabled: Bool, animated: Bool = false) {
         guard isFloatingStyleEnabled != enabled else { return }
         isFloatingStyleEnabled = enabled
-        if !enabled {
-            materialInterfaceStyle = nil
-            materialBackgroundView.overrideUserInterfaceStyle = .unspecified
-            chromeContentHost.overrideUserInterfaceStyle = .unspecified
-            if #available(iOS 26.0, *) {
-                materialBackgroundView.cornerConfiguration = .corners(radius: .fixed(0))
-                chromeContentHost.cornerConfiguration = .corners(radius: .fixed(0))
-            }
-        }
         applyCurrentStyle(animated: animated)
     }
 
@@ -630,13 +621,15 @@ final class BrowserToolbarView: UIView {
         guard isFloatingStyleEnabled else { return }
         materialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
-            materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
-            chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
+            if #available(iOS 26.0, *) {
+                materialBackgroundView.overrideUserInterfaceStyle = .unspecified
+                chromeContentHost.overrideUserInterfaceStyle = .unspecified
+            } else {
+                materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+                chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
+            }
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
-            if #available(iOS 26.0, *) {
-                FloatingGlassAppearancePolicy.applyGlassBackground(to: materialBackgroundView, interfaceStyle: interfaceStyle)
-            }
             materialBackgroundView.layoutIfNeeded()
         }
         scheduleHostedOmnibarMaterialRefresh()
@@ -1043,11 +1036,6 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
-            if #available(iOS 26.0, *), self.isFloatingStyleEnabled {
-                FloatingGlassAppearancePolicy.applyGlassBackground(
-                    to: self.materialBackgroundView,
-                    interfaceStyle: self.materialInterfaceStyle ?? self.traitCollection.userInterfaceStyle)
-            }
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.applyContentStackMetrics()
             self.rebuildButtonRow()
@@ -1067,6 +1055,9 @@ final class BrowserToolbarView: UIView {
         }
     }
 
+    /// Rebuilds the glass so it re-resolves against whatever is now behind the capsule. Swapping the
+    /// surface under the bar (web page <-> new tab page) doesn't invalidate the effect on its own, so
+    /// a light page's material survives into a dark NTP and the capsule reads lighter than its backdrop.
     func refreshMaterialBackdrop() {
         guard isFloatingStyleEnabled else { return }
         UIView.performWithoutAnimation {
@@ -1078,8 +1069,7 @@ final class BrowserToolbarView: UIView {
 
     private func materialEffect() -> UIVisualEffect {
         if #available(iOS 26.0, *) {
-            return FloatingGlassAppearancePolicy.glassEffect(
-                interfaceStyle: materialInterfaceStyle ?? traitCollection.userInterfaceStyle)
+            return UIGlassEffect(style: .regular)
         } else {
             return UIBlurEffect(style: .systemThinMaterial)
         }

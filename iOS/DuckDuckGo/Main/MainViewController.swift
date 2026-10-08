@@ -102,29 +102,17 @@ enum FloatingGlassAppearancePolicy {
     }
 
     static func interfaceStyle(isFireMode: Bool,
-                               traitCollection: UITraitCollection) -> UIUserInterfaceStyle {
+                               traitCollection: UITraitCollection,
+                               pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
         if isFireMode {
             return .dark
         }
-        return traitCollection.userInterfaceStyle == .dark ? .dark : .light
-    }
-
-    @available(iOS 26.0, *)
-    static func glassEffect(interfaceStyle: UIUserInterfaceStyle) -> UIGlassEffect {
-        let effect = UIGlassEffect(style: .regular)
-        effect.tintColor = UIColor.systemBackground
-            .resolvedColor(with: UITraitCollection(userInterfaceStyle: interfaceStyle))
-        return effect
-    }
-
-    @available(iOS 26.0, *)
-    static func applyGlassBackground(to view: UIVisualEffectView, interfaceStyle: UIUserInterfaceStyle) {
-        if #available(iOS 27.0, *) {
-            return
+        // Follow the page in both themes: forcing dark glass over a light page leaves its white icons washed out.
+        guard let pageBackgroundColor else {
+            return traitCollection.userInterfaceStyle == .dark ? .dark : .light
         }
-        // iOS 26 tint still takes page color.
-        view.backgroundColor = UIColor.systemBackground
-            .resolvedColor(with: UITraitCollection(userInterfaceStyle: interfaceStyle))
+        let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
+        return resolvedColor.brightnessPercentage < 50 ? .dark : .light
     }
 }
 
@@ -418,7 +406,6 @@ class MainViewController: UIViewController {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
         viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
-        floatingDomainCapsuleController.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
         // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
         // in the navigation bar container instead, so its glass keeps the style it was snapshotted
         // with and lands opaque before flipping translucent a frame later.
@@ -431,7 +418,8 @@ class MainViewController: UIViewController {
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
         FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: tabManager.currentBrowsingMode == .fire,
-            traitCollection: UITraitCollection(userInterfaceStyle: themeManager.currentInterfaceStyle))
+            traitCollection: UITraitCollection(userInterfaceStyle: themeManager.currentInterfaceStyle),
+            pageBackgroundColor: settledFloatingGlassPageBackgroundColor)
     }
 
     private var settledFloatingGlassPageBackgroundColor: UIColor? {
@@ -550,11 +538,21 @@ class MainViewController: UIViewController {
                               isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
+    // Refresh glass when page colors change.
     private var pageBackgroundColorObservation: NSKeyValueObservation?
+    private var siteThemeColorObservation: NSKeyValueObservation?
+    private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
     private func observePageBackgroundColor(for tab: TabViewController) {
-        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak tab] _, _ in
+        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self, weak tab] _, _ in
             tab?.pullToRefreshViewAdapter?.webViewUnderPageBackgroundDidChange()
+            self?.refreshSettledFloatingGlassAppearance()
+        }
+        siteThemeColorObservation = tab.webView.observe(\.themeColor, options: [.initial, .new]) { [weak self] _, _ in
+            self?.refreshSettledFloatingGlassAppearance()
+        }
+        pageContentBackgroundColorObservation = tab.observe(\.floatingPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in
+            self?.refreshSettledFloatingGlassAppearance()
         }
     }
 
@@ -2399,6 +2397,8 @@ class MainViewController: UIViewController {
         }
 
         pageBackgroundColorObservation = nil
+        siteThemeColorObservation = nil
+        pageContentBackgroundColorObservation = nil
         refreshSettledFloatingGlassAppearance()
 
         // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab

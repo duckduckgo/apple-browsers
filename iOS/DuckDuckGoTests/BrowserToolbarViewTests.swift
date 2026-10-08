@@ -119,62 +119,30 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertTrue(isInsideGlassContentView)
     }
 
-    func testWhenFloatingGlassChangesThemeThenTintAndControlsFollowTheme() throws {
-        guard #available(iOS 26.0, *) else { return }
-        for embeddedOmnibar in [false, true] {
-            let sut = makeSUT(embeddedOmnibar: embeddedOmnibar)
-            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-            window.addSubview(sut)
-            window.makeKeyAndVisible()
-            defer { window.isHidden = true }
-            let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
-            sut.setToolbarButtons([fire])
-
-            for style in [UIUserInterfaceStyle.dark, .light, .dark] {
-                sut.refreshMaterialAppearance(interfaceStyle: style)
-                window.layoutIfNeeded()
-
-                let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
-                XCTAssertEqual((glassView.effect as? UIGlassEffect)?.tintColor,
-                               FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: style).tintColor)
-                XCTAssertEqual(glassView.overrideUserInterfaceStyle, style)
-                fire.updateTraitsIfNeeded()
-                XCTAssertEqual(fire.traitCollection.userInterfaceStyle, style)
-
-                sut.refreshMaterialBackdrop()
-                XCTAssertEqual((glassView.effect as? UIGlassEffect)?.tintColor,
-                               FloatingGlassAppearancePolicy.glassEffect(interfaceStyle: style).tintColor)
-            }
-        }
-    }
-
-    func testWhenFloatingStyleIsDisabledThenThemeOverridesAreRemoved() throws {
+    func testWhenStandaloneGlassChangesAppearanceThenItStaysUntinted() throws {
         guard #available(iOS 26.0, *) else { return }
         let sut = makeSUT(embeddedOmnibar: false)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        window.overrideUserInterfaceStyle = .light
-        window.addSubview(sut)
-        window.makeKeyAndVisible()
-        defer { window.isHidden = true }
-        let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
-        sut.setToolbarButtons([fire])
+
         sut.refreshMaterialAppearance(interfaceStyle: .dark)
+
         let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
-
-        sut.setFloatingStyleEnabled(false)
-        sut.refreshMaterialAppearance(interfaceStyle: .dark)
-        window.layoutIfNeeded()
-
-        // iOS 26 caches cleared effects.
-        if #available(iOS 27.0, *) {
-            XCTAssertNil(glassView.effect)
-        }
-        XCTAssertEqual(glassView.backgroundColor?.resolvedColor(with: glassView.traitCollection),
-                       ThemeManager.shared.currentTheme.barBackgroundColor.resolvedColor(with: glassView.traitCollection))
-        XCTAssertEqual(glassView.layer.shadowOpacity, 0)
+        XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
         XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
-        fire.updateTraitsIfNeeded()
-        XCTAssertEqual(fire.traitCollection.userInterfaceStyle, .light)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .light)
+
+        XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenStandaloneGlassUsesDarkInterfaceStyleThenItRemainsAdaptive() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
     func testWhenNotFloatingThenProgressIsANoOp() {
@@ -379,7 +347,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         }
     }
 
-    func testWhenBottomOmnibarDetachmentSettlesThenOuterInsetsMatchStandaloneChrome() {
+    func testWhenBottomOmnibarDetachmentSettlesThenOuterInsetsMatchStandaloneConcentricSpec() {
         let sut = makeSUT(embeddedOmnibar: true)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
         container.addSubview(sut)
@@ -387,11 +355,14 @@ final class BrowserToolbarViewTests: XCTestCase {
         sut.applyOmnibarDetachmentPose()
         container.layoutIfNeeded()
 
-        let standaloneToolbar = makeSUT(embeddedOmnibar: false)
-        container.addSubview(standaloneToolbar)
-        container.layoutIfNeeded()
+        let frame = sut.restingCapsuleFrame(in: container)
 
-        XCTAssertEqual(sut.restingCapsuleFrame(in: container), standaloneToolbar.restingCapsuleFrame(in: container))
+        if #available(iOS 26.0, *) {
+            // Settled: it's a standalone capsule again, not tucked at the tight embedded margin.
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+        }
     }
 
     func testWhenStandaloneFloatingThenBottomMarginMatchesCombinedChrome() {

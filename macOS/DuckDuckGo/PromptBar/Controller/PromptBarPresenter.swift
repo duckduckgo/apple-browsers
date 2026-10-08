@@ -85,6 +85,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let screenProvider: PromptBarScreenProviding
     private let makeWindow: (NSRect) -> PromptBarWindow
     private let makeDimWindow: (NSRect) -> NSWindow
+    private let presentationEffectsEnabled: () -> Bool
     private let firePixel: (PromptBarPixel) -> Void
     private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
 
@@ -101,6 +102,7 @@ final class PromptBarPresenter: PromptBarPresenting {
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
          makeDimWindow: @escaping (NSRect) -> NSWindow = { NSWindow(contentRect: $0, styleMask: .borderless, backing: .buffered, defer: false) },
+         presentationEffectsEnabled: @escaping () -> Bool = { false },
          promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
          firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
             if case .firstUse = pixel {
@@ -113,6 +115,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
         self.makeWindow = makeWindow
         self.makeDimWindow = makeDimWindow
+        self.presentationEffectsEnabled = presentationEffectsEnabled
         self.promoOutcome = promoOutcome
         self.firePixel = firePixel
 
@@ -196,12 +199,15 @@ final class PromptBarPresenter: PromptBarPresenting {
                                                  in: screenProvider.targetVisibleFrame),
                         display: false)
 
-        window.alphaValue = 0
+        let showsEffects = presentationEffectsEnabled()
+        window.alphaValue = showsEffects ? 0 : 1
         // No `NSApp.activate`: it would raise the browser's windows above whatever the user has in front.
         window.orderFrontRegardless()
         window.makeKey()
-        animateAppearance(of: window)
-        dimScreen()
+        if showsEffects {
+            animateAppearance(of: window)
+            dimScreen()
+        }
         // First responder only sticks once the window is key.
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.

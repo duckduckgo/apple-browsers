@@ -337,7 +337,7 @@
         ]
     },
     "m_mac_aichat_promptbar_promo_try_now": {
-        "description": "Fired when the user clicks Try Now on the Duck.ai launcher promo, which turns on the Prompt Bar keyboard shortcut and menu bar icon and opens Duck.ai Settings. Matches the stored tried_now outcome",
+        "description": "Fired when the user clicks Try Now on the Duck.ai launcher promo, which turns on the Prompt Bar keyboard shortcut and menu bar icon, then opens the Prompt Bar with a message introducing the shortcut (its Settings link opens Duck.ai Settings). Matches the stored tried_now outcome",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],

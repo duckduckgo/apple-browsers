@@ -2664,6 +2664,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
             presenter: PromptBarPresenter(content: content,
+                                          presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
                                           promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
         )
         coordinator.start()

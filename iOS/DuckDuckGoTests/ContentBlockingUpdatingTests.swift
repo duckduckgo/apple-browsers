@@ -58,6 +58,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     let appSettings = AppSettingsMock()
     let configManager = PrivacyConfigurationManagerMock()
     let rulesManager = ContentBlockerRulesManagerMock()
+    let nativeGPCFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     var updating: ContentBlockingUpdating!
 
     override func setUp() {
@@ -70,7 +71,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                          webExtensionAvailability: nil))
+                                                                          webExtensionAvailability: nil),
+                                           featureFlagger: nativeGPCFlagger)
     }
 
     override static func setUp() {
@@ -80,6 +82,31 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
     override static func tearDown() {
         WKContentRuleList.restoreDealloc()
+    }
+
+    @MainActor
+    func testNativeGPCFlagChangesRebuildScriptsWithoutRecompilingRules() async {
+        var updated = expectation(description: "Initial scripts")
+        var initialRules: WKContentRuleList?
+        let subscription = updating.userContentBlockingAssets.sink { assets in
+            if let initialRules {
+                XCTAssertTrue(assets.rules(withName: "test") === initialRules)
+            } else {
+                initialRules = assets.rules(withName: "test")
+            }
+            XCTAssertNotNil(assets.featureFlagger)
+            updated.fulfill()
+        }
+        rulesManager.updatesSubject.send(Self.testUpdate())
+        await fulfillment(of: [updated], timeout: 5)
+        for enabled in [true, false] {
+            updated = expectation(description: "Scripts rebuilt for native GPC flag change")
+            nativeGPCFlagger.enabledFeatureFlags = enabled ? [.nativeGPC] : []
+            nativeGPCFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 5)
+        }
+        subscription.cancel()
+        updating.stopUpdates()
     }
 
     func testWhenSupportedOSAndFlagIsEnabledThenSitePermissionsAreAvailableAtLaunch() throws {

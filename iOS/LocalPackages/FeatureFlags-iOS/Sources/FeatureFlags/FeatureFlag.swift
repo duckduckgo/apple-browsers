@@ -580,6 +580,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
+
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1219267534135259?focus=true
+    case nativeGPC
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -646,6 +649,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     private var config: Config {
         switch self {
+        case .nativeGPC:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.nativeGPC))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:

@@ -269,6 +269,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 properties: ContentScopeProperties,
                 scriptContext: ContentScopeScriptContext = .contentScope(),
                 allowedNonisolatedFeatures: [String] = [],
+                useNativeGPC: Bool = false,
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws {
         self.scriptContext = scriptContext
@@ -283,6 +284,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             properties: properties,
             scriptContext: scriptContext,
             config: broker.messagingConfig(),
+            useNativeGPC: useNativeGPC,
             privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
@@ -296,6 +298,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
                                       config: WebkitMessagingConfig,
+                                      useNativeGPC: Bool = false,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
@@ -310,11 +313,36 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         }
 
         return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: [
-            "$CONTENT_SCOPE$": privacyConfigJson,
+            "$CONTENT_SCOPE$": privacyConfigurationJavaScript(privacyConfigJson, useNativeGPC: useNativeGPC),
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
             "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString
         ])
+    }
+
+    static func privacyConfigurationJavaScript(_ json: String, useNativeGPC: Bool) -> String {
+        guard #available(iOS 27.0, macOS 27.0, *), useNativeGPC else { return json }
+        // WebKit owns both GPC signals on HTTPS pages, including when the native value is false.
+        // Use the top-level URL so subframes follow the same policy as their containing page.
+        // HTTP pages retain the legacy script, even when their subframes use HTTPS.
+        return """
+        (() => {
+            const configuration = \(json);
+            let topURL;
+            try {
+                topURL = globalThis.top.location.href;
+            } catch {
+                const ancestors = globalThis.location.ancestorOrigins;
+                topURL = ancestors && ancestors.length
+                    ? ancestors[ancestors.length - 1]
+                    : globalThis.document.referrer;
+            }
+            if (topURL && topURL.startsWith("https:") && configuration.features && configuration.features.gpc) {
+                configuration.features.gpc.state = "disabled";
+            }
+            return configuration;
+        })()
+        """
     }
 
     private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {

@@ -236,6 +236,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Native GPC support
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1219267534135259?focus=true
+    case nativeGPC
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

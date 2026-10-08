@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import Common
 import FoundationExtensions
+import FeatureFlags_macOS
 import BrowserServicesKit
 import History
 import NewTabPage
@@ -169,6 +170,11 @@ final class UserContentUpdating {
         let updatesStream = AsyncStream { continuation in
             // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
             let cancellable = contentBlockerRulesManager.updatesPublisher
+                .combineLatest(featureFlagger.updatesPublisher
+                    .prepend(())
+                    .map { featureFlagger.isFeatureOn(.nativeGPC) }
+                    .removeDuplicates()
+                    .map { _ in Notification(name: .init("nativeGPCFlagChanged")) }, combine)
             // regenerate UserScripts on gpcEnabled preference updated
                 .combineLatest(webTrackingProtectionPreferences.$isGPCEnabled)
                 .map { $0.0 } // drop gpcEnabled value: $0.1

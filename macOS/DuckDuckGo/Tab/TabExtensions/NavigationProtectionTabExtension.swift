@@ -29,6 +29,7 @@ final class NavigationProtectionTabExtension {
 
     private let contentBlocking: AnyContentBlocking
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    private let featureFlagger: FeatureFlagger
 
     private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, _ in
         switch event {
@@ -49,9 +50,12 @@ final class NavigationProtectionTabExtension {
                          tld: contentBlocking.tld)
     }()
 
-    init(contentBlocking: AnyContentBlocking, webTrackingProtectionPreferences: WebTrackingProtectionPreferences) {
+    init(contentBlocking: AnyContentBlocking,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         featureFlagger: FeatureFlagger) {
         self.contentBlocking = contentBlocking
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.featureFlagger = featureFlagger
     }
 
     private func resetNavigation() {
@@ -59,11 +63,35 @@ final class NavigationProtectionTabExtension {
         referrerTrimming.onFinishNavigation()
     }
 
+    private func configureNativeGPC(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) -> Bool {
+        let useNativeGPC = GPCRequestFactory.supportsNativeGPC(for: navigationAction.request.url) && featureFlagger.isFeatureOn(.nativeGPC)
+        if navigationAction.isForMainFrame {
+            // Apply on back/forward too, and explicitly clear the preference when the remote flag is disabled.
+            preferences.globalPrivacyControlEnabled = useNativeGPC && GPCRequestFactory().nativeGPCEnabled(
+                url: navigationAction.request.url,
+                config: contentBlocking.privacyConfigurationManager.privacyConfig,
+                gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled
+            )
+            if useNativeGPC {
+                // Strip inherited headers without restarting the navigation or disturbing back/forward history.
+                preferences.alternateRequest = GPCRequestFactory().requestForGPC(
+                    basedOn: navigationAction.request,
+                    config: contentBlocking.privacyConfigurationManager.privacyConfig,
+                    gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
+                    useNativeGPC: true
+                )
+            }
+        }
+        return useNativeGPC
+    }
+
 }
 
 extension NavigationProtectionTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        let useNativeGPC = configureNativeGPC(for: navigationAction, preferences: &preferences)
+
         // We don‘t handle opening new tabs here because a new Tab is opened in
         // Tab+Navigation and it will run through this procedure again for its NavigationAction
 
@@ -119,7 +147,7 @@ extension NavigationProtectionTabExtension: NavigationResponder {
         }
 
         let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
-        if let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
+        if !useNativeGPC, let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
                                                               config: contentBlocking.privacyConfigurationManager.privacyConfig,
                                                               gpcEnabled: isGPCEnabled) {
             request = newRequest

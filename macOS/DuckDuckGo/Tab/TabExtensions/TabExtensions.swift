@@ -208,7 +208,8 @@ extension TabExtensionsBuilder {
         add {
             NavigationProtectionTabExtension(
                 contentBlocking: dependencies.privacyFeatures.contentBlocking,
-                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
+                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
+                featureFlagger: dependencies.featureFlagger
             )
 
         }

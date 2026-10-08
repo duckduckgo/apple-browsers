@@ -110,6 +110,7 @@ final class UserScripts: UserScriptsProvider {
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
                                                                 allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue],
+                                                                useNativeGPC: featureFlagger.isFeatureOn(.nativeGPC),
                                                                 privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,

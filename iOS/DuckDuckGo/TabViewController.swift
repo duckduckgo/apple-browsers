@@ -3483,6 +3483,15 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView,
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        self.webView(webView, decidePolicyFor: navigationAction, preferences: WKWebpagePreferences()) { policy, _ in
+            decisionHandler(policy)
+        }
+    }
+
+    func webView(_ webView: WKWebView,
+                 decidePolicyFor navigationAction: WKNavigationAction,
+                 preferences: WKWebpagePreferences,
+                 decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
 
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
@@ -3507,7 +3516,7 @@ extension TabViewController: WKNavigationDelegate {
             if policy == .allow || policy.rawValue == 3 {
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
-            decisionHandler(policy)
+            decisionHandler(policy, preferences)
         }
 
         // Wait on the shared startup gate. The post-gate helper is also used by the
@@ -3530,6 +3539,7 @@ extension TabViewController: WKNavigationDelegate {
                 webExtensionNavigationTask = nil
                 decidePolicyAfterWebExtensionInitialLoad(webView,
                                                          navigationAction: navigationAction,
+                                                         preferences: preferences,
                                                          decisionHandler: wrappedHandler)
             }
             return
@@ -3537,6 +3547,7 @@ extension TabViewController: WKNavigationDelegate {
 
         decidePolicyAfterWebExtensionInitialLoad(webView,
                                                  navigationAction: navigationAction,
+                                                 preferences: preferences,
                                                  decisionHandler: wrappedHandler)
     }
 
@@ -3547,6 +3558,7 @@ extension TabViewController: WKNavigationDelegate {
 
     private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
                                                           navigationAction: WKNavigationAction,
+                                                          preferences: WKWebpagePreferences,
                                                           decisionHandler wrappedHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
         var isUserInitiated = false
@@ -3579,12 +3591,32 @@ extension TabViewController: WKNavigationDelegate {
                }
                self.decidePolicyAfterWebExtensionInitialLoad(webView,
                                                              navigationAction: navigationAction,
+                                                             preferences: preferences,
                                                              decisionHandler: wrappedHandler)
            }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
         
+
+        let useNativeGPC = GPCRequestFactory.supportsNativeGPC(for: navigationAction.request.url) && featureFlagger.isFeatureOn(.nativeGPC)
+        if #available(iOS 27.0, *), navigationAction.isTargetingMainFrame {
+            // Re-evaluate after content blocking is ready, including on back/forward and remote flag changes.
+            preferences.globalPrivacyControlEnabled = useNativeGPC && GPCRequestFactory().nativeGPCEnabled(
+                url: navigationAction.request.url,
+                config: privacyConfigurationManager.privacyConfig,
+                gpcEnabled: appSettings.sendDoNotSell
+            )
+            if useNativeGPC {
+                // Strip inherited headers without restarting the navigation or disturbing back/forward history.
+                preferences.alternateRequest = GPCRequestFactory().requestForGPC(
+                    basedOn: navigationAction.request,
+                    config: privacyConfigurationManager.privacyConfig,
+                    gpcEnabled: appSettings.sendDoNotSell,
+                    useNativeGPC: true
+                )
+            }
+        }
 
         didGoBackForward = (navigationAction.navigationType == .backForward)
 
@@ -3693,6 +3725,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         if navigationAction.isTargetingMainFrame,
+           !useNativeGPC,
            !navigationAction.isSameDocumentNavigation,
            !navigationAction.shouldDownload,
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),

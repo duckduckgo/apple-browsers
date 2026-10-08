@@ -147,4 +147,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
+
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1219267534135259?focus=true
+    case nativeGPC
 }

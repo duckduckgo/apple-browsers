@@ -171,7 +171,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], useNativeGPC: sourceProvider.featureFlagger.isFeatureOn(.nativeGPC), privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {

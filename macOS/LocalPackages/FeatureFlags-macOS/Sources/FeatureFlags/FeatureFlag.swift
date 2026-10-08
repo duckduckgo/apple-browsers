@@ -604,6 +604,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Native GPC support
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1219267534135259?focus=true
+    case nativeGPC
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -656,6 +660,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     private var config: Config {
         switch self {
+        case .nativeGPC:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.nativeGPC), category: .other)
         case .maliciousSiteProtection:
             Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:

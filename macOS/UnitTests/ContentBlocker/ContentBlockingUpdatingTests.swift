@@ -37,12 +37,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     var preferences: WebTrackingProtectionPreferences! = WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
     var rulesManager: ContentBlockerRulesManagerMock! = ContentBlockerRulesManagerMock()
     var updating: UserContentUpdating!
+    var nativeGPCFlagger: MockFeatureFlagger!
 
     @MainActor
     override func setUp() async throws {
         let configStore = ConfigurationStore()
 
         let featureFlagger = MockFeatureFlagger()
+        nativeGPCFlagger = featureFlagger
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -108,6 +110,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         preferences = nil
         rulesManager = nil
         updating = nil
+        nativeGPCFlagger = nil
     }
 
     override static func setUp() {
@@ -117,6 +120,29 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
     override static func tearDown() {
         WKContentRuleList.restoreDealloc()
+    }
+
+    @MainActor
+    func testNativeGPCFlagChangesRebuildScriptsWithoutRecompilingRules() async {
+        var updated = expectation(description: "Initial scripts")
+        var initialRules: WKContentRuleList?
+        let subscription = updating.userContentBlockingAssets.sink { assets in
+            if let initialRules {
+                XCTAssertTrue(assets.rules(withName: "test") === initialRules)
+            } else {
+                initialRules = assets.rules(withName: "test")
+            }
+            updated.fulfill()
+        }
+        rulesManager.updatesSubject.send(Self.testUpdate())
+        await fulfillment(of: [updated], timeout: 5)
+        for enabled in [true, false] {
+            updated = expectation(description: "Scripts rebuilt for native GPC flag change")
+            nativeGPCFlagger.enabledFeatureFlags = enabled ? [.nativeGPC] : []
+            nativeGPCFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 5)
+        }
+        subscription.cancel()
     }
 
     func testInitialUpdateIsBuffered() {

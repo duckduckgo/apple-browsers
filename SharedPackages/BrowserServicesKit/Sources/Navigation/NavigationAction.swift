@@ -207,6 +207,8 @@ public struct NavigationPreferences: Equatable {
 
     public var userAgent: String?
     public var contentMode: WKWebpagePreferences.ContentMode
+    public var globalPrivacyControlEnabled: Bool = false
+    public var alternateRequest: URLRequest?
 
 #if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
     public var autoplayPolicy: _WKWebsiteAutoplayPolicy?
@@ -244,6 +246,10 @@ public struct NavigationPreferences: Equatable {
     internal init(userAgent: String?, preferences: WKWebpagePreferences) {
         self.contentMode = preferences.preferredContentMode
         self.javaScriptEnabledValue = preferences.allowsContentJavaScript
+        if #available(macOS 27.0, iOS 27.0, *) {
+            self.globalPrivacyControlEnabled = preferences.globalPrivacyControlEnabled
+            self.alternateRequest = preferences.alternateRequest
+        }
 
 #if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
         self.autoplayPolicy = .init(rawValue: preferences.autoplayPolicy)
@@ -259,6 +265,10 @@ public struct NavigationPreferences: Equatable {
     internal func applying(to preferences: WKWebpagePreferences) -> WKWebpagePreferences {
         preferences.preferredContentMode = contentMode
         preferences.allowsContentJavaScript = javaScriptEnabled
+        if #available(macOS 27.0, iOS 27.0, *) {
+            preferences.globalPrivacyControlEnabled = globalPrivacyControlEnabled
+            preferences.alternateRequest = alternateRequest
+        }
 
 #if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
         if mustApplyAutoplayPolicy, let autoplayPolicy {

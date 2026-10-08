@@ -23,6 +23,22 @@ public struct GPCRequestFactory {
 
     public init() { }
 
+    public static func supportsNativeGPC(for url: URL?) -> Bool {
+        if #available(iOS 27.0, macOS 27.0, *) {
+            // WebKit only sends the header to trustworthy origins. Preserve legacy HTTP coverage.
+            return url?.scheme == "https"
+        }
+        return false
+    }
+
+    /// Native GPC does not need the header allowlist used to avoid cancel-and-reload navigation bugs.
+    /// It still honors `features.gpc.exceptions`, `unprotectedTemporary`, and user-disabled protections.
+    public func nativeGPCEnabled(url: URL?, config: PrivacyConfiguration, gpcEnabled: Bool) -> Bool {
+        guard gpcEnabled, let url, let host = url.host,
+              url.scheme == "https" else { return false }
+        return config.isFeature(.gpc, enabledForDomain: host)
+    }
+
     public struct Constants {
         public static let secGPCHeader = "Sec-GPC"
     }
@@ -53,16 +69,23 @@ public struct GPCRequestFactory {
 
     public func requestForGPC(basedOn incomingRequest: URLRequest,
                               config: PrivacyConfiguration,
-                              gpcEnabled: Bool) -> URLRequest? {
+                              gpcEnabled: Bool,
+                              useNativeGPC: Bool = false) -> URLRequest? {
 
         func removingHeader(fromRequest incomingRequest: URLRequest) -> URLRequest? {
             var request = incomingRequest
-            if let headers = request.allHTTPHeaderFields, headers.firstIndex(where: { $0.key == Constants.secGPCHeader }) != nil {
+            if request.value(forHTTPHeaderField: Constants.secGPCHeader) != nil {
                 request.setValue(nil, forHTTPHeaderField: Constants.secGPCHeader)
                 return request
             }
 
             return nil
+        }
+
+        // A request restored or redirected from the legacy path may still carry its manually added header.
+        // Let WebKit own the signal, including removing it when the user opts out or the site is excluded.
+        if useNativeGPC {
+            return removingHeader(fromRequest: incomingRequest)
         }
 
         /*

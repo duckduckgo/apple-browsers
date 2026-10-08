@@ -23,6 +23,8 @@ import BrowserServicesKit
 import Core
 import Combine
 import CombineExtensions
+import FeatureFlags_iOS
+import PrivacyConfig
 import SitePermissions
 import WebKit
 
@@ -42,12 +44,14 @@ public final class ContentBlockingUpdating {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        var featureFlagger: FeatureFlagger?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var sitePermissionsGeolocationUserScript: GeolocationUserScript?
         var isSitePermissionsEnabled: Bool { sitePermissionsGeolocationUserScript != nil }
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
+            { [duckAiNativeStorageHandler, featureFlagger, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
                 UserScripts(with: sourceProvider,
+                            featureFlagger: featureFlagger ?? AppDependencyProvider.shared.featureFlagger,
                             sitePermissionsEnabled: isSitePermissionsEnabled,
                             mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
                             geolocationUserScript: sitePermissionsGeolocationUserScript,
@@ -75,13 +79,15 @@ public final class ContentBlockingUpdating {
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
     init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                              featureFlagger: featureFlagger,
                               sitePermissionsGeolocationUserScript: nil)
         }
 
@@ -99,6 +105,11 @@ public final class ContentBlockingUpdating {
 
         // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
         cancellable = userScriptsDependencies.contentBlockingManager.updatesPublisher
+            .combineLatest(featureFlagger.updatesPublisher
+                .prepend(())
+                .map { featureFlagger.isFeatureOn(.nativeGPC) }
+                .removeDuplicates()
+                .map { _ in Notification(name: .init("nativeGPCFlagChanged")) }, combine)
             // regenerate UserScripts on:
             // prefs changes notifications with initially published value for combineLatest to work.
             // Not all of these will trigger Tab reload,

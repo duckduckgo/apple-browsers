@@ -161,8 +161,16 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
     func frameForRevealingItem(at indexPath: IndexPath) -> CGRect? {
         guard let collectionView, let frame = unpinnedFrameForItem(at: indexPath) else { return nil }
         let visibleWidth = collectionView.bounds.width - collectionView.adjustedContentInset.left - collectionView.adjustedContentInset.right
+        let current = currentIndex?()
+        let pinnedWidth = current != nil && current != indexPath.item ? min(frame.width, max(0, visibleWidth - frame.width)) : 0
         // Leave a glimpse of neighboring tabs without squeezing the selected tab on narrow strips.
-        let peek = min(frame.width / 2, max(0, (visibleWidth - frame.width) / 2))
-        return frame.insetBy(dx: -peek, dy: 0).intersection(CGRect(origin: .zero, size: collectionView.contentSize))
+        let peek = min(frame.width / 2, max(0, (visibleWidth - frame.width - pinnedWidth) / 2))
+        var revealFrame = frame.insetBy(dx: -peek, dy: 0)
+        // A pinned current tab covers the neighbor hint unless its width is also reserved.
+        if let current, current < indexPath.item {
+            revealFrame.origin.x -= pinnedWidth
+        }
+        revealFrame.size.width += pinnedWidth
+        return revealFrame.intersection(CGRect(origin: .zero, size: collectionView.contentSize))
     }
 }

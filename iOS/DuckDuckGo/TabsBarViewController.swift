@@ -89,6 +89,7 @@ class TabsBarViewController: UIViewController {
     private var currentLayout: TabsBarLayout?
     private var draggedTabOriginalFrame: CGRect?
     private weak var draggedTabCell: TabsBarCell?
+    private weak var reorderDropSession: UIDropSession?
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -803,14 +804,12 @@ extension TabsBarViewController: UICollectionViewDelegate {
 
     /// Gives the lifted tab a card background.
     private var tabLiftBackgroundColor: UIColor {
-        ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.5)
+        ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.9)
     }
 
     private func applyTabLiftStyle(to parameters: UIPreviewParameters, cell: UICollectionViewCell, backgroundColor: UIColor) {
         parameters.backgroundColor = backgroundColor
-        parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds,
-                                              byRoundingCorners: [.topLeft, .topRight],
-                                              cornerRadii: CGSize(width: TabsBarCell.cornerRadius, height: TabsBarCell.cornerRadius))
+        parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds, cornerRadius: TabsBarCell.cornerRadius)
         parameters.shadowPath = UIBezierPath()
     }
 
@@ -839,7 +838,9 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
         collectionView.collectionViewLayout.invalidateLayout()
-        flareBackground.beginReorder()
+        flareBackground.beginReorder { [weak self] elapsedTime in
+            self?.scrollDuringReorder(elapsedTime: elapsedTime)
+        }
         let isInsideStrip = collectionView.bounds.contains(session.location(in: collectionView))
         draggedTabCell?.contentView.isHidden = isInsideStrip
         // A context-menu lift can become a drag after the finger has already left the strip.
@@ -849,6 +850,7 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        reorderDropSession = nil
         draggedTabCell?.contentView.isHidden = false
         draggedTabCell = nil
         draggedTabOriginalFrame = nil
@@ -876,23 +878,29 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dropSessionDidEnter session: UIDropSession) {
-        guard session.localDragSession != nil else { return }
+        guard session.localDragSession != nil, draggedTabOriginalFrame != nil else { return }
+        reorderDropSession = session
         draggedTabCell?.contentView.isHidden = true
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         dropSessionDidUpdate session: UIDropSession,
                         withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+        if session.localDragSession != nil, draggedTabOriginalFrame != nil {
+            reorderDropSession = session
+        }
         return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
     }
 
     func collectionView(_ collectionView: UICollectionView, dropSessionDidExit session: UIDropSession) {
+        reorderDropSession = nil
         guard session.localDragSession != nil, let frame = draggedTabOriginalFrame else { return }
         draggedTabCell?.contentView.isHidden = false
         collectionView.scrollRectToVisible(frame, animated: !UIAccessibility.isReduceMotionEnabled)
     }
 
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        reorderDropSession = nil
         guard let item = coordinator.items.first,
               let sourceIndexPath = item.sourceIndexPath,
               let proposedDestination = coordinator.destinationIndexPath,
@@ -909,9 +917,30 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
             self?.refreshVisibleCellStyles()
         })
         coordinator.drop(item.dragItem, toItemAt: destinationIndexPath).addCompletion { [weak self] position in
-            guard position == .end, self?.tabsModel?.currentTab === tab else { return }
-            self?.scrollToSelectedTab()
+            guard position == .end else { return }
+            DispatchQueue.main.async {
+                guard let self, let index = self.tabsModel?.indexOf(tab: tab) else { return }
+                self.scrollToTab(at: IndexPath(item: index, section: 0))
+            }
         }
+    }
+
+    func scrollDuringReorder(elapsedTime: TimeInterval) {
+        guard let session = reorderDropSession,
+              let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout else { return }
+        let location = session.location(in: collectionView)
+        guard collectionView.bounds.contains(location) else { return }
+        let visibleBounds = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+        // Start before the folded edge so neighboring insertion slots stay within reach.
+        let edgeWidth = min(layout.itemSize.width, visibleBounds.width / 3)
+        guard edgeWidth > 0 else { return }
+        let leading = ((visibleBounds.minX + edgeWidth - location.x) / edgeWidth).clamped(to: 0...1)
+        let trailing = ((location.x - visibleBounds.maxX + edgeWidth) / edgeWidth).clamped(to: 0...1)
+        let distance = (trailing - leading) * layout.itemSize.width * 2 * elapsedTime
+        guard distance != 0 else { return }
+        let minimum = -collectionView.adjustedContentInset.left
+        let maximum = max(minimum, collectionView.contentSize.width - collectionView.bounds.width + collectionView.adjustedContentInset.right)
+        collectionView.contentOffset.x = (collectionView.contentOffset.x + distance).clamped(to: minimum...maximum)
     }
 
     private func refreshVisibleCellStyles() {

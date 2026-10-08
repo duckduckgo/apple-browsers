@@ -128,7 +128,9 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
 
         XCTAssertEqual(current.frame.minX, 310)
         XCTAssertEqual(current.zIndex, 2)
-        XCTAssertEqual(layout.layoutAttributesForItem(at: IndexPath(item: 3, section: 0))?.frame.minX, 360)
+        let neighbor = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: 3, section: 0)))
+        XCTAssertGreaterThan(neighbor.frame.minX, 360)
+        XCTAssertLessThan(neighbor.frame.minX, 361)
 
         let flare = TabFlareBackgroundController(collectionView: collectionView,
                                                 topCornerRadius: TabsBarCell.cornerRadius,
@@ -214,7 +216,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
     }
 
     func testPointerBoundsExcludeCoveredPartsOfEdgeTabsAndCloseButton() throws {
-        let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 10)
+        let (collectionView, _) = makeCollectionView(currentIndex: { 2 })
         let window = UIWindow(frame: collectionView.frame)
         window.addSubview(collectionView)
         defer { window.subviews.forEach { $0.removeFromSuperview() } }
@@ -226,13 +228,13 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
             cell.layoutIfNeeded()
         }
 
-        let leadingRect = CGRect(x: 0, y: 0, width: 100, height: 40)
-        let trailingRect = CGRect(x: 50, y: 0, width: 70, height: 40)
+        let leadingRect = CGRect(x: 0, y: 0, width: 110, height: 40)
+        let trailingRect = CGRect(x: 60, y: 0, width: 60, height: 40)
         XCTAssertEqual(leading.visiblePointerRect(in: leading.contentView), leadingRect)
         XCTAssertEqual(trailing.visiblePointerRect(in: trailing.contentView), trailingRect)
         XCTAssertEqual(selected.visiblePointerRect(in: selected.contentView), selected.contentView.bounds)
         XCTAssertTrue(covered.visiblePointerRect(in: covered.contentView).isEmpty)
-        XCTAssertEqual(leading.visiblePointerRect(in: leading.removeButton), CGRect(x: 0, y: 0, width: 20, height: 40))
+        XCTAssertEqual(leading.visiblePointerRect(in: leading.removeButton), CGRect(x: 0, y: 0, width: 30, height: 40))
 
         let interaction = try XCTUnwrap(covered.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
         let region = UIPointerRegion(rect: covered.contentView.bounds, identifier: nil)
@@ -260,6 +262,45 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
             XCTAssertGreaterThanOrEqual(cell.frame.minX, 310)
             XCTAssertLessThanOrEqual(cell.frame.maxX, 840)
         }
+    }
+
+    func testEdgeAccordionStartsMovingNextTabAtHalfExposureAndOuterTabMovesFaster() throws {
+        for (offset, direction, outerIndex, innerIndex) in [(CGFloat(290), CGFloat(1), 2, 3), (360, -1, 7, 6)] {
+            let (collectionView, _) = makeCollectionView(currentIndex: { 4 }, contentOffset: offset)
+            let outer = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: outerIndex, section: 0)) as? TabsBarCell)
+            let inner = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: innerIndex, section: 0)))
+            var previousOuterX = outer.frame.minX
+            var previousInnerX = inner.frame.minX
+            var previousExposure = outer.visiblePointerRect(in: outer.contentView).width
+            XCTAssertEqual(previousExposure, outer.bounds.width / 2)
+
+            for distance in [CGFloat(10), 20] {
+                collectionView.contentOffset.x = offset + direction * distance
+                collectionView.layoutIfNeeded()
+                let outerMovement = direction * (outer.frame.minX - previousOuterX)
+                let innerMovement = direction * (inner.frame.minX - previousInnerX)
+                XCTAssertGreaterThan(innerMovement, 0)
+                XCTAssertGreaterThan(outerMovement, innerMovement)
+                XCTAssertLessThanOrEqual(outerMovement, 10)
+                let exposure = outer.visiblePointerRect(in: outer.contentView).width
+                XCTAssertGreaterThan(exposure, 0)
+                XCTAssertLessThan(exposure, previousExposure)
+                previousOuterX = outer.frame.minX
+                previousInnerX = inner.frame.minX
+                previousExposure = exposure
+            }
+        }
+    }
+
+    func testOutgoingAccordionTabRemainsMaterializedWhileStillExposed() throws {
+        let (collectionView, layout) = makeCollectionView(currentIndex: { 4 }, contentOffset: 380)
+        let indexPath = IndexPath(item: 2, section: 0)
+        let naturalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: indexPath))
+        XCTAssertFalse(naturalFrame.intersects(collectionView.bounds))
+        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+        XCTAssertTrue(attributes.contains { $0.indexPath == indexPath })
+        let outgoing = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
+        XCTAssertGreaterThan(outgoing.visiblePointerRect(in: outgoing.contentView).width, 0)
     }
 
     func testReorderAttributesKeepInactiveCellsBelowSelectionAndResetOnReuse() throws {
@@ -319,7 +360,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
     }
 
     func testRevealFrameRespectsContentEndsAndNarrowStripWithoutOverscroll() throws {
-        for (width, expectedRevealWidth) in [(CGFloat(600), CGFloat(180)), (230, 140), (180, 120)] {
+        for (width, expectedRevealWidth) in [(CGFloat(600), CGFloat(180)), (230, 140), (200, 125), (180, 120)] {
             let (collectionView, layout) = makeCollectionView(currentIndex: { nil }, contentOffset: 300)
             collectionView.bounds.size.width = width
             collectionView.layoutIfNeeded()
@@ -334,6 +375,13 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
                 XCTAssertEqual(index == 0 ? revealFrame.minX : revealFrame.maxX, index == 0 ? 0 : contentBounds.maxX)
                 collectionView.scrollRectToVisible(revealFrame, animated: false)
                 collectionView.layoutIfNeeded()
+                if width >= 200 {
+                    XCTAssertEqual(collectionView.cellForItem(at: indexPath)?.frame, naturalFrame)
+                    let usableBounds = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+                    for cell in collectionView.visibleCells {
+                        XCTAssertTrue(usableBounds.contains(cell.frame))
+                    }
+                }
                 XCTAssertGreaterThanOrEqual(collectionView.contentOffset.x, -collectionView.adjustedContentInset.left)
                 XCTAssertLessThanOrEqual(collectionView.contentOffset.x, contentBounds.width - width + collectionView.adjustedContentInset.right)
             }

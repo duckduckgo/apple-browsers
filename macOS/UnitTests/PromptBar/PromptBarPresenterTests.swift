@@ -26,6 +26,7 @@ final class PromptBarPresenterTests: XCTestCase {
     private var content: MockPromptBarContent!
     private var presenter: PromptBarPresenter!
     private var windows: [StubPromptBarWindow] = []
+    private var dimWindows: [StubPromptBarWindow] = []
     private var firedPixels: [PromptBarPixel] = []
 
     override func setUp() {
@@ -39,6 +40,11 @@ final class PromptBarPresenterTests: XCTestCase {
                 self?.windows.append(window)
                 return window
             },
+            makeDimWindow: { [weak self] rect in
+                let window = StubPromptBarWindow(contentRect: rect)
+                self?.dimWindows.append(window)
+                return window
+            },
             firePixel: { [weak self] pixel in
                 self?.firedPixels.append(pixel)
             }
@@ -47,6 +53,7 @@ final class PromptBarPresenterTests: XCTestCase {
 
     override func tearDown() {
         windows = []
+        dimWindows = []
         firedPixels = []
         presenter = nil
         content = nil
@@ -84,6 +91,13 @@ final class PromptBarPresenterTests: XCTestCase {
         presenter.dismiss(reason: .escape)
 
         XCTAssertEqual(content.resetCount, 0)
+    }
+
+    func testWhenShownThenTheScreenIsDimmedBehindTheBar() {
+        presenter.show(source: .keyboardShortcut)
+
+        XCTAssertEqual(dimWindows.count, 1)
+        XCTAssertTrue(dimWindows.first?.isVisible == true)
     }
 
     func testWhenShownAgainAfterDismissalThenItReusesTheWindowAndResetsAgainOnDismissal() {
@@ -192,6 +206,10 @@ private final class StubPromptBarWindow: PromptBarWindow {
 
     override func orderOut(_ sender: Any?) {
         stubbedIsVisible = false
+    }
+
+    override func order(_ place: NSWindow.OrderingMode, relativeTo otherWin: Int) {
+        stubbedIsVisible = place != .out
     }
 }
 

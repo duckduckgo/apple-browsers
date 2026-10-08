@@ -84,6 +84,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let content: PromptBarContentHosting
     private let screenProvider: PromptBarScreenProviding
     private let makeWindow: (NSRect) -> PromptBarWindow
+    private let makeDimWindow: (NSRect) -> NSWindow
     private let firePixel: (PromptBarPixel) -> Void
     private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
 
@@ -99,6 +100,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     init(content: PromptBarContentHosting,
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
+         makeDimWindow: @escaping (NSRect) -> NSWindow = { NSWindow(contentRect: $0, styleMask: .borderless, backing: .buffered, defer: false) },
          promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
          firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
             if case .firstUse = pixel {
@@ -110,6 +112,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         self.content = content
         self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
         self.makeWindow = makeWindow
+        self.makeDimWindow = makeDimWindow
         self.promoOutcome = promoOutcome
         self.firePixel = firePixel
 
@@ -167,7 +170,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private func dimScreen() {
         guard dimWindow == nil, let window, let screen = window.screen else { return }
 
-        let dimWindow = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        let dimWindow = makeDimWindow(screen.frame)
         dimWindow.isReleasedWhenClosed = false
         dimWindow.backgroundColor = .black
         dimWindow.isOpaque = false

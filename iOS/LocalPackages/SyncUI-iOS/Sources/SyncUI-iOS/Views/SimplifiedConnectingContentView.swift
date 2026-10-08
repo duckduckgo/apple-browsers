@@ -63,6 +63,7 @@ struct SimplifiedConnectingContentView: View {
         }
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 
     private var title: String {

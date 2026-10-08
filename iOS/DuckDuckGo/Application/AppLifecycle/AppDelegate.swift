@@ -24,6 +24,16 @@ import Common
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        guard builder.system == .main else { return }
+
+        let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(MainViewController.keyboardSettings),
+                                          input: ",", modifierFlags: .command)
+        settingsCommand.wantsPriorityOverSystemBehavior = true
+        builder.replaceChildren(ofMenu: .preferences) { _ in [settingsCommand] }
+    }
+
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }

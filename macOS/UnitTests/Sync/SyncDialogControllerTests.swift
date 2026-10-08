@@ -2080,6 +2080,52 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_tapped_mac").count, 1)
     }
 
+    func testRemoveDeviceConfirmed_forOtherDevice_whenSucceeds_firesRemoveDeviceConfirmedPixel() async {
+        let device = SyncDevice(kind: .desktop, name: "Other Device", id: "other-id")
+        managementDialogModel.currentDialog = .removeDeviceV2(device)
+        let expectation = expectation(description: "remove device flow ended")
+        managementDialogModel.$currentDialog.sink {
+            if $0 == nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.removeDeviceConfirmed(device)
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_confirmed_mac").count, 1)
+    }
+
+    func testRemoveDeviceConfirmed_forOtherDevice_whenFails_doesNotFireRemoveDeviceConfirmedPixel() async {
+        let expectation = expectation(description: "Remove device errored")
+        managementDialogModel.$syncErrorMessage.sink {
+            if $0 != nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+        ddgSyncing.disconnectDeviceError = SyncError.failedToLoadAccount
+
+        syncDialogController.removeDeviceConfirmed(SyncDevice(kind: .desktop, name: "Other Device", id: "other-id"))
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_confirmed_mac").isEmpty)
+    }
+
+    func testRemoveDevice_whenSucceeds_doesNotFireRemoveDeviceConfirmedPixel() async {
+        managementDialogModel.currentDialog = .removeDevice(SyncDevice(kind: .desktop, name: "Other Device", id: "other-id"))
+        let expectation = expectation(description: "remove device flow ended")
+        managementDialogModel.$currentDialog.sink {
+            if $0 == nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.removeDevice(SyncDevice(kind: .desktop, name: "Other Device", id: "other-id"))
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_confirmed_mac").isEmpty)
+    }
+
     func testPresentRemoveDeviceConfirmation_forCurrentDevice_firesTurnOffSyncTappedPixel() {
         syncDialogController.presentRemoveDeviceConfirmation(SyncDevice(kind: .current, name: "test", id: "test"))
 

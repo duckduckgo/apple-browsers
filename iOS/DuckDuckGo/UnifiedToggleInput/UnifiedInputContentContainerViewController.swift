@@ -108,6 +108,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             guard oldValue != usesRedesignedNewTabPageLayout else { return }
             unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
             if isViewLoaded {
+                view.setNeedsLayout()
                 applyRequestedContentInset()
             }
         }
@@ -523,7 +524,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.isLandscapeOrientation = isHorizontallyCompactLayoutEnabled
         unifiedSuggestionsHost?.setLandscape(isHorizontallyCompactLayoutEnabled)
 
-        let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Metrics.horizontalMarginForCompactLayout : 0
+        // The redesigned modules align with the NTP's safe area. The landscape
+        // inset would squeeze their favorites grid and message cards into a narrow strip.
+        let usesLandscapeInset = isHorizontallyCompactLayoutEnabled && !usesRedesignedNewTabPageLayout
+        let horizontalMargin: CGFloat = usesLandscapeInset ? Metrics.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
         guard isContentActive else {

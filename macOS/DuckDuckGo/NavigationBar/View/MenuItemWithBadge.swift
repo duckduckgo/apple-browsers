@@ -78,7 +78,7 @@ struct MenuItemWithBadgeConstants {
         if #available(macOS 12.0, *) {
             return Color(nsColor: .selectedContentBackgroundColor)
         }
-        return .menuItemHover
+        return Color(.menuItemHover)
     }()
 }
 

@@ -68,7 +68,7 @@ final class SuggestionTableRowView: NSTableRowView {
                 return colorsProvider.suggestionsHighlightBackgroundColor
             }
 
-            return isBurner ? .burnerAccent : theme.palette.accentPrimary
+            return isBurner ? NSColor(resource: .burnerAccent) : theme.palette.accentPrimary
         }()
 
         let cornerRadius = styleProvider.suggestionHighlightCornerRadius

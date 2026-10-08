@@ -107,6 +107,103 @@ class BarsAnimatorTests: XCTestCase {
         XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(1)])
     }
 
+    func testFloatingScrollEndRetriesInsetsWhenChromeUpdatesAreBlocked() {
+        for (canHideBars, isDisabled) in [(false, false), (true, true)] {
+            let manager = BrowserChromeManager()
+            let delegate = BrowserChromeDelegateMock()
+            delegate.isFloatingChromeEnabled = true
+            delegate.canHideBars = canHideBars
+            delegate.isChromeScrollInteractionDisabled = isDisabled
+            manager.delegate = delegate
+            let scrollView = mockTallScrollView()
+            manager.attach(to: scrollView)
+            var retries = 0
+            manager.onScrollStateChanged = { retries += 1 }
+
+            manager.scrollViewDidEndDecelerating(scrollView)
+
+            XCTAssertEqual(retries, 1)
+            XCTAssertTrue(delegate.receivedMessages.isEmpty)
+        }
+    }
+
+    func testScrollStateCallbacksIgnoreOldScrollViewAndClassicUI() {
+        for isFloating in [false, true] {
+            let manager = BrowserChromeManager()
+            let delegate = BrowserChromeDelegateMock()
+            delegate.isFloatingChromeEnabled = isFloating
+            manager.delegate = delegate
+            let oldScrollView = mockTallScrollView()
+            let currentScrollView = mockTallScrollView()
+            manager.attach(to: oldScrollView)
+            manager.attach(to: currentScrollView)
+            var retries = 0
+            manager.onScrollStateChanged = { retries += 1 }
+
+            manager.scrollViewDidScroll(oldScrollView)
+            manager.scrollViewDidEndDragging(oldScrollView, willDecelerate: false)
+            manager.scrollViewDidEndDecelerating(oldScrollView)
+            XCTAssertEqual(retries, 0)
+
+            manager.scrollViewDidScroll(currentScrollView)
+            manager.scrollViewDidEndDecelerating(currentScrollView)
+            if !isFloating {
+                manager.scrollViewDidEndDragging(currentScrollView, willDecelerate: false)
+                let queueDrained = expectation(description: "Classic drag callback processed")
+                DispatchQueue.main.async { queueDrained.fulfill() }
+                wait(for: [queueDrained], timeout: 1)
+            }
+            XCTAssertEqual(retries, isFloating ? 2 : 0)
+        }
+    }
+
+    func testFloatingDragWithoutDecelerationRetriesInsetsAfterCallbackReturns() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        delegate.isChromeScrollInteractionDisabled = true
+        manager.delegate = delegate
+        let scrollView = mockTallScrollView()
+        manager.attach(to: scrollView)
+        let retried = expectation(description: "Insets retried after dragging state clears")
+        var callbackReturned = false
+        manager.onScrollStateChanged = {
+            XCTAssertTrue(callbackReturned)
+            retried.fulfill()
+        }
+
+        manager.scrollViewDidEndDragging(scrollView, willDecelerate: false)
+        callbackReturned = true
+
+        wait(for: [retried], timeout: 1)
+    }
+
+    func testScheduledInsetRetryIgnoresReattachmentAndNewDrag() {
+        for reattach in [false, true] {
+            let manager = BrowserChromeManager()
+            let delegate = BrowserChromeDelegateMock()
+            delegate.isFloatingChromeEnabled = true
+            manager.delegate = delegate
+            let scrollView = mockTallScrollView()
+            let replacement = mockTallScrollView()
+            manager.attach(to: scrollView)
+            var retries = 0
+            manager.onScrollStateChanged = { retries += 1 }
+
+            manager.scrollViewDidEndDragging(scrollView, willDecelerate: false)
+            if reattach {
+                manager.attach(to: replacement)
+            } else {
+                manager.scrollViewWillBeginDragging(scrollView)
+            }
+            let queueDrained = expectation(description: "Scheduled retry processed")
+            DispatchQueue.main.async { queueDrained.fulfill() }
+            wait(for: [queueDrained], timeout: 1)
+
+            XCTAssertEqual(retries, 0)
+        }
+    }
+
     func testDidStartScrollingUpdatesPositionCorrectly() {
         let (sut, delegate) = makeSUT()
         let scrollView = mockScrollView()

@@ -587,8 +587,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
+        // The Terms of Service disclaimer keeps a disabled "Ask" instead, until the user types.
         // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
-        if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
+        if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode
+            && !isTermsOfServiceDisclaimerShown {
             submitButtonMode = .voice
             setSubmitButtonContent(image: DesignSystemImages.Glyphs.Size16.voice)
             submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
@@ -658,11 +660,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Sets `submitButton.layer.backgroundColor` to the appropriate state-aware color. Called
     /// from `applySubmitButtonAppearance(enabled:)` and from the KVO observers on the hover/press
-    /// dynamic properties. Disabled state and "submit mode while empty" both render no fill.
+    /// dynamic properties. Disabled state and "submit mode while empty" both render no fill, except a
+    /// disabled "Ask", which keeps a gray pill so it still reads as the button the disclaimer names.
     private func applySubmitButtonFill() {
         let designSystemColor: DesignSystemColor?
         if !submitButton.isEnabled {
-            designSystemColor = nil
+            designSystemColor = submitButton.title.isEmpty ? nil : .controlsFillPrimary
         } else if submitButtonMode == .voice {
             if submitButton.isMouseDown {
                 designSystemColor = .controlsFillTertiary

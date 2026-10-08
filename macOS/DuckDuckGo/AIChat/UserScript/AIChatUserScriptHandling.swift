@@ -213,6 +213,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let browserTools: AIChatBrowserToolsService
     private let fireNewAIChatExperimentPixels: () -> Void
     private let featureDiscovery: FeatureDiscovery
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
 
     var isFireWindowProvider: (() -> Bool)?
     var isSidebarProvider: (() -> Bool)?
@@ -265,9 +266,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-        homepageAiChatsProvider: HomepageAiChatsProvider? = nil
+        homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
         self.storage = storage
+        self.termsOfServiceStore = termsOfServiceStore
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.browserTools = browserTools
@@ -385,8 +388,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
         let prompt = messageHandling.getDataForMessageType(.nativePrompt)
-        notePendingNativePromptIfNeeded(prompt as? AIChatNativePrompt)
-        return prompt
+        guard let nativePrompt = prompt as? AIChatNativePrompt else { return prompt }
+        notePendingNativePromptIfNeeded(nativePrompt)
+        return nativePrompt.withTermsAccepted(termsAcceptedMarker(for: nativePrompt))
     }
 
     @MainActor
@@ -535,7 +539,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
         notePendingNativePromptIfNeeded(prompt)
-        aiChatNativePromptSubject.send(prompt)
+        aiChatNativePromptSubject.send(prompt.withTermsAccepted(termsAcceptedMarker(for: prompt)))
+    }
+
+    /// `true` only when the prompt was sent with Ask and the acceptance is on record; every other prompt
+    /// reads `false`. `nil` omits the key wherever native Terms of Service is off.
+    private func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeTermsOfService) else { return nil }
+        let sentWithAsk = prompt.termsAccepted == true
+        let termsAccepted = sentWithAsk && termsOfServiceStore.hasAccepted
+        Logger.aiChat.debug("[TermsOfService] Prompt crosses the bridge with termsAccepted=\(termsAccepted, privacy: .public) (sentWithAsk=\(sentWithAsk, privacy: .public))")
+        return termsAccepted
     }
 
     private func notePendingNativePromptIfNeeded(_ prompt: AIChatNativePrompt?) {
@@ -1259,20 +1273,17 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         }
     }
 
+    /// A report owed for an acceptance made natively is the same acceptance, not a duplicate.
     private func handleTermsAccepted() {
-        let alreadyAccepted = storage.hasAcceptedTermsAndConditions
+        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
 
-        if alreadyAccepted {
-            let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
-            let pixel: AIChatPixel = syncIsOn
-                ? .aiChatTermsAcceptedDuplicateSyncOn
-                : .aiChatTermsAcceptedDuplicateSyncOff
-            Task { @MainActor [weak self] in
-                self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
-            }
+        let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
+        let pixel: AIChatPixel = syncIsOn
+            ? .aiChatTermsAcceptedDuplicateSyncOn
+            : .aiChatTermsAcceptedDuplicateSyncOff
+        Task { @MainActor [weak self] in
+            self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         }
-
-        storage.hasAcceptedTermsAndConditions = true
     }
 
     private func refreshAtbs(completion: (() -> Void)? = nil) {

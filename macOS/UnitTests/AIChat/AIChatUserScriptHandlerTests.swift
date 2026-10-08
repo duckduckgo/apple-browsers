@@ -21,6 +21,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 @testable import DDGSync
 @_spi(Testing) import Persistence
@@ -387,6 +388,154 @@ struct AIChatUserScriptHandlerTests {
             throw EventNotReceivedError()
         }
         #expect(prompt == .queryPrompt("test", autoSubmit: true))
+    }
+
+    // MARK: - Terms of Service
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt sent with Ask once the terms are accepted crosses the bridge accepted", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenSentWithAskAndTermsAreAcceptedThenPulledPromptCarriesTermsAccepted() async {
+        let termsOfServiceStore = makeTermsOfServiceStore(accepted: true)
+        let testHandler = makeTermsOfServiceHandler(termsOfServiceStore: termsOfServiceStore)
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("test", autoSubmit: true).withTermsAccepted(true) }
+
+        let prompt = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock()) as? AIChatNativePrompt
+
+        #expect(prompt?.termsAccepted == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt sent with Ask before any acceptance crosses the bridge not accepted", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenSentWithAskAndTermsAreNotAcceptedThenPulledPromptCarriesFalse() async {
+        let testHandler = makeTermsOfServiceHandler(termsOfServiceStore: makeTermsOfServiceStore(accepted: false))
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("test", autoSubmit: true).withTermsAccepted(true) }
+
+        let prompt = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock()) as? AIChatNativePrompt
+
+        #expect(prompt?.termsAccepted == false)
+    }
+
+    /// Return, and every surface without an Ask button, leaves the web app to apply its own terms.
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt not sent with Ask crosses the bridge not accepted", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenNotSentWithAskThenPulledPromptCarriesFalse() async {
+        let testHandler = makeTermsOfServiceHandler(termsOfServiceStore: makeTermsOfServiceStore(accepted: true))
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("test", autoSubmit: true) }
+
+        let prompt = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock()) as? AIChatNativePrompt
+
+        #expect(prompt?.termsAccepted == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With native Terms of Service off, prompts carry no termsAccepted", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenNativeTermsOfServiceIsOffThenPulledPromptOmitsTermsAccepted() async {
+        let testHandler = makeTermsOfServiceHandler(isFlagOn: false, termsOfServiceStore: makeTermsOfServiceStore(accepted: true))
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("test", autoSubmit: true).withTermsAccepted(true) }
+
+        let prompt = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock()) as? AIChatNativePrompt
+
+        #expect(prompt != nil)
+        #expect(prompt?.termsAccepted == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A pushed prompt sent with Ask carries the acceptance", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenPushedPromptWasSentWithAskThenItCarriesTermsAccepted() async throws {
+        struct EventNotReceivedError: Error {}
+        let testHandler = makeTermsOfServiceHandler(termsOfServiceStore: makeTermsOfServiceStore(accepted: true))
+
+        let promptStream = AsyncStream { continuation in
+            let cancellable = testHandler.aiChatNativePromptPublisher
+                .sink { prompt in
+                    continuation.yield(prompt)
+                }
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+
+        testHandler.submitAIChatNativePrompt(AIChatNativePrompt.queryPrompt("test", autoSubmit: true).withTermsAccepted(true))
+
+        guard let prompt = await promptStream.first(where: { _ in true }) else {
+            throw EventNotReceivedError()
+        }
+        #expect(prompt.termsAccepted == true)
+    }
+
+    /// The web reports the acceptance an Ask click carried; that report is the same acceptance.
+    @available(iOS 16, macOS 13, *)
+    @Test("The web's report of a native acceptance is not a duplicate", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenWebReportsAnAcceptanceMadeNativelyThenNoDuplicatePixelFires() async {
+        let termsOfServiceStore = makeTermsOfServiceStore(accepted: false)
+        termsOfServiceStore.recordAcceptedInNativeInput()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeTermsOfServiceHandler(termsOfServiceStore: termsOfServiceStore, pixelFiring: testPixelFiring)
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: .userDidAcceptTermsAndConditions)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(testPixelFiring.actualFireCalls.isEmpty)
+        #expect(termsOfServiceStore.hasAccepted)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A repeat web acceptance fires the duplicate pixel", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenWebReportsARepeatAcceptanceThenDuplicatePixelFires() async throws {
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeTermsOfServiceHandler(termsOfServiceStore: makeTermsOfServiceStore(accepted: true),
+                                                    pixelFiring: testPixelFiring)
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: .userDidAcceptTermsAndConditions)) {
+                continuation.resume()
+            }
+        }
+        // The pixel fires on a main-actor task of its own.
+        let deadline = Date().addingTimeInterval(5)
+        while testPixelFiring.actualFireCalls.isEmpty, Date() < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        #expect(testPixelFiring.actualFireCalls == [.init(pixel: AIChatPixel.aiChatTermsAcceptedDuplicateSyncOff, frequency: .dailyAndStandard)])
+    }
+
+    private func makeTermsOfServiceStore(accepted: Bool) -> DuckAiTermsOfServiceStore {
+        let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
+        if accepted {
+            store.recordWebReport()
+        }
+        return store
+    }
+
+    @MainActor
+    private func makeTermsOfServiceHandler(isFlagOn: Bool = true,
+                                           termsOfServiceStore: DuckAiTermsOfServiceStore,
+                                           pixelFiring testPixelFiring: PixelKitMock = PixelKitMock()) -> AIChatUserScriptHandler {
+        AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeTermsOfService.rawValue: isFlagOn]),
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery,
+            termsOfServiceStore: termsOfServiceStore
+        )
     }
 
     @available(iOS 16, macOS 13, *)

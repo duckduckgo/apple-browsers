@@ -82,15 +82,11 @@ struct ScanTabView: View {
                 fullPanelIntroAnimation
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            dismissIntroAnimation()
-        }
         .transition(.opacity)
     }
 
     private var introAnimationCard: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             introLottie(named: "SyncScanQRCodeCard")
 
             Button {
@@ -98,14 +94,14 @@ struct ScanTabView: View {
             } label: {
                 Text(UserText.simplifiedScanQRGotItButton)
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(PrimaryButtonStyle(compact: true))
         }
         .padding(24)
         .background(
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color(designSystemColor: .surfaceSecondary))
         )
-        .frame(maxWidth: 360)
+        .frame(maxWidth: 300)
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, instructionsHeight)
@@ -128,6 +124,10 @@ struct ScanTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(designSystemColor: .surfaceSecondary))
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissIntroAnimation()
+        }
     }
 
     private func introLottie(named name: String) -> some View {
@@ -190,9 +190,12 @@ struct ScanTabView: View {
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 4) {
-                SyncOpenAppInstruction(format: UserText.simplifiedScanQROpenInstruction, appName: UserText.simplifiedScanQRAppName)
-
-                SyncInstructionText(markdown: UserText.simplifiedScanQRStepsInstruction)
+                if model.isImprovedPairingFlowEnabled {
+                    SyncOpenAppInstruction(format: UserText.simplifiedScanQRInstruction, appName: UserText.simplifiedScanQRAppName)
+                } else {
+                    SyncOpenAppInstruction(format: UserText.simplifiedScanQROpenInstruction, appName: UserText.simplifiedScanQRAppName)
+                    SyncInstructionText(markdown: UserText.simplifiedScanQRStepsInstruction)
+                }
             }
         }
         .padding(.horizontal, 16)

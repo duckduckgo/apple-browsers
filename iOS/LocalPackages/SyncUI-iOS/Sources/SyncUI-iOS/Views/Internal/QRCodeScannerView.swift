@@ -55,6 +55,8 @@ struct QRCodeScannerView: UIViewRepresentable {
         let cameraView: QRCodeScannerView
         var captureCodes = true
 
+        private let sessionQueue = DispatchQueue(label: "com.duckduckgo.sync.qrCodeScanner.session", qos: .userInitiated)
+
         init(_ cameraView: QRCodeScannerView) {
             self.cameraView = cameraView
             self.session = AVCaptureSession()
@@ -62,36 +64,46 @@ struct QRCodeScannerView: UIViewRepresentable {
         }
 
         func start(_ uiView: UIView) {
-            session.sessionPreset = .high
-
-            guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                  let input = try? AVCaptureDeviceInput(device: backCamera) else {
-
-                // This updates the view so needs to be done in a separate UI cycle
-                DispatchQueue.main.async {
-                    self.cameraView.onCameraUnavailable()
-                }
-                return
-            }
-            session.addInput(input)
-            session.addOutput(metadataOutput)
-            metadataOutput.metadataObjectTypes = [.qr]
-            metadataOutput.setMetadataObjectsDelegate(self, queue: .main)
-
             let previewLayer = AVCaptureVideoPreviewLayer(session: session)
             uiView.layer.addSublayer(previewLayer)
             previewLayer.frame = uiView.bounds
             previewLayer.videoGravity = .resizeAspectFill
 
-            DispatchQueue.global().async {
+            sessionQueue.async {
+                guard self.configureSession() else {
+                    DispatchQueue.main.async {
+                        self.cameraView.onCameraUnavailable()
+                    }
+                    return
+                }
                 self.session.startRunning()
             }
         }
 
         func stop() {
-            DispatchQueue.global().async {
+            sessionQueue.async {
                 self.session.stopRunning()
             }
+        }
+
+        private func configureSession() -> Bool {
+            guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let input = try? AVCaptureDeviceInput(device: backCamera) else {
+                return false
+            }
+
+            session.beginConfiguration()
+            defer { session.commitConfiguration() }
+
+            session.sessionPreset = .high
+            guard session.canAddInput(input), session.canAddOutput(metadataOutput) else {
+                return false
+            }
+            session.addInput(input)
+            session.addOutput(metadataOutput)
+            metadataOutput.metadataObjectTypes = [.qr]
+            metadataOutput.setMetadataObjectsDelegate(self, queue: .main)
+            return true
         }
 
         // This gets get called on the main queue

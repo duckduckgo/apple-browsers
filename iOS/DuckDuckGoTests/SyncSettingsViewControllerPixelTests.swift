@@ -301,7 +301,8 @@ final class SyncSettingsViewControllerPixelTests {
         })
     }
 
-    @Test("Sync setup flow version follows local capability flags", arguments: [
+    @available(iOS 16, macOS 13, *)
+    @Test("Sync setup flow version follows local capability flags", .timeLimit(.minutes(1)), arguments: [
         ([FeatureFlag](), "v1"),
         ([.syncCanUseV2ConnectFlow], "v2"),
         ([.syncCanUseV2ConnectFlow, .syncCanUseExchangeV2Point1], "v2.1"),
@@ -312,7 +313,8 @@ final class SyncSettingsViewControllerPixelTests {
         #expect(vc.syncSetupPixelFlowVersion == expected)
     }
 
-    @Test("Join report fires the matching count and daily pixel", arguments: [true, false])
+    @available(iOS 16, macOS 13, *)
+    @Test("Join report fires the matching count and daily pixel", .timeLimit(.minutes(1)), arguments: [true, false])
     func joinReportPixel(didSucceed: Bool) {
         let vc = makeViewController(source: nil, enabledFeatureFlags: [])
         let report = PairingV2JoinReport(hostHasAccount: false, hostKind: .thirdParty,

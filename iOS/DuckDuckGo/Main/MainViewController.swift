@@ -2957,8 +2957,7 @@ class MainViewController: UIViewController {
             }
             defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
         } else {
-            enterSearchOnAppOpen()
-            focusCompleted(isAutomaticFocusAccepted)
+            focusCompleted(enterSearchAutomatically())
         }
     }
 
@@ -2974,14 +2973,25 @@ class MainViewController: UIViewController {
                                 !daxDialogsManager.isShowingContextualOnboardingDialog)
     }
 
+    /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
+    func enterSearchOnAppOpen() {
+        if enterSearchAutomatically() {
+            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+        }
+    }
+
     /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because
     /// focus is decided a moment later, so the visit is told the keyboard came up once an input accepts focus.
-    func enterSearchOnAppOpen() {
-        guard presentedViewController == nil else { return }
+    /// Returns whether an input accepted focus.
+    @discardableResult
+    private func enterSearchAutomatically() -> Bool {
+        guard presentedViewController == nil else { return false }
         enterSearch()
-        if isNewTabPageVisible, isAutomaticFocusAccepted {
+        guard isAutomaticFocusAccepted else { return false }
+        if isNewTabPageVisible {
             newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
         }
+        return true
     }
 
     private func rememberNewTabPageInputFocusForTabSwitch() {
@@ -8193,7 +8203,7 @@ extension MainViewController {
                         guard showsKeyboard,
                               !self.isNewTabPageKeyboardBlockedByDialog,
                               !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
-                        self.enterSearchOnAppOpen()
+                        self.enterSearchAutomatically()
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
                     self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
@@ -8204,7 +8214,7 @@ extension MainViewController {
                     // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.
                     guard self.currentTab?.isAITab != true else { return }
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-                        self.enterSearchOnAppOpen()
+                        self.enterSearchAutomatically()
                     }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)

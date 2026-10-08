@@ -309,7 +309,7 @@ class MainViewController: UIViewController {
     private let idleReturnEvaluator: IdleReturnEvaluating
 
     /// Set when the launch landed this return on the New Tab Page, so the launch action — which runs
-    /// afterwards and would otherwise treat the return a second time — can tell that it is too late.
+    /// afterwards — records the arrival instead of opening a second page.
     /// One-shot: reading it clears it, so later returns are handled normally.
     private var didLandOnNewTabPageForIdleReturnAtLaunch = false
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
@@ -2308,7 +2308,7 @@ class MainViewController: UIViewController {
     /// tab is attached — so the launch screen hands over to the NTP rather than to a page that is
     /// about to be replaced. Returns whether it took over the initial view.
     private func attachNewTabPageForIdleReturn() -> Bool {
-        guard case .afterIdle(.ntp, let timeAwayMs) = idleReturnEvaluator.evaluateReturn() else { return false }
+        guard case .afterIdle(.ntp, _) = idleReturnEvaluator.evaluateReturn() else { return false }
         // Clearing tabs on launch owns the landing: the tabs are already gone before this runs and
         // the burn replaces what is left behind us, so taking over here would only mark a tab that
         // is about to be discarded — and the ordinary path then starts a second, untreated session.
@@ -2327,13 +2327,9 @@ class MainViewController: UIViewController {
             }
         }
 
-        // The session starts when the NTP renders; stash the time away so it carries it.
-        postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        // Matches what the launch action passes through `newTab`: the keyboard and the NTP session's
-        // trigger both key off these. With the app-open keyboard flag on, the keyboard is raised later
-        // by the launch action's completion instead, once authentication and prompts are out of the way.
-        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-        attachHomeScreen(isNewTab: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+        // Only the page is put up here. The launch action records the arrival and raises the keyboard
+        // once authentication is done, as it does when it opens the page itself.
+        attachHomeScreen(isNewTab: true, openedAfterIdle: true, recordsArrival: false)
         didLandOnNewTabPageForIdleReturnAtLaunch = true
         return true
     }
@@ -2443,7 +2439,8 @@ class MainViewController: UIViewController {
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
                                       openedAfterIdle: Bool = false,
-                                      startsNewTabPageSessionVisit: Bool = true) {
+                                      startsNewTabPageSessionVisit: Bool = true,
+                                      recordsArrival: Bool = true) {
         reportDuckAISessionCurrentTab()
         guard !autoClearInProgress else { return }
 
@@ -2501,8 +2498,7 @@ class MainViewController: UIViewController {
         // Resolved before the instrumentation call below, so the wide event records the mode
         // the app decided on rather than racing the keyboard to observe it. Behind the flag a new tab
         // also keeps the keyboard hidden during onboarding.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
-            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+        let willBeginEditing = isNewTab && willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2550,7 +2546,7 @@ class MainViewController: UIViewController {
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
-        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+        if recordsArrival, presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             // Consumed here rather than before the guard, so an attach that happens behind a
             // presented controller and records nothing cannot swallow the burn's trigger. Moving on
             // to an existing tab clears it instead, in `attachTab`.
@@ -2570,6 +2566,25 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func willBeginEditingOnNewTab(allowingKeyboard: Bool) -> Bool {
+        allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+    }
+
+    /// Records the arrival on the New Tab Page the launch put up for an idle return, at the point the
+    /// launch action would otherwise have opened one, and raises the keyboard as `newTab` would.
+    func recordNewTabPageArrivalForIdleReturnAtLaunch(allowingKeyboard: Bool) {
+        let willBeginEditing = willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: true, hatch: currentNTPEscapeHatch, focused: willBeginEditing)
+            startNewTabPageSessionInstrumentation(isNewTab: true, willBeginEditing: willBeginEditing, isAfterFire: false)
+        }
+        if willBeginEditing {
+            omniBar.beginEditing(animated: true)
+        }
     }
 
     private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {

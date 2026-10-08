@@ -736,6 +736,8 @@ final class MainCoordinator {
         homePageConfiguration.handleAppBackgrounded()
         promoCoordinationService.handleAppBackgrounded()
         resetAppStartTime()
+        // Only a standard launch reads it; any other launch action would leave it for the next return.
+        _ = controller.consumeIdleReturnTreatmentAppliedAtLaunch()
         Task {
             await privacyStats.handleAppTermination()
         }
@@ -944,16 +946,11 @@ extension MainCoordinator: UserActivityHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
-        // The launch already landed this return on the NTP and the render already started its
-        // session; anything else here would cancel that session and record the return as untreated.
-        // The page is already showing, so it completes as kept — which hands the keyboard to the
-        // same app-open handling as any other return that finds the NTP in place.
-        if controller.consumeIdleReturnTreatmentAppliedAtLaunch() {
-            completion(.keptCurrent)
-            return
-        }
+        // The launch already put up the NTP without recording anything; record the arrival where the
+        // page would otherwise be opened, so the metrics and keyboard follow the same path.
+        let landedAtLaunch = controller.consumeIdleReturnTreatmentAppliedAtLaunch()
 
-        if voiceSessionStateManager.isVoiceSessionActive {
+        if !landedAtLaunch, voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             completion(.suppressed)
             return
@@ -966,7 +963,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
-        if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+        if !landedAtLaunch, let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             completion(.keptCurrent)
             return
@@ -977,7 +974,11 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            if landedAtLaunch {
+                self.controller.recordNewTabPageArrivalForIdleReturnAtLaunch(allowingKeyboard: !deferKeyboard)
+            } else {
+                self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            }
             completion(.openedNewTab)
         }
     }

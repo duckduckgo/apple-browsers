@@ -25,9 +25,6 @@ import WebKit
 @MainActor
 final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
-    /// The action whose popover is open, so a popup that calls `window.close()` can close it.
-    private weak var shownPopupAction: WKWebExtension.Action?
-
     /// Keeps the open popover on the app's theme while it changes.
     private var popupAppearanceObservation: NSKeyValueObservation?
 
@@ -143,12 +140,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             }
         }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
-        shownPopupAction = action
-    }
-
-    func dismissPopup(for popupWebView: WKWebView) {
-        guard let shownPopupAction, shownPopupAction.popupWebView === popupWebView else { return }
-        shownPopupAction.closePopup()
     }
 
     // MARK: - Private Helpers

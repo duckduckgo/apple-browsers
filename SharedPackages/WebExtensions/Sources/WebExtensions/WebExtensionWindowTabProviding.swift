@@ -43,9 +43,6 @@ public protocol WebExtensionWindowTabProviding: AnyObject {
     func presentPopup(_ action: WKWebExtension.Action,
                       for context: WKWebExtensionContext) async throws
 
-    /// Closes whatever hosts `popupWebView`, whose page called `window.close()`. Does nothing by default.
-    func dismissPopup(for popupWebView: WKWebView)
-
     /// Shows the browser's counterpart of a Chrome page, such as `chrome://password-manager/settings`.
     /// - Returns: `false` when the browser has no counterpart, which is the default.
     func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool
@@ -53,8 +50,6 @@ public protocol WebExtensionWindowTabProviding: AnyObject {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionWindowTabProviding {
-
-    func dismissPopup(for popupWebView: WKWebView) {}
 
     func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool { false }
 }

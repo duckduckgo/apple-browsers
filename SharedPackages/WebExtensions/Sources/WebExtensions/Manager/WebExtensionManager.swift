@@ -202,15 +202,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
 #endif
 
-        // Popup pages report `window.close()`, so the window/tab provider can close what hosts them.
-        let windowCloseScript = WKUserScript(source: WebExtensionWindowCloseScript.source,
-                                             injectionTime: .atDocumentStart,
-                                             forMainFrameOnly: true)
-        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(windowCloseScript)
-        let windowCloseHandler = WebExtensionWindowCloseMessageHandler()
-        controllerConfiguration.webViewConfiguration.userContentController.add(windowCloseHandler,
-                                                                                name: WebExtensionWindowCloseScript.messageHandlerName)
-
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -235,10 +226,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
-
-        windowCloseHandler.onWindowClose = { [weak self] popupWebView in
-            self?.windowTabProvider.dismissPopup(for: popupWebView)
-        }
 
         apiCompatibilityHandler.resolveExtension = { [weak self] url in
             guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }

@@ -121,6 +121,23 @@ public struct UserText {
     static let simplifiedManageDeviceStatusSynced = NSLocalizedString("sync.simplified.manage.device.status.synced", bundle: Bundle.module, value: "Synced", comment: "Status label shown under a device name on the manage device screen when the device is synced")
     static let simplifiedManageDeviceRemoveFooter = NSLocalizedString("sync.simplified.manage.device.remove.footer", bundle: Bundle.module, value: "This device will no longer be able to access your synced data if you remove it.", comment: "Footer caption shown under the Remove Device button on the manage device screen")
     static let simplifiedManageDeviceTurnOffFooter = NSLocalizedString("sync.simplified.manage.device.turn.off.footer", bundle: Bundle.module, value: "This device will no longer be able to access your synced data if this is turned off.", comment: "Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen")
+    static func simplifiedManageDeviceRemoveFooter(_ name: String) -> String {
+        let localized = NotLocalizedString("sync.simplified.manage.device.remove.footer.named", bundle: Bundle.module, value: "\"%@\" will no longer be able to access your synced data on other devices.", comment: "Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name")
+        return String(format: localized, name)
+    }
+    static func simplifiedManageDeviceTurnOffFooter(_ name: String) -> String {
+        let localized = NotLocalizedString("sync.simplified.manage.device.turn.off.footer.named", bundle: Bundle.module, value: "\"%@\" will no longer be able to access your synced data on other devices if this is turned off.", comment: "Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name")
+        return String(format: localized, name)
+    }
+    static func simplifiedRemoveDeviceConfirmTitle(_ name: String) -> String {
+        let localized = NotLocalizedString("sync.simplified.remove.device.confirm.title", bundle: Bundle.module, value: "Remove %@ from Sync & Backup?", comment: "Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name")
+        return String(format: localized, name)
+    }
+    static func simplifiedRemoveDeviceConfirmMessage(_ name: String) -> String {
+        let localized = NotLocalizedString("sync.simplified.remove.device.confirm.message", bundle: Bundle.module, value: "\"%@\" will no longer be able to access your synced data. Bookmarks, Autofill data and Duck.ai chats will remain on your devices.", comment: "Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name")
+        return String(format: localized, name)
+    }
+    static let simplifiedRemoveDeviceConfirmAction = NotLocalizedString("sync.simplified.remove.device.confirm.action", bundle: Bundle.module, value: "Remove", comment: "Confirmation alert button to remove a device from Sync & Backup")
     static let simplifiedSyncWithAnotherDeviceButton = NSLocalizedString("sync.simplified.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync With Another Device sync setup button label")
     static let simplifiedRecoverSyncedDataSectionHeader = NSLocalizedString("sync.simplified.recover.synced.data.section.header", bundle: Bundle.module, value: "Recover Synced Data", comment: "Section header above the recovery-code option in sync setup")
     static let simplifiedHaveRecoveryCodeButton = NSLocalizedString("sync.simplified.have.recovery.code.button", bundle: Bundle.module, value: "I Have a Recovery Code", comment: "Sync setup row label to recover synced data using an existing recovery code")

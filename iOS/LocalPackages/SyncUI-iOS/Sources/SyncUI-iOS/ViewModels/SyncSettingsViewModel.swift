@@ -50,6 +50,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     // Simplified sync setup experiment
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
+    func disableSync() async -> Bool
     func simplifiedCopyRecoveryCode()
 
     var syncBookmarksPausedTitle: String? { get }
@@ -213,6 +214,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
+    @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false
@@ -231,7 +233,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private var postConnectingSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
-    private let isImprovedPairingFlowEnabled: Bool
+    let isImprovedPairingFlowEnabled: Bool
 
     public init(
         isOnDevEnvironment: @escaping () -> Bool,
@@ -418,7 +420,22 @@ public class SyncSettingsViewModel: ObservableObject {
     func thisDeviceDetailsTurnOffSyncTapped() {
         guard !isBusy else { return }
         delegate?.fireDeviceDetailsPixel(event: .thisDeviceTurnOffSyncTapped)
-        disableSyncToggleTapped()
+        if isImprovedPairingFlowEnabled {
+            isThisDeviceTurnOffConfirmationVisible = true
+        } else {
+            disableSyncToggleTapped()
+        }
+    }
+
+    func thisDeviceDetailsTurnOffSyncConfirmed() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            if await delegate?.disableSync() == true {
+                isSyncEnabled = false
+            }
+        }
     }
 
     func otherDeviceDetailsRemoveDeviceTapped() {

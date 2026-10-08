@@ -26,6 +26,13 @@ enum PromptBarPresentationSource: Equatable, CaseIterable {
     case keyboardShortcut
     case menuBarIcon
 
+    var pixelValue: String {
+        switch self {
+        case .keyboardShortcut: "shortcut"
+        case .menuBarIcon: "menu_bar_icon"
+        }
+    }
+
     var shownPixel: PromptBarPixel {
         switch self {
         case .keyboardShortcut: .shownFromShortcut
@@ -79,6 +86,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let makeWindow: (NSRect) -> PromptBarWindow
     private let makeDimWindow: (NSRect) -> NSWindow
     private let firePixel: (PromptBarPixel) -> Void
+    private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
@@ -93,11 +101,19 @@ final class PromptBarPresenter: PromptBarPresenting {
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
          makeDimWindow: @escaping (NSRect) -> NSWindow = { NSWindow(contentRect: $0, styleMask: .borderless, backing: .buffered, defer: false) },
-         firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
+         promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
+         firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
+            if case .firstUse = pixel {
+                PixelKit.fire(pixel, frequency: .uniqueByName, includeAppVersionParameter: true)
+            } else {
+                PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+         }) {
         self.content = content
         self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
         self.makeWindow = makeWindow
         self.makeDimWindow = makeDimWindow
+        self.promoOutcome = promoOutcome
         self.firePixel = firePixel
 
         self.content.onSubmit = { [weak self] in
@@ -119,6 +135,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     func show(source: PromptBarPresentationSource) {
         present()
         firePixel(source.shownPixel)
+        firePixel(.firstUse(source: source, promoOutcome: promoOutcome()))
     }
 
     func showForLauncherPromo(shortcut: String) {

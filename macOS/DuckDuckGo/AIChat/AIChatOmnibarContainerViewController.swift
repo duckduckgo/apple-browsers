@@ -295,6 +295,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var launcherPromoCancellable: AnyCancellable?
     private var isShowingLauncherPromo = false
     private var isLauncherPromoDeferred = false
+    private var didReportLauncherPromoShown = false
     private var launcherIntroductionShortcut: String?
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -1234,7 +1235,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onAction = { [weak self] in
             guard let self else { return }
             if isShowingLauncherPromo {
-                launcherPromo?.tryNow()
+                launcherPromo?.tryNow(on: .addressBar)
                 return
             }
             omnibarController.usageWarningViewModel?.performAction()
@@ -1250,7 +1251,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 return
             }
             if isShowingLauncherPromo {
-                launcherPromo?.dismiss()
+                launcherPromo?.dismiss(on: .addressBar)
                 refreshUsageCard()
                 return
             }
@@ -1300,7 +1301,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         omnibarController.onPromptSubmitted = { [weak self] in
             guard let self, isShowingLauncherPromo, isUsageWarningVisible else { return }
-            launcherPromo?.ignore()
+            launcherPromo?.ignore(on: .addressBar)
         }
         launcherPromoCancellable = launcherPromo?.changesPublisher.sink { [weak self] in
             self?.refreshUsageCard()
@@ -1447,6 +1448,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.update(with: promo)
         isShowingLauncherPromo = true
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+        if isUsageWarningVisible, !didReportLauncherPromoShown {
+            didReportLauncherPromoShown = true
+            launcherPromo?.shown(on: .addressBar)
+        }
     }
 
     func showLauncherIntroduction(shortcut: String) {
@@ -1632,6 +1637,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         highUsageNoticeSource?.clear()
         isShowingLauncherPromo = false
         isLauncherPromoDeferred = false
+        didReportLauncherPromoShown = false
         launcherIntroductionShortcut = nil
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()

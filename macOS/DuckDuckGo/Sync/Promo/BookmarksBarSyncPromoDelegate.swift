@@ -31,13 +31,21 @@ struct BookmarksBarSyncPromoLegacySettings: StoringKeys {
     let legacyFirstPresentedDate = StorageKey<Date>(UserDefaultsKeys.bookmarksBarSyncPromoFirstPresentedDate, assertionHandler: { _ in })
 }
 
-protocol BookmarksBarSyncPromoPresenting: AnyObject {
+protocol SyncDeviceButtonPromoPresenting: AnyObject {
     var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
     @MainActor func syncSetupStarted()
+    @MainActor func syncButtonDismissed()
+    /// The delegate decides whether this ends the current showing.
+    @MainActor func syncButtonSurfaceClosed()
+}
+
+extension SyncDeviceButtonPromoPresenting {
+    @MainActor func syncButtonDismissed() {}
+    @MainActor func syncButtonSurfaceClosed() {}
 }
 
 /// Shows the "Sync Bookmarks" button in the bookmarks bar through the promo queue.
-final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, BookmarksBarSyncPromoPresenting {
+final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, SyncDeviceButtonPromoPresenting {
 
     private static let legacyPresentationDays = 7
 

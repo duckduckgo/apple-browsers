@@ -28,15 +28,20 @@ struct AddEditBookmarkDialogView: ModalView {
     }
 
     var body: some View {
-        Group {
+        // Not a `Group`: its modifiers apply per branch, so swapping to the folder view would count as closing the dialog.
+        ZStack {
             switch viewModel.viewState {
             case .bookmark:
-                addEditBookmarkView.onAppear {
-                    syncButtonModel.viewDidLoad()
-                }
+                addEditBookmarkView
             case .folder:
                 addFolderView
             }
+        }
+        .onAppear {
+            syncButtonModel.panelDidOpen()
+        }
+        .onDisappear {
+            syncButtonModel.syncButtonSurfaceClosed()
         }
         .background(Color(designSystemColor: .surfaceSecondary))
         .font(.system(size: 13))

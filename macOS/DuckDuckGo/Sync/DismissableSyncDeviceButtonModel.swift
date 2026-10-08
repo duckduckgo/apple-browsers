@@ -54,7 +54,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             case .bookmarksBar:
                 return UserDefaultsKeys.bookmarksBarSyncPromoFirstPresentedDate.rawValue
             case .bookmarkAdded:
-                return nil
+                return NSApp.delegateTyped.bookmarkAddedSyncPromoDelegate
             }
         }
 
@@ -77,12 +77,12 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         }
 
         @MainActor
-        var promo: BookmarksBarSyncPromoPresenting? {
+        var promo: SyncDeviceButtonPromoPresenting? {
             switch self {
             case .bookmarksBar:
                 return NSApp.delegateTyped.bookmarksBarSyncPromoDelegate
             case .bookmarkAdded:
-                return nil
+                return NSApp.delegateTyped.bookmarkAddedSyncPromoDelegate
             }
         }
     }
@@ -108,7 +108,8 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
-    private let promo: BookmarksBarSyncPromoPresenting?
+    private let notificationCenter: NotificationCenter
+    private let promo: SyncDeviceButtonPromoPresenting?
 
     private var cancellables: Set<AnyCancellable> = []
     private var hasFiredImpressionPixel = false
@@ -139,13 +140,15 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         syncLauncher: SyncDeviceFlowLaunching?,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         pixelFiring: PixelFiring? = PixelKit.shared,
-        promo: BookmarksBarSyncPromoPresenting? = nil
+        notificationCenter: NotificationCenter = .default,
+        promo: SyncDeviceButtonPromoPresenting? = nil
     ) {
         self.source = source
         self.keyValueStore = keyValueStore
         self.syncLauncher = syncLauncher
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.notificationCenter = notificationCenter
         self.promo = promo ?? source.promo
 
         if let promo = self.promo {
@@ -161,20 +164,19 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func viewDidLoad() {
-        guard promo == nil else { return }
-        guard
-            featureFlagger.isNewSyncEntryPointsFeatureOn,
-            syncLauncher != nil,
-            case .inactive = authState,
-            !wasDimissed,
-            !incrementPresentationCountLimitReturningLimitReached()
-        else {
-            shouldShowSyncButton = false
-            return
-        }
-        syncButtonDidAppear()
-        shouldShowSyncButton = true
+    func panelDidOpen() {
+        // The bookmarks bar fires its own display pixel when its button appears; panels fire it here, once the panel is open.
+        $shouldShowSyncButton
+            .first { $0 }
+            .sink { [weak self] _ in
+                self?.syncButtonDidAppear()
+            }
+            .store(in: &cancellables)
+        notificationCenter.post(name: .bookmarkPanelShown, object: nil)
+    }
+
+    func syncButtonSurfaceClosed() {
+        promo?.syncButtonSurfaceClosed()
     }
 
     func syncButtonDidAppear() {
@@ -191,7 +193,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 
     func dismissSyncButtonAction() {
         shouldShowSyncButton = false
-        keyValueStore.set(true, forKey: source.wasDismissedKey)
+        promo?.syncButtonDismissed()
         pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDismissed, options: .parameters(["source": source.pixelSource.rawValue]))
     }
 

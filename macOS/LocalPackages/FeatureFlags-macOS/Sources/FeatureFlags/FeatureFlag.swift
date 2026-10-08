@@ -572,6 +572,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
     case aiChatLauncherPromo
 
+    /// Shows the Duck.ai Terms of Service disclaimer under the native Duck.ai input, where clicking Ask accepts them.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
+    case aiChatNativeTermsOfService
+
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
@@ -993,6 +997,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
         case .aiChatLauncherPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.launcherPromo), category: .duckAI)
+        case .aiChatNativeTermsOfService:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import os.log
 import WebExtensions
 import WebKit
@@ -24,6 +25,9 @@ import WebKit
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
+
+    /// Hosts extension action popups. Exposed so the toolbar button can toggle its own popup.
+    let popupPresenter = WebExtensionPopupPresenter()
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -107,15 +111,27 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return
         }
 
-        guard let popupPopover = action.popupPopover,
-              let popupWebView = action.popupWebView
-        else {
-            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup popover or web view")
+        guard let popupWebView = action.popupWebView else {
+            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup web view")
             return
         }
 
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
-        popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+
+        // The popup is tied to the tab selected in the window that owns the button.
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
+            return
+        }
+
+        // Shown in our own panel instead of `action.popupPopover` (see `WebExtensionPopupPanel`).
+        let selectedTabPublisher = tabCollectionViewModel.$selectedTabViewModel
+            .map { $0?.tab }
+            .eraseToAnyPublisher()
+        popupPresenter.present(action, for: context, from: button, selectedTabPublisher: selectedTabPublisher)
+    }
+
+    func dismissPopup(for popupWebView: WKWebView) {
+        popupPresenter.close(ifShowing: popupWebView)
     }
 
     // MARK: - Private Helpers

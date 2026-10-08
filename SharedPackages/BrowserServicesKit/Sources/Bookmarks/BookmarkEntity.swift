@@ -140,8 +140,7 @@ public class BookmarkEntity: NSManagedObject {
     }
 
     public var urlObject: URL? {
-        guard let url = url else { return nil }
-        return url.isBookmarklet() ? url.toEncodedBookmarklet() : URL(string: url)
+        BookmarkUtils.url(from: url)
     }
 
     public var isRoot: Bool {

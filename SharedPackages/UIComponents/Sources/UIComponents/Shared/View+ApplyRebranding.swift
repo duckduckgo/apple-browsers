@@ -1,6 +1,5 @@
 //
-//  SyncAppNameChip.swift
-//  DuckDuckGo
+//  View+ApplyRebranding.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,25 +20,14 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 
-struct SyncAppNameChip: View {
+public extension View {
 
-    var name: String = UserText.simplifiedViewCodeAppName
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(uiImage: DesignSystemImages.Color.Size24.appDuckDuckGo)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 16, height: 16)
-
-            Text(name)
-                .daxSubheadSemibold()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-        }
-        .padding(4)
+    func applyRebranding() -> Self {
+        AppRebrand.isAppRebranded = { true }
+        DesignSystemRebrand.isAppRebranded = { true }
+        #if os(iOS)
+        DesignSystemPalette.current = .rebranded
+        #endif
+        return self
     }
-}
-
-#Preview {
-    SyncAppNameChip()
 }

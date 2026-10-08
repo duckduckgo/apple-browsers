@@ -86,6 +86,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let makeWindow: (NSRect) -> PromptBarWindow
     private let makeDimWindow: (NSRect) -> NSWindow
     private let presentationEffectsEnabled: () -> Bool
+    private let animatesPresentationEffects: Bool
     private let firePixel: (PromptBarPixel) -> Void
     private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
 
@@ -103,6 +104,7 @@ final class PromptBarPresenter: PromptBarPresenting {
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
          makeDimWindow: @escaping (NSRect) -> NSWindow = { NSWindow(contentRect: $0, styleMask: .borderless, backing: .buffered, defer: false) },
          presentationEffectsEnabled: @escaping () -> Bool = { false },
+         animatesPresentationEffects: Bool = true,
          promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
          firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
             if case .firstUse = pixel {
@@ -116,6 +118,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         self.makeWindow = makeWindow
         self.makeDimWindow = makeDimWindow
         self.presentationEffectsEnabled = presentationEffectsEnabled
+        self.animatesPresentationEffects = animatesPresentationEffects
         self.promoOutcome = promoOutcome
         self.firePixel = firePixel
 
@@ -147,6 +150,10 @@ final class PromptBarPresenter: PromptBarPresenting {
     }
 
     private func animateAppearance(of window: NSWindow) {
+        guard animatesPresentationEffects else {
+            window.alphaValue = 1
+            return
+        }
         let duration = 0.25
         if let contentView = window.contentView, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             contentView.wantsLayer = true
@@ -169,6 +176,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     }
 
     private static let dimFadeDuration = 0.3
+    private static let dimAlpha: CGFloat = 0.15
 
     private func dimScreen() {
         guard dimWindow == nil, let window, let screen = window.screen else { return }
@@ -181,13 +189,14 @@ final class PromptBarPresenter: PromptBarPresenting {
         dimWindow.ignoresMouseEvents = true
         dimWindow.level = window.level
         dimWindow.collectionBehavior = window.collectionBehavior
-        dimWindow.alphaValue = 0
+        dimWindow.alphaValue = animatesPresentationEffects ? 0 : Self.dimAlpha
         dimWindow.order(.below, relativeTo: window.windowNumber)
         self.dimWindow = dimWindow
+        guard animatesPresentationEffects else { return }
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = Self.dimFadeDuration
-            dimWindow.animator().alphaValue = 0.15
+            dimWindow.animator().alphaValue = Self.dimAlpha
         }
     }
 
@@ -224,11 +233,15 @@ final class PromptBarPresenter: PromptBarPresenting {
         window.orderOut(nil)
         if let dimWindow {
             self.dimWindow = nil
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = Self.dimFadeDuration
-                dimWindow.animator().alphaValue = 0
-            } completionHandler: {
+            if !animatesPresentationEffects {
                 dimWindow.orderOut(nil)
+            } else {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = Self.dimFadeDuration
+                    dimWindow.animator().alphaValue = 0
+                } completionHandler: {
+                    dimWindow.orderOut(nil)
+                }
             }
         }
         content.resetAfterDismissal()

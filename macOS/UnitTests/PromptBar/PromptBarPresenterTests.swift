@@ -47,6 +47,7 @@ final class PromptBarPresenterTests: XCTestCase {
                 return window
             },
             presentationEffectsEnabled: { [weak self] in self?.presentationEffectsEnabled ?? false },
+            animatesPresentationEffects: false,
             firePixel: { [weak self] pixel in
                 self?.firedPixels.append(pixel)
             }

@@ -42,7 +42,7 @@ struct PageSignalsTabExtensionTests {
         tabExtension.didCommit(makeNavigation(url: url, navigationType: .alternateHtmlLoad, isCommitted: true))
 
         #expect(tabExtension.pageSignals?.host == "example.com")
-        #expect(tabExtension.pageSignals?.resourceFailures == ["example.com": [.dns]])
+        #expect(encodedFailures() == ["example.com": ["(NSURLErrorDomain,-1003)"]])
     }
 
     @available(macOS 13, *)
@@ -65,11 +65,15 @@ struct PageSignalsTabExtensionTests {
         tabExtension.navigation(navigation, didFailWith: dnsError(failingURL: URL(string: "https://www.redirected.com")!))
 
         #expect(tabExtension.pageSignals?.host == "redirected.com")
-        #expect(tabExtension.pageSignals?.resourceFailures == ["redirected.com": [.dns]])
+        #expect(encodedFailures() == ["redirected.com": ["(NSURLErrorDomain,-1003)"]])
     }
 }
 
 private extension PageSignalsTabExtensionTests {
+
+    func encodedFailures() -> [String: Set<String>]? {
+        tabExtension.pageSignals?.resourceFailures.mapValues { Set($0.map(\.stringValue)) }
+    }
 
     func makeNavigation(url: URL, navigationType: NavigationType = .custom(.userEnteredUrl), isCommitted: Bool = false) -> Navigation {
         let action = NavigationAction(request: URLRequest(url: url),

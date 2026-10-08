@@ -23,11 +23,8 @@ import SwiftUIExtensions
 
 struct FaviconView: View {
 
-    /// What to show while a site has no favicon.
     enum Placeholder {
-        /// The first letters of the site's domain on a coloured square.
         case letters
-        /// A globe icon.
         case globe
     }
 

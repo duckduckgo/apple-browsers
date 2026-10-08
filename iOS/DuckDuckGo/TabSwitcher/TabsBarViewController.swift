@@ -459,9 +459,9 @@ class TabsBarViewController: UIViewController {
     }
 
     private func scrollToTab(at indexPath: IndexPath) {
-        // Selection still reveals the tab's original place in the strip, rather than its pinned frame.
+        // Reveal the tab's original position with a glimpse of any neighbors beyond it.
         guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
-              let frame = layout.unpinnedFrameForItem(at: indexPath) else { return }
+              let frame = layout.frameForRevealingItem(at: indexPath) else { return }
         collectionView.scrollRectToVisible(frame, animated: true)
     }
 

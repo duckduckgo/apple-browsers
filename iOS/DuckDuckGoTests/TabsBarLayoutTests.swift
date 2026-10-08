@@ -293,6 +293,53 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertEqual(inactive.layer.zPosition, originalOrder)
     }
 
+    func testSelectingPartiallyCoveredEdgeTabRevealsItWithNeighborStillExposed() throws {
+        for (offset, index, neighborIndex) in [(CGFloat(300), 2, 1), (330, 7, 8)] {
+            var currentIndex = 4
+            let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: offset)
+            let indexPath = IndexPath(item: index, section: 0)
+            let edge = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
+            let exposedWidth = edge.visiblePointerRect(in: edge.contentView).width
+            XCTAssertGreaterThan(exposedWidth, 0)
+            XCTAssertLessThan(exposedWidth, edge.bounds.width)
+
+            currentIndex = index
+            collectionView.reloadData()
+            collectionView.layoutIfNeeded()
+            let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
+            collectionView.scrollRectToVisible(revealFrame, animated: false)
+            collectionView.layoutIfNeeded()
+
+            let selected = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
+            let neighbor = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighborIndex, section: 0)) as? TabsBarCell)
+            XCTAssertEqual(selected.frame, layout.unpinnedFrameForItem(at: indexPath))
+            XCTAssertEqual(selected.visiblePointerRect(in: selected.contentView), selected.contentView.bounds)
+            XCTAssertEqual(neighbor.visiblePointerRect(in: neighbor.contentView).width, 60)
+        }
+    }
+
+    func testRevealFrameRespectsContentEndsAndNarrowStripWithoutOverscroll() throws {
+        for (width, expectedRevealWidth) in [(CGFloat(600), CGFloat(180)), (230, 140), (180, 120)] {
+            let (collectionView, layout) = makeCollectionView(currentIndex: { nil }, contentOffset: 300)
+            collectionView.bounds.size.width = width
+            collectionView.layoutIfNeeded()
+            let contentBounds = CGRect(origin: .zero, size: collectionView.contentSize)
+            for index in [0, 9] {
+                let indexPath = IndexPath(item: index, section: 0)
+                let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
+                let naturalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: indexPath))
+                XCTAssertTrue(contentBounds.contains(revealFrame))
+                XCTAssertTrue(revealFrame.contains(naturalFrame))
+                XCTAssertEqual(revealFrame.width, expectedRevealWidth)
+                XCTAssertEqual(index == 0 ? revealFrame.minX : revealFrame.maxX, index == 0 ? 0 : contentBounds.maxX)
+                collectionView.scrollRectToVisible(revealFrame, animated: false)
+                collectionView.layoutIfNeeded()
+                XCTAssertGreaterThanOrEqual(collectionView.contentOffset.x, -collectionView.adjustedContentInset.left)
+                XCTAssertLessThanOrEqual(collectionView.contentOffset.x, contentBounds.width - width + collectionView.adjustedContentInset.right)
+            }
+        }
+    }
+
     func testFlareAnimatesToSelectedTabWhenReorderEnds() throws {
         var currentIndex = 0
         let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: 300)

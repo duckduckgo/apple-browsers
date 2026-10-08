@@ -113,8 +113,11 @@ final class SitePermissionsState {
     fileprivate var uptimeProvider: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
 
     var contentBlockingWaitTasks = [UUID: Task<Void, Never>]()
+    /// Times the current main-frame wait for the rules compilation timeout pixel, with site permissions on or off.
+    var contentBlockingWaitTimeoutPixel: AnyCancellable?
 
     func cancelContentBlockingWaits() {
+        contentBlockingWaitTimeoutPixel = nil
         contentBlockingWaitTasks.values.forEach { $0.cancel() }
         contentBlockingWaitTasks.removeAll()
     }

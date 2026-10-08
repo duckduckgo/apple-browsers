@@ -1,7 +1,8 @@
 //
-//  WebExtensionConfigurationProvider+macOS.swift
+//  ContentBlockingPixel.swift
+//  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,23 +17,16 @@
 //  limitations under the License.
 //
 
-import AppKitExtensions
 import Foundation
-import WebExtensions
+import PixelKit
 
-@available(macOS 15.4, *)
-struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
+enum ContentBlockingPixel: PixelKit.Event, Equatable {
+    /// A main-frame navigation has waited for content blocking assets for longer than the timeout.
+    case rulesCompilationTimeout
 
-    /// Applies to every web extension page, not to tabs showing websites.
-    var applicationNameForUserAgent: String {
-        UserAgent.webExtensionSuffix
-    }
+    var name: String { "content-blocking_rules-compilation-timeout" }
 
-    var isInspectable: Bool {
-#if DEBUG
-        return true
-#else
-        return false
-#endif
-    }
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

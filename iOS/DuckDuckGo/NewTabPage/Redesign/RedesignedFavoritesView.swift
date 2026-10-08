@@ -23,26 +23,35 @@ import SwiftUI
 
 struct RedesignedFavoritesView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject var model: FavoritesViewModel
+    /// Shows the Add Favorite tile and empty state when set.
+    let onAddFavorite: (() -> Void)?
     @State private var isDraggingFavorite = false
     @State private var gridHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var collapsedItemHeights: [Favorite.ID: CGFloat] = [:]
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
     private let haptics = UIImpactFeedbackGenerator()
 
-    private var isExpanded: Bool { model.expansionState.isExpanded }
+    private var columns: [GridItem] {
+        let count = horizontalSizeClass == .regular ? Metrics.regularColumnCount : Metrics.compactColumnCount
+        return Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: count)
+    }
+
+    private var isExpanded: Bool { hasOverflow && model.expansionState.isExpanded }
 
     private var collapsedCapacity: Int { columns.count }
 
-    private var hasOverflow: Bool { model.allFavorites.count > collapsedCapacity }
+    // Reserve a control column in both presentations so expansion state stays shared.
+    private var hasOverflow: Bool { model.allFavorites.count >= collapsedCapacity }
 
     private var collapsedFavoriteIDs: Set<Favorite.ID> {
         Set(model.allFavorites.prefix(collapsedCapacity - 1).map(\.id))
     }
 
     private var collapsedHeight: CGFloat {
-        let estimatedRowHeight = Metrics.tileSize + Metrics.iconToTitleSpacing + UIFont.daxCaption1().lineHeight * 2
+        let estimatedRowHeight = Metrics.tileSize + RedesignedFavoriteTileMetrics.iconToTitleSpacing
+            + UIFont.daxCaption().lineHeight * CGFloat(RedesignedFavoriteTileMetrics.titleLineLimit)
         return model.allFavorites.prefix(columns.count)
             .compactMap { collapsedItemHeights[$0.id] }
             .max() ?? estimatedRowHeight
@@ -53,7 +62,12 @@ struct RedesignedFavoritesView: View {
     }
 
     var body: some View {
-        if !model.isEmpty {
+        if model.isEmpty {
+            if onAddFavorite != nil {
+                emptyState
+                    .padding(Metrics.contentPadding)
+            }
+        } else {
             FavoritesExpansionContainer(
                 progress: isExpanded ? 1 : 0,
                 collapsedGridHeight: hasOverflow ? collapsedHeight : gridHeight,
@@ -69,16 +83,47 @@ struct RedesignedFavoritesView: View {
         }
     }
 
+    private var emptyState: some View {
+        LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
+            addFavoriteButton
+
+            ForEach(1..<columns.count, id: \.self) { _ in
+                Circle()
+                    .strokeBorder(Color(designSystemColor: .textSecondary),
+                                  style: StrokeStyle(lineWidth: Metrics.placeholderStrokeWidth, dash: Metrics.placeholderDashPattern))
+                    .frame(width: Metrics.tileSize, height: Metrics.tileSize)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private var addFavoriteButton: some View {
+        Button {
+            onAddFavorite?()
+        } label: {
+            RedesignedFavoriteTileView(title: UserText.addFavoriteScreenTitle) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
+                    .foregroundColor(Color(designSystemColor: .icons))
+                    .frame(width: Metrics.tileSize, height: Metrics.tileSize)
+                    .background(Color(designSystemColor: .controlsFillPrimary))
+                    .clipShape(Circle())
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isDraggingFavorite)
+        .accessibilityLabel(UserText.addFavoriteScreenTitle)
+    }
+
     private var favoritesGrid: some View {
         LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
             favorites
+            if onAddFavorite != nil {
+                addFavoriteButton
+                    .revealed(!hasOverflow || isExpanded, animation: expansionAnimation, value: isExpanded)
+            }
             if hasOverflow {
-                // Keep the final tile in the grid so toggling expansion does not change its layout.
                 expansionButton(expands: false)
-                    .opacity(isExpanded ? 1 : 0)
-                    .animation(expansionAnimation, value: isExpanded)
-                    .allowsHitTesting(isExpanded)
-                    .accessibilityHidden(!isExpanded)
+                    .revealed(isExpanded, animation: expansionAnimation, value: isExpanded)
             }
         }
         // Measure the complete grid independently of the animated viewport. Cells retain
@@ -184,6 +229,7 @@ struct RedesignedFavoritesView: View {
                 collapsedItemHeights[favorite.id] = height
             }
         } preview: { favorite in
+            // Match the context-menu preview while keeping the whole tile as the drag source.
             RedesignedFavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
         } onMove: { from, to in
             haptics.impactOccurred()
@@ -198,15 +244,13 @@ struct RedesignedFavoritesView: View {
             guard !isDraggingFavorite else { return }
             model.expansionState.isExpanded = expands
         } label: {
-            VStack(spacing: Metrics.iconToTitleSpacing) {
+            RedesignedFavoriteTileView(title: expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess) {
                 Image(uiImage: expands ? DesignSystemImages.Glyphs.Size24.chevronDownSmall : DesignSystemImages.Glyphs.Size24.chevronUpSmall)
+                    .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                     .background(Color(designSystemColor: .controlsFillPrimary))
                     .clipShape(Circle())
-                Text(expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess)
-                    .daxCaption1()
             }
-            .foregroundColor(Color(designSystemColor: .textPrimary))
         }
         .buttonStyle(.plain)
         .disabled(isDraggingFavorite)
@@ -257,6 +301,16 @@ private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Anim
     }
 }
 
+private extension View {
+    /// Fades the view in or out while keeping its layout slot, and hides it from touches and accessibility.
+    func revealed(_ isVisible: Bool, animation: Animation?, value: Bool) -> some View {
+        opacity(isVisible ? 1 : 0)
+            .animation(animation, value: value)
+            .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
+    }
+}
+
 private struct FavoritesHeaderHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
@@ -282,9 +336,11 @@ private enum Metrics {
     static let headerIconSize: CGFloat = 16
     static let collapseIconSize: CGFloat = 12
     static let collapseIconBackgroundSize: CGFloat = 20
-    static let columnCount = 5
+    static let compactColumnCount = 5
+    static let regularColumnCount = 6
     static let columnSpacing: CGFloat = 8
     static let rowSpacing: CGFloat = 20
-    static let iconToTitleSpacing: CGFloat = 6
     static let tileSize: CGFloat = 48
+    static let placeholderStrokeWidth: CGFloat = 1
+    static let placeholderDashPattern: [CGFloat] = [4, 4]
 }

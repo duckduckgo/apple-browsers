@@ -822,6 +822,55 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.simplifiedCreateAccountAndStartSyncingCallCount, 1)
     }
 
+    func testWhenDeviceDetailsShownForThisDeviceThenFiresThisDeviceScreenShownPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        sut.deviceDetailsShown(for: .init(id: "1", name: "iPhone", type: "phone", isThisDevice: true))
+
+        XCTAssertEqual(delegate.firedDeviceDetailsPixelEvents, [.thisDeviceScreenShown])
+    }
+
+    func testWhenDeviceDetailsShownForOtherDeviceThenFiresOtherDeviceScreenShownPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        sut.deviceDetailsShown(for: .init(id: "2", name: "Mac", type: "desktop", isThisDevice: false))
+
+        XCTAssertEqual(delegate.firedDeviceDetailsPixelEvents, [.otherDeviceScreenShown])
+    }
+
+    func testWhenThisDeviceDetailsTurnOffSyncTappedThenFiresTurnOffPixelAndShowsConfirmation() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        let confirmationShown = expectation(description: "Turn off confirmation shown")
+        delegate.onSimplifiedConfirmAndDisableSync = { confirmationShown.fulfill() }
+
+        sut.thisDeviceDetailsTurnOffSyncTapped()
+
+        await fulfillment(of: [confirmationShown], timeout: 5)
+        XCTAssertEqual(delegate.firedDeviceDetailsPixelEvents, [.thisDeviceTurnOffSyncTapped])
+    }
+
+    func testWhenThisDeviceDetailsTurnOffSyncTappedWhileBusyThenDoesNotFireTurnOffPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.isBusy = true
+
+        sut.thisDeviceDetailsTurnOffSyncTapped()
+
+        XCTAssertTrue(delegate.firedDeviceDetailsPixelEvents.isEmpty)
+    }
+
+    func testWhenOtherDeviceDetailsRemoveDeviceTappedThenFiresRemoveDevicePixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        sut.otherDeviceDetailsRemoveDeviceTapped()
+
+        XCTAssertEqual(delegate.firedDeviceDetailsPixelEvents, [.otherDeviceRemoveDeviceTapped])
+    }
+
     private func enableSyncAndWaitForAnotherDevicePrompt(_ sut: SyncSettingsViewModel) async {
         let promptShownExpectation = expectation(description: "Sync another device prompt is shown")
         let cancellable = sut.$connectingSheetPhase
@@ -886,6 +935,8 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var onAuthenticateUserFinished: (() -> Void)?
     var onShowSyncWithAnotherDevice: (() -> Void)?
     var firedSyncSetupPixelEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] = []
+    var firedDeviceDetailsPixelEvents: [SyncSettingsViewModel.DeviceDetailsPixelEvent] = []
+    var onSimplifiedConfirmAndDisableSync: (() -> Void)?
 
     var syncBookmarksPausedTitle: String?
     var syncCredentialsPausedTitle: String?
@@ -934,7 +985,10 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         simplifiedCreateAccountAndStartSyncingCallCount += 1
     }
-    func simplifiedConfirmAndDisableSync() async -> Bool { true }
+    func simplifiedConfirmAndDisableSync() async -> Bool {
+        onSimplifiedConfirmAndDisableSync?()
+        return true
+    }
     func confirmAndDeleteAllData() async -> Bool { true }
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool { true }
     func removeDevice(_ device: SyncSettingsViewModel.Device) {}
@@ -949,6 +1003,9 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     func shareLink(for url: URL, with message: String, from rect: CGRect) {}
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent) {
         firedSyncSetupPixelEvents.append(event)
+    }
+    func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent) {
+        firedDeviceDetailsPixelEvents.append(event)
     }
 }
 

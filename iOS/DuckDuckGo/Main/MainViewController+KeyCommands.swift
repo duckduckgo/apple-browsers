@@ -23,8 +23,12 @@ import FeatureFlags_iOS
 extension MainViewController {
     
     override var keyCommands: [UIKeyCommand]? {
-        
+        let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(keyboardSettings),
+                                          input: ",", modifierFlags: .command)
+        settingsCommand.wantsPriorityOverSystemBehavior = true
+
         let alwaysAvailable: [UIKeyCommand] = [
+            settingsCommand,
             UIKeyCommand(title: "", action: #selector(keyboardFire), input: UIKeyCommand.inputBackspace,
                          modifierFlags: [ .control, .alternate ], discoverabilityTitle: UserText.keyCommandFire)
         ]
@@ -96,6 +100,11 @@ extension MainViewController {
                          discoverabilityTitle: UserText.keyCommandNewTab)
         ]
 
+        let indexedTabCommands = (1...9).map {
+            UIKeyCommand(title: "", action: #selector(keyboardSelectTab(_:)), input: String($0), modifierFlags: .command,
+                         discoverabilityTitle: UserText.keyCommandSelect)
+        }
+
         var newFireTabCommands: [UIKeyCommand] = []
         if fireModeCapability.isFireModeEnabled {
             newFireTabCommands.append(
@@ -130,7 +139,8 @@ extension MainViewController {
             UIKeyCommand(title: "", action: #selector(keyboardEscape), input: UIKeyCommand.inputEscape, modifierFlags: [])
         ]
 
-        let commands = [alwaysAvailable, browsingCommands, findInPageCommands, arrowKeys, tabCommands, newFireTabCommands, other].flatMap { $0 }
+        let commands = [alwaysAvailable, browsingCommands, findInPageCommands, arrowKeys, tabCommands, indexedTabCommands,
+                        newFireTabCommands, other].flatMap { $0 }
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
@@ -184,6 +194,19 @@ extension MainViewController {
     @objc func keyboardFire() {
         onQuickFirePressed()
     }
+
+    @objc func keyboardSettings() {
+        guard isShortcutEnabled() else { return }
+        if let tabSwitcherController {
+            guard tabSwitcherController.presentedViewController == nil else { return }
+            tabSwitcherController.dismiss(animated: true) { [weak self] in
+                self?.onSettingsPressed()
+            }
+            return
+        }
+        guard presentedViewController == nil else { return }
+        onSettingsPressed()
+    }
     
     @objc func keyboardFind() {
         guard isShortcutEnabled() else { return }
@@ -205,7 +228,8 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
-        if currentTab != nil {
+        // A New Tab Page often has no tab controller yet, and find-in-page then does nothing.
+        if currentTab != nil || featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
             newTab()
         } else {
             keyboardFind()
@@ -229,12 +253,27 @@ extension MainViewController {
         
         guard let tab = currentTab else { return }
         closeTab(tab.tabModel)
+        showKeyboardOnNewTabPageIfAllowed()
     }
     
     @objc func keyboardNextTab() {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.nextTab else { return }
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
+        performCancel()
+        selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageIfAllowed()
+        }
+    }
+
+    @objc func keyboardSelectTab(_ command: UIKeyCommand) {
+        guard tabSwitcherController == nil, presentedViewController == nil else { return }
+        guard isShortcutEnabled() else { return }
+        guard let input = command.input, let number = Int(input), (1...9).contains(number),
+              let targetTab = tabManager.currentTabsModel.get(tabAt: number - 1) else { return }
+
         performCancel()
         selectTab(targetTab)
     }
@@ -243,8 +282,12 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.previousTab else { return }
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageIfAllowed()
+        }
     }
     
     @objc func keyboardShowAllTabs() {

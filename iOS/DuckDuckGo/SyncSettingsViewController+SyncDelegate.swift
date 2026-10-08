@@ -161,6 +161,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             do {
                 let devices = try await syncService.updateDeviceName(name)
                 mapDevices(devices)
+                pixelFiring?.fire(SyncDeviceDetailsPixel.thisDeviceNameUpdated)
             } catch {
                 await handleError(SyncErrorMessage.unableToUpdateDeviceName, error: error, event: .syncUpdateDeviceError)
             }
@@ -458,6 +459,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             pixelFiring?.fire(Pixel.Event.settingsSyncAnotherDevicePromptDismissed,
                               options: .parameters(uiVersionParameters))
         }
+    }
+
+    func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent) {
+        let pixel: SyncDeviceDetailsPixel
+        switch event {
+        case .thisDeviceScreenShown: pixel = .thisDeviceScreenShown
+        case .thisDeviceTurnOffSyncTapped: pixel = .thisDeviceTurnOffSyncTapped
+        case .otherDeviceScreenShown: pixel = .otherDeviceScreenShown
+        case .otherDeviceRemoveDeviceTapped: pixel = .otherDeviceRemoveDeviceTapped
+        }
+        pixelFiring?.fire(pixel)
     }
 
     @MainActor
@@ -799,6 +811,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task { @MainActor in
             do {
                 try await syncService.disconnect(deviceId: device.id)
+                pixelFiring?.fire(SyncDeviceDetailsPixel.otherDeviceRemoveDeviceConfirmed)
                 refreshDevices()
             } catch {
                 await handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)

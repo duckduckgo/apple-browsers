@@ -144,6 +144,15 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         }
     }
 
+    func testWhenNothingIsSavedAndSearchHasTextThenDetailReportsNoResults() {
+        let sut = makeSUT(category: .notifications, entries: [])
+
+        sut.send(action: .setSearchQuery("missing"))
+
+        XCTAssertFalse(sut.viewState.isEmpty)
+        XCTAssertTrue(sut.viewState.hasNoResults)
+    }
+
     func testWhenPermissionsUpdateThenDetailPreservesItsSearchQuery() {
         let sut = makeSUT(
             category: .notifications,

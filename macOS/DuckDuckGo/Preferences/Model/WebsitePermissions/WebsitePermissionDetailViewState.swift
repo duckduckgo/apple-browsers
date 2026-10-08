@@ -32,10 +32,13 @@ struct WebsitePermissionDetailViewState: Equatable {
         groupedByDomain(visibleSites)
     }
     var isEmpty: Bool {
-        sites.isEmpty
+        sites.isEmpty && !isSearching
     }
     var hasNoResults: Bool {
-        !sites.isEmpty && visibleSites.isEmpty
+        isSearching && visibleSites.isEmpty
+    }
+    private var isSearching: Bool {
+        !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     init(

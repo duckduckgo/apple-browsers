@@ -285,12 +285,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         item.target = self
         menu.addItem(item)
     }
-
-    /// The presenter that hosts extension popups, owned by the manager's window/tab provider.
-    private var popupPresenter: WebExtensionPopupPresenter? {
-        guard let manager = webExtensionManagerProvider() as? WebExtensionManager else { return nil }
-        return (manager.windowTabProvider as? WebExtensionWindowTabProvider)?.popupPresenter
-    }
 }
 
 private extension NSView {

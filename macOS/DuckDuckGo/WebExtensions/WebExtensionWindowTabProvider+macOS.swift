@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Combine
 import os.log
 import WebExtensions
 import WebKit
@@ -26,8 +25,8 @@ import WebKit
 @MainActor
 final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
-    /// Hosts extension action popups. Exposed so the toolbar button can toggle its own popup.
-    let popupPresenter = WebExtensionPopupPresenter()
+    /// The action whose popover is open, so a popup that calls `window.close()` can close it.
+    private weak var shownPopupAction: WKWebExtension.Action?
 
     /// Keeps the open popover on the app's theme while it changes.
     private var popupAppearanceObservation: NSKeyValueObservation?
@@ -130,10 +129,12 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             }
         }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+        shownPopupAction = action
     }
 
     func dismissPopup(for popupWebView: WKWebView) {
-        popupPresenter.close(ifShowing: popupWebView)
+        guard let shownPopupAction, shownPopupAction.popupWebView === popupWebView else { return }
+        shownPopupAction.closePopup()
     }
 
     // MARK: - Private Helpers

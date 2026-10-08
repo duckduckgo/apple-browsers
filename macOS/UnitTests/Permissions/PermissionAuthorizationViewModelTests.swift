@@ -106,25 +106,25 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
     // MARK: - Decisions
 
     func testAllowThisVisitGrantsWithoutRemembering() throws {
-        try assertDecision(.allowThisVisit, granted: true, remember: false, pixel: .allow)
+        try assertDecision(.allowThisVisit, granted: true, remember: false, pixel: .allowOnce)
     }
 
     func testAlwaysAllowGrantsAndRemembers() throws {
-        try assertDecision(.alwaysAllow, granted: true, remember: true, pixel: .allow)
+        try assertDecision(.alwaysAllow, granted: true, remember: true, pixel: .always)
     }
 
     func testNeverAllowDeniesAndRemembers() throws {
-        try assertDecision(.neverAllow, granted: false, remember: true, pixel: .deny)
+        try assertDecision(.neverAllow, granted: false, remember: true, pixel: .never)
     }
 
-    func testDismissCancelsQueryWithoutPixel() throws {
-        let query = makeQuery(permissions: [.camera])
+    func testDismissCancelsQueryAndFiresCancelPixel() throws {
+        let query = makeQuery(permissions: [.camera, .microphone])
         let viewModel = makeViewModel(query: query)
 
         viewModel.send(action: .dismiss)
 
         XCTAssertThrowsError(try XCTUnwrap(result).get())
-        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(firedPixelNames, authorizationPixelNames(for: [.camera, .microphone], action: .cancel))
         XCTAssertEqual(finishCount, 1)
         withExtendedLifetime(query) {}
     }
@@ -214,9 +214,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
                 await waitUntil { !decisions.isEmpty }
 
                 XCTAssertEqual(decisions, [true])
-                XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [
-                    PermissionPixel.authorizationDecision(permissionType: .notification, decision: .allow).name,
-                ])
+                XCTAssertEqual(firedPixelNames, authorizationPixelNames(for: [.notification], action: action == .alwaysAllow ? .always : .allowOnce))
                 XCTAssertNil(model.authorizationQuery)
                 XCTAssertEqual(manager.persistedDecision(forDomain: "example.com", permissionType: .notification),
                                hasStoredAllow || action == .alwaysAllow ? .allow : nil)
@@ -488,7 +486,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
 
         XCTAssertThrowsError(try XCTUnwrap(result).get())
         XCTAssertTrue(query.wasDismissed)
-        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(firedPixelNames, authorizationPixelNames(for: [.notification], action: .cancel))
         XCTAssertEqual(finishCount, 1)
         withExtendedLifetime((viewModel, query)) {}
     }
@@ -503,7 +501,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
             XCTAssertEqual(prompt.phase, .openSettings)
             XCTAssertEqual(prompt.savedDecisions, permissions.map { _ in .allow })
             XCTAssertTrue(pageDecisions.isEmpty)
-            XCTAssertEqual(firedPixelNames, allowDecisionPixelNames(for: permissions))
+            XCTAssertEqual(firedPixelNames, authorizationPixelNames(for: permissions, action: .always))
         }
     }
 
@@ -518,6 +516,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
 
         XCTAssertEqual(pageDecisions, [false])
         XCTAssertEqual(prompt.savedDecisions, [.allow])
+        XCTAssertEqual(firedPixelNames, authorizationPixelNames(for: [.notification], action: .always), "The saved choice isn't cancelled")
     }
 
     func testWhenSiteIsAlreadyAlwaysAllowedThenShowingThePromptDoesNotSaveItAgain() throws {
@@ -526,6 +525,10 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         XCTAssertEqual(prompt.phase, .openSettings)
         XCTAssertEqual(prompt.manager.setPermissionCalls.count, 1, "Saving again would move the site in Settings' Recent list")
         XCTAssertTrue(firedPixelNames.isEmpty)
+
+        prompt.viewModel.send(action: .dismiss)
+
+        XCTAssertTrue(firedPixelNames.isEmpty, "Closing makes no new choice to cancel")
     }
 
     func testWhenSiteIsAlwaysAllowedAndSystemPermissionIsGrantedOnReturnThenRequestIsGrantedWithoutDecisionPixel() async throws {
@@ -549,6 +552,21 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
         XCTAssertEqual(finishCount, 1)
         withExtendedLifetime((viewModel, query)) {}
+    }
+
+    // MARK: - Pixels
+
+    func testAuthorizationPixelIsNamedAsOnWindowsWithoutMacPrefix() {
+        let pixel = PermissionPixel.authorizationAction(permissionType: .externalScheme(scheme: "mailto"), action: .allowOnce)
+
+        XCTAssertEqual(pixel.name, "permission_authorization_external-scheme_allow_once_macos")
+        XCTAssertNil(pixel.parameters)
+    }
+
+    func testChoiceThatCannotBeSavedIsReportedAsOnlyForThisVisit() {
+        XCTAssertEqual(PermissionPixel.AuthorizationAction(decision: .neverAllow, permissionType: .popups), .denyOnce)
+        XCTAssertEqual(PermissionPixel.AuthorizationAction(decision: .neverAllow, permissionType: .camera), .never)
+        XCTAssertEqual(PermissionPixel.AuthorizationAction(decision: .alwaysAllow, permissionType: .popups), .always)
     }
 
     // MARK: - Learn more
@@ -585,7 +603,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         _ action: PermissionAuthorizationViewModel.Action,
         granted: Bool,
         remember: Bool,
-        pixel: PermissionPixel.AuthorizationDecision
+        pixel: PermissionPixel.AuthorizationAction
     ) throws {
         let query = makeQuery(permissions: [.camera, .microphone], domain: "duck.ai")
         let viewModel = makeViewModel(query: query)
@@ -595,10 +613,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         let output = try XCTUnwrap(try result?.get())
         XCTAssertEqual(output.granted, granted)
         XCTAssertEqual(output.remember, remember)
-        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [
-            PermissionPixel.authorizationDecision(permissionType: .camera, decision: pixel).name,
-            PermissionPixel.authorizationDecision(permissionType: .microphone, decision: pixel).name,
-        ])
+        XCTAssertEqual(firedPixelNames, authorizationPixelNames(for: [.camera, .microphone], action: pixel))
         XCTAssertEqual(finishCount, 1)
         withExtendedLifetime(query) {}
     }
@@ -690,8 +705,8 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         pixelFiring.actualFireCalls.map(\.pixel.name)
     }
 
-    private func allowDecisionPixelNames(for permissions: [PermissionType]) -> [String] {
-        permissions.map { PermissionPixel.authorizationDecision(permissionType: $0, decision: .allow).name }
+    private func authorizationPixelNames(for permissions: [PermissionType], action: PermissionPixel.AuthorizationAction) -> [String] {
+        permissions.map { PermissionPixel.authorizationAction(permissionType: $0, action: action).name }
     }
 
     /// Notifications not asked by macOS yet, the allow `decision` picked, and Request Permission pressed.

@@ -2087,6 +2087,7 @@
 		5C26B3292853419DA7E820AC /* TabContentDisplayTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6308141E2A1B48C8B5FC059A /* TabContentDisplayTitleTests.swift */; };
 		5E3101604A8E2A8F281BF20B /* AIChatUsageWarningCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */; };
 		745B7C5CAFA2E1C29E8B8F61 /* AIChatUsageWarningCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */; };
+		E248B1EE65B2746DA4F0A0D2 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */; };
 		5FDF4C801FDF14A44C149130 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4CEDF81CD010E256D02F54 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift */; };
 		5FFB5A9B02EB884EACEB7FFD /* (null) in Sources */ = {isa = PBXBuildFile; };
 		604AFF29DF594DC4AF18864C /* PreferencesWebsitePermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637378A7DE5641D7AF4A7BE1 /* PreferencesWebsitePermissionsView.swift */; };
@@ -4342,6 +4343,7 @@
 		CCB50000000000000000A103 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */; };
 		CCBC17F5FE1230434E075AD1 /* AIChatUsageWarningCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */; };
 		DDBEF6F94ACA9D46E81F83C8 /* AIChatUsageWarningCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */; };
+		419EDB33DD235D2E410AA789 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */; };
 		CCBCF38A2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
 		CCBCF38B2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
 		CCC13FF42F6B0C74007DC7CC /* DockCustomizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC13FF32F6B0C74007DC7CC /* DockCustomizerTests.swift */; };
@@ -6034,6 +6036,7 @@
 		723C064CD3E53BDC70788B46 /* NewTabPageOmnibarActionsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarActionsHandlerTests.swift; sourceTree = "<group>"; };
 		7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUsageWarningCopyTests.swift; sourceTree = "<group>"; };
 		00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUsageWarningCardViewTests.swift; sourceTree = "<group>"; };
+		555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarUsageCardLayoutTests.swift; sourceTree = "<group>"; };
 		79BC7E0753A96C3B81E3BCB2 /* UnloadedTabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnloadedTabViewModelTests.swift; sourceTree = "<group>"; };
 		7A1B2C3D4E5F60718293A4B5 /* BookmarksBarMenuPopoverPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuPopoverPresenting.swift; sourceTree = "<group>"; };
 		7B0099802B65C6B300FE7C31 /* MacTransparentProxyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacTransparentProxyProvider.swift; sourceTree = "<group>"; };
@@ -8536,6 +8539,7 @@
 				FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */,
 				7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */,
 				00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */,
+				555B3DA437008D2F2D7CD236 /* AIChatOmnibarUsageCardLayoutTests.swift */,
 				EFBACD03AF738C2EFEAAC7EA /* AIChatUsageWarningRingViewTests.swift */,
 				7BAA26BE7A6F97E8A5F4692F /* DuckAiUsageWarningPixelTests.swift */,
 				FB07BAD20000000000000405 /* AIChatOmnibarDuckAILogoLayoutTests.swift */,
@@ -17141,6 +17145,7 @@
 				FB07BAD20000000000000501 /* DuckAIPromptSurfaceTests.swift in Sources */,
 				CCBC17F5FE1230434E075AD1 /* AIChatUsageWarningCopyTests.swift in Sources */,
 				DDBEF6F94ACA9D46E81F83C8 /* AIChatUsageWarningCardViewTests.swift in Sources */,
+				419EDB33DD235D2E410AA789 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */,
 				321C985EAF5C725987D86DD3 /* AIChatUsageWarningRingViewTests.swift in Sources */,
 				49A10CDD2CD3A472F861351E /* DuckAiUsageWarningPixelTests.swift in Sources */,
 				FB07BAD20000000000000505 /* AIChatOmnibarDuckAILogoLayoutTests.swift in Sources */,
@@ -19558,6 +19563,7 @@
 				FB07BAD20000000000000601 /* DuckAIPromptSurfaceTests.swift in Sources */,
 				5E3101604A8E2A8F281BF20B /* AIChatUsageWarningCopyTests.swift in Sources */,
 				745B7C5CAFA2E1C29E8B8F61 /* AIChatUsageWarningCardViewTests.swift in Sources */,
+				E248B1EE65B2746DA4F0A0D2 /* AIChatOmnibarUsageCardLayoutTests.swift in Sources */,
 				427305A230AFEE6E5265BBAC /* AIChatUsageWarningRingViewTests.swift in Sources */,
 				BB12AF2B7F40A5B073A0BF34 /* DuckAiUsageWarningPixelTests.swift in Sources */,
 				FB07BAD20000000000000605 /* AIChatOmnibarDuckAILogoLayoutTests.swift in Sources */,

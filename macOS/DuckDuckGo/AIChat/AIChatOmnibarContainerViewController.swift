@@ -1440,6 +1440,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// not drive a resize on a panel that is going away. Returns whether anything changed.
     @discardableResult
     private func applyUsageWarningVisibility(_ visible: Bool) -> Bool {
+        // `setupUI` resolves the card before `setupUsageWarningCard` builds it; recording that state
+        // would reserve the band with no constraint to move, and make every later resolve a no-op.
+        guard let backgroundViewBottomConstraint else { return false }
+
         let reservation = visible ? usageWarningCardView.bandHeight : 0
         guard isUsageWarningVisible != visible || usageWarningReservation != reservation else { return false }
 
@@ -1448,7 +1452,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.isHidden = !visible
         usageWarningShadowView.isHidden = !visible || hostDrawsChrome
         panelBottomEdgeStrokeView.isHidden = !visible || !hostDrawsChrome
-        backgroundViewBottomConstraint?.constant = -reservation
+        backgroundViewBottomConstraint.constant = -reservation
         applyTermsOfServiceDisclaimerState()
         // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
         // so without this guard teardown puts it straight back on the window.

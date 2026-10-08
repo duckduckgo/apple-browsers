@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 @testable import DataBrokerProtection_iOS
 
@@ -50,6 +51,20 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
         try manager.deleteAllUserProfileData()
 
         XCTAssertEqual(dependencies.profileStateManager.profileState, .noProfile)
+    }
+
+    func test_deleteAllUserProfileData_keepsLastManifestVersions() async throws {
+        let (manager, _) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
+        let originalVersions = settings.lastManifestVersions
+        defer { settings.lastManifestVersions = originalVersions }
+        settings.lastManifestVersions = ["key-id": 1790906518]
+        settings.mainConfigETag = "etag"
+
+        try manager.deleteAllUserProfileData()
+
+        XCTAssertNil(settings.mainConfigETag)
+        XCTAssertEqual(settings.lastManifestVersions, ["key-id": 1790906518])
     }
 
     func test_appDidEnterBackground_keepsCachedState_whenProfileReadFails() async throws {

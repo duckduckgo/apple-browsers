@@ -1290,7 +1290,7 @@
         ]
     },
     "dbp_bundle_verification_failure": {
-        "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, or when a built-in bundle signing key has been revoked. The update is skipped and retried on the next check.",
+        "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, when another error stops verification, or when a built-in bundle signing key has been revoked. The update is skipped and retried on the next check.",
         "owners": ["noisysocks"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -1301,8 +1301,15 @@
                 "key": "reason",
                 "description": "Why verification failed",
                 "type": "string",
-                "enum": ["key_revoked", "signature_missing", "signature_invalid", "rollback", "digest_mismatch"]
+                "enum": ["key_revoked", "signature_missing", "signature_invalid", "rollback", "digest_mismatch", "other"]
             }
         ]
+    },
+    "dbp_bundle_verification_success": {
+        "description": "Fired when a PIR broker update check passes bundle verification, including when the main config hasn't changed. Compare with dbp_bundle_verification_failure to see whether verification is working.",
+        "owners": ["noisysocks"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

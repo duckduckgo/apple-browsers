@@ -122,7 +122,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     private static let updateCheckInterval = TimeInterval.hours(1)
-    private static let revokedSigningKeysSettingsKey = "revokedBundleSigningKeys"
     private static let configVersionHeader = "X-Config-Version"
 
     private let featureFlagger: FeatureFlagging
@@ -186,16 +185,12 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 return
             }
 
-            /// 2. Fall back to bundled JSONs if any of our signing keys has been revoked
-            let verifier = BrokerBundleVerifier(keys: signingKeys.keys(isProductionEndpoint: settings.isProductionEndpoint))
-            if verifier.hasRevokedKey(revokedKeyIDs: revokedSigningKeyIDs) {
-                Logger.dataBrokerProtection.log("🧩 Broker bundle signing key revoked, reverting to bundled broker JSONs")
-                do {
-                    try revertToBundledBrokers()
-                } catch {
-                    pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService revertToBundledBrokers"))
-                }
-                settings.mainConfigETag = nil
+            /// 2. Skip the update if any of our signing keys has been revoked. PIR stays paused until an app update drops the key.
+            let keyRevocationChecker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager,
+                                                                        settings: settings,
+                                                                        signingKeys: signingKeys)
+            if keyRevocationChecker.isAnyKeyRevoked {
+                Logger.dataBrokerProtection.log("🧩 Broker bundle signing key revoked, skipping update")
                 settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
                 throw BrokerBundleVerificationError.keyRevoked
             }
@@ -214,13 +209,21 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             guard let signedMainConfig else {
                 Logger.dataBrokerProtection.log("🧩 Broker JSONs are up to date: main config eTag matches")
                 settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
+                pixelHandler?.fire(.bundleVerificationSuccess)
                 return
             }
             let newETag = signedMainConfig.eTag
 
             /// 5. Verify the signature over the exact bytes received, then reject rollbacks
+            let verifier = BrokerBundleVerifier(keys: signingKeys.keys(isProductionEndpoint: settings.isProductionEndpoint))
             let signingKey = try verifier.verifyingKey(manifest: signedMainConfig.data, signature: signedMainConfig.signature)
-            let mainConfig = try JSONDecoder().decode(MainConfig.self, from: signedMainConfig.data)
+            let mainConfig: MainConfig
+            do {
+                mainConfig = try JSONDecoder().decode(MainConfig.self, from: signedMainConfig.data)
+            } catch {
+                pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService decodeMainConfig"))
+                throw BrokerBundleVerificationError.other
+            }
             if let lastManifestVersion = settings.lastManifestVersions[signingKey.id],
                mainConfig.manifestVersion < lastManifestVersion {
                 throw BrokerBundleVerificationError.rollback
@@ -233,6 +236,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             settings.lastManifestVersions[signingKey.id] = mainConfig.manifestVersion
             settings.mainConfigETag = newETag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
+            pixelHandler?.fire(.bundleVerificationSuccess)
         } catch let error as BrokerBundleVerificationError {
             Logger.dataBrokerProtection.error("🧩 Broker bundle verification failed: \(error.rawValue, privacy: .public)")
             pixelHandler?.fire(.bundleVerificationFailure(reason: error))
@@ -241,10 +245,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService checkForUpdates"))
             throw error
         }
-    }
-
-    private var revokedSigningKeyIDs: [String] {
-        privacyConfigurationManager.privacyConfig.settings(for: .dbp)[Self.revokedSigningKeysSettingsKey] as? [String] ?? []
     }
 
     private struct SignedMainConfig {
@@ -272,18 +272,12 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             throw Error.serverError(httpCode: mainConfigResponse.statusCode)
         }
 
-        var signatureRequest = try Endpoint.request(for: .mainConfigSignature, endpointURL: settings.endpointURL)
-        signatureRequest.cachePolicy = .reloadIgnoringLocalCacheData
-        let (signatureData, signatureResponse) = try await httpData(for: signatureRequest)
-
-        let signature: Data?
-        switch signatureResponse.statusCode {
-        case 200:
-            signature = signatureData
-        case 404:
-            signature = nil
-        default:
-            throw Error.serverError(httpCode: signatureResponse.statusCode)
+        let (signature, signatureResponse): (Data?, HTTPURLResponse)
+        do {
+            (signature, signatureResponse) = try await fetchSignature()
+        } catch {
+            pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService fetchSignature"))
+            throw BrokerBundleVerificationError.other
         }
 
         let mainConfigVersion = mainConfigResponse.value(forHTTPHeaderField: Self.configVersionHeader)
@@ -293,28 +287,28 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         return SignedMainConfig(data: data, eTag: eTag, signature: signature, isFromDifferentConfigVersions: isFromDifferentConfigVersions)
     }
 
+    /// Returns a nil signature when the server has none.
+    private func fetchSignature() async throws -> (Data?, HTTPURLResponse) {
+        var request = try Endpoint.request(for: .mainConfigSignature, endpointURL: settings.endpointURL)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, response) = try await httpData(for: request)
+
+        switch response.statusCode {
+        case 200:
+            return (data, response)
+        case 404:
+            return (nil, response)
+        default:
+            throw Error.serverError(httpCode: response.statusCode)
+        }
+    }
+
     private func httpData(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let (data, response) = try await urlSession.data(for: request)
         guard let response = response as? HTTPURLResponse else {
             throw Error.clientError
         }
         return (data, response)
-    }
-
-    /// Bundled brokers were verified by CI, so they replace stored brokers even when older,
-    /// and stored brokers that aren't bundled are disabled.
-    private func revertToBundledBrokers() throws {
-        /// An empty bundle means the bundled brokers are unavailable (e.g. in tests), not that none should run
-        guard let bundledBrokers = try bundledBrokers(), !bundledBrokers.isEmpty else { return }
-
-        for brokerResource in bundledBrokers {
-            try overwriteBroker(brokerResource)
-        }
-
-        let bundledBrokerURLs = Set(bundledBrokers.map(\.broker.url))
-        for brokerResource in try vault.fetchAllBrokerResources() where !bundledBrokerURLs.contains(brokerResource.broker.url) {
-            try disableBrokerUntilUpdated(brokerResource)
-        }
     }
 
     func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig, eTag: String) async throws {

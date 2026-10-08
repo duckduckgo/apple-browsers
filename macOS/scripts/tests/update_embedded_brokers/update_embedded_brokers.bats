@@ -263,6 +263,15 @@ writeMainConfig() {
 	[ "$status" -ne 0 ]
 }
 
+@test "verifyBrokerDigests: fails when an active broker is missing from the archive" {
+	writeBroker "$SOURCE_DIR/other.com.json" "Other" "0.2.0"
+	writeDigestMainConfig "$(shasum -a 256 "$SOURCE_DIR/other.com.json" | cut -d ' ' -f 1)"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"active.com.json is missing"* ]]
+}
+
 @test "verifyBrokerDigests: passes for the dbp-api fixture brokers" {
 	cp "$SIGNING_FIXTURES"/*.com.json "$SOURCE_DIR"
 	jq '.active_data_brokers = ["anywho.com.json", "verecor.com.json"]' "$SIGNING_FIXTURES/main_config.json" > "$MAIN_CONFIG"

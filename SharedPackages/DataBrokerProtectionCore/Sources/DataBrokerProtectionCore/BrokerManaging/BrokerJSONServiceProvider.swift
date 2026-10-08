@@ -95,49 +95,6 @@ public extension BrokerStoring {
         try handleBrokerVersionUpdate(brokerId: savedBrokerId)
     }
 
-    /// Inserts a new broker or replaces an existing one with the same URL, even if the stored broker is newer
-    func overwriteBroker(_ brokerResource: BrokerResource) throws {
-        let broker = brokerResource.broker
-
-        guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
-            try addBroker(brokerResource)
-            return
-        }
-
-        guard savedBroker.version != broker.version || savedBroker.eTag != broker.eTag,
-              let savedBrokerId = savedBroker.id else {
-            return
-        }
-
-        Logger.dataBrokerProtection.log("🧩 Overwriting broker: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
-
-        try vault.update(brokerResource, with: savedBrokerId)
-        try handleBrokerVersionUpdate(brokerId: savedBrokerId)
-    }
-
-    /// Stops a stored broker from running while keeping its scan and opt-out history.
-    ///
-    /// The stored version and eTag are cleared, so the next remote update treats the broker as changed and replaces it.
-    func disableBrokerUntilUpdated(_ brokerResource: BrokerResource) throws {
-        let broker = brokerResource.broker
-        guard let brokerId = broker.id, broker.removedAt == nil else { return }
-
-        Logger.dataBrokerProtection.log("🧩 Disabling broker until updated: \(broker.url, privacy: .public)")
-
-        let disabledBroker = DataBroker(id: brokerId,
-                                        name: broker.name,
-                                        url: broker.url,
-                                        steps: broker.steps,
-                                        version: "0",
-                                        schedulingConfig: broker.schedulingConfig,
-                                        parent: broker.parent,
-                                        mirrorSites: broker.mirrorSites,
-                                        optOutUrl: broker.optOutUrl,
-                                        eTag: "",
-                                        removedAt: Date())
-        try vault.update(BrokerResource(broker: disabledBroker, rawJSON: brokerResource.rawJSON), with: brokerId)
-    }
-
     private func addBroker(_ brokerResource: BrokerResource) throws {
         Logger.dataBrokerProtection.log("🧩 New broker found: \(brokerResource.broker.url, privacy: .public)")
 

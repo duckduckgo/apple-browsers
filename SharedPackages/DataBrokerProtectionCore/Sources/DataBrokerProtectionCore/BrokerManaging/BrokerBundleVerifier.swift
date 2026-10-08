@@ -19,6 +19,7 @@
 import Foundation
 import CryptoKit
 import os.log
+import PrivacyConfig
 
 public enum BrokerBundleVerificationError: String, Error, CaseIterable {
     case keyRevoked = "key_revoked"
@@ -26,6 +27,7 @@ public enum BrokerBundleVerificationError: String, Error, CaseIterable {
     case signatureInvalid = "signature_invalid"
     case rollback
     case digestMismatch = "digest_mismatch"
+    case other
 }
 
 public struct BrokerBundleSigningKey {
@@ -75,13 +77,36 @@ public struct BrokerBundleSigningKeys {
     }
 }
 
+/// PIR pauses while privacy-config lists any of the app's signing keys for the current environment as revoked.
+///
+/// This is read from the current privacy-config every time rather than stored, because privacy-config's list is
+/// additive only. Once an app update drops the revoked key, PIR resumes.
+public struct BrokerBundleKeyRevocationChecker {
+    static let revokedKeysSettingsKey = "revokedBundleSigningKeys"
+
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let settings: DataBrokerProtectionSettings
+    private let signingKeys: BrokerBundleSigningKeys
+
+    public init(privacyConfigurationManager: PrivacyConfigurationManaging,
+                settings: DataBrokerProtectionSettings,
+                signingKeys: BrokerBundleSigningKeys = .builtIn) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.settings = settings
+        self.signingKeys = signingKeys
+    }
+
+    public var isAnyKeyRevoked: Bool {
+        let revokedKeyIDs = privacyConfigurationManager.privacyConfig.settings(for: .dbp)[Self.revokedKeysSettingsKey] as? [String] ?? []
+        guard !revokedKeyIDs.isEmpty else { return false }
+
+        let normalizedRevokedKeyIDs = Set(revokedKeyIDs.map { $0.lowercased() })
+        return signingKeys.keys(isProductionEndpoint: settings.isProductionEndpoint).contains { normalizedRevokedKeyIDs.contains($0.id) }
+    }
+}
+
 struct BrokerBundleVerifier {
     let keys: [BrokerBundleSigningKey]
-
-    func hasRevokedKey(revokedKeyIDs: [String]) -> Bool {
-        let revokedKeyIDs = Set(revokedKeyIDs.map { $0.lowercased() })
-        return keys.contains { revokedKeyIDs.contains($0.id) }
-    }
 
     /// Returns the key that produced `signature` over the exact bytes of `manifest`.
     func verifyingKey(manifest: Data, signature: Data?) throws -> BrokerBundleSigningKey {

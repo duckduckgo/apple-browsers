@@ -184,6 +184,16 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
     public var isInternalUser: Bool = false
 }
 
+public extension PrivacyConfigurationManagingMock {
+    /// The IDs of every built-in broker bundle signing key, for both environments
+    static let builtInBundleSigningKeyIDs = (BrokerBundleSigningKeys.builtIn.production + BrokerBundleSigningKeys.builtIn.staging)
+        .compactMap { BrokerBundleSigningKey(base64SPKI: $0)?.id }
+
+    func setRevokedBundleSigningKeyIDs(_ keyIDs: [String]) {
+        (privacyConfig as? PrivacyConfigurationMock)?.featureSettings[.dbp] = ["revokedBundleSigningKeys": keyIDs]
+    }
+}
+
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
     public var currentConfig: Data = Data()
 
@@ -697,9 +707,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var lastPreferredRunDateOnOptOut: Date?
     public var lastSavedBrokerResource: BrokerResource?
     public var lastUpdatedBrokerResource: BrokerResource?
-    public var updatedBrokerResources = [BrokerResource]()
-    public var brokerResourcesToReturn: [BrokerResource]?
-    public var brokersByURL = [String: DataBroker]()
     public var brokerFixturesBundle: Bundle?
     public var wasUpdatedPreferredRunDateCalled = false
 
@@ -728,9 +735,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         profile = nil
         profileQueries.removeAll()
         brokers.removeAll()
-        updatedBrokerResources.removeAll()
-        brokerResourcesToReturn = nil
-        brokersByURL.removeAll()
         scanJobData.removeAll()
         optOutJobData.removeAll()
         lastPreferredRunDateOnScan = nil
@@ -762,7 +766,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func update(_ brokerResource: BrokerResource, with id: Int64) throws {
         wasBrokerUpdateCalled = true
         lastUpdatedBrokerResource = brokerResource
-        updatedBrokerResources.append(brokerResource)
         if shouldThrowOnUpdate {
             throw DataBrokerProtectionError.unknown("Mock update error")
         }
@@ -794,7 +797,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
                          removedAt: nil)
         }
 
-        return brokersByURL[name]
+        return nil
     }
 
     public func fetchAllBrokers() throws -> [DataBroker] {
@@ -802,10 +805,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
-        if let brokerResourcesToReturn {
-            return brokerResourcesToReturn
-        }
-
         let fileManager = MockFileManager(
             fixtureBundle: brokerFixturesBundle,
             fixtureFileNames: [

@@ -161,17 +161,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         }
     }
 
-    func testCheckForUpdatesThrowsJSONDecodingErrorWhenResponseIsInvalid() async {
-        let expectation = XCTestExpectation(description: "JSON decoding error")
-
+    func testCheckForUpdatesThrowsOtherVerificationErrorWhenSignedResponseIsInvalid() async {
         appendSignedMainConfigResponses(Data())
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail("Unexpected error")
-        } catch DecodingError.dataCorrupted {
-            expectation.fulfill()
+            XCTFail("Expected an error")
+        } catch BrokerBundleVerificationError.other {
         } catch {
-            XCTFail("Unexpected error")
+            XCTFail("Unexpected error \(error)")
         }
     }
 

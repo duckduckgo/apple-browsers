@@ -75,7 +75,8 @@ public final class DBPUIViewModel {
                                                       prefs: contentScopeProperties,
                                                       delegate: self,
                                                       webUISettings: webUISettings,
-                                                      vpnBypassService: nil)
+                                                      vpnBypassService: nil,
+                                                      dbpSettings: DataBrokerProtectionSettings(defaults: .dbp))
             configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
             if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {

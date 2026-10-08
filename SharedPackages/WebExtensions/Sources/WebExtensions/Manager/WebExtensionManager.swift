@@ -887,12 +887,22 @@ public extension Notification.Name {
     /// this notification reaches every observer. Per-window UI needs that, because each
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
+
+    /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
+    /// from JavaScript. The object is the extension's `WKWebExtensionContext`.
+    static let webExtensionActionDidChange = Notification.Name("webExtensionActionDidChange")
 }
 
 // MARK: - WKWebExtensionControllerDelegate
 
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager: WKWebExtensionControllerDelegate {
+
+    public func webExtensionController(_ controller: WKWebExtensionController,
+                                       didUpdate action: WKWebExtension.Action,
+                                       forExtensionContext context: WKWebExtensionContext) {
+        NotificationCenter.default.post(name: .webExtensionActionDidChange, object: context)
+    }
 
     @objc(_webExtensionController:didCreateBackgroundWebView:forExtensionContext:)
     public func webExtensionController(_ controller: WKWebExtensionController,

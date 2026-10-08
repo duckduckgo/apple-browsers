@@ -48,8 +48,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
     private let container: NSStackView
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
     private let isPrivateWindow: Bool
+    private let selectedTabProvider: () -> WKWebExtensionTab?
     private var buttons = Set<MouseOverButton>()
     private var updateCancellable: AnyCancellable?
+    private var actionCancellable: AnyCancellable?
 
     /// Whether the toolbar buttons are shown. The navigation bar sets it from the selected tab's
     /// content, because an extension popup makes no sense on a tab without a web page.
@@ -65,8 +67,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
     init(webExtensionManagerProvider: @escaping () -> WebExtensionManaging?,
          themeManager: ThemeManaging,
          container: NSStackView,
-         isPrivateWindow: Bool = false) {
+         isPrivateWindow: Bool = false,
+         selectedTabProvider: @escaping () -> WKWebExtensionTab? = { nil }) {
          self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.selectedTabProvider = selectedTabProvider
         self.themeManager = themeManager
         self.container = container
         self.isPrivateWindow = isPrivateWindow
@@ -87,6 +91,26 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
             .sink { [weak self] _ in
                 self?.updateLoadedExtensions()
             }
+
+        actionCancellable = NotificationCenter.default
+            .publisher(for: .webExtensionActionDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self, let context = notification.object as? WKWebExtensionContext else { return }
+                for button in self.buttons where button.identifier?.rawValue == context.uniqueIdentifier {
+                    self.applyAction(of: context, to: button)
+                }
+            }
+    }
+
+    /// Shows each extension's action for the selected tab, since an extension can set a different
+    /// icon on every tab.
+    func refreshActions() {
+        let loaded = webExtensionManagerProvider()?.loadedExtensions ?? []
+        for button in buttons {
+            guard let context = loaded.first(where: { $0.uniqueIdentifier == button.identifier?.rawValue }) else { continue }
+            applyAction(of: context, to: button)
+        }
     }
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -168,6 +192,18 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         }
     }
 
+    /// Shows the extension's current action for the selected tab, which its JavaScript can change,
+    /// falling back to its manifest.
+    /// The extension supplies its own artwork, so the button keeps no tint color.
+    private func applyAction(of context: WKWebExtensionContext, to button: NSButton) {
+        let action = selectedTabProvider().flatMap { context.action(for: $0) } ?? context.action(for: nil)
+        button.image = action?.icon(for: Constants.iconSize)
+            ?? context.webExtension.actionIcon(for: Constants.iconSize)
+            ?? context.webExtension.icon(for: Constants.iconSize)
+        let label = action?.label ?? ""
+        button.toolTip = !label.isEmpty ? label : (context.webExtension.displayActionLabel ?? context.webExtension.displayName)
+    }
+
     private func toolbarButton(for context: WKWebExtensionContext) -> MouseOverButton {
         let button = MouseOverButton(frame: NSRect(x: 0, y: 0, width: Constants.buttonSize, height: Constants.buttonSize))
 
@@ -179,14 +215,11 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.isHidden = !buttonsAreVisible
-        button.toolTip = context.webExtension.displayActionLabel ?? context.webExtension.displayName
         button.target = self
         button.action = #selector(toolbarButtonClicked)
         button.menu = ExtensionButtonMenu(button: button, context: context, delegate: self)
 
-        // The extension supplies its own artwork, so the button keeps no tint color.
-        button.image = context.webExtension.actionIcon(for: Constants.iconSize)
-            ?? context.webExtension.icon(for: Constants.iconSize)
+        applyAction(of: context, to: button)
 
         applyThemeStyle(theme: theme, to: button)
 

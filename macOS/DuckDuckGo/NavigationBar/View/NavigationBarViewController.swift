@@ -799,7 +799,8 @@ final class NavigationBarViewController: NSViewController {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
                                                            themeManager: themeManager,
                                                            container: menuButtons,
-                                                           isPrivateWindow: tabCollectionViewModel.isBurner)
+                                                           isPrivateWindow: tabCollectionViewModel.isBurner,
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
         }
@@ -1513,6 +1514,7 @@ final class NavigationBarViewController: NSViewController {
         guard #available(macOS 15.4, *),
               let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
         updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
+        updater.refreshActions()
     }
 
     private func subscribeToDownloads() {

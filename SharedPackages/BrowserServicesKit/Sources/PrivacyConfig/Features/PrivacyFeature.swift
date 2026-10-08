@@ -398,9 +398,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
 
-    /// Makes the address-bar Duck.ai menu page-aware
-    case contextualAddressBarMenu
-
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 

@@ -200,6 +200,7 @@ public enum FeatureFlag: String {
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
 
+    /// Control daily Duo counts for app improvements, with randomized timestamps for privacy.
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
     case iPhoneDuoLaunchReporting
 

@@ -168,6 +168,7 @@ final class ReportingService {
 
     private func onStatisticsLoaded() {
         PixelKit.fire(Pixel.Event.appLaunch, options: .withATB)
+        // Guide Duo app improvements with daily counts and randomized timestamps.
         deviceLaunchPixelReporter.reportLaunch()
         reportAdAttribution()
         reportWidgetUsage()

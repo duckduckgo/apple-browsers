@@ -23,6 +23,7 @@ import Foundation
 import PixelKit
 import PrivacyConfig
 
+/// Measure daily Duo use to guide app improvements while obscuring launch timing.
 struct DeviceLaunchPixelReporter {
     private let featureFlagger: FeatureFlagger
     private let machineIdentifier: () -> String?
@@ -41,6 +42,7 @@ struct DeviceLaunchPixelReporter {
         self.schedule = schedule
     }
 
+    // Read the model locally; never attach the raw value to the pixel.
     static func hardwareMachine() -> String? {
         var size = 0
         guard sysctlbyname("hw.machine", nil, &size, nil, 0) == 0, size > 0 else { return nil }
@@ -55,7 +57,7 @@ struct DeviceLaunchPixelReporter {
     func reportLaunch() {
         guard featureFlagger.isFeatureOn(.iPhoneDuoLaunchReporting),
               machineIdentifier() == "iPhone19,4" else { return }
-        // Measure daily Duo use without sending at the exact launch time.
+        // Delay sending to reduce correlation with the user’s launch time.
         schedule(TimeInterval.random(in: 1...30)) {
             guard featureFlagger.isFeatureOn(.iPhoneDuoLaunchReporting) else { return }
             pixelFiring?.fire(DeviceLaunchPixel.iPhoneDuoLaunched, frequency: .daily)

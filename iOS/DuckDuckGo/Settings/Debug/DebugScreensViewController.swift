@@ -68,6 +68,7 @@ struct DebugScreensView: View {
                 Section(header: Text(verbatim: "Device")) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(verbatim: "Hardware machine (hw.machine)")
+                        // Check device matching locally without uploading the raw model value.
                         Text(verbatim: DeviceLaunchPixelReporter.hardwareMachine() ?? "Unavailable")
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)

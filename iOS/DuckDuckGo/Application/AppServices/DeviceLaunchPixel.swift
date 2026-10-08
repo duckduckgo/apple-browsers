@@ -19,6 +19,7 @@
 
 import PixelKit
 
+/// Daily Duo counts guide app improvements; PETAL randomizes timestamps for privacy.
 enum DeviceLaunchPixel: PixelKit.Event {
     case iPhoneDuoLaunched
 

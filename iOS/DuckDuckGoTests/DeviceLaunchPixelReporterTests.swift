@@ -22,6 +22,7 @@ import XCTest
 @_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 
+/// Verify device eligibility, daily limits, and launch-timing privacy measures.
 final class DeviceLaunchPixelReporterTests: XCTestCase {
     func testMatchingDeviceFiresDailyPixelWithExactName() throws {
         let pixelFiring = PixelKitMock()

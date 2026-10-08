@@ -775,8 +775,14 @@ private extension UnifiedToggleInputToolbarView {
         updateSubmitButtonAppearance()
     }
 
+    /// The "Ask" or "Create" label replaces the voice button too, disabled until the user types.
+    private var showsVoiceButton: Bool {
+        isAIVoiceChatActive && !isSubmitEnabled && !isEditing
+            && (preservedTermsOfServiceSendButton ?? termsOfServiceSendButton) == nil
+    }
+
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
+        let showVoice = showsVoiceButton
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -798,9 +804,9 @@ private extension UnifiedToggleInputToolbarView {
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
         let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
-        // The blocked button keeps its icon and takes the inactive submit fill: the voice and
+        // The blocked button and a disabled "Ask" take the inactive submit fill: the voice and
         // return-key styles have no disabled state of their own.
-        if isInputBlockedByUsageLimit {
+        if isInputBlockedByUsageLimit || (labelTitle != nil && !isActive) {
             submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
         } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
@@ -844,7 +850,7 @@ private extension UnifiedToggleInputToolbarView {
         onReasoningPickerShown?()
     }
     @objc private func submitTapped() {
-        if isAIVoiceChatActive && !isSubmitEnabled {
+        if showsVoiceButton {
             onVoiceTapped?()
         } else {
             onSubmitTapped?()

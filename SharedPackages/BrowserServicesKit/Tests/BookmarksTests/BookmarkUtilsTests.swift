@@ -48,6 +48,29 @@ final class BookmarkUtilsTests: XCTestCase {
         try? FileManager.default.removeItem(at: location)
     }
 
+    func testURLParsingPreservesRelativeAndCustomSchemeAddresses() {
+        for address in ["example.com", "-11", "ftp://example.com", "myapp://open/page"] {
+            XCTAssertEqual(BookmarkUtils.url(from: address)?.absoluteString, address)
+        }
+    }
+
+    func testURLParsingRejectsMissingAndMalformedAddresses() {
+        XCTAssertNil(BookmarkUtils.url(from: nil))
+        XCTAssertNil(BookmarkUtils.url(from: "http://["))
+        XCTAssertNil(BookmarkUtils.url(from: "https://exa[mple.com"))
+    }
+
+    func testURLParsingPreservesFoundationEmptyAddressBehavior() {
+        // Foundation's handling of empty relative URLs differs between OS versions.
+        XCTAssertEqual(BookmarkUtils.url(from: ""), URL(string: ""))
+    }
+
+    func testURLParsingEncodesBookmarkletsWithoutDoubleEncoding() {
+        for address in ["javascript:alert('Hello world')", "javascript:alert('Hello%20world')"] {
+            XCTAssertEqual(BookmarkUtils.url(from: address)?.absoluteString, "javascript:alert('Hello%20world')")
+        }
+    }
+
     func testThatFetchingRootFolderPicksTheOneWithMostChildren() {
         let context = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
         context.performAndWait {

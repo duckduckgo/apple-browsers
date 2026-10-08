@@ -721,6 +721,7 @@
 		987130C5294AAB9F00AB05E0 /* BookmarkEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987130BF294AAB9E00AB05E0 /* BookmarkEditorViewModelTests.swift */; };
 		987130C6294AAB9F00AB05E0 /* BookmarkListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987130C0294AAB9E00AB05E0 /* BookmarkListViewModelTests.swift */; };
 		987130C7294AAB9F00AB05E0 /* MenuBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987130C1294AAB9E00AB05E0 /* MenuBookmarksViewModelTests.swift */; };
+		3269B06E7316B41D2BEAAB61 /* AddFavoriteViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF93772B878B222D692DFC /* AddFavoriteViewModelTests.swift */; };
 		987130C8294AAB9F00AB05E0 /* BookmarksTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987130C2294AAB9E00AB05E0 /* BookmarksTestHelpers.swift */; };
 		987130C9294AAB9F00AB05E0 /* BookmarkUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987130C3294AAB9E00AB05E0 /* BookmarkUtilsTests.swift */; };
 		987243142C5232B5007ECC76 /* BookmarksDatabaseSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987243132C5232B5007ECC76 /* BookmarksDatabaseSetupTests.swift */; };
@@ -2641,6 +2642,7 @@
 		987130BF294AAB9E00AB05E0 /* BookmarkEditorViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkEditorViewModelTests.swift; sourceTree = "<group>"; };
 		987130C0294AAB9E00AB05E0 /* BookmarkListViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkListViewModelTests.swift; sourceTree = "<group>"; };
 		987130C1294AAB9E00AB05E0 /* MenuBookmarksViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuBookmarksViewModelTests.swift; sourceTree = "<group>"; };
+		D1CF93772B878B222D692DFC /* AddFavoriteViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFavoriteViewModelTests.swift; sourceTree = "<group>"; };
 		987130C2294AAB9E00AB05E0 /* BookmarksTestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksTestHelpers.swift; sourceTree = "<group>"; };
 		987130C3294AAB9E00AB05E0 /* BookmarkUtilsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkUtilsTests.swift; sourceTree = "<group>"; };
 		987243132C5232B5007ECC76 /* BookmarksDatabaseSetupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDatabaseSetupTests.swift; sourceTree = "<group>"; };
@@ -5608,6 +5610,7 @@
 				987130C3294AAB9E00AB05E0 /* BookmarkUtilsTests.swift */,
 				987130BE294AAB9E00AB05E0 /* FavoriteListViewModelTests.swift */,
 				987130C1294AAB9E00AB05E0 /* MenuBookmarksViewModelTests.swift */,
+				D1CF93772B878B222D692DFC /* AddFavoriteViewModelTests.swift */,
 				987130C2294AAB9E00AB05E0 /* BookmarksTestHelpers.swift */,
 			);
 			name = BSK;
@@ -9244,6 +9247,7 @@
 				5694372B2BE3F2D900C0881B /* SyncErrorHandlerTests.swift in Sources */,
 				A71D000630EEA00100A11A01 /* UnifiedDeviceListPixelHandlerTests.swift in Sources */,
 				987130C7294AAB9F00AB05E0 /* MenuBookmarksViewModelTests.swift in Sources */,
+				3269B06E7316B41D2BEAAB61 /* AddFavoriteViewModelTests.swift in Sources */,
 				9FFDA83D2DFA8F6F007923F7 /* MockAudioSessionManager.swift in Sources */,
 				C1A74BB02EC2618D00870321 /* AutofillServiceTests.swift in Sources */,
 				9FE7CD672E14F03B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift in Sources */,

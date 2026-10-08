@@ -670,6 +670,7 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
     var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.mobile)
 
     func createOrToggleFavorite(title: String, url: URL) {}
+    func saveFavorite(title: String?, urlString: String) -> Bool { true }
     func createBookmark(title: String, url: URL) {}
     func favorite(for url: URL) -> BookmarkEntity? { nil }
     func bookmark(for url: URL) -> BookmarkEntity? { nil }

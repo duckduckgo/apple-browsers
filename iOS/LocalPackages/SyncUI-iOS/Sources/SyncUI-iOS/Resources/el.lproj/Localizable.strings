@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Συνεχίστε τη συνεδρία του Sync & Backup για να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία ή συνεχίστε με μια νέα ρύθμιση.";
 
@@ -85,9 +82,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Λήψη των εικονιδίων που λείπουν;";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Αυτόματη λήψη εικονιδίων";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Συνεχίστε την ανάπτυξη";
 
@@ -169,11 +163,17 @@
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Φορτώνει εικονίδια από ιστότοπους που έχετε προσθέσει σελιδοδείκτες. Οι λήψεις εικονιδίων αποκαλύπτονται στο δίκτυό σας.";
 
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Φόρτωση εικονιδίων σελιδοδείκτη";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Σελιδοδείκτες";
 
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Χρησιμοποίησε τους ίδιους σελιδοδείκτες αγαπημένων σε κινητό και υπολογιστή.";
+
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Κοινοποίηση αγαπημένων σε όλες τις συσκευές";
 
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Το Sync & Backup είναι κρυπτογραφημένο από άκρο σε άκρο σε όλες τις συσκευές σου.";
@@ -214,8 +214,8 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Υπόδειγμα κωδικού:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Άνοιξε την άλλη";
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Άνοιξε το άλλο σου %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Επικόλληση κωδικού συγχρονισμού";
@@ -271,7 +271,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Χρησιμοποιήστε αυτόν τον κωδικό ώστε να επαναφέρετε τα δεδομένα σας σε περίπτωση που χάσετε την πρόσβαση σε αυτήν τη συσκευή. Δεν είναι δυνατή η ανάκτηση δεδομένων Sync & Backup έπειτα από 18 μήνες αδράνειας. [Μάθετε περισσότερα](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Εφαρμογή DuckDuckGo";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +292,14 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Κλείσιμο";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo για υπολογιστές";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Σάρωσε τον κωδικό QR για συγχρονισμό.";
 
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Άνοιγμα";
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Άνοιξε το %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Είμαι έτοιμος για σάρωση";
@@ -322,8 +322,8 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Αντιγραφή κωδικού κειμένου";
 
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "Σε μια άλλη συσκευή, άνοιξε το";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "Σε μια άλλη συσκευή, άνοιξε το %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Πήγαινε στο **Sync & Backup** › **Συγχρονισμός με άλλη συσκευή** και σάρωσε αυτόν τον κωδικό:";
@@ -354,9 +354,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Αυτή η συσκευή";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Ενοποίηση αγαπημένων σε όλες τις συσκευές";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Χρησιμοποιείτε περιβάλλον Ανάπτυξης συγχρονισμού";

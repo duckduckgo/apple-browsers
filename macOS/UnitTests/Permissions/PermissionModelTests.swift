@@ -561,6 +561,19 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(model.permissions, [.geolocation: .reloading])
     }
 
+    func testWhenPageNavigatesThenPendingQueryHeldByPresenterIsCompleted() throws {
+        var granted: Bool?
+        model.permissions([.externalScheme(scheme: "mailto")], requestedForDomain: "example.com") { (decision: Bool) in granted = decision }
+        // The prompt's presenter can still hold the query after the model drops it.
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        model.tabDidStartNavigation()
+
+        XCTAssertTrue(query.isComplete)
+        XCTAssertEqual(granted, false)
+        XCTAssertNil(model.authorizationQuery)
+    }
+
     func testWhenExternalSchemePermissionQueryIsResetThenItTriggersDecisionHandler() {
         let c = model.$authorizationQuery.sink {
             if $0 != nil {
@@ -604,6 +617,24 @@ final class PermissionModelTests: XCTestCase {
         withExtendedLifetime(c) {
             waitForExpectations(timeout: 1)
         }
+    }
+
+    func testWhenAllowIsPersistedWhileMacOSBlocksThePermissionThenPendingQueryWaitsForMacOS() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        webView.urlValue = URL.duckDuckGo
+        let domain = try XCTUnwrap(URL.duckDuckGo.host)
+        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.denied)
+        var granted: Bool?
+        model.permissions([.notification], requestedForDomain: domain) { (decision: Bool) in granted = decision }
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        permissionManagerMock.setPermission(.allow, forDomain: domain, permissionType: .notification)
+        permissionManagerMock.permissionSubject.send((domain, .notification, .decisionChanged(.allow)))
+
+        // The prompt grants it once macOS allows.
+        XCTAssertNil(granted)
+        XCTAssertFalse(query.isComplete)
+        query.cancel()
     }
 
     func testWhenDenyPermissionIsPersistedThenPermissionQueryIsDenied() {

@@ -863,6 +863,18 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenManagerIsCreated_ThenWindowCloseScriptIsInstalledForMainFramesAtDocumentStart() {
+        let manager = makeManager()
+
+        let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let closeScript = userScripts.first { $0.source == WebExtensionWindowCloseScript.source }
+
+        XCTAssertNotNil(closeScript, "Expected the window close script among the controller's user scripts")
+        XCTAssertEqual(closeScript?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(closeScript?.isForMainFrameOnly, true)
+    }
+
+    @MainActor
     func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() {
         let manager = makeManager()
 

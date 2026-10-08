@@ -25,6 +25,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
+import PixelKit
 import PrivacyConfig
 @_spi(Testing) import Persistence
 import Subscription
@@ -222,7 +223,8 @@ extension TabViewController {
         fireTab: Bool = false,
         interactionStateData: Data? = nil,
         initialRequest: URLRequest? = nil,
-        consumeCookies: Bool = false
+        consumeCookies: Bool = false,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
             model: .init(link: link, fireTab: fireTab),
@@ -258,6 +260,7 @@ extension TabViewController {
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub(),
             webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
+            pixelFiring: pixelFiring,
             sitePermissionsEnabled: sitePermissionsEnabled
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,

@@ -166,7 +166,10 @@ final class PermissionModel {
             // await permission deactivation and transition to .none
             permissions[permission].willReload()
         }
+        let pendingQueries = authorizationQueries
         authorizationQueries = []
+        // A presenter can still hold a query, and its popover stays open until the query completes.
+        pendingQueries.forEach { $0.cancel() }
         temporarilyAllowedExternalSchemes.removeAll()
         removedPermissions.removeAll()
         deniedByCategoryDefault.removeAll()
@@ -300,7 +303,16 @@ final class PermissionModel {
         // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
         query.isSystemPermissionDisabled = isSystemPermissionDisabled
+        query.parameters.saveAlwaysAllow = { [weak self] in
+            self?.saveAlwaysAllow(for: permissions, domain: domain)
+        }
         authorizationQueries.append(query)
+    }
+
+    private func saveAlwaysAllow(for permissions: [PermissionType], domain: String) {
+        for permission in permissions {
+            permissionManager.setPermission(.allow, forDomain: domain, permissionType: permission)
+        }
     }
 
     /// Drops the `.requested` state of a prompt the user dismissed, so the address bar stops showing it.
@@ -341,6 +353,8 @@ final class PermissionModel {
                 self.revoke(permissionType)
                 fallthrough
             case (.allow, .requested):
+                // While macOS blocks the permission, the prompt keeps the request and grants it once macOS allows.
+                guard decision == .deny || !isSystemPermissionDisabled(for: permissionType) else { break }
                 while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
                     query.handleDecision(grant: decision == .allow, remember: true)
                 }

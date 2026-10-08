@@ -112,6 +112,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     size: SnapshotImageSize,
     record: Bool = false,
     perceptualPrecision: Float = 0.98,
+    drawHierarchyInKeyWindow: Bool = false,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -123,6 +124,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     let configurations = strategy.configurations(for: .iOS, size: size)
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
+    guard assertKeyWindowAvailable(if: drawHierarchyInKeyWindow, fileID: fileID, file: file, line: line, column: column) else { return }
 
     for configuration in configurations {
         let rootView = view.environment(\.colorScheme, configuration.appearance.colorScheme)
@@ -132,6 +134,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
             size: size,
             record: record,
             perceptualPrecision: perceptualPrecision,
+            drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
             fileID: fileID,
             file: file,
             testName: testName,
@@ -220,6 +223,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     size: SnapshotImageSize,
     record: Bool,
     perceptualPrecision: Float,
+    drawHierarchyInKeyWindow: Bool,
     fileID: StaticString,
     file: StaticString,
     testName: String,
@@ -231,7 +235,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: view.fixedSize(),
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
                 traits: configuration.traits
@@ -250,7 +254,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: view.frame(width: SnapshotDevice.iPhoneDefault.size.width).fixedSize(),
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
                 traits: configuration.traits
@@ -278,7 +282,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
                 isPad: configuration.device == .iPadDefault
             ),
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
                 traits: configuration.traits
@@ -302,7 +306,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: view,
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
                 traits: configuration.traits
@@ -373,6 +377,38 @@ private extension SnapshotDevice {
             UITraitCollection(verticalSizeClass: verticalSizeClass)
         ])
     }
+}
+
+private func assertKeyWindowAvailable(
+    if drawHierarchyInKeyWindow: Bool,
+    fileID: StaticString,
+    file: StaticString,
+    line: UInt,
+    column: UInt
+) -> Bool {
+    guard drawHierarchyInKeyWindow, !hasKeyWindow else { return true }
+
+    recordSnapshotIssue(
+        "drawHierarchyInKeyWindow requires an app-hosted test target (e.g. iOS/DuckDuckGoTests); package test targets have no key window.",
+        fileID: fileID,
+        file: file,
+        line: line,
+        column: column
+    )
+    return false
+}
+
+private var hasKeyWindow: Bool {
+    let sharedApplication = NSSelectorFromString("sharedApplication")
+    guard UIApplication.responds(to: sharedApplication),
+          let application = UIApplication.perform(sharedApplication)?.takeUnretainedValue() as? UIApplication else {
+        return false
+    }
+
+    return application.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap(\.windows)
+        .contains(where: \.isKeyWindow)
 }
 
 private extension SnapshotAppearance {

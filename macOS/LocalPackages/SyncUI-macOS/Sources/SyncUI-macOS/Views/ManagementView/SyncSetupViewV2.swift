@@ -22,6 +22,7 @@ import SwiftUIExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PreviewSnapshots
+import UIComponents
 
 struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
@@ -161,6 +162,7 @@ struct SyncSetupViewV2_Previews: PreviewProvider {
                 .frame(width: 544, height: 800, alignment: .top)
                 .padding()
                 .background(Color(nsColor: .windowBackgroundColor))
+                .applyRebranding()
         }
     )
 }

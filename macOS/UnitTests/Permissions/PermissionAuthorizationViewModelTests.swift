@@ -34,6 +34,10 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
     private var openedURLs: [URL] = []
     private var openedSystemSettingsURLs: [URL] = []
     private var finishCount = 0
+    /// A prompt shown through a real permission model; kept alive for the test.
+    private var sitePrompt: SitePrompt?
+    /// What the page was told for the request behind `sitePrompt`.
+    private var pageDecisions: [Bool] = []
 
     override func setUp() {
         super.setUp()
@@ -51,6 +55,8 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         openedURLs = []
         openedSystemSettingsURLs = []
         finishCount = 0
+        sitePrompt = nil
+        pageDecisions = []
         super.tearDown()
     }
 
@@ -487,6 +493,41 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         withExtendedLifetime((viewModel, query)) {}
     }
 
+    func testWhenMacOSBlocksAccessThenAlwaysAllowIsSavedWithoutGrantingTheRequest() throws {
+        for permissions in Self.permissionsBlockableByMacOS {
+            pixelFiring = PixelKitMock()
+            let prompt = try showPrompt(for: permissions, systemPermissionState: .denied)
+
+            prompt.viewModel.send(action: .alwaysAllow)
+
+            XCTAssertEqual(prompt.phase, .openSettings)
+            XCTAssertEqual(prompt.savedDecisions, permissions.map { _ in .allow })
+            XCTAssertTrue(pageDecisions.isEmpty)
+            XCTAssertEqual(firedPixelNames, allowDecisionPixelNames(for: permissions))
+        }
+    }
+
+    func testWhenPromptIsClosedAfterMacOSDeniedItsPromptThenAlwaysAllowStaysSavedAndRequestIsDenied() async throws {
+        let prompt = try showPrompt(for: [.notification], systemPermissionState: .notDetermined)
+        systemPermissionManager.defersAuthorizationResponse = true
+        prompt.viewModel.send(action: .alwaysAllow)
+        prompt.viewModel.send(action: .requestSystemPermission)
+        await denySystemPermissionRequest()
+
+        prompt.viewModel.send(action: .dismiss)
+
+        XCTAssertEqual(pageDecisions, [false])
+        XCTAssertEqual(prompt.savedDecisions, [.allow])
+    }
+
+    func testWhenSiteIsAlreadyAlwaysAllowedThenShowingThePromptDoesNotSaveItAgain() throws {
+        let prompt = try showPrompt(for: [.notification], systemPermissionState: .denied, savedDecision: .allow)
+
+        XCTAssertEqual(prompt.phase, .openSettings)
+        XCTAssertEqual(prompt.manager.setPermissionCalls.count, 1, "Saving again would move the site in Settings' Recent list")
+        XCTAssertTrue(firedPixelNames.isEmpty)
+    }
+
     func testWhenSiteIsAlwaysAllowedAndSystemPermissionIsGrantedOnReturnThenRequestIsGrantedWithoutDecisionPixel() async throws {
         systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
         let query = makeQuery(permissions: [.notification])
@@ -583,6 +624,74 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
             openSystemSettingsURL: { [weak self] in self?.openedSystemSettingsURLs.append($0) },
             finish: { [weak self] in self?.finishCount += 1 }
         )
+    }
+
+    // MARK: - Prompt shown through a permission model
+
+    private static let permissionsBlockableByMacOS: [[PermissionType]] = [[.notification], [.geolocation], [.camera, .microphone]]
+
+    @MainActor
+    private struct SitePrompt {
+        let model: PermissionModel
+        let manager: PermissionManagerMock
+        let query: PermissionAuthorizationQuery
+        let viewModel: PermissionAuthorizationViewModel
+
+        var phase: PermissionAuthorizationViewState.SystemPermissionStep.Phase? {
+            viewModel.viewState.systemPermissionStep?.phase
+        }
+
+        var savedDecisions: [PersistedPermissionDecision?] {
+            query.permissions.map { manager.persistedDecision(forDomain: query.domain, permissionType: $0) }
+        }
+    }
+
+    /// example.com asks for `permissions` with the new prompt on, every macOS permission in `systemPermissionState`,
+    /// and the site's `savedDecision`. The prompt is shown; the page's answers are recorded in `pageDecisions`.
+    private func showPrompt(
+        for permissions: [PermissionType],
+        systemPermissionState: SystemPermissionAuthorizationState,
+        savedDecision: PersistedPermissionDecision? = nil
+    ) throws -> SitePrompt {
+        systemPermissionManager = SystemPermissionManagerMock()
+        systemPermissionManager.defaultAuthorizationState = systemPermissionState
+        systemPermissionManager.notificationAuthorizationStateSubject.send(systemPermissionState)
+        let manager = PermissionManagerMock()
+        if let savedDecision {
+            permissions.forEach { manager.setPermission(savedDecision, forDomain: "example.com", permissionType: $0) }
+        }
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        let model = PermissionModel(permissionManager: manager,
+                                    geolocationService: GeolocationServiceMock(),
+                                    systemPermissionManager: systemPermissionManager,
+                                    featureFlagger: featureFlagger)
+
+        pageDecisions = []
+        model.permissions(permissions, requestedForDomain: "example.com") { [weak self] (granted: Bool) in
+            self?.pageDecisions.append(granted)
+        }
+        let query = try XCTUnwrap(model.authorizationQuery)
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .onAppear)
+
+        let prompt = SitePrompt(model: model, manager: manager, query: query, viewModel: viewModel)
+        sitePrompt = prompt
+        return prompt
+    }
+
+    private func denySystemPermissionRequest() async {
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
+        respondToSystemPermissionRequest(with: .denied)
+        await waitUntil { self.sitePrompt?.phase == .openSettings }
+    }
+
+    private var firedPixelNames: [String] {
+        pixelFiring.actualFireCalls.map(\.pixel.name)
+    }
+
+    private func allowDecisionPixelNames(for permissions: [PermissionType]) -> [String] {
+        permissions.map { PermissionPixel.authorizationDecision(permissionType: $0, decision: .allow).name }
     }
 
     /// Notifications not asked by macOS yet, the allow `decision` picked, and Request Permission pressed.

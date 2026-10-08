@@ -424,9 +424,10 @@ final class LaunchActionHandlerTests {
     @available(iOS 16, macOS 13, *)
     @Test(
         "When idle return keeps the current NTP and the flag is on then keyboard presenter is called",
-        .timeLimit(.minutes(1))
+        .timeLimit(.minutes(1)),
+        arguments: [false, true]
     )
-    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled() {
+    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled(isFirstForeground: Bool) {
         let date = Date()
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         idleReturnEvaluator.didReturnAfterIdleResult = true
@@ -434,13 +435,13 @@ final class LaunchActionHandlerTests {
         idleReturnDelegate.showNewTabPageAfterIdleReturnResult = .keptCurrent
 
         launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date,
-                                                               isFirstForeground: false,
+                                                               isFirstForeground: isFirstForeground,
                                                                hasCompletedAuthentication: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
-        #expect(keyboardPresenter.lastBackgroundDate == date)
+        #expect(keyboardPresenter.lastBackgroundDate == (isFirstForeground ? nil : date))
         #expect(!keyboardPresenter.hasCompletedAuthentication)
         #expect(keyboardPresenter.isAfterIdleReturn)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)

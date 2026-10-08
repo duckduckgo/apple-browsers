@@ -289,8 +289,134 @@ public enum WebExtensionAPIStubScript {
             }
         }
 
+        // `chrome.permissions` methods that answer like Chrome for permission names WebKit doesn't
+        // know, where WebKit rejects the whole call. Calls WebKit accepts are left as they are.
+        var invalidPermissionPattern = /is not a valid permission|invalid.*permission/i;
+        var reportedUnknownPermissions = Object.create(null);
+        var wrappedMarkerName = "__ddgWrapped";
+        var wrappedPermissionsMethods = [
+            { name: "contains", unknownNameFails: true },
+            { name: "request", unknownNameFails: true },
+            { name: "remove", unknownNameFails: false }
+        ];
+
+        function isInvalidPermissionError(error) {
+            if (error === undefined || error === null) {
+                return false;
+            }
+            var message = error.message === undefined || error.message === null ? String(error) : String(error.message);
+            return invalidPermissionPattern.test(message);
+        }
+
+        function reportUnknownPermission(name) {
+            if (reportedUnknownPermissions[name]) {
+                return;
+            }
+            reportedUnknownPermissions[name] = true;
+            if (typeof name === "string") {
+                reportAPI("missing", "permission:" + name);
+            }
+            console.info("[DuckDuckGo] The host does not implement the '" + name
+                + "' permission; answering the way Chrome would instead of throwing");
+        }
+
+        // A promise either way, whether the host throws or rejects.
+        function callPermissionsMethod(method, owner, descriptor) {
+            try {
+                return Promise.resolve(method.call(owner, descriptor));
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        }
+
+        // Asks the host about one descriptor, and whether it knew the names in it. Other errors pass through.
+        function probePermissionsDescriptor(method, owner, descriptor, name) {
+            return callPermissionsMethod(method, owner, descriptor).then(function(result) {
+                return { isKnown: true, isSatisfied: result === true };
+            }, function(error) {
+                if (!isInvalidPermissionError(error)) {
+                    throw error;
+                }
+                if (name !== undefined) {
+                    reportUnknownPermission(name);
+                }
+                return { isKnown: false, isSatisfied: false };
+            });
+        }
+
+        function probePermissionsIndividually(method, owner, descriptor) {
+            var names = descriptor && Array.isArray(descriptor.permissions) ? descriptor.permissions : [];
+            var origins = descriptor && Array.isArray(descriptor.origins) ? descriptor.origins : [];
+            var probes = names.map(function(name) {
+                return probePermissionsDescriptor(method, owner, { permissions: [name] }, name);
+            });
+            if (origins.length > 0) {
+                // Origins are never the reason for the validation error, so they stay one call.
+                probes.push(probePermissionsDescriptor(method, owner, { origins: origins }, undefined));
+            }
+            return Promise.all(probes);
+        }
+
+        // An unknown name makes `contains` and `request` answer `false`; `remove` ignores it.
+        function combinePermissionOutcomes(outcomes, unknownNameFails) {
+            var isSatisfied = true;
+            for (var index = 0; index < outcomes.length; index++) {
+                if (!outcomes[index].isKnown) {
+                    if (unknownNameFails) {
+                        return false;
+                    }
+                } else if (!outcomes[index].isSatisfied) {
+                    isSatisfied = false;
+                }
+            }
+            return isSatisfied;
+        }
+
+        // A method bound to its owner, so destructured calls keep working, answering through a promise
+        // and a trailing callback like the method it replaces.
+        function makePermissionsMethod(owner, methodName, unknownNameFails) {
+            var original = owner[methodName];
+            if (typeof original !== "function" || original[wrappedMarkerName] === true) {
+                return null;
+            }
+
+            var wrapper = function(descriptor) {
+                var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                var promise = callPermissionsMethod(original, owner, descriptor).catch(function(error) {
+                    if (!isInvalidPermissionError(error)) {
+                        throw error;
+                    }
+                    return probePermissionsIndividually(original, owner, descriptor).then(function(outcomes) {
+                        return combinePermissionOutcomes(outcomes, unknownNameFails);
+                    });
+                });
+                if (typeof callback === "function") {
+                    promise.then(function(value) {
+                        invokeCallback(callback, value);
+                    }, function() {
+                        // A real failure only rejects the promise, as in Chrome.
+                    });
+                }
+                return promise;
+            };
+
+            try {
+                Object.defineProperty(wrapper, wrappedMarkerName, {
+                    value: true,
+                    writable: false,
+                    enumerable: false,
+                    configurable: true
+                });
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not mark the chrome.permissions." + methodName + " wrapper: " + error);
+            }
+            return wrapper;
+        }
+
+
         var stubbedNamespaces = [];
         var stubbedMembers = [];
+        var wrappedNamespaces = [];
 
         missingNamespaces.forEach(function(namespace) {
             try {
@@ -327,9 +453,29 @@ public enum WebExtensionAPIStubScript {
             }
         });
 
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0) {
+        // Only the methods that validate names are replaced; `getAll` and the events stay WebKit's.
+        try {
+            var permissions = api.permissions;
+            if (permissions !== undefined && permissions !== null) {
+                var wrappedMethodNames = [];
+                wrappedPermissionsMethods.forEach(function(method) {
+                    var wrapper = makePermissionsMethod(permissions, method.name, method.unknownNameFails);
+                    if (wrapper !== null && define(permissions, method.name, wrapper)) {
+                        wrappedMethodNames.push(method.name);
+                    }
+                });
+                if (wrappedMethodNames.length > 0) {
+                    wrappedNamespaces.push("permissions");
+                }
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not wrap chrome.permissions: " + error);
+        }
+
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
-                + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ") + "]");
+                + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
+                + "], wrapped: [" + wrappedNamespaces.join(", ") + "]");
         }
     })();
 

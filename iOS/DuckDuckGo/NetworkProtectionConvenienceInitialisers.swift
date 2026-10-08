@@ -23,6 +23,7 @@ import Common
 import FoundationExtensions
 import NetworkExtension
 import Subscription
+import PrivacyDashboard
 
 
 private class DefaultTunnelSessionProvider: TunnelSessionProvider {
@@ -30,6 +31,10 @@ private class DefaultTunnelSessionProvider: TunnelSessionProvider {
         return await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession()
     }
 }
+
+extension TunnelConnectivityIssuesProvider: @retroactive VPNConnectivityIssuesProviding {}
+
+extension HostnamePinger: @retroactive PingQualityProviding {}
 
 extension ConnectionStatusObserverThroughSession {
     convenience init() {

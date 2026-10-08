@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Probeer Gratis";
+"action.title.vpn.free-trial-badge" = "Probeer gratis";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "We blokkeren invasieve trackers voordat ze worden geladen. Zo elimineren we effectief advertenties die afhankelijk zijn van tracking.";
@@ -316,6 +316,12 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Foto maken";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Bestanden worden automatisch gescand op illegale inhoud. Gemarkeerde chats hebben een beperkte gegevensbewaring. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Meer informatie";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Dat bericht is te lang om met bijlagen te versturen.";
 
@@ -345,6 +351,15 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "Tabbladen toevoegen";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan geen afbeeldingen maken. Geen zichtbaarheid van de provider is pas van toepassing als je terugschakelt.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ondersteunt het maken van afbeeldingen niet.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Gebruikt nu %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Bewerken vervangt het antwoord door een nieuw antwoord.";
@@ -1470,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Configuratie";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bevestigen";
@@ -2615,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Voer een niet-negatief aantal dagen in. De installatiedatum wordt ingesteld op dat aantal dagen geleden.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3070,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Evenement toegevoegd aan Apple Calendar";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Wachtwoorden importeren";
 
@@ -3191,9 +3197,6 @@
 "keyCommandZoomOut" = "Uitzoomen";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Laatst verwerkt: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Beschikbare producten laden...";
 
 /* No comment provided by engineer. */
@@ -3267,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Hostnaam van berichtenbeleid";
-
-/* No comment provided by engineer. */
-"Messages" = "Berichten";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3629,13 +3629,7 @@
 "No extensions installed" = "Geen extensies geïnstalleerd";
 
 /* No comment provided by engineer. */
-"No Logs" = "Geen logboeken";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Geen resultaten voor \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Geen berichten";
 
 /* No comment provided by engineer. */
 "No results found" = "Geen resultaten gevonden";
@@ -4167,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo kan deze pagina niet laden.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Recente verwerkingslogboeken";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Gezinsleden: %@";
@@ -4954,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Wat is er nieuw";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Toont logboeken van de laatste minuut, om problemen direct na een vernieuwing te diagnosticeren.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selecteer de optie die het beste je probleem beschrijft.";
 
@@ -5001,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Status: ongeldig verklaard";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Opgeslagen hostnaam: %@";
@@ -5492,9 +5477,6 @@
 "theme.name.light" = "Licht";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Deze lijst bevat berichten die getoond zijn plus maximaal 1 bericht dat gepland staat om getoond te worden. Mogelijk bevat de configuratie meer berichten die nog worden getoond, maar deze zijn nog niet verwerkt.";
-
-/* No comment provided by engineer. */
 "Title" = "Titel";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5517,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Contact toegevoegd";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versie: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Zoeken";
@@ -5917,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan geen afbeeldingen maken. Geen zichtbaarheid van de provider is pas van toepassing als je terugschakelt.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ ondersteunt het maken van afbeeldingen niet.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Gebruikt nu %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Alle chats";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Bestanden worden automatisch gescand op illegale inhoud. Gemarkeerde chats hebben een beperkte gegevensbewaring. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Meer informatie";

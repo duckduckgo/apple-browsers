@@ -22,6 +22,8 @@ import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
+import Testing
+import FeatureFlags_iOS
 
 @testable import DuckDuckGo
 
@@ -237,12 +239,30 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .default, "Return still adds a new line")
     }
 
-    func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenAnEmptyPromptKeepsTheVoiceButton() throws {
+    func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenAnEmptyPromptShowsADisabledAskUntilTyping() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        let sendButton = omniBarView.aiChatSendButton
+
+        XCTAssertEqual(sendButton.title(for: .normal), UserText.duckAIAskButtonTitle, "Ask stands in for the voice button")
+        XCTAssertNil(sendButton.image(for: .normal))
+        XCTAssertFalse(sendButton.isEnabled)
+
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+        omniBarView.updateAIChatSendButton(hasText: true)
+
+        XCTAssertEqual(sendButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        XCTAssertTrue(sendButton.isEnabled)
+    }
+
+    func testWhenTermsAreAlreadyAcceptedThenAnEmptyIPadDuckAIPromptShowsTheVoiceButton() throws {
+        termsStore.recordWebReport()
         let sut = makeSUTShowingTermsOfService()
         let omniBarView = try expandDuckAIPanel(of: sut)
 
         XCTAssertNil(omniBarView.aiChatSendButton.title(for: .normal))
         XCTAssertNotNil(omniBarView.aiChatSendButton.image(for: .normal))
+        XCTAssertTrue(omniBarView.aiChatSendButton.isEnabled)
     }
 
     func testWhenTermsAreAlreadyAcceptedThenIPadDuckAIReturnSubmitsAndSendKeepsItsArrow() throws {
@@ -320,6 +340,38 @@ class QuerySubmittedTests: XCTestCase {
 
         XCTAssertEqual(mock.query, expected)
         XCTAssertFalse(mock.wasOnOmniSuggestionSelectedCalled)
+    }
+}
+
+@MainActor
+final class NewTabPageAppOpenFocusTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("App-open fallback focuses mounted legacy input only for a valid request", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func appOpenFocusWithoutUnifiedInput(flagOn: Bool, isRequestValid: Bool) {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = sut
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        defer {
+            sut.barView.textField.resignFirstResponder()
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+        #expect(sut.barView.textField.window != nil)
+        var actualResult: Bool?
+
+        sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { isRequestValid }) { actualResult = $0 }
+
+        #expect(sut.barView.textField.isFirstResponder == isRequestValid)
+        #expect(actualResult == isRequestValid)
     }
 }
 

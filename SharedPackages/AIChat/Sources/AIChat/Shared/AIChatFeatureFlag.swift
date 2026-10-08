@@ -24,6 +24,7 @@ public protocol AIChatFeatureFlagProviding {
     func supportsSyncChatsUpdate() -> Bool
     func isNativeDataAccessEnabled() -> Bool
     func isNativeDataStorageEnabled() -> Bool
+    func isHomepageChatSuggestionsEnabled() -> Bool
 
 }
 
@@ -31,4 +32,6 @@ public extension AIChatFeatureFlagProviding {
     // Defaults on — the push is already gated by the umbrella AI Chat sync flag; this
     // subfeature only adds an independent remote kill switch.
     func supportsSyncChatsUpdate() -> Bool { true }
+
+    func isHomepageChatSuggestionsEnabled() -> Bool { false }
 }

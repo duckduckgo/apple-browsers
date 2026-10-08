@@ -110,8 +110,8 @@ final class SyncSettingsViewControllerPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Granting the camera prompt fires the granted result and authorises the scanner", .timeLimit(.minutes(1)))
-    func grantingCameraPromptFiresGrantedResult() async {
+    @Test("Granting the camera prompt fires the authorized result and authorises the scanner", .timeLimit(.minutes(1)))
+    func grantingCameraPromptFiresAuthorizedResult() async {
         cameraAuthorization.authorizationStatus = .notDetermined
         cameraAuthorization.requestAccessResult = true
         let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
@@ -121,7 +121,7 @@ final class SyncSettingsViewControllerPixelTests {
 
         #expect(cameraAuthorization.requestAccessCallCount == 1)
         #expect(model.videoPermission == .authorised)
-        #expect(promptResultCalls().map(\.pixel.parameters) == [["result": "granted"]])
+        #expect(promptResultCalls().map(\.pixel.parameters) == [["result": "authorized"]])
     }
 
     @available(iOS 16, macOS 13, *)

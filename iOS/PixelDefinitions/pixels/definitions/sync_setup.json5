@@ -120,7 +120,7 @@
                 "key": "result",
                 "type": "string",
                 "description": "Whether the user granted or denied camera access.",
-                "enum": ["granted", "denied"]
+                "enum": ["authorized", "denied"]
             }
         ]
     },

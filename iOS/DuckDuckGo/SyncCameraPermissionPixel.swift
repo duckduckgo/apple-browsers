@@ -34,7 +34,8 @@ enum SyncCameraPermissionPixel: PixelKit.Event {
     var parameters: [String: String]? {
         switch self {
         case .promptResult(let granted):
-            return ["result": granted ? "granted" : "denied"]
+            let result: SyncCameraPermissionPixelValue = granted ? .authorized : .denied
+            return ["result": result.rawValue]
         }
     }
 

@@ -29,11 +29,8 @@ import Cocoa
 /// - `didStartListening()` / `willStopListening()` — template hooks for extra setup/teardown (e.g. a resize lock).
 internal class MouseEventInterceptingView: ColorView {
 
-    /// The timestamp of the mouse-down a button is tracking. Shared, because the press can end over
-    /// another interceptor, whose monitor must not swallow it either.
-    private static var buttonPressTimestamp: TimeInterval?
-
     private var localMonitor: Any?
+    private var ownsPress = false
 
     init() {
         super.init(frame: .zero, backgroundColor: nil, cornerRadius: 0, borderColor: nil, borderWidth: 0, interceptClickEvents: false)
@@ -97,7 +94,25 @@ internal class MouseEventInterceptingView: ColorView {
     // MARK: - Event handling
 
     func handleMonitoredEvent(_ event: NSEvent) -> NSEvent? {
-        guard !Self.belongsToButtonPress(event), !isHidden else { return event }
+        switch event.type {
+        case .leftMouseDown:
+            let result = route(event)
+            ownsPress = result == nil
+            return result
+        case .leftMouseDragged, .leftMouseUp:
+            guard ownsPress else { return event }
+            if event.type == .leftMouseUp {
+                ownsPress = false
+            }
+            _ = route(event)
+            return nil
+        default:
+            return route(event)
+        }
+    }
+
+    private func route(_ event: NSEvent) -> NSEvent? {
+        guard !isHidden else { return event }
         guard let window, event.window === window, window.isKeyWindow || window.isMainWindow else { return event }
         let locationInWindow = event.locationInWindow
         let locationInView = convert(locationInWindow, from: nil)
@@ -118,32 +133,11 @@ internal class MouseEventInterceptingView: ColorView {
         return dispatch(event, to: hitView, in: window)
     }
 
-    /// A button's tracking loop pulls the drags and mouse-up of its press through every interceptor's
-    /// monitor, and swallowing them would leave the button stuck mid-press.
-    private static func belongsToButtonPress(_ event: NSEvent) -> Bool {
-        switch event.type {
-        case .leftMouseDown:
-            // Every monitor sees the same mouse-down, so only a different one starts a new press.
-            if event.timestamp != buttonPressTimestamp {
-                buttonPressTimestamp = nil
-            }
-            return buttonPressTimestamp != nil
-        case .leftMouseDragged, .leftMouseUp:
-            return buttonPressTimestamp != nil
-        default:
-            return false
-        }
-    }
-
     private func dispatch(_ event: NSEvent, to hitView: NSView?, in window: NSWindow) -> NSEvent? {
-        // AppKit wouldn't focus a clicked button, but the panel always has, which shows its focus ring.
         if event.type == .leftMouseDown, let hitView, hitView.acceptsFirstResponder {
             window.makeFirstResponder(hitView)
         }
-        // Since the macOS 27 SDK, a plain NSButton handed its mouse-down from here never fires.
-        // AppKit delivers the press to this same button instead: the checks above proved it's on top.
         if event.type == .leftMouseDown, hitView is NSButton {
-            Self.buttonPressTimestamp = event.timestamp
             return event
         }
         if let hitView {

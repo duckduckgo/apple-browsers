@@ -16,10 +16,20 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
 struct FaviconView: View {
+
+    /// What to show while a site has no favicon.
+    enum Placeholder {
+        /// The first letters of the site's domain on a coloured square.
+        case letters
+        /// A globe icon.
+        case globe
+    }
 
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
@@ -27,6 +37,7 @@ struct FaviconView: View {
     let size: CGFloat
     let onFaviconMissing: (() -> Void)?
     private var letterPaddingModifier: CGFloat
+    private let placeholder: Placeholder
 
     var domain: String {
         url?.host ?? ""
@@ -37,10 +48,11 @@ struct FaviconView: View {
 
     /// Initializes a `FaviconView`
     /// Note: The `letterPaddingModifier` parameter is only used when a `LetterIconView` is displayed instead of a Favicon image
-    init(url: URL?, size: CGFloat = 32, letterPaddingModifier: CGFloat = 0.33, onFaviconMissing: (() -> Void)? = nil) {
+    init(url: URL?, size: CGFloat = 32, letterPaddingModifier: CGFloat = 0.33, placeholder: Placeholder = .letters, onFaviconMissing: (() -> Void)? = nil) {
         self.url = url
         self.size = size
         self.letterPaddingModifier = letterPaddingModifier
+        self.placeholder = placeholder
         self.onFaviconMissing = onFaviconMissing
     }
 
@@ -79,7 +91,15 @@ struct FaviconView: View {
                         timer.upstream.connect().cancel()
                     }
             } else {
-                LetterIconView(title: Application.appDelegate.tld.eTLDplus1(domain) ?? domain, size: size, paddingModifier: letterPaddingModifier)
+                switch placeholder {
+                case .letters:
+                    LetterIconView(title: Application.appDelegate.tld.eTLDplus1(domain) ?? domain, size: size, paddingModifier: letterPaddingModifier)
+                case .globe:
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
+                        .renderingMode(.template)
+                        .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                        .frame(width: size, height: size)
+                }
             }
         }.onAppear {
             refreshImage()

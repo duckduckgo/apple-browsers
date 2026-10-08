@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import SwiftUI
 
 /// A domain and the permissions stored for it.
@@ -76,15 +75,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
 
     private var domainHeader: some View {
         HStack(spacing: Constants.faviconSpacing) {
-            if let faviconURL = group.faviconURL {
-                FaviconView(url: faviconURL, size: Constants.faviconSize)
-            } else {
-                // Local files have no website favicon
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
-                    .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
-                    .frame(width: Constants.faviconSize, height: Constants.faviconSize)
-            }
+            FaviconView(url: group.faviconURL, size: Constants.faviconSize, placeholder: .globe)
 
             Text(group.displayName)
                 .font(.system(size: 13, weight: .medium))

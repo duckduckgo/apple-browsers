@@ -40,15 +40,7 @@ struct PreferencesWebsitePermissionSiteRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            if let faviconURL {
-                FaviconView(url: faviconURL, size: Constants.faviconSize)
-            } else {
-                // Local files have no website favicon
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
-                    .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
-                    .frame(width: Constants.faviconSize, height: Constants.faviconSize)
-            }
+            FaviconView(url: faviconURL, size: Constants.faviconSize, placeholder: .globe)
 
             Text(domain)
                 .font(.system(size: 13, weight: .medium))

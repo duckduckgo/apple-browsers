@@ -91,7 +91,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            // `.final` is intercepted in NewTabPageViewController and rendered via `createEndOfJourneyDialog`
+            // `.final` is intercepted in NewTabPageOnboardingCoordinator and rendered via `createEndOfJourneyDialog`
             // (content-driven), so it never reaches this switch.
             // swiftlint:disable redundant_discardable_let
             let _ = assertionFailure("Should not be reached.")

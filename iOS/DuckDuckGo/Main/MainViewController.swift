@@ -326,6 +326,7 @@ class MainViewController: UIViewController {
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
+    private let pixelFiring: (any PixelKitFiring)?
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -769,8 +770,10 @@ class MainViewController: UIViewController {
         promoCoordinationService: (any RecentModalPromptStatusProviding
             & PromoCoordinationDiagnosticsProviding
             & PromoCoordinationCooldownResetting
-            & AppRatingPromptGating)? = nil
+            & AppRatingPromptGating)? = nil,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
+        self.pixelFiring = pixelFiring
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
         self.remoteMessagingPixelReporter = remoteMessagingPixelReporter
@@ -1227,7 +1230,7 @@ class MainViewController: UIViewController {
                 on: tab, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
             tab.wasInputFocusedBeforeTabSwitch = false
             if tab !== tabManager.currentTabsModel.currentTab {
-                PixelKit.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
+                pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
                 selectTab(tab)

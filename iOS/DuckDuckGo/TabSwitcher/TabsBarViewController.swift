@@ -960,6 +960,8 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
                                    hidesInactiveCloseButton: hidesInactiveCloseButton,
                                    withTheme: theme)
         }
+        // Selection unfolds the tab; apply its new frame before moving the flare.
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 

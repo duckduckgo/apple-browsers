@@ -73,7 +73,7 @@ final class AddBookmarkPopover: NSPopover {
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
-        let syncButtonModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
+        let syncButtonModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded)
         self.syncButtonModel = syncButtonModel
         syncButtonModel.panelDidOpen()
         let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonModel))

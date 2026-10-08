@@ -42,7 +42,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     var hasInlineSearchInput: Bool { true }
 
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator?
-    private var isOnboardingContentHidden = false
+    private var isOnboardingContentHidden: Bool { contentContainerView.isHidden }
 
     private let blocks: [any NewTabPageBlock]
     private let favoritesModel: FavoritesViewModel?
@@ -385,7 +385,6 @@ extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
 extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
 
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
-        isOnboardingContentHidden = hidden
         // Keep the scroll position and block sizes intact beneath the dialog.
         contentContainerView.isHidden = hidden
         view.accessibilityElementsHidden = inputEditingLayout != nil && !hidden

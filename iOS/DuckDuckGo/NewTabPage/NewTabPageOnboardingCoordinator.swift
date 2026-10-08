@@ -375,18 +375,7 @@ final class NewTabPageOnboardingCoordinator {
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .subscriptionPromotion else {
-                // Hide the NTP logo before the promo fades in so it doesn't blink through
-                // the FadeInView's alpha-0→1 animation.  It will be restored once the UTI
-                // deactivates after the user acts on the promo ("No thanks" / proceed).
-                self.setLogoHidden(true)
-                self.dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                    self?.showNextDaxDialog()
-                    // UIHostingController starts with a clear UIKit background; SwiftUI renders
-                    // the promo's opaque ContextualBackgroundStyle backdrop asynchronously.
-                    // Matching the backing view's colour immediately prevents the one-frame gap
-                    // where whatever is behind the promo (NTP background, logo) shows through.
-                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
-                })
+                self.presentSubscriptionPromotionAfterAddressBarDismissal()
                 return
             }
 
@@ -405,13 +394,7 @@ final class NewTabPageOnboardingCoordinator {
             if spec == .final {
                 let nextSpec = dialogProvider.nextHomeScreenMessageNew()
                 if nextSpec == .subscriptionPromotion {
-                    // Hide the NTP logo before the promo fades in — mirrors the onDismiss path.
-                    self?.setLogoHidden(true)
-                    self?.dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                        self?.showNextDaxDialog()
-                        // Set the background color to the rebranding backdrop color to prevent the NTP logo from flashing through the completion dialog.
-                        self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
-                    })
+                    self?.presentSubscriptionPromotionAfterAddressBarDismissal()
                     return
                 }
                 dialogProvider.dismiss()
@@ -488,6 +471,22 @@ final class NewTabPageOnboardingCoordinator {
         }
     }
 
+    /// Hides the logo, collapses the address bar, then presents the subscription promo.
+    private func presentSubscriptionPromotionAfterAddressBarDismissal() {
+        // Hide the NTP logo before the promo fades in so it doesn't blink through
+        // the FadeInView's alpha-0→1 animation.  It will be restored once the UTI
+        // deactivates after the user acts on the promo ("No thanks" / proceed).
+        setLogoHidden(true)
+        dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
+            self?.showNextDaxDialog()
+            // UIHostingController starts with a clear UIKit background; SwiftUI renders
+            // the promo's opaque ContextualBackgroundStyle backdrop asynchronously.
+            // Matching the backing view's colour immediately prevents the one-frame gap
+            // where whatever is behind the promo (NTP background, logo) shows through.
+            self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+        })
+    }
+
     /// Collapses the address bar (or UTI panel) before showing the subscription promo, then
     /// calls `completion` once the dismissal has finished. Uses UTI-aware collapse when UTI is
     /// active because `omniBar.endEditing()` only resigns the legacy text field and does not
@@ -521,11 +520,7 @@ final class NewTabPageOnboardingCoordinator {
             // Skip: mirror the standard final dialog's subscription hand-off.
             let nextSpec = daxDialogsManager.nextHomeScreenMessageNew()
             if nextSpec == .subscriptionPromotion {
-                setLogoHidden(true)
-                dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
-                    self?.showNextDaxDialog()
-                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
-                })
+                presentSubscriptionPromotionAfterAddressBarDismissal()
             } else {
                 daxDialogsManager.dismiss()
             }
@@ -575,17 +570,15 @@ final class NewTabPageOnboardingCoordinator {
             didHideBarsForChatPathVisitSiteDialog = false
             chromeDelegate?.setBarsHidden(false, animated: animateBars, customAnimationDuration: nil)
         }
-        if didDismissDuckAICompletionDialog {
+        if didDismissDuckAICompletionDialog, let page {
             // Restore NTP visibility that was muted during the chat-path handoff so the
             // empty-state Dax doesn't flash through the editing-state transition.
-            page?.view.alpha = 1
-            if let page {
-                page.delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(page)
-            }
+            page.view.alpha = 1
+            page.delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(page)
         }
         if didFinishNTPOnboarding {
-            self.restoreOnboardingContentIfNeeded()
-            self.setLogoHidden(false)
+            restoreOnboardingContentIfNeeded()
+            setLogoHidden(false)
         }
     }
 

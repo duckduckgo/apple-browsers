@@ -34,6 +34,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
     private let simulateCPMBreakageMenuItem = NSMenuItem(title: "", action: #selector(WebExtensionsDebugMenu.toggleCPMBreakageSimulation))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
+    private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
 
     init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
@@ -55,6 +56,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
         apiCompatibilityLogMenuItem.target = self
+        extensionsPageMenuItem.target = self
         apiCompatibilityLogMenuItem.isEnabled = true
 
         addItems()
@@ -76,6 +78,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(processMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
+        addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
 
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
@@ -179,6 +182,10 @@ final class WebExtensionsDebugMenu: NSMenu {
             ? AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOn
             : AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOff
         simulateCPMBreakageMenuItem.state = isEnabled ? .on : .off
+    }
+
+    @objc func showExtensionsPage() {
+        Application.appDelegate.windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
     }
 
     @objc func showAPICompatibilityLog() {

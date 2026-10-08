@@ -770,4 +770,10 @@ extension String {
     var permissionDisplayName: String {
         self == .localFilePermissionDomain ? UserText.websitePermissionsLocalFile : self
     }
+
+    /// The URL a permission domain's favicon is looked up for. Local files have none.
+    var permissionFaviconURL: URL? {
+        guard self != .localFilePermissionDomain else { return nil }
+        return URL(string: "\(URL.NavigationalScheme.https.separated())\(self)")
+    }
 }

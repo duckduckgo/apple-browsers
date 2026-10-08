@@ -119,8 +119,7 @@ extension WebsitePermissionDetailViewState {
         }
 
         var faviconURL: URL? {
-            guard domain != .localFilePermissionDomain else { return nil }
-            return URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+            domain.permissionFaviconURL
         }
 
         /// Label for the row when it is listed under a domain heading, which already names the site.

@@ -105,8 +105,7 @@ extension WebsitePermissionsViewState {
         }
 
         var faviconURL: URL? {
-            guard domain != .localFilePermissionDomain else { return nil }
-            return URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+            domain.permissionFaviconURL
         }
 
         var accessibilityIdentifier: String {

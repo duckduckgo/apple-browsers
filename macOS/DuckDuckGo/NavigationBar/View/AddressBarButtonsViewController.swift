@@ -1199,7 +1199,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         // Check if there are any persisted permissions for the current domain
-        let domain = tabViewModel.tab.content.urlForWebView?.host ?? ""
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: (tabViewModel.tab.content.urlForWebView ?? .empty).securityOrigin)
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true

@@ -88,6 +88,7 @@ class TabsBarViewController: UIViewController {
     private var addTabButtonLeadingConstraint: NSLayoutConstraint?
     private var currentLayout: TabsBarLayout?
     private var draggedTabOriginalFrame: CGRect?
+    private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
 
@@ -818,15 +819,16 @@ extension TabsBarViewController: UICollectionViewDelegate {
 extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard tabsModel?.get(tabAt: indexPath.row) != nil else { return [] }
+        guard tabsModel?.get(tabAt: indexPath.row) != nil,
+              let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { return [] }
         // Don't start a reorder drag from the close button.
-        if let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell,
-           cell.removeButton.bounds.contains(session.location(in: cell.removeButton)) {
+        if cell.removeButton.bounds.contains(session.location(in: cell.removeButton)) {
             return []
         }
         // Capture before UIKit moves the source cell to make room for an insertion slot.
         draggedTabOriginalFrame = (collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)?.unpinnedFrameForItem(at: indexPath)
-        draggedTabCell = collectionView.cellForItem(at: indexPath) as? TabsBarCell
+        draggedTabCell = cell
+        draggedTabGrabOffset = session.location(in: cell).x
         let item = UIDragItem(itemProvider: NSItemProvider())
         item.localObject = indexPath
         return [item]
@@ -931,12 +933,15 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
         let location = session.location(in: collectionView)
         guard collectionView.bounds.contains(location) else { return }
         let visibleBounds = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
-        // Start before the folded edge so neighboring insertion slots stay within reach.
-        let edgeWidth = min(layout.itemSize.width, visibleBounds.width / 3)
-        guard edgeWidth > 0 else { return }
-        let leading = ((visibleBounds.minX + edgeWidth - location.x) / edgeWidth).clamped(to: 0...1)
-        let trailing = ((location.x - visibleBounds.maxX + edgeWidth) / edgeWidth).clamped(to: 0...1)
-        let distance = (trailing - leading) * layout.itemSize.width * 2 * elapsedTime
+        let tabWidth = layout.itemSize.width
+        guard tabWidth > 0, visibleBounds.width > 0 else { return }
+        let draggedMinX = location.x - draggedTabGrabOffset
+        let draggedMaxX = draggedMinX + tabWidth
+        // Look ahead from the dragged tab's edge by one full tab and a third of its neighbor.
+        let lookahead = min(tabWidth * 4 / 3, max(0, (visibleBounds.width - tabWidth) / 2))
+        let leading = max(0, visibleBounds.minX + lookahead - draggedMinX)
+        let trailing = max(0, draggedMaxX + lookahead - visibleBounds.maxX)
+        let distance = (trailing - leading) * elapsedTime / 0.25
         guard distance != 0 else { return }
         let minimum = -collectionView.adjustedContentInset.left
         let maximum = max(minimum, collectionView.contentSize.width - collectionView.bounds.width + collectionView.adjustedContentInset.right)

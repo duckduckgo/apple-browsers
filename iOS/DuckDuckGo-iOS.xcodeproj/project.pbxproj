@@ -1470,6 +1470,7 @@
 		CB27DAF930063B9A00EEEADB /* AITabChromeDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF830063B9A00EEEADB /* AITabChromeDecisionTests.swift */; };
 		CB27DAFD30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */; };
 		CB2A7EEF283D185100885F67 /* RulesCompilationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */; };
+		D6C62066844460E5EC71B8F1 /* ContentBlockingPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE89979280ED2603BB97A9D7 /* ContentBlockingPixel.swift */; };
 		CB2A7EF128410DF700885F67 /* PixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF028410DF700885F67 /* PixelEvent.swift */; };
 		CB2A7EF4285383B300885F67 /* AppLastCompiledRulesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF3285383B300885F67 /* AppLastCompiledRulesStore.swift */; };
 		3CE7897ED88494EB85F50D32 /* NewTabPageKeyboardPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59C85ED0D80C7E44454AB333 /* NewTabPageKeyboardPolicyTests.swift */; };
@@ -3229,6 +3230,7 @@
 		CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTextChangeGateTests.swift; sourceTree = "<group>"; };
 		CB29792D2AF6D5C1006C461D /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesCompilationMonitor.swift; sourceTree = "<group>"; };
+		BE89979280ED2603BB97A9D7 /* ContentBlockingPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingPixel.swift; sourceTree = "<group>"; };
 		CB2A7EF028410DF700885F67 /* PixelEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelEvent.swift; sourceTree = "<group>"; };
 		CB2A7EF3285383B300885F67 /* AppLastCompiledRulesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLastCompiledRulesStore.swift; sourceTree = "<group>"; };
 		CB2C47822AF6D55800AEDCD9 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -7078,6 +7080,7 @@
 				31D4CD4F2D4D3CD600BC27C6 /* Navigatable.swift */,
 				CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */,
 				CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */,
+				BE89979280ED2603BB97A9D7 /* ContentBlockingPixel.swift */,
 				9820EAF422613CD30089094D /* WebProgressWorker.swift */,
 				C14135B42EC4BE880006F8C1 /* TabViewControllerAIChatExtension.swift */,
 				C1E9B8EF2F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift */,
@@ -8799,6 +8802,7 @@
 				8528AE7C212EF4A200D0BD74 /* AppRatingPrompt.swift in Sources */,
 				BD2F39EB2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift in Sources */,
 				CB2A7EEF283D185100885F67 /* RulesCompilationMonitor.swift in Sources */,
+				D6C62066844460E5EC71B8F1 /* ContentBlockingPixel.swift in Sources */,
 				31CB4251273AF50700FA0F3F /* SpeechRecognizerProtocol.swift in Sources */,
 				319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */,
 				7B1681062D10BC96005EAE24 /* VPNShortcutIntents.swift in Sources */,

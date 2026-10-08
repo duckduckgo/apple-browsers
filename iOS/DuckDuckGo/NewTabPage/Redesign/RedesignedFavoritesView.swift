@@ -23,6 +23,7 @@ import SwiftUI
 
 struct RedesignedFavoritesView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject var model: FavoritesViewModel
     /// Shows the Add Favorite tile and empty state when set.
     let onAddFavorite: (() -> Void)?
@@ -30,8 +31,12 @@ struct RedesignedFavoritesView: View {
     @State private var gridHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var collapsedItemHeights: [Favorite.ID: CGFloat] = [:]
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
     private let haptics = UIImpactFeedbackGenerator()
+
+    private var columns: [GridItem] {
+        let count = horizontalSizeClass == .regular ? Metrics.regularColumnCount : Metrics.compactColumnCount
+        return Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: count)
+    }
 
     private var isExpanded: Bool { hasOverflow && model.expansionState.isExpanded }
 
@@ -331,7 +336,8 @@ private enum Metrics {
     static let headerIconSize: CGFloat = 16
     static let collapseIconSize: CGFloat = 12
     static let collapseIconBackgroundSize: CGFloat = 20
-    static let columnCount = 5
+    static let compactColumnCount = 5
+    static let regularColumnCount = 6
     static let columnSpacing: CGFloat = 8
     static let rowSpacing: CGFloat = 20
     static let tileSize: CGFloat = 48

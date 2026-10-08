@@ -24,15 +24,13 @@ import Foundation
 @MainActor
 final class AddFavoriteViewModel: ObservableObject {
     @Published var name = ""
-    @Published var urlText = "" {
-        didSet {
-            let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
-            validatedURL = trimmed.isEmpty ? nil : BookmarkUtils.url(from: trimmed)
-        }
-    }
+    @Published var urlText = ""
     var onSave: (() -> Void)?
 
-    private var validatedURL: URL?
+    private var validatedURL: URL? {
+        let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : BookmarkUtils.url(from: trimmed)
+    }
     private let bookmarks: MenuBookmarksInteracting
 
     init(bookmarks: MenuBookmarksInteracting) {

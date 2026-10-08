@@ -481,7 +481,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
             supportsAttachmentPrivacyDisplay: isAttachmentPrivacyEnabled,
-            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message)
+            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
+            supportsCanonicalChatFormat: true
         )
         return config
     }

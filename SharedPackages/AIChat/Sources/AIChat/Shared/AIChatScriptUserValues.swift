@@ -160,6 +160,10 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsAttachmentPrivacyDisplay: Bool
     /// `true` when the duckduckgo.com homepage may request the user's chats via `getAIChats`.
     public let supportsHomePageChatSuggestions: Bool
+    /// `true` when native's own readers of stored chats (chat history, suggestions, export) accept the
+    /// canonical chat format, so the web app may write canonical chats to native storage. Absent on
+    /// builds that predate it, which must keep receiving the legacy format.
+    public let supportsCanonicalChatFormat: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -237,7 +241,8 @@ public struct AIChatNativeConfigValues: Codable {
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
                 supportsBrowserTools: Bool = false,
                 supportsAttachmentPrivacyDisplay: Bool = false,
-                supportsHomePageChatSuggestions: Bool = false) {
+                supportsHomePageChatSuggestions: Bool = false,
+                supportsCanonicalChatFormat: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -270,6 +275,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsBrowserTools = supportsBrowserTools
         self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
         self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
+        self.supportsCanonicalChatFormat = supportsCanonicalChatFormat
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

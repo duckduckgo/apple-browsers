@@ -2499,33 +2499,34 @@ extension DefaultOmniBarView {
     func updateAIChatSendButton(hasText: Bool) {
         // Mirror the iPhone unified toggle rule: submit is available with text or a valid attachment,
         // and blocked while any attachment is invalid. Voice only stands in when the input is truly
-        // empty (no text and no attachments).
+        // empty (no text and no attachments) and the Terms of Service disclaimer isn't asking for Ask.
         let attachments = attachmentsStripView.attachments
         let hasValidAttachment = attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = attachments.contains(where: \.isInvalid)
         let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
-            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
-        } else if !hasText && attachments.isEmpty {
-            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.voice, allowsAskTitle: false)
+        } else if !hasText && attachments.isEmpty && termsOfServiceSendButton == nil {
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.voice)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else {
-            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
-            aiChatSendButton.backgroundColor = .clear
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall)
+            // A disabled "Ask" keeps a gray pill so it still reads as the button the disclaimer names.
+            aiChatSendButton.backgroundColor = termsOfServiceSendButton == nil ? .clear : UIColor(designSystemColor: .controlsFillPrimary)
             aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
             aiChatSendButton.isEnabled = false
         }
     }
 
-    /// The "Ask" label stands in for the arrow only; the voice icon stays.
-    private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
-        let title = allowsAskTitle ? termsOfServiceSendButton?.title : nil
+    /// The label the Terms of Service disclaimer names ("Ask" or "Create") stands in for the icon.
+    private func setAIChatSendButtonContent(_ image: UIImage) {
+        let title = termsOfServiceSendButton?.title
         aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
         aiChatSendButton.setTitle(title, for: .normal)
         aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel

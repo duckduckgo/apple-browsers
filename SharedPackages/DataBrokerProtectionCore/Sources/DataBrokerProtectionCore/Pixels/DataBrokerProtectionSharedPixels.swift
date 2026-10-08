@@ -226,13 +226,14 @@ public enum DataBrokerProtectionSharedPixels {
     case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?)
     case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?, error: Error)
     case bundleVerificationFailure(reason: BrokerBundleVerificationError)
+    case bundleVerificationSuccess
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
         switch self {
-        case .bundleVerificationFailure:
+        case .bundleVerificationFailure, .bundleVerificationSuccess:
             return .standard
         default:
             return .legacyOmitted
@@ -365,6 +366,12 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             return "dbp_bundle_verification_failure_macos"
 #else
             return "dbp_bundle_verification_failure"
+#endif
+        case .bundleVerificationSuccess:
+#if os(macOS)
+            return "dbp_bundle_verification_success_macos"
+#else
+            return "dbp_bundle_verification_success"
 #endif
         }
     }
@@ -674,6 +681,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .bundleVerificationFailure(let reason):
             return [Consts.reasonParamKey: reason.rawValue]
+        case .bundleVerificationSuccess:
+            return [:]
         }
     }
 
@@ -681,7 +690,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
         switch self {
         case .mainFrameChallengeDetected,
                 .challengeClearanceObserved,
-                .bundleVerificationFailure:
+                .bundleVerificationFailure,
+                .bundleVerificationSuccess:
             return .none
         default:
             return .platformDefault
@@ -769,7 +779,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .serviceEmailConfirmationJobSuccess,
                 .updateDataBrokersSuccess,
                 .updateDataBrokersFailure,
-                .bundleVerificationFailure:
+                .bundleVerificationFailure,
+                .bundleVerificationSuccess:
             return [.pixelSource]
 
 #if os(iOS)
@@ -898,6 +909,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .challengeClearanceObserved,
                     .bundleVerificationFailure:
                 pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
+            case .bundleVerificationSuccess:
+                pixelKit.fire(event, frequency: .daily, withAdditionalParameters: parameters)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)
             case .updateDataBrokersFailure(_, _, _, let error):

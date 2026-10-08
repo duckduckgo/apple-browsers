@@ -27,12 +27,16 @@ public enum WebExtensionAPICompatibilityKind: String, CaseIterable, Sendable {
     case stubbed
     /// WebKit implements the API but rejected the call ("Invalid call to X()").
     case invalidArgs
+    /// The extension tried to open a Chrome page, such as `chrome://password-manager/settings`.
+    case unsupportedURL
 }
 
-/// The API compatibility log: which unsupported `chrome.*` APIs the loaded extensions touched.
+/// The extension compatibility log: which unsupported `chrome.*` APIs and Chrome pages the loaded
+/// extensions touched.
 ///
-/// A line holds the kind, the API path and the extension's name and version, nothing else. No URL,
-/// error message or call argument ever reaches the log. The Debug Menu reads the lines back from
+/// A line holds the kind, the API path or Chrome page and the extension's name and version, nothing
+/// else. A Chrome page is logged without its query. No other URL, error message or call argument ever
+/// reaches the log. The Debug Menu reads the lines back from
 /// the current process's log store.
 public enum WebExtensionAPICompatibilityLog {
 

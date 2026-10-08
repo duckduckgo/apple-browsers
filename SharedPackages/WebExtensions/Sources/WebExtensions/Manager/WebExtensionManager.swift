@@ -133,6 +133,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Receives the API compatibility reports of extension pages.
     private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
 
+    /// Records the Chrome pages extensions try to open, which the browser doesn't have.
+    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+
 #if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
@@ -910,7 +913,19 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
+        // A Chrome page such as `chrome://password-manager/settings` opens the browser's counterpart.
+        // Without one, it opens nothing and goes to the compatibility log instead.
+        if let url = configuration.url, url.scheme == "chrome" {
+            if windowTabProvider.openChromePage(url, for: extensionContext) {
+                return nil
+            }
+            compatibilityReporter.report(kind: .unsupportedURL,
+                                         api: "chrome://" + (url.host ?? "") + url.path,
+                                         extensionName: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.displayName),
+                                         version: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.version))
+            return nil
+        }
+        return try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,

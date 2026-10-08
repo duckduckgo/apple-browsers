@@ -127,6 +127,16 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         return Tab(content: .newtab)
     }
 
+    func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool {
+        switch url.host {
+        case "password-manager":
+            windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
+            return true
+        default:
+            return false
+        }
+    }
+
     func presentPopup(
         _ action: WKWebExtension.Action,
         for context: WKWebExtensionContext

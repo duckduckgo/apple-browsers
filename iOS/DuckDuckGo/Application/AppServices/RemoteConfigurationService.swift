@@ -18,6 +18,8 @@
 //
 
 import Foundation
+import BrowserServicesKit
+import Combine
 import Core
 import Configuration
 import BackgroundTasks
@@ -30,10 +32,23 @@ public extension NSNotification.Name {
 
 final class RemoteConfigurationService {
 
-    init() {
+    private let privacyConfigurationOverrideReporter: PrivacyConfigurationOverrideReporter
+    private var privacyConfigurationOverrideCommand: PrivacyConfigurationOverrideCommand?
+
+    init(launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler()) {
         // Task handler registration needs to happen before the end of `didFinishLaunching`, otherwise submitting a task can throw an exception.
         // Having both in `didBecomeActive` can sometimes cause the exception when running on a physical device, so registration happens here.
         AppConfigurationFetch.registerBackgroundRefreshTaskHandler()
+
+        let contentBlockingManager = ContentBlocking.shared.contentBlockingManager
+        let contentBlockingUpdates = contentBlockingManager.updatesPublisher.map(\.completionTokens).eraseToAnyPublisher()
+        privacyConfigurationOverrideReporter = PrivacyConfigurationOverrideReporter(
+            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            urlProvider: AppDependencyProvider.shared.configurationURLProvider,
+            contentBlockingUpdates: contentBlockingUpdates,
+            scheduleCompilation: { contentBlockingManager.scheduleCompilation() }
+        )
+        privacyConfigurationOverrideCommand = launchOptionsHandler.privacyConfigurationOverride
     }
 
     // MARK: - Resume
@@ -47,11 +62,24 @@ final class RemoteConfigurationService {
         }
         AppDependencyProvider.shared.configurationManager.loadPrivacyConfigFromDiskIfNeeded()
 
+        // Set the override before the scheduled fetch below, so that fetch leaves it alone.
+        applyPrivacyConfigurationOverrideIfNeeded()
+
         AppConfigurationFetch().start { result in
             NotificationCenter.default.post(name: .didFetchConfigurationOnForeground, object: nil)
             if case .assetsUpdated(let protectionsUpdated) = result, protectionsUpdated {
                 ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
             }
+        }
+    }
+
+    /// Handles `-privacyConfigURL` once per launch, bypassing the refresh throttle.
+    private func applyPrivacyConfigurationOverrideIfNeeded() {
+        guard let command = privacyConfigurationOverrideCommand else { return }
+        privacyConfigurationOverrideCommand = nil
+        privacyConfigurationOverrideReporter.handle(command) {
+            try await AppDependencyProvider.shared.configurationManager.fetchPrivacyConfiguration()
+            ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
         }
     }
 

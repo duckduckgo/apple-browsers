@@ -124,6 +124,30 @@ final class PromptBarPresenter: PromptBarPresenting {
         dimScreen()
     }
 
+    private func animateAppearance(of window: NSWindow) {
+        let duration = 0.15
+        if let contentView = window.contentView, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            contentView.wantsLayer = true
+            let center = CGPoint(x: contentView.bounds.midX, y: contentView.bounds.midY)
+            var start = CATransform3DMakeTranslation(center.x, center.y, 0)
+            start = CATransform3DScale(start, 0.96, 0.96, 1)
+            start = CATransform3DTranslate(start, -center.x, -center.y, 0)
+
+            let zoom = CABasicAnimation(keyPath: "transform")
+            zoom.fromValue = start
+            zoom.toValue = CATransform3DIdentity
+            zoom.duration = duration
+            zoom.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            contentView.layer?.add(zoom, forKey: "appear")
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            window.animator().alphaValue = 1
+        }
+    }
+
+    private static let dimFadeDuration = 0.3
+
     private func dimScreen() {
         guard dimWindow == nil, let window, let screen = window.screen else { return }
 
@@ -140,7 +164,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         self.dimWindow = dimWindow
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
+            context.duration = Self.dimFadeDuration
             dimWindow.animator().alphaValue = 0.15
         }
     }
@@ -153,9 +177,11 @@ final class PromptBarPresenter: PromptBarPresenting {
                                                  in: screenProvider.targetVisibleFrame),
                         display: false)
 
+        window.alphaValue = 0
         // No `NSApp.activate`: it would raise the browser's windows above whatever the user has in front.
         window.orderFrontRegardless()
         window.makeKey()
+        animateAppearance(of: window)
         // First responder only sticks once the window is key.
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.
@@ -170,8 +196,15 @@ final class PromptBarPresenter: PromptBarPresenting {
         let hadText = content.hasPromptText
         resignKeyCancellable = nil
         window.orderOut(nil)
-        dimWindow?.orderOut(nil)
-        dimWindow = nil
+        if let dimWindow {
+            self.dimWindow = nil
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = Self.dimFadeDuration
+                dimWindow.animator().alphaValue = 0
+            } completionHandler: {
+                dimWindow.orderOut(nil)
+            }
+        }
         content.resetAfterDismissal()
 
         if let cancellation = reason.cancellation {

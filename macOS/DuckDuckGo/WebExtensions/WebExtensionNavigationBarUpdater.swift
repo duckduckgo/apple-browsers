@@ -277,9 +277,9 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         let action = context.action(for: nil)
 
         // A second click on the button of the open popup closes it.
-        if let popupPresenter, popupPresenter.isShown(for: context) {
+        if let action, action.popupPopover?.isShown == true {
             Logger.webExtensions.debug("🧩 Click closes the open popup of \(identifier, privacy: .public)")
-            popupPresenter.close()
+            action.closePopup()
             return
         }
 

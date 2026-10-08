@@ -2889,6 +2889,8 @@
 		9F56CFB22B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F56CFB02B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift */; };
 		9F5D4EC52DED3FA800B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5D4EC42DED3F9D00B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift */; };
 		9F5D4EC62DED3FA800B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5D4EC42DED3F9D00B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift */; };
+		BA16EFCB33542FF28582E582 /* MouseEventInterceptingViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6331DB58947B35E90D7F372 /* MouseEventInterceptingViewTests.swift */; };
+		C44CAA5E0BCE555A66222125 /* MouseEventInterceptingViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6331DB58947B35E90D7F372 /* MouseEventInterceptingViewTests.swift */; };
 		9F5E48192D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */; };
 		9F5E481A2D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */; };
 		9F6434612BEC82B700D2D8A0 /* AttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F6434602BEC82B700D2D8A0 /* AttributionPixelHandler.swift */; };
@@ -6428,6 +6430,7 @@
 		9F56CFAC2B84326C00BB7F11 /* AddEditBookmarkDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkDialogViewModel.swift; sourceTree = "<group>"; };
 		9F56CFB02B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDialogViewFactory.swift; sourceTree = "<group>"; };
 		9F5D4EC42DED3F9D00B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPixelEvent.swift; sourceTree = "<group>"; };
+		E6331DB58947B35E90D7F372 /* MouseEventInterceptingViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseEventInterceptingViewTests.swift; sourceTree = "<group>"; };
 		9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtensionTests.swift; sourceTree = "<group>"; };
 		9F6434602BEC82B700D2D8A0 /* AttributionPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionPixelHandler.swift; sourceTree = "<group>"; };
 		9F64346F2BECBA2800D2D8A0 /* SubscriptionRedirectManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRedirectManagerTests.swift; sourceTree = "<group>"; };
@@ -10941,6 +10944,7 @@
 				4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */,
 				84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */,
 				4B85B69E2ED3BF0B003EBF2A /* MockFileManager.swift */,
+				E6331DB58947B35E90D7F372 /* MouseEventInterceptingViewTests.swift */,
 				9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */,
 				845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */,
 				CD3301282C887B1C009AA127 /* URLTokenValidatorTests.swift */,
@@ -17442,6 +17446,7 @@
 				B51792B12F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */,
 				A5B00101000000000000003B /* PermissionAuthorizationViewModelTests.swift in Sources */,
 				3706FE38293F661700E42796 /* SuggestionContainerTests.swift in Sources */,
+				BA16EFCB33542FF28582E582 /* MouseEventInterceptingViewTests.swift in Sources */,
 				9F5E48192D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */,
 				84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */,
 				3706FE39293F661700E42796 /* TabTests.swift in Sources */,
@@ -19815,6 +19820,7 @@
 				EDF8C424924C4DCEAD1A995D /* BookmarksBarPromptViewModelTests.swift in Sources */,
 				BBB8191A2EC493DD0064977E /* MockBlackFridayCampaignProvider.swift in Sources */,
 				9FB19C852E94CC6300B651B1 /* RemoteMessagingSurfacesProvider.swift in Sources */,
+				C44CAA5E0BCE555A66222125 /* MouseEventInterceptingViewTests.swift in Sources */,
 				9F5E481A2D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */,
 				BBFF22F52F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */,
 				9F872D9D2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,

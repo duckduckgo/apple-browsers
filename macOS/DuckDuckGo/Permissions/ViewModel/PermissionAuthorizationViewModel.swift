@@ -88,7 +88,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     ) {
         viewState = initialState ?? .init()
         self.query = query
-        self.domain = query.domain
+        self.domain = query.domain.permissionDisplayName
         self.permissions = query.permissions
         self.permissionType = PermissionAuthorizationType(from: query.permissions)
         self.systemPermissionManager = systemPermissionManager
@@ -109,6 +109,10 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             if case .decision(var decision) = viewState.content {
                 decision.learnMore = permissionType.learnMoreURL.map {
                     PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+                }
+                if case .externalScheme = permissionType, domain.isEmpty {
+                    // A link typed in the address bar has no website to save the choice for, as on Windows
+                    decision.buttons = decision.buttons.filter { $0.action == .allowThisVisit }
                 }
                 viewState.content = .decision(decision)
             }

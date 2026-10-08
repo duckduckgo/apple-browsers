@@ -199,7 +199,7 @@ final class PopupHandlingTabExtension {
         var resultWebView: WKWebView?
         var isCalledSynchronously = true
         defer { isCalledSynchronously = false } // whether the callback was called synchronously or asynchronously
-        permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
+        permissionModel.request([.popups], forDomain: sourceSecurityOrigin.permissionDomain, url: url)
             .receive { [weak self] result in
                 self?.handlePermissionRequestResult(result,
                                                     from: webView,

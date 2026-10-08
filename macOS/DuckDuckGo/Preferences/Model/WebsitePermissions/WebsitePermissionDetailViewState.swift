@@ -72,7 +72,7 @@ struct WebsitePermissionDetailViewState: Equatable {
                 )
             }
             .sorted {
-                let domainComparison = $0.domain.localizedCaseInsensitiveCompare($1.domain)
+                let domainComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
                 if domainComparison != .orderedSame {
                     return domainComparison == .orderedAscending
                 }
@@ -111,8 +111,13 @@ extension WebsitePermissionDetailViewState {
             "\(domain)|\(permissionType.rawValue)"
         }
 
+        var displayName: String {
+            domain.permissionDisplayName
+        }
+
         var faviconURL: URL? {
-            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+            guard domain != .localFilePermissionDomain else { return nil }
+            return URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
         }
 
         /// Label for the row when it is listed under a domain heading, which already names the site.
@@ -131,6 +136,10 @@ extension WebsitePermissionDetailViewState {
 
         var id: String {
             domain
+        }
+
+        var displayName: String {
+            domain.permissionDisplayName
         }
 
         var faviconURL: URL? {

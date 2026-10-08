@@ -43,7 +43,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
             labelledPermissions
         } else if let row = group.rows.first {
             PreferencesWebsitePermissionSiteRowView(
-                domain: row.domain,
+                domain: row.displayName,
                 faviconURL: row.faviconURL,
                 permissionType: row.permissionType,
                 permissionTitle: row.permissionTitle,
@@ -77,7 +77,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
         HStack(spacing: Constants.faviconSpacing) {
             FaviconView(url: group.faviconURL, size: Constants.faviconSize)
 
-            Text(group.domain)
+            Text(group.displayName)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .lineLimit(1)
@@ -95,7 +95,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
                 decision: row.decision,
                 availableDecisions: row.availableDecisions,
                 accessibilityIdentifier: row.accessibilityIdentifier,
-                domain: row.domain,
+                domain: row.displayName,
                 permissionType: row.permissionType,
                 permissionTitle: row.permissionTitle,
                 onDecisionChanged: { onDecisionChanged(row.id, $0) },

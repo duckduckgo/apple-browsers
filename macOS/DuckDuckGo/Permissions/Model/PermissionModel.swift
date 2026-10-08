@@ -18,6 +18,7 @@
 
 import AVFoundation
 import Combine
+import Common
 import ConcurrencyExtensions
 import CoreLocation
 import DDGNavigation
@@ -82,10 +83,10 @@ final class PermissionModel {
     }
     private var cancellables = Set<AnyCancellable>()
 
-    /// Returns the domain for the current webView URL, mapping file URLs to "localhost"
+    /// Returns the domain permissions are saved under for the current webView URL.
     private var currentDomain: String? {
         guard let url = webView?.url else { return nil }
-        return url.isFileURL ? .localhost : url.host
+        return url.isFileURL ? .localFilePermissionDomain : url.host
     }
 
     /// Creates the model for one tab; pass `webView` now or assign it later to start tracking its permissions.
@@ -740,4 +741,29 @@ final class PermissionModel {
         }
     }
 
+}
+
+extension String {
+    /// Website permissions from every local file are saved under this key, apart from `localhost`,
+    /// so a local development server keeps its own permissions. It can't collide with a host name.
+    static let localFilePermissionDomain = "file://"
+
+    /// The name shown for a permission domain in prompts and Settings.
+    var permissionDisplayName: String {
+        self == .localFilePermissionDomain ? UserText.websitePermissionsLocalFile : self
+    }
+}
+
+extension URL {
+    /// The domain website permissions are saved under for this page.
+    var permissionDomain: String {
+        isFileURL ? .localFilePermissionDomain : (host ?? "")
+    }
+}
+
+extension SecurityOrigin {
+    /// The domain website permissions are saved under for this origin.
+    var permissionDomain: String {
+        self.protocol == "file" ? .localFilePermissionDomain : host
+    }
 }

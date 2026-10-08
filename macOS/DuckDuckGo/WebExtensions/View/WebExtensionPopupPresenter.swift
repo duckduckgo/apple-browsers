@@ -239,8 +239,8 @@ final class WebExtensionPopupPresenter {
               let parentWindow = button.window else { return }
 
         let size = NSSize(
-            width: min(max(pageSize.width, Constants.minimumSize.width), Constants.maximumSize.width),
-            height: min(max(pageSize.height, Constants.minimumSize.height), Constants.maximumSize.height)
+            width: min(max(pageSize.width.rounded(.up), Constants.minimumSize.width), Constants.maximumSize.width),
+            height: min(max(pageSize.height.rounded(.up), Constants.minimumSize.height), Constants.maximumSize.height)
         )
         guard size != panel.frame.size else { return }
 
@@ -265,7 +265,8 @@ final class WebExtensionPopupPresenter {
             }
         }
 
-        return NSRect(origin: origin, size: size)
+        // Whole points, so the panel doesn't land between pixels.
+        return NSRect(origin: NSPoint(x: origin.x.rounded(), y: origin.y.rounded()), size: size)
     }
 
     // MARK: - Close

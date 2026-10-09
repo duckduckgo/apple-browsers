@@ -452,15 +452,19 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @objc func openFreemiumDBP(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .dailyAndStandard)
 
+        let entryPoint: FreemiumDBPEntryPoint
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
+            entryPoint = .appMenuPostScan
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResults)
         } else {
+            entryPoint = .appMenuPreScan
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScan)
         }
 
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllersManager: Application.appDelegate.windowControllersManager)
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(entryPoint: entryPoint,
+                                                            windowControllersManager: Application.appDelegate.windowControllersManager)
         notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
     }
 

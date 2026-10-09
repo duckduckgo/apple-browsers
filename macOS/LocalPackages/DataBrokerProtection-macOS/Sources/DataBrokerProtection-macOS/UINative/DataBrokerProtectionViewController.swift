@@ -81,6 +81,10 @@ final public class DataBrokerProtectionViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    public func updateFreeScanEntryPoint(_ entryPoint: String?) {
+        webUIViewModel.setFreeScanEntryPoint(entryPoint, in: webView)
+    }
+
     public override func viewDidLoad() {
         super.viewDidLoad()
 

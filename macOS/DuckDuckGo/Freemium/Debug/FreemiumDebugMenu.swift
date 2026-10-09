@@ -43,6 +43,11 @@ final class FreemiumDebugMenu: NSMenuItem {
         menu.addItem(NSMenuItem(title: "Set Results and Trigger Post-Scan Banner", action: #selector(setResultsAndTriggerPostScanBanner), target: self))
         menu.addItem(NSMenuItem(title: "Set No Results and Trigger Post-Scan Banner", action: #selector(setNoResultsAndTriggerPostScanBanner), target: self))
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Open PIR from Free Scan Banner", action: #selector(openPIRFromFreeScanBanner), target: self))
+        menu.addItem(NSMenuItem(title: "Open PIR from View Results Banner", action: #selector(openPIRFromViewResultsBanner), target: self))
+        menu.addItem(NSMenuItem(title: "Open PIR from App Menu Pre-Scan", action: #selector(openPIRFromAppMenuPreScan), target: self))
+        menu.addItem(NSMenuItem(title: "Open PIR from App Menu Post-Scan", action: #selector(openPIRFromAppMenuPostScan), target: self))
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Set New Tab Promotion Did Dismiss FALSE", action: #selector(setNewTabPromotionDidDismissFalse), target: self))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Log all state", action: #selector(logAllState), target: self))
@@ -106,6 +111,34 @@ final class FreemiumDebugMenu: NSMenuItem {
     @objc
     func setFirstScanResultsNil() {
         DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).firstScanResults = nil
+    }
+
+    @MainActor
+    @objc func openPIRFromFreeScanBanner() {
+        openPIR(from: .freeScanBanner)
+    }
+
+    @MainActor
+    @objc func openPIRFromViewResultsBanner() {
+        openPIR(from: .viewResultsBanner)
+    }
+
+    @MainActor
+    @objc func openPIRFromAppMenuPreScan() {
+        openPIR(from: .appMenuPreScan)
+    }
+
+    @MainActor
+    @objc func openPIRFromAppMenuPostScan() {
+        openPIR(from: .appMenuPostScan)
+    }
+
+    @MainActor
+    private func openPIR(from entryPoint: FreemiumDBPEntryPoint) {
+        DefaultFreemiumDBPPresenter().showFreemiumDBPAndSetActivated(
+            entryPoint: entryPoint,
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     @objc

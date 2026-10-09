@@ -659,7 +659,7 @@ final class URLExtensionTests {
     @Test("Creating TabContent from other internal page URLs", .timeLimit(.minutes(1)))
     func tabContentFromOtherInternalPages() {
         #expect(TabContent.contentFromURL(.onboarding, source: .ui) == .onboarding)
-        #expect(TabContent.contentFromURL(.dataBrokerProtection, source: .ui) == .dataBrokerProtection)
+        #expect(TabContent.contentFromURL(.dataBrokerProtection, source: .ui) == .dataBrokerProtection(.subscribed))
         #expect(TabContent.contentFromURL(.releaseNotes, source: .ui) == .releaseNotes)
     }
 
@@ -683,7 +683,7 @@ final class URLExtensionTests {
         (TabContent.anyHistoryPane, URL.history),
         (TabContent.anySettingsPane, URL.settings),
         (TabContent.onboarding, URL.onboarding),
-        (TabContent.dataBrokerProtection, URL.dataBrokerProtection),
+        (TabContent.dataBrokerProtection(.subscribed), URL.dataBrokerProtection),
         (TabContent.releaseNotes, URL.releaseNotes),
         // Settings with panes
         (TabContent.settings(pane: .general), URL.settingsPane(.general)),
@@ -785,7 +785,7 @@ final class URLExtensionTests {
         (URL.bookmarks, TabContent.bookmarks),
         (URL.newtab, TabContent.newtab),
         (URL.onboarding, TabContent.onboarding),
-        (URL.dataBrokerProtection, TabContent.dataBrokerProtection),
+        (URL.dataBrokerProtection, TabContent.dataBrokerProtection(.subscribed)),
         (URL.releaseNotes, TabContent.releaseNotes)
     ]
 

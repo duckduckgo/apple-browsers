@@ -294,12 +294,13 @@ public final class DBPUICommunicator {
     }
 }
 
-extension DBPUICommunicator: DBPUICommunicationDelegate {
+extension DBPUICommunicator: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
 
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
         let isUserEligibleForFreeTrial = delegate?.isUserEligibleForFreeTrial() ?? false
-        return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser, isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
+        return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser,
+                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
     }
 
     public func saveProfile() async throws {

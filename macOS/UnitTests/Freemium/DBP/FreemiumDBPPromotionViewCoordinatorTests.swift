@@ -153,6 +153,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .freeScanBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanClick)
     }
 
@@ -190,6 +191,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .viewResultsBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsClick)
     }
 
@@ -224,6 +226,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .viewResultsBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
     }
 

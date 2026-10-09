@@ -27,8 +27,8 @@ import DataBrokerProtectionCoreTestsUtils
 /// The fixtures in `BundleResources/BrokerBundleSigning` are real dbp-api packaging output, signed with the TEST staging key.
 final class BrokerBundleVerificationTests: XCTestCase {
 
-    private static let stagingKeyID = "7d70813fd5b624988cc80dc8a59eae4773c8ed8beb2998ed99e13326439afe65"
-    private static let productionKeyID = "5f36a83cf7110611f6151e579a80349e55eacf252e7bd8fa95fe8b8d04fa571b"
+    private static let testStagingKeyID = "7d70813fd5b624988cc80dc8a59eae4773c8ed8beb2998ed99e13326439afe65"
+    private static let testProductionKeyID = "5f36a83cf7110611f6151e579a80349e55eacf252e7bd8fa95fe8b8d04fa571b"
     private static let fixtureManifestVersion = 1790906518
     private static let fixtureBrokerFileNames = ["anywho.com.json", "verecor.com.json"]
 
@@ -72,10 +72,28 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     // MARK: - Keys
 
-    func testBuiltInKeysAreValidAndMatchTheBackendTestKeys() {
+    /// Must match dbp-api's `dbp-json/bundle-signing-keys.json`
+    func testBuiltInKeysMatchTheDbpAPIKeys() {
         let keys = BrokerBundleSigningKeys.builtIn
-        XCTAssertEqual(keys.keys(isProductionEndpoint: true).map(\.id), [Self.productionKeyID])
-        XCTAssertEqual(keys.keys(isProductionEndpoint: false).map(\.id), [Self.stagingKeyID])
+        XCTAssertEqual(keys.production, ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg=="])
+        XCTAssertEqual(keys.staging, ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ=="])
+        XCTAssertEqual(keys.keys(isProductionEndpoint: true).map(\.id), ["9f203b1713089cb240e7b76ba60146bc6c1c4f231206c7ae071dff555b7e6e60"])
+        XCTAssertEqual(keys.keys(isProductionEndpoint: false).map(\.id), ["47b8e7e7113853a373207e6e75f377500928821df118e402a52da022074e0880"])
+    }
+
+    func testTestKeysMatchTheKeyThatSignedTheFixtures() {
+        let keys = BrokerBundleSigningKeys.dbpAPITestKeys
+        XCTAssertEqual(keys.keys(isProductionEndpoint: true).map(\.id), [Self.testProductionKeyID])
+        XCTAssertEqual(keys.keys(isProductionEndpoint: false).map(\.id), [Self.testStagingKeyID])
+    }
+
+    func testBuiltInKeysDoNotVerifyTheTestSignedFixtures() throws {
+        for isProductionEndpoint in [true, false] {
+            let verifier = BrokerBundleVerifier(keys: BrokerBundleSigningKeys.builtIn.keys(isProductionEndpoint: isProductionEndpoint))
+            XCTAssertThrowsError(try verifier.verifyingKey(manifest: try fixture("main_config.json"), signature: try fixture("main_config.json.sig"))) {
+                XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
+            }
+        }
     }
 
     func testInvalidKeyIsRejected() {
@@ -87,7 +105,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenSignatureIsValidThenVerifyingKeyIsReturned() throws {
         let key = try stagingVerifier.verifyingKey(manifest: try fixture("main_config.json"), signature: try fixture("main_config.json.sig"))
-        XCTAssertEqual(key.id, Self.stagingKeyID)
+        XCTAssertEqual(key.id, Self.testStagingKeyID)
     }
 
     func testWhenSignatureHasSurroundingWhitespaceThenItIsAccepted() throws {
@@ -113,7 +131,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     }
 
     func testWhenVerifiedWithWrongKeyThenSignatureIsInvalid() throws {
-        let verifier = BrokerBundleVerifier(keys: BrokerBundleSigningKeys.builtIn.keys(isProductionEndpoint: true))
+        let verifier = BrokerBundleVerifier(keys: BrokerBundleSigningKeys.dbpAPITestKeys.keys(isProductionEndpoint: true))
 
         XCTAssertThrowsError(try verifier.verifyingKey(manifest: try fixture("main_config.json"), signature: try fixture("main_config.json.sig"))) {
             XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
@@ -122,10 +140,10 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenAnyKeyMatchesThenSignatureIsValid() throws {
         let otherKey = BrokerBundleSigningKey(base64SPKI: P256.Signing.PrivateKey().publicKey.derRepresentation.base64EncodedString())!
-        let verifier = BrokerBundleVerifier(keys: [otherKey] + BrokerBundleSigningKeys.builtIn.keys(isProductionEndpoint: false))
+        let verifier = BrokerBundleVerifier(keys: [otherKey] + BrokerBundleSigningKeys.dbpAPITestKeys.keys(isProductionEndpoint: false))
 
         let key = try verifier.verifyingKey(manifest: try fixture("main_config.json"), signature: try fixture("main_config.json.sig"))
-        XCTAssertEqual(key.id, Self.stagingKeyID)
+        XCTAssertEqual(key.id, Self.testStagingKeyID)
     }
 
     func testWhenSignatureIsAbsentOrEmptyThenSignatureIsMissing() throws {
@@ -147,25 +165,25 @@ final class BrokerBundleVerificationTests: XCTestCase {
     }
 
     func testRevocationCheckerOnlyMatchesKeysForTheCurrentEnvironment() {
-        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings)
+        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings, signingKeys: .dbpAPITestKeys)
 
-        for (revokedKeyIDs, isRevoked) in [([Self.productionKeyID, Self.stagingKeyID], true),
-                                           ([Self.stagingKeyID.uppercased()], true),
-                                           ([Self.productionKeyID], false),
+        for (revokedKeyIDs, isRevoked) in [([Self.testProductionKeyID, Self.testStagingKeyID], true),
+                                           ([Self.testStagingKeyID.uppercased()], true),
+                                           ([Self.testProductionKeyID], false),
                                            ([], false)] {
             privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": revokedKeyIDs]
             XCTAssertEqual(checker.isAnyKeyRevoked, isRevoked, "\(revokedKeyIDs)")
         }
 
         settings.selectedEnvironment = .production
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testProductionKeyID]]
         XCTAssertTrue(checker.isAnyKeyRevoked)
     }
 
     func testRevocationCheckerTreatsMissingOrMalformedSettingAsNotRevoked() {
-        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings)
+        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings, signingKeys: .dbpAPITestKeys)
 
-        for dbpSettings: [String: Any] in [[:], ["revokedBundleSigningKeys": Self.stagingKeyID], ["revokedBundleSigningKeys": [1, 2]]] {
+        for dbpSettings: [String: Any] in [[:], ["revokedBundleSigningKeys": Self.testStagingKeyID], ["revokedBundleSigningKeys": [1, 2]]] {
             privacyConfig.featureSettings[.dbp] = dbpSettings
             XCTAssertFalse(checker.isAnyKeyRevoked)
         }
@@ -195,7 +213,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
         try await makeService().checkForUpdates()
 
         XCTAssertTrue(vault.wasBrokerSavedCalled)
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
         XCTAssertEqual(settings.mainConfigETag, eTag)
         XCTAssertTrue(firedVerificationFailures.isEmpty)
         XCTAssertEqual(firedVerificationSuccessCount, 1)
@@ -243,7 +261,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     func testWhenSignedWithWrongKeyThenNothingIsStored() async throws {
         try stageExtractedBrokers()
         appendFixtureResponses()
-        let productionKey = BrokerBundleSigningKeys.builtIn.production
+        let productionKey = BrokerBundleSigningKeys.dbpAPITestKeys.production
 
         await assertCheckForUpdatesFails(with: .signatureInvalid, signingKeys: .init(production: [], staging: productionKey))
         assertNothingMarkedUpToDate()
@@ -269,7 +287,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     func testWhenUnsignedFallbackConfigIsServedThenLastGoodBrokersAreKept() async throws {
         try stageExtractedBrokers()
         settings.mainConfigETag = "last-good"
-        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion - 1]
+        settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion - 1]
         appendFixtureResponses(signatureResponse: (HTTPURLResponse.notFound, nil))
 
         await assertCheckForUpdatesFails(with: .signatureMissing)
@@ -277,7 +295,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertFalse(vault.wasBrokerSavedCalled)
         XCTAssertFalse(vault.wasBrokerUpdateCalled)
         XCTAssertEqual(settings.mainConfigETag, "last-good", "Next check should request the update again")
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion - 1])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion - 1])
     }
 
     func testMainConfigAndSignatureAreNotServedFromLocalCache() async throws {
@@ -301,7 +319,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
         XCTAssertEqual(mainConfigRequests.count, 2)
         XCTAssertEqual(signatureRequests.count, 2)
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
         XCTAssertTrue(firedVerificationFailures.isEmpty)
     }
 
@@ -375,18 +393,18 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenManifestVersionIsOlderThanLastSeenForKeyThenRollbackIsRejected() async throws {
         try stageExtractedBrokers()
-        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion + 1]
+        settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion + 1]
         appendFixtureResponses()
 
         await assertCheckForUpdatesFails(with: .rollback)
         XCTAssertFalse(vault.wasBrokerSavedCalled)
         XCTAssertNil(settings.mainConfigETag)
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion + 1])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion + 1])
     }
 
     func testWhenManifestVersionIsUnchangedThenItIsAccepted() async throws {
         try stageExtractedBrokers()
-        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion]
+        settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion]
         appendFixtureResponses()
 
         try await makeService().checkForUpdates()
@@ -397,12 +415,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenOnlyAnotherKeyHasSeenANewerManifestThenItIsAccepted() async throws {
         try stageExtractedBrokers()
-        settings.lastManifestVersions = [Self.productionKeyID: 9999999999]
+        settings.lastManifestVersions = [Self.testProductionKeyID: 9999999999]
         appendFixtureResponses()
 
         try await makeService().checkForUpdates()
 
-        XCTAssertEqual(settings.lastManifestVersions, [Self.productionKeyID: 9999999999, Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testProductionKeyID: 9999999999, Self.testStagingKeyID: Self.fixtureManifestVersion])
     }
 
     func testWhenBrokerDoesNotMatchDigestThenOnlyMatchingBrokersAreStored() async throws {
@@ -417,10 +435,10 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: extractedDirectoryURL.path), "Download should be discarded so it's fetched again")
     }
 
-    func testWhenBuiltInKeyIsRevokedThenUpdateIsSkippedAndStoredDataIsUntouched() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
+    func testWhenSigningKeyIsRevokedThenUpdateIsSkippedAndStoredDataIsUntouched() async throws {
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testStagingKeyID]]
         settings.mainConfigETag = "previous"
-        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion]
+        settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion]
         vault.shouldReturnNewVersionBroker = true
         let olderBundledBroker = try DataBroker.initFromResource(try XCTUnwrap(Bundle.module.url(forResource: "valid-broker",
                                                                                                  withExtension: "json",
@@ -435,16 +453,16 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertFalse(vault.wasBrokerUpdateCalled, "Bundled brokers must not replace stored ones")
         XCTAssertEqual(try vault.fetchBroker(with: "broker.com")?.version, "1.0.1")
         XCTAssertEqual(settings.mainConfigETag, "previous")
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
         XCTAssertEqual(firedVerificationSuccessCount, 0)
     }
 
     func testWhenRevokedKeyIsDroppedThenUpdatesResume() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testStagingKeyID]]
         await assertCheckForUpdatesFails(with: .keyRevoked)
 
         /// An app update drops the revoked key, so privacy-config no longer affects this app's keys
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testProductionKeyID]]
         pixelHandler.clear()
         try stageExtractedBrokers()
         appendFixtureResponses()
@@ -453,13 +471,13 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
         XCTAssertTrue(vault.wasBrokerSavedCalled)
         XCTAssertEqual(settings.mainConfigETag, eTag)
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
         XCTAssertTrue(firedVerificationFailures.isEmpty)
         XCTAssertEqual(firedVerificationSuccessCount, 1)
     }
 
     func testWhenOnlyOtherKeysAreRevokedThenUpdateProceeds() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testProductionKeyID]]
         try stageExtractedBrokers()
         appendFixtureResponses()
 
@@ -469,7 +487,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     }
 
     func testWhenRevokedKeysSettingIsMalformedThenItIsTreatedAsEmpty() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": Self.stagingKeyID]
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": Self.testStagingKeyID]
         try stageExtractedBrokers()
         appendFixtureResponses()
 
@@ -480,12 +498,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testLastManifestVersionsSurviveResettingBrokerDeliveryData() {
         settings.mainConfigETag = "previous"
-        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion]
+        settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion]
 
         settings.resetBrokerDeliveryData()
 
         XCTAssertNil(settings.mainConfigETag)
-        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
     }
 
     func testBundleVerificationSuccessPixel() {
@@ -517,7 +535,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     // MARK: - Helpers
 
     private var stagingVerifier: BrokerBundleVerifier {
-        BrokerBundleVerifier(keys: BrokerBundleSigningKeys.builtIn.keys(isProductionEndpoint: false))
+        BrokerBundleVerifier(keys: BrokerBundleSigningKeys.dbpAPITestKeys.keys(isProductionEndpoint: false))
     }
 
     private var extractedDirectoryURL: URL {
@@ -549,7 +567,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
         return try Data(contentsOf: url)
     }
 
-    private func makeService(signingKeys: BrokerBundleSigningKeys = .builtIn) -> RemoteBrokerJSONService {
+    private func makeService(signingKeys: BrokerBundleSigningKeys = .dbpAPITestKeys) -> RemoteBrokerJSONService {
         let localBrokerService = LocalBrokerJSONService(repository: repository,
                                                         resources: resources,
                                                         vault: vault,
@@ -612,7 +630,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     }
 
     private func assertCheckForUpdatesFails(with expectedError: BrokerBundleVerificationError,
-                                            signingKeys: BrokerBundleSigningKeys = .builtIn,
+                                            signingKeys: BrokerBundleSigningKeys = .dbpAPITestKeys,
                                             file: StaticString = #filePath,
                                             line: UInt = #line) async {
         do {
@@ -636,4 +654,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
 private extension HTTPURLResponse {
     static let notFound = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 404, httpVersion: nil, headerFields: [:])!
     static let internalServerError = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 500, httpVersion: nil, headerFields: [:])!
+}
+
+extension BrokerBundleSigningKeys {
+    /// dbp-api's test key pair, which signed the fixtures in `BundleResources/BrokerBundleSigning`. Never ship these.
+    static let dbpAPITestKeys = BrokerBundleSigningKeys(
+        production: ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErmuPs8CapwHjt32La//bKRjV9ercvqY3jTzjWFSmdtnqI8ZrxOqMgEoKR6o0He6XZUy/oKOpW70+zur/7//+KQ=="],
+        staging: ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqpP7ubErpgXf5cpp1OFghScG7tJbhUhrKyzkxFdXGErtklupZcJx078xfZRmdYoxLbnaIAt3NYs9XeOr1oJESA=="]
+    )
 }

@@ -39,6 +39,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingManager: ContentBlockerRulesManager
     private let networkSignalsProvider: NetworkSignalsProviding
+    private let memoryPressureProvider: MemoryPressureProviding
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
     private let featureFlagger: FeatureFlagger
@@ -81,6 +82,7 @@ final class PrivacyDashboardViewController: UIViewController {
           contentBlockingManager: ContentBlockerRulesManager,
           breakageAdditionalInfo: BreakageAdditionalInfo?,
           networkSignalsProvider: NetworkSignalsProviding = AppDependencyProvider.shared.networkSignalsProvider,
+          memoryPressureProvider: MemoryPressureProviding = AppDependencyProvider.shared.memoryPressureProvider,
           featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
@@ -93,6 +95,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
         self.networkSignalsProvider = networkSignalsProvider
+        self.memoryPressureProvider = memoryPressureProvider
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
         self.featureFlagger = featureFlagger
@@ -412,7 +415,8 @@ extension PrivacyDashboardViewController {
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
                                 adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
                                 networkSignals: networkSignals,
-                                dnsResolution: dnsResolution)
+                                dnsResolution: dnsResolution,
+                                memoryPressure: memoryPressureProvider.currentLevel)
     }
 
     /// `nil` when page signals are disabled or the URL has no host.

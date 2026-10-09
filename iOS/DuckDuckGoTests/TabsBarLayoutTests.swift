@@ -335,6 +335,36 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertTrue(leading.isHidden)
     }
 
+    func testOuterAccordionSeparatorsFadeAsTheirGapsCloseAndRecoverWhenOpened() throws {
+        for (offset, direction, outerIndex, innerIndex) in [(CGFloat(290), CGFloat(1), 2, 3), (360, -1, 7, 6)] {
+            let (collectionView, _) = makeCollectionView(currentIndex: { 4 }, contentOffset: offset)
+            let outer = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: outerIndex, section: 0)))
+            let inner = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: innerIndex, section: 0)))
+            var previousAlpha: CGFloat = 1
+            for distance in [CGFloat(0), 30, 60, 90, 0] {
+                collectionView.contentOffset.x = offset + direction * distance
+                collectionView.layoutIfNeeded()
+                for cell in [outer, inner] {
+                    cell.layoutIfNeeded()
+                    let separator = try XCTUnwrap(cell.contentView.subviews.first {
+                        $0.bounds.width == 1 && (direction > 0 ? $0.frame.minX == 0 : $0.frame.maxX == cell.bounds.width)
+                    })
+                    XCTAssertFalse(separator.isHidden)
+                    if cell === inner || distance == 0 {
+                        XCTAssertEqual(separator.alpha, 1)
+                    } else {
+                        XCTAssertLessThan(separator.alpha, previousAlpha)
+                        XCTAssertGreaterThan(separator.alpha, 0)
+                        if distance == 90 {
+                            XCTAssertLessThan(separator.alpha, 0.02)
+                        }
+                        previousAlpha = separator.alpha
+                    }
+                }
+            }
+        }
+    }
+
     func testReorderAttributesKeepInactiveCellsBelowSelectionAndResetOnReuse() throws {
         let (collectionView, layout) = makeCollectionView(currentIndex: { 2 }, contentOffset: 10)
         let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 2, section: 0)) as? TabsBarCell)

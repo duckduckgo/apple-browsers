@@ -84,6 +84,8 @@ class TabsBarCell: UICollectionViewCell {
         isCurrent = false
         contentView.isHidden = false
         leadingSeparatorView.isHidden = true
+        leadingSeparatorView.alpha = 1
+        separatorView.alpha = 1
     }
 
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
@@ -196,7 +198,7 @@ class TabsBarCell: UICollectionViewCell {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        updateLeadingSeparator()
+        updateSeparators()
         
         if isPressed {
             layer.masksToBounds = false
@@ -240,18 +242,30 @@ class TabsBarCell: UICollectionViewCell {
         separatorView.backgroundColor = theme.tabsBarSeparatorColor
         separatorView.isHidden = isCurrent || isNextCurrent
         leadingSeparatorView.backgroundColor = theme.tabsBarSeparatorColor
-        updateLeadingSeparator()
+        updateSeparators()
 
         hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
         updateCloseButtonVisibility()
     }
 
-    private func updateLeadingSeparator() {
+    private func updateSeparators() {
+        leadingSeparatorView.alpha = 1
+        separatorView.alpha = 1
         guard !isCurrent,
               let collectionView = superview as? UICollectionView,
               let indexPath = collectionView.indexPath(for: self) else {
             leadingSeparatorView.isHidden = true
             return
+        }
+        let previous = indexPath.item > 0
+            ? collectionView.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) : nil
+        let next = indexPath.item + 1 < collectionView.numberOfItems(inSection: indexPath.section)
+            ? collectionView.layoutAttributesForItem(at: IndexPath(item: indexPath.item + 1, section: indexPath.section)) : nil
+        if let previous, CGFloat(previous.zIndex) > layer.zPosition {
+            separatorView.alpha = separatorAlpha(forGap: frame.maxX - previous.frame.maxX)
+        }
+        if let next, CGFloat(next.zIndex) > layer.zPosition {
+            leadingSeparatorView.alpha = separatorAlpha(forGap: next.frame.minX - frame.minX)
         }
         if let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
            let currentIndex = layout.currentIndex?(),
@@ -262,13 +276,18 @@ class TabsBarCell: UICollectionViewCell {
         }
         let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
         let isPinnedAtLeadingEdge = frame.minX == leading && leading > 0
-        let previous = indexPath.item > 0
-            ? collectionView.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) : nil
         // A leading overlap covers the previous tab's trailing separator.
         let coversPreviousSeparator = previous.map {
             CGFloat($0.zIndex) < layer.zPosition && $0.frame.minX <= frame.minX && $0.frame.maxX > frame.minX
         } ?? false
         leadingSeparatorView.isHidden = !isPinnedAtLeadingEdge && !coversPreviousSeparator
+    }
+
+    private func separatorAlpha(forGap gap: CGFloat) -> CGFloat {
+        guard bounds.width > 0 else { return 1 }
+        // Ease the outer line away as the accordion closes its last half-tab of space.
+        let fraction = min(max(gap / (bounds.width / 2), 0), 1)
+        return fraction * fraction * (3 - 2 * fraction)
     }
 
     /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.

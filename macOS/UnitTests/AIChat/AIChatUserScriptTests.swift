@@ -476,7 +476,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didSubmitAIChatPageContext = true
     }
 
-    func resetConversationSourceForNewDocument() {}
+    func resetConversationSourceForNewDocument() {
+        directNavigationFallback = nil
+    }
 
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
         didSubmitAIChatSelectionContext = true

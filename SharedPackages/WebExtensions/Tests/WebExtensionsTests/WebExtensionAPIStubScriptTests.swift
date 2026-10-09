@@ -32,6 +32,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private var context: JSContext!
     private var exceptions: [String] = []
     private var scheduledTimers: [ScheduledTimer] = []
+    private var scheduledIntervals: [ScheduledTimer] = []
     /// Backs the fake `chrome.storage.local`, as JSON per key, so it outlives a context: two
     /// contexts made in one test see the same storage, like two pages of one extension.
     private var storageLocalItems: [String: String] = [:]
@@ -45,6 +46,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context = nil
         exceptions = []
         scheduledTimers = []
+        scheduledIntervals = []
         storageLocalItems = [:]
         try super.tearDownWithError()
     }
@@ -136,8 +138,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     func testWhenStubIsCalled_ThenItReturnsAPromise() throws {
         try evaluateStubScript()
 
-        try assertTrue("typeof chrome.idle.queryState(60) === 'object'")
-        try assertTrue("typeof chrome.idle.queryState(60).then === 'function'")
+        try assertTrue("typeof chrome.downloads.download({}) === 'object'")
+        try assertTrue("typeof chrome.downloads.download({}).then === 'function'")
     }
 
     func testWhenStubIsCalledWithTrailingCallback_ThenTheCallbackIsInvokedWithUndefined() throws {
@@ -175,6 +177,192 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertTrue("chrome.notifications.then === undefined")
         try assertTrue("chrome.privacy.services.then === undefined")
+    }
+
+    // MARK: - Idle
+
+    func testWhenIdleIsQueried_ThenTheReplyIsHandedToThePromiseAndTheCallback() throws {
+        try installFakeIdleHandler(reply: "locked")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseState = 'pending';
+        var callbackState = 'pending';
+        chrome.idle.queryState(120, function(state) { callbackState = state; }).then(function(state) { promiseState = state; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'locked' && callbackState === 'locked'")
+        try assertTrue("idleRequests.length === 1 && idleRequests[0].detectionInterval === 120")
+    }
+
+    func testWhenIdleIsQueriedWithoutACallback_ThenTheStatesAreResolvedAsGiven() throws {
+        try installFakeIdleHandler(reply: "idle")
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'idle'")
+    }
+
+    func testWhenTheIdleHandlerFails_ThenQueryStateAnswersActive() throws {
+        try installFakeIdleHandler(reply: "idle", fails: true)
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active'")
+    }
+
+    func testWhenTheIdleHandlerAnswersAnUnknownState_ThenQueryStateAnswersActive() throws {
+        try installFakeIdleHandler(reply: "asleep")
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active'")
+    }
+
+    func testWhenThereIsNoIdleHandler_ThenQueryStateAnswersActiveWithBothStyles() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseState = 'pending';
+        var callbackState = 'pending';
+        chrome.idle.queryState(60, function(state) { callbackState = state; }).then(function(state) { promiseState = state; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active' && callbackState === 'active'")
+    }
+
+    func testWhenTheDetectionIntervalIsBelowChromesMinimum_ThenItIsClampedTo15() throws {
+        try installFakeIdleHandler(reply: "active")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.idle.queryState(1);
+        chrome.idle.queryState(0);
+        chrome.idle.queryState(90.7);
+        chrome.idle.queryState('soon');
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("JSON.stringify(idleRequests.map(function(r) { return r.detectionInterval; })) === '[15,15,90,60]'")
+    }
+
+    func testWhenTheDetectionIntervalIsSet_ThenPollingUsesItClampedAndTheDefaultIs60() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.idle.onStateChanged.addListener(function() {});")
+        firePolls()
+        try assertTrue("idleRequests[0].detectionInterval === 60")
+
+        context.evaluateScript("chrome.idle.setDetectionInterval(5);")
+        firePolls()
+        try assertTrue("idleRequests[1].detectionInterval === 15")
+
+        context.evaluateScript("chrome.idle.setDetectionInterval(300);")
+        firePolls()
+        try assertTrue("idleRequests[2].detectionInterval === 300")
+    }
+
+    func testWhenTheStateChanges_ThenListenersAreFiredOnlyOnTheChange() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+        context.evaluateScript("var heard = []; chrome.idle.onStateChanged.addListener(function(state) { heard.push(state); });")
+        try assertNoExceptions()
+
+        firePolls()
+        try assertTrue("heard.length === 0")
+
+        context.evaluateScript("idleReply = 'idle';")
+        firePolls()
+        firePolls()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\"]'")
+
+        context.evaluateScript("idleReply = 'locked';")
+        firePolls()
+        context.evaluateScript("idleReply = 'active';")
+        firePolls()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\",\"locked\",\"active\"]'")
+    }
+
+    func testWhenSeveralListenersAreAdded_ThenASingleTimerPollsEvery15Seconds() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        function first() {}
+        function second() {}
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(second);
+        """)
+        try assertNoExceptions()
+
+        XCTAssertEqual(scheduledIntervals.count, 1)
+        XCTAssertEqual(scheduledIntervals.first?.delay, 15000)
+        try assertTrue("chrome.idle.onStateChanged.hasListener(first) && chrome.idle.onStateChanged.hasListener(second)")
+    }
+
+    func testWhenTheLastListenerIsRemoved_ThenThePollingStops() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        function first() {}
+        function second() {}
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(second);
+        chrome.idle.onStateChanged.removeListener(first);
+        """)
+        try assertNoExceptions()
+        try assertTrue("clearedIntervals.length === 0 && chrome.idle.onStateChanged.hasListeners()")
+
+        context.evaluateScript("chrome.idle.onStateChanged.removeListener(second);")
+        try assertNoExceptions()
+        try assertTrue("clearedIntervals.length === 1 && !chrome.idle.onStateChanged.hasListeners()")
+    }
+
+    func testWhenAListenerThrows_ThenTheOthersStillHearTheChange() throws {
+        try installFakeIdleHandler(reply: "idle")
+        try installFakeIntervals()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var heard = [];
+        chrome.idle.onStateChanged.addListener(function() { throw new Error('boom'); });
+        chrome.idle.onStateChanged.addListener(function(state) { heard.push(state); });
+        """)
+
+        firePolls()
+
+        try assertNoExceptions()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\"]'")
+    }
+
+    func testWhenAutoLockDelayIsQueried_ThenItResolvesZero() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("var delay = 'pending'; chrome.idle.getAutoLockDelay().then(function(value) { delay = value; });")
+        try assertNoExceptions()
+
+        try assertTrue("delay === 0")
+    }
+
+    func testWhenIdleNamespaceExists_ThenItIsNotReplaced() throws {
+        context.evaluateScript("var original = { custom: true }; chrome.idle = original;")
+        try evaluateStubScript()
+
+        try assertTrue("chrome.idle === original")
     }
 
     // MARK: - Existing Namespaces
@@ -691,6 +879,44 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private func assertReports(_ json: String, file: StaticString = #filePath, line: UInt = #line) throws {
         let escaped = json.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'")
         try assertTrue("JSON.stringify(reports) === '\(escaped)'", file: file, line: line)
+    }
+
+    /// A page whose host answers `chrome.idle.queryState` through the idle message handler: it
+    /// resolves with `idleReply` (read at call time, so a test can change it) or rejects, and
+    /// `idleRequests` collects what the script posted.
+    private func installFakeIdleHandler(reply: String, fails: Bool = false) throws {
+        context.evaluateScript("""
+        var idleRequests = [];
+        var idleReply = "\(reply)";
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.idleMessageHandlerName)": {
+                postMessage: function(payload) {
+                    idleRequests.push(payload);
+                    return \(fails ? "Promise.reject(new Error('nope'))" : "Promise.resolve(idleReply)");
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// `setInterval` and `clearInterval` that park the poll for the test to fire.
+    private func installFakeIntervals() throws {
+        let scheduleInterval: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
+            self?.scheduledIntervals.append(ScheduledTimer(callback: callback, delay: delay))
+            return self?.scheduledIntervals.count ?? 0
+        }
+        let clearInterval: @convention(block) (JSValue) -> Void = { [weak self] _ in
+            self?.context.evaluateScript("clearedIntervals.push(true);")
+        }
+        context.setObject(scheduleInterval, forKeyedSubscript: "setInterval" as NSString)
+        context.setObject(clearInterval, forKeyedSubscript: "clearInterval" as NSString)
+        context.evaluateScript("var clearedIntervals = [];")
+        try assertNoExceptions()
+    }
+
+    private func firePolls() {
+        scheduledIntervals.forEach { $0.callback.call(withArguments: []) }
     }
 
     private func evaluateStubScript() throws {

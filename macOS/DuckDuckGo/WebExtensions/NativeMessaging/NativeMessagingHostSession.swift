@@ -156,8 +156,8 @@ final class NativeMessagingHostSession {
 
         // Writes go off the main thread, so a host that reads slowly cannot block the browser.
         // They go through one serial queue, so frames reach the host in the order the extension
-        // posted them and never interleave. A detached task per message gave no such guarantee,
-        // and a host that expects a handshake in order fails when a later frame overtakes an earlier one.
+        // posted them and never interleave. A host that expects a handshake in order fails when
+        // a later frame overtakes an earlier one.
         writeQueue.async {
             do {
                 try handle.write(contentsOf: frame)
@@ -218,10 +218,10 @@ final class NativeMessagingHostSession {
         }
 
         if let exitStatus, exitStatus != 0 {
-            // Two causes look the same here. The host may have nothing to talk to, as
-            // Bitwarden's proxy does without its desktop app. Or it refused us, as
-            // a host does for a browser it does not know. A host that refuses usually
-            // says so in its last message or on standard error.
+            // Two causes look the same here. The host may have nothing to talk to, such as a
+            // companion app that is not running. Or it refused us, as a host does for a caller
+            // it does not know. A host that refuses usually says so in its last message or on
+            // standard error.
             Logger.webExtensions.error("""
             ❌ Host \(self.hostName, privacy: .public) ended with status \(exitStatus, privacy: .public). \
             Either its companion app is absent, or the host refused us.

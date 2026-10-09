@@ -44,9 +44,9 @@ extension WKWebExtension {
     ///
     /// WebKit gives every extension a fresh `webkit-extension://<uuid>/` base URL, which no
     /// native messaging host recognizes. A host manifest instead lists the extensions it
-    /// trusts as Chrome origins in `allowed_origins`, and a host such as Bitwarden's
-    /// proxy refuses any caller it cannot find there. So to talk to such
-    /// a host we have to present the same identifier Chrome would.
+    /// trusts as Chrome origins in `allowed_origins`, and a host may refuse any caller it
+    /// cannot find there. So to talk to such a host we have to present the same identifier
+    /// Chrome would.
     ///
     /// Chrome derives it from the manifest `key`, which is the extension's public key: the
     /// value is base64-encoded DER (a `SubjectPublicKeyInfo`), and the identifier is the first

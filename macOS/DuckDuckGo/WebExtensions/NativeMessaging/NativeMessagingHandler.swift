@@ -23,9 +23,8 @@ import WebKit
 
 /// Connects extensions to native messaging hosts on macOS.
 ///
-/// This is what makes Bitwarden's biometric unlock work. That flow calls
-/// `runtime.connectNative("com.8bit.bitwarden")` and waits for the host to answer over the
-/// port. WebKit hands us the port; we run the host and carry messages both ways.
+/// An extension calls `runtime.connectNative` or `runtime.sendNativeMessage` with a host name.
+/// WebKit hands us the port or the message; we run the host and carry messages both ways.
 @available(macOS 15.4, *)
 @MainActor
 final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
@@ -35,6 +34,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         case permissionMissing(host: String)
         case hostUnavailable(host: String, underlying: Error)
         case originNotAllowed(host: String, origin: String?)
+        case timedOut(host: String)
 
         var errorDescription: String? {
             switch self {
@@ -48,18 +48,24 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
             case .originNotAllowed(let host, let origin):
                 return "The native messaging host \(host) does not allow "
                     + "\(origin ?? "an extension with no manifest key") to connect."
+            case .timedOut(let host):
+                return "The native messaging host \(host) did not answer in time."
             }
         }
     }
 
     /// One reply is enough for `sendNativeMessage`, so the wait has a bound.
-    private static let singleMessageTimeout: TimeInterval = 10
+    static let defaultSingleMessageTimeout: TimeInterval = 10
+
+    private let singleMessageTimeout: TimeInterval
 
     /// Where an extension came from, which gives the Chrome identifier of a Web Store install.
     private let installationStore: InstalledWebExtensionStoring?
 
-    init(installationStore: InstalledWebExtensionStoring? = nil) {
+    init(installationStore: InstalledWebExtensionStoring? = nil,
+         singleMessageTimeout: TimeInterval = NativeMessagingHandler.defaultSingleMessageTimeout) {
         self.installationStore = installationStore
+        self.singleMessageTimeout = singleMessageTimeout
     }
 
     /// Sessions of open ports, keyed by the port that owns each one.
@@ -128,44 +134,53 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         let hostName = try hostName(from: applicationIdentifier, for: context)
         let session = try makeSession(hostName: hostName, for: context)
 
+        return try await Self.exchange(message, with: session, hostName: hostName, timeout: singleMessageTimeout)
+    }
+
+    /// Sends one message and returns the first reply.
+    ///
+    /// Ends with the first of a reply, the host ending or failing, and the timeout. Every
+    /// exit stops the session, so no host process outlives the call.
+    static func exchange(_ message: Any,
+                         with session: NativeMessagingHostSession,
+                         hostName: String,
+                         timeout: TimeInterval) async throws -> Any? {
         defer { session.stop() }
 
-        return try await withThrowingTaskGroup(of: Any?.self) { group in
-            group.addTask { @MainActor in
-                try await withCheckedThrowingContinuation { continuation in
-                    var didResume = false
+        return try await withCheckedThrowingContinuation { continuation in
+            var didResume = false
+            var timeoutTask: Task<Void, Never>?
 
-                    session.messageHandler = { reply in
-                        guard !didResume else { return }
-                        didResume = true
-                        continuation.resume(returning: reply)
-                    }
-                    session.terminationHandler = { error in
-                        guard !didResume else { return }
-                        didResume = true
-                        continuation.resume(throwing: error ?? NativeMessagingHostSession.SessionError.hostEnded)
-                    }
+            func finish(_ result: Result<Any?, Error>) {
+                guard !didResume else { return }
+                didResume = true
+                timeoutTask?.cancel()
+                continuation.resume(with: result)
+            }
 
-                    do {
-                        try session.start()
-                        try session.send(message)
-                    } catch {
-                        guard !didResume else { return }
-                        didResume = true
-                        continuation.resume(throwing: error)
-                    }
+            session.messageHandler = { reply in
+                finish(.success(reply))
+            }
+            session.terminationHandler = { error in
+                finish(.failure(error ?? NativeMessagingHostSession.SessionError.hostEnded))
+            }
+
+            timeoutTask = Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .seconds(timeout))
+                } catch {
+                    return
                 }
-            }
-
-            group.addTask {
-                try await Task.sleep(for: .seconds(Self.singleMessageTimeout))
                 Logger.webExtensions.error("❌ Host \(hostName, privacy: .public) did not answer in time")
-                return nil
+                finish(.failure(HandlerError.timedOut(host: hostName)))
             }
 
-            let result = try await group.next() ?? nil
-            group.cancelAll()
-            return result
+            do {
+                try session.start()
+                try session.send(message)
+            } catch {
+                finish(.failure(error))
+            }
         }
     }
 
@@ -211,28 +226,21 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
     /// Picks the origin to hand the host as its first argument.
     ///
-    /// A host manifest names the extensions it trusts, and a host checks the argument against
-    /// that list. Chrome's `allowed_origins` holds `chrome-extension://<id>/` origins, and a
-    /// host such as Bitwarden's refuses anything else, so we present the extension's Chrome
-    /// origin and refuse the connection ourselves when the list has no room for it. Firefox's
-    /// `allowed_extensions` names extensions by identifier instead and leaves the argument
-    /// unchecked, so there we send the Chrome origin only because more hosts recognize it than
-    /// recognize our own `webkit-extension://` base URL.
+    /// A host manifest lists the extensions it trusts as `chrome-extension://<id>/` origins in
+    /// `allowed_origins`, and a host checks its argument against that list. So we present the
+    /// extension's Chrome origin, and refuse the connection ourselves when the manifest has no
+    /// list or the list lacks that origin.
     private func callerOrigin(for context: WKWebExtensionContext,
                               hostName: String,
                               manifest: NativeMessagingHostManifest) throws -> String {
         let chromeOrigin = context.webExtension.chromeExtensionOrigin ?? webStoreOrigin(of: context)
 
-        // An empty list is still a list: it trusts nobody, so it must not fall through.
-        if let allowedOrigins = manifest.allowedOrigins {
-            guard let chromeOrigin, allowedOrigins.contains(chromeOrigin) else {
-                throw HandlerError.originNotAllowed(host: hostName, origin: chromeOrigin)
-            }
-
-            return chromeOrigin
+        // A missing or empty list trusts nobody, so it must not fall through.
+        guard let chromeOrigin, manifest.allowedOrigins?.contains(chromeOrigin) == true else {
+            throw HandlerError.originNotAllowed(host: hostName, origin: chromeOrigin)
         }
 
-        return chromeOrigin ?? context.baseURL.absoluteString
+        return chromeOrigin
     }
 
     /// The Chrome origin of an extension installed from the Chrome Web Store, whose manifest carries no `key`:

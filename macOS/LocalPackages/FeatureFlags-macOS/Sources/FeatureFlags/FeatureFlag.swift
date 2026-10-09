@@ -107,6 +107,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
 
+    /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
+    case webExtensionNativeMessaging
+
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
@@ -729,6 +732,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
                    category: .webExtensions)
+        case .webExtensionNativeMessaging:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:

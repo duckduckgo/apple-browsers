@@ -32,7 +32,7 @@ public enum NativeMessagingFramingError: Error, Equatable {
 ///
 /// Every message carries a 4-byte length prefix in the host's byte order, and then the
 /// message itself as UTF-8 JSON. Chrome, Firefox and Safari all use this format, so a host
-/// such as Bitwarden's `desktop_proxy` needs no change to talk to us.
+/// needs no change to talk to us.
 public enum NativeMessagingFraming {
 
     /// Upper bound for one message. It guards against a hostile or broken host.

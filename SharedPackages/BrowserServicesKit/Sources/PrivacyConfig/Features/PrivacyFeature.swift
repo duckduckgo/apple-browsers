@@ -875,6 +875,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmMessagingHangRecovery
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
+    /// Controls native messaging between web extensions and host apps on macOS.
+    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

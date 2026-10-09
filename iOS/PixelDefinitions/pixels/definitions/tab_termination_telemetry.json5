@@ -102,7 +102,7 @@
         "parameters": ["appVersion"]
     },
     "web-content_termination-reload-result": {
-        "description": "Fires once per reload of the current tab after its web content process terminated, when that reload ends: the first navigation that finishes or fails (cancellations excluded), or another termination before either. Compare with m_d_wktct to find reloads that never ended, and use recovery to check that tabs killed in the background are still reloaded when the app becomes active.",
+        "description": "Fires at most once per reload of the current tab after its web content process terminated (m_d_wktct): on the next navigation in that tab that finishes or fails (cancellations ignored), or on another termination before either. Navigations are not matched to the reload, so if the reload never starts, hangs or is cancelled, the next navigation the user makes in that tab is reported as its result. m_d_wktct minus this pixel therefore only counts reloads with no later navigation or termination in the tab, and is a lower bound on reloads that never completed. Use recovery to check that tabs killed in the background are still reloaded when the app becomes active.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

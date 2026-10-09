@@ -212,7 +212,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
         tracker.begin(.deferred)
         tracker.didFail(with: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
-        tracker.didFail(with: NSError(domain: WKError.errorDomain, code: WKError.Code.frameLoadInterruptedByPolicyChange.rawValue))
+        tracker.didFail(with: NSError(domain: WKError.WebKitErrorDomain, code: WKError.Code.frameLoadInterruptedByPolicyChange.rawValue))
         XCTAssertTrue(pixelFiring.calls.isEmpty, "Cancellations keep waiting for the real result")
 
         tracker.didFinish()

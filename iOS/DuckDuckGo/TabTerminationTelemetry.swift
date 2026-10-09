@@ -415,7 +415,7 @@ struct TerminationReloadTracker {
         // result is reported for the reload. Tracking the reload's WKNavigation would fix this.
         let error = error as NSError
         let isCancellation = (error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled)
-            || (error.domain == WKError.errorDomain && error.code == WKError.Code.frameLoadInterruptedByPolicyChange.rawValue)
+            || (error.domain == WKError.WebKitErrorDomain && error.code == WKError.Code.frameLoadInterruptedByPolicyChange.rawValue)
         guard !isCancellation else { return }
         end(.failed)
     }

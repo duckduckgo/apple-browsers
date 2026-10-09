@@ -29,12 +29,14 @@ public enum DuckAiInputSubmitMethod: String, Equatable {
     case button
     /// Return. iPhone and iPad don't send on Return while the disclaimer shows.
     case enter
-    /// Quick actions, suggested prompts, Paste & Go and dictation.
+    /// Quick actions, Paste & Go and dictation.
     case other
 }
 
 public enum DuckAiInputOutcome: Equatable {
     case promptSubmitted(DuckAiInputSubmitMethod)
+    /// A suggested prompt tapped in the contextual sheet.
+    case suggestedPrompt
     case voiceStarted
     case abandoned
 }
@@ -65,6 +67,8 @@ public struct DuckAiInputOutcomeEvent: Equatable {
         case .promptSubmitted(let submitMethod):
             parameters["outcome"] = "prompt_submitted"
             parameters["submit_method"] = submitMethod.rawValue
+        case .suggestedPrompt:
+            parameters["outcome"] = "suggested_prompt"
         case .voiceStarted:
             parameters["outcome"] = "voice_started"
         case .abandoned:
@@ -106,14 +110,6 @@ public final class DuckAiInputOutcomeMeasurement {
         openInput?.isTermsOfServiceDisclaimerShown = true
     }
 
-    public func promptSubmitted(_ submitMethod: DuckAiInputSubmitMethod) {
-        report(.promptSubmitted(submitMethod))
-    }
-
-    public func voiceStarted() {
-        report(.voiceStarted)
-    }
-
     /// The input closed, collapsed, left Duck.ai mode or went to the background.
     public func inputClosed() {
         guard let openInput else { return }
@@ -122,7 +118,8 @@ public final class DuckAiInputOutcomeMeasurement {
         fire(openInput, outcome: .abandoned)
     }
 
-    private func report(_ outcome: DuckAiInputOutcome) {
+    /// Only the first outcome counts; `abandoned` comes from `inputClosed()`.
+    public func record(_ outcome: DuckAiInputOutcome) {
         guard var openInput, !openInput.hasReported else { return }
         openInput.hasReported = true
         self.openInput = openInput

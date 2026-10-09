@@ -35,8 +35,8 @@ struct DuckAiInputOutcomeMeasurementTests {
     func whenAPromptIsSentThenItIsReportedOnceWithItsMethod() {
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
 
-        sut.promptSubmitted(.button)
-        sut.promptSubmitted(.enter)
+        sut.record(.promptSubmitted(.button))
+        sut.record(.promptSubmitted(.enter))
         sut.inputClosed()
 
         #expect(firing.events == [
@@ -62,7 +62,7 @@ struct DuckAiInputOutcomeMeasurementTests {
         sut.inputOpened(surface: .duckAI, isTermsOfServiceDisclaimerShown: false)
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
 
-        sut.voiceStarted()
+        sut.record(.voiceStarted)
 
         #expect(firing.events == [
             DuckAiInputOutcomeEvent(surface: .duckAI, isTermsOfServiceDisclaimerShown: false, outcome: .voiceStarted)
@@ -82,8 +82,8 @@ struct DuckAiInputOutcomeMeasurementTests {
     @Test
     func whenNoInputIsOpenThenNothingIsReported() {
         sut.termsOfServiceDisclaimerBecameVisible()
-        sut.promptSubmitted(.button)
-        sut.voiceStarted()
+        sut.record(.promptSubmitted(.button))
+        sut.record(.voiceStarted)
         sut.inputClosed()
 
         #expect(firing.events.isEmpty)
@@ -92,7 +92,7 @@ struct DuckAiInputOutcomeMeasurementTests {
     @Test
     func whenTheNextOpeningClosesThenItReportsItsOwnOutcome() {
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
-        sut.promptSubmitted(.button)
+        sut.record(.promptSubmitted(.button))
         sut.inputClosed()
 
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: false)
@@ -110,6 +110,17 @@ struct DuckAiInputOutcomeMeasurementTests {
             "tos_disclaimer_shown": "true",
             "outcome": "prompt_submitted",
             "submit_method": "other"
+        ])
+    }
+
+    @Test
+    func whenASuggestedPromptIsReportedThenTheParametersHaveNoSubmitMethod() {
+        let event = DuckAiInputOutcomeEvent(surface: .contextualChat, isTermsOfServiceDisclaimerShown: true, outcome: .suggestedPrompt)
+
+        #expect(event.parameters == [
+            "surface": "contextual_chat",
+            "tos_disclaimer_shown": "true",
+            "outcome": "suggested_prompt"
         ])
     }
 

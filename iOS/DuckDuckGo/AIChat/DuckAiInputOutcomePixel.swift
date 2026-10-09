@@ -52,13 +52,14 @@ extension DuckAiInputSurface {
     }
 }
 
-extension DuckAiInputSubmitMethod {
+extension DuckAiInputOutcome {
 
     init(trigger: TextSubmissionTrigger) {
         switch trigger {
-        case .sendButton: self = .button
-        case .textEntry: self = .enter
-        case .pasteAndGo, .programmatic: self = .other
+        case .sendButton: self = .promptSubmitted(.button)
+        case .textEntry: self = .promptSubmitted(.enter)
+        case .pasteAndGo, .programmatic: self = .promptSubmitted(.other)
+        case .suggestedPrompt: self = .suggestedPrompt
         }
     }
 }

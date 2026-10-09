@@ -42,6 +42,8 @@ enum TextSubmissionTrigger: String {
     case pasteAndGo
     /// A prompt the app sends on the user's behalf, such as a quick action chip.
     case programmatic
+    /// A suggested prompt tapped in the contextual sheet.
+    case suggestedPrompt
 }
 
 // MARK: - SwitchBarHandling Protocol

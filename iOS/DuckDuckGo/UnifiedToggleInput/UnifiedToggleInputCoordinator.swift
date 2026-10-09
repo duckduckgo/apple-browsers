@@ -957,8 +957,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    func submitProgrammatic(text: String) {
-        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat, trigger: .programmatic)
+    func submitProgrammatic(text: String, trigger: TextSubmissionTrigger = .programmatic) {
+        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat, trigger: trigger)
     }
 
     // MARK: - Edit mode
@@ -1588,7 +1588,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
         // Ahead of the collapse below, which closes the input.
-        inputOutcomeMeasurement.promptSubmitted(.other)
+        inputOutcomeMeasurement.record(.promptSubmitted(.other))
         let configuration = voicePromptSubmissionConfiguration
         recordDuckAISubmissionStarted(
             reasoningEffort: configuration.reasoningEffort,
@@ -1611,7 +1611,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Suggestions sent from outside the input never tap Ask, so they accept nothing.
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         Logger.aiChat.debug("[TermsOfService] External prompt submission: acceptance not recorded, termsAccepted=false")
-        inputOutcomeMeasurement.promptSubmitted(.other)
+        inputOutcomeMeasurement.record(.promptSubmitted(.other))
         let configuration = promptSubmissionConfiguration
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
@@ -2211,7 +2211,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
-        inputOutcomeMeasurement.promptSubmitted(DuckAiInputSubmitMethod(trigger: trigger))
+        inputOutcomeMeasurement.record(DuckAiInputOutcome(trigger: trigger))
         let termsAccepted = acceptTermsOfServiceIfAskTapped(trigger)
         footerController?.recordPromptSubmitted()
 
@@ -2534,10 +2534,12 @@ private extension UnifiedToggleInputCoordinator {
         syncTermsOfServiceSendButtonToHandler()
     }
 
-    /// The input is measured while it's open in Duck.ai mode.
+    /// The input is measured while it's open in Duck.ai mode. The sheet's input stays open while collapsed,
+    /// since its suggested prompts can still be tapped.
     var isDuckAIInputOpen: Bool {
-        guard inputMode == .aiChat, isInputEditing else { return false }
-        return host != .contextualChat || isContextualInputPresented
+        guard inputMode == .aiChat else { return false }
+        guard host == .contextualChat else { return isInputEditing }
+        return isContextualInputPresented && isContextualChatState
     }
 
     /// Only a chat without a prompt is measured, so follow-ups in the Duck.ai tab and the sheet aren't counted.
@@ -2735,7 +2737,7 @@ private extension UnifiedToggleInputCoordinator {
                     && !isInputPaneExpanded
                     && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {
-                    inputOutcomeMeasurement.voiceStarted()
+                    inputOutcomeMeasurement.record(.voiceStarted)
                     delegate?.unifiedToggleInputDidRequestAIVoiceChat()
                 } else {
                     guard viewController.handler.isVoiceSearchEnabled else { return }
@@ -2751,7 +2753,7 @@ private extension UnifiedToggleInputCoordinator {
                 guard let self else { return }
                 let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
                 self.pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContext)
-                self.inputOutcomeMeasurement.voiceStarted()
+                self.inputOutcomeMeasurement.record(.voiceStarted)
                 self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)

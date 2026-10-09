@@ -431,7 +431,7 @@ final class AIChatOmnibarController {
     /// otherwise opens a new selected Duck.ai tab in `mode: voice-mode`.
     func openNewVoiceChat() {
         pixelHandler.fire(.voiceChatOpened)
-        inputOutcomeMeasurement.voiceStarted()
+        inputOutcomeMeasurement.record(.voiceStarted)
 
         guard !surface.routesSubmissionThroughHost else {
             delegate?.aiChatOmnibarControllerRequestsVoiceSession(self)
@@ -1415,7 +1415,7 @@ final class AIChatOmnibarController {
         firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
-        inputOutcomeMeasurement.promptSubmitted(sentWithAsk ? .button : .enter)
+        inputOutcomeMeasurement.record(.promptSubmitted(sentWithAsk ? .button : .enter))
         if sentWithAsk {
             termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
         }

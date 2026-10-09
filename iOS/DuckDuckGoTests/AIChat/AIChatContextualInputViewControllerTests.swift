@@ -127,7 +127,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         defer { window.isHidden = true }
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
-        sut.recordPromptSubmitted(.button)
+        sut.recordInputOutcome(.promptSubmitted(.button))
         sut.acceptTermsIfDisclaimerShown()
 
         XCTAssertEqual(firing.events, [

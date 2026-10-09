@@ -167,6 +167,33 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
         XCTAssertEqual(outcomeParameters.map { $0["outcome"] }, ["abandoned"])
     }
 
+    /// The collapsed pill still shows the suggested prompts, so collapsing doesn't close the sheet's input.
+    func testWhenASuggestedPromptIsSentAfterTheSheetInputCollapsesThenItIsReportedAsASuggestedPrompt() {
+        sut = makeCoordinator(host: .contextualChat, isDisclaimerEnabled: true, contextualStart: .expandedPreSubmit)
+        sut.showExpanded()
+        sut.beginContextualInputPresentation()
+        showFooter([.termsConsent])
+
+        sut.showCollapsed()
+        sut.submitProgrammatic(text: "What is this page about?", trigger: .suggestedPrompt)
+
+        XCTAssertEqual(outcomeParameters, [[
+            "surface": "contextual_chat",
+            "tos_disclaimer_shown": "true",
+            "outcome": "suggested_prompt"
+        ]])
+    }
+
+    func testWhenAQuickActionIsSentFromTheSheetThenItIsAnOtherPrompt() {
+        sut = makeCoordinator(host: .contextualChat, isDisclaimerEnabled: false, contextualStart: .expandedPreSubmit)
+        sut.showExpanded()
+        sut.beginContextualInputPresentation()
+
+        sut.submitProgrammatic(text: "Summarize This Page")
+
+        XCTAssertEqual(outcomeParameters.last?["submit_method"], "other")
+    }
+
     // MARK: - Helpers
 
     private var termsOfServiceStore: DuckAiTermsOfServiceStore {

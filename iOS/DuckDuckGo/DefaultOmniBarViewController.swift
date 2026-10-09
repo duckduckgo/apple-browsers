@@ -233,7 +233,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let hasAttachments = attachmentController?.hasAttachments ?? false
         // Voice only stands in for an empty prompt; pending attachments are a submittable input.
         if text.isEmpty && !hasAttachments {
-            inputOutcomeMeasurement.voiceStarted()
+            inputOutcomeMeasurement.record(.voiceStarted)
             omniDelegate?.onDuckAIVoiceModeRequested()
             return
         }
@@ -557,7 +557,7 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 // Before the collapse below takes the disclaimer off screen.
-                inputOutcomeMeasurement.promptSubmitted(sentWithAsk ? .button : .enter)
+                inputOutcomeMeasurement.record(.promptSubmitted(sentWithAsk ? .button : .enter))
                 if sentWithAsk {
                     termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message)
                 }

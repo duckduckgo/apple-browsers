@@ -307,8 +307,8 @@ final class AIChatContextualInputViewController: UIViewController {
     }
 
     /// Call before `acceptTermsIfDisclaimerShown()`, for every prompt the basic input sends.
-    func recordPromptSubmitted(_ submitMethod: DuckAiInputSubmitMethod) {
-        inputOutcomeMeasurement.promptSubmitted(submitMethod)
+    func recordInputOutcome(_ outcome: DuckAiInputOutcome) {
+        inputOutcomeMeasurement.record(outcome)
     }
 
     /// The basic input shows only before the sheet's chat has a prompt, so every opening here starts a new chat.

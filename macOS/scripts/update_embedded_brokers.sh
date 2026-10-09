@@ -12,44 +12,32 @@ DBP_MAIN_CONFIG_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json"
 DBP_MAIN_CONFIG_SIGNATURE_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json.sig"
 
 BROKER_JSON_DIR_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON"
-SIGNING_KEYS_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BrokerManaging/BrokerBundleVerifier.swift"
+SIGNING_KEYS_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/bundle-signing-keys.json"
 
-# Prints the base64 SPKI keys in BrokerBundleSigningKeys.builtIn for the given environment, one per line.
-signingKeys() {
-	local swift_file=$1
-	local environment=$2
-
-	sed -n "/static let builtIn/,/^    )/p" "$swift_file" \
-		| sed -n "/${environment}: \[/,/\]/p" \
-		| grep -oE '"[A-Za-z0-9+/]+=*"' \
-		| tr -d '"'
-}
-
+# Succeeds if signature_file is a base64 DER ECDSA signature of main_config by any of the keys, which are base64 SPKI DER, one per line.
 verifyMainConfigSignature() {
 	local main_config=$1
-	local signature=$2
+	local signature_file=$2
 	local keys=$3
 
-	local work_dir
+	local work_dir key
 	work_dir=$(mktemp -d)
+	tr -d '[:space:]' < "$signature_file" | base64 -d > "${work_dir}/signature.der" 2>/dev/null
 
-	local result=1
-	if [[ -n "$keys" ]] && tr -d ' \t\r\n' < "$signature" | base64 -d > "${work_dir}/signature.der" 2>/dev/null && [[ -s "${work_dir}/signature.der" ]]; then
-		local key
-		while IFS= read -r key; do
-			printf -- "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----\n" "$(printf '%s' "$key" | fold -w 64)" > "${work_dir}/key.pem"
-			if openssl dgst -sha256 -verify "${work_dir}/key.pem" -signature "${work_dir}/signature.der" "$main_config" >/dev/null 2>&1; then
-				result=0
-				break
-			fi
-		done <<< "$keys"
-	fi
+	while IFS= read -r key; do
+		[[ -n "$key" ]] || continue
+		printf '%s' "$key" | base64 -d > "${work_dir}/key.der"
+		if openssl dgst -sha256 -verify "${work_dir}/key.der" -keyform DER -signature "${work_dir}/signature.der" "$main_config" >/dev/null 2>&1; then
+			rm -rf "$work_dir"
+			return 0
+		fi
+	done <<< "$keys"
 
 	rm -rf "$work_dir"
-	return $result
+	return 1
 }
 
-# Checks every active broker in source_dir against main_config.json's json_sha256.
+# Fails unless every active broker is in source_dir and matches its json_sha256 entry.
 verifyBrokerDigests() {
 	local source_dir=$1
 	local main_config=$2
@@ -61,22 +49,20 @@ verifyBrokerDigests() {
 	fi
 
 	local error_found=0
-	local file_path file_name expected actual
-
-	while IFS= read -r file_path; do
-		file_name=$(basename "$file_path")
-		printf '%s\n' "$active_brokers" | grep -Fxq "$file_name" || continue
-
-		expected=$(jq -r --arg file_name "$file_name" '.json_sha256[$file_name] // empty' "$main_config")
-		actual=$(shasum -a 256 "$file_path" | cut -d ' ' -f 1)
-		if [[ -z "$expected" || "$actual" != "$expected" ]]; then
-			printf "Error: %s does not match its json_sha256 entry\n" "$file_name"
-			error_found=1
-		fi
-	done < <(find "$source_dir" -name '*.json' | sort)
-
+	local file_name file_path expected found
 	while IFS= read -r file_name; do
-		if [[ -z "$(find "$source_dir" -name "$file_name" -print -quit)" ]]; then
+		expected=$(jq -r --arg file_name "$file_name" '.json_sha256[$file_name] // empty' "$main_config")
+		found=0
+		# installBrokerJSONs copies every file with this name, so check them all
+		while IFS= read -r file_path; do
+			found=1
+			if [[ "$(shasum -a 256 "$file_path" | cut -d ' ' -f 1)" != "$expected" ]]; then
+				printf "Error: %s does not match its json_sha256 entry\n" "$file_path"
+				error_found=1
+			fi
+		done < <(find "$source_dir" -name "$file_name")
+
+		if [[ $found -eq 0 ]]; then
 			printf "Error: active broker %s is missing from the archive\n" "$file_name"
 			error_found=1
 		fi
@@ -172,7 +158,7 @@ main() {
 	local script_dir target_dir signing_keys
 	script_dir=$(dirname "$(readlink -f "$0")")
 	target_dir="${script_dir}/${BROKER_JSON_DIR_RELATIVE_PATH}"
-	signing_keys=$(signingKeys "${script_dir}/${SIGNING_KEYS_RELATIVE_PATH}" production)
+	signing_keys=$(jq -r '.production[]' "${script_dir}/${SIGNING_KEYS_RELATIVE_PATH}")
 
 	printf "Processing DBP broker data: %s\n" "$DBP_BROKER_URL"
 

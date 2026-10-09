@@ -46,7 +46,7 @@ public struct BrokerBundleSigningKey {
 }
 
 /// Public keys used to verify `main_config.json.sig`, as base64 SPKI DER.
-public struct BrokerBundleSigningKeys {
+public struct BrokerBundleSigningKeys: Decodable, Equatable {
     public let production: [String]
     public let staging: [String]
 
@@ -55,16 +55,23 @@ public struct BrokerBundleSigningKeys {
         self.staging = staging
     }
 
-    // Must match dbp-api's `dbp-json/bundle-signing-keys.json`.
-    // `macOS/scripts/update_embedded_brokers.sh` reads the production list, so keep one key per line.
-    public static let builtIn = BrokerBundleSigningKeys(
-        production: [
-            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==",
-        ],
-        staging: [
-            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==",
-        ]
-    )
+    /// Must match dbp-api's `dbp-json/bundle-signing-keys.json`. `macOS/scripts/update_embedded_brokers.sh` reads the same file.
+    public static let builtIn: BrokerBundleSigningKeys = {
+        do {
+            return try loadBuiltIn()
+        } catch {
+            Logger.dataBrokerProtection.fault("🧩 Failed to load broker bundle signing keys: \(error, privacy: .public)")
+            assertionFailure("Failed to load broker bundle signing keys: \(error)")
+            return BrokerBundleSigningKeys(production: [], staging: [])
+        }
+    }()
+
+    static func loadBuiltIn() throws -> BrokerBundleSigningKeys {
+        guard let url = Bundle.module.url(forResource: "bundle-signing-keys", withExtension: "json", subdirectory: "BundleResources") else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return try JSONDecoder().decode(BrokerBundleSigningKeys.self, from: Data(contentsOf: url))
+    }
 
     func keys(isProductionEndpoint: Bool) -> [BrokerBundleSigningKey] {
         (isProductionEndpoint ? production : staging).compactMap { base64SPKI in
@@ -77,10 +84,8 @@ public struct BrokerBundleSigningKeys {
     }
 }
 
-/// PIR pauses while privacy-config lists any of the app's signing keys for the current environment as revoked.
-///
-/// This is read from the current privacy-config every time rather than stored, because privacy-config's list is
-/// additive only. Once an app update drops the revoked key, PIR resumes.
+/// PIR pauses while privacy-config lists any of the app's signing keys as revoked. This isn't stored, because the
+/// list is additive only: PIR resumes once an app update drops the revoked key.
 public struct BrokerBundleKeyRevocationChecker {
     static let revokedKeysSettingsKey = "revokedBundleSigningKeys"
 
@@ -108,7 +113,6 @@ public struct BrokerBundleKeyRevocationChecker {
 struct BrokerBundleVerifier {
     let keys: [BrokerBundleSigningKey]
 
-    /// Returns the key that produced `signature` over the exact bytes of `manifest`.
     func verifyingKey(manifest: Data, signature: Data?) throws -> BrokerBundleSigningKey {
         guard let signature else {
             throw BrokerBundleVerificationError.signatureMissing
@@ -133,11 +137,5 @@ struct BrokerBundleVerifier {
     static func hasExpectedDigest(_ data: Data, expectedSHA256: String?) -> Bool {
         guard let expectedSHA256 else { return false }
         return data.sha256HexString == expectedSHA256.lowercased()
-    }
-}
-
-extension Data {
-    var sha256HexString: String {
-        SHA256.hash(data: self).map { String(format: "%02x", $0) }.joined()
     }
 }

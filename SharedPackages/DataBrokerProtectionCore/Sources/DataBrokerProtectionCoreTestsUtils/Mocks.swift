@@ -185,7 +185,6 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
 }
 
 public extension PrivacyConfigurationManagingMock {
-    /// The IDs of every built-in broker bundle signing key, for both environments
     static let builtInBundleSigningKeyIDs = (BrokerBundleSigningKeys.builtIn.production + BrokerBundleSigningKeys.builtIn.staging)
         .compactMap { BrokerBundleSigningKey(base64SPKI: $0)?.id }
 

@@ -246,14 +246,7 @@ public enum DataBrokerProtectionSharedPixels {
 
 extension DataBrokerProtectionSharedPixels: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
-    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
-        switch self {
-        case .bundleVerificationFailure, .bundleVerificationSuccess:
-            return .standard
-        default:
-            return .legacyOmitted
-        }
-    }
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     public var name: String {
         switch self {
@@ -378,18 +371,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             // Broker update pixels
         case .updateDataBrokersSuccess: return "dbp_update_databrokers_success"
         case .updateDataBrokersFailure: return "dbp_update_databrokers_failure"
-        case .bundleVerificationFailure:
-#if os(macOS)
-            return "dbp_bundle_verification_failure_macos"
-#else
-            return "dbp_bundle_verification_failure"
-#endif
-        case .bundleVerificationSuccess:
-#if os(macOS)
-            return "dbp_bundle_verification_success_macos"
-#else
-            return "dbp_bundle_verification_success"
-#endif
+        case .bundleVerificationFailure: return "dbp_bundle_verification_failure"
+        case .bundleVerificationSuccess: return "dbp_bundle_verification_success"
         }
     }
 
@@ -951,8 +934,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .challengeFailed,
                     .bundleVerificationFailure:
                 pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
+            case .bundleVerificationFailure:
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .bundleVerificationSuccess:
-                pixelKit.fire(event, frequency: .daily, withAdditionalParameters: parameters)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .daily)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)
             case .updateDataBrokersFailure(_, _, _, let error):

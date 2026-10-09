@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 @testable import DataBrokerProtection_iOS
 
@@ -50,6 +51,26 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
         try manager.deleteAllUserProfileData()
 
         XCTAssertEqual(dependencies.profileStateManager.profileState, .noProfile)
+    }
+
+    func test_deleteAllUserProfileData_keepsBundleSigningState() async throws {
+        let (manager, _) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
+        let (originalETag, originalVersions, originalFingerprint) = (settings.mainConfigETag, settings.lastManifestVersions, settings.bundleSigningKeyFingerprint)
+        defer {
+            settings.mainConfigETag = originalETag
+            settings.lastManifestVersions = originalVersions
+            settings.bundleSigningKeyFingerprint = originalFingerprint
+        }
+        settings.mainConfigETag = "etag"
+        settings.lastManifestVersions = ["key-id": 1790906518]
+        settings.bundleSigningKeyFingerprint = "key-id"
+
+        try manager.deleteAllUserProfileData()
+
+        XCTAssertNil(settings.mainConfigETag)
+        XCTAssertEqual(settings.lastManifestVersions, ["key-id": 1790906518])
+        XCTAssertEqual(settings.bundleSigningKeyFingerprint, "key-id")
     }
 
     func test_appDidEnterBackground_keepsCachedState_whenProfileReadFails() async throws {

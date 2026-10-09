@@ -203,6 +203,21 @@ final class LaunchingTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("An action handled before willConnectTo should be passed to Connected", .timeLimit(.minutes(1)))
+    func actionBeforeConnectReachesConnected() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+
+        if case .connected(let connected) = stateMachine.currentState,
+           let mockConnected = connected as? MockConnected {
+            #expect(mockConnected.actionToHandle != nil)
+        } else {
+            Issue.record("Incorrect state")
+        }
+    }
+
     @Test("willTerminate(with:) should transition from Launching to Terminating")
     func transitionFromLaunchingToTerminating() {
         if case .initializing(let initializing) = stateMachine.currentState,

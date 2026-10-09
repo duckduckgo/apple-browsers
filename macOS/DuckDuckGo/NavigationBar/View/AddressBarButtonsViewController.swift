@@ -938,7 +938,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.isShown = true
         view.layoutSubtreeIfNeeded()
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: url).droppingWwwPrefix()
         let source = (notification.userInfo?[NotificationCenterPermissionCenterPresenter.sourceUserInfoKey] as? DuckAiMicPermissionSource) ?? .voiceChat
         lastSystemDisabledMicPromptSource = source
         showSystemDisabledInfoPopover(for: domain, permissionType: .microphone, micPromptSource: source)
@@ -1199,7 +1199,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         // Check if there are any persisted permissions for the current domain
-        let domain = tabViewModel.tab.content.urlForWebView?.host ?? ""
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: (tabViewModel.tab.content.urlForWebView ?? .empty).securityOrigin)
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
@@ -2381,7 +2381,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: url).droppingWwwPrefix()
 
         // On duck.ai with OS mic denied AND no other permission in play, the shield only
         // exists as an anchor for the system-disabled remediation surface — route the click

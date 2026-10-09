@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import DDGNavigation
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -449,6 +450,67 @@ final class TabPermissionsTests: XCTestCase {
         withExtendedLifetime(c) {}
     }
 
+    @MainActor
+    func testWhenAppLinkIsOpenedThenPermissionIsRequestedForTheWebsiteItCameFrom() async {
+        let (handler, permissionModel) = makeAppLinkHandler()
+        let mailLink = URL(string: "mailto:test@example.com")!
+        let redirect = makeNavigationAction(to: URL(string: "https://redirect.example/")!, navigationType: .linkActivated(isMiddleClick: false))
+
+        await open(mailLink, with: handler, navigationType: .linkActivated(isMiddleClick: false), redirectHistory: [redirect])
+        await open(URL(string: "zoommtg://zoom.us/join")!, with: handler, navigationType: .custom(.userEnteredUrl))
+        await open(mailLink, with: handler, navigationType: .custom(.userEnteredUrl))
+        await open(mailLink, with: handler, navigationType: .linkActivated(isMiddleClick: false))
+
+        XCTAssertEqual(permissionModel.requestedDomains, [
+            "redirect.example", // redirected to the app: the redirecting website
+            "zoom.us",          // typed with a host: the link's host
+            "",                 // typed without a host: no website
+            "page.example",     // clicked on a page: the page's permission domain
+        ])
+    }
+
+    // MARK: - App link helpers
+
+    @MainActor
+    private func makeAppLinkHandler() -> (ExternalAppSchemeHandler, PermissionModelMock) {
+        let workspace = WorkspaceMock()
+        workspace.appUrl = Bundle.main.bundleURL
+        let permissionModel = PermissionModelMock()
+        let handler = ExternalAppSchemeHandler(workspace: workspace, permissionModel: permissionModel, contentPublisher: Empty<Tab.TabContent, Never>())
+        return (handler, permissionModel)
+    }
+
+    private func makeNavigationAction(to url: URL, navigationType: NavigationType, redirectHistory: [NavigationAction]? = nil) -> NavigationAction {
+        let pageURL = URL(string: "https://page.example/")!
+        let sourceFrame = FrameInfo(webView: nil, handle: FrameHandle(rawValue: 1 as UInt64)!, isMainFrame: true, url: pageURL, securityOrigin: pageURL.securityOrigin)
+        return NavigationAction(request: URLRequest(url: url), navigationType: navigationType, currentHistoryItemIdentity: nil,
+                                redirectHistory: redirectHistory, isUserInitiated: true, sourceFrame: sourceFrame, targetFrame: nil,
+                                shouldDownload: false, mainFrameNavigation: nil)
+    }
+
+    @MainActor
+    private func open(_ url: URL, with handler: ExternalAppSchemeHandler, navigationType: NavigationType, redirectHistory: [NavigationAction]? = nil) async {
+        let action = makeNavigationAction(to: url, navigationType: navigationType, redirectHistory: redirectHistory)
+        var preferences = NavigationPreferences(userAgent: nil, contentMode: .desktop, javaScriptEnabled: true)
+        _ = await handler.decidePolicy(for: action, preferences: &preferences)
+    }
+
+}
+
+private final class PermissionModelMock: PermissionModelProtocol {
+    private(set) var requestedDomains: [String] = []
+
+    func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL?, decisionHandler: @escaping (Bool) -> Void) {
+        requestedDomains.append(domain)
+    }
+
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool {
+        false
+    }
+
+    func permissionDomain(for origin: SecurityOrigin) -> String {
+        origin.host
+    }
 }
 
 final class WorkspaceMock: Workspace {

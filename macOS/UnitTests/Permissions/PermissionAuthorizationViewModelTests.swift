@@ -79,6 +79,22 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.viewState.decision?.learnMore, .init(title: UserText.permissionPopupLearnMoreLink, url: Self.locationHelpURL))
     }
 
+    func testWhenExternalAppIsOpenedFromALocalFileOrATypedLinkThenOnlyTheLocalFileCanSaveTheChoice() {
+        let permission = PermissionType.externalScheme(scheme: "mailto")
+        let localFileViewModel = makeViewModel(query: makeQuery(permissions: [permission], domain: .localFilePermissionDomain))
+        let typedLinkViewModel = makeViewModel(query: makeQuery(permissions: [permission], domain: ""))
+
+        localFileViewModel.send(action: .onAppear)
+        typedLinkViewModel.send(action: .onAppear)
+
+        XCTAssertEqual(localFileViewModel.viewState.title,
+                       String(format: UserText.externalSchemePermissionAuthorizationFormat, UserText.websitePermissionsLocalFile, permission.localizedDescription))
+        XCTAssertEqual(localFileViewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
+        XCTAssertEqual(typedLinkViewModel.viewState.title,
+                       String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat, permission.localizedDescription))
+        XCTAssertEqual(typedLinkViewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit])
+    }
+
     func testOnAppearHasNoLearnMoreForCamera() {
         let viewModel = makeViewModel(query: makeQuery(permissions: [.camera]))
 

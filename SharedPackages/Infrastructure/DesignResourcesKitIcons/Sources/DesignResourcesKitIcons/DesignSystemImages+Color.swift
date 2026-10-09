@@ -115,6 +115,7 @@ public extension DesignSystemImages {
             public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor16) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor16) }
             public static var vpnGray: DesignSystemImage { .init(resource: .vpnGrayColor16) }
+            public static var websitePermissions: DesignSystemImage { .init(resource: .websitePermissionsColor16) }
             public static var searchFindToggle: DesignSystemImage { .init(resource: .searchFindColor16) }
         }
 

@@ -24,6 +24,8 @@ import Combine
 /// global shortcut registration), so all consumers observe the same object.
 final class PromptBarPreferences: ObservableObject {
 
+    @Published var pendingLauncherIntroduction = false
+
     @Published var isKeyboardShortcutEnabled: Bool {
         didSet { persistor.isKeyboardShortcutEnabled = isKeyboardShortcutEnabled }
     }

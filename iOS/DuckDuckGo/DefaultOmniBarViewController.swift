@@ -201,7 +201,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
         omniBarView.onFooterVisibilityChanged = { [weak self] ids in
             guard let self else { return }
-            if ids.contains(.termsConsent) { inputOutcomeMeasurement.disclaimerBecameVisible() }
+            if ids.contains(.termsConsent) { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
             if ids.contains(.attachmentPrivacy) {
                 if attachmentPrivacyNotice.recordDisplay() {
                     fireAttachmentPrivacyPixel(.shown)
@@ -818,9 +818,7 @@ extension DefaultOmniBarViewController {
             inputOutcomeMeasurement.inputClosed()
             return
         }
-        inputOutcomeMeasurement.inputOpened(surface: .addressBar,
-                                               termsState: termsOfServiceDisclaimer.inputTermsState,
-                                               isDisclaimerShown: isTermsOfServiceDisclaimerShown)
+        inputOutcomeMeasurement.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.

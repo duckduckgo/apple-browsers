@@ -17,15 +17,9 @@
                 "enum": ["address_bar", "promptbar"]
             },
             {
-                "key": "disclaimer_shown",
+                "key": "tos_disclaimer_shown",
                 "description": "Whether the Terms of Service disclaimer was on screen at any point while the input was open.",
                 "type": "boolean"
-            },
-            {
-                "key": "terms_state",
-                "description": "Whether the user had accepted the Terms of Service when the input opened. `unknown` while the native disclaimer's feature flag is off.",
-                "type": "string",
-                "enum": ["accepted", "not_accepted", "unknown"]
             },
             {
                 "key": "outcome",

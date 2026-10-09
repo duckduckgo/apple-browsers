@@ -33,55 +33,55 @@ struct DuckAiInputOutcomeMeasurementTests {
 
     @Test
     func whenAPromptIsSentThenItIsReportedOnceWithItsMethod() {
-        sut.inputOpened(surface: .addressBar, termsState: .notAccepted, isDisclaimerShown: true)
+        sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
 
         sut.promptSubmitted(.button)
         sut.promptSubmitted(.enter)
         sut.inputClosed()
 
         #expect(firing.events == [
-            DuckAiInputOutcomeEvent(surface: .addressBar, isDisclaimerShown: true, termsState: .notAccepted, outcome: .promptSubmitted(.button))
+            DuckAiInputOutcomeEvent(surface: .addressBar, isTermsOfServiceDisclaimerShown: true, outcome: .promptSubmitted(.button))
         ])
     }
 
     @Test
     func whenTheInputClosesWithoutAnOutcomeThenItIsReportedAbandonedOnce() {
-        sut.inputOpened(surface: .promptBar, termsState: .accepted, isDisclaimerShown: false)
+        sut.inputOpened(surface: .promptBar, isTermsOfServiceDisclaimerShown: false)
 
         sut.inputClosed()
         sut.inputClosed()
 
         #expect(firing.events == [
-            DuckAiInputOutcomeEvent(surface: .promptBar, isDisclaimerShown: false, termsState: .accepted, outcome: .abandoned)
+            DuckAiInputOutcomeEvent(surface: .promptBar, isTermsOfServiceDisclaimerShown: false, outcome: .abandoned)
         ])
     }
 
-    /// Callers re-sync on every state change, so a second opening must not replace the open input's surface or state.
+    /// Callers re-sync on every state change, so a second opening must not replace the open input's surface or disclaimer state.
     @Test
     func whenTheInputIsOpenThenAnotherOpeningIsIgnored() {
-        sut.inputOpened(surface: .duckAI, termsState: .notAccepted, isDisclaimerShown: false)
-        sut.inputOpened(surface: .addressBar, termsState: .accepted, isDisclaimerShown: true)
+        sut.inputOpened(surface: .duckAI, isTermsOfServiceDisclaimerShown: false)
+        sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
 
         sut.voiceStarted()
 
         #expect(firing.events == [
-            DuckAiInputOutcomeEvent(surface: .duckAI, isDisclaimerShown: false, termsState: .notAccepted, outcome: .voiceStarted)
+            DuckAiInputOutcomeEvent(surface: .duckAI, isTermsOfServiceDisclaimerShown: false, outcome: .voiceStarted)
         ])
     }
 
     @Test
     func whenTheDisclaimerRendersWhileOpenThenItIsReportedShown() {
-        sut.inputOpened(surface: .contextualChat, termsState: .notAccepted, isDisclaimerShown: false)
+        sut.inputOpened(surface: .contextualChat, isTermsOfServiceDisclaimerShown: false)
 
-        sut.disclaimerBecameVisible()
+        sut.termsOfServiceDisclaimerBecameVisible()
         sut.inputClosed()
 
-        #expect(firing.events.map(\.isDisclaimerShown) == [true])
+        #expect(firing.events.map(\.isTermsOfServiceDisclaimerShown) == [true])
     }
 
     @Test
     func whenNoInputIsOpenThenNothingIsReported() {
-        sut.disclaimerBecameVisible()
+        sut.termsOfServiceDisclaimerBecameVisible()
         sut.promptSubmitted(.button)
         sut.voiceStarted()
         sut.inputClosed()
@@ -91,31 +91,23 @@ struct DuckAiInputOutcomeMeasurementTests {
 
     @Test
     func whenTheNextOpeningClosesThenItReportsItsOwnOutcome() {
-        sut.inputOpened(surface: .addressBar, termsState: .notAccepted, isDisclaimerShown: true)
+        sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
         sut.promptSubmitted(.button)
         sut.inputClosed()
 
-        sut.inputOpened(surface: .addressBar, termsState: .accepted, isDisclaimerShown: false)
+        sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: false)
         sut.inputClosed()
 
         #expect(firing.events.map(\.outcome) == [.promptSubmitted(.button), .abandoned])
     }
 
     @Test
-    func whenTheNativeDisclaimerIsOffThenTheTermsStateIsUnknown() {
-        #expect(DuckAiInputTermsState(isNativeDisclaimerEnabled: false, hasAccepted: true) == .unknown)
-        #expect(DuckAiInputTermsState(isNativeDisclaimerEnabled: true, hasAccepted: true) == .accepted)
-        #expect(DuckAiInputTermsState(isNativeDisclaimerEnabled: true, hasAccepted: false) == .notAccepted)
-    }
-
-    @Test
     func whenAPromptIsReportedThenTheParametersCarryTheSubmitMethod() {
-        let event = DuckAiInputOutcomeEvent(surface: .contextualChat, isDisclaimerShown: true, termsState: .notAccepted, outcome: .promptSubmitted(.other))
+        let event = DuckAiInputOutcomeEvent(surface: .contextualChat, isTermsOfServiceDisclaimerShown: true, outcome: .promptSubmitted(.other))
 
         #expect(event.parameters == [
             "surface": "contextual_chat",
-            "disclaimer_shown": "true",
-            "terms_state": "not_accepted",
+            "tos_disclaimer_shown": "true",
             "outcome": "prompt_submitted",
             "submit_method": "other"
         ])
@@ -123,12 +115,11 @@ struct DuckAiInputOutcomeMeasurementTests {
 
     @Test
     func whenTheInputIsAbandonedThenTheParametersHaveNoSubmitMethod() {
-        let event = DuckAiInputOutcomeEvent(surface: .promptBar, isDisclaimerShown: false, termsState: .unknown, outcome: .abandoned)
+        let event = DuckAiInputOutcomeEvent(surface: .promptBar, isTermsOfServiceDisclaimerShown: false, outcome: .abandoned)
 
         #expect(event.parameters == [
             "surface": "promptbar",
-            "disclaimer_shown": "false",
-            "terms_state": "unknown",
+            "tos_disclaimer_shown": "false",
             "outcome": "abandoned"
         ])
     }

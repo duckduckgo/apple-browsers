@@ -131,7 +131,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         sut.acceptTermsIfDisclaimerShown()
 
         XCTAssertEqual(firing.events, [
-            DuckAiInputOutcomeEvent(surface: .contextualChat, isDisclaimerShown: true, termsState: .notAccepted, outcome: .promptSubmitted(.button))
+            DuckAiInputOutcomeEvent(surface: .contextualChat, isTermsOfServiceDisclaimerShown: true, outcome: .promptSubmitted(.button))
         ])
     }
 
@@ -146,7 +146,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         sut.endAppearanceTransition()
 
         XCTAssertEqual(firing.events.map(\.outcome), [.abandoned])
-        XCTAssertEqual(firing.events.map(\.isDisclaimerShown), [true])
+        XCTAssertEqual(firing.events.map(\.isTermsOfServiceDisclaimerShown), [true])
     }
 
     func testWhenTermsAreAcceptedThenNoDisclaimerShows() {

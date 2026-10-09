@@ -315,8 +315,7 @@ final class AIChatContextualInputViewController: UIViewController {
     private func startInputOutcomeMeasurement() {
         guard showsBasicNativeInput, viewIfLoaded?.window != nil else { return }
         inputOutcomeMeasurement.inputOpened(surface: .contextualChat,
-                                               termsState: termsOfServiceDisclaimer.inputTermsState,
-                                               isDisclaimerShown: visibleTermsOfServiceMessage != nil)
+                                            isTermsOfServiceDisclaimerShown: visibleTermsOfServiceMessage != nil)
     }
 
     private var visibleTermsOfServiceMessage: UTIFooterMessage? {
@@ -423,7 +422,7 @@ private extension AIChatContextualInputViewController {
         }
         displayedTermsOfServiceMessage = message
         termsOfServiceCard.isHidden = message == nil
-        if visibleTermsOfServiceMessage != nil { inputOutcomeMeasurement.disclaimerBecameVisible() }
+        if visibleTermsOfServiceMessage != nil { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
         basicNativeInputViewController.submitButtonTitle = message == nil ? nil : UserText.duckAIAskButtonTitle
 
         // The outgoing pin goes first, so the two are never active together.

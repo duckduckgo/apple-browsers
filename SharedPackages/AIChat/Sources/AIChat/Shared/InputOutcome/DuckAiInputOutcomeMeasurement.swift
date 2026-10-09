@@ -25,21 +25,6 @@ public enum DuckAiInputSurface: String, Equatable {
     case promptBar = "promptbar"
 }
 
-/// Read when the input opens. `unknown` while the native disclaimer is off.
-public enum DuckAiInputTermsState: String, Equatable {
-    case accepted
-    case notAccepted = "not_accepted"
-    case unknown
-
-    public init(isNativeDisclaimerEnabled: Bool, hasAccepted: Bool) {
-        guard isNativeDisclaimerEnabled else {
-            self = .unknown
-            return
-        }
-        self = hasAccepted ? .accepted : .notAccepted
-    }
-}
-
 public enum DuckAiInputSubmitMethod: String, Equatable {
     case button
     /// Return. iPhone and iPad don't send on Return while the disclaimer shows.
@@ -60,25 +45,21 @@ public struct DuckAiInputOutcomeEvent: Equatable {
     public static let pixelName = "aichat_input_outcome"
 
     public let surface: DuckAiInputSurface
-    public let isDisclaimerShown: Bool
-    public let termsState: DuckAiInputTermsState
+    public let isTermsOfServiceDisclaimerShown: Bool
     public let outcome: DuckAiInputOutcome
 
     public init(surface: DuckAiInputSurface,
-                isDisclaimerShown: Bool,
-                termsState: DuckAiInputTermsState,
+                isTermsOfServiceDisclaimerShown: Bool,
                 outcome: DuckAiInputOutcome) {
         self.surface = surface
-        self.isDisclaimerShown = isDisclaimerShown
-        self.termsState = termsState
+        self.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
         self.outcome = outcome
     }
 
     public var parameters: [String: String] {
         var parameters = [
             "surface": surface.rawValue,
-            "disclaimer_shown": String(isDisclaimerShown),
-            "terms_state": termsState.rawValue
+            "tos_disclaimer_shown": String(isTermsOfServiceDisclaimerShown)
         ]
         switch outcome {
         case .promptSubmitted(let submitMethod):
@@ -103,8 +84,7 @@ public final class DuckAiInputOutcomeMeasurement {
 
     private struct OpenInput {
         let surface: DuckAiInputSurface
-        let termsState: DuckAiInputTermsState
-        var isDisclaimerShown: Bool
+        var isTermsOfServiceDisclaimerShown: Bool
         var hasReported = false
     }
 
@@ -116,16 +96,14 @@ public final class DuckAiInputOutcomeMeasurement {
     }
 
     /// Ignored while the input is already open, so callers can re-sync on every state change.
-    public func inputOpened(surface: DuckAiInputSurface,
-                            termsState: DuckAiInputTermsState,
-                            isDisclaimerShown: Bool) {
+    public func inputOpened(surface: DuckAiInputSurface, isTermsOfServiceDisclaimerShown: Bool) {
         guard openInput == nil else { return }
-        openInput = OpenInput(surface: surface, termsState: termsState, isDisclaimerShown: isDisclaimerShown)
+        openInput = OpenInput(surface: surface, isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     /// The disclaimer is on screen, not just resolved.
-    public func disclaimerBecameVisible() {
-        openInput?.isDisclaimerShown = true
+    public func termsOfServiceDisclaimerBecameVisible() {
+        openInput?.isTermsOfServiceDisclaimerShown = true
     }
 
     public func promptSubmitted(_ submitMethod: DuckAiInputSubmitMethod) {
@@ -153,8 +131,7 @@ public final class DuckAiInputOutcomeMeasurement {
 
     private func fire(_ openInput: OpenInput, outcome: DuckAiInputOutcome) {
         pixelFiring.fire(DuckAiInputOutcomeEvent(surface: openInput.surface,
-                                                 isDisclaimerShown: openInput.isDisclaimerShown,
-                                                 termsState: openInput.termsState,
+                                                 isTermsOfServiceDisclaimerShown: openInput.isTermsOfServiceDisclaimerShown,
                                                  outcome: outcome))
     }
 }

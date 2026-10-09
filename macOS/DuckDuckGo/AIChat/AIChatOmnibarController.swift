@@ -173,7 +173,6 @@ final class AIChatOmnibarController {
     @Published var isInputBlockedByUsageLimit = false
 
     let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
-    private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private let inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring?
     private(set) lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
         pixelFiring: inputOutcomePixelFiring ?? DuckAiInputOutcomePixelAdapter()
@@ -183,7 +182,7 @@ final class AIChatOmnibarController {
     var isTermsOfServiceDisclaimerShown = false {
         didSet {
             guard isTermsOfServiceDisclaimerShown, !oldValue else { return }
-            inputOutcomeMeasurement.disclaimerBecameVisible()
+            inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible()
         }
     }
 
@@ -386,7 +385,6 @@ final class AIChatOmnibarController {
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.usageLimitsStore = usageLimitsStore
         self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
-        self.termsOfServiceStore = termsOfServiceStore
         self.inputOutcomePixelFiring = inputOutcomePixelFiring
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
@@ -519,11 +517,8 @@ final class AIChatOmnibarController {
 
     /// After the refresh, which applies the card synchronously, so whether it shows the disclaimer is settled.
     private func startInputOutcomeMeasurement() {
-        let termsState = DuckAiInputTermsState(isNativeDisclaimerEnabled: featureFlagger.isFeatureOn(.aiChatNativeTermsOfService),
-                                                      hasAccepted: termsOfServiceStore.hasAccepted)
         inputOutcomeMeasurement.inputOpened(surface: surface.inputOutcomePixelSurface,
-                                               termsState: termsState,
-                                               isDisclaimerShown: isTermsOfServiceDisclaimerShown)
+                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     private func refreshUsageWarnings() {

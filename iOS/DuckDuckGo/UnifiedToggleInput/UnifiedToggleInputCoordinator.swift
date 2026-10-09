@@ -354,8 +354,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var attachmentPrivacyNoticeSource: UTIFooterAttachmentPrivacyNoticeSource?
     private var multiTabPromotionSource: UTIFooterMultiTabPromotionSource?
     private var contextualChatHasActiveConversation: () -> Bool = { false }
-    private let termsOfServiceStore: DuckAiTermsOfServiceStore
-    private let isNativeTermsOfServiceAvailable: Bool
     private let inputOutcomePixelFiring: UTIPixelFiring
     private var isContextualInputPresented = false
     private lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
@@ -458,12 +456,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             floatingUIManager: floatingUIManager
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
-        self.termsOfServiceStore = termsOfServiceStore
         self.inputOutcomePixelFiring = pixelFiring
-        self.isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
-            ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
         super.init()
         viewController.delegate = self
+        let isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
+            ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
         setUpFooter(subscriptionManager: subscriptionManager,
                     termsOfServiceStore: isNativeTermsOfServiceAvailable ? termsOfServiceStore : nil)
         textModel = UTITextModel(sideEffects: .init(
@@ -1101,7 +1098,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         footerController?.onTermsOfServiceVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }
-            if isVisible { inputOutcomeMeasurement.disclaimerBecameVisible() }
+            if isVisible { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
             syncInputBehaviorToHandler()
             updateFloatingReturnKeyState()
             onFloatingReturnKeyAvailabilityChanged?()
@@ -2550,11 +2547,8 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         guard !hasSubmittedPrompt else { return }
-        let termsState = DuckAiInputTermsState(isNativeDisclaimerEnabled: isNativeTermsOfServiceAvailable,
-                                                      hasAccepted: termsOfServiceStore.hasAccepted)
         inputOutcomeMeasurement.inputOpened(surface: DuckAiInputSurface(pixelSurface),
-                                               termsState: termsState,
-                                               isDisclaimerShown: isTermsOfServiceDisclaimerShown)
+                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     func syncTermsOfServiceSendButtonToHandler() {

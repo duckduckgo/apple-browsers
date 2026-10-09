@@ -59,8 +59,7 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
 
         XCTAssertEqual(outcomeParameters, [[
             "surface": "address_bar",
-            "disclaimer_shown": "true",
-            "terms_state": "not_accepted",
+            "tos_disclaimer_shown": "true",
             "outcome": "prompt_submitted",
             "submit_method": "button"
         ]])
@@ -86,7 +85,7 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
 
     // MARK: - Abandoned
 
-    func testWhenTheOmnibarClosesWithoutAPromptThenItIsReportedAbandonedWithAnUnknownTermsState() {
+    func testWhenTheOmnibarClosesWithoutAPromptThenItIsReportedAbandoned() {
         sut = makeCoordinator(host: .omnibar, isDisclaimerEnabled: false)
         sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
 
@@ -94,8 +93,7 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
 
         XCTAssertEqual(outcomeParameters, [[
             "surface": "address_bar",
-            "disclaimer_shown": "false",
-            "terms_state": "unknown",
+            "tos_disclaimer_shown": "false",
             "outcome": "abandoned"
         ]])
     }
@@ -108,7 +106,7 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
         sut.updateInputMode(.search, animated: false)
 
         XCTAssertEqual(outcomeParameters.map { $0["outcome"] }, ["abandoned"])
-        XCTAssertEqual(outcomeParameters.last?["disclaimer_shown"], "true")
+        XCTAssertEqual(outcomeParameters.last?["tos_disclaimer_shown"], "true")
     }
 
     func testWhenTheOmnibarOpensInSearchThenNothingIsMeasuredUntilItSwitchesToDuckAI() {
@@ -132,16 +130,6 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertEqual(outcomeParameters.map { $0["outcome"] }, ["abandoned"])
-    }
-
-    func testWhenTheUserHasAcceptedThenTheTermsStateIsAccepted() {
-        termsOfServiceStore.recordAcceptedInNativeInput()
-        sut = makeCoordinator(host: .omnibar, isDisclaimerEnabled: true)
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
-
-        sut.completeOmnibarDeactivation()
-
-        XCTAssertEqual(outcomeParameters.last?["terms_state"], "accepted")
     }
 
     // MARK: - Surfaces

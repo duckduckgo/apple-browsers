@@ -231,7 +231,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.cleanup()
 
         XCTAssertEqual(pixelFiring.events, [
-            DuckAiInputOutcomeEvent(surface: .addressBar, isDisclaimerShown: false, termsState: .unknown, outcome: .abandoned)
+            DuckAiInputOutcomeEvent(surface: .addressBar, isTermsOfServiceDisclaimerShown: false, outcome: .abandoned)
         ])
     }
 
@@ -247,7 +247,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.cleanup()
 
         XCTAssertEqual(pixelFiring.events, [
-            DuckAiInputOutcomeEvent(surface: .addressBar, isDisclaimerShown: true, termsState: .notAccepted, outcome: .promptSubmitted(.enter))
+            DuckAiInputOutcomeEvent(surface: .addressBar, isTermsOfServiceDisclaimerShown: true, outcome: .promptSubmitted(.enter))
         ])
     }
 
@@ -262,7 +262,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.submit(sentWithAsk: true)
 
         XCTAssertEqual(pixelFiring.events.map(\.outcome), [.promptSubmitted(.button)])
-        XCTAssertEqual(pixelFiring.events.map(\.isDisclaimerShown), [true])
+        XCTAssertEqual(pixelFiring.events.map(\.isTermsOfServiceDisclaimerShown), [true])
     }
 
     /// Navigating away is not a prompt.
@@ -289,18 +289,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.cleanup()
 
         XCTAssertEqual(pixelFiring.events.map(\.outcome), [.voiceStarted])
-    }
-
-    func testWhenTheUserHasAcceptedThenTheTermsStateIsAccepted() {
-        let pixelFiring = RecordingInputOutcomePixelFiring()
-        let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
-        store.recordAcceptedInNativeInput()
-        let controller = makeTermsOfServiceController(store: store, inputOutcomePixelFiring: pixelFiring)
-
-        controller.onOmnibarActivated(shouldFetchSuggestions: false)
-        controller.cleanup()
-
-        XCTAssertEqual(pixelFiring.events.map(\.termsState), [.accepted])
     }
 
     private func makeTermsOfServiceController(store: DuckAiTermsOfServiceStore,

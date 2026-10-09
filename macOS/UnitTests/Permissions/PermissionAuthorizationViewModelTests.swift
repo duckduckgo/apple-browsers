@@ -246,26 +246,46 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
             appDidBecomeActive.send()
             await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .request }
 
+            // One click shows each device's macOS alert in turn.
+            viewModel.send(action: .requestSystemPermission)
             for permission in permissions {
-                viewModel.send(action: .requestSystemPermission)
                 XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
                 XCTAssertEqual(systemPermissionManager.authorizationRequestedFor.last, permission)
                 XCTAssertNil(result)
 
                 systemPermissionManager.authorizationStates[permission] = .authorized
                 respondToSystemPermissionRequest(with: .authorized)
-                await waitUntil { self.result != nil || viewModel.viewState.systemPermissionStep?.phase != .waiting }
-                if permission != permissions.last {
-                    XCTAssertNil(result)
-                    XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .request)
-                }
+                await waitUntil { self.result != nil || self.systemPermissionManager.authorizationRequestedFor.last != permission }
             }
 
+            XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, permissions)
             let output = try XCTUnwrap(try result?.get())
             XCTAssertTrue(output.granted)
             XCTAssertEqual(output.remember, true)
             XCTAssertEqual(finishCount, 1)
             withExtendedLifetime((query, viewModel)) {}
+        }
+    }
+
+    func testRequestStepNamesOnlyTheDevicesMacOSHasNotAskedAbout() {
+        let scenarios: [(states: [PermissionType: SystemPermissionAuthorizationState], message: String)] = [
+            ([.camera: .notDetermined, .microphone: .notDetermined], UserText.websitePermissionsPromptSystemCameraAndMicrophoneRequired),
+            ([.camera: .notDetermined, .microphone: .authorized], UserText.websitePermissionsPromptSystemCameraRequired),
+            ([.camera: .authorized, .microphone: .notDetermined], UserText.websitePermissionsPromptSystemMicrophoneRequired),
+        ]
+        for scenario in scenarios {
+            systemPermissionManager.authorizationStates = scenario.states
+            let query = makeQuery(permissions: [.camera, .microphone])
+            let viewModel = makeViewModel(query: query)
+
+            viewModel.send(action: .allowThisVisit)
+
+            XCTAssertEqual(viewModel.viewState.systemPermissionStep, .init(
+                phase: .request,
+                message: scenario.message,
+                buttonTitle: UserText.websitePermissionsPromptRequestSystemPermission
+            ))
+            withExtendedLifetime(query) {}
         }
     }
 
@@ -313,12 +333,11 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         // The refresh has already read the old camera state and is waiting for microphone status.
         systemPermissionManager.authorizationStates[.camera] = .authorized
         respondToSystemPermissionRequest(with: .authorized)
-        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .request }
+        await waitUntil { self.systemPermissionManager.authorizationRequestedFor == [.camera, .microphone] }
+
         systemPermissionManager.pendingAuthorizationStateCompletions[1](.notDetermined)
         await waitUntil { self.systemPermissionManager.authorizationStateResponseCount == 2 }
         await settle()
-
-        viewModel.send(action: .requestSystemPermission)
 
         XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.camera, .microphone])
         XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
@@ -456,6 +475,75 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         XCTAssertTrue(output.granted)
         XCTAssertEqual(output.remember, true)
         XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
+    func testWhenFirstMediaPermissionIsGrantedAfterTimeoutThenNextDeviceIsRequestedWithoutAnotherClick() async throws {
+        for permissions: [PermissionType] in [[.camera, .microphone], [.microphone, .camera]] {
+            for refreshFirst in [false, true] {
+                result = nil
+                finishCount = 0
+                scheduledWork = []
+                systemPermissionManager = SystemPermissionManagerMock()
+                systemPermissionManager.authorizationStates = [.camera: .notDetermined, .microphone: .notDetermined]
+                systemPermissionManager.defersAuthorizationResponse = true
+                let query = makeQuery(permissions: permissions)
+                let viewModel = makeViewModel(query: query)
+                viewModel.send(action: .allowThisVisit)
+                viewModel.send(action: .requestSystemPermission)
+                runScheduledWork()
+
+                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+                systemPermissionManager.authorizationStates[permissions[0]] = .authorized
+                if refreshFirst {
+                    appDidBecomeActive.send()
+                    await waitUntil { self.systemPermissionManager.authorizationRequestedFor == permissions }
+                }
+                systemPermissionManager.pendingAuthorizationCompletions[0](.authorized)
+                await waitUntil { self.systemPermissionManager.authorizationRequestedFor == permissions }
+                await settle()
+
+                XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, permissions)
+                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
+                XCTAssertNil(result)
+
+                systemPermissionManager.authorizationStates[permissions[1]] = .authorized
+                respondToSystemPermissionRequest(with: .authorized)
+                await waitUntil { self.result != nil }
+
+                let output = try XCTUnwrap(try result?.get())
+                XCTAssertTrue(output.granted)
+                XCTAssertEqual(output.remember, false)
+                XCTAssertEqual(finishCount, 1)
+                withExtendedLifetime((viewModel, query)) {}
+            }
+        }
+    }
+
+    func testWhenFirstMediaPermissionIsDeniedAfterTimeoutThenNextDeviceWaitsForAnotherClick() async {
+        systemPermissionManager.authorizationStates = [.camera: .notDetermined, .microphone: .notDetermined]
+        systemPermissionManager.defersAuthorizationResponse = true
+        let query = makeQuery(permissions: [.camera, .microphone])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .allowThisVisit)
+        viewModel.send(action: .requestSystemPermission)
+        runScheduledWork()
+
+        systemPermissionManager.authorizationStates[.camera] = .denied
+        respondToSystemPermissionRequest(with: .denied)
+        await settle()
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+        XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.camera])
+
+        systemPermissionManager.authorizationStates[.camera] = .authorized
+        appDidBecomeActive.send()
+        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .request }
+
+        XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.camera])
+        XCTAssertNil(result)
+        viewModel.send(action: .requestSystemPermission)
+        XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.camera, .microphone])
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
         withExtendedLifetime((viewModel, query)) {}
     }
 

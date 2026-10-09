@@ -70,6 +70,8 @@ public struct DNSBlockDetector: Sendable {
 private extension DNSBlockDetector {
 
     func resolution(of addresses: [any IPAddress]) -> DNSResolution {
+        let addresses = addresses.map(unwrappingIPv4Mapped)
+
         if addresses.isEmpty {
             return .unresolved
         }
@@ -132,6 +134,15 @@ private extension DNSBlockDetector {
         }
     }
 
+    /// `::ffff:a.b.c.d` as the IPv4 it embeds, so every check sees plain IPv4.
+    func unwrappingIPv4Mapped(_ address: any IPAddress) -> any IPAddress {
+        guard let ipv6 = address as? IPv6Address, ipv6.isIPv4Mapped, let ipv4 = ipv6.asIPv4 else {
+            return address
+        }
+
+        return ipv4
+    }
+
     /// Unspecified, loopback and discard addresses, as DNS blockers answer.
     func isUnroutable(_ address: any IPAddress) -> Bool {
         switch address {
@@ -150,12 +161,8 @@ private extension DNSBlockDetector {
         return firstByte == 0 || firstByte == 127
     }
 
-    /// `::`, `::1`, `100::/64` (discard), and unroutable IPv4-mapped addresses, such as `::ffff:0.0.0.0`.
+    /// `::`, `::1` and `100::/64` (discard).
     func isUnroutable(_ address: IPv6Address) -> Bool {
-        if address.isIPv4Mapped, let ipv4 = address.asIPv4 {
-            return isUnroutable(ipv4)
-        }
-
         let isDiscard = address.rawValue.starts(with: [0x01, 0, 0, 0, 0, 0, 0, 0])
         return address == .any || address == .loopback || isDiscard
     }

@@ -55,9 +55,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
-    case tabTerminationTelemetry
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
     case tabTerminationErrorPage
 

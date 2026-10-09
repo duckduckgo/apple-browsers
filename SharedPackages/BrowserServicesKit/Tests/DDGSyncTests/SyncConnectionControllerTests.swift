@@ -66,6 +66,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
     var shouldContinueServerSyncOperation = true
     var shouldAllowPairingV2PeerToJoin = true
+    var allowPairingV2PeerToJoinHandler: (() async -> Bool)?
+    var dismissPairingV2ConfirmationCalled = { }
     var shouldJoinPairingV2Peer = true
     var willPerformServerSyncOperationCallCount = 0
 
@@ -93,7 +95,14 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     }
 
     func controllerShouldAllowPairingV2PeerToJoin(peerName _: String?, peerKind _: PairingV2DeviceKind) async -> Bool {
-        shouldAllowPairingV2PeerToJoin
+        if let allowPairingV2PeerToJoinHandler {
+            return await allowPairingV2PeerToJoinHandler()
+        }
+        return shouldAllowPairingV2PeerToJoin
+    }
+
+    func controllerDismissPairingV2Confirmation() async {
+        dismissPairingV2ConfirmationCalled()
     }
 
     func controllerShouldJoinPairingV2Peer(peerName _: String?, peerKind _: PairingV2DeviceKind) async -> Bool {
@@ -512,6 +521,91 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_startExchangeMode_whenPeerCancelsPendingConfirmation_notifiesCancellationBeforeRelayCleanupFinishes() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canUseExchangeV2Point1 = { true }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        let confirmationPresented = expectation(description: "confirmation presented")
+        let cancellationReported = expectation(description: "peer cancellation reported")
+        let byeStarted = expectation(description: "teardown bye started")
+        let allowByeToFinish = expectation(description: "allow teardown bye to finish")
+        let channelClosed = expectation(description: "local channel closed after bye")
+        messageExchanger.sendHandler = { messages, _ in
+            let crypto = PairingV2MessageCrypto()
+            for message in messages {
+                if case .bye(let bye) = try crypto.decrypt(message, privateKey: peerKeyPair.privateKey) {
+                    XCTAssertEqual(bye.reason, .done)
+                    byeStarted.fulfill()
+                    await self.fulfillment(of: [allowByeToFinish], timeout: 10)
+                }
+            }
+        }
+        messageExchanger.closeChannelHandler = { _ in
+            channelClosed.fulfill()
+        }
+        var confirmationContinuation: CheckedContinuation<Bool, Never>?
+        defer { confirmationContinuation?.resume(returning: false) }
+        var events: [String] = []
+        delegate.allowPairingV2PeerToJoinHandler = {
+            await withCheckedContinuation { continuation in
+                confirmationContinuation = continuation
+                events.append("presented")
+                confirmationPresented.fulfill()
+            }
+        }
+        delegate.dismissPairingV2ConfirmationCalled = {
+            events.append("dismissed")
+            confirmationContinuation?.resume(returning: false)
+            confirmationContinuation = nil
+        }
+        delegate.didBeginTransmittingRecoveryKeyCalled = {
+            events.append("began transmitting")
+        }
+        delegate.didErrorCalled = {
+            events.append("cancelled")
+            cancellationReported.fulfill()
+        }
+
+        var payload: PairingV2QRCodePayload?
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard let payload else { return [] }
+            if sequence == 0 {
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: "2.1")),
+                    .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                               name: "Peer", kind: .ddg))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair)
+            }
+            await self.fulfillment(of: [confirmationPresented], timeout: 5)
+            return try Self.encryptedPresenterPeerMessages(messages: [
+                .bye(.init(reason: .cancelled))
+            ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+        }
+
+        let pairingInfo = try await controller.startExchangeMode()
+        payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
+        await fulfillment(of: [byeStarted, cancellationReported], timeout: 5)
+
+        XCTAssertEqual(events, ["presented", "dismissed", "cancelled"])
+        XCTAssertEqual(delegate.didErrorErrors?.error, .syncCancelledFromOtherDevice)
+        XCTAssertNil(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange)
+        XCTAssertTrue(messageExchanger.closeChannelCalls.isEmpty)
+        allowByeToFinish.fulfill()
+        await fulfillment(of: [channelClosed], timeout: 5)
+        XCTAssertEqual(messageExchanger.closeChannelCalls, [try XCTUnwrap(payload).channelId])
+        let sentMessages = try messageExchanger.sendCalls.flatMap(\.messages).map {
+            try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey)
+        }
+        XCTAssertFalse(sentMessages.contains {
+            if case .recoveryCodeResponse = $0 { return true }
+            return false
+        })
+    }
+
+    @MainActor
     func test_startExchangeMode_whenV21PresenterCompletes_doesNotWaitForDeviceListChange() async throws {
         dependencies.isPairingV2CodeEnabled = { true }
         dependencies.canUseExchangeV2Point1 = { true }
@@ -635,6 +729,10 @@ final class SyncConnectionControllerTests: XCTestCase {
         delegate.didCompletePairingWithAlreadyConnectedAccountCalled = {
             didCompleteAlreadyConnected.fulfill()
         }
+        var didBeginTransmittingRecoveryKey = false
+        delegate.didBeginTransmittingRecoveryKeyCalled = {
+            didBeginTransmittingRecoveryKey = true
+        }
         let didCloseChannel = expectation(description: "did close channel")
         messageExchanger.closeChannelHandler = { _ in
             didCloseChannel.fulfill()
@@ -649,6 +747,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             return
         }
         XCTAssertNil(delegate.didErrorErrors)
+        XCTAssertFalse(didBeginTransmittingRecoveryKey)
         await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
     }
@@ -1112,6 +1211,63 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_syncCodeEntered_whenPairingV2PollingFails_sendsErrorBye() async throws {
+        dependencies.canUseExchangeV2Point1 = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let errorByeSent = expectation(description: "error bye sent")
+        messageExchanger.sendHandler = { messages, _ in
+            let decryptedMessages = try messages.compactMap {
+                try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey)
+            }
+            guard let bye = decryptedMessages.first(where: { message in
+                if case .bye = message { return true }
+                return false
+            }) else { return }
+            XCTAssertEqual(bye, .bye(.init(reason: .error)))
+            errorByeSent.fulfill()
+        }
+        messageExchanger.fetchMessagesError = PairingV2RelayRequestError(kind: .httpError,
+                                                                         underlyingError: SyncError.unexpectedStatusCode(500))
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let payload = PairingV2QRCodePayload(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com")))
+
+        _ = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        await fulfillment(of: [errorByeSent], timeout: 5)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .pairingV2OperationFailure(.init(stage: .scannerPollOwnChannel, kind: .httpError)))
+    }
+
+    @MainActor
+    func test_syncCodeEntered_whenPairingV2PollingTimesOut_sendsErrorBye() async throws {
+        resetControllerUnderTest(pairingV2PollingTimeout: 0)
+        dependencies.canUseExchangeV2Point1 = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let errorByeSent = expectation(description: "error bye sent")
+        messageExchanger.sendHandler = { messages, _ in
+            let decryptedMessages = try messages.compactMap {
+                try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey)
+            }
+            guard let bye = decryptedMessages.first(where: { message in
+                if case .bye = message { return true }
+                return false
+            }) else { return }
+            XCTAssertEqual(bye, .bye(.init(reason: .error)))
+            errorByeSent.fulfill()
+        }
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let payload = PairingV2QRCodePayload(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com")))
+
+        _ = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        await fulfillment(of: [errorByeSent], timeout: 5)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .pairingV2SessionTimedOut(timeoutStage: .waitingForPeerStatus))
+    }
+
+    @MainActor
     func test_syncCodeEntered_withV2UrlWhenPresenterIsActive_cancelsPresenterCoordinator() async throws {
         dependencies.isPairingV2CodeEnabled = { true }
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -1308,6 +1464,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             (.invalidCredentials, .invalidCredentials, "invalid credentials"),
             (.loginFailed, .transportFailure, "login failure"),
             (.upgradeFailed, .accountUpgradeFailed, "account upgrade failure"),
+            (.peerCancelled, .syncCancelledFromOtherDevice, "peer cancellation"),
             (.nativeCredentialAlreadyPresent, .thirdPartyAccountAlreadyUpgraded, "native credential already present"),
             (.recoveryCodeDenied, .syncCancelledFromOtherDevice, "recovery code denied"),
             (.recoveryCodeUnavailable, .peerRecoveryCodeUnavailable, "peer recovery code unavailable"),
@@ -2156,6 +2313,7 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     @MainActor
     private func resetControllerUnderTest(
+        pairingV2PollingTimeout: TimeInterval? = nil,
         makePairingV2KeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
         createPairingV2QRCodeURL: @escaping (PairingV2QRCodePayload) throws -> URL = {
             try $0.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
@@ -2170,7 +2328,7 @@ final class SyncConnectionControllerTests: XCTestCase {
                                               delegate: delegate,
                                               syncService: syncService,
                                               dependencies: dependencies,
-                                              pairingV2PollingTimeout: Self.pairingV2PollingTimeout,
+                                              pairingV2PollingTimeout: pairingV2PollingTimeout ?? Self.pairingV2PollingTimeout,
                                               pairingV2PollIntervalNanoseconds: Self.pairingV2PollIntervalNanoseconds,
                                               makePairingV2KeyPair: makePairingV2KeyPair,
                                               createPairingV2QRCodeURL: createPairingV2QRCodeURL)

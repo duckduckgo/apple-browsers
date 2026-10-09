@@ -2546,7 +2546,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Hide ‘Return to’ Shortcut";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Return to Last Used Tab";
+"escapeHatch.menu.lastUsedTab" = "Last Used Tab";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "More options";

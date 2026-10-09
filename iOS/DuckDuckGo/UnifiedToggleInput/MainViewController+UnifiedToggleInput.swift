@@ -1346,7 +1346,13 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         return .intercept
     }
 
-    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?,
+                                     isRequestValid: @escaping () -> Bool,
+                                     onFocus: ((Bool) -> Void)?) -> UnifiedToggleInputActivationDecision {
+        guard isRequestValid() else {
+            onFocus?(false)
+            return .intercept
+        }
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
@@ -1367,7 +1373,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         resetSERPFlowForQuery(currentText)
         coordinator.activateFromOmnibar(prefilledText: currentText,
                                         inputMode: inputMode,
-                                        cardPosition: position)
+                                        cardPosition: position,
+                                        isFocusRequestValid: isRequestValid,
+                                        onFocus: onFocus)
         return .intercept
     }
 

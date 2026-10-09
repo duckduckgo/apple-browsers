@@ -89,7 +89,7 @@ extension MainViewController {
 
         // Not a burn arrival: a burn reports itself through the attach it causes. Input focus, not the
         // observed keyboard, which a hardware keyboard hides and which can lag the background cycle.
-        startNewTabPageSessionInstrumentation(trigger: .appOpen, willBeginEditing: isInputFocused)
+        startNewTabPageSessionInstrumentation(trigger: .appOpen)
     }
 
     /// Records a New Tab Page action, but only while the New Tab Page is the surface on screen.

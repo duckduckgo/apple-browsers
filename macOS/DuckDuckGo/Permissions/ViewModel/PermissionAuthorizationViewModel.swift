@@ -112,7 +112,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
                 }
                 viewState.content = .decision(decision)
             }
-            if query?.isSystemPermissionDisabled == true, pendingDecision == nil {
+            if query?.opensOnSystemPermissionStep == true, pendingDecision == nil {
                 isResumingStoredDecision = true
                 allow(.alwaysAllow)
             }

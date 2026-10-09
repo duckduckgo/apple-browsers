@@ -141,7 +141,7 @@ final class PermissionAuthorizationViewController: NSViewController {
             domain: query.domain,
             permissionType: permissionType,
             showsTwoStepUI: showsTwoStepUI,
-            isSystemPermissionDisabled: query.isSystemPermissionDisabled,
+            isSystemPermissionDisabled: query.opensOnSystemPermissionStep,
             onDeny: { [weak self] in
                 self?.handleDeny()
             },

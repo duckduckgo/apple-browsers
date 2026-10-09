@@ -1703,7 +1703,7 @@ final class PermissionModelTests: XCTestCase {
 
                     let query = try XCTUnwrap(model.authorizationQuery)
                     XCTAssertEqual(query.permissions, requestedPermissions)
-                    XCTAssertEqual(query.isSystemPermissionDisabled, allowedPermissions.count == requestedPermissions.count)
+                    XCTAssertEqual(query.opensOnSystemPermissionStep, allowedPermissions.count == requestedPermissions.count)
                     XCTAssertNil(granted)
                     query.wasDismissed = true
                     query.cancel()
@@ -1860,28 +1860,30 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(receivedPermissionType, .geolocation)
     }
 
-    func testWhenNewPromptsEnabledAndSystemPermissionDeniedThenStoredAllowWaitsInPromptInsteadOfInfoPopover() throws {
+    func testWhenNewPromptsEnabledAndSystemPermissionNotGrantedThenStoredAllowWaitsOnSystemPermissionStep() throws {
         featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
-        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.denied)
         permissionManagerMock.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
         var blockedBySystem = false
         let c = model.permissionBlockedBySystem.sink { _ in blockedBySystem = true }
-        var decisions: [Bool] = []
+        for state: SystemPermissionAuthorizationState in [.denied, .notDetermined] {
+            systemPermissionManagerMock.notificationAuthorizationStateSubject.send(state)
+            var decisions: [Bool] = []
 
-        model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
-            decisions.append(granted)
+            model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
+                decisions.append(granted)
+            }
+
+            let query = try XCTUnwrap(model.authorizationQuery)
+            XCTAssertTrue(query.opensOnSystemPermissionStep)
+            XCTAssertFalse(blockedBySystem)
+            XCTAssertEqual(decisions, [])
+
+            // Granting after macOS allows notifications keeps Always allow and grants the request
+            query.handleDecision(grant: true, remember: true)
+
+            XCTAssertEqual(decisions, [true])
+            XCTAssertEqual(permissionManagerMock.permission(forDomain: "example.com", permissionType: .notification), .allow)
         }
-
-        let query = try XCTUnwrap(model.authorizationQuery)
-        XCTAssertTrue(query.isSystemPermissionDisabled)
-        XCTAssertFalse(blockedBySystem)
-        XCTAssertEqual(decisions, [])
-
-        // Granting after macOS allows notifications keeps Always allow and grants the request
-        query.handleDecision(grant: true, remember: true)
-
-        XCTAssertEqual(decisions, [true])
-        XCTAssertEqual(permissionManagerMock.permission(forDomain: "example.com", permissionType: .notification), .allow)
         withExtendedLifetime(c) {}
     }
 

@@ -230,7 +230,7 @@ final class PermissionModel {
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
-                                    isSystemPermissionDisabled: Bool = false,
+                                    opensOnSystemPermissionStep: Bool = false,
                                     decisionHandler: @escaping (Bool) -> Void) {
 
         var queryPtr: UnsafeMutableRawPointer?
@@ -283,7 +283,7 @@ final class PermissionModel {
 
         // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
-        query.isSystemPermissionDisabled = isSystemPermissionDisabled
+        query.opensOnSystemPermissionStep = opensOnSystemPermissionStep
         query.parameters.saveAlwaysAllow = { [weak self] in
             self?.saveAlwaysAllow(for: permissions, domain: domain)
         }
@@ -535,8 +535,8 @@ final class PermissionModel {
     ///
     /// Then for the whole request: any deny denies it all, all allow grants it, anything else asks the user.
     /// An allow still asks when macOS access isn't granted (see `isSystemPermissionDisabled`), and with website prompts
-    /// also when macOS hasn't asked yet: the website prompt has to come before the macOS one, and shows its
-    /// System Settings step for denied access.
+    /// also when macOS hasn't asked yet: the website prompt has to come before the macOS one, and opens on its
+    /// System Settings step.
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
         var shouldAsk = false
         for permission in permissions {
@@ -578,7 +578,7 @@ final class PermissionModel {
                 } else if featureFlagger.isFeatureOn(.websitePermissionsPrompts),
                           permission.requiresSystemPermission,
                           systemPermissionManager.cachedAuthorizationState(for: permission) == .notDetermined {
-                    // A macOS permission reset must return to the website choices before requesting system access.
+                    // macOS hasn't asked yet: the prompt opens on its System Settings step to request access.
                     shouldAsk = true
                 }
             case .ask:
@@ -612,9 +612,11 @@ final class PermissionModel {
     ///    the permissions become `.requested` and the address bar shows the prompt. `decisionHandler` is called
     ///    when the user answers, with `false` if the prompt is dismissed or the tab navigates away first.
     ///
-    /// When the website is allowed but macOS access is denied in System Settings:
-    /// - with website prompts, the prompt opens on its System Settings step and grants the request once macOS does;
-    /// - without them, the request is denied and `permissionBlockedBySystem` shows an informational popover.
+    /// When the website is allowed but macOS access isn't granted:
+    /// - with website prompts, the prompt opens on its System Settings step, whether macOS hasn't asked yet or
+    ///   access is denied, and grants the request once macOS does;
+    /// - without them, a denial in System Settings denies the request and `permissionBlockedBySystem` shows
+    ///   an informational popover.
     ///
     /// All permissions of one request get one decision, e.g. camera + microphone for a video call.
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (Bool) -> Void) {
@@ -640,16 +642,15 @@ final class PermissionModel {
         }
         switch shouldGrant {
         case .none:
-            // Allowed for the website, but denied in macOS System Settings?
-            let isSystemDisabled: Bool = {
-                permissions.contains(where: isSystemPermissionDisabled)
-                    && permissions.allSatisfy { self.permissionManager.permission(forDomain: domain, permissionType: $0) == .allow }
-            }()
+            // Allowed for the website, so only macOS access is missing?
+            let isAlwaysAllowed = permissions.allSatisfy { self.permissionManager.permission(forDomain: domain, permissionType: $0) == .allow }
+            let isSystemDisabled = isAlwaysAllowed && permissions.contains(where: isSystemPermissionDisabled)
 
-            if isSystemDisabled, featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
-                // The prompt opens on its System Settings step and grants the request once macOS does
+            if isAlwaysAllowed, featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+                // The prompt skips the website choices and opens on its System Settings step, which asks macOS
+                // or points to System Settings, and grants the request once macOS does
                 self.queryAuthorization(for: permissions, domain: domain, url: url,
-                                        isSystemPermissionDisabled: true,
+                                        opensOnSystemPermissionStep: true,
                                         decisionHandler: wrappedDecisionHandler)
             } else if isSystemDisabled {
                 // Deny - system permission is disabled, can't deliver anyway
@@ -660,7 +661,7 @@ final class PermissionModel {
                 // Ask the user; the answer replaces a denial that came from the "Block" default
                 deniedByCategoryDefault.subtract(permissions)
                 self.queryAuthorization(for: permissions, domain: domain, url: url,
-                                        isSystemPermissionDisabled: false,
+                                        opensOnSystemPermissionStep: false,
                                         decisionHandler: wrappedDecisionHandler)
             }
         case .some(true):

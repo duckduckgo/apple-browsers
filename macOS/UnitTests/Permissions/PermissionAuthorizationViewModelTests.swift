@@ -175,7 +175,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
 
                 viewModel.send(action: .onAppear)
 
-                XCTAssertFalse(query.isSystemPermissionDisabled)
+                XCTAssertFalse(query.opensOnSystemPermissionStep)
                 XCTAssertNil(viewModel.viewState.systemPermissionStep)
                 XCTAssertEqual(viewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
                 XCTAssertTrue(decisions.isEmpty)
@@ -515,7 +515,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
     func testWhenSiteIsAlwaysAllowedAndSystemPermissionIsGrantedOnReturnThenRequestIsGrantedWithoutDecisionPixel() async throws {
         systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
         let query = makeQuery(permissions: [.notification])
-        query.isSystemPermissionDisabled = true
+        query.opensOnSystemPermissionStep = true
         let viewModel = makeViewModel(query: query)
         viewModel.send(action: .onAppear)
 

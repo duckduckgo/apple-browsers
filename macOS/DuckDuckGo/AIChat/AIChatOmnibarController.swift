@@ -153,6 +153,8 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    var onPromptSubmitted: (() -> Void)?
+
     /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
     /// submit and teardown — two of the events — are this type's to report.
     private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
@@ -173,9 +175,18 @@ final class AIChatOmnibarController {
     @Published var isInputBlockedByUsageLimit = false
 
     let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring?
+    private(set) lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
+        pixelFiring: inputOutcomePixelFiring ?? DuckAiInputOutcomePixelAdapter()
+    )
 
     /// Set by the container VC from the card it renders: an Ask click accepts the terms only while it's on screen.
-    var isTermsOfServiceDisclaimerShown = false
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard isTermsOfServiceDisclaimerShown, !oldValue else { return }
+            inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible()
+        }
+    }
 
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
@@ -355,7 +366,8 @@ final class AIChatOmnibarController {
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -375,6 +387,7 @@ final class AIChatOmnibarController {
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.usageLimitsStore = usageLimitsStore
         self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.inputOutcomePixelFiring = inputOutcomePixelFiring
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -420,6 +433,7 @@ final class AIChatOmnibarController {
     /// otherwise opens a new selected Duck.ai tab in `mode: voice-mode`.
     func openNewVoiceChat() {
         pixelHandler.fire(.voiceChatOpened)
+        inputOutcomeMeasurement.record(.voiceStarted)
 
         guard !surface.routesSubmissionThroughHost else {
             delegate?.aiChatOmnibarControllerRequestsVoiceSession(self)
@@ -490,6 +504,7 @@ final class AIChatOmnibarController {
 
         fetchModels()
         refreshUsageWarnings()
+        startInputOutcomeMeasurement()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -500,6 +515,12 @@ final class AIChatOmnibarController {
         if shouldFetchSuggestions {
             fetchSuggestionsIfNeeded(query: currentText)
         }
+    }
+
+    /// After the refresh, which applies the card synchronously, so whether it shows the disclaimer is settled.
+    private func startInputOutcomeMeasurement() {
+        inputOutcomeMeasurement.inputOpened(surface: surface.inputOutcomePixelSurface,
+                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     private func refreshUsageWarnings() {
@@ -1205,6 +1226,7 @@ final class AIChatOmnibarController {
         hasBeenActivated = false
         // Whatever the user was going to do about the card, they have now done it.
         usageWarningMeasurement.inputSessionEnded()
+        inputOutcomeMeasurement.inputClosed()
         usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -1395,9 +1417,11 @@ final class AIChatOmnibarController {
         firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
+        inputOutcomeMeasurement.record(.promptSubmitted(sentWithAsk ? .button : .enter))
         if sentWithAsk {
             termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
         }
+        onPromptSubmitted?()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and

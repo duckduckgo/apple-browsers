@@ -87,7 +87,7 @@ extension Preferences {
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(Color(.textSecondary))
                 }
 
                 if !NSApp.isSandboxed {
@@ -198,6 +198,9 @@ extension Preferences {
             }
             .onReceive(bitwardenStatusPublisher) { status in
                 bitwardenStatus = status
+            }
+            .onAppear {
+                model.viewDidAppear()
             }
         }
 

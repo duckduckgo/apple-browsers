@@ -43,6 +43,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
     var mockSubscriptionManager: SubscriptionManagerMock!
+    var newAIChatExperimentPixelsFiredCount = 0
 
     override func setUpWithError() throws {
         PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
@@ -59,6 +60,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, activeOffers: []))
+        newAIChatExperimentPixelsFiredCount = 0
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -71,7 +73,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
-            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature
+            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
+            fireNewAIChatExperimentPixels: { self.newAIChatExperimentPixelsFiredCount += 1 }
         )
     }
 
@@ -766,6 +769,32 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockProductSurfaceTelemetry.duckAIUsedCallCount, 1)
     }
 
+    // MARK: - duck_ai_new_chat experiment metric
+
+    func testWhenFirstPromptSubmitted_ThenNewAIChatExperimentPixelsAreFired() throws {
+        // When
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMetric: AIChatMetric(metricName: .userDidSubmitFirstPrompt))
+
+        // Then
+        XCTAssertEqual(newAIChatExperimentPixelsFiredCount, 1)
+    }
+
+    func testWhenOngoingPromptSubmitted_ThenNewAIChatExperimentPixelsAreNotFired() throws {
+        // When
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMetric: AIChatMetric(metricName: .userDidSubmitPrompt))
+
+        // Then
+        XCTAssertEqual(newAIChatExperimentPixelsFiredCount, 0)
+    }
+
+    func testWhenNewChatCreatedWithoutPrompt_ThenNewAIChatExperimentPixelsAreNotFired() throws {
+        // When
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMetric: AIChatMetric(metricName: .userDidCreateNewChat))
+
+        // Then
+        XCTAssertEqual(newAIChatExperimentPixelsFiredCount, 0)
+    }
+
     // MARK: - Free Trial Conversion Tracking
 
     func testWhenPlusModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsCalled() throws {
@@ -976,6 +1005,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool? { nil }
     func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
@@ -992,6 +1022,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

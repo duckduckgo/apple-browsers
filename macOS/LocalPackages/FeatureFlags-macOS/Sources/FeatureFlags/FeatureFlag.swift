@@ -265,9 +265,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
     case addressBarIMEConfirmFix
 
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1217589459874947
-    case dataImportDataDirectoryAccess
-
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
@@ -338,11 +335,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
-
-    /// Enables advanced card ordering for the Next Steps List widget
-    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
-    case nextStepsListAdvancedCardOrdering
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
@@ -469,6 +461,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
     case promoQueueVPNUpsellPromo
 
+    /// Enables the "Sync your bookmarks" promo (Bookmarks panel and Manage Bookmarks) in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218734?focus=true
+    case promoQueueSyncSetupBookmarksPromo
+
+    /// Enables the "Sync your autofill data" promo (Passwords & Autofill panel and settings) in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
+    case promoQueueSyncSetupAutofillPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -507,6 +507,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
+
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats under its chat box.
+    case aiChatHomepageChatSuggestions
 
     /// Gates the macOS "Customize Responses" native UI (omnibar + New Tab Page entry points).
     /// Internal-only while in development.
@@ -550,6 +553,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
+    case syncImprovedPairingFlow
+
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
     case simplifiedSyncSetupV2
@@ -566,6 +572,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates reading the Duck.ai usage-limit snapshot from native storage on Duck.ai input activation,
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
+
+    /// Promotes the Duck.ai launcher in the New Tab Page AI-mode drawer, then hints at its shortcut.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
+    case aiChatLauncherPromo
+
+    /// Shows the Duck.ai Terms of Service disclaimer under the native Duck.ai input, where clicking Ask accepts them.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
+    case aiChatNativeTermsOfService
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
@@ -807,8 +821,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
-        case .dataImportDataDirectoryAccess:
-            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:
@@ -851,8 +863,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .nextStepsListAdvancedCardOrdering:
-            Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
@@ -925,6 +935,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
         case .promoQueueVPNUpsellPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
+        case .promoQueueSyncSetupBookmarksPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
+        case .promoQueueSyncSetupAutofillPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -951,6 +965,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage), category: .duckAI)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
+        case .aiChatHomepageChatSuggestions:
+            Config(source: .remoteReleasable(AIChatSubfeature.homepageChatSuggestions), category: .duckAI)
         case .aiChatCustomizeResponses:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:
@@ -978,12 +994,18 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatLauncherPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.launcherPromo), category: .duckAI)
+        case .aiChatNativeTermsOfService:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

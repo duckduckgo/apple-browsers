@@ -51,7 +51,7 @@ struct SyncAnotherDevicePromptView: View {
 
                 VStack(spacing: 8) {
                     Button {
-                        model.syncAnotherDeviceFromConnectingSheet()
+                        Task { await model.syncAnotherDeviceFromConnectingSheet() }
                     } label: {
                         HStack(spacing: 8) {
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
@@ -59,10 +59,10 @@ struct SyncAnotherDevicePromptView: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(model.isConnectingThisDeviceOnly)
+                    .disabled(model.isAnotherDevicePromptInteractionDisabled)
 
                     Button {
-                        model.syncThisDeviceOnlyFromConnectingSheet()
+                        Task { await model.syncThisDeviceOnlyFromConnectingSheet() }
                     } label: {
                         HStack(spacing: 8) {
                             if model.isConnectingThisDeviceOnly {
@@ -72,15 +72,18 @@ struct SyncAnotherDevicePromptView: View {
                         }
                     }
                     .buttonStyle(SecondaryFillButtonStyle())
-                    .disabled(model.isConnectingThisDeviceOnly)
+                    .disabled(model.isAnotherDevicePromptInteractionDisabled)
                 }
                 .padding(.bottom, 20)
             }
             .padding(.horizontal, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 model.anotherDevicePromptAppeared()
             }
+            .syncPasscodeRequiredAlert(isPresented: $model.shouldShowPasscodeRequiredAlert)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -89,7 +92,7 @@ struct SyncAnotherDevicePromptView: View {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     }
                     .accessibilityLabel(UserText.simplifiedScanCloseButton)
-                    .disabled(model.isConnectingThisDeviceOnly)
+                    .disabled(model.isAnotherDevicePromptInteractionDisabled)
                 }
             }
         }

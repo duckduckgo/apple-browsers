@@ -47,7 +47,7 @@ extension Tab {
         case identityTheftRestoration(URL)
         case releaseNotes
         case webExtensionUrl(URL)
-        case aiChat(URL)
+        case aiChat(URL, source: URLSource = .ui)
     }
     typealias TabContent = Tab.Content
 
@@ -136,6 +136,19 @@ extension TabContent {
             }
         }
 
+        /// Duck.ai keeps only the sources its direct-navigation pixel reads, so every other load of it
+        /// (restoration, reload, web view updates) still behaves as `.ui` did. It never downloads the page.
+        fileprivate var aiChatSource: Self {
+            switch self {
+            case .userEntered(let value, downloadRequested: _):
+                .userEntered(value)
+            case .bookmark, .historyEntry, .appOpenUrl, .link:
+                self
+            case .pendingStateRestoration, .loadedByStateRestoration, .ui, .reload, .switchToOpenTab, .webViewUpdated:
+                .ui
+            }
+        }
+
     }
 }
 extension TabContent {
@@ -170,7 +183,7 @@ extension TabContent {
                 return .webExtensionUrl(url)
             }
             if url.isDuckAIURL {
-                return .aiChat(url)
+                return .aiChat(url, source: source.aiChatSource)
             }
 
             let subscriptionManager = Application.appDelegate.subscriptionManager
@@ -298,7 +311,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url):
+        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url, source: _):
             return url
         case .newtab:
             return .newtab
@@ -325,12 +338,28 @@ extension TabContent {
 
     var source: URLSource {
         switch self {
-        case .url(_, _, source: let source):
+        case .url(_, _, source: let source), .aiChat(_, source: let source):
             return source
         case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .dataBrokerProtection,
-                .subscription, .identityTheftRestoration, .webExtensionUrl, .none, .aiChat:
+                .subscription, .identityTheftRestoration, .webExtensionUrl, .none:
             return .ui
         }
+    }
+
+    /// URLRequest.CachePolicy for loading this content. Duck.ai always loads as `.ui` does, so a
+    /// history-entry open doesn't prefer stale cached data.
+    var cachePolicy: URLRequest.CachePolicy {
+        if case .aiChat = self {
+            return URLSource.ui.cachePolicy
+        }
+        return source.cachePolicy
+    }
+
+    /// Duck.ai content without the source of the navigation that opened it, for copies that load it
+    /// again later and must not count as that navigation.
+    var resettingAIChatSource: Self {
+        guard case .aiChat(let url, source: _) = self else { return self }
+        return .aiChat(url)
     }
 
     var isExternalUrl: Bool {

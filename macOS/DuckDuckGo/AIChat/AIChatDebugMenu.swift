@@ -88,6 +88,20 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Terms of Service") {
+                NSMenuItem(title: "Reset Native Acceptance", action: #selector(resetNativeTermsOfServiceAcceptance))
+                    .targetting(self)
+                NSMenuItem(title: "Clear Web Acceptance (reload Duck.ai)", action: #selector(clearWebTermsOfServiceAcceptance))
+                    .targetting(self)
+            }
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             storageServerMenuItem
 
 #if DEBUG || REVIEW
@@ -142,6 +156,22 @@ final class AIChatDebugMenu: NSMenu {
             item.toolTip = seed.expectation
             menu.addItem(item)
         }
+    }
+
+    @objc private func resetLauncherPromo() {
+        DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    // MARK: - Terms of Service
+
+    /// While any chat exists, both acceptances come back on the next launch: delete all chats first.
+    @objc private func resetNativeTermsOfServiceAcceptance() {
+        DuckAiTermsOfServiceStore().resetForDebugging()
+    }
+
+    @MainActor
+    @objc private func clearWebTermsOfServiceAcceptance() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.deleteEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
     }
 
     // MARK: - Attachment privacy disclosure

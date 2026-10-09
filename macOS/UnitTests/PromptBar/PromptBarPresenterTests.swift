@@ -26,6 +26,8 @@ final class PromptBarPresenterTests: XCTestCase {
     private var content: MockPromptBarContent!
     private var presenter: PromptBarPresenter!
     private var windows: [StubPromptBarWindow] = []
+    private var dimWindows: [StubPromptBarWindow] = []
+    private var presentationEffectsEnabled = false
     private var firedPixels: [PromptBarPixel] = []
 
     override func setUp() {
@@ -39,6 +41,13 @@ final class PromptBarPresenterTests: XCTestCase {
                 self?.windows.append(window)
                 return window
             },
+            makeDimWindow: { [weak self] rect in
+                let window = StubPromptBarWindow(contentRect: rect)
+                self?.dimWindows.append(window)
+                return window
+            },
+            presentationEffectsEnabled: { [weak self] in self?.presentationEffectsEnabled ?? false },
+            animatesPresentationEffects: false,
             firePixel: { [weak self] pixel in
                 self?.firedPixels.append(pixel)
             }
@@ -47,6 +56,8 @@ final class PromptBarPresenterTests: XCTestCase {
 
     override func tearDown() {
         windows = []
+        dimWindows = []
+        presentationEffectsEnabled = false
         firedPixels = []
         presenter = nil
         content = nil
@@ -86,6 +97,20 @@ final class PromptBarPresenterTests: XCTestCase {
         XCTAssertEqual(content.resetCount, 0)
     }
 
+    func testWhenShownWithPresentationEffectsThenTheScreenIsDimmedBehindTheBar() {
+        presentationEffectsEnabled = true
+        presenter.show(source: .keyboardShortcut)
+
+        XCTAssertEqual(dimWindows.count, 1)
+        XCTAssertTrue(dimWindows.first?.isVisible == true)
+    }
+
+    func testWhenShownWithoutPresentationEffectsThenTheScreenIsNotDimmed() {
+        presenter.show(source: .keyboardShortcut)
+
+        XCTAssertTrue(dimWindows.isEmpty)
+    }
+
     func testWhenShownAgainAfterDismissalThenItReusesTheWindowAndResetsAgainOnDismissal() {
         presenter.show(source: .keyboardShortcut)
         presenter.dismiss(reason: .escape)
@@ -104,8 +129,9 @@ final class PromptBarPresenterTests: XCTestCase {
         presenter.dismiss(reason: .submission)
         presenter.show(source: .menuBarIcon)
 
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.shownFromShortcut.name,
-                                                 PromptBarPixel.shownFromMenuBarIcon.name])
+        let firstUse = PromptBarPixel.firstUse(source: .keyboardShortcut, promoOutcome: nil).name
+        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.shownFromShortcut.name, firstUse,
+                                                 PromptBarPixel.shownFromMenuBarIcon.name, firstUse])
     }
 
     func testWhenDismissedAfterSubmittingThenNoCancellationIsReported() {
@@ -192,6 +218,10 @@ private final class StubPromptBarWindow: PromptBarWindow {
     override func orderOut(_ sender: Any?) {
         stubbedIsVisible = false
     }
+
+    override func order(_ place: NSWindow.OrderingMode, relativeTo otherWin: Int) {
+        stubbedIsVisible = place != .out
+    }
 }
 
 private struct StubScreenProvider: PromptBarScreenProviding {
@@ -222,6 +252,8 @@ private final class MockPromptBarContent: PromptBarContentHosting {
     func focusPromptEditor() {
         focusCount += 1
     }
+
+    func showLauncherIntroduction(shortcut: String) {}
 
     func resetAfterDismissal() {
         resetCount += 1

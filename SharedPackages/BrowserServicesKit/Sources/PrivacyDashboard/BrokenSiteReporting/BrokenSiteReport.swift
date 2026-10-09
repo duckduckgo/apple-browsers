@@ -100,6 +100,9 @@ public struct BrokenSiteReport {
     let httpStatusCodes: [Int]?
     let openerContext: OpenerContext?
     let vpnOn: Bool
+    let networkSignals: NetworkSignals?
+    let dnsResolution: DNSResolution?
+    let memoryPressure: MemoryPressureLevel?
     let jsPerformance: [Double]?
     let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
@@ -162,7 +165,10 @@ public struct BrokenSiteReport {
         pageLoadTiming: WKPageLoadTiming?,
         breakageData: String? = nil,
         loadedWebExtensions: String? = nil,
-        adBlockingExtensionScriptletsVersion: String? = nil
+        adBlockingExtensionScriptletsVersion: String? = nil,
+        networkSignals: NetworkSignals? = nil,
+        dnsResolution: DNSResolution? = nil,
+        memoryPressure: MemoryPressureLevel? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -183,6 +189,9 @@ public struct BrokenSiteReport {
         self.httpStatusCodes = httpStatusCodes
         self.openerContext = openerContext
         self.vpnOn = vpnOn
+        self.networkSignals = networkSignals
+        self.dnsResolution = dnsResolution
+        self.memoryPressure = memoryPressure
         self.jsPerformance = jsPerformance
         self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
@@ -241,7 +250,10 @@ public struct BrokenSiteReport {
         pageLoadTiming: WKPageLoadTiming? = nil,
         breakageData: String? = nil,
         loadedWebExtensions: String? = nil,
-        adBlockingExtensionScriptletsVersion: String? = nil
+        adBlockingExtensionScriptletsVersion: String? = nil,
+        networkSignals: NetworkSignals? = nil,
+        dnsResolution: DNSResolution? = nil,
+        memoryPressure: MemoryPressureLevel? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -264,6 +276,9 @@ public struct BrokenSiteReport {
         self.httpStatusCodes = httpStatusCodes
         self.openerContext = openerContext
         self.vpnOn = vpnOn
+        self.networkSignals = networkSignals
+        self.dnsResolution = dnsResolution
+        self.memoryPressure = memoryPressure
         self.jsPerformance = jsPerformance
         self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount

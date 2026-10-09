@@ -303,7 +303,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             keyValueStore: UserDefaults.app,
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
-            featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
@@ -847,7 +846,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func invalidateCache(forController controller: TabViewController, reloadCurrent: Bool) {
+    func invalidateCache(forController controller: TabViewController,
+                         reloadCurrent: Bool,
+                         recovery: TerminationReloadMonitor.Recovery = .immediate) {
         if current() === controller {
             if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
                 controller.showTabTerminationErrorPage()
@@ -861,6 +862,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                     PixelKit.fire(Pixel.Event.aiChatTabDidReloadAfterTermination, frequency: .dailyAndCount)
                 }
 
+                controller.beginTerminationReload(recovery)
                 current()?.reload()
             } else {
                 controllerPendingTerminationRecovery = controller
@@ -1017,6 +1019,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
+            tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {
                 removeFromCache(controller)
@@ -1027,10 +1030,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             removeTabHistory(for: tabIDs)
         }
 
-        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            Task {
-                await clearAppSwitcherSnapshots()
-            }
+        Task {
+            await clearAppSwitcherSnapshots()
         }
 
         tabsCacheNeedsCleanup = true
@@ -1067,6 +1068,8 @@ extension TabManager {
     @MainActor
     func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         let tabsData = tabsRemovalData(browsingMode: browsingMode)
+
+        tabsData.tabsToDelete.forEach { $0.iPadOmnibarDraft.invalidate() }
 
         let previewsResult = previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
         tabsModelProvider.clearTabs(for: browsingMode)
@@ -1162,7 +1165,7 @@ extension TabManager {
     private func onApplicationBecameActive(_ notification: NSNotification) {
         if let controllerPendingTerminationRecovery {
             self.controllerPendingTerminationRecovery = nil
-            invalidateCache(forController: controllerPendingTerminationRecovery, reloadCurrent: true)
+            invalidateCache(forController: controllerPendingTerminationRecovery, reloadCurrent: true, recovery: .deferred)
         }
         assertTabPreviewCount()
     }

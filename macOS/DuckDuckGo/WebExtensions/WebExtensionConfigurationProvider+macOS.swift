@@ -23,8 +23,9 @@ import WebExtensions
 @available(macOS 15.4, *)
 struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
+    /// Applies to every web extension page, not to tabs showing websites.
     var applicationNameForUserAgent: String {
-        UserAgent.brandedDefaultSuffix
+        UserAgent.webExtensionSuffix
     }
 
     var isInspectable: Bool {

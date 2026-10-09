@@ -31,6 +31,7 @@ import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
@@ -862,7 +863,11 @@ extension AppDelegate {
 
     @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
-        SyncPromoManager().resetPromos()
+        let legacyStorage = KeyedStorage<SyncPromoLegacySettings>(storage: UserDefaults.standard)
+        legacyStorage.bookmarksDismissedDate = nil
+        legacyStorage.passwordsDismissedDate = nil
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupBookmarksPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupAutofillPromoID, clearHistory: true)
         DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
@@ -1408,7 +1413,8 @@ extension MainViewController {
         if tabBarViewController.isDuckAIChatPresented {
             tabBarViewController.closeDuckAIChat()
         } else {
-            tabBarViewController.openDuckAISidebarWithPageAttachment()
+            tabBarViewController.openDuckAISidebarWithPageAttachment(conversationSource: .mainMenuAskAboutPage,
+                                                                     sidebarOpenSource: .mainMenuAskAboutPage)
         }
     }
 
@@ -1561,6 +1567,30 @@ extension MainViewController {
     @objc func inspectPermissions(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
+    }
+
+    @objc func debugShowPageSignals(_ sender: Any?) {
+        let signals = tabCollectionViewModel.selectedTabViewModel?.tab.pageSignals?.pageSignals
+        let alert = PageSignalsAlert(signals: signals)
+        alert.runModal()
+    }
+
+    @objc func debugVerifyDNSBlocking(_ sender: Any?) {
+        let host = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.host
+
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "DNS Blocking"
+
+            if let host {
+                let resolution = await DNSBlockDetector().resolution(for: host)
+                alert.informativeText = "\(host): \(resolution.rawValue)"
+            } else {
+                alert.informativeText = "The current tab has no site loaded."
+            }
+
+            await alert.runModal()
+        }
     }
 
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {

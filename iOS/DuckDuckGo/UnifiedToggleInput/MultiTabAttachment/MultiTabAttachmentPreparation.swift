@@ -142,7 +142,8 @@ final class MultiTabAttachmentPreparation: TabObserver {
         }
         let updated = UnifiedToggleInputTabAttachment(id: attachment.id, tabId: tab.uid,
                                                        title: link.displayTitle, url: url,
-                                                       favicon: url.host == attachment.url.host ? attachment.favicon : nil)
+                                                       favicon: url.host == attachment.url.host ? attachment.favicon : nil,
+                                                       source: attachment.source)
         if updated != attachment {
             attachment = updated
             onChange(updated)

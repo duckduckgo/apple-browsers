@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Възобновете сесията на Sync & Backup, за да възстановите отметките, паролите и други данни, или продължете с нови настройки.";
 
@@ -85,9 +82,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Изтегляне липсващи икони?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Автоматично изтегляне на икони";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Продължаване на разработката";
 
@@ -169,11 +163,17 @@
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Зарежда икони от уебсайтове, които сте добавили в отметките. Изтеглянето на икони се разкрива във Вашата мрежа.";
 
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Зареждане на икони на отметки";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Отметки";
 
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Използвайте едни и същи любими отметки на мобилни устройства и на компютър.";
+
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Споделяне на любимите на всички устройства";
 
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup е криптирано от край до край на всички устройства.";
@@ -214,8 +214,8 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Примерен код:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Отворете на другото";
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Отворете другото си %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Поставяне на код за синхронизация";
@@ -271,7 +271,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Използвайте този код, за да възстановите данните си, ако загубите достъп до това устройство. Данните в Sync & Backup не могат да бъдат възстановени след 18 месеца неактивност. [Научете повече](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Приложение DuckDuckGo";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +292,14 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Затваряне";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo за настолен компютър";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Сканиране на QR код за синхронизиране.";
 
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Отваряне";
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Отворете %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Готов съм за сканиране";
@@ -322,8 +322,8 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Копирайте текстов код";
 
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "На друго устройство отворете";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "На друго устройство отворете %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Отворете **Sync & Backup** › **Синхронизиране с друго устройство** и сканирайте този код:";
@@ -354,9 +354,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Това устройство";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Обединяване на любимите на всички устройства";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Използвате среда за разработка Sync Development";

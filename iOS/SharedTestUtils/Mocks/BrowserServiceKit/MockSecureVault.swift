@@ -44,6 +44,7 @@ final class MockSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
 
     var storedAccounts: [SecureVaultModels.WebsiteAccount] = []
     var storedCredentials: [Int64: SecureVaultModels.WebsiteCredentials] = [:]
+    var storeWebsiteCredentialsHandler: ((SecureVaultModels.WebsiteCredentials) throws -> Int64)?
     var storedCredentialsForDomain: [String: [SecureVaultModels.WebsiteCredentials]] = [:]
     var storedNeverPromptWebsites = [SecureVaultModels.NeverPromptWebsites]()
     var storedNotes: [SecureVaultModels.Note] = []
@@ -112,6 +113,9 @@ final class MockSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
     }
 
     func storeWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials) throws -> Int64 {
+        if let storeWebsiteCredentialsHandler {
+            return try storeWebsiteCredentialsHandler(credentials)
+        }
         let accountID = Int64(credentials.account.id!)!
         storedCredentials[accountID] = credentials
 

@@ -38,19 +38,6 @@ extension AIChatRAGTool {
         }
     }
 
-    /// Human-readable tool name shown as the badge label (iPad).
-    var toolbarChipTitle: String? {
-        switch self {
-        case .webSearch:
-            return UserText.aiChatToolbarWebSearchToolTitle
-        case .imageGeneration:
-            return UserText.aiChatToolbarImageGenerationToolTitle
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
-
     var toolbarChipAccessibilityLabel: String? {
         switch self {
         case .webSearch:

@@ -54,6 +54,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// The user accepted the offer to attach the page they navigated to.
     var onSuggestionAccepted: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
+    /// Counted once per prompt: the user script echoes the first one back as a second delivery.
+    var onPromptSent: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
@@ -534,6 +536,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.submitProgrammatic(text: prompt)
     }
 
+    func submitSuggestedPrompt(_ prompt: String) {
+        coordinator.submitProgrammatic(text: prompt, trigger: .suggestedPrompt)
+    }
+
     func discardTabAttachments() {
         coordinator.discardTabAttachments()
         contextualChatViewController?.cancelPendingTabAttachmentPrompt()
@@ -594,6 +600,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     func unifiedToggleInputDidSubmitPromptToBoundChat() {
+        onPromptSent?()
         reportFirstPromptSubmission()
     }
 
@@ -608,6 +615,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            images: [AIChatNativePrompt.NativePromptImage]?,
                                            files: [AIChatNativePrompt.NativePromptFile]?,
                                            termsAccepted: Bool) {
+        onPromptSent?()
         guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,

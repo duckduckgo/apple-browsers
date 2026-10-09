@@ -24,6 +24,7 @@ public func assertImageSnapshots<State>(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -36,6 +37,7 @@ public func assertImageSnapshots<State>(
         strategy: { _ in strategy },
         size: size,
         record: record,
+        precision: precision,
         perceptualPrecision: perceptualPrecision,
         fileID: fileID,
         file: file,
@@ -50,12 +52,104 @@ public func assertImageSnapshots<State>(
     strategy: (State) -> SnapshotImageStrategy,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
     line: UInt = #line,
     column: UInt = #column
+) {
+    forEachPreviewSnapshot(previews, strategy: strategy, size: size, fileID: fileID, file: file, line: line, column: column) { view, strategy in
+        assertImageSnapshot(
+            matching: view,
+            strategy: strategy,
+            size: size,
+            record: record,
+            precision: precision,
+            perceptualPrecision: perceptualPrecision,
+            fileID: fileID,
+            file: file,
+            testName: testName,
+            line: line,
+            column: column
+        )
+    }
+}
+
+#if os(iOS)
+public func assertImageSnapshots<State>(
+    _ previews: PreviewSnapshots<State>,
+    strategy: SnapshotImageStrategy = .allAppearances,
+    size: SnapshotImageSize,
+    record: Bool = false,
+    precision: Float = 0.9999,
+    perceptualPrecision: Float = 0.98,
+    drawHierarchyInKeyWindow: Bool,
+    fileID: StaticString = #fileID,
+    file: StaticString = #filePath,
+    testName: String = #function,
+    line: UInt = #line,
+    column: UInt = #column
+) {
+    assertImageSnapshots(
+        previews,
+        strategy: { _ in strategy },
+        size: size,
+        record: record,
+        precision: precision,
+        perceptualPrecision: perceptualPrecision,
+        drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+        fileID: fileID,
+        file: file,
+        testName: testName,
+        line: line,
+        column: column
+    )
+}
+
+public func assertImageSnapshots<State>(
+    _ previews: PreviewSnapshots<State>,
+    strategy: (State) -> SnapshotImageStrategy,
+    size: SnapshotImageSize,
+    record: Bool = false,
+    precision: Float = 0.9999,
+    perceptualPrecision: Float = 0.98,
+    drawHierarchyInKeyWindow: Bool,
+    fileID: StaticString = #fileID,
+    file: StaticString = #filePath,
+    testName: String = #function,
+    line: UInt = #line,
+    column: UInt = #column
+) {
+    forEachPreviewSnapshot(previews, strategy: strategy, size: size, fileID: fileID, file: file, line: line, column: column) { view, strategy in
+        assertImageSnapshot(
+            matching: view,
+            strategy: strategy,
+            size: size,
+            record: record,
+            precision: precision,
+            perceptualPrecision: perceptualPrecision,
+            drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+            fileID: fileID,
+            file: file,
+            testName: testName,
+            line: line,
+            column: column
+        )
+    }
+}
+#endif
+
+private func forEachPreviewSnapshot<State>(
+    _ previews: PreviewSnapshots<State>,
+    strategy: (State) -> SnapshotImageStrategy,
+    size: SnapshotImageSize,
+    fileID: StaticString,
+    file: StaticString,
+    line: UInt,
+    column: UInt,
+    assert: (AnyView, SnapshotImageStrategy) -> Void
 ) {
     let snapshotConfigurations = previews.snapshotConfigurations
     guard !snapshotConfigurations.isEmpty else {
@@ -70,22 +164,14 @@ public func assertImageSnapshots<State>(
     }
 
     for configuration in snapshotConfigurations {
-        assertImageSnapshot(
-            matching: previews.configure(configuration.state),
-            strategy: namedStrategy(
+        assert(
+            previews.configure(configuration.state),
+            namedStrategy(
                 strategy(configuration.state),
                 previewName: configuration.name,
                 interfaceOrientation: configuration.interfaceOrientation,
                 size: size
-            ),
-            size: size,
-            record: record,
-            perceptualPrecision: perceptualPrecision,
-            fileID: fileID,
-            file: file,
-            testName: testName,
-            line: line,
-            column: column
+            )
         )
     }
 }

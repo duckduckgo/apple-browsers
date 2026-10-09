@@ -101,6 +101,7 @@ public struct BrokenSiteReport {
     let openerContext: OpenerContext?
     let vpnOn: Bool
     let networkSignals: NetworkSignals?
+    let dnsResolution: DNSResolution?
     let jsPerformance: [Double]?
     let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
@@ -164,7 +165,8 @@ public struct BrokenSiteReport {
         breakageData: String? = nil,
         loadedWebExtensions: String? = nil,
         adBlockingExtensionScriptletsVersion: String? = nil,
-        networkSignals: NetworkSignals? = nil
+        networkSignals: NetworkSignals? = nil,
+        dnsResolution: DNSResolution? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -186,6 +188,7 @@ public struct BrokenSiteReport {
         self.openerContext = openerContext
         self.vpnOn = vpnOn
         self.networkSignals = networkSignals
+        self.dnsResolution = dnsResolution
         self.jsPerformance = jsPerformance
         self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
@@ -245,7 +248,8 @@ public struct BrokenSiteReport {
         breakageData: String? = nil,
         loadedWebExtensions: String? = nil,
         adBlockingExtensionScriptletsVersion: String? = nil,
-        networkSignals: NetworkSignals? = nil
+        networkSignals: NetworkSignals? = nil,
+        dnsResolution: DNSResolution? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -269,6 +273,7 @@ public struct BrokenSiteReport {
         self.openerContext = openerContext
         self.vpnOn = vpnOn
         self.networkSignals = networkSignals
+        self.dnsResolution = dnsResolution
         self.jsPerformance = jsPerformance
         self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount

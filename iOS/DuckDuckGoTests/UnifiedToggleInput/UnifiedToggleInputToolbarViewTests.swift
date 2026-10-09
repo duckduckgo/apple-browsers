@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -294,6 +295,42 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertNotNil(submitButton.image(for: .normal))
         XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
         XCTAssertEqual(submitButton.bounds.size, CGSize(width: 40, height: 40))
+    }
+
+    func testWhenTheTermsLabelIsEnabledWithTheReturnKeyStyleThenItUsesThePrimaryButtonFill() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.usesNewPromptSubmitStyle = true
+        sut.isSubmitEnabled = true
+
+        sut.termsOfServiceSendButton = .ask
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        assertColor(submitButton.backgroundColor, matches: .buttonsPrimaryDefault)
+        assertColor(submitButton.titleColor(for: .normal), matches: .buttonsPrimaryText)
+    }
+
+    func testWhenTheTermsLabelIsEnabledOnAFireTabThenItUsesThePrimaryButtonFill() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.refreshFireMode(fireMode: true)
+        sut.isSubmitEnabled = true
+
+        sut.termsOfServiceSendButton = .create
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        assertColor(submitButton.backgroundColor, matches: .buttonsPrimaryDefault)
+        assertColor(submitButton.titleColor(for: .normal), matches: .buttonsPrimaryText)
+    }
+
+    func testWhenTheTermsLabelIsDisabledThenItKeepsTheInactiveFill() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.usesNewPromptSubmitStyle = true
+        sut.isSubmitEnabled = false
+
+        sut.termsOfServiceSendButton = .ask
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertFalse(submitButton.isEnabled)
+        assertColor(submitButton.backgroundColor, matches: .controlsFillPrimary)
     }
 
     func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
@@ -642,6 +679,15 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
             }
         }
         return nil
+    }
+
+    private func assertColor(_ color: UIColor?, matches expected: DesignSystemColor,
+                             file: StaticString = #filePath, line: UInt = #line) {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            XCTAssertEqual(color?.resolvedColor(with: traits), UIColor(designSystemColor: expected).resolvedColor(with: traits),
+                           "\(style == .light ? "Light" : "Dark") mode", file: file, line: line)
+        }
     }
 
     private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {

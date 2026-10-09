@@ -146,6 +146,15 @@ iOS renders in a pinnable simulator runtime, so it validates major.minor. macOS 
 
 When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expectedMacOSVersion` and re-record affected references.
 
+## Comparison tolerance
+
+Every image helper compares with two thresholds:
+
+- `perceptualPrecision` (default `0.98`): how close a pixel's color must be to the reference to count as matching.
+- `precision` (default `0.9999`): the fraction of pixels that must match. Up to 0.01% may differ — about 300 pixels on a full @3x iPhone screen.
+
+Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. Override either argument on a single call only when a view needs a different budget.
+
 ## Reference storage
 
 Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.
@@ -162,13 +171,9 @@ After re-recording, inspect every diff and commit only the intentional ones.
 
 ## Skipping
 
-`SKIP_SNAPSHOT_TESTS=1` in the test scheme's env (or on the command line, same place as `GENERATE_SNAPSHOTS`) turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
+`SKIP_SNAPSHOT_TESTS=1` in the test scheme's env turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
 
-```bash
-xcodebuild test ... SKIP_SNAPSHOT_TESTS=1
-```
-
-**Currently pinned on.** The variable is hardcoded to `1` in the test-action environment of the app schemes (`iOS Browser`, `macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`), so image snapshots are skipped for everyone — locally and in CI — while snapshot references and CI runners stabilise. To re-enable snapshots, set the value back to `$(SKIP_SNAPSHOT_TESTS)` (or disable the entry) in those schemes.
+The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `1` because the CI runners are still on macOS 26, while macOS references are pinned to macOS 27. To pause or resume snapshots for a platform, change the value in that platform's schemes.
 
 ## Conventions
 

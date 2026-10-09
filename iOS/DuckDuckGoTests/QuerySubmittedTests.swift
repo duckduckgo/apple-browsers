@@ -22,6 +22,7 @@ import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
+import DesignResourcesKit
 import Testing
 import FeatureFlags_iOS
 
@@ -255,6 +256,20 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertTrue(sendButton.isEnabled)
     }
 
+    func testWhenAskIsEnabledInIPadFireModeThenItUsesThePrimaryButtonFill() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        omniBarView.refreshFireMode(fireMode: true)
+
+        omniBarView.aiChatTextView.text = "best places to visit in japan"
+        omniBarView.updateAIChatSendButton(hasText: true)
+
+        let sendButton = omniBarView.aiChatSendButton
+        XCTAssertEqual(sendButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        assertColor(sendButton.backgroundColor, matches: .buttonsPrimaryDefault)
+        assertColor(sendButton.tintColor, matches: .buttonsPrimaryText)
+    }
+
     func testWhenTermsAreAlreadyAcceptedThenAnEmptyIPadDuckAIPromptShowsTheVoiceButton() throws {
         termsStore.recordWebReport()
         let sut = makeSUTShowingTermsOfService()
@@ -314,6 +329,15 @@ class QuerySubmittedTests: XCTestCase {
 
     private var termsStore: DuckAiTermsOfServiceStore {
         DuckAiTermsOfServiceStore(keyValueStore: UserDefaults(suiteName: termsSuiteName)!)
+    }
+
+    private func assertColor(_ color: UIColor?, matches expected: DesignSystemColor,
+                             file: StaticString = #filePath, line: UInt = #line) {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            XCTAssertEqual(color?.resolvedColor(with: traits), UIColor(designSystemColor: expected).resolvedColor(with: traits),
+                           "\(style == .light ? "Light" : "Dark") mode", file: file, line: line)
+        }
     }
 
     private func makeSUTShowingTermsOfService() -> DefaultOmniBarViewController {

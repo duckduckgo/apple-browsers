@@ -199,6 +199,9 @@ extension Preferences {
             .onReceive(bitwardenStatusPublisher) { status in
                 bitwardenStatus = status
             }
+            .onAppear {
+                model.viewDidAppear()
+            }
         }
 
         @ViewBuilder

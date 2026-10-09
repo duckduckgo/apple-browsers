@@ -240,7 +240,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
-    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished.
+    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished,
+    /// except those with `canShowDuringOnboarding`.
     private let isOnboardingCompletedProvider: () -> Bool
 
     /// Triggers to be evaluated after delegate registration and deferral window ends.
@@ -515,9 +516,11 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// and showing any that are newly eligible. Triggers are evaluated in promo priority order.
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
-        guard isOnboardingCompletedProvider() else { return }
+        let isOnboardingCompleted = isOnboardingCompletedProvider()
 
-        let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
+        let matchingPromos = promos.filter {
+            $0.triggers.contains(where: triggers.contains) && (isOnboardingCompleted || $0.canShowDuringOnboarding)
+        }
         for promo in matchingPromos {
             (promo.delegate as? InternalPromoDelegate)?.refreshEligibility()
         }

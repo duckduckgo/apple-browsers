@@ -741,20 +741,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             let turnOffAction = UIAlertAction(title: UserText.simplifiedSyncTurnOffAction, style: .default) { _ in
                 Task { @MainActor in
-                    do {
-                        try await self.syncService.disconnect()
-                        self.pixelFiring?.fire(Pixel.Event.syncDisabled, options: .parameters(self.uiVersionParameters))
-                        self.syncPausedStateManager.syncDidTurnOff()
-                        continuation.resume(returning: true)
-                    } catch {
-                        await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
-                        continuation.resume(returning: false)
-                    }
+                    continuation.resume(returning: await self.disableSync())
                 }
             }
             alert.addAction(cancelAction)
             alert.addAction(turnOffAction)
             self.present(alert, animated: true)
+        }
+    }
+
+    @MainActor
+    func disableSync() async -> Bool {
+        do {
+            try await syncService.disconnect()
+            pixelFiring?.fire(Pixel.Event.syncDisabled, options: .parameters(uiVersionParameters))
+            syncPausedStateManager.syncDidTurnOff()
+            return true
+        } catch {
+            await handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
+            return false
         }
     }
 

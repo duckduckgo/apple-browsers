@@ -27,11 +27,14 @@ public enum DNSResolution: String, Sendable {
     /// Only unroutable addresses (`0.0.0.0`, `::`, loopback), as DNS blockers answer.
     case blocked
 
+    /// Only private or link-local addresses, as Pi-hole's LAN-IP mode, captive portals and intranets answer.
+    case privateIP
+
     /// No addresses: the domain doesn't exist, the lookup failed, or it timed out.
     case unresolved
 }
 
-/// Detects DNS blockers that answer with unroutable addresses, such as `0.0.0.0`.
+/// Detects DNS blockers that answer with unroutable addresses, such as `0.0.0.0`, or with private addresses.
 public struct DNSBlockDetector: Sendable {
 
     private let timeout: TimeInterval = 1
@@ -70,6 +73,10 @@ private extension DNSBlockDetector {
 
         if addresses.allSatisfy(isUnroutable) {
             return .blocked
+        }
+
+        if addresses.allSatisfy({ isUnroutable($0) || isPrivate($0) }) {
+            return .privateIP
         }
 
         return .resolved
@@ -118,8 +125,60 @@ private extension DNSBlockDetector {
         }
     }
 
+    /// Unspecified, loopback and discard addresses, as DNS blockers answer.
     func isUnroutable(_ address: any IPAddress) -> Bool {
-        let isUnspecified = address.rawValue.allSatisfy { $0 == 0 }
-        return isUnspecified || address.isLoopback
+        switch address {
+        case let ipv4 as IPv4Address:
+            return isUnroutable(ipv4)
+        case let ipv6 as IPv6Address:
+            return isUnroutable(ipv6)
+        default:
+            return false
+        }
+    }
+
+    /// `0.0.0.0/8` (unspecified) and `127.0.0.0/8` (loopback).
+    func isUnroutable(_ address: IPv4Address) -> Bool {
+        let firstByte = address.rawValue.first
+        return firstByte == 0 || firstByte == 127
+    }
+
+    /// `::`, `::1`, `100::/64` (discard), and unroutable IPv4-mapped addresses, such as `::ffff:0.0.0.0`.
+    func isUnroutable(_ address: IPv6Address) -> Bool {
+        if address.isIPv4Mapped, let ipv4 = address.asIPv4 {
+            return isUnroutable(ipv4)
+        }
+
+        let isDiscard = address.rawValue.starts(with: [0x01, 0, 0, 0, 0, 0, 0, 0])
+        return address == .any || address == .loopback || isDiscard
+    }
+
+    /// Private and link-local ranges, as Pi-hole's LAN-IP mode, captive portals and intranets answer.
+    func isPrivate(_ address: any IPAddress) -> Bool {
+        let bytes = [UInt8](address.rawValue)
+
+        switch address {
+        case is IPv4Address:
+            return bytes.hasPrefix([10], bits: 8)               // 10.0.0.0/8
+                || bytes.hasPrefix([172, 16], bits: 12)         // 172.16.0.0/12
+                || bytes.hasPrefix([192, 168], bits: 16)        // 192.168.0.0/16
+                || bytes.hasPrefix([169, 254], bits: 16)        // 169.254.0.0/16
+        case is IPv6Address:
+            return bytes.hasPrefix([0xFC], bits: 7)             // fc00::/7
+                || bytes.hasPrefix([0xFE, 0x80], bits: 10)      // fe80::/10
+        default:
+            return false
+        }
+    }
+}
+
+private extension Array where Element == UInt8 {
+
+    /// Whether the first `bits` bits match `prefix`, as in CIDR notation.
+    func hasPrefix(_ prefix: [UInt8], bits: Int) -> Bool {
+        (0..<bits).allSatisfy { bit in
+            let mask = UInt8(0x80) >> (bit % 8)
+            return self[bit / 8] & mask == prefix[bit / 8] & mask
+        }
     }
 }

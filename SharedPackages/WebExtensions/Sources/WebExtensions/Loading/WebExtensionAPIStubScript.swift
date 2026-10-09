@@ -26,9 +26,18 @@ import Foundation
 /// APIs WebKit implements are left alone. The script does nothing in our own extensions, and it
 /// reports calls to placeholders to the API compatibility log.
 ///
-/// `chrome.idle` is implemented rather than a placeholder, on macOS: the state (`locked`, `idle` or
-/// `active`) comes from the app through `idleMessageHandlerName`, and `onStateChanged` polls while it
-/// has listeners.
+/// Some namespaces are implemented rather than placeholders:
+/// - `chrome.idle`, on macOS: the state (`locked`, `idle` or `active`) comes from the app through
+///   `idleMessageHandlerName`, and `onStateChanged` polls while it has listeners.
+/// - `chrome.offscreen`: `createDocument` loads the document in a hidden iframe, so the offscreen
+///   page's `runtime.onMessage` listeners run and messages from the background page reach them.
+/// - `chrome.privacy`: the `services` settings are shaped like Chrome's `ChromeSetting` and persisted
+///   in `storage.local` under one reserved key. Nothing in the app reads them.
+///
+/// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
+/// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
+/// are defined where missing. `chrome.permissions` counts `privacy` and `idle` as granted, since the
+/// script provides them and WebKit rejects the names.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -80,28 +89,67 @@ public enum WebExtensionAPIStubScript {
             // A page that cannot read its manifest is treated like any other extension page.
         }
 
-        // Namespaces WebKit does not define at all. Each becomes a generic nestable stub, or a
-        // purpose-shaped one when it has a `kind` (see makeIdle below).
+        // `Symbol.dispose` and `Symbol.asyncDispose` (explicit resource management, `using`
+        // declarations) ship in Chrome but not in this WebKit. TypeScript's `using` helpers throw
+        // "Symbol.dispose is not defined." without them, which stops Bitwarden's SDK from unlocking
+        // the vault. Defining them here, before any extension code runs, also lets generated code
+        // that only attaches `[Symbol.dispose]` methods when the symbol exists do so. Only the
+        // symbols are needed: the helpers do the disposing themselves.
+        ["dispose", "asyncDispose"].forEach(function(name) {
+            try {
+                if (typeof Symbol[name] !== "symbol") {
+                    Object.defineProperty(Symbol, name, {
+                        value: Symbol("Symbol." + name),
+                        writable: false, enumerable: false, configurable: false
+                    });
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not define Symbol." + name + ": " + error);
+            }
+        });
+
+        // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
+        // generic nestable stub; "offscreen", "privacy" and "idle" are purpose-shaped (see
+        // makeOffscreen, makePrivacy and makeIdle below).
         var missingNamespaces = [
             { name: "notifications" },
-            { name: "offscreen" },
+            { name: "offscreen", kind: "offscreen" },
             { name: "downloads" },
             { name: "idle", kind: "idle" },
             { name: "management" },
-            { name: "privacy" },
+            { name: "privacy", kind: "privacy" },
             { name: "browsingData" },
             { name: "topSites" },
             { name: "sidePanel" }
         ];
 
         // Members missing from namespaces that WebKit does implement, addressed by dotted path.
-        // A "namespace" member becomes a nestable stub, an "event" member an addListener object, and
-        // "managedStorage" a purpose-shaped stub (see makeManagedStorage below).
+        // A "namespace" member becomes a nestable stub, an "event" member an addListener object,
+        // "managedStorage" a purpose-shaped stub (see makeManagedStorage below), and "constants" the
+        // literal value carried by the entry.
         var missingMembers = [
             { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
             { path: "runtime.onSuspend", kind: "event" }
         ];
+
+        // The enum-like constants Chrome hangs off its namespaces, with Chrome's documented values.
+        // Extension code dereferences these as call arguments — Bitwarden passes
+        // `world: chrome.scripting.ExecutionWorld.ISOLATED` to `scripting.executeScript` — and WebKit
+        // implements the call but not the constant, so the argument throws before the call happens.
+        // Only the constants the supported extensions actually read are listed here.
+        var missingConstants = [
+            { path: "scripting.ExecutionWorld", value: { ISOLATED: "ISOLATED", MAIN: "MAIN" } },
+            { path: "tabs.TAB_ID_NONE", value: -1 },
+            { path: "windows.WINDOW_ID_NONE", value: -1 },
+            { path: "windows.WINDOW_ID_CURRENT", value: -2 }
+        ];
+
+        // Constants are installed exactly like the members above — same "is it missing?" check, same
+        // `define` — so they join that list rather than getting a loop of their own.
+        missingConstants.forEach(function(constant) {
+            missingMembers.push({ path: constant.path, kind: "constants", value: constant.value });
+        });
 
         var retentionPropertyName = "\(Self.retentionPropertyName)";
         var eventNamePattern = /^on[A-Z]/;
@@ -272,6 +320,274 @@ public enum WebExtensionAPIStubScript {
             };
         }
 
+        // Resolves a document URL against the background page, the way the page itself would.
+        function resolveDocumentURL(url) {
+            return new URL(url === undefined || url === null ? "" : String(url), globalThis.location.href).href;
+        }
+
+        var offscreenReasonNames = [
+            "TESTING", "AUDIO_PLAYBACK", "IFRAME_SCRIPTING", "DOM_SCRAPING", "BLOBS", "DOM_PARSER",
+            "USER_MEDIA", "DISPLAY_MEDIA", "WEB_RTC", "CLIPBOARD", "LOCAL_STORAGE", "WORKERS",
+            "BATTERY_STATUS", "MATCH_MEDIA", "GEOLOCATION"
+        ];
+
+        // `chrome.offscreen` is the one stub that does real work. Bitwarden copies to the clipboard
+        // by opening an offscreen document, sending it a message and closing it again, so a no-op
+        // `createDocument` makes "copy password" do nothing at all. An extension iframe inside the
+        // background page is itself an extension page with the full API: the offscreen page's
+        // `runtime.onMessage` listeners run there and messages from the background page reach them.
+        // Whether the clipboard write from that hidden frame is allowed under WebKit has not been
+        // measured — this turns a silent no-op into a real attempt whose outcome shows up in the
+        // extension's own logs.
+        function makeOffscreen() {
+            var documentFrame = null;
+            var loadTimeoutInMilliseconds = 5000;
+
+            var reason = {};
+            offscreenReasonNames.forEach(function(name) {
+                reason[name] = name;
+            });
+
+            var offscreen = {
+                Reason: Object.freeze(reason),
+                hasDocument: makeResolver(function() {
+                    return documentFrame !== null;
+                }),
+                createDocument: function(parameters) {
+                    var callback = arguments.length > 1 ? arguments[arguments.length - 1] : undefined;
+                    if (documentFrame !== null) {
+                        // Chrome's own wording, so an extension matching on the message still matches.
+                        return Promise.reject(new Error("Only a single offscreen document may be created."));
+                    }
+
+                    var frame = document.createElement("iframe");
+                    frame.setAttribute("hidden", "hidden");
+                    frame.setAttribute("aria-hidden", "true");
+                    frame.style.width = "0";
+                    frame.style.height = "0";
+                    frame.style.border = "0";
+                    frame.src = resolveDocumentURL(parameters ? parameters.url : undefined);
+                    documentFrame = frame;
+                    (document.body || document.documentElement).appendChild(frame);
+
+                    return new Promise(function(resolve) {
+                        var isSettled = false;
+                        function finish() {
+                            if (isSettled) {
+                                return;
+                            }
+                            isSettled = true;
+                            if (typeof callback === "function") {
+                                invokeCallback(callback, undefined);
+                            }
+                            resolve(undefined);
+                        }
+                        frame.addEventListener("load", finish);
+                        // A document that never loads must not leave the caller awaiting forever.
+                        setTimeout(finish, loadTimeoutInMilliseconds);
+                    });
+                },
+                closeDocument: function() {
+                    var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                    if (documentFrame === null) {
+                        return Promise.reject(new Error("No current offscreen document."));
+                    }
+                    var frame = documentFrame;
+                    documentFrame = null;
+                    if (typeof frame.remove === "function") {
+                        frame.remove();
+                    } else if (frame.parentNode) {
+                        frame.parentNode.removeChild(frame);
+                    }
+                    if (typeof callback === "function") {
+                        invokeCallback(callback, undefined);
+                    }
+                    return Promise.resolve(undefined);
+                }
+            };
+
+            // The namespace owns the open document, so it has to outlive the wrapper it hangs off.
+            retain(offscreen);
+            return offscreen;
+        }
+
+        // The `privacy.services` settings the stub answers for — the three Bitwarden turns off to
+        // become the default password manager — and the one `storage.local` key holding the values
+        // the extension has set, as `{ passwordSavingEnabled: false, ... }`. A setting that was never
+        // set, or was cleared, is absent from that object.
+        var privacySettingNames = ["passwordSavingEnabled", "autofillAddressEnabled", "autofillCreditCardEnabled"];
+        var privacySettingsStorageKey = "__ddgPrivacySettings";
+
+        // Keeps only the known settings, as booleans, so whatever sits under the key cannot reshape
+        // the answers.
+        function sanitizePrivacySettings(stored) {
+            var settings = {};
+            if (stored === null || typeof stored !== "object") {
+                return settings;
+            }
+            privacySettingNames.forEach(function(name) {
+                if (Object.prototype.hasOwnProperty.call(stored, name)) {
+                    settings[name] = stored[name] === true;
+                }
+            });
+            return settings;
+        }
+
+        // Calls a `storage.local` method and settles once, whichever way the host answers: through the
+        // trailing callback, through a returned promise, or both.
+        function callStorageArea(area, methodName, argument) {
+            return new Promise(function(resolve, reject) {
+                var isSettled = false;
+                function finish(value) {
+                    if (!isSettled) {
+                        isSettled = true;
+                        resolve(value);
+                    }
+                }
+                function fail(error) {
+                    if (!isSettled) {
+                        isSettled = true;
+                        reject(error);
+                    }
+                }
+                try {
+                    var result = area[methodName](argument, finish);
+                    if (result && typeof result.then === "function") {
+                        result.then(finish, fail);
+                    }
+                } catch (error) {
+                    fail(error);
+                }
+            });
+        }
+
+        // The state shared by the three settings. `storage.local` is shared by every page of the
+        // extension and survives a restart, like the browser setting it stands in for; when it is
+        // unavailable, or a call to it fails, the settings live in memory for this page instead so
+        // nothing ever throws. Operations run one after another, so a `set` that follows another
+        // `set` reads the state the first one wrote rather than racing it.
+        function makePrivacySettingsStore() {
+            var memory = {};
+            var queue = Promise.resolve();
+
+            function storageArea() {
+                var storage = api.storage;
+                var local = storage ? storage.local : undefined;
+                if (!local || typeof local.get !== "function" || typeof local.set !== "function") {
+                    return null;
+                }
+                return local;
+            }
+
+            function enqueue(operation) {
+                var result = queue.then(operation);
+                queue = result.catch(function() {});
+                return result;
+            }
+
+            function readSettings() {
+                var area = storageArea();
+                if (area === null) {
+                    return Promise.resolve(sanitizePrivacySettings(memory));
+                }
+                return callStorageArea(area, "get", privacySettingsStorageKey).then(function(items) {
+                    if (items === null || typeof items !== "object") {
+                        // A failed callback-style read answers `undefined`; keep what this page knows.
+                        return sanitizePrivacySettings(memory);
+                    }
+                    return sanitizePrivacySettings(items[privacySettingsStorageKey]);
+                }, function(error) {
+                    console.info("[DuckDuckGo] Could not read the privacy settings: " + error);
+                    return sanitizePrivacySettings(memory);
+                });
+            }
+
+            function writeSettings(settings) {
+                memory = sanitizePrivacySettings(settings);
+                var area = storageArea();
+                if (area === null) {
+                    return Promise.resolve(undefined);
+                }
+                var items = {};
+                items[privacySettingsStorageKey] = sanitizePrivacySettings(settings);
+                return callStorageArea(area, "set", items).then(function() {
+                    return undefined;
+                }, function(error) {
+                    console.info("[DuckDuckGo] Could not store the privacy settings: " + error);
+                    return undefined;
+                });
+            }
+
+            return {
+                read: function() {
+                    return enqueue(readSettings);
+                },
+                update: function(mutate) {
+                    return enqueue(function() {
+                        return readSettings().then(function(settings) {
+                            mutate(settings);
+                            return writeSettings(settings);
+                        });
+                    });
+                }
+            };
+        }
+
+        // One `ChromeSetting`. Nothing stored means the browser default: enabled, and the extension
+        // could take control of it. Once the extension sets a value it controls the setting, which
+        // is what Bitwarden checks for — `controlled_by_this_extension` with `value === false`.
+        function makeChromeSetting(store, name) {
+            function trailingCallback(argumentsList) {
+                var last = argumentsList.length > 0 ? argumentsList[argumentsList.length - 1] : undefined;
+                return typeof last === "function" ? last : undefined;
+            }
+
+            return {
+                get: function() {
+                    var answer = store.read().then(function(settings) {
+                        if (Object.prototype.hasOwnProperty.call(settings, name)) {
+                            return { value: settings[name], levelOfControl: "controlled_by_this_extension" };
+                        }
+                        return { value: true, levelOfControl: "controllable_by_this_extension" };
+                    });
+                    return answerBothStyles(answer, trailingCallback(arguments));
+                },
+                set: function(details) {
+                    var value = details !== null && typeof details === "object" ? Boolean(details.value) : false;
+                    var answer = store.update(function(settings) {
+                        settings[name] = value;
+                    });
+                    return answerBothStyles(answer, trailingCallback(arguments));
+                },
+                clear: function() {
+                    var answer = store.update(function(settings) {
+                        delete settings[name];
+                    });
+                    return answerBothStyles(answer, trailingCallback(arguments));
+                },
+                onChange: makeEvent()
+            };
+        }
+
+        // `chrome.privacy` with working `services` settings; `network` and `websites` stay generic
+        // stubs so other code paths that touch them keep running.
+        function makePrivacy() {
+            var store = makePrivacySettingsStore();
+            var services = {};
+            privacySettingNames.forEach(function(name) {
+                services[name] = makeChromeSetting(store, name);
+            });
+
+            var privacy = {
+                services: services,
+                network: makeStub("privacy.network"),
+                websites: makeStub("privacy.websites")
+            };
+
+            retain(privacy);
+            return privacy;
+        }
+
         var idleMessageHandlerName = "\(Self.idleMessageHandlerName)";
         var idleStates = ["active", "idle", "locked"];
         var idleDefaultDetectionInterval = 60;
@@ -380,6 +696,12 @@ public enum WebExtensionAPIStubScript {
             return idle;
         }
 
+        // Constants are handed out frozen, so an extension that walks one cannot reshape what the
+        // next reader sees. Primitives — `tabs.TAB_ID_NONE` is just `-1` — pass straight through.
+        function makeConstants(value) {
+            return value !== null && typeof value === "object" ? Object.freeze(value) : value;
+        }
+
         function makeMember(entry, path) {
             if (entry.kind === "event") {
                 return makeEvent(path);
@@ -387,8 +709,17 @@ public enum WebExtensionAPIStubScript {
             if (entry.kind === "managedStorage") {
                 return makeManagedStorage();
             }
+            if (entry.kind === "offscreen") {
+                return makeOffscreen();
+            }
+            if (entry.kind === "privacy") {
+                return makePrivacy();
+            }
             if (entry.kind === "idle") {
                 return makeIdle();
+            }
+            if (entry.kind === "constants") {
+                return makeConstants(entry.value);
             }
             return makeStub(path);
         }
@@ -425,11 +756,44 @@ public enum WebExtensionAPIStubScript {
         var invalidPermissionPattern = /is not a valid permission|invalid.*permission/i;
         var reportedUnknownPermissions = Object.create(null);
         var wrappedMarkerName = "__ddgWrapped";
+        // `answerWithoutHost` is the answer for a descriptor that named only virtual permissions (see
+        // below): they are always held, so `contains` and `request` succeed, and they cannot be
+        // taken away, so `remove` reports that nothing was removed.
         var wrappedPermissionsMethods = [
-            { name: "contains", unknownNameFails: true },
-            { name: "request", unknownNameFails: true },
-            { name: "remove", unknownNameFails: false }
+            { name: "contains", unknownNameFails: true, answerWithoutHost: true },
+            { name: "request", unknownNameFails: true, answerWithoutHost: true },
+            { name: "remove", unknownNameFails: false, answerWithoutHost: false }
         ];
+
+        // Permissions WebKit rejects but this script provides itself, so they count as granted.
+        // WebKit does not know these names, so the host would answer `false` (or throw) for these
+        // forever. `privacy` is backed by makePrivacy and `idle` by makeIdle above; Bitwarden will not touch it until
+        // `contains` or `request` says it holds the permission. `permissions.onAdded` is not fired
+        // for them: WebKit owns that event, and Bitwarden's Chrome path does not wait for it.
+        var virtualPermissionNames = ["privacy", "idle"];
+
+        function isVirtualPermission(name) {
+            return virtualPermissionNames.indexOf(name) !== -1;
+        }
+
+        // The descriptor to hand the host with the virtual names taken out, or the descriptor itself
+        // when it names none, so a call without them reaches the host exactly as the caller made it.
+        // `isEmpty` means nothing is left to ask the host about.
+        function stripVirtualPermissions(descriptor) {
+            var names = descriptor && Array.isArray(descriptor.permissions) ? descriptor.permissions : null;
+            if (names === null || !names.some(isVirtualPermission)) {
+                return { descriptor: descriptor, isEmpty: false };
+            }
+            var stripped = {};
+            Object.keys(descriptor).forEach(function(key) {
+                stripped[key] = descriptor[key];
+            });
+            stripped.permissions = names.filter(function(name) {
+                return !isVirtualPermission(name);
+            });
+            var origins = Array.isArray(descriptor.origins) ? descriptor.origins : [];
+            return { descriptor: stripped, isEmpty: stripped.permissions.length === 0 && origins.length === 0 };
+        }
 
         function isInvalidPermissionError(error) {
             if (error === undefined || error === null) {
@@ -504,8 +868,10 @@ public enum WebExtensionAPIStubScript {
         }
 
         // A method bound to its owner, so destructured calls keep working, answering through a promise
-        // and a trailing callback like the method it replaces.
-        function makePermissionsMethod(owner, methodName, unknownNameFails) {
+        // and a trailing callback like the method it replaces. Virtual permissions are taken out
+        // first; whatever remains goes to the host, and the answer for the remainder is the answer
+        // for the whole descriptor.
+        function makePermissionsMethod(owner, methodName, unknownNameFails, answerWithoutHost) {
             var original = owner[methodName];
             if (typeof original !== "function" || original[wrappedMarkerName] === true) {
                 return null;
@@ -513,14 +879,20 @@ public enum WebExtensionAPIStubScript {
 
             var wrapper = function(descriptor) {
                 var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
-                var promise = callPermissionsMethod(original, owner, descriptor).catch(function(error) {
-                    if (!isInvalidPermissionError(error)) {
-                        throw error;
-                    }
-                    return probePermissionsIndividually(original, owner, descriptor).then(function(outcomes) {
-                        return combinePermissionOutcomes(outcomes, unknownNameFails);
+                var hostQuery = stripVirtualPermissions(descriptor);
+                var promise;
+                if (hostQuery.isEmpty) {
+                    promise = Promise.resolve(answerWithoutHost);
+                } else {
+                    promise = callPermissionsMethod(original, owner, hostQuery.descriptor).catch(function(error) {
+                        if (!isInvalidPermissionError(error)) {
+                            throw error;
+                        }
+                        return probePermissionsIndividually(original, owner, hostQuery.descriptor).then(function(outcomes) {
+                            return combinePermissionOutcomes(outcomes, unknownNameFails);
+                        });
                     });
-                });
+                }
                 if (typeof callback === "function") {
                     promise.then(function(value) {
                         invokeCallback(callback, value);
@@ -590,7 +962,8 @@ public enum WebExtensionAPIStubScript {
             if (permissions !== undefined && permissions !== null) {
                 var wrappedMethodNames = [];
                 wrappedPermissionsMethods.forEach(function(method) {
-                    var wrapper = makePermissionsMethod(permissions, method.name, method.unknownNameFails);
+                    var wrapper = makePermissionsMethod(permissions, method.name, method.unknownNameFails,
+                        method.answerWithoutHost);
                     if (wrapper !== null && define(permissions, method.name, wrapper)) {
                         wrappedMethodNames.push(method.name);
                     }

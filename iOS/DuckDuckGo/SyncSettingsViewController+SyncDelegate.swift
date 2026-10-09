@@ -22,7 +22,6 @@ import UIKit
 import SwiftUI
 import SyncUI_iOS
 import DDGSync
-import AVFoundation
 import os.log
 import FeatureFlags_iOS
 import PixelKit
@@ -161,6 +160,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             do {
                 let devices = try await syncService.updateDeviceName(name)
                 mapDevices(devices)
+                pixelFiring?.fire(SyncDeviceDetailsPixel.thisDeviceNameUpdated)
             } catch {
                 await handleError(SyncErrorMessage.unableToUpdateDeviceName, error: error, event: .syncUpdateDeviceError)
             }
@@ -460,6 +460,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
+    func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent) {
+        let pixel: SyncDeviceDetailsPixel
+        switch event {
+        case .thisDeviceScreenShown: pixel = .thisDeviceScreenShown
+        case .thisDeviceTurnOffSyncTapped: pixel = .thisDeviceTurnOffSyncTapped
+        case .otherDeviceScreenShown: pixel = .otherDeviceScreenShown
+        case .otherDeviceRemoveDeviceTapped: pixel = .otherDeviceRemoveDeviceTapped
+        }
+        pixelFiring?.fire(pixel)
+    }
+
     @MainActor
     func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {
         guard needsPreservedAccountCleanupBeforeServerOperation else {
@@ -604,10 +615,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                                             stringForQRCode: String,
                                             source: SyncSetupSource) {
         scanSetupSource = source
+        scanScreenCameraPermission = nil
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
-            source: CodeCollectionSource(syncSetupSource: source))
+            source: CodeCollectionSource(syncSetupSource: source),
+            isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow))
         model.delegate = self
         scanCodeViewModel = model
 
@@ -634,23 +647,22 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
-        checkCameraPermission(model: model)
+        Task { @MainActor in
+            await checkCameraPermission(model: model)
+        }
     }
 
-    func checkCameraPermission(model: ScanOrPasteCodeViewModel) {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status == .notDetermined {
-            Task { @MainActor in
-                _ = await AVCaptureDevice.requestAccess(for: .video)
-                self.checkCameraPermission(model: model)
-            }
-            return
-        }
-
-        switch status {
-        case .denied: model.videoPermission = .denied
-        case .authorized: model.videoPermission = .authorised
-        default: assertionFailure("Unexpected status \(status)")
+    @MainActor
+    func checkCameraPermission(model: ScanOrPasteCodeViewModel) async {
+        switch SyncCameraPermissionPixelValue(cameraAuthorization.authorizationStatus) {
+        case .authorized:
+            model.videoPermission = .authorised
+        case .denied:
+            model.videoPermission = .denied
+        case .notDetermined:
+            let granted = await cameraAuthorization.requestAccess()
+            pixelFiring?.fire(SyncCameraPermissionPixel.promptResult(granted: granted))
+            model.videoPermission = granted ? .authorised : .denied
         }
     }
 
@@ -729,20 +741,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             let turnOffAction = UIAlertAction(title: UserText.simplifiedSyncTurnOffAction, style: .default) { _ in
                 Task { @MainActor in
-                    do {
-                        try await self.syncService.disconnect()
-                        self.pixelFiring?.fire(Pixel.Event.syncDisabled, options: .parameters(self.uiVersionParameters))
-                        self.syncPausedStateManager.syncDidTurnOff()
-                        continuation.resume(returning: true)
-                    } catch {
-                        await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
-                        continuation.resume(returning: false)
-                    }
+                    continuation.resume(returning: await self.disableSync())
                 }
             }
             alert.addAction(cancelAction)
             alert.addAction(turnOffAction)
             self.present(alert, animated: true)
+        }
+    }
+
+    @MainActor
+    func disableSync() async -> Bool {
+        do {
+            try await syncService.disconnect()
+            pixelFiring?.fire(Pixel.Event.syncDisabled, options: .parameters(uiVersionParameters))
+            syncPausedStateManager.syncDidTurnOff()
+            return true
+        } catch {
+            await handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
+            return false
         }
     }
 
@@ -799,6 +816,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task { @MainActor in
             do {
                 try await syncService.disconnect(deviceId: device.id)
+                pixelFiring?.fire(SyncDeviceDetailsPixel.otherDeviceRemoveDeviceConfirmed)
                 refreshDevices()
             } catch {
                 await handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)
@@ -820,16 +838,22 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func scanQRCodeScreenShown() {
-        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown)
+        let cameraPermission = SyncCameraPermissionPixelValue(cameraAuthorization.authorizationStatus)
+        if scanScreenCameraPermission == nil {
+            scanScreenCameraPermission = cameraPermission
+        }
+        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown,
+                                     additionalParameters: [SyncCameraPermissionPixelValue.parameterKey: cameraPermission.rawValue])
     }
 
-    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event) {
+    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event, additionalParameters: [String: String] = [:]) {
         var parameters = [
             SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
             SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
             PixelParameters.uiVersion: syncUIVersion
         ]
         parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
+        parameters.merge(additionalParameters) { _, new in new }
         pixelFiring?.fire(pixel, options: .parameters(parameters))
     }
 

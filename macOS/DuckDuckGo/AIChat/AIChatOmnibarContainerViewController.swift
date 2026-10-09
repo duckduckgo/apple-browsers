@@ -122,6 +122,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let clipMaskBottomOffset: CGFloat = 14
         static let shadowOverlapHeight: CGFloat = 21
         static let submitButtonSize: CGFloat = 28
+        static let submitButtonTitleHorizontalPadding: CGFloat = 12
+        static let submitButtonTitleFont = NSFont.systemFont(ofSize: 13, weight: .semibold)
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 8
         static let submitButtonBottomInset: CGFloat = 8
@@ -209,12 +211,40 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Mirrors the card's constraint so the reservation and the layout can't disagree.
     private var isUsageWarningVisible = false
+    /// Only the exposed band counts; the rest is behind the panel and costs nothing. Two rows while
+    /// required messages stack.
+    private var usageWarningReservation: CGFloat = 0
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    /// Only the exposed band counts; the rest is behind the panel and costs nothing.
-    private var usageWarningReservation: CGFloat {
-        isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
+    /// Widens the send button while it reads "Ask" in place of its arrow.
+    private lazy var submitButtonWidthConstraint = submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize)
+
+    /// The disclaimer on screen is what lets the next Ask click accept the terms, and what makes the button read "Ask".
+    private var isTermsOfServiceDisclaimerShown: Bool {
+        isUsageWarningVisible && usageWarningCardView.isShowingTermsOfService
     }
+
+    private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton {
+        DuckAiTermsOfServiceSendButton(isImageGenerationMode: omnibarController.isImageGenerationMode)
+    }
+
+    private lazy var attachmentPrivacyGate: AttachmentPrivacyDisclosureGate = {
+        let gate = AttachmentPrivacyDisclosureGate(
+            disclosure: AttachmentPrivacyDisclosure(
+                store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+                webKeySource: duckAiNativeStorageHandler,
+                featureFlagger: NSApp.delegateTyped.featureFlagger
+            )
+        )
+        gate.onDisplayStarted = { [weak self] kind in
+            self?.attachmentPrivacyPixelFirer.fireShown(kind: kind)
+        }
+        return gate
+    }()
+
+    private lazy var attachmentPrivacyPixelFirer = AttachmentPrivacyDisclosurePixelFirer(
+        surface: omnibarController.surface.attachmentPrivacyPixelSurface
+    )
 
     /// The card's exposed band, for hosts that need to stop their own chrome above it.
     var usageWarningBandHeight: CGFloat { usageWarningReservation }
@@ -521,6 +551,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 }
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
                 self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
+                // The disclaimer names the send button, which reads "Create" while Create Image is selected.
+                self.usageWarningCardView.updateTermsOfServiceSendButton(self.termsOfServiceSendButton)
                 // Re-evaluate the submit button so voice mode is suppressed/restored when
                 // image-generation toggles (voice mode is hidden while image-gen is active).
                 self.updateSubmitButtonState(for: self.omnibarController.currentText)
@@ -547,10 +579,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
+        // The Terms of Service disclaimer keeps a disabled "Ask" instead, until the user types.
         // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
-        if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
+        if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode
+            && !isTermsOfServiceDisclaimerShown {
             submitButtonMode = .voice
-            submitButton.image = DesignSystemImages.Glyphs.Size16.voice
+            setSubmitButtonContent(image: DesignSystemImages.Glyphs.Size16.voice)
             submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
             submitButton.setAccessibilityLabel(UserText.aiChatVoiceChatButtonTooltip)
             // Voice has no Enter-on-empty shortcut, so the button must be tab-reachable.
@@ -558,13 +592,35 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             applySubmitButtonAppearance(enabled: true)
         } else {
             submitButtonMode = .submit
-            submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
+            if isTermsOfServiceDisclaimerShown {
+                setSubmitButtonContent(title: termsOfServiceSendButton.title)
+            } else {
+                setSubmitButtonContent(image: DesignSystemImages.Glyphs.Size12.arrowRight)
+            }
             submitButton.toolTip = UserText.aiChatSendButtonTooltip
             submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
             // Enter on the textarea handles submit; skip the button in tab order.
             submitButton.refusesFirstResponder = true
             applySubmitButtonAppearance(enabled: hasContent && !hasBlockingExcess)
         }
+    }
+
+    private func setSubmitButtonContent(image: NSImage) {
+        submitButton.title = ""
+        submitButton.image = image
+        submitButton.imagePosition = .imageOnly
+        submitButtonWidthConstraint.constant = Constants.submitButtonSize
+    }
+
+    /// The word the Terms of Service disclaimer names, in place of the arrow.
+    private func setSubmitButtonContent(title: String) {
+        submitButton.image = nil
+        submitButton.imagePosition = .noImage
+        submitButton.font = Constants.submitButtonTitleFont
+        submitButton.title = title
+        let titleWidth = (title as NSString).size(withAttributes: [.font: Constants.submitButtonTitleFont]).width
+        submitButtonWidthConstraint.constant = max(Constants.submitButtonSize,
+                                                   ceil(titleWidth) + 2 * Constants.submitButtonTitleHorizontalPadding)
     }
 
     private func applySubmitButtonAppearance(enabled requested: Bool) {
@@ -596,11 +652,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Sets `submitButton.layer.backgroundColor` to the appropriate state-aware color. Called
     /// from `applySubmitButtonAppearance(enabled:)` and from the KVO observers on the hover/press
-    /// dynamic properties. Disabled state and "submit mode while empty" both render no fill.
+    /// dynamic properties. Disabled state and "submit mode while empty" both render no fill, except a
+    /// disabled "Ask", which keeps a gray pill so it still reads as the button the disclaimer names.
     private func applySubmitButtonFill() {
         let designSystemColor: DesignSystemColor?
         if !submitButton.isEnabled {
-            designSystemColor = nil
+            designSystemColor = submitButton.title.isEmpty ? nil : .controlsFillPrimary
         } else if submitButtonMode == .voice {
             if submitButton.isMouseDown {
                 designSystemColor = .controlsFillTertiary
@@ -988,7 +1045,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
             submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
             // Bottom constraint is set in setupSuggestionsView() to be above suggestions
-            submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
+            submitButtonWidthConstraint,
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
 
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
@@ -1194,6 +1251,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
         }
+        usageWarningCardView.onLearnMore = { [weak self] in
+            self?.openAttachmentPrivacyLearnMore()
+        }
+        usageWarningCardView.onTermsOfServiceLink = { [weak self] in
+            self?.openTermsOfService()
+        }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
@@ -1231,6 +1294,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
+        defer { applyTermsOfServiceDisclaimerState() }
+
+        // Required > Action > Informational. Out of usage outranks the disclosures: it is the
+        // reason Send is disabled, so a disclaimer that only Send can accept would deadlock.
+        if let warning, warning.blocksInput {
+            usageWarningCardView.update(with: warning)
+            currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
+        // Both required, so they stack, as on iOS: claiming the attachment notice's one display here
+        // is right, since it shows under the disclaimer.
+        if omnibarController.termsOfServiceDisclaimer.isRequired {
+            usageWarningCardView.updateForTermsOfService(sendButton: termsOfServiceSendButton,
+                                                         stackingAttachmentPrivacy: shouldShowAttachmentPrivacyDisclosure)
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
+        if shouldShowAttachmentPrivacyDisclosure {
+            usageWarningCardView.updateForAttachmentPrivacy()
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
         if let createImageModelSwitchNotice {
             usageWarningCardView.update(with: createImageModelSwitchNotice)
             // Not a usage message, so nothing here is an impression — and leaving the last one set
@@ -1246,6 +1334,47 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         applyHighUsageNotice()
+    }
+
+    // MARK: - Terms of Service disclaimer
+
+    /// The controller decides whether an Ask click accepts, and the send button reads "Ask" only while it would.
+    private func applyTermsOfServiceDisclaimerState() {
+        omnibarController.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
+        updateSubmitButtonState(for: omnibarController.currentText)
+    }
+
+    /// A new tab, so the draft survives.
+    private func openTermsOfService() {
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacyTerms,
+                                                              source: .ui,
+                                                              newTab: true,
+                                                              selected: true)
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    /// Images and files only: a page-context chip is not scanned, so the claim would not apply.
+    private var stagedAttachmentKind: AttachmentPrivacyDisclosureKind? {
+        if !omnibarController.activeImageAttachments.isEmpty { return .image }
+        if !omnibarController.activeFileAttachments.isEmpty { return .file }
+        return nil
+    }
+
+    private var shouldShowAttachmentPrivacyDisclosure: Bool {
+        attachmentPrivacyGate.shouldShow(attachmentKind: stagedAttachmentKind,
+                                         tabID: omnibarController.currentTabUUID)
+    }
+
+    /// A new tab, so the staged attachment and the draft survive.
+    private func openAttachmentPrivacyLearnMore() {
+        if let stagedAttachmentKind {
+            attachmentPrivacyPixelFirer.fireLearnMoreTapped(kind: stagedAttachmentKind)
+        }
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
+                                                              source: .ui,
+                                                              newTab: true,
+                                                              selected: true)
     }
 
     /// Spent allowance: the whole input goes inert so the card is the only thing left to act on,
@@ -1314,15 +1443,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// not drive a resize on a panel that is going away. Returns whether anything changed.
     @discardableResult
     private func applyUsageWarningVisibility(_ visible: Bool) -> Bool {
-        guard isUsageWarningVisible != visible else { return false }
+        // `setupUI` resolves the card before `setupUsageWarningCard` builds it; recording that state
+        // would reserve the band with no constraint to move, and make every later resolve a no-op.
+        guard let backgroundViewBottomConstraint else { return false }
+
+        let reservation = visible ? usageWarningCardView.bandHeight : 0
+        guard isUsageWarningVisible != visible || usageWarningReservation != reservation else { return false }
 
         isUsageWarningVisible = visible
+        usageWarningReservation = reservation
         usageWarningCardView.isHidden = !visible
         usageWarningShadowView.isHidden = !visible || hostDrawsChrome
         panelBottomEdgeStrokeView.isHidden = !visible || !hostDrawsChrome
-        backgroundViewBottomConstraint?.constant = visible
-            ? -AIChatUsageWarningCardView.Constants.contentHeight
-            : 0
+        backgroundViewBottomConstraint.constant = -reservation
+        applyTermsOfServiceDisclaimerState()
         // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
         // so without this guard teardown puts it straight back on the window.
         applyTheme(theme: themeManager.theme)
@@ -1509,7 +1643,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func submitButtonClicked() {
         switch submitButtonMode {
         case .submit:
-            omnibarController.submit()
+            omnibarController.submit(sentWithAsk: true)
         case .voice:
             omnibarController.openNewVoiceChat()
         }
@@ -2084,6 +2218,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.hasImageAttachments = hasAttachments
 
+        // Every path that changes the staged set lands here: menu, picker and drag & drop.
+        refreshUsageCard()
+
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
         // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).
         updateAttachmentsCarouselLayout()
@@ -2525,8 +2662,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
 
-        if let borderColor = NSColor(named: "AddressBarBorderColor"), !hostDrawsChrome {
-            backgroundView.borderColor = borderColor
+        if !hostDrawsChrome {
+            backgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             backgroundView.borderColor = .clear
         }
@@ -2545,31 +2682,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // be themed without a deeper rewrite.)
         let focusRingColor = colorsProvider.accentPrimaryColor
         toolsButton.tintColor = toolButtonTintColor
-        toolsButton.hoverBackgroundColor = .buttonMouseOver
-        toolsButton.pressedBackgroundColor = .buttonMouseDown
+        toolsButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        toolsButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         toolsButton.focusRingColor = focusRingColor
         imageGenActiveButton.tintColor = toolButtonTintColor
-        imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
-        imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageGenActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageGenActiveButton.focusRingColor = focusRingColor
         webSearchActiveButton.tintColor = toolButtonTintColor
-        webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
-        webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        webSearchActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         webSearchActiveButton.focusRingColor = focusRingColor
         imageUploadButton.tintColor = toolButtonTintColor
-        imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-        imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageUploadButton.focusRingColor = focusRingColor
         reasoningPickerButton.tintColor = toolButtonTintColor
-        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
-        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        reasoningPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
         // The two borders read as one crisp edge over an opaque fill, but split into a visible
         // double outline over a translucent one.
-        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
+        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(resource: .addressBarInnerBorder)
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
@@ -2586,7 +2723,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap
         panelBottomEdgeStrokeView.cornerRadius = panelRadius
-        panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")
+        panelBottomEdgeStrokeView.strokeColor = NSColor(resource: .addressBarBorder)
         // Re-asserted because `applyTheme` re-runs on appearance changes. Over host-drawn chrome
         // the host owns the outer silhouette, so a shadow round the card falls inside the bar.
         usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
@@ -2597,10 +2734,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
             usageWarningShadowView.shadowColor = colorsProvider.addressBarShadowColor
-            imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-            imageUploadButton.pressedBackgroundColor = .buttonMouseDown
-            modelPickerButton.hoverBackgroundColor = .buttonMouseOver
-            modelPickerButton.pressedBackgroundColor = .buttonMouseDown
+            imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
+            modelPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            modelPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         }
     }
 }

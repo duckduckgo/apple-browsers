@@ -81,6 +81,8 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
         .userDidViewSettingsSubscribeButton: (.aiChatSubscriptionFunnelImpression, .duckAISettings),
         .userDidClickSettingsSubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAISettings),
+        .userDidViewSettingsResubscribeButton: (.aiChatSubscriptionFunnelImpression, .duckAISettings),
+        .userDidClickSettingsResubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAISettings),
 
         .userDidViewProUpgradeDisclaimerBanner: (.aiChatSubscriptionFunnelImpression, .duckAIDisclaimerBanner),
         .userDidClickProUpgradeDisclaimerBannerButton: (.aiChatSubscriptionFunnelClick, .duckAIDisclaimerBanner),

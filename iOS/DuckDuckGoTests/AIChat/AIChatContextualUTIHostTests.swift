@@ -50,6 +50,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        start: ContextualInputStart = .expandedOnExistingChat,
         isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         sut = AIChatContextualUTIHost(
@@ -60,6 +61,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
             isFireTab: false,
             attachMoreTabsFeature: attachMoreTabsFeature,
+            start: start,
             tabAttachmentSource: tabAttachmentSource,
             isCurrentPageAttachInProgress: isCurrentPageAttachInProgress
         )
@@ -215,23 +217,6 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(attachCallCount, 0)
     }
 
-    func test_chipRemoveOnASuggestion_forwardsDismissalNotARemoval() {
-        let url = URL(string: "https://example.com/a")!
-        originatingURL.send(url)
-        makeSUT()
-        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
-        var dismissCallCount = 0
-        var removeCallCount = 0
-        sut.onSuggestionDismissed = { dismissCallCount += 1 }
-        sut.onRemoveRequested = { removeCallCount += 1 }
-
-        sut.chipViewModel.tapToRemove()
-
-        XCTAssertEqual(dismissCallCount, 1)
-        XCTAssertEqual(removeCallCount, 0)
-        XCTAssertNil(sut.chipViewModel.state)
-    }
-
     func test_setAttachedContextWithSameURLAfterDelivered_makesContextPendingAgain() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
@@ -256,6 +241,33 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.notifyPromptDelivered()
 
         XCTAssertEqual(deliveredCount, 1)
+    }
+
+    func test_firstPromptEchoedByTheUserScript_countsAsOneSend() {
+        makeSUT(start: .expandedPreSubmit)
+        var sentCount = 0
+        var deliveredCount = 0
+        sut.onPromptSent = { sentCount += 1 }
+        sut.onPromptDelivered = { deliveredCount += 1 }
+        let userScript = makeTestUserScript()
+
+        sut.unifiedToggleInputDidSubmitPrompt("hello", modelId: nil, tools: nil, reasoningEffort: nil,
+                                              images: nil, files: nil, termsAccepted: false)
+        sut.bindToUserScript(userScript)
+        userScript.onPromptSubmitted?()
+
+        XCTAssertEqual(sentCount, 1)
+        XCTAssertEqual(deliveredCount, 2, "the echo is still a delivery; only the count of prompts must not double")
+    }
+
+    func test_followUpPromptToABoundChat_countsAsOneSend() {
+        makeSUT()
+        var sentCount = 0
+        sut.onPromptSent = { sentCount += 1 }
+
+        sut.unifiedToggleInputDidSubmitPromptToBoundChat()
+
+        XCTAssertEqual(sentCount, 1)
     }
 
     func test_prepareForNewChat_clearsAttachedContextPresentation() {

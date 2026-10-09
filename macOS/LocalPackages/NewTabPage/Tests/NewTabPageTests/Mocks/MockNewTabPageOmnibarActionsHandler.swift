@@ -30,6 +30,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
     var openPrivacyTermsHandler: (() -> Void)?
     private(set) var lastSubmitChatAiTermsAccepted: Bool?
+    private(set) var openAttachmentPrivacyLearnMoreKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -89,5 +90,10 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func openPrivacyTerms() {
         openPrivacyTermsHandler?()
+    }
+
+    @MainActor
+    func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        openAttachmentPrivacyLearnMoreKinds.append(kind)
     }
 }

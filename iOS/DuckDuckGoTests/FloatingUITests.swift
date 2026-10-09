@@ -17,11 +17,84 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import UIKit
 import WebKit
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
+
+final class FloatingUIFeatureFlagTests: XCTestCase {
+
+    func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+        let isIOS26Enabled = featureFlagger.isFloatingUIFeatureEnabled()
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        let isIOS27Enabled = featureFlagger.isFloatingUIFeatureEnabled()
+
+        if #available(iOS 27, *) {
+            XCTAssertFalse(isIOS26Enabled)
+            XCTAssertTrue(isIOS27Enabled)
+        } else if #available(iOS 26, *) {
+            XCTAssertTrue(isIOS26Enabled)
+            XCTAssertFalse(isIOS27Enabled)
+        } else {
+            XCTAssertFalse(isIOS26Enabled)
+            XCTAssertFalse(isIOS27Enabled)
+        }
+    }
+
+    func testWhenOnlyIOS26FlagIsEnabledThenFloatingUIIsEnabledOnlyOnIOS26() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenOnlyIOS27FlagIsEnabledThenFloatingUIIsEnabledOnIOS27AndLater() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS27])
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 28))
+    }
+
+    func testWhenBothFlagsAreEnabledThenFloatingUIIsEnabledOnBothSupportedVersions() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenBothFlagsAreDisabledThenFloatingUIIsDisabledOnBothSupportedVersions() {
+        let featureFlagger = MockFeatureFlagger()
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenOSIsOutsideTheRolloutThenFloatingUIIsDisabledEvenWithBothFlagsEnabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+
+        for version in [18, 25] {
+            XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: version))
+        }
+    }
+
+    func testWhenFlagsChangeThenOnlyTheirRespectiveOSIsAffected() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS26]
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 28))
+    }
+}
 
 final class FloatingUIManagerTests: XCTestCase {
 
@@ -80,7 +153,7 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
 
-    func testWhenAugustFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
+    func testWhenFloatingUIFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
         let manager = FloatingUIManager(
             isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
@@ -93,7 +166,7 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertTrue(manager.isFloatingTabSwitcherEnabled)
     }
 
-    func testWhenAugustFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
+    func testWhenFloatingUIFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
             isFloatingUIFeatureEnabled: false,
             isPadProvider: { false },
@@ -103,7 +176,7 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
     }
 
-    func testWhenAugustFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
+    func testWhenFloatingUIFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
             isFloatingUIFeatureEnabled: true,
             isPadProvider: { true },
@@ -1577,6 +1650,32 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
+    func testTopBounceDefersInsetsUntilScrollingSettlesOrMovesBackIntoPage() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset.top = 97.33333333333334
+
+        for state in [BounceScrollView.State.tracking, .dragging, .decelerating, .idle] {
+            scrollView.state = state
+            for offsetY: CGFloat in [-156, -97.33333333333333, -96] {
+                scrollView.contentOffset.y = offsetY
+                XCTAssertEqual(WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(scrollView),
+                               state != .idle && offsetY < -97,
+                               "state=\(state), offsetY=\(offsetY)")
+            }
+        }
+    }
+
+    private final class BounceScrollView: UIScrollView {
+        enum State { case idle, tracking, dragging, decelerating }
+        var state: State = .idle
+
+        override var isTracking: Bool { state == .tracking }
+        override var isDragging: Bool { state == .dragging }
+        override var isDecelerating: Bool { state == .decelerating }
+    }
+
     func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
         let scrollView = UIScrollView()
         scrollView.contentInsetAdjustmentBehavior = .automatic
@@ -1605,14 +1704,18 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
     }
 
     func testWhenPinnedToTopThenUpdatingInsetsPreservesPinnedPosition() {
-        let scrollView = UIScrollView()
-        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
-        scrollView.contentOffset = CGPoint(x: 0, y: -20)
+        let topInset: CGFloat = 97.33333333333334
+        for offsetY in [-topInset, -97.33333333333333] {
+            let scrollView = UIScrollView()
+            scrollView.contentInsetAdjustmentBehavior = .never
+            scrollView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+            scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
 
-        WebViewScrollViewInsetUpdater.update(scrollView,
-                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+            WebViewScrollViewInsetUpdater.update(scrollView,
+                                                 insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0))
 
-        XCTAssertEqual(scrollView.contentOffset.y, -50)
+            XCTAssertEqual(scrollView.contentOffset.y, -122)
+        }
     }
 
     func testWhenNotPinnedToTopThenUpdatingInsetsPreservesContentOffset() {

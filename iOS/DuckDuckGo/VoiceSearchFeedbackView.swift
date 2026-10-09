@@ -245,6 +245,7 @@ struct VoiceSearchFeedbackView_Previews: PreviewProvider {
         ],
         configure: {
             VoiceSearchFeedbackView(speechModel: $0)
+                .applyRebranding()
         }
     )
 }

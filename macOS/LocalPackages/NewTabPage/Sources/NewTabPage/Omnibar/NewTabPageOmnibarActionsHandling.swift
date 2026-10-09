@@ -65,4 +65,8 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func openPrivacyTerms()
 
+    /// Opens the attachment privacy help page in a new tab, leaving the staged attachment alone.
+    @MainActor
+    func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind)
+
 }

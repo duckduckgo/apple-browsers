@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Ilmaiskokeilu";
+"action.title.vpn.free-trial-badge" = "Kokeile maksutta";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Estää tunkeilevat seurantatoiminnot ennen niiden latautumista, mikä eliminoi tehokkaasti seurantaa käyttävät mainokset.";
@@ -295,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Voit liittää vain %d kuvaa kerrallaan.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Lisää välilehtiä";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Kysy asiakirjasta";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Kysy sivusta";
 
@@ -304,11 +310,23 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Lisää kuva";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Jatka Duck.ai:ssa";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ota valokuva";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Tiedostot tarkistetaan automaattisesti laittoman sisällön varalta. Merkittyjen keskustelujen tietojen säilytysaika on rajoitettu. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Lue lisää";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Viesti on liian pitkä lähetettäväksi liitteiden kanssa.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Viimeisimmät välilehdet";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Liitteet eivät ole tilapäisesti käytettävissä. Yritä myöhemmin uudelleen.";
@@ -321,6 +339,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tätä tiedostotyyppiä ei tueta, liitä %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Ei osuvia välilehtiä";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Valitse enintään %d välilehteä";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d/%2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Lisää välilehtiä";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ei voi luoda kuvia. Ei palveluntarjoajan näkyvyyttä -ominaisuus ei ole käytössä, ennen kuin vaihdat takaisin.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ei tue kuvien luomista.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Nyt käytössä %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Muokkaaminen korvaa vastauksen uudella.";
@@ -423,6 +462,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Kokeile maksutta";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Uusi · Kirjoita “@” tai napauta kuvaketta {attachment}, niin voit lisätä välilehden.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "liite";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";
@@ -1440,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Määritys";
 
 /* No comment provided by engineer. */
 "Confirm" = "Vahvista";
@@ -2585,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Anna ei-negatiivinen päivien määrä. Asennuspäivämääräksi asetetaan niin monta päivää sitten.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Tapahtuma lisätty Apple-kalenteriin";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "Tunnus: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Tuo salasanat";
 
@@ -3161,9 +3197,6 @@
 "keyCommandZoomOut" = "Loitonna";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Viimeksi käsitelty: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Ladataan saatavilla olevia tuotteita...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Viestikäytännön isäntänimi";
-
-/* No comment provided by engineer. */
-"Messages" = "Viestit";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3629,7 @@
 "No extensions installed" = "Ei asennettuja laajennuksia";
 
 /* No comment provided by engineer. */
-"No Logs" = "Ei lokitietoja";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ei osumia haulle \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Ei viestejä";
 
 /* No comment provided by engineer. */
 "No results found" = "Tuloksia ei löytynyt";
@@ -4137,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo ei voi ladata tätä sivua.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Sukulaiset: %@";
@@ -4924,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Uutuudet";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näyttää lokit viimeisen minuutin ajalta, jotta ongelmat voidaan diagnosoida heti päivityksen jälkeen.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Valitse vaihtoehto, joka parhaiten kuvaa ongelmaa.";
 
@@ -4971,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Tila: Mitätöity";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
@@ -5462,9 +5477,6 @@
 "theme.name.light" = "Vaalea";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Tämä luettelo sisältää viestit, jotka on näytetty, sekä enintään 1 viestin, joka on ajoitettu näytettäväksi. Konfiguraatiossa voi olla muitakin viestejä, jotka näytetään, mutta niitä ei ole vielä käsitelty.";
-
-/* No comment provided by engineer. */
 "Title" = "Otsikko";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5487,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Yhteystieto lisätty";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versio: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Etsi";
@@ -5887,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ei voi luoda kuvia. Ei palveluntarjoajan näkyvyyttä -ominaisuus ei ole käytössä, ennen kuin vaihdat takaisin.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ ei tue kuvien luomista.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Nyt käytössä %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Kaikki keskustelut";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Tiedostot tarkistetaan automaattisesti laittoman sisällön varalta. Merkittyjen keskustelujen tietojen säilytysaika on rajoitettu. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Lue lisää";

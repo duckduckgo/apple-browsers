@@ -32,6 +32,7 @@ import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
@@ -39,6 +40,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
+    let chromeWebStoreUserScript: Subfeature?
     let hoverUserScript = HoverUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
@@ -72,18 +74,30 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
+        if #available(macOS 15.4, *) {
+            chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
+                NSApp.delegateTyped.webExtensionManager?.chromeWebStore
+            }, buildType: buildType)
+        } else {
+            chromeWebStoreUserScript = nil
+        }
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
         let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage)
             && duckAiNativeStorageHandler != nil
             && duckAiNativeStorageHandler?.setupSucceeded != false
+        let homepageAiChatsProvider = HomepageAiChatsProvider(
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: sourceProvider.featureFlagger)
+        )
         let aiChatMessageHandler = AIChatMessageHandler(
             featureFlagger: sourceProvider.featureFlagger,
-            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
@@ -93,7 +107,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             statisticsLoader: StatisticsLoader.shared,
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
@@ -134,6 +149,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         } else {
             duckAiNativeStorageUserScript = nil
         }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -229,6 +245,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
+        if let chromeWebStoreUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
+        }
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)

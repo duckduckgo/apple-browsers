@@ -30,7 +30,7 @@ final class URLDragPreviewProviderTests {
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithFavicon() {
-        let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon)
+        let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: NSImage(resource: .homeFavicon))
         assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
@@ -46,8 +46,8 @@ final class URLDragPreviewProviderTests {
     func testURLPreviewWithCustomColors() {
         let provider = URLDragPreviewProvider(
             url: URL(string: "https://duckduckgo.com")!,
-            favicon: .homeFavicon,
-            backgroundColor: .button,
+            favicon: NSImage(resource: .homeFavicon),
+            backgroundColor: NSColor(resource: .button),
             textColor: .textColor
         )
         assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
@@ -58,7 +58,7 @@ final class URLDragPreviewProviderTests {
     func testURLPreviewWithCustomWidth() {
         let provider = URLDragPreviewProvider(
             url: URL(string: "https://duckduckgo.com")!,
-            favicon: .homeFavicon,
+            favicon: NSImage(resource: .homeFavicon),
             width: 300
         )
         assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
@@ -76,7 +76,7 @@ final class URLDragPreviewProviderTests {
     func testURLPreviewWithLongURL() {
         let provider = URLDragPreviewProvider(
             url: URL(string: "https://very-long-domain-name-that-should-be-truncated.com/path/to/some/very/long/resource")!,
-            favicon: .homeFavicon
+            favicon: NSImage(resource: .homeFavicon)
         )
         assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
@@ -91,7 +91,7 @@ final class URLDragPreviewProviderTests {
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testTextPreviewWithFavicon() {
-        let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
+        let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: NSImage(resource: .homeFavicon))
         assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 

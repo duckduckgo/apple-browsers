@@ -18,6 +18,10 @@
 
 public extension DesignSystemImages {
     enum Glyphs {
+        public enum Size10 {
+            public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight10) }
+        }
+
         public enum Size12 {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility12) }
             public static var add: DesignSystemImage { .init(resource: .add12) }
@@ -149,10 +153,12 @@ public extension DesignSystemImages {
         }
 
         public enum Size16 {
+            public static var returnTo: DesignSystemImage { .init(resource: .returnTo16) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneral16) }
             public static var priceTag: DesignSystemImage { .init(resource: .priceTag16) }
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility16) }
             public static var add: DesignSystemImage { .init(resource: .add16) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop16) }

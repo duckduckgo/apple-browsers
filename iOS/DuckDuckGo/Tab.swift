@@ -69,11 +69,11 @@ public class Tab: NSObject, NSCoding {
     /// restoration, and the replacement must be attributed to it too.
     private(set) var hasPendingSessionRestoration = false
 
-    /// The date last time this tab was displayed.
+    /// The date this tab was last displayed.
     ///
-    /// - Warning: This value **must not** be used for any other purpose than for inactive tabs buckets aggregation
-    /// into a daily pixel in `TabSwitcherOpenDailyPixel`. If you plan to do something else,
-    /// read through https://app.asana.com/0/69071770703008/1208795393823862/f and reopen if necessary.
+    /// Used for inactive-tab bucket aggregation in `TabSwitcherOpenDailyPixel` and the redesigned
+    /// New Tab Page's last-viewed caption. Before adding other uses, read through
+    /// https://app.asana.com/0/69071770703008/1208795393823862/f and reopen if necessary.
     private(set) var lastViewedDate: Date?
 
     var isDesktop: Bool = false {
@@ -148,6 +148,8 @@ public class Tab: NSObject, NSCoding {
     /// Per-tab AI Chat configuration (model, reasoning mode, tool). Persisted via
     /// NSCoding so reopening the app restores the tab's selected AI settings.
     var unifiedInputState: UnifiedInputTabState
+
+    @MainActor lazy var iPadOmnibarDraft = IPadOmnibarDraft()
 
     var duckAIEntrySource: AIChatEntryPointSource?
 

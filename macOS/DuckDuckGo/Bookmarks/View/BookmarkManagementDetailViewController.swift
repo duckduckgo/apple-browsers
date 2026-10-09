@@ -553,8 +553,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         clearSearch()
         managementDetailViewModel.update(selection: selectionState, mode: mode)
         tableView.reloadData()
-        sortItemsButton.backgroundColor = mode.shouldHighlightButton ? .buttonMouseDown : .clear
-        sortItemsButton.mouseOverColor = mode.shouldHighlightButton ? .buttonMouseDown : .buttonMouseOver
+        sortItemsButton.backgroundColor = mode.shouldHighlightButton ? NSColor(resource: .buttonMouseDown) : .clear
+        sortItemsButton.mouseOverColor = mode.shouldHighlightButton ? NSColor(resource: .buttonMouseDown) : NSColor(resource: .buttonMouseOver)
     }
 
     private func clearSearch() {
@@ -762,9 +762,9 @@ private extension BookmarkManagementDetailViewController {
     func configureToolbarButton(_ button: MouseOverButton, image: NSImage, isHidden: Bool) {
         button.bezelStyle = .shadowlessSquare
         button.cornerRadius = 4
-        button.normalTintColor = .button
-        button.mouseDownColor = .buttonMouseDown
-        button.mouseOverColor = .buttonMouseOver
+        button.normalTintColor = NSColor(resource: .button)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
         button.imageHugsTitle = true
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.alignment = .center

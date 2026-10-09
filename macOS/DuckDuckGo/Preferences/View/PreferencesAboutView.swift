@@ -181,9 +181,9 @@ extension Preferences {
                             .padding(.vertical, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: DesignSystemRebrand.isAppRebranded() ? 11 : 4)
-                                    .fill(DesignSystemRebrand.isAppRebranded() ? Color(designSystemColor: .statusYellowTertiary) : Color.betaLabelBackground)
+                                    .fill(DesignSystemRebrand.isAppRebranded() ? Color(designSystemColor: .statusYellowTertiary) : Color(.betaLabelBackground))
                             )
-                            .foregroundColor(Color.betaLabelForeground)
+                            .foregroundColor(Color(.betaLabelForeground))
                     }
                 }
 
@@ -300,19 +300,19 @@ extension Preferences {
         private var statusIcon: some View {
             switch model.updateState {
             case .upToDate:
-                Image(nsImage: .check)
+                Image(nsImage: NSImage(resource: .check))
                     .foregroundColor(.green)
             case .updateCycle(let progress):
                 if hasPendingUpdate {
                     if hasCriticalUpdate {
-                        Image(nsImage: .criticalUpdateNotificationInfo)
+                        Image(nsImage: NSImage(resource: .criticalUpdateNotificationInfo))
                             .foregroundColor(.red)
                     } else {
-                        Image(nsImage: .updateNotificationInfo)
+                        Image(nsImage: NSImage(resource: .updateNotificationInfo))
                             .foregroundColor(.blue)
                     }
                 } else if progress.isFailed {
-                    Image(nsImage: .criticalUpdateNotificationInfo)
+                    Image(nsImage: NSImage(resource: .criticalUpdateNotificationInfo))
                         .foregroundColor(.red)
                 } else {
                     if #available(macOS 13.0, *) {
@@ -328,7 +328,7 @@ extension Preferences {
         @ViewBuilder
         private var lastCheckedText: some View {
             let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-            Text("\(UserText.lastChecked): \(lastChecked)")
+            Text(verbatim: "\(UserText.lastChecked): \(lastChecked)")
                 .foregroundColor(.secondary)
         }
 
@@ -471,7 +471,7 @@ extension Preferences {
                 }
             }
             .padding()
-            .background(Color.unsupportedOSWarning)
+            .background(Color(.unsupportedOSWarning))
             .cornerRadius(8)
             .fixedSize(horizontal: false, vertical: true)
             .frame(minWidth: 320, maxWidth: 510)

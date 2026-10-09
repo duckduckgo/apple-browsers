@@ -293,7 +293,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
-            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
@@ -303,7 +303,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             keyValueStore: UserDefaults.app,
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
-            featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
@@ -1017,6 +1016,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
+            tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {
                 removeFromCache(controller)
@@ -1027,10 +1027,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             removeTabHistory(for: tabIDs)
         }
 
-        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
-            Task {
-                await clearAppSwitcherSnapshots()
-            }
+        Task {
+            await clearAppSwitcherSnapshots()
         }
 
         tabsCacheNeedsCleanup = true
@@ -1067,6 +1065,8 @@ extension TabManager {
     @MainActor
     func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         let tabsData = tabsRemovalData(browsingMode: browsingMode)
+
+        tabsData.tabsToDelete.forEach { $0.iPadOmnibarDraft.invalidate() }
 
         let previewsResult = previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
         tabsModelProvider.clearTabs(for: browsingMode)

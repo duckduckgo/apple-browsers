@@ -110,7 +110,7 @@ struct ReturnToTabCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
         .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
-        .accessibilityIdentifier("NTP.escapeHatch.card")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.card")
     }
 
     /// Trailing controls: when enabled, the Fire (delete tab) button sits to the left of the three-dots menu.
@@ -133,7 +133,7 @@ struct ReturnToTabCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
-        .accessibilityIdentifier("NTP.escapeHatch.fireButton")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.fireButton")
         .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { fireButtonFrameInWindow = $0 }
     }
 
@@ -154,7 +154,7 @@ struct ReturnToTabCard: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
-        .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.moreButton")
         .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
     }
 
@@ -286,7 +286,7 @@ struct ReturnToTabCard: View {
 }
 
 /// Holds FaviconViewModel in @StateObject so it's created once per domain instead of on every body.
-private struct DomainFaviconView: View {
+struct DomainFaviconView: View {
     let domain: String
 
     @StateObject private var viewModel: FaviconViewModel

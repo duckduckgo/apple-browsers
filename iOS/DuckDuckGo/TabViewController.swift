@@ -96,6 +96,9 @@ enum WebViewPreviewSnapshotPolicy {
 
 enum WebViewScrollViewInsetUpdater {
 
+    // WebKit's resting offset and adjusted inset can differ by floating-point rounding.
+    private static let topPositionTolerance: CGFloat = 0.001
+
     struct AdjustmentBehavior {
         let contentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
         let automaticallyAdjustsScrollIndicatorInsets: Bool
@@ -116,15 +119,24 @@ enum WebViewScrollViewInsetUpdater {
         scrollView.automaticallyAdjustsScrollIndicatorInsets = behavior.automaticallyAdjustsScrollIndicatorInsets
     }
 
-    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
+    static func shouldDeferDuringTopBounce(_ scrollView: UIScrollView) -> Bool {
+        (scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating)
+            && scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+    }
+
+    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, animated: Bool = false) {
         if scrollView.contentInset != insets {
-            let isPinnedToTop = scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+            let isPinnedToTop = scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
             scrollView.contentInset = insets
             if isPinnedToTop {
-                scrollView.contentOffset.y = -insets.top
+                scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
             }
         }
 
+        updateScrollIndicatorInsets(scrollView, insets: insets)
+    }
+
+    static func updateScrollIndicatorInsets(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
         if scrollView.verticalScrollIndicatorInsets != insets {
             scrollView.verticalScrollIndicatorInsets = insets
         }
@@ -323,7 +335,10 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
+    private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
+                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
     private var hasAppliedFloatingUIScrollViewInsets = false
+    private var hasDeferredFloatingUIInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -726,7 +741,6 @@ class TabViewController: UIViewController {
         (webView.configuration.userContentController as? UserContentController)!
     }
 
-
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
 
@@ -821,6 +835,8 @@ class TabViewController: UIViewController {
 
     let sitePermissionsState = SitePermissionsState()
     var sitePermissionsNavigationTimeout: TimeInterval = 10
+    var contentBlockingWaitPixelTimeout: TimeInterval = 10
+    var contentBlockingWaitNotificationCenter: NotificationCenter = .default
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -971,7 +987,7 @@ class TabViewController: UIViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
-            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement
@@ -1187,6 +1203,12 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: barsVisibilityPercent)
     }
 
+    func applyDeferredFloatingUIInsetsIfNeeded() {
+        guard hasDeferredFloatingUIInsets, let webView,
+              !WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) else { return }
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent)
+    }
+
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
         updateWebViewBottomConstraint(for: barsVisibilityPercent)
 
@@ -1287,17 +1309,38 @@ class TabViewController: UIViewController {
         if additionalSafeAreaInsets != .zero {
             additionalSafeAreaInsets = .zero
         }
-        if WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+        // Indicators follow the visible chrome even while page geometry is held for a bounce.
+        // Apply after WebKit's inset setters as well, so they cannot leave stale indicator insets.
+        defer {
+            WebViewScrollViewInsetUpdater.updateScrollIndicatorInsets(webView.scrollView, insets: obscuredInsets)
+        }
+        // WebKit clamps overscroll when obscuredContentInsets changes, even for bottom-only changes.
+        // Keep both inset types stable until the bounce ends or the gesture moves back into the page.
+        if hasAppliedFloatingUIScrollViewInsets,
+           WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) {
+            hasDeferredFloatingUIInsets = true
+            return
+        }
+        let hadDeferredInsets = hasDeferredFloatingUIInsets
+        let animateTopAlignment = hadDeferredInsets
+            && !webView.scrollView.isTracking && !webView.scrollView.isDragging && !webView.scrollView.isDecelerating
+        let shouldUpdateScrollInsets = WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
-        ) {
-            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
+        )
+        // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
+        hasDeferredFloatingUIInsets = false
+        if shouldUpdateScrollInsets {
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
         }
         setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+        // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
+        hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        hasDeferredFloatingUIInsets = false
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
@@ -1496,6 +1539,7 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        pageSignalsMonitor.attach(to: webView)
         sitePermissionsDidAttachWebView(replacingWebView: isReplacingWebView)
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
@@ -1707,6 +1751,7 @@ class TabViewController: UIViewController {
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
+        pageSignalsMonitor.detach()
         prepareSitePermissionsForDataClearing()
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
@@ -2114,7 +2159,6 @@ class TabViewController: UIViewController {
                                                name: AppUserDefaults.Notifications.textZoomChange,
                                                object: nil)
     }
-
 
     private func subscribeToEmailProtectionSignOutNotification() {
         emailProtectionSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
@@ -2591,6 +2635,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
         userScripts?.selectionFrameScript.reset()
@@ -3399,6 +3444,7 @@ extension TabViewController: WKNavigationDelegate {
         urlProvidedBasicAuthCredential = nil
         lastError = error
         let error = error as NSError
+        pageSignalsMonitor.didFailProvisionalNavigation(to: error.failedUrl, with: error)
 
         // Ignore Frame Load Interrupted that will be caused when a download starts
         if error.code == 102 && error.domain == "WebKitErrorDomain" {
@@ -3486,9 +3532,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
-            if isSitePermissionsEnabled {
-                sitePermissionsState.cancelContentBlockingWaits()
-            }
+            sitePermissionsState.cancelContentBlockingWaits()
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3498,16 +3542,11 @@ extension TabViewController: WKNavigationDelegate {
         // nav1's `didStartProvisionalNavigation` consumed it. WebKit serializes delegate callbacks on the
         // main queue, so firing from inside the allow branches guarantees the next event is the matching
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
-        //
-        // `determineAllowPolicy()` may also return the private `WKNavigationActionPolicy(rawValue: 3)`
-        // (`_WKNavigationActionPolicyAllowWithoutTryingAppLink`) to disable Universal Links handling
-        // (set via `preventUniversalLinksOnce` — notably after a tab restoration). WebKit still produces
-        // a `didStartProvisional` for it, so `willStart` must fire just like for the public `.allow` value.
-        let wrappedHandler: (WKNavigationActionPolicy) -> Void = { [weak self] policy in
-            if policy == .allow || policy.rawValue == 3 {
+        let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
+            if case .allow = decision {
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
-            decisionHandler(policy)
+            decisionHandler(decision.webKitPolicy)
         }
 
         // Wait on the shared startup gate. The post-gate helper is also used by the
@@ -3547,15 +3586,13 @@ extension TabViewController: WKNavigationDelegate {
 
     private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
                                                           navigationAction: WKNavigationAction,
-                                                          decisionHandler wrappedHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+                                                          decisionHandler wrappedHandler: @escaping (TabNavigationDecision) -> Void) {
 
-        // There is an `isUserInitiated` var on navigationAction that uses private API
-        //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
-        //  if the user visits the a domain where as a loop has already been detected
-        //  we'll show the error page but that is a small number at this point already.
-        if #available(iOS 18.4, *), navigationAction.buttonNumber.contains(.primary) {
-            safariRedirectHandler.reset()
+        var isUserInitiated = false
+        if #available(iOS 18.4, *) {
+            isUserInitiated = navigationAction.buttonNumber.contains(.primary)
         }
+        safariRedirectHandler.willNavigate(navigationAction, isUserInitiated: isUserInitiated)
 
         if let url = navigationAction.request.url {
             if !tabURLInterceptor.allowsNavigatingTo(url: url) {
@@ -3666,14 +3703,16 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.isTargetingMainFrame,
            !(navigationAction.request.url?.isDuckDuckGoSearch ?? false) {
             let didRewriteLink = linkProtection.requestTrackingLinkRewrite(initiatingURL: webView.url,
-                                                                           navigationAction: navigationAction,
+                                                                           destinationRequest: navigationAction.request,
                                                                            onStartExtracting: { showProgressIndicator() },
                                                                            onFinishExtracting: { },
-                                                                           onLinkRewrite: { [weak self] newRequest, _ in
+                                                                           onLinkRewrite: { [weak self] newRequest in
                 guard let self = self else { return }
                 self.load(urlRequest: newRequest)
             },
-                                                                           policyDecisionHandler: wrappedHandler)
+                                                                           policyDecisionHandler: { shouldAllow in
+                wrappedHandler(shouldAllow ? .allow(appLinks: .enabled) : .cancel)
+            })
 
             if didRewriteLink {
                 return
@@ -3757,7 +3796,7 @@ extension TabViewController: WKNavigationDelegate {
         decidePolicyFor(navigationAction: navigationAction) { [weak self] decision in
             if let self = self,
                let url = navigationAction.request.url,
-               decision != .cancel,
+               case .allow = decision,
                navigationAction.isTargetingMainFrame {
                 if url.isDuckDuckGoSearch {
 
@@ -3781,8 +3820,10 @@ extension TabViewController: WKNavigationDelegate {
                 self.delegate?.closeFindInPage(tab: self)
             }
             // If navigating to the URL is allowed and we're not sideloading a special error page, forward the event to
-            // the SpecialErrorPageNavigationHandler.
-            if let self, decision == .allow, !self.specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
+            // the SpecialErrorPageNavigationHandler regardless of whether app links are enabled.
+            if let self,
+               case .allow = decision,
+               !self.specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
                 self.specialErrorPageNavigationHandler.handleDecidePolicy(for: navigationAction, webView: webView)
             }
             wrappedHandler(decision)
@@ -3809,6 +3850,10 @@ extension TabViewController: WKNavigationDelegate {
 
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            if isMainFrame {
+                startContentBlockingWaitTimeoutPixel(until: userContentController.$contentBlockingAssets.filter { $0 != nil })
+            }
+            // Retains the tab until assets install: tab deinit stops asset delivery and would strand WebKit's decision.
             Task {
                 rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
                 showProgressIndicator()
@@ -3825,7 +3870,12 @@ extension TabViewController: WKNavigationDelegate {
         showProgressIndicator()
         let waitID = UUID()
         let timeout = sitePermissionsNavigationTimeout
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
+        let geolocationInstalled = userContentController.$contentBlockingAssets
+            .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+        if isMainFrame {
+            startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
+        }
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
@@ -3835,8 +3885,7 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
             // Only readiness may reset the deadline; unrelated asset updates must not extend it.
-            let readiness = userContentController.$contentBlockingAssets
-                .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+            let readiness = geolocationInstalled
                 .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
                 .first()
             var isReady = false
@@ -3850,12 +3899,40 @@ extension TabViewController: WKNavigationDelegate {
                 completion(false)
                 return
             }
+            if isMainFrame {
+                state?.contentBlockingWaitTimeoutPixel = nil
+            }
             if !isReady, isMainFrame {
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
             completion(isReady)
         }
         return true
+    }
+
+    /// Counts main-frame navigations still waiting for content blocking assets after the timeout in the foreground:
+    /// the stall that could otherwise block page loads indefinitely. Any cancelled wait cancels this too.
+    private func startContentBlockingWaitTimeoutPixel<Ready: Publisher>(until ready: Ready) where Ready.Failure == Never {
+        let notificationCenter = contentBlockingWaitNotificationCenter
+        let timeout = contentBlockingWaitPixelTimeout
+        // Each return to the foreground restarts the timeout, so time in the background never counts.
+        sitePermissionsState.contentBlockingWaitTimeoutPixel = notificationCenter.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .map { _ in false }
+            .merge(with: notificationCenter.publisher(for: UIApplication.willEnterForegroundNotification).map { _ in true })
+            .prepend(UIApplication.shared.applicationState != .background)
+            .map { isForeground in
+                isForeground
+                    ? Just(()).delay(for: .seconds(timeout), scheduler: DispatchQueue.main).eraseToAnyPublisher()
+                    : Empty(completeImmediately: false).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .prefix(untilOutputFrom: ready)
+            .first()
+            .sink(receiveCompletion: { [weak state = sitePermissionsState] _ in
+                state?.contentBlockingWaitTimeoutPixel = nil
+            }, receiveValue: { [pixelFiring] in
+                pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
+            })
     }
 
     private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
@@ -3869,8 +3946,8 @@ extension TabViewController: WKNavigationDelegate {
         webpageDidFailToLoad()
     }
 
-    private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {
-        let allowPolicy = determineAllowPolicy()
+    private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (TabNavigationDecision) -> Void) {
+        let allowDecision = determineAllowDecision()
 
         if navigationAction.navigationType == .linkActivated {
             delegate?.tabDidEngageWithPage(self)
@@ -3892,12 +3969,12 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         guard navigationAction.request.mainDocumentURL != nil else {
-            completion(allowPolicy)
+            completion(allowDecision)
             return
         }
 
         guard let url = navigationAction.request.url else {
-            completion(allowPolicy)
+            completion(allowDecision)
             return
         }
 
@@ -3908,20 +3985,20 @@ extension TabViewController: WKNavigationDelegate {
         let schemeType = SchemeHandler.schemeType(for: url)
         self.blobDownloadTargetFrame = nil
 
-        if safariRedirectHandler.handleRedirect(to: url) {
+        if safariRedirectHandler.handleRedirect(to: url, isMainFrame: navigationAction.targetFrame?.isMainFrame ?? true) {
             completion(.cancel)
             return
         }
 
         switch schemeType {
         case .allow:
-            completion(.allow)
+            completion(.allow(appLinks: .enabled))
             return
 
         case .navigational:
             performNavigationFor(url: url,
                                  navigationAction: navigationAction,
-                                 allowPolicy: allowPolicy,
+                                 allowDecision: allowDecision,
                                  completion: completion)
 
         case .external(let action):
@@ -3965,8 +4042,8 @@ extension TabViewController: WKNavigationDelegate {
 
     private func performNavigationFor(url: URL,
                                       navigationAction: WKNavigationAction,
-                                      allowPolicy: WKNavigationActionPolicy,
-                                      completion: @escaping (WKNavigationActionPolicy) -> Void) {
+                                      allowDecision: TabNavigationDecision,
+                                      completion: @escaping (TabNavigationDecision) -> Void) {
 
         // when navigating to a request with basic auth username/password, cache it and redirect to a trimmed URL
         if navigationAction.isTargetingMainFrame,
@@ -4000,11 +4077,11 @@ extension TabViewController: WKNavigationDelegate {
 
         if isNewTargetBlankRequest(navigationAction: navigationAction) {
             // This will fallback to native WebView handling through webView(_:createWebViewWith:for:windowFeatures:)
-            completion(allowPolicy)
+            completion(allowDecision)
             return
         }
 
-        if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame {
+        if case .allow = allowDecision, navigationAction.isTargetingMainFrame {
             if shouldUseSafariOnlyUserAgentForNextMainFrameNavigation {
                 webView.customUserAgent = userAgentManager.safariOnlyUserAgent(isDesktop: tabModel.isDesktop)
                 shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
@@ -4014,20 +4091,20 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         if !privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
-            completion(allowPolicy)
+            completion(allowDecision)
             return
         }
 
         if shouldUpgradeToHttps(url: url, navigationAction: navigationAction) {
-            upgradeToHttps(url: url, allowPolicy: allowPolicy, completion: completion)
+            upgradeToHttps(url: url, allowDecision: allowDecision, completion: completion)
         } else {
-            completion(allowPolicy)
+            completion(allowDecision)
         }
     }
 
     private func upgradeToHttps(url: URL,
-                                allowPolicy: WKNavigationActionPolicy,
-                                completion: @escaping (WKNavigationActionPolicy) -> Void) {
+                                allowDecision: TabNavigationDecision,
+                                completion: @escaping (TabNavigationDecision) -> Void) {
         httpsUpgradeTask = Task {
             let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
             guard !Task.isCancelled else {
@@ -4042,10 +4119,10 @@ extension TabViewController: WKNavigationDelegate {
                     load(url: upgradedUrl, didUpgradeURL: true)
                     completion(.cancel)
                 } else {
-                    completion(allowPolicy)
+                    completion(allowDecision)
                 }
             case .failure:
-                completion(allowPolicy)
+                completion(allowDecision)
             }
         }
     }
@@ -4069,12 +4146,11 @@ extension TabViewController: WKNavigationDelegate {
         return navigationAction.navigationType == .linkActivated && navigationAction.targetFrame == nil
     }
 
-    private func determineAllowPolicy() -> WKNavigationActionPolicy {
-        let allowWithoutUniversalLinks = WKNavigationActionPolicy(rawValue: WKNavigationActionPolicy.allow.rawValue + 2) ?? .allow
-        if preventUniversalLinksOnce {
-            return allowWithoutUniversalLinks
+    private func determineAllowDecision() -> TabNavigationDecision {
+        if preventUniversalLinksOnce || !AppUserDefaults().allowUniversalLinks {
+            return .allow(appLinks: .disabled)
         }
-        return AppUserDefaults().allowUniversalLinks ? .allow : allowWithoutUniversalLinks
+        return .allow(appLinks: .enabled)
     }
     
     private func showErrorNow() {
@@ -4184,9 +4260,9 @@ extension TabViewController: WKNavigationDelegate {
 extension TabViewController {
 
     private func performBlobNavigation(_ navigationAction: WKNavigationAction,
-                                       completion: @escaping (WKNavigationActionPolicy) -> Void) {
+                                       completion: @escaping (TabNavigationDecision) -> Void) {
         self.blobDownloadTargetFrame = navigationAction.targetFrame
-        completion(.allow)
+        completion(.allow(appLinks: .enabled))
     }
 
     private func startDownload(with navigationResponse: WKNavigationResponse) async -> (responsePolicy: WKNavigationResponsePolicy, download: Download?) {
@@ -4717,15 +4793,13 @@ extension TabViewController: UIGestureRecognizerDelegate {
             return false
         }
 
-        if featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay) {
-            // Claiming priority inserts this recognizer into the failure graph of every other tap
-            // recognizer, including the multi-tap ones WKWebView installs over web content. Those hold
-            // the second tap of a quick two-tap sequence back while they arbitrate, and it is dropped
-            // rather than delivered - so typing on an on-screen keyboard loses alternate keypresses.
-            // Claim nothing unless this tap could actually fire.
-            guard isShowBarsTap(gestureRecognizer) else {
-                return false
-            }
+        // Claiming priority inserts this recognizer into the failure graph of every other tap
+        // recognizer, including the multi-tap ones WKWebView installs over web content. Those hold
+        // the second tap of a quick two-tap sequence back while they arbitrate, and it is dropped
+        // rather than delivered - so typing on an on-screen keyboard loses alternate keypresses.
+        // Claim nothing unless this tap could actually fire.
+        guard isShowBarsTap(gestureRecognizer) else {
+            return false
         }
 
         // Don't delay tap gestures that are inside the onboarding dialog
@@ -5063,7 +5137,6 @@ extension TabViewController: AutoconsentUserScriptDelegate {
         privacyInfo?.cookieConsentManaged = consentStatus
     }
 }
-
 
 @available(iOS 18.4, *)
 extension PrivacyInfo {
@@ -6081,6 +6154,7 @@ extension TabViewController: SafariRedirectHandlerDelegate {
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
+        if case .safariRedirectLoop = actionableErrorPage { return }
         SafariRedirectPixel.loopErrorPageShown.fireDailyAndCount()
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)

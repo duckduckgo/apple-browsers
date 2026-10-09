@@ -1042,11 +1042,13 @@ extension AppDelegate {
 
     @objc func resetVPNUpsell() {
         // Clear VPN upsell state
-        vpnUpsellUserDefaultsPersistor.vpnUpsellPopoverViewed = false
-        vpnUpsellUserDefaultsPersistor.vpnUpsellDismissed = false
-        vpnUpsellUserDefaultsPersistor.vpnUpsellFirstPinnedDate = nil
+        vpnUpsellUserDefaultsPersistor.legacyPopoverViewed = false
+        vpnUpsellUserDefaultsPersistor.legacyUpsellDismissed = false
+        vpnUpsellUserDefaultsPersistor.legacyFirstPinnedDate = nil
         // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
         vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval = 10
+        promoService?.undismiss(promoId: PromoServiceFactory.vpnUpsellToolbarButtonPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.vpnUpsellDotBadgePromoID, clearHistory: true)
     }
 }
 
@@ -1406,7 +1408,8 @@ extension MainViewController {
         if tabBarViewController.isDuckAIChatPresented {
             tabBarViewController.closeDuckAIChat()
         } else {
-            tabBarViewController.openDuckAISidebarWithPageAttachment()
+            tabBarViewController.openDuckAISidebarWithPageAttachment(conversationSource: .mainMenuAskAboutPage,
+                                                                     sidebarOpenSource: .mainMenuAskAboutPage)
         }
     }
 
@@ -1559,6 +1562,12 @@ extension MainViewController {
     @objc func inspectPermissions(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
+    }
+
+    @objc func debugShowPageSignals(_ sender: Any?) {
+        let signals = tabCollectionViewModel.selectedTabViewModel?.tab.pageSignals?.pageSignals
+        let alert = PageSignalsAlert(signals: signals)
+        alert.runModal()
     }
 
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {

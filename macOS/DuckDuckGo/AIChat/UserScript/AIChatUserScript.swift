@@ -85,6 +85,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             originRules.append(.exact(hostname: customURLHostname))
             destinationRules.append(.exact(hostname: customURLHostname))
         }
+
         self.messageOriginPolicy = .only(rules: originRules)
         self.messageDestinationPolicy = .only(rules: destinationRules)
         super.init()
@@ -183,6 +184,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChatSettings
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
+        case .attachmentPrivacyShouldDisplay:
+            return handler.attachmentPrivacyShouldDisplay
         case .closeAIChat:
             return handler.closeAIChat
         case .getAIChatNativePrompt:
@@ -265,6 +268,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.dictationStartFailed
         case .customizeResponsesModalClosed:
             return handler.customizeResponsesModalClosed
+        case .getAIChats:
+            return handler.getAIChats
         default:
             return nil
         }

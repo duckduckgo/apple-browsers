@@ -366,6 +366,8 @@ final class DuckPlayer {
 
     private var isFeatureEnabled: Bool = false {
         didSet {
+            // Rebinding republishes `mode`, which re-shows the YouTube overlay mid-video.
+            guard isFeatureEnabled != oldValue else { return }
             bindDuckPlayerModeIfNeeded()
         }
     }
@@ -416,13 +418,13 @@ extension DuckPlayer {
         guard isAvailable, mode != .disabled, faviconView.url?.isDuckPlayer == true else {
             return nil
         }
-        return .duckPlayer
+        return NSImage(resource: .duckPlayer)
     }
 
     func image(for bookmark: Bookmark) -> NSImage? {
         // Bookmarks to Duck Player pages retain duck:// URL even when Duck Player is disabled,
         // so we keep the Duck Player favicon even if Duck Player is currently disabled
-        return (bookmark.urlObject?.isDuckPlayer ?? false) ? .duckPlayer : nil
+        return (bookmark.urlObject?.isDuckPlayer ?? false) ? NSImage(resource: .duckPlayer) : nil
     }
 
     func domainForRecentlyVisitedSite(with url: URL) -> String? {

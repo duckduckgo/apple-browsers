@@ -18,6 +18,7 @@
 
 import XCTest
 import WebKit
+import ZIPFoundation
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -74,17 +75,23 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
+                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                             storageProvider: WebExtensionStorageProviding? = nil,
+                             bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
+                                 XCTFail("Unexpected bundled extension lookup")
+                                 return nil
+                             }) -> WebExtensionManager {
         let manager = WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
-            storageProvider: storageProvidingMock,
+            storageProvider: storageProvider ?? storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: webExtensionLoadingMock,
             eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock,
             pixelFiring: pixelFiring,
-            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            bundledExtensionURL: bundledExtensionURL
         )
         manager.unloadGuard = WebExtensionUnloadGuard(
             now: { [unowned self] in currentDate },
@@ -125,20 +132,20 @@ final class WebExtensionManagerTests: XCTestCase {
         return context
     }
 
-    private func makeTestExtensionDirectory(permissions: [String] = []) throws -> URL {
+    private func makeTestExtensionDirectory(permissions: [String] = [], embeddedType: DuckDuckGoWebExtensionType? = nil) throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReloadTestExtension-\(UUID().uuidString)")
-        let permissionsJSON = permissions.map { "\"\($0)\"" }.joined(separator: ", ")
-        let manifest = """
-        {
+        var manifest: [String: Any] = [
             "manifest_version": 3,
             "name": "Reload Test Extension",
             "version": "1.0.0",
             "description": "Minimal backgroundless test extension for reload unit tests",
-            "permissions": [\(permissionsJSON)]
+            "permissions": permissions
+        ]
+        if let embeddedType {
+            manifest["browser_specific_settings"] = ["duckduckgo": ["id": embeddedType.rawValue]]
         }
-        """
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try manifest.write(to: dir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        try JSONSerialization.data(withJSONObject: manifest).write(to: dir.appendingPathComponent("manifest.json"))
         createdTestExtensionDirs.append(dir)
         return dir
     }
@@ -166,6 +173,16 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(installedExtensionStoringMock.addCalled)
         XCTAssertNotNil(installedExtensionStoringMock.addedExtension?.uniqueIdentifier)
         XCTAssertEqual(storageProvidingMock.copyExtensionIdentifier, installedExtensionStoringMock.addedExtension?.uniqueIdentifier)
+    }
+
+    @MainActor
+    func testWhenPermissionsAreDisabled_ThenDDGIdentityIsPreservedWithoutBundleLookup() async throws {
+        let manager = makeManager()
+        let sourceURL = try makeTestExtensionDirectory(embeddedType: .embedded)
+
+        try await manager.installExtension(from: sourceURL)
+
+        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.embeddedType, .embedded)
     }
 
     @MainActor
@@ -201,6 +218,56 @@ final class WebExtensionManagerTests: XCTestCase {
             XCTAssertFalse(installedExtensionStoringMock.addCalled)
             XCTAssertTrue(storageProvidingMock.removeExtensionCalled)
         }
+    }
+
+    @MainActor
+    func testStoreExtensionInstallationNotifiesWithStoreIDAfterStateUpdate() async throws {
+        let manager = makeManager()
+        let sourceURL = try createTestWebExtension()
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: String(repeating: "a", count: 32))
+        let store = installedExtensionStoringMock!
+        let changed = expectation(forNotification: .chromeWebStoreExtensionChanged, object: manager) { notification in
+            XCTAssertEqual(notification.userInfo?["extensionId"] as? String, identity.id)
+            XCTAssertEqual(store.installedExtensions.first?.storeIdentity, identity)
+            return true
+        }
+
+        try await manager.installExtension(from: sourceURL, storeIdentity: identity)
+
+        await fulfillment(of: [changed], timeout: 1)
+    }
+
+    @MainActor
+    func testNonStoreExtensionInstallationDoesNotSendStoreNotification() async throws {
+        let manager = makeManager()
+        let sourceURL = try createTestWebExtension()
+        let changed = expectation(forNotification: .chromeWebStoreExtensionChanged, object: manager)
+        changed.isInverted = true
+
+        try await manager.installExtension(from: sourceURL)
+
+        await fulfillment(of: [changed], timeout: 0.01)
+    }
+
+    @MainActor
+    func testFailedStoreExtensionInstallationDoesNotSendChangeNotification() async throws {
+        let manager = makeManager()
+        let sourceURL = try createTestWebExtension()
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+        let changed = expectation(forNotification: .chromeWebStoreExtensionChanged, object: manager)
+        changed.isInverted = true
+
+        do {
+            try await manager.installExtension(
+                from: sourceURL,
+                storeIdentity: .init(store: .chromeWebStore, id: String(repeating: "a", count: 32))
+            )
+            XCTFail("Expected installation to fail")
+        } catch {
+            XCTAssertTrue(installedExtensionStoringMock.installedExtensions.isEmpty)
+        }
+
+        await fulfillment(of: [changed], timeout: 0.01)
     }
 
     // MARK: - Uninstall Extension Tests
@@ -250,6 +317,52 @@ final class WebExtensionManagerTests: XCTestCase {
         try manager.uninstallExtension(identifier: identifier)
 
         XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
+    }
+
+    @MainActor
+    func testStoreExtensionRemovalNotifiesWithStoreIDAfterStateUpdate() throws {
+        let manager = makeManager()
+        let storeID = String(repeating: "a", count: 32)
+        let store = installedExtensionStoringMock!
+        store.installedExtensions = [InstalledWebExtension(uniqueIdentifier: "local-id", filename: "extension.zip",
+                                                          name: nil, version: nil, storeIdentity: .init(store: .chromeWebStore, id: storeID))]
+        let removed = expectation(forNotification: .chromeWebStoreExtensionChanged, object: manager) { notification in
+            XCTAssertEqual(notification.userInfo?["extensionId"] as? String, storeID)
+            XCTAssertTrue(store.installedExtensions.isEmpty)
+            return true
+        }
+
+        try manager.uninstallExtension(identifier: "local-id")
+
+        wait(for: [removed], timeout: 1)
+    }
+
+    @MainActor
+    func testNonStoreExtensionRemovalDoesNotSendStoreNotification() throws {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "local-id")]
+        let removed = expectation(forNotification: .chromeWebStoreExtensionChanged, object: manager)
+        removed.isInverted = true
+
+        try manager.uninstallExtension(identifier: "local-id")
+
+        wait(for: [removed], timeout: 0.01)
+    }
+
+    @MainActor
+    func testFailedStoreExtensionRemovalDoesNotSendSuccessNotification() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "local-id", filename: "extension.zip", name: nil, version: nil,
+                                  storeIdentity: .init(store: .chromeWebStore, id: String(repeating: "a", count: 32)))
+        ]
+        storageProvidingMock.mockRemoveError = NSError(domain: "test", code: 1)
+        let removed = expectation(forNotification: .chromeWebStoreExtensionChanged, object: manager)
+        removed.isInverted = true
+
+        XCTAssertThrowsError(try manager.uninstallExtension(identifier: "local-id"))
+
+        wait(for: [removed], timeout: 0.01)
     }
 
     // MARK: - Uninstall All Extensions Tests
@@ -540,14 +653,18 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     private func makeManagerWithLoadedExtension(identifier: String,
                                                 filename: String = "extension.zip",
-                                                embeddedType: DuckDuckGoWebExtensionType? = nil) async throws -> WebExtensionManager {
+                                                embeddedType: DuckDuckGoWebExtensionType? = nil,
+                                                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
+                                                    XCTFail("Unexpected bundled extension lookup")
+                                                    return nil
+                                                }) async throws -> WebExtensionManager {
         installedExtensionStoringMock.installedExtensions = [
             makeInstalledWebExtension(uniqueIdentifier: identifier, filename: filename, version: "0.0.1", embeddedType: embeddedType)
         ]
         webExtensionLoadingMock.mockLoadResults = [
             .success(WebExtensionLoadResult(identifier: identifier, filename: filename, displayName: nil, version: "0.0.1"))
         ]
-        let manager = makeManager()
+        let manager = makeManager(bundledExtensionURL: bundledExtensionURL)
         try await loadRealContext(identifier: identifier, into: manager.controller, permissions: ["declarativeNetRequest"])
         await manager.loadInstalledExtensions()
         return manager
@@ -593,12 +710,19 @@ final class WebExtensionManagerTests: XCTestCase {
                        "disabling should have uninstalled the extension after the settle window")
     }
 
-    // The upgrade branch resolves the bundled extension through `Bundle.module`, which traps on iOS.
-    // Gated for the same reason as DarkReaderBundlePatchTests.
-#if os(macOS)
     @MainActor
     func testWhenEmbeddedDNRExtensionIsUpgradedWithinSettleWindow_ThenSyncSleepsBeforeUninstall() async throws {
-        let manager = try await makeManagerWithLoadedAdBlocker()
+        let bundledDirectory = try makeTestExtensionDirectory(permissions: ["declarativeNetRequest"], embeddedType: .adBlockingExtension)
+        let bundledURL = bundledDirectory.appendingPathExtension("zip")
+        createdTestExtensionDirs.append(bundledURL)
+        try FileManager.default.zipItem(at: bundledDirectory, to: bundledURL, shouldKeepParent: false)
+        let manager = try await makeManagerWithLoadedExtension(identifier: "old-adblock",
+                                                              filename: "content-blocker-extension-apple.zip",
+                                                              embeddedType: .adBlockingExtension,
+                                                              bundledExtensionURL: { descriptor in
+                                                                  XCTAssertEqual(descriptor.type, .adBlockingExtension)
+                                                                  return bundledURL
+                                                              })
 
         currentDate = currentDate.addingTimeInterval(1)
         await manager.syncEmbeddedExtensions(enabledTypes: [.adBlockingExtension])
@@ -606,6 +730,46 @@ final class WebExtensionManagerTests: XCTestCase {
         assertSleptForRemainderBeforeUnloading()
         XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
                        "upgrade should have uninstalled the old extension after the settle window")
+    }
+
+#if os(macOS)
+    // MARK: - Zip to Folder Upgrade Tests
+
+    /// Existing Dark Reader installs are stored as a zip, which WebKit unzips on the main thread on
+    /// every load. Upgrading to a bundled version that requires extraction must leave a folder install.
+    @MainActor
+    func testWhenZipInstalledExtensionIsUpgradedToVersionRequiringExtraction_ThenFolderInstallReplacesZip() async throws {
+        let extensionsDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("ZipUpgradeTest-\(UUID().uuidString)")
+        createdTestExtensionDirs.append(extensionsDirectory)
+        let storageProvider = WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory)
+
+        let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .darkReader)?.bundledURL)
+        let bundledMetadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
+        XCTAssertTrue(bundledMetadata.requiresExtraction, "precondition: the bundled Dark Reader requires extraction")
+
+        let oldIdentifier = "old-darkreader"
+        _ = try storageProvider.copyExtension(from: bundledURL, identifier: oldIdentifier)
+        XCTAssertEqual(storageProvider.resolveInstalledExtension(identifier: oldIdentifier)?.pathExtension, "zip",
+                       "precondition: the old install resolves to its zip")
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: oldIdentifier, filename: "darkreader.zip", version: "4.9.128.1", embeddedType: .darkReader)
+        ]
+
+        let manager = makeManager(storageProvider: storageProvider, bundledExtensionURL: { descriptor in
+            XCTAssertEqual(descriptor.type, .darkReader)
+            return bundledURL
+        })
+        await manager.syncEmbeddedExtensions(enabledTypes: [.darkReader])
+
+        let installed = try XCTUnwrap(manager.installedEmbeddedExtension(for: .darkReader))
+        XCTAssertNotEqual(installed.uniqueIdentifier, oldIdentifier)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: extensionsDirectory.appendingPathComponent(oldIdentifier).path),
+                       "the old zip install should have been removed")
+
+        let resolvedURL = try XCTUnwrap(storageProvider.resolveInstalledExtension(identifier: installed.uniqueIdentifier))
+        XCTAssertEqual(resolvedURL.lastPathComponent, installed.uniqueIdentifier,
+                       "the new install should resolve to its extracted folder, not a zip")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: resolvedURL.appendingPathComponent("manifest.json").path))
     }
 #endif
 
@@ -696,6 +860,27 @@ final class WebExtensionManagerTests: XCTestCase {
         let context = manager.contexts.first
         XCTAssertNotNil(context)
         XCTAssertFalse(context?.isInspectable == true)
+    }
+
+    @MainActor
+    func testWhenManagerIsCreated_ThenWindowCloseScriptIsInstalledForMainFramesAtDocumentStart() {
+        let manager = makeManager()
+
+        let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let closeScript = userScripts.first { $0.source == WebExtensionWindowCloseScript.source }
+
+        XCTAssertNotNil(closeScript, "Expected the window close script among the controller's user scripts")
+        XCTAssertEqual(closeScript?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(closeScript?.isForMainFrameOnly, true)
+    }
+
+    @MainActor
+    func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() {
+        let manager = makeManager()
+
+        let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+
+        XCTAssertFalse(userScripts.contains { WebExtensionLoader.thirdPartyScriptSources.contains($0.source) })
     }
 
     // MARK: - Additional Helpers

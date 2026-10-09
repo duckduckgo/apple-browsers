@@ -22,6 +22,9 @@ import Foundation
 
 protocol UnifiedToggleInputOmnibarActivating: AnyObject {
     func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision
+    func activateFromOmnibarOnAppOpenIfNeeded(currentText: String?,
+                                              isRequestValid: @escaping () -> Bool,
+                                              completion: @escaping (Bool) -> Void) -> UnifiedToggleInputActivationDecision
 }
 
 enum UnifiedToggleInputActivationDecision {

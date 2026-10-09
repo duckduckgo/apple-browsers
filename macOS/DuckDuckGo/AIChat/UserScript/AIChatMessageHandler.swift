@@ -55,6 +55,7 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let isNativeStorageBridgeAvailable: Bool
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
@@ -70,7 +71,8 @@ final class AIChatMessageHandler: AIChatMessageHandling {
              let isReturning = DefaultReinstallUserDetection(
                 keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser
              return isReturning ? .returning : .new
-         }) {
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
@@ -80,6 +82,7 @@ final class AIChatMessageHandler: AIChatMessageHandling {
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
@@ -154,7 +157,9 @@ extension AIChatMessageHandler {
             attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
                 ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
                 : nil,
-            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools)
+            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools),
+            supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure),
+            supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true
         )
     }
 

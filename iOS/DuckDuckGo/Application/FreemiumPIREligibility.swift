@@ -56,31 +56,33 @@ struct FreemiumPIRDebugSettings {
 final class DefaultFreemiumPIREligibilityChecker: FreemiumPIREligibilityChecking {
     private let featureFlagger: FeatureFlagger
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
-    private let subscriptionAuthenticationStateProvider: SubscriptionAuthenticationStateProvider
+    private let subscriptionManager: any SubscriptionManager
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
     init(featureFlagger: FeatureFlagger,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
-         subscriptionAuthenticationStateProvider: SubscriptionAuthenticationStateProvider,
+         subscriptionManager: any SubscriptionManager,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         self.featureFlagger = featureFlagger
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
-        self.subscriptionAuthenticationStateProvider = subscriptionAuthenticationStateProvider
+        self.subscriptionManager = subscriptionManager
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
     }
 
     func canShowEntryPoint() -> Bool {
         guard featureFlagger.isFeatureOn(.personalInformationRemoval),
-              !subscriptionAuthenticationStateProvider.isUserAuthenticated else {
+              !subscriptionManager.isUserAuthenticated else {
             return false
         }
 
-        // The debug override only bypasses rollout and locale gates; signed-in users still use paid PIR.
+        // The debug override only bypasses rollout, locale and purchase-eligibility gates; signed-in users still use paid PIR.
         if freemiumPIRDebugSettings.isEligibilityForced {
             return true
         }
 
+        // Users who can't buy a subscription can't convert, so don't offer them a free scan.
         return featureFlagger.isFeatureOn(.dbpFreemiumPIR)
             && (runPrerequisitesDelegate?.meetsLocaleRequirement ?? false)
+            && subscriptionManager.isSubscriptionPurchaseEligible
     }
 }

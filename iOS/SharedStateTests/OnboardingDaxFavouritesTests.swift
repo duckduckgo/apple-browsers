@@ -205,7 +205,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                     featureFlagger: featureFlagger,
                     runPrerequisitesDelegate: nil,
-                    subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                    subscriptionManager: SubscriptionManagerMock(),
                     freemiumPIRDebugSettings: freemiumPIRDebugSettings
                 ),
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings,

@@ -70,10 +70,10 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
     }
 
     /// The web records the acceptance a native send carried, and that report is the same acceptance.
-    func testWhenWebReportsAnAcceptanceMadeInNativeInputThenItIsNotARepeat() {
+    func testWhenWebReportsAnAcceptanceMadeInNativeInputThenItConfirmsIt() {
         sut.recordAcceptedInNativeInput()
 
-        XCTAssertEqual(sut.recordWebReport(), .firstAcceptance)
+        XCTAssertEqual(sut.recordWebReport(), .confirmsNativeAcceptance)
     }
 
     /// Only the one report the native send owes is excused; a later re-prompt still reads as a repeat.
@@ -91,9 +91,18 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
     }
 
     /// A page that loaded before synced chats arrived can still show its card, and accepting there is the same acceptance.
-    func testWhenWebReportsAfterAnAcceptanceFromExistingChatsThenItIsNotARepeat() {
+    func testWhenWebReportsAfterAnAcceptanceFromExistingChatsThenItConfirmsIt() {
         sut.recordAcceptedFromExistingChats()
 
+        XCTAssertEqual(sut.recordWebReport(), .confirmsNativeAcceptance)
+    }
+
+    /// With native Terms of Service off, chats are recorded for measurement but are not an acceptance.
+    func testWhenExistingChatsAreRecordedThenTheyCountForMeasurementOnly() {
+        sut.recordExistingChats()
+
+        XCTAssertFalse(sut.hasAccepted)
+        XCTAssertTrue(sut.hasAcceptedOrExistingChats)
         XCTAssertEqual(sut.recordWebReport(), .firstAcceptance)
     }
 

@@ -228,6 +228,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let termsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring
     private let isNativeStorageBridgeAvailable: Bool
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
@@ -277,11 +278,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
          },
-         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+         termsOfServicePixelFiring: DuckAiTermsOfServicePixelFiring = DuckAiTermsOfServicePixelAdapter(surface: { nil })) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
         self.termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: keyValueStore)
+        self.termsOfServicePixelFiring = termsOfServicePixelFiring
         self.promptHandler = promptHandler
         self.devicePlatform = devicePlatform
         self.aichatContextualModeFeature = aichatContextualModeFeature
@@ -380,7 +383,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private func handleTermsAcceptedIfNeeded(_ metric: AIChatMetric) {
         guard metric.metricName == .userDidAcceptTermsAndConditions else { return }
-        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
+        // Read first: the report records the acceptance. A user with chats isn't measured in either group.
+        let wasMeasuredAsAccepted = termsOfServiceStore.hasAcceptedOrExistingChats
+        let outcome = termsOfServiceStore.recordWebReport()
+        if outcome == .firstAcceptance, !wasMeasuredAsAccepted {
+            termsOfServicePixelFiring.fire(.accepted(.web, isNativeDisclaimerEnabled: featureFlagger.isFeatureOn(.duckAINativeTermsOfService)))
+        }
+        guard outcome == .alreadyAccepted else { return }
 
         let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
             ? .aiChatTermsAcceptedDuplicateSyncOn

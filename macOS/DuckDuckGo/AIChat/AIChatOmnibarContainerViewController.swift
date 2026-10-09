@@ -1255,6 +1255,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.openAttachmentPrivacyLearnMore()
         }
         usageWarningCardView.onTermsOfServiceLink = { [weak self] in
+            self?.omnibarController.termsOfServiceMeasurement.linkTapped()
             self?.openTermsOfService()
         }
 

@@ -511,6 +511,49 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.actualFireCalls == [.init(pixel: AIChatPixel.aiChatTermsAcceptedDuplicateSyncOff, frequency: .dailyAndStandard)])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A first web acceptance fires the accepted pixel without a surface", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenWebReportsAFirstAcceptanceThenTheAcceptedPixelFires() async {
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeTermsOfServiceHandler(isFlagOn: false,
+                                                    termsOfServiceStore: makeTermsOfServiceStore(accepted: false),
+                                                    pixelFiring: testPixelFiring)
+
+        await reportTermsAccepted(to: testHandler)
+
+        #expect(testPixelFiring.actualFireCalls == [
+            .init(pixel: DuckAiTermsOfServicePixel(name: "aichat_terms_of_service_accepted_macos",
+                                                   parameters: ["source": "web", "native_disclaimer": "disabled"]),
+                  frequency: .dailyAndCount)
+        ])
+    }
+
+    /// Users with chats are left out of the measurement in both groups.
+    @available(iOS 16, macOS 13, *)
+    @Test("A web acceptance from a user with chats fires no accepted pixel", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenWebReportsAnAcceptanceFromAUserWithChatsThenNoAcceptedPixelFires() async {
+        let termsOfServiceStore = makeTermsOfServiceStore(accepted: false)
+        termsOfServiceStore.recordExistingChats()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeTermsOfServiceHandler(isFlagOn: false, termsOfServiceStore: termsOfServiceStore, pixelFiring: testPixelFiring)
+
+        await reportTermsAccepted(to: testHandler)
+
+        #expect(testPixelFiring.actualFireCalls.isEmpty)
+        #expect(termsOfServiceStore.hasAccepted)
+    }
+
+    @MainActor
+    private func reportTermsAccepted(to handler: AIChatUserScriptHandler) async {
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: .userDidAcceptTermsAndConditions)) {
+                continuation.resume()
+            }
+        }
+    }
+
     private func makeTermsOfServiceStore(accepted: Bool) -> DuckAiTermsOfServiceStore {
         let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
         if accepted {

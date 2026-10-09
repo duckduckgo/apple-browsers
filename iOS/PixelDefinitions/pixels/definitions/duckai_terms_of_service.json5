@@ -1,0 +1,108 @@
+// Duck.ai Terms of Service disclaimer pixels - the native disclaimer under the iPhone Duck.ai input
+// (address bar, Duck.ai tab, contextual sheet) and the iPad address bar and contextual sheet, gated by
+// the `duckAINativeTermsOfService` feature flag. Named for name with macOS.
+//
+// The question is whether seeing the disclaimer changes if a user who hasn't accepted sends a prompt
+// or bounces. Each native input session for such a user joins one group: `shown` once the disclaimer
+// renders, or `not_shown` at the start when the flag is off and nothing blocks sending. A user who
+// has accepted, or has Duck.ai chats on the device, is left out of both groups.
+//
+// Each session reports one outcome: its first prompt (`_prompt_submitted`) or `_abandoned` when the
+// input closes, collapses, switches to search or the app goes to the background without one.
+// `_accepted` closes the funnel: with the flag off, a native send still meets the web app's own card.
+{
+    "aichat_terms_of_service_shown": {
+        "description": "Fires when the Terms of Service disclaimer renders under a native Duck.ai input, once per input session, for a user who hasn't accepted.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_terms_of_service_shown_prompt_submitted": {
+        "description": "Fires on the first prompt sent in an input session that showed the Terms of Service disclaimer.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "send_method",
+                "description": "How the prompt was sent. Only Ask accepts the Terms of Service, and while the disclaimer shows, Return adds a new line and voice is replaced by Ask.",
+                "type": "string",
+                "enum": ["ask", "return", "voice", "quick_action"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_shown_abandoned": {
+        "description": "Fires when an input session that showed the Terms of Service disclaimer ends without a prompt: the input closed or collapsed, switched to search, or the app went to the background.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_terms_of_service_not_shown": {
+        "description": "Fires when a native Duck.ai input opens for a user who hasn't accepted the Terms of Service while the native disclaimer is off and nothing blocks sending. The control group for `aichat_terms_of_service_shown`.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_terms_of_service_not_shown_prompt_submitted": {
+        "description": "Fires on the first prompt sent in an input session counted as `aichat_terms_of_service_not_shown`. The web app still shows its own Terms of Service card for that prompt.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "send_method",
+                "description": "How the prompt was sent: Ask, Return or Paste & Go, voice, or a chip or suggestion sent on the user's behalf.",
+                "type": "string",
+                "enum": ["ask", "return", "voice", "quick_action"]
+            }
+        ]
+    },
+    "aichat_terms_of_service_not_shown_abandoned": {
+        "description": "Fires when an input session counted as `aichat_terms_of_service_not_shown` ends without a prompt: the input closed or collapsed, switched to search, or the app went to the background.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_terms_of_service_link_tapped": {
+        "description": "Fires when the user taps the Privacy Policy and Terms of Service link in the native disclaimer.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_terms_of_service_accepted": {
+        "description": "Fires when the user first accepts Duck.ai's Terms of Service: by tapping Ask with the native disclaimer on screen, or on the web app's own card. Not fired for the web's report of an acceptance already made natively, nor for users with Duck.ai chats on the device.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "Which native input the user accepted in. Only sent when `source` is `native_input`.",
+                "type": "string",
+                "enum": ["address_bar", "duck_ai", "contextual_chat"]
+            },
+            {
+                "key": "source",
+                "description": "Where the user accepted: the native disclaimer, or the web app.",
+                "type": "string",
+                "enum": ["native_input", "web"]
+            },
+            {
+                "key": "native_disclaimer",
+                "description": "Whether the native disclaimer feature was on when the user accepted.",
+                "type": "string",
+                "enum": ["enabled", "disabled"]
+            }
+        ]
+    }
+}

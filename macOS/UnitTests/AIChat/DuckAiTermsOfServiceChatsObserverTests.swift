@@ -83,12 +83,12 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
     }
 
     /// The web app's own card, if the page loaded before the chats arrived, must not count as a duplicate.
-    func testWhenChatsExistThenTheNextWebReportIsTheFirstAcceptance() {
+    func testWhenChatsExistThenTheNextWebReportConfirmsTheAcceptance() {
         storage.chats.send([chat])
 
         start()
 
-        XCTAssertEqual(store.recordWebReport(), .firstAcceptance)
+        XCTAssertEqual(store.recordWebReport(), .confirmsNativeAcceptance)
     }
 
     func testWhenWebRecordedFalseAndChatsExistThenItIsReplacedWithTrue() throws {
@@ -120,11 +120,23 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         XCTAssertEqual(storage.chatsPublisherRequests, 0)
     }
 
-    func testWhenNativeTermsOfServiceIsOffThenNothingIsObserved() {
-        XCTAssertNil(DuckAiTermsOfServiceChatsObserver(storageHandler: storage,
-                                                       featureFlagger: makeFeatureFlagger(isFlagOn: false),
-                                                       store: store,
-                                                       queue: queue))
+    /// The measurement qualifies users the same way in both groups, so chats count with the flag off too.
+    func testWhenNativeTermsOfServiceIsOffAndChatsExistThenOnlyTheChatsAreRecorded() throws {
+        storage.chats.send([chat])
+
+        start(isNativeTermsOfServiceOn: false)
+
+        XCTAssertFalse(store.hasAccepted)
+        XCTAssertTrue(store.hasAcceptedOrExistingChats)
+        XCTAssertNil(try storage.getEntry(key: termsKey))
+    }
+
+    func testWhenNativeTermsOfServiceIsOffAndChatsWereRecordedThenChatsAreNotRead() {
+        store.recordExistingChats()
+
+        start(isNativeTermsOfServiceOn: false)
+
+        XCTAssertEqual(storage.chatsPublisherRequests, 0)
     }
 
     func testWhenNativeStorageIsUnavailableThenNothingIsObserved() {
@@ -134,9 +146,9 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
                                                        queue: queue))
     }
 
-    private func start() {
+    private func start(isNativeTermsOfServiceOn: Bool = true) {
         sut = DuckAiTermsOfServiceChatsObserver(storageHandler: storage,
-                                                featureFlagger: makeFeatureFlagger(isFlagOn: true),
+                                                featureFlagger: makeFeatureFlagger(isFlagOn: isNativeTermsOfServiceOn),
                                                 store: store,
                                                 queue: queue)
         sut?.start()

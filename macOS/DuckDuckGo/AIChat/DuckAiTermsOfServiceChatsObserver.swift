@@ -25,9 +25,11 @@ import PrivacyConfig
 
 /// Chats on the device mean the user accepted Duck.ai's Terms of Service before, here or on a device that
 /// synced them, so once any exist neither the native disclaimer nor the web app's card asks again.
+/// With native Terms of Service off, they're only recorded for measurement.
 final class DuckAiTermsOfServiceChatsObserver {
 
     private let storageHandler: DuckAiNativeObservableStorage
+    private let isNativeTermsOfServiceOn: Bool
     private let store: DuckAiTermsOfServiceStore
     private let queue: DispatchQueue
     private var cancellable: AnyCancellable?
@@ -36,9 +38,9 @@ final class DuckAiTermsOfServiceChatsObserver {
           featureFlagger: FeatureFlagger,
           store: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
           queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.duckai.terms-of-service.chats", qos: .utility)) {
-        guard featureFlagger.isFeatureOn(.aiChatNativeTermsOfService),
-              let storageHandler = storageHandler as? DuckAiNativeObservableStorage else { return nil }
+        guard let storageHandler = storageHandler as? DuckAiNativeObservableStorage else { return nil }
         self.storageHandler = storageHandler
+        self.isNativeTermsOfServiceOn = featureFlagger.isFeatureOn(.aiChatNativeTermsOfService)
         self.store = store
         self.queue = queue
     }
@@ -46,19 +48,25 @@ final class DuckAiTermsOfServiceChatsObserver {
     /// Off the main thread: the chats database opens in the background and its first read waits for it.
     func start() {
         queue.async { [weak self] in
-            guard let self, !(self.store.hasAccepted && self.isWebAcceptanceRecorded) else { return }
+            guard let self, !self.isRecorded else { return }
             self.cancellable = self.storageHandler.chatsPublisher()
                 .first { !$0.isEmpty }
                 .sink(receiveCompletion: { completion in
                     guard case .failure(let error) = completion else { return }
                     Logger.aiChat.error("[TermsOfService] Couldn't observe chats: \(error.localizedDescription, privacy: .public)")
                 }, receiveValue: { [weak self] _ in
-                    self?.recordAcceptance()
+                    self?.recordExistingChats()
                 })
         }
     }
 
-    private func recordAcceptance() {
+    private var isRecorded: Bool {
+        isNativeTermsOfServiceOn ? store.hasAccepted && isWebAcceptanceRecorded : store.hasAcceptedOrExistingChats
+    }
+
+    private func recordExistingChats() {
+        store.recordExistingChats()
+        guard isNativeTermsOfServiceOn else { return }
         store.recordAcceptedFromExistingChats()
         guard !isWebAcceptanceRecorded else { return }
         do {

@@ -582,6 +582,8 @@ final class MainViewController: NSViewController {
 
         aiChatOmnibarContainerViewController.setShadowVisible(false)
         aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+        // Esc, a click outside and a switch to another Duck.ai tab close the input without `cleanup()`.
+        aiChatOmnibarContainerViewController.omnibarController.termsOfServiceMeasurement.inputSessionEnded()
         mainView.updateAIChatOmnibarContainerHeight(0, animated: true)
         mainView.isAIChatOmnibarContainerShown = false
         aiChatOmnibarTextContainerViewController.stopEventMonitoring()

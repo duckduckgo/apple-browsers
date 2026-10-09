@@ -77,10 +77,10 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
     }
 
     /// The web reports the acceptance the native send carried, and that report must not read as a duplicate.
-    func testWhenAcceptedByAskThenTheWebReportIsTheFirstAcceptance() {
+    func testWhenAcceptedByAskThenTheWebReportConfirmsTheAcceptance() {
         makeDisclaimer().acceptIfShown(true)
 
-        XCTAssertEqual(store.recordWebReport(), .firstAcceptance)
+        XCTAssertEqual(store.recordWebReport(), .confirmsNativeAcceptance)
     }
 
     func testWhenCreateImageIsSelectedThenTheDisclaimerNamesCreate() {

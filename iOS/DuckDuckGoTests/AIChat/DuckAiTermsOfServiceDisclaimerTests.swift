@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo
 
@@ -115,6 +116,25 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
         XCTAssertFalse(makeSUT().hasAccepted)
     }
 
+    // MARK: - Measurement
+
+    func testWhenTheFeatureIsOffThenASessionForAUserWhoHasntAcceptedIsNotShown() {
+        feature.isAvailable = false
+        let firing = RecordingDisclaimerPixelFiring()
+
+        makeSUT().startMeasurementSession(DuckAiTermsOfServiceMeasurement(pixelFiring: firing), isDisclaimerShown: false)
+
+        XCTAssertEqual(firing.events, [.sessionStarted(.notShown)])
+    }
+
+    func testWhenTheDisclaimerIsOnScreenAtTheStartThenTheSessionIsShown() {
+        let firing = RecordingDisclaimerPixelFiring()
+
+        makeSUT().startMeasurementSession(DuckAiTermsOfServiceMeasurement(pixelFiring: firing), isDisclaimerShown: true)
+
+        XCTAssertEqual(firing.events, [.sessionStarted(.shown)])
+    }
+
     // MARK: - Helpers
 
     private var store: DuckAiTermsOfServiceStore {
@@ -123,6 +143,14 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
 
     private func makeSUT() -> DuckAiTermsOfServiceDisclaimer {
         DuckAiTermsOfServiceDisclaimer(feature: feature, store: store)
+    }
+}
+
+private final class RecordingDisclaimerPixelFiring: DuckAiTermsOfServicePixelFiring {
+    private(set) var events: [DuckAiTermsOfServiceMeasurementEvent] = []
+
+    func fire(_ event: DuckAiTermsOfServiceMeasurementEvent) {
+        events.append(event)
     }
 }
 

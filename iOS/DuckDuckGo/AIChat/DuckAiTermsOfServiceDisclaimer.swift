@@ -52,8 +52,17 @@ struct DuckAiTermsOfServiceDisclaimer {
     /// Off with the flag, so no prompt claims an acceptance made while native Terms of Service was on.
     var hasAccepted: Bool { feature.isAvailable && store.hasAccepted }
 
+    /// These inputs have no usage-limit block, so nothing keeps a session out of the `not_shown` group.
+    func startMeasurementSession(_ measurement: DuckAiTermsOfServiceMeasurement, isDisclaimerShown: Bool) {
+        measurement.inputSessionStarted(hasAccepted: store.hasAcceptedOrExistingChats,
+                                        isDisclaimerEnabled: feature.isAvailable,
+                                        isInputBlocked: false)
+        if isDisclaimerShown { measurement.disclaimerBecameVisible() }
+    }
+
     /// Call only for an Ask tap. `visibleMessage` is what the input's card shows right now; a send made
     /// without seeing the disclaimer accepts nothing, and the web app shows its own card for that prompt instead.
+    /// Returns whether this tap is the acceptance.
     @discardableResult
     func acceptIfShown(_ visibleMessage: UTIFooterMessage?) -> Bool {
         guard isDisclaimer(visibleMessage) else { return false }

@@ -392,28 +392,15 @@ final class TabManagerTests: XCTestCase {
                                     "flushPendingSave should write synchronously without waiting for debounce")
     }
 
-    func testWhenMemoryWarningIsReceivedThenTabTerminationTelemetryIsNotified() throws {
-        let telemetry = MockTabTerminationTelemetry()
-        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
-
-        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
-
-        XCTAssertEqual(telemetry.memoryWarningCallCount, 1)
-        XCTAssertEqual(telemetry.memoryWarningActiveTabCounts, [0])
-        withExtendedLifetime(manager) {}
-    }
-
     func testWhenMemoryWarningIsReceivedInBackgroundThenNonCurrentControllersAreEvicted() throws {
         let tabs = (0..<3).map {
             Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
         }
         let model = TabsModel(tabs: tabs, desktop: false)
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
-        let telemetry = MockTabTerminationTelemetry()
         let cacheDelegate = MockTabControllerCacheDelegate()
         let manager = try makeManager(model,
                                       featureFlagger: featureFlagger,
-                                      tabTerminationTelemetry: telemetry,
                                       applicationState: { .background })
         manager.cacheDelegate = cacheDelegate
 
@@ -424,7 +411,6 @@ final class TabManagerTests: XCTestCase {
 
         NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
 
-        XCTAssertEqual(telemetry.memoryWarningActiveTabCounts, [3])
         XCTAssertNotNil(manager.controller(for: tabs[0]))
         XCTAssertNil(manager.controller(for: tabs[1]))
         XCTAssertNil(manager.controller(for: tabs[2]))
@@ -753,15 +739,6 @@ final class TabManagerTests: XCTestCase {
         return (manager, tabs)
     }
 
-    func testWhenWebContentProcessTerminatesThenTabTerminationTelemetryIsNotified() throws {
-        let telemetry = MockTabTerminationTelemetry()
-        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
-
-        manager.webContentProcessDidTerminate()
-
-        XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
-    }
-
     func testWhenTerminationThresholdIsReachedThenCurrentTabShowsErrorPage() throws {
         let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
         let tabsModel = TabsModel(desktop: false)
@@ -901,7 +878,6 @@ final class TabManagerTests: XCTestCase {
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
                      normalStore: ThrowingKeyValueStoring? = nil,
-                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
                      tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
                      privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
                      applicationState: (@MainActor () -> UIApplication.State)? = nil,
@@ -948,7 +924,6 @@ final class TabManagerTests: XCTestCase {
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
                           adBlockingAvailability: StubAdBlockingAvailability(),
                           eventHub: StubEventHub(),
-                          tabTerminationTelemetry: tabTerminationTelemetry,
                           tabTerminationErrorPageDetector: tabTerminationErrorPageDetector,
                           applicationState: applicationState,
                           isPad: isPad,
@@ -988,22 +963,6 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
-    }
-}
-
-@MainActor
-private final class MockTabTerminationTelemetry: TabTerminationTelemetry {
-    private(set) var memoryWarningCallCount = 0
-    private(set) var memoryWarningActiveTabCounts: [Int] = []
-    private(set) var webContentProcessTerminationActiveTabCounts: [Int] = []
-
-    func webContentProcessDidTerminate(activeTabCount: Int) {
-        webContentProcessTerminationActiveTabCounts.append(activeTabCount)
-    }
-
-    func didReceiveMemoryWarning(activeTabCount: Int) {
-        memoryWarningCallCount += 1
-        memoryWarningActiveTabCounts.append(activeTabCount)
     }
 }
 

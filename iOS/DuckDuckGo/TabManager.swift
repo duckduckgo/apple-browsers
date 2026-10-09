@@ -150,7 +150,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let featureFlagger: FeatureFlagger
     private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     private let clearAppSwitcherSnapshots: @MainActor () async -> Void
-    private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let tabEvictionSettings: TabEvictionSettings
     private let applicationState: @MainActor () -> UIApplication.State
@@ -268,7 +267,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
-         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
          tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          isPad: Bool? = nil,
@@ -296,12 +294,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
-        let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
-        self.tabEvictionSettings = tabEvictionSettings
-        self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
-            featureFlagger: featureFlagger,
-            keyValueStore: UserDefaults.app,
-            memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
+        self.tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
             privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
@@ -841,11 +834,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func webContentProcessDidTerminate() {
-        tabTerminationTelemetry.webContentProcessDidTerminate(activeTabCount: tabControllerCache.count)
-    }
-
-    @MainActor
     func invalidateCache(forController controller: TabViewController, reloadCurrent: Bool) {
         if current() === controller {
             if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
@@ -1182,7 +1170,6 @@ extension TabManager {
     @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
-        tabTerminationTelemetry.didReceiveMemoryWarning(activeTabCount: tabControllerCache.count)
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache

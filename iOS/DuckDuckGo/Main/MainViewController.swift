@@ -7534,7 +7534,6 @@ extension MainViewController: TabDelegate {
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
-        tabManager.webContentProcessDidTerminate()
 
         // Only reload current if the app is not in the background - need to ensure we reload in
         //  in inactive state in case we're coming to the foreground

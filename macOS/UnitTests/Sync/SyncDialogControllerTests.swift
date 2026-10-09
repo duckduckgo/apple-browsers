@@ -1647,6 +1647,76 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
+    func testControllerDidFinishTransmittingRecoveryKey_refreshesDevicesUntilJoinerRegisters() async {
+        let localDeviceId = "local-mac"
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
+        ddgSyncing.registeredDevices = [
+            RegisteredDevice(id: localDeviceId, name: "Test Mac", type: "desktop"),
+            RegisteredDevice(id: "joiner-id", name: "Test iPhone", type: "mobile")
+        ]
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+
+        let devicesFetched = expectation(description: "Device list refreshed")
+        let successPresented = expectation(description: "Recovery-code success dialog presented")
+        ddgSyncing.fetchDevicesCallback = { devicesFetched.fulfill() }
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .prefix(1)
+            .sink { _ in successPresented.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+
+        await fulfillment(of: [devicesFetched, successPresented], timeout: 6)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testEndingFlowWhileWaitingForDevicesCancelsRefreshTimer() async {
+        let localDeviceId = "local-mac"
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
+        ddgSyncing.registeredDevices = [RegisteredDevice(id: localDeviceId, name: "Test Mac", type: "desktop")]
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        var fetchCount = 0
+        let firstFetch = expectation(description: "Initial device refresh")
+        let unexpectedFetch = expectation(description: "No refresh after flow ends")
+        unexpectedFetch.isInverted = true
+        ddgSyncing.fetchDevicesCallback = {
+            fetchCount += 1
+            if fetchCount == 1 {
+                firstFetch.fulfill()
+            } else {
+                unexpectedFetch.fulfill()
+            }
+        }
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        await fulfillment(of: [firstFetch], timeout: 5)
+
+        managementDialogModel.endFlow()
+        XCTAssertNil(managementDialogModel.currentDialog)
+        ddgSyncing.registeredDevices.append(RegisteredDevice(id: "joiner-id", name: "Test iPhone", type: "mobile"))
+        let unexpectedSuccess = expectation(description: "No success dialog after flow ends")
+        unexpectedSuccess.isInverted = true
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .sink { _ in unexpectedSuccess.fulfill() }
+            .store(in: &cancellables)
+
+        await fulfillment(of: [unexpectedFetch, unexpectedSuccess], timeout: 3.5)
+        XCTAssertEqual(fetchCount, 1)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
     func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHostAfterUnknownOutcome_endsWithoutPresentingSuccess() {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .waitForOtherDevice

@@ -112,6 +112,8 @@ final class SyncDialogController {
     private var pairingV2ConfirmationWasDismissedByController = false
     private var didCreateSyncAccountDuringPairing = false
     private var displayedCodeSetupSource: SyncSetupSource?
+    private var hostDeviceWaitCancellable: AnyCancellable?
+    private var hostDeviceRefreshCancellable: AnyCancellable?
 
     @Published var stringForQR: String?
     @Published var codeForDisplayOrPasting: String?
@@ -282,6 +284,7 @@ final class SyncDialogController {
     }
 
     private func startPollingForRecoveryKey(isRecovery: Bool) {
+        cancelHostDeviceWait()
         pairingV2PeerKind = nil
         didCreateSyncAccountDuringPairing = false
         Task { @MainActor in
@@ -359,18 +362,35 @@ final class SyncDialogController {
     private func waitForDevicesToChange(then action: @escaping (SyncDialogController) -> Void) {
         let localDeviceID = syncService.account?.deviceId
         let knownDeviceIDs = Set(devices.map(\.id))
+        cancelHostDeviceWait()
 
-        $devices.removeDuplicates()
+        // Pairing can start outside Settings (e.g. the More menu), where no device-list refresh timer is running.
+        // Refresh while waiting so completion does not depend on Settings being open.
+        hostDeviceRefreshCancellable = Timer.publish(every: 3, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.refreshDevices()
+            }
+        hostDeviceWaitCancellable = $devices.removeDuplicates()
             .filter { devices in
                 devices.contains { $0.id != localDeviceID && !knownDeviceIDs.contains($0.id) }
             }
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
-                Task {
+                self.cancelHostDeviceWait()
+                Task { @MainActor in
+                    guard self.syncService.account?.deviceId == localDeviceID else { return }
                     action(self)
                 }
-            }.store(in: &cancellables)
+            }
+    }
+
+    private func cancelHostDeviceWait() {
+        hostDeviceWaitCancellable?.cancel()
+        hostDeviceWaitCancellable = nil
+        hostDeviceRefreshCancellable?.cancel()
+        hostDeviceRefreshCancellable = nil
     }
 
     private func startExchangeOrRecovery() {
@@ -382,6 +402,7 @@ final class SyncDialogController {
     }
 
     private func startLegacyRecoveryFlow() {
+        cancelHostDeviceWait()
         let recoveryCode = recoveryCode ?? "" // Only called if Sync enabled therefore will never be blank
         codeForDisplayOrPasting = recoveryCode
         stringForQR = recoveryCode
@@ -393,6 +414,7 @@ final class SyncDialogController {
     }
 
     private func startPollingForPublicKey() {
+        cancelHostDeviceWait()
         pairingV2PeerKind = nil
         didCreateSyncAccountDuringPairing = false
         Task { @MainActor in
@@ -739,6 +761,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func didEndFlow() {
+        cancelHostDeviceWait()
         didCreateSyncAccountDuringPairing = false
         let controller = self.connectionController
         let delegate = self.coordinationDelegate
@@ -843,6 +866,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
 extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerWillBeginTransmittingRecoveryKey() async {
+        cancelHostDeviceWait()
         presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 

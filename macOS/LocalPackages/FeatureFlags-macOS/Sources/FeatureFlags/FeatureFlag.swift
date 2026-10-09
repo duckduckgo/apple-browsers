@@ -472,6 +472,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
     case promoQueueSyncSetupAutofillPromo
 
+    /// Enables the Bookmarks Bar "Sync Bookmarks" button promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598749?focus=true
+    case promoQueueBookmarksBarSyncPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -944,6 +948,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
+        case .promoQueueBookmarksBarSyncPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

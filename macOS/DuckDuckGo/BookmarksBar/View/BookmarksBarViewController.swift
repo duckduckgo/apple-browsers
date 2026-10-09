@@ -83,7 +83,7 @@ final class BookmarksBarViewController: NSViewController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
-    let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
+    let syncButtonModel: DismissableSyncDeviceButtonModel
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -119,6 +119,7 @@ final class BookmarksBarViewController: NSViewController {
          featureFlagger: FeatureFlagger,
          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         syncButtonModel: DismissableSyncDeviceButtonModel? = nil,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -126,6 +127,7 @@ final class BookmarksBarViewController: NSViewController {
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
+        self.syncButtonModel = syncButtonModel ?? DismissableSyncDeviceButtonModel(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
@@ -365,9 +367,6 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     private func setUpSyncButton() {
-        if appereancePreferences.showBookmarksBar {
-            syncButtonModel.viewDidLoad()
-        }
         syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
@@ -505,9 +504,13 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
-            self?.syncButton.isHidden = !$0
-            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            guard let self else { return }
+            syncButton.isHidden = !shouldShow
+            syncButtonZeroWidthConstraint.priority = shouldShow ? .defaultLow : .required
+            if shouldShow {
+                syncButtonModel.syncButtonDidAppear()
+            }
         }
         .store(in: &cancellables)
     }

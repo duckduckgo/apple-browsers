@@ -256,7 +256,15 @@ extension PromoServiceFactoryTests {
             ),
             autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
             syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
-            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill)
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill),
+            bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                isBookmarksBarSettingOn: { true },
+                notificationCenter: NotificationCenter(),
+                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            )
         )
     }
 }

@@ -156,6 +156,9 @@ final class FaviconManager: FaviconManagement {
     private let faviconDownloader: FaviconDownloader
     private let featureFlagger: FeatureFlagger
 
+    /// SVG favicons rejected in this session because they render fully transparent.
+    @MainActor private var transparentSVGFaviconURLs = Set<URL>()
+
     @Published private var faviconsLoaded = false
     var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
 
@@ -414,6 +417,7 @@ final class FaviconManager: FaviconManagement {
         return result
     }
 
+    @MainActor
     private func filteringAlreadyFetchedFaviconLinks(from faviconLinks: [FaviconUserScript.FaviconLink]) async -> [FaviconUserScript.FaviconLink] {
         guard !faviconLinks.isEmpty else { return [] }
 
@@ -421,14 +425,15 @@ final class FaviconManager: FaviconManagement {
             result[faviconLink.href] = faviconLink
         }
         let weekAgo = Date.weekAgo
-        let cachedFavicons = await imageCache.getFavicons(with: urlsToLinks.keys)?
+        let cachedFavicons = imageCache.getFavicons(with: urlsToLinks.keys)?
             .filter { favicon in
                 favicon.dateCreated > weekAgo
             } ?? []
         let cachedUrls = Set(cachedFavicons.map(\.url))
 
+        // Transparent SVGs rejected earlier in this session would only be rejected again.
         let nonCachedFavicons = urlsToLinks.filter { url, _ in
-            !cachedUrls.contains(url)
+            !cachedUrls.contains(url) && !transparentSVGFaviconURLs.contains(url)
         }.values
 
         return Array(nonCachedFavicons)
@@ -440,36 +445,8 @@ final class FaviconManager: FaviconManagement {
         // Download and decode every favicon at full resolution first. We need each favicon's original
         // size to decide which ones to keep — if we downscaled during the download (capping every favicon
         // at `maxStoredFaviconPixelSize`) we could no longer tell the redundant large ones apart.
-        let fetched: [FetchedFavicon] = await withTaskGroup(of: FetchedFavicon?.self) { [faviconDownloader] group in
-            for faviconLink in faviconLinks {
-                let faviconUrl = faviconLink.href
-                group.addTask {
-                    do {
-                        try Task.checkCancellation()
-
-                        let data = try await faviconDownloader.download(from: faviconUrl, using: webView)
-
-                        try Task.checkCancellation()
-
-                        return try Self.decodeFavicon(from: data, link: faviconLink)
-                    } catch {
-                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
-                        return nil
-                    }
-                }
-            }
-            var result = [FetchedFavicon]()
-            for await fetchedFavicon in group {
-                guard !Task.isCancelled else {
-                    return []
-                }
-                if let fetchedFavicon {
-                    result.append(fetchedFavicon)
-                }
-            }
-
-            return result
-        }
+        let (fetched, transparentSVGURLs) = await downloadFavicons(faviconLinks, webView: webView)
+        await rejectTransparentSVGFavicons(transparentSVGURLs)
 
         // With the storing improvements off, follow the pre-existing path: store every fetched favicon at
         // its original resolution.
@@ -504,6 +481,80 @@ final class FaviconManager: FaviconManagement {
         }
     }
 
+    private enum FaviconDownloadResult {
+        case fetched(FetchedFavicon)
+        case transparentSVG(URL)
+        case failed
+    }
+
+    /// Downloads and decodes favicons in parallel. Returns the decoded favicons and the URLs of SVG favicons
+    /// that were rejected because they render fully transparent.
+    private func downloadFavicons(_ faviconLinks: [FaviconUserScript.FaviconLink],
+                                  webView: WKWebView?) async -> (fetched: [FetchedFavicon], transparentSVGURLs: Set<URL>) {
+        await withTaskGroup(of: FaviconDownloadResult.self) { [faviconDownloader] group in
+            for faviconLink in faviconLinks {
+                let faviconUrl = faviconLink.href
+                group.addTask {
+                    do {
+                        try Task.checkCancellation()
+
+                        let data = try await faviconDownloader.download(from: faviconUrl, using: webView)
+
+                        try Task.checkCancellation()
+
+                        return .fetched(try Self.decodeFavicon(from: data, link: faviconLink))
+                    } catch FaviconDecodingError.transparentSVG {
+                        Logger.favicons.debug("Rejected Favicon from \(faviconUrl.shortDescription): SVG renders fully transparent")
+                        return .transparentSVG(faviconUrl)
+                    } catch {
+                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
+                        return .failed
+                    }
+                }
+            }
+            var fetched = [FetchedFavicon]()
+            var transparentSVGURLs = Set<URL>()
+            for await downloadResult in group {
+                guard !Task.isCancelled else {
+                    return ([], [])
+                }
+                switch downloadResult {
+                case .fetched(let fetchedFavicon):
+                    fetched.append(fetchedFavicon)
+                case .transparentSVG(let url):
+                    transparentSVGURLs.insert(url)
+                case .failed:
+                    break
+                }
+            }
+
+            return (fetched, transparentSVGURLs)
+        }
+    }
+
+    /**
+     * Remembers the given transparent SVG favicon URLs for the rest of the session, so that they aren't downloaded
+     * again on every favicon update, and removes cached copies of them stored before transparent SVGs were rejected.
+     *
+     * After the removal, references that point at these favicons resolve to a cache miss, so the tab shows
+     * the placeholder (or the `/favicon.ico` fallback, if available) instead of an invisible favicon.
+     */
+    @MainActor
+    private func rejectTransparentSVGFavicons(_ urls: Set<URL>) async {
+        guard !urls.isEmpty else { return }
+        transparentSVGFaviconURLs.formUnion(urls)
+
+        let identifiers = Set(imageCache.getFavicons(with: urls)?.map(\.identifier) ?? [])
+        await imageCache.removeFavicons(withIdentifiers: identifiers)
+    }
+
+    private enum FaviconDecodingError: Error {
+        /// AppKit's SVG renderer ignores CSS, so an SVG that colors its paths only through a `<style>` rule
+        /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
+        /// a fully transparent image.
+        case transparentSVG
+    }
+
     private static func decodeFavicon(from data: Data, link: FaviconUserScript.FaviconLink) throws -> FetchedFavicon {
         // Validate that we got actual image data
         guard !data.isEmpty else {
@@ -518,7 +569,7 @@ final class FaviconManager: FaviconManagement {
         // Treat a transparent SVG as undecodable so that another favicon
         // or the `/favicon.ico` fallback gets picked instead.
         guard !fetchedFavicon.isTransparentSVG else {
-            throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: link.href])
+            throw FaviconDecodingError.transparentSVG
         }
 
         return fetchedFavicon
@@ -539,9 +590,7 @@ final class FaviconManager: FaviconManagement {
             return link.href.pathExtension.lowercased() == "svg"
         }
 
-        /// AppKit's SVG renderer ignores CSS, so an SVG that colors its paths only through a `<style>` rule
-        /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
-        /// a fully transparent image.
+        /// See `FaviconDecodingError.transparentSVG`.
         var isTransparentSVG: Bool {
             (isSVG || data.isSVGImageData) && !image.hasVisiblePixels()
         }

@@ -133,8 +133,8 @@ jobs:
         run: |
           echo "ACTION=${{ steps.params.outputs.action }}" >> $GITHUB_ENV
           echo "IS_PR_TRIGGER=${{ steps.params.outputs.is_pr_trigger }}" >> $GITHUB_ENV
-          echo "PLATFORM=${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}" >> $GITHUB_ENV
-          echo "JOB_ID=${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}" >> $GITHUB_ENV
+          echo "PLATFORM=${{ steps.params.outputs.platform }}" >> $GITHUB_ENV
+          echo "JOB_ID=${{ steps.params.outputs.job_id }}" >> $GITHUB_ENV
           echo "BRANCH=${{ steps.params.outputs.branch }}" >> $GITHUB_ENV
           echo "ALLOW_UNFINISHED=${{ steps.params.outputs.allow_unfinished }}" >> $GITHUB_ENV
           echo "WORKFLOW_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}" >> $GITHUB_ENV
@@ -188,35 +188,42 @@ jobs:
           cat upload_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status
-        if: ${{ env.ACTION == 'status' }}
+        if: ${{ env.IS_PR_TRIGGER != 'true' && env.ACTION == 'status' }}
         run: |
           ./scripts/smartling/smartling_status.sh "$JOB_ID" "$PLATFORM"
           cat status_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Approve Job
-        if: ${{ env.ACTION == 'approve' }}
+        if: ${{ env.IS_PR_TRIGGER != 'true' && env.ACTION == 'approve' }}
         id: approve
         run: |
           ./scripts/smartling/smartling_approve.sh "$JOB_ID" "$PLATFORM"
           cat approve_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Download from Smartling
-        if: ${{ env.ACTION == 'download' }}
+        if: ${{ env.IS_PR_TRIGGER != 'true' && env.ACTION == 'download' }}
         id: download
         run: |
           ./scripts/smartling/smartling_download.sh "$JOB_ID" "$PLATFORM" "$ALLOW_UNFINISHED"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
 
-      - name: Check Status and Update Labels
-        if: ${{ env.ACTION == 'check_status' }}
-        id: check_status
+      - name: Run label action for each uploaded platform
+        if: ${{ env.IS_PR_TRIGGER == 'true' && steps.params.outputs.needs_comment_parsing == 'true' }}
+        env:
+          JOBS: ${{ steps.parse_comment.outputs.jobs }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          IOS_SMARTLING_USER_ID: ${{ secrets.IOS_SMARTLING_USER_ID }}
+          IOS_SMARTLING_USER_SECRET: ${{ secrets.IOS_SMARTLING_USER_SECRET }}
+          IOS_SMARTLING_PROJECT_ID: ${{ vars.IOS_SMARTLING_PROJECT_ID }}
+          MACOS_SMARTLING_USER_ID: ${{ secrets.MACOS_SMARTLING_USER_ID }}
+          MACOS_SMARTLING_USER_SECRET: ${{ secrets.MACOS_SMARTLING_USER_SECRET }}
+          MACOS_SMARTLING_PROJECT_ID: ${{ vars.MACOS_SMARTLING_PROJECT_ID }}
         run: |
-          ./scripts/smartling/smartling_status_check.sh "$JOB_ID" "$PLATFORM"
-          cat check_status_message.txt >> $GITHUB_STEP_SUMMARY
+          ./scripts/smartling/smartling_pr_jobs.sh "$ACTION" "$PR_NUMBER" "$JOBS"
 
       # PR-specific steps (comments and labels)
       - name: Post PR comment
-        if: ${{ env.IS_PR_TRIGGER == 'true' }}
+        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'upload' }}
         run: |
           ACTION="$ACTION"
           MESSAGE_FILE="${ACTION}_message.txt"
@@ -236,28 +243,3 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
           ./scripts/smartling/pr_label_manager.sh after_upload "$PR_NUMBER" "$STATUS" "$TRIGGER_LABEL"
-
-      - name: Update PR labels after approval
-        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'approve' }}
-        run: |
-          STATUS="${{ steps.approve.outputs.approve_success == 'true' && 'success' || 'failed' }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-
-          ./scripts/smartling/pr_label_manager.sh after_approve "$PR_NUMBER" "$STATUS"
-
-      - name: Update PR labels after download
-        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'download' }}
-        run: |
-          RESULT="${{ steps.download.outputs.download_result }}"
-          STATUS="${RESULT:-failed}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-
-          ./scripts/smartling/pr_label_manager.sh after_download "$PR_NUMBER" "$STATUS"
-
-      - name: Update PR labels after status check
-        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'check_status' }}
-        run: |
-          STATUS="${{ steps.check_status.outputs.status_result }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-
-          ./scripts/smartling/pr_label_manager.sh check_status "$PR_NUMBER" "$STATUS"

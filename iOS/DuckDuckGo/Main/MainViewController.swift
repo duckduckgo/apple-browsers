@@ -1546,7 +1546,6 @@ class MainViewController: UIViewController {
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
         return DuckAIAddressBarMenuType.resolve(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
             isShowingDocument: tab.isShowingDocument,
             tabType: tab.tabType,
             searchQuery: tab.url?.searchQuery

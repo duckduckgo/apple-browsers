@@ -53,6 +53,10 @@ protocol Promo {
     /// Default: true.
     var setsGlobalCooldown: Bool { get }
 
+    /// When true, triggers can show this promo before onboarding is completed.
+    /// Default: false.
+    var canShowDuringOnboarding: Bool { get }
+
     /// Provides dynamic promo behavior (eligibility, show, hide).
     /// Delegate should be set by feature module when their dependencies are ready.
     var delegate: (any PromoDelegate)? { get set }
@@ -70,6 +74,7 @@ struct InternalPromo: Promo {
     let coexistingPromoIDs: Set<String>
     let respectsGlobalCooldown: Bool
     let setsGlobalCooldown: Bool
+    let canShowDuringOnboarding: Bool
 
     var delegate: (any PromoDelegate)?
 
@@ -81,6 +86,7 @@ struct InternalPromo: Promo {
          coexistingPromoIDs: Set<String> = [],
          respectsGlobalCooldown: Bool = true,
          setsGlobalCooldown: Bool = true,
+         canShowDuringOnboarding: Bool = false,
          delegate: InternalPromoDelegate? = nil) {
         self.id = id
         self.triggers = triggers
@@ -90,6 +96,7 @@ struct InternalPromo: Promo {
         self.coexistingPromoIDs = coexistingPromoIDs
         self.respectsGlobalCooldown = respectsGlobalCooldown
         self.setsGlobalCooldown = setsGlobalCooldown
+        self.canShowDuringOnboarding = canShowDuringOnboarding
         self.delegate = delegate
     }
 }
@@ -112,6 +119,9 @@ struct ExternalPromo: Promo {
 
     /// External promos control when they will show; they don't respect PromoService cooldowns
     let respectsGlobalCooldown: Bool = false
+
+    /// The onboarding gate applies to triggers, which external promos don't have
+    let canShowDuringOnboarding: Bool = false
 
     var delegate: (any PromoDelegate)?
 

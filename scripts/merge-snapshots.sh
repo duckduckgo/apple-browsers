@@ -3,13 +3,15 @@
 set -euo pipefail
 
 # Merges the companion PR in the apple-browsers-snapshots submodule into its
-# main, then repoints the monorepo PR branch at the resulting main commit so the
-# monorepo can never reference a commit that only lives on a soon-deleted branch.
+# main with a merge commit, then verifies the monorepo PR's submodule pointer is
+# reachable from that main, so the monorepo can never reference a commit that
+# only lived on the deleted companion branch. The monorepo PR branch is left
+# untouched so its CI results and approvals stay valid.
 #
 # Triggered by the "Merge snapshots" label via
-# .github/workflows/merge_snapshots.yml. Requires a `gh`/git authenticated with
-# write access to both duckduckgo/apple-browsers and
-# duckduckgo/apple-browsers-snapshots.
+# .github/workflows/merge_snapshots.yml. Requires a `gh` authenticated with
+# write access to duckduckgo/apple-browsers-snapshots, run from a checkout of
+# the monorepo PR branch.
 #
 # Usage: ./scripts/merge-snapshots.sh <pr-branch>
 
@@ -29,6 +31,8 @@ if [ -z "$PR_NUMBER" ]; then
 	exit 1
 fi
 
+CURRENT_POINTER="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
+
 MERGED_AT="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergedAt --jq '.mergedAt // empty')"
 if [ -z "$MERGED_AT" ]; then
 	PR_STATE="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json state --jq '.state')"
@@ -37,42 +41,35 @@ if [ -z "$MERGED_AT" ]; then
 		exit 1
 	fi
 
+	PR_HEAD="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json headRefOid --jq '.headRefOid')"
+	PR_STATUS="$(gh api "repos/$SUBMODULE_REPO/compare/$PR_HEAD...$CURRENT_POINTER" --jq '.status' 2>/dev/null || true)"
+	if [ "$PR_STATUS" != "identical" ] && [ "$PR_STATUS" != "behind" ]; then
+		echo "❌ $SUBMODULE_PATH points at $CURRENT_POINTER, which is not in companion PR #$PR_NUMBER (status: '${PR_STATUS:-unknown}')."
+		echo "   Run ./scripts/open-snapshot-submodule-pr.sh on '$BRANCH' and push, then re-add the label."
+		exit 1
+	fi
+
 	echo "🔀 Merging $SUBMODULE_REPO PR #$PR_NUMBER..."
-	gh pr merge "$PR_NUMBER" -R "$SUBMODULE_REPO" --merge
+	gh pr merge "$PR_NUMBER" -R "$SUBMODULE_REPO" --merge --match-head-commit "$PR_HEAD"
 else
 	echo "ℹ️  Companion PR #$PR_NUMBER is already merged."
 fi
 
-MERGED_AT=""
-NEW_POINTER=""
+STATUS=""
 for attempt in 1 2 3 4 5; do
-	MERGED_AT="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergedAt --jq '.mergedAt // empty')"
-	NEW_POINTER="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergeCommit --jq '.mergeCommit.oid // empty')"
-	if [ -n "$MERGED_AT" ] && [ -n "$NEW_POINTER" ]; then
+	STATUS="$(gh api "repos/$SUBMODULE_REPO/compare/$BASE_BRANCH...$CURRENT_POINTER" --jq '.status' 2>/dev/null || true)"
+	if [ "$STATUS" = "identical" ] || [ "$STATUS" = "behind" ]; then
 		break
 	fi
 	if [ "$attempt" -lt 5 ]; then
-		echo "⏳ Merge commit not reported yet (attempt $attempt/5); retrying in 3s..."
+		echo "⏳ $SUBMODULE_PATH pointer not on $SUBMODULE_REPO@$BASE_BRANCH yet (status: '${STATUS:-unknown}', attempt $attempt/5); retrying in 3s..."
 		sleep 3
 	fi
 done
-if [ -z "$MERGED_AT" ] || [ -z "$NEW_POINTER" ]; then
-	echo "❌ Companion PR #$PR_NUMBER did not report a merge commit after retries; refusing to update the submodule pointer."
+if [ "$STATUS" != "identical" ] && [ "$STATUS" != "behind" ]; then
+	echo "❌ $SUBMODULE_PATH points at $CURRENT_POINTER, which is not reachable from $SUBMODULE_REPO@$BASE_BRANCH (status: '${STATUS:-unknown}')."
+	echo "   Point $SUBMODULE_PATH on '$BRANCH' at a commit on $SUBMODULE_REPO@$BASE_BRANCH and push, then re-add the label."
 	exit 1
 fi
 
-CURRENT_POINTER="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
-
-if [ "$NEW_POINTER" = "$CURRENT_POINTER" ]; then
-	echo "✅ Pointer already at $SUBMODULE_REPO@$BASE_BRANCH ($NEW_POINTER) — nothing to update."
-	exit 0
-fi
-
-echo "📌 Repointing $SUBMODULE_PATH: $CURRENT_POINTER → $NEW_POINTER"
-git update-index --cacheinfo "160000,$NEW_POINTER,$SUBMODULE_PATH"
-git -c user.name="github-actions[bot]" \
-	-c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-	commit -m "Update $SUBMODULE_PATH pointer to merged $BASE_BRANCH"
-git push origin "HEAD:$BRANCH"
-
-echo "✅ Verified companion PR #$PR_NUMBER is merged and repointed $SUBMODULE_PATH to $NEW_POINTER."
+echo "✅ Companion PR #$PR_NUMBER is merged and $SUBMODULE_PATH ($CURRENT_POINTER) is on $SUBMODULE_REPO@$BASE_BRANCH. No new commit needed."

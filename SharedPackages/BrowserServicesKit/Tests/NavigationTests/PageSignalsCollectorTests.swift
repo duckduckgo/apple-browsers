@@ -75,7 +75,7 @@ struct PageSignalsCollectorTests {
 }
 
 /// Mimics `_WKContentRuleListAction`'s `blockedLoad` property.
-private final class ContentRuleListActionStub: NSObject {
+final class ContentRuleListActionStub: NSObject {
     @objc let blockedLoad: Bool
 
     init(blockedLoad: Bool) {

@@ -29,6 +29,7 @@ enum NewTabPageOnboardingDialogKind: Equatable {
 
 @MainActor
 protocol NewTabPageOnboardingHosting: NewTabPage {
+    var hidesOnboardingContentBeforeInputActivation: Bool { get }
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind)
 }
 
@@ -43,17 +44,15 @@ final class NewTabPageOnboardingCoordinator {
     private let tutorialSettings: TutorialSettings
     private let contextualContentProvider: ContextualOnboardingContentProviding
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
-    private var presentationGeneration = 0
     private var hostingController: UIHostingController<AnyView>?
     private var daxDialogTopConstraint: NSLayoutConstraint?
     private var isShowingDuckAICompletionDialog = false
     private var didHideBarsForChatPathVisitSiteDialog = false
     private var hiddenContentDialog: NewTabPageOnboardingDialogKind?
-    private var didHideLogo = false
-    private var presentedSpec: DaxDialogs.HomeScreenSpec?
-    private var isCompletionPending = false
 
-    var isPresentingDialog: Bool { hiddenContentDialog != nil }
+    var isPresentingDialog: Bool {
+        hostingController != nil || (page?.hidesOnboardingContentBeforeInputActivation == true && hiddenContentDialog != nil)
+    }
 
     var isAwaitingChatPathCompletion: Bool {
         daxDialogsManager.chatPathPhase == .trackerToEOJ && daxDialogsManager.isAIChatEnabled && hostingController == nil
@@ -79,25 +78,35 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     func pageDidAppear() {
-        guard !isShowingDuckAICompletionDialog, !isCompletionPending else { return }
-        showNextDaxDialog()
+        presentNextDaxDialog(event: .nextDialogRequested)
     }
 
     func pageWillDisappear() {
+        // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
+        // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
         dismissDuckAICompletionDialogIfNeededOnEditingEnd()
-        // Ordinary dialogs stay attached when a modal temporarily covers the page.
+        // Clean up any stale hosting controller parented to mainVC before this NTP leaves.
+        if let hostingController, hostingController.parent !== page {
+            dismissHostingController(didFinishNTPOnboarding: false)
+        }
     }
 
     func detach() {
-        dismissDuckAICompletionDialogIfNeededOnEditingEnd()
-        dismissHostingController(didFinishNTPOnboarding: true, animateBars: false)
+        notifyDuckAICompletionDismissedIfNeeded()
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: false, customAnimationDuration: nil)
+        }
     }
 
     private func setLogoHidden(_ hidden: Bool) {
-        // Only restore a logo this coordinator hid; repeated hide requests must reach the shared view.
-        guard hidden || didHideLogo else { return }
-        didHideLogo = hidden
         page?.setLogoHidden(hidden)
+    }
+
+    private func prepareOnboardingContent(for dialog: NewTabPageOnboardingDialogKind) {
+        guard page?.hidesOnboardingContentBeforeInputActivation == true else { return }
+        hideOnboardingContent(for: dialog)
     }
 
     private func hideOnboardingContent(for dialog: NewTabPageOnboardingDialogKind) {
@@ -105,8 +114,8 @@ final class NewTabPageOnboardingCoordinator {
         page?.setOnboardingContentHidden(true, for: dialog)
     }
 
-    private func restoreOnboardingContentIfNeeded() {
-        guard let dialog = hiddenContentDialog else { return }
+    private func restoreOnboardingContent() {
+        let dialog = hiddenContentDialog ?? .contextual
         hiddenContentDialog = nil
         page?.setOnboardingContentHidden(false, for: dialog)
     }
@@ -141,29 +150,12 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
-        dismissHostingController(didFinishNTPOnboarding: false)
-        isCompletionPending = true
-        hideOnboardingContent(for: .duckAICompletion)
+        prepareOnboardingContent(for: .duckAICompletion)
         setLogoHidden(true)
-        setUnifiedInputContentOverlaySuppressed(true)
         chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
 
-        let generation = presentationGeneration
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            guard self.presentationGeneration == generation, self.page?.parent != nil else {
-                // A newer dialog owns visibility if it has already replaced this request.
-                if self.hostingController == nil && self.presentationGeneration == generation {
-                    self.isCompletionPending = false
-                    self.setUnifiedInputContentOverlaySuppressed(false)
-                    self.restoreOnboardingContentIfNeeded()
-                    self.setLogoHidden(false)
-                    self.page?.view.alpha = 1
-                }
-                return
-            }
-            self.isCompletionPending = false
-            self.showDuckAIOnboardingCompletionDialog(message: message)
+            self?.showDuckAIOnboardingCompletionDialog(message: message)
         }
     }
 
@@ -213,18 +205,19 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     private func presentSubscriptionPromotionIfPending() {
-        guard daxDialogsManager.subscriptionPromotionPending else {
-            dismissHostingController(didFinishNTPOnboarding: true)
-            return
-        }
+        guard daxDialogsManager.subscriptionPromotionPending else { return }
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
     private func showDuckAIOnboardingCompletionDialog(message: String) {
+        dismissHostingController(didFinishNTPOnboarding: false)
+        hideOnboardingContent(for: .duckAICompletion)
+
         guard let mainVC = parent as? MainViewController,
               let coordinator = mainVC.unifiedToggleInputCoordinator,
               coordinator.isOmnibarSession else {
-            dismissHostingController(didFinishNTPOnboarding: true)
+            isShowingDuckAICompletionDialog = false
+            restoreRedesignedContentIfNeeded()
             setLogoHidden(false)
             page?.view.alpha = 1
             return
@@ -240,9 +233,8 @@ final class NewTabPageOnboardingCoordinator {
         // dismissHostingController re-enables the overlay when the dialog is torn down.
         setUnifiedInputContentOverlaySuppressed(true)
 
-        let generation = presentationGeneration
         let onDismiss = { [weak self, weak mainVC, weak coordinator] in
-            guard let self, self.presentationGeneration == generation else { return }
+            guard let self else { return }
             // Collapse the UTI bar explicitly rather than going through omniBar.endEditing()
             // (which only resigns the legacy text field and does not drive the UTI state machine).
             // Takes an optional completion so the subscription promo can be deferred until after
@@ -255,7 +247,6 @@ final class NewTabPageOnboardingCoordinator {
                 }
             }
             let finishDismissal = {
-                guard self.presentationGeneration == generation else { return }
                 // Mirror the OmniBar path: mark EOJ seen before peeking so that
                 // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
                 // branch and can return .subscriptionPromotion (r3257196584).
@@ -269,7 +260,6 @@ final class NewTabPageOnboardingCoordinator {
                         mainVC.viewCoordinator.unifiedInputContentContainer.alpha = 0
                     }
                     collapseUTI { [weak self] in
-                        guard self?.presentationGeneration == generation else { return }
                         self?.dismissHostingController(didFinishNTPOnboarding: false,
                                                        updateUnifiedInputContentOverlaySuppression: false)
                         self?.showNextDaxDialog()
@@ -309,7 +299,6 @@ final class NewTabPageOnboardingCoordinator {
         ntpHC.view.backgroundColor = .clear
         ntpHC.view.translatesAutoresizingMaskIntoConstraints = false
         self.hostingController = ntpHC
-        hideOnboardingContent(for: .duckAICompletion)
         let ntpContainer: UIView = page.view.superview ?? mainVC.view
         mainVC.addChild(ntpHC)
         ntpContainer.addSubview(ntpHC.view)
@@ -328,19 +317,13 @@ final class NewTabPageOnboardingCoordinator {
 
     private func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
         guard let page else { return }
-        let nextSpec = dialogProvider.nextHomeScreenMessageNew()
-        if let nextSpec, nextSpec == presentedSpec, hostingController != nil {
-            setUnifiedInputContentOverlaySuppressed(true)
-            return
-        }
         dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
 
-        guard let spec = nextSpec else {
+        guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
             restoreContentAfterDialogSequenceIfNeeded()
             return
         }
-        presentedSpec = spec
-        hideOnboardingContent(for: .contextual)
+        prepareOnboardingContent(for: .contextual)
         setUnifiedInputContentOverlaySuppressed(true)
 
         // The EoJ ("High five!") dialog surfaces with an active address bar in UTI mode so the user
@@ -355,9 +338,8 @@ final class NewTabPageOnboardingCoordinator {
             chromeDelegate?.omniBar.beginEditing(animated: false, forTextEntryMode: .aiChat)
         }
 
-        let generation = presentationGeneration
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in
-            guard let self, self.presentationGeneration == generation else { return }
+            guard let self else { return }
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .subscriptionPromotion else {
@@ -374,7 +356,6 @@ final class NewTabPageOnboardingCoordinator {
         }
 
         let onManualDismiss: () -> Void = { [weak self] in
-            guard self?.presentationGeneration == generation else { return }
             self?.dismissHostingController(didFinishNTPOnboarding: true)
 
             if spec == .final {
@@ -390,7 +371,7 @@ final class NewTabPageOnboardingCoordinator {
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 
-        let daxDialogView = makeDialog(for: spec, factory: factory, generation: generation,
+        let daxDialogView = makeDialog(for: spec, factory: factory,
                                        onDismiss: onDismiss, onManualDismiss: onManualDismiss)
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
@@ -414,19 +395,26 @@ final class NewTabPageOnboardingCoordinator {
         ])
 
         hostingController.didMove(toParent: page)
+        if !page.hidesOnboardingContentBeforeInputActivation {
+            hideOnboardingContent(for: .contextual)
+        }
     }
 
     private func restoreContentAfterDialogSequenceIfNeeded() {
         // The chat-path completion owns visibility during the queued input handoff.
         guard !isAwaitingChatPathCompletion else { return }
-        restoreOnboardingContentIfNeeded()
-        setLogoHidden(false)
+        restoreRedesignedContentIfNeeded()
         setUnifiedInputContentOverlaySuppressed(false)
+    }
+
+    private func restoreRedesignedContentIfNeeded() {
+        guard page?.hidesOnboardingContentBeforeInputActivation == true, hiddenContentDialog != nil else { return }
+        restoreOnboardingContent()
+        setLogoHidden(false)
     }
 
     private func makeDialog(for spec: DaxDialogs.HomeScreenSpec,
                             factory: any NewTabDaxDialogProviding,
-                            generation: Int,
                             onDismiss: @escaping (Bool) -> Void,
                             onManualDismiss: @escaping () -> Void) -> AnyView {
         if spec == .final {
@@ -434,7 +422,6 @@ final class NewTabPageOnboardingCoordinator {
             // content-driven entry point — the content provider decides which variant.
             // Other specs still go through `createDaxDialog` below but we will refactor one by one (strangler pattern).
             return factory.createEndOfJourneyDialog(content: contextualContentProvider.endOfJourneyContent) { [weak self] action in
-                guard self?.presentationGeneration == generation else { return }
                 switch action {
                 case .completeAndActivateSearch: onDismiss(true)
                 case .manualDismiss: onManualDismiss()
@@ -457,8 +444,7 @@ final class NewTabPageOnboardingCoordinator {
             daxDialogsManager.chatPathPhase == .visitSite {
             didHideBarsForChatPathVisitSiteDialog = true
             DispatchQueue.main.async { [weak self] in
-                guard let self, self.didHideBarsForChatPathVisitSiteDialog, self.page?.parent != nil else { return }
-                self.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
+                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
             }
         }
     }
@@ -483,18 +469,13 @@ final class NewTabPageOnboardingCoordinator {
     /// active because `omniBar.endEditing()` only resigns the legacy text field and does not
     /// drive the UTI state machine.
     private func dismissAddressBarEditingForSubscriptionPromo(completion: @escaping () -> Void) {
-        let generation = presentationGeneration
-        let completeIfCurrent = { [weak self] in
-            guard self?.presentationGeneration == generation else { return }
-            completion()
-        }
         if let mainVC = parent as? MainViewController,
            let coordinator = mainVC.unifiedToggleInputCoordinator,
            coordinator.isOmnibarSession {
-            mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completeIfCurrent)
+            mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
         } else {
             chromeDelegate?.omniBar.endEditing()
-            completeIfCurrent()
+            completion()
         }
     }
 
@@ -540,42 +521,31 @@ final class NewTabPageOnboardingCoordinator {
         daxDialogTopConstraint.constant = inset
     }
 
-    private func dismissHostingController(didFinishNTPOnboarding: Bool,
-                                          updateUnifiedInputContentOverlaySuppression: Bool = true,
-                                          animateBars: Bool = true) {
+    private func dismissHostingController(didFinishNTPOnboarding: Bool, updateUnifiedInputContentOverlaySuppression: Bool = true) {
         let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
-        if isCompletionPending {
-            page?.view.alpha = 1
-        }
-        if hostingController != nil || isCompletionPending {
-            // Cancel callbacks only when a hosted or queued presentation is actually removed.
-            presentationGeneration += 1
-        }
-        isCompletionPending = false
-        presentedSpec = nil
-        if let hostingController {
-            hostingController.willMove(toParent: nil)
-            hostingController.view.removeFromSuperview()
-            hostingController.removeFromParent()
-            self.hostingController = nil
-            daxDialogTopConstraint = nil
-        }
+        hostingController?.willMove(toParent: nil)
+        hostingController?.view.removeFromSuperview()
+        hostingController?.removeFromParent()
+        hostingController = nil
+        daxDialogTopConstraint = nil
         if updateUnifiedInputContentOverlaySuppression {
-            setUnifiedInputContentOverlaySuppressed(false)
+            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
         isShowingDuckAICompletionDialog = false
         if didHideBarsForChatPathVisitSiteDialog {
             didHideBarsForChatPathVisitSiteDialog = false
-            chromeDelegate?.setBarsHidden(false, animated: animateBars, customAnimationDuration: nil)
+            chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
         }
-        if didDismissDuckAICompletionDialog, let page {
+        if didDismissDuckAICompletionDialog {
             // Restore NTP visibility that was muted during the chat-path handoff so the
             // empty-state Dax doesn't flash through the editing-state transition.
-            page.view.alpha = 1
-            page.delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(page)
+            page?.view.alpha = 1
+            if let page {
+                page.delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(page)
+            }
         }
         if didFinishNTPOnboarding {
-            restoreOnboardingContentIfNeeded()
+            restoreOnboardingContent()
             setLogoHidden(false)
         }
     }
@@ -593,6 +563,22 @@ final class NewTabPageOnboardingCoordinator {
         // When promoPending, the state machine is left intact: the subscription promo
         // will surface naturally on the next NTP open via viewDidAppear → presentNextDaxDialog().
         ViewHighlighter.hideAll()
+    }
+
+    private func notifyDuckAICompletionDismissedIfNeeded() {
+        guard isShowingDuckAICompletionDialog else { return }
+        isShowingDuckAICompletionDialog = false
+        // Mirror dismissDuckAICompletionDialogIfNeededOnEditingEnd: mark EOJ seen and
+        // dismiss the dialog system so the subscription promo state is consistent
+        // regardless of whether the user tapped dismiss or navigated away.
+        daxDialogsManager.setFinalOnboardingDialogSeen()
+        if !daxDialogsManager.subscriptionPromotionPending {
+            daxDialogsManager.dismiss()
+        }
+        page?.view.alpha = 1
+        if let page {
+            page.delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(page)
+        }
     }
 }
 

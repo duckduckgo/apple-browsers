@@ -91,7 +91,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         XCTAssertTrue(page.canAnimateSearchInput)
     }
 
-    func testWhenPageAppearsAgainThenExistingDialogIsNotDuplicated() {
+    func testWhenPageAppearsAgainThenDialogIsRebuiltWithoutStacking() {
         dialogs.specToReturn = .initial
         page.showNextDaxDialog()
 
@@ -99,69 +99,37 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         coordinator.pageDidAppear()
 
         XCTAssertTrue(dialogs.nextHomeScreenMessageNewCalled)
-        XCTAssertEqual(factory.specs, [.initial])
+        XCTAssertEqual(factory.specs, [.initial, .initial])
         XCTAssertEqual(page.children.count, 1)
     }
 
-    func testWhenPromotionIsNoLongerDueOnReappearanceThenItIsRemoved() {
-        for onboardingFlow: OnboardingFlowType in [.default, .duckAI] {
-            flow.currentOnboardingFlow = onboardingFlow
-            dialogs.subscriptionPromotionPending = true
-            dialogs.specToReturn = .subscriptionPromotion
-            page.showNextDaxDialog()
-            XCTAssertTrue(page.isPresentingOnboardingDialog)
-
-            // Purchasing in the modal makes the promotion ineligible on return.
-            dialogs.subscriptionPromotionPending = false
-            dialogs.specToReturn = nil
-            coordinator.pageDidAppear()
-
-            XCTAssertFalse(page.isPresentingOnboardingDialog)
-            XCTAssertTrue(page.children.isEmpty)
-            XCTAssertTrue(page.canAnimateSearchInput)
-        }
-    }
-
-    func testWhenNextDialogChangesOnReappearanceThenOldCallbacksCannotDismissItsReplacement() {
-        dialogs.specToReturn = .initial
+    func testWhenDefaultFlowPromotionIsNoLongerDueThenRestingContentReturns() {
+        dialogs.subscriptionPromotionPending = true
+        dialogs.specToReturn = .subscriptionPromotion
         page.showNextDaxDialog()
-        let oldCompletion = factory.onCompletion
-        dialogs.specToReturn = .subsequent
-
-        coordinator.pageDidAppear()
-        oldCompletion?(false)
-
-        XCTAssertEqual(factory.specs, [.initial, .subsequent])
-        XCTAssertEqual(page.children.count, 1)
         XCTAssertTrue(page.isPresentingOnboardingDialog)
-        XCTAssertFalse(dialogs.dismissCalled)
+
+        dialogs.subscriptionPromotionPending = false
+        dialogs.specToReturn = nil
+        coordinator.pageDidAppear()
+
+        XCTAssertFalse(page.isPresentingOnboardingDialog)
+        XCTAssertTrue(page.children.isEmpty)
+        XCTAssertTrue(page.canAnimateSearchInput)
     }
 
-    func testWhenPageDetachesThenDialogIsRemovedAndCanBePresentedOnReturn() {
+    func testWhenPageDetachesThenDialogStateIsKeptUntilReappearance() {
         dialogs.specToReturn = .initial
         page.showNextDaxDialog()
 
         page.dismiss()
 
-        XCTAssertFalse(coordinator.isPresentingDialog)
-        XCTAssertTrue(page.children.isEmpty)
+        XCTAssertTrue(coordinator.isPresentingDialog)
+        XCTAssertEqual(page.children.count, 1)
         XCTAssertFalse(dialogs.dismissCalled, "Leaving a tab must not complete contextual onboarding")
         coordinator.pageDidAppear()
         XCTAssertTrue(coordinator.isPresentingDialog)
         XCTAssertEqual(factory.specs, [.initial, .initial])
-    }
-
-    func testWhenDetachedDialogCallbackArrivesThenItDoesNotAdvanceOnboarding() {
-        dialogs.specToReturn = .initial
-        page.showNextDaxDialog()
-        let completion = factory.onCompletion
-        page.dismiss()
-        dialogs.nextHomeScreenMessageNewCalled = false
-
-        completion?(false)
-
-        XCTAssertFalse(dialogs.nextHomeScreenMessageNewCalled)
-        XCTAssertFalse(dialogs.dismissCalled)
     }
 
     func testWhenInputIsFocusedThenOnboardingRemainsAccessible() {

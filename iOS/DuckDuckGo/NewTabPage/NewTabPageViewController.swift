@@ -196,8 +196,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        isRemoteMessageSurfacePresented = false
         onboardingCoordinator.pageWillDisappear()
+        isRemoteMessageSurfacePresented = false
         notifyRemoteMessageSurfaceChanged()
     }
 
@@ -339,7 +339,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - RMF
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        isRemoteMessageSurfacePresented && !newTabPageViewModel.isOnboarding && hasAppearedRemoteMessage(withID: messageID)
+        isRemoteMessageSurfacePresented && hasAppearedRemoteMessage(withID: messageID)
     }
 
     func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
@@ -369,6 +369,7 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 }
 
 extension NewTabPageViewController: NewTabPageOnboardingHosting {
+    var hidesOnboardingContentBeforeInputActivation: Bool { false }
     var isPresentingOnboardingDialog: Bool { onboardingCoordinator.isPresentingDialog }
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
         // The transparent Duck.ai completion dialog needs the legacy NTP background beneath it.
@@ -377,7 +378,6 @@ extension NewTabPageViewController: NewTabPageOnboardingHosting {
         } else {
             newTabPageViewModel.finishOnboarding()
         }
-        notifyRemoteMessageSurfaceChanged()
     }
 
     func showNextDaxDialog() {

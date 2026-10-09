@@ -386,6 +386,8 @@ extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
 
 extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
 
+    var hidesOnboardingContentBeforeInputActivation: Bool { true }
+
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
         // Keep the scroll position and block sizes intact beneath the dialog.
         contentContainerView.isHidden = hidden

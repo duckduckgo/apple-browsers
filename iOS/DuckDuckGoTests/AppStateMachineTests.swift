@@ -167,11 +167,22 @@ final class MockTerminatingStateFactory: TerminatingStateFactory {
 
 }
 
+extension LaunchBreadcrumb {
+
+    /// Keeps state machine tests out of the test host's `UserDefaults.standard` and away from real pixels.
+    static var testing: LaunchBreadcrumb {
+        LaunchBreadcrumb(store: UserDefaults(suiteName: "AppStateMachineTests")!, applicationState: { .inactive }, pixelFiring: { nil })
+    }
+
+}
+
 @MainActor
 @Suite("AppStateMachine launching origin transition tests", .serialized)
 final class LaunchingTests {
 
-    let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()), terminatingStateFactory: MockTerminatingStateFactory())
+    let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()),
+                                       terminatingStateFactory: MockTerminatingStateFactory(),
+                                       launchBreadcrumb: .testing)
 
     @Test("didFinishLaunching should transition from Initializing to Launching")
     func transitionFromInitializingToLaunching() {
@@ -249,7 +260,7 @@ final class LaunchingTests {
 @Suite("AppStateMachine connected origin transition tests", .serialized)
 final class ConnectedTests {
 
-    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())))
+    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
 
     @Test("didBecomeActive should transition from Connected to Foreground and call onTransition and didReturn")
     func transitionFromConnectedToForeground() {
@@ -307,7 +318,7 @@ final class ConnectedTests {
 @Suite("AppStateMachine foreground origin transition tests", .serialized)
 final class ForegroundTests {
 
-    let stateMachine = AppStateMachine(initialState: .foreground(MockForeground(actionToHandle: nil)))
+    let stateMachine = AppStateMachine(initialState: .foreground(MockForeground(actionToHandle: nil)), launchBreadcrumb: .testing)
 
     @Test("didEnterBackground should transition from Foreground to Background and call onTransition and didReturn")
     func transitionFromForegroundToBackground() {
@@ -373,7 +384,7 @@ final class ForegroundTests {
 @Suite("AppStateMachine background origin transition tests", .serialized)
 final class BackgroundTests {
 
-    let stateMachine = AppStateMachine(initialState: .background(MockBackground()))
+    let stateMachine = AppStateMachine(initialState: .background(MockBackground()), launchBreadcrumb: .testing)
 
     @Test("didBecomeActive should transition from Background to Foreground and call onTransition and didReturn")
     func transitionFromBackgroundToForeground() {
@@ -503,7 +514,7 @@ final class SceneLifecycleInstrumentationTests {
     @available(iOS 16, macOS 13, *)
     @Test("Scene disconnect fires with the current app state", .timeLimit(.minutes(1)))
     func sceneDidDisconnectFiresWithState() {
-        let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())))
+        let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
         instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
         stateMachine.handle(.didBecomeActive)
         instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
@@ -524,14 +535,11 @@ final class LaunchBreadcrumbTests {
     let suiteName = "LaunchBreadcrumbTests-\(UUID().uuidString)"
     let pixelKit = PixelKitMock()
     let initializing = MockInitializing()
+    lazy var store = UserDefaults(suiteName: suiteName)!
+    lazy var launchBreadcrumb = LaunchBreadcrumb(store: store, applicationState: { .inactive }, pixelFiring: { [pixelKit] in pixelKit })
     lazy var stateMachine = AppStateMachine(initialState: .initializing(initializing),
-                                            terminatingStateFactory: MockTerminatingStateFactory())
-
-    init() {
-        LaunchBreadcrumb.store = UserDefaults(suiteName: suiteName)!
-        LaunchBreadcrumb.applicationState = { .inactive }
-        LaunchBreadcrumb.pixelFiring = { [pixelKit] in pixelKit }
-    }
+                                            terminatingStateFactory: MockTerminatingStateFactory(),
+                                            launchBreadcrumb: launchBreadcrumb)
 
     deinit {
         UserDefaults().removePersistentDomain(forName: suiteName)
@@ -541,12 +549,12 @@ final class LaunchBreadcrumbTests {
     @Test("A launch that reaches Foreground leaves no breadcrumb and fires nothing", .timeLimit(.minutes(1)))
     func completedLaunchClearsBreadcrumb() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(LaunchBreadcrumb.current == ["step": "launched", "app_state": "inactive"])
+        #expect(launchBreadcrumb.current == ["step": "launched", "app_state": "inactive"])
         stateMachine.handle(.willConnectToWindow(window: UIWindow()))
-        #expect(LaunchBreadcrumb.current == ["step": "ui-attached", "app_state": "inactive"])
+        #expect(launchBreadcrumb.current == ["step": "ui-attached", "app_state": "inactive"])
         stateMachine.handle(.didBecomeActive)
 
-        #expect(LaunchBreadcrumb.current == nil)
+        #expect(launchBreadcrumb.current == nil)
         #expect(pixelKit.actualFireCalls.isEmpty)
     }
 
@@ -557,33 +565,33 @@ final class LaunchBreadcrumbTests {
         stateMachine.handle(.willConnectToWindow(window: UIWindow()))
         stateMachine.handle(.didEnterBackground)
 
-        #expect(LaunchBreadcrumb.current == nil)
+        #expect(launchBreadcrumb.current == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("A breadcrumb left by the previous launch is reported on the next launch", .timeLimit(.minutes(1)))
     func incompleteLaunchIsReported() {
         let previous = ["step": "persistent-stores", "app_state": "inactive"]
-        LaunchBreadcrumb.store.set(previous, forKey: LaunchBreadcrumb.key)
+        store.set(previous, forKey: LaunchBreadcrumb.key)
 
         stateMachine.handle(.didFinishLaunching(isTesting: false))
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: previous),
                                                               frequency: .dailyAndCount)])
-        #expect(LaunchBreadcrumb.current?["step"] == "launched")
+        #expect(launchBreadcrumb.current?["step"] == "launched")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("A launch that terminates is reported as terminating, and still reports the previous launch", .timeLimit(.minutes(1)))
     func terminatingLaunch() {
         let previous = ["step": "launched", "app_state": "background"]
-        LaunchBreadcrumb.store.set(previous, forKey: LaunchBreadcrumb.key)
+        store.set(previous, forKey: LaunchBreadcrumb.key)
         initializing.shouldThrowOnLaunching = true
 
         stateMachine.handle(.didFinishLaunching(isTesting: false))
 
         #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [previous])
-        #expect(LaunchBreadcrumb.current?["step"] == "terminating")
+        #expect(launchBreadcrumb.current?["step"] == "terminating")
     }
 
 }

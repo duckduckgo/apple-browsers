@@ -86,8 +86,9 @@ struct Launching: LaunchingHandling {
 
         favicons = Favicons(fireproofing: fireproofing)
 
+        let launchBreadcrumb = LaunchBreadcrumb()
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
-        LaunchBreadcrumb.mark(.keyValueStore)
+        launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
         // Initialize configuration with the key-value store
@@ -104,7 +105,7 @@ struct Launching: LaunchingHandling {
         // MARK: - Application Setup
         // Handles one-time application setup during launch
         try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
-        LaunchBreadcrumb.mark(.persistentStores)
+        launchBreadcrumb.mark(.persistentStores)
 
         // Migrate existing fireproofed domains to eTLD+1 store
         fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
@@ -142,7 +143,7 @@ struct Launching: LaunchingHandling {
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                       faviconStoring: favicons,
                                       duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-        LaunchBreadcrumb.mark(.sync)
+        launchBreadcrumb.mark(.sync)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -179,7 +180,7 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability)
-        LaunchBreadcrumb.mark(.contentBlocking)
+        launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
         // EventHub gets its own store, matching macOS, so its period state never shares a file with app
@@ -372,7 +373,7 @@ struct Launching: LaunchingHandling {
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub
         )
-        LaunchBreadcrumb.mark(.mainCoordinator)
+        launchBreadcrumb.mark(.mainCoordinator)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

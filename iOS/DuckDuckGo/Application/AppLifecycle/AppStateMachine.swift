@@ -156,7 +156,7 @@ final class AppStateMachine {
     private(set) var currentState: AppState {
         didSet {
             switch currentState {
-            case .foreground, .background: LaunchBreadcrumb.clear()
+            case .foreground, .background: launchBreadcrumb.clear()
             default: break
             }
         }
@@ -173,10 +173,14 @@ final class AppStateMachine {
     private var lastConnectedWindowIdentifier: ObjectIdentifier?
 
     private let terminatingStateFactory: TerminatingStateFactory
+    private let launchBreadcrumb: LaunchBreadcrumb
 
-    init(initialState: AppState, terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory()) {
+    init(initialState: AppState,
+         terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory(),
+         launchBreadcrumb: LaunchBreadcrumb = LaunchBreadcrumb()) {
         self.currentState = initialState
         self.terminatingStateFactory = terminatingStateFactory
+        self.launchBreadcrumb = launchBreadcrumb
     }
 
     func handle(_ event: AppEvent) {
@@ -211,17 +215,17 @@ final class AppStateMachine {
         if isTesting {
             currentState = .simulated(Simulated())
         } else {
-            let previousLaunch = LaunchBreadcrumb.current
-            LaunchBreadcrumb.mark(.launchingStarted)
+            let previousLaunch = launchBreadcrumb.current
+            launchBreadcrumb.mark(.launchingStarted)
             do {
                 let launching = try initializing.makeLaunchingState()
-                LaunchBreadcrumb.mark(.launched)
+                launchBreadcrumb.mark(.launched)
                 // PixelKit is set up while making the Launching state.
-                LaunchBreadcrumb.reportIncompleteLaunch(previousLaunch)
+                launchBreadcrumb.reportIncompleteLaunch(previousLaunch)
                 currentState = .launching(launching)
             } catch {
-                LaunchBreadcrumb.mark(.terminating)
-                LaunchBreadcrumb.reportIncompleteLaunch(previousLaunch)
+                launchBreadcrumb.mark(.terminating)
+                launchBreadcrumb.reportIncompleteLaunch(previousLaunch)
                 currentState = .terminating(terminatingStateFactory.makeTerminatingState(error: error))
             }
         }
@@ -231,9 +235,9 @@ final class AppStateMachine {
         switch event {
         case .willConnectToWindow(let window):
             storeWindowIdentifier(window)
-            LaunchBreadcrumb.mark(.windowConnected)
+            launchBreadcrumb.mark(.windowConnected)
             let connected = launching.makeConnectedState(window: window, actionToHandle: actionToHandle)
-            LaunchBreadcrumb.mark(.uiAttached)
+            launchBreadcrumb.mark(.uiAttached)
             currentState = .connected(connected)
         default:
             handleUnexpectedEvent(event, for: .launching(launching))
@@ -355,8 +359,7 @@ enum LaunchBreadcrumbPixel: PixelKit.Event {
 
 /// The last launch step reached, kept until the app reaches Foreground or Background. One left over at the next launch
 /// means that launch never finished, e.g. a black screen the user had to force quit, a hang, or a kill during launch.
-@MainActor
-enum LaunchBreadcrumb {
+struct LaunchBreadcrumb {
 
     /// Launch steps in the order they run. `Launching.init` marks the steps between `launchingStarted` and `launched`.
     enum Step: String {
@@ -374,24 +377,32 @@ enum LaunchBreadcrumb {
 
     static let key = "com.duckduckgo.app-lifecycle.launch-breadcrumb"
 
-    // Swapped in tests.
-    static var store: UserDefaults = .standard
-    static var applicationState: () -> UIApplication.State = { UIApplication.shared.applicationState }
-    static var pixelFiring: () -> (any PixelKitFiring)? = { PixelKit.shared }
+    private let store: UserDefaults
+    private let applicationState: @MainActor () -> UIApplication.State
+    private let pixelFiring: () -> (any PixelKitFiring)?
 
-    static var current: [String: String]? {
-        store.dictionary(forKey: key) as? [String: String]
+    init(store: UserDefaults = .standard,
+         applicationState: @escaping @MainActor () -> UIApplication.State = { UIApplication.shared.applicationState },
+         pixelFiring: @escaping () -> (any PixelKitFiring)? = { PixelKit.shared }) {
+        self.store = store
+        self.applicationState = applicationState
+        self.pixelFiring = pixelFiring
     }
 
-    static func mark(_ step: Step) {
-        store.set(["step": step.rawValue, "app_state": applicationState().stringValue], forKey: key)
+    var current: [String: String]? {
+        store.dictionary(forKey: Self.key) as? [String: String]
     }
 
-    static func clear() {
-        store.removeObject(forKey: key)
+    @MainActor
+    func mark(_ step: Step) {
+        store.set(["step": step.rawValue, "app_state": applicationState().stringValue], forKey: Self.key)
     }
 
-    static func reportIncompleteLaunch(_ breadcrumb: [String: String]?) {
+    func clear() {
+        store.removeObject(forKey: Self.key)
+    }
+
+    func reportIncompleteLaunch(_ breadcrumb: [String: String]?) {
         guard let breadcrumb else { return }
         pixelFiring()?.fire(LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: breadcrumb), frequency: .dailyAndCount)
     }

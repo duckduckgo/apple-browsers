@@ -354,7 +354,7 @@ enum TabTerminationTelemetryPixel: PixelKit.Event {
 
 enum WebContentHealthPixel: PixelKit.Event {
 
-    case terminationReloadResult(outcome: TerminationReloadTracker.Outcome, recovery: TerminationReloadTracker.Recovery)
+    case terminationReloadResult(outcome: TerminationReloadMonitor.Outcome, recovery: TerminationReloadMonitor.Recovery)
     case unresponsive(appState: String)
 
     var name: String {
@@ -380,7 +380,7 @@ enum WebContentHealthPixel: PixelKit.Event {
 
 /// Reports how the reload after a web content process termination ended: the first navigation that finishes or
 /// fails after `begin`, or another termination before either.
-struct TerminationReloadTracker {
+struct TerminationReloadMonitor {
 
     enum Recovery: String {
         /// Reloaded from the termination callback.

@@ -849,7 +849,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func invalidateCache(forController controller: TabViewController,
                          reloadCurrent: Bool,
-                         recovery: TerminationReloadTracker.Recovery = .immediate) {
+                         recovery: TerminationReloadMonitor.Recovery = .immediate) {
         if current() === controller {
             if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
                 controller.showTabTerminationErrorPage()

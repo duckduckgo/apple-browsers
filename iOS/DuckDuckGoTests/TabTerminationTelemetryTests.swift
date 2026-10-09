@@ -205,7 +205,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
     func testWhenTerminationReloadEndsThenResultPixelFiresOnceWithOutcomeAndRecovery() throws {
         let pixelFiring = MockTabTerminationPixelFiring()
-        var tracker = TerminationReloadTracker(pixelFiring: pixelFiring)
+        var tracker = TerminationReloadMonitor(pixelFiring: pixelFiring)
 
         tracker.didFinish()
         XCTAssertTrue(pixelFiring.calls.isEmpty, "Navigations without a termination reload are not reported")
@@ -226,7 +226,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
     func testWhenTerminationReloadFailsOrTerminatesThenOutcomeIsReported() {
         let pixelFiring = MockTabTerminationPixelFiring()
-        var tracker = TerminationReloadTracker(pixelFiring: pixelFiring)
+        var tracker = TerminationReloadMonitor(pixelFiring: pixelFiring)
 
         tracker.begin(.immediate)
         tracker.didFail(with: NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet))

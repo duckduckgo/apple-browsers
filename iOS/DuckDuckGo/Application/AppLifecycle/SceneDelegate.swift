@@ -146,17 +146,21 @@ enum SceneLifecyclePixel: PixelKit.Event {
 struct SceneLifecycleInstrumentation {
 
     private let pixelFiring: (any PixelKitFiring)?
-    private let isMainUI: (UIViewController?) -> Bool
+    private let isAppUI: (UIViewController?) -> Bool
 
+    /// App UI is the main UI or one of the overlays shown over it: the authentication screen hides the main window
+    /// while the app is locked, and the blank snapshot covers it while data is cleared.
     init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         isMainUI: @escaping (UIViewController?) -> Bool = { $0 is MainViewController }) {
+         isAppUI: @escaping (UIViewController?) -> Bool = {
+             $0 is MainViewController || $0 is AuthenticationViewController || $0 is BlankSnapshotViewController
+         }) {
         self.pixelFiring = pixelFiring
-        self.isMainUI = isMainUI
+        self.isAppUI = isAppUI
     }
 
-    /// The scene became active but none of its visible windows shows the main UI, so the user sees a black screen.
+    /// The scene became active but none of its visible windows shows app UI, so the user sees a black screen.
     func sceneDidBecomeActive(windows: [UIWindow]) {
-        guard !windows.contains(where: { !$0.isHidden && isMainUI($0.rootViewController) }) else { return }
+        guard !windows.contains(where: { !$0.isHidden && isAppUI($0.rootViewController) }) else { return }
         pixelFiring?.fire(SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)
     }
 

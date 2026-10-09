@@ -444,45 +444,58 @@ final class BackgroundTests {
 @Suite("Scene lifecycle pixels")
 final class SceneLifecycleInstrumentationTests {
 
-    private final class StubMainViewController: UIViewController {}
+    private final class StubAppUIViewController: UIViewController {}
 
     let pixelKit = PixelKitMock()
-    lazy var instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit, isMainUI: { $0 is StubMainViewController })
+    lazy var instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit, isAppUI: { $0 is StubAppUIViewController })
 
     @available(iOS 16, macOS 13, *)
-    @Test("Becoming active with no main UI in any window fires the pixel", .timeLimit(.minutes(1)))
-    func activeWithoutMainUIFires() {
-        let window = UIWindow()
-        window.rootViewController = UIViewController()
-
-        instrumentation.sceneDidBecomeActive(windows: [window, UIWindow()])
+    @Test("Becoming active with no app UI in any window fires the pixel", .timeLimit(.minutes(1)))
+    func activeWithoutAppUIFires() {
+        // A reconnected scene only has the new window that nothing has attached the UI to.
+        instrumentation.sceneDidBecomeActive(windows: [UIWindow()])
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)])
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Becoming active with the main UI only in a hidden window fires the pixel", .timeLimit(.minutes(1)))
-    func activeWithMainUIOnlyInHiddenWindowFires() {
-        let oldWindow = UIWindow()
-        oldWindow.rootViewController = StubMainViewController()
-        oldWindow.isHidden = true
+    @Test("Becoming active with app UI only in a hidden window fires the pixel", .timeLimit(.minutes(1)))
+    func activeWithAppUIOnlyInHiddenWindowFires() {
+        let hiddenWindow = UIWindow()
+        hiddenWindow.rootViewController = StubAppUIViewController()
+        hiddenWindow.isHidden = true
 
-        instrumentation.sceneDidBecomeActive(windows: [oldWindow, UIWindow()])
+        instrumentation.sceneDidBecomeActive(windows: [hiddenWindow, UIWindow()])
 
-        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)])
+        #expect(pixelKit.actualFireCalls.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Becoming active with the main UI in a visible window does not fire the pixel", .timeLimit(.minutes(1)))
-    func activeWithMainUIDoesNotFire() {
+    @Test("Becoming active with app UI in a visible window does not fire the pixel", .timeLimit(.minutes(1)))
+    func activeWithAppUIDoesNotFire() {
+        // e.g. the authentication overlay is visible while it hides the main window.
+        let hiddenMainWindow = UIWindow()
+        hiddenMainWindow.rootViewController = UIViewController()
+        hiddenMainWindow.isHidden = true
         let overlayWindow = UIWindow()
-        overlayWindow.rootViewController = UIViewController()
+        overlayWindow.rootViewController = StubAppUIViewController()
         overlayWindow.isHidden = false
-        let mainWindow = UIWindow()
-        mainWindow.rootViewController = StubMainViewController()
-        mainWindow.isHidden = false
 
-        instrumentation.sceneDidBecomeActive(windows: [overlayWindow, mainWindow])
+        instrumentation.sceneDidBecomeActive(windows: [hiddenMainWindow, overlayWindow, UIWindow()])
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Main UI and its overlays count as app UI by default", .timeLimit(.minutes(1)))
+    func defaultAppUIIncludesOverlays() {
+        let pixelKit = PixelKitMock()
+        let instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit)
+        let window = UIWindow()
+        window.rootViewController = AuthenticationViewController()
+        window.isHidden = false
+
+        instrumentation.sceneDidBecomeActive(windows: [window])
 
         #expect(pixelKit.actualFireCalls.isEmpty)
     }

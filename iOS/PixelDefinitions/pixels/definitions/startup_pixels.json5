@@ -108,7 +108,7 @@
         ]
     },
     "app-lifecycle_active-without-main-ui": {
-        "description": "Fires when a scene becomes active but none of its visible windows has the MainViewController as root, meaning the user sees a black screen. Measures user impact of a scene reconnecting while the app is still in the Connected state during launch.",
+        "description": "Fires when a scene becomes active but none of its visible windows shows app UI (the MainViewController, or the authentication or blank snapshot overlay shown over it), meaning the user sees a black screen. Measures user impact of a scene reconnecting while the app is still in the Connected state during launch.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["daily", "platform", "form_factor"],

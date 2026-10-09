@@ -829,6 +829,7 @@ class TabViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
+    private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -2895,6 +2896,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
@@ -3379,6 +3381,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        terminationReloadMonitor.didFail(with: error)
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3433,6 +3436,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        terminationReloadMonitor.didFail(with: error)
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -4675,6 +4679,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        // Before the delegate call below, which can start the next termination reload.
+        terminationReloadMonitor.didTerminate()
+
         if webView === self.webView {
             cancelWebExtensionNavigationWait()
         }
@@ -4708,6 +4715,18 @@ extension TabViewController: WKUIDelegate {
         }
 
         delegate?.tabContentProcessDidTerminate(tab: self)
+    }
+
+    /// Call right before reloading after a web content process termination, to report how that reload ends.
+    func beginTerminationReload(_ recovery: TerminationReloadMonitor.Recovery) {
+        terminationReloadMonitor.begin(recovery)
+    }
+
+    // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
+    @objc(_webViewWebProcessDidBecomeUnresponsive:)
+    func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
+        let appState = UIApplication.shared.applicationState == .background ? "background" : "foreground"
+        pixelFiring?.fire(WebContentHealthPixel.unresponsive(appState: appState), frequency: .dailyAndCount)
     }
     
     func webView(_ webView: WKWebView,

@@ -83,18 +83,22 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             return
         }
 
-        guard let url = URL.makeURL(from: term) else {
-            Logger.newTabPageOmnibar.error("Failed to create URL from term: \(term)")
-            return
-        }
+        // Upgraded to HTTPS before loading, as the address bar does: an in-app upgrade redirects the load,
+        // and the tab replaces its content with the redirected URL's, losing the source it was opened with.
+        URL.makeUrl(suggestion: nil, stringValueWithoutSuffix: term) { url, _, _ in
+            guard let url else {
+                Logger.newTabPageOmnibar.error("Failed to create URL from term: \(term)")
+                return
+            }
 
-        NewTabPageLinkOpener.open(
-            url,
-            source: Self.searchBoxSource(for: url),
-            sender: .userScript,
-            target: target.linkOpenTarget,
-            sourceWindow: mainWindowController.window
-        )
+            NewTabPageLinkOpener.open(
+                url,
+                source: Self.searchBoxSource(for: url),
+                sender: .userScript,
+                target: target.linkOpenTarget,
+                sourceWindow: mainWindowController.window
+            )
+        }
     }
 
     /// Duck.ai reached from the search box is a direct navigation; the box's Duck.ai mode is a separate path.

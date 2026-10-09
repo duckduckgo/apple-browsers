@@ -19,6 +19,7 @@
 
 import Foundation
 import Testing
+import UIKit
 @_spi(Testing) import WideEvent
 @testable import DuckDuckGo
 
@@ -873,5 +874,108 @@ struct NewTabPageSessionInstrumentationTests {
         // Replacing the visit is what removed it from the screen, so that is its end.
         #expect(lastCompletion(wideEvent)?.0.sessionInterval.durationMilliseconds == 60_000)
         #expect(wideEvent.started.count == 2)
+    }
+    // MARK: - Visible presentation
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Time behind App Lock is excluded from the visible visit", .timeLimit(.minutes(1)))
+    func visitWaitsForVisiblePage() {
+        let (instrumentation, wideEvent, clock) = makeSUT()
+        var visible = false
+        let notifications = NotificationCenter()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { visible })
+        let page = NSObject()
+        var callbacks: [String] = []
+        coordinator.schedule(for: page, visit: {
+            callbacks.append("visit")
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: {
+            callbacks.append("shown")
+        }, focus: {
+            callbacks.append("focus")
+            instrumentation.keyboardRaisedOnArrival()
+            coordinator.recordIfVisible()
+        })
+
+        clock.advance(by: 60)
+        notifications.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        #expect(wideEvent.started.isEmpty)
+        #expect(callbacks.isEmpty)
+        #expect(!coordinator.hasPresentedPage)
+
+        visible = true
+        notifications.post(name: UIWindow.didBecomeKeyNotification, object: nil)
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.launchKeyboardMode == .up)
+        #expect(coordinator.hasPresentedPage)
+        notifications.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        notifications.post(name: UIWindow.didBecomeKeyNotification, object: nil)
+        #expect(wideEvent.started.count == 1)
+        #expect(callbacks == ["visit", "shown", "focus"])
+        coordinator.schedule(for: page, shown: { callbacks.append("visible") })
+        #expect(callbacks.last == "visible")
+
+        clock.advance(by: 2)
+        instrumentation.visitBackgrounded()
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .appBackgrounded)
+        #expect(lastCompletion(wideEvent)?.0.sessionInterval.durationMilliseconds == 2_000)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Replacing a hidden page drops its visit, presentation, and focus", .timeLimit(.minutes(1)))
+    func replacementDropsOldPageCallbacks() {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        var visible = false
+        var oldPageShown = false
+        var oldPageFocused = false
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
+        let oldPage = NSObject()
+        let newPage = NSObject()
+        coordinator.schedule(for: oldPage, visit: {
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: { oldPageShown = true }, focus: { oldPageFocused = true })
+        coordinator.schedule(for: newPage, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+
+        visible = true
+        coordinator.recordIfVisible()
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.trigger == .newTabOpened)
+        #expect(!oldPageShown)
+        #expect(!oldPageFocused)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancelled unlock retains the unseen card but starts only the next return's visit", .timeLimit(.minutes(1)))
+    func backgroundPreservesOnlyUnseenPresentation() {
+        let (instrumentation, wideEvent, clock) = makeSUT()
+        var visible = false
+        var shownCount = 0
+        var oldRequestFocused = false
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
+        let page = NSObject()
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: { shownCount += 1 }, focus: { oldRequestFocused = true })
+        coordinator.backgrounded()
+        instrumentation.visitBackgrounded()
+        clock.advance(by: 60)
+        #expect(wideEvent.started.isEmpty)
+        #expect(wideEvent.completions.isEmpty)
+        #expect(!coordinator.hasPresentedPage)
+
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+        visible = true
+        coordinator.recordIfVisible()
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.trigger == .appOpen)
+        #expect(shownCount == 1)
+        #expect(!oldRequestFocused)
     }
 }

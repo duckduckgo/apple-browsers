@@ -699,10 +699,15 @@ final class MainCoordinator {
 
     func presentModalPromptIfNeeded() {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
+        _ = runOnceModalPromptCloses(while: { true }, {})
     }
 
     func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
-        promoCoordinationService.runOnceModalPromptCloses(while: shouldWait, handler)
+        // Presentation analytics still need the dismissal when the keyboard is disabled or cancelled.
+        promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
+            self?.controller.recordPendingNewTabPagePresentationIfVisible()
+            if shouldWait() { handler() }
+        }
     }
 
     func prepareHomePageMessagesForForegroundIfNeeded() {
@@ -976,7 +981,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         }
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
-        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
@@ -986,6 +991,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut,
                                                                  focused: controller.isInputFocused)
@@ -999,6 +1005,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     /// the post-idle event — which only reports on treated returns — is not started.
     /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.
     private func startUntreatedReturnSession(timeAwayMs: Int?) {
+        guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil,
                                                                  focused: controller.isInputFocused)

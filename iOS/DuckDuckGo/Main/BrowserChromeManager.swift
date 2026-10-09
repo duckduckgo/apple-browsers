@@ -214,7 +214,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         }
         guard delegate?.isFloatingChromeEnabled == true, !decelerate else { return }
         finishFloatingScrolling(in: scrollView)
-        // Retry after UIKit clears dragging state.
+        // UIKit can still report dragging/tracking inside didEndDragging. Retry after it clears them.
         DispatchQueue.main.async { [weak self, weak scrollView] in
             guard let self, let scrollView, scrollView === self.attachedScrollView,
                   !self.isFloatingUserScrollActive else { return }

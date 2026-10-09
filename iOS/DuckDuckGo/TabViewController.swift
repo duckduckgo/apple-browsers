@@ -96,7 +96,7 @@ enum WebViewPreviewSnapshotPolicy {
 
 enum WebViewScrollViewInsetUpdater {
 
-    // Allow WebKit rounding at rest.
+    // WebKit's resting offset and adjusted inset can differ by floating-point rounding.
     private static let topPositionTolerance: CGFloat = 0.001
 
     struct AdjustmentBehavior {
@@ -1306,11 +1306,13 @@ class TabViewController: UIViewController {
         if additionalSafeAreaInsets != .zero {
             additionalSafeAreaInsets = .zero
         }
-        // Keep indicators below chrome. Set last; WebKit may overwrite.
+        // Indicators follow the visible chrome even while page geometry is held for a bounce.
+        // Apply after WebKit's inset setters as well, so they cannot leave stale indicator insets.
         defer {
             WebViewScrollViewInsetUpdater.updateScrollIndicatorInsets(webView.scrollView, insets: obscuredInsets)
         }
-        // Hold insets during bounce; WebKit clamps overscroll.
+        // WebKit clamps overscroll when obscuredContentInsets changes, even for bottom-only changes.
+        // Keep both inset types stable until the bounce ends or the gesture moves back into the page.
         if hasAppliedFloatingUIScrollViewInsets,
            WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) {
             hasDeferredFloatingUIInsets = true
@@ -1323,14 +1325,14 @@ class TabViewController: UIViewController {
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
         )
-        // Clear first; WebKit may call back synchronously.
+        // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
         hasDeferredFloatingUIInsets = false
         if shouldUpdateScrollInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
         }
         setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
-        // Keep smooth alignment until chrome settles.
+        // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
         hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
 

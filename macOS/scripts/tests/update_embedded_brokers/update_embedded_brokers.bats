@@ -10,7 +10,7 @@ setup() {
 	MAIN_CONFIG="$BATS_TEST_TMPDIR/main_config.json"
 	mkdir -p "$SOURCE_DIR" "$TARGET_DIR"
 
-	SIGNING_KEYS_SWIFT="$scripts_dir/$SIGNING_KEYS_RELATIVE_PATH"
+	SIGNING_KEYS="$scripts_dir/$SIGNING_KEYS_RELATIVE_PATH"
 	SIGNING_FIXTURES="$scripts_dir/../../SharedPackages/DataBrokerProtectionCore/Tests/DataBrokerProtectionCoreTests/BundleResources/BrokerBundleSigning"
 
 	# dbp-api's test staging key, which signed the fixtures. The app never ships it.
@@ -159,18 +159,14 @@ writeMainConfig() {
 	[[ "$output" == *"Same Name"* ]]
 }
 
-@test "signingKeys: reads one key per environment from the app's built-in keys" {
-	run signingKeys "$SIGNING_KEYS_SWIFT" production
+@test "bundle-signing-keys.json: holds one production and one staging key" {
+	run jq -r '.production[]' "$SIGNING_KEYS"
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 1 ]
-	[ "${lines[0]}" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==" ]
-	printf '%s' "${lines[0]}" | base64 -d | openssl pkey -pubin -inform DER -noout
+	[ "$output" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==" ]
 
-	run signingKeys "$SIGNING_KEYS_SWIFT" staging
+	run jq -r '.staging[]' "$SIGNING_KEYS"
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 1 ]
-	[ "${lines[0]}" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==" ]
-	printf '%s' "${lines[0]}" | base64 -d | openssl pkey -pubin -inform DER -noout
+	[ "$output" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==" ]
 }
 
 @test "verifyMainConfigSignature: accepts the dbp-api fixture signed with the test staging key" {
@@ -178,12 +174,9 @@ writeMainConfig() {
 	[ "$status" -eq 0 ]
 }
 
-@test "verifyMainConfigSignature: rejects the test-signed dbp-api fixture with the app's built-in keys" {
-	for environment in production staging; do
-		[ -n "$(signingKeys "$SIGNING_KEYS_SWIFT" "$environment")" ]
-		run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(signingKeys "$SIGNING_KEYS_SWIFT" "$environment")"
-		[ "$status" -ne 0 ]
-	done
+@test "verifyMainConfigSignature: rejects the test-signed dbp-api fixture with the app's keys" {
+	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(jq -r '.production[], .staging[]' "$SIGNING_KEYS")"
+	[ "$status" -ne 0 ]
 }
 
 @test "verifyMainConfigSignature: accepts a signature from any of the keys" {
@@ -263,6 +256,17 @@ writeMainConfig() {
 	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
 	[ "$status" -ne 0 ]
 	[[ "$output" == *"active.com.json"* ]]
+}
+
+@test "verifyBrokerDigests: fails when another file with an active broker's name does not match json_sha256" {
+	writeBroker "$SOURCE_DIR/active.com.json" "Active" "0.2.0"
+	writeDigestMainConfig "$(shasum -a 256 "$SOURCE_DIR/active.com.json" | cut -d ' ' -f 1)"
+	mkdir -p "$SOURCE_DIR/nested"
+	writeBroker "$SOURCE_DIR/nested/active.com.json" "Tampered" "0.2.0"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"nested/active.com.json"* ]]
 }
 
 @test "verifyBrokerDigests: fails when an active broker has no json_sha256 entry" {

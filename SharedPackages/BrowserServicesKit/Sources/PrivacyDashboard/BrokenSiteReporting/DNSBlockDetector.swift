@@ -30,6 +30,9 @@ public enum DNSResolution: String, Sendable {
     /// Only private or link-local addresses, as Pi-hole's LAN-IP mode, captive portals and intranets answer.
     case privateIP
 
+    /// Only reserved, multicast, documentation, NAT64 or 6to4 addresses, which no public site uses.
+    case invalid
+
     /// No addresses: the domain doesn't exist, the lookup failed, or it timed out.
     case unresolved
 }
@@ -77,6 +80,10 @@ private extension DNSBlockDetector {
 
         if addresses.allSatisfy({ isUnroutable($0) || isPrivate($0) }) {
             return .privateIP
+        }
+
+        if addresses.allSatisfy({ isUnroutable($0) || isPrivate($0) || isInvalid($0) }) {
+            return .invalid
         }
 
         return .resolved
@@ -166,6 +173,31 @@ private extension DNSBlockDetector {
         case is IPv6Address:
             return bytes.hasPrefix([0xFC], bits: 7)             // fc00::/7
                 || bytes.hasPrefix([0xFE, 0x80], bits: 10)      // fe80::/10
+        default:
+            return false
+        }
+    }
+
+    /// Reserved, multicast, documentation and translation ranges, which no public site resolves to.
+    func isInvalid(_ address: any IPAddress) -> Bool {
+        let bytes = [UInt8](address.rawValue)
+
+        switch address {
+        case is IPv4Address:
+            return bytes.hasPrefix([240], bits: 4)              // 240.0.0.0/4, reserved, including 255.255.255.255
+                || bytes.hasPrefix([224], bits: 4)              // 224.0.0.0/4, multicast
+                || bytes.hasPrefix([192, 0, 0], bits: 24)       // 192.0.0.0/24, IETF protocol assignments
+                || bytes.hasPrefix([192, 0, 2], bits: 24)       // 192.0.2.0/24, documentation
+                || bytes.hasPrefix([198, 51, 100], bits: 24)    // 198.51.100.0/24, documentation
+                || bytes.hasPrefix([203, 0, 113], bits: 24)     // 203.0.113.0/24, documentation
+        case is IPv6Address:
+            return bytes.hasPrefix([0x00, 0x64, 0xFF, 0x9B, 0, 0, 0, 0, 0, 0, 0, 0], bits: 96)  // 64:ff9b::/96, NAT64
+                || bytes.hasPrefix([0x00, 0x64, 0xFF, 0x9B, 0x00, 0x01], bits: 48)          // 64:ff9b:1::/48, local NAT64
+                || bytes.hasPrefix([0x20, 0x02], bits: 16)                                  // 2002::/16, 6to4
+                || bytes.hasPrefix([0xFF], bits: 8)                                         // ff00::/8, multicast
+                || bytes.hasPrefix([0x20, 0x01, 0x0D, 0xB8], bits: 32)                      // 2001:db8::/32, documentation
+                || bytes.hasPrefix([0x3F, 0xFF, 0x00], bits: 20)                            // 3fff::/20, documentation
+                || bytes.hasPrefix([0x01, 0, 0, 0, 0, 0, 0, 0x01], bits: 64)                // 100:0:0:1::/64, dummy
         default:
             return false
         }

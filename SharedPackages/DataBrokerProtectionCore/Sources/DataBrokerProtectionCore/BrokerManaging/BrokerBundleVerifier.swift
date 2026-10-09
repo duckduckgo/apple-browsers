@@ -55,14 +55,14 @@ public struct BrokerBundleSigningKeys {
         self.staging = staging
     }
 
-    // These are dbp-api TEST keys and must be replaced with the real production and staging keys before shipping.
+    // Must match dbp-api's `dbp-json/bundle-signing-keys.json`.
     // `macOS/scripts/update_embedded_brokers.sh` reads the production list, so keep one key per line.
     public static let builtIn = BrokerBundleSigningKeys(
         production: [
-            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErmuPs8CapwHjt32La//bKRjV9ercvqY3jTzjWFSmdtnqI8ZrxOqMgEoKR6o0He6XZUy/oKOpW70+zur/7//+KQ==",
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==",
         ],
         staging: [
-            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqpP7ubErpgXf5cpp1OFghScG7tJbhUhrKyzkxFdXGErtklupZcJx078xfZRmdYoxLbnaIAt3NYs9XeOr1oJESA==",
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==",
         ]
     )
 

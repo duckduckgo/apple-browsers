@@ -42,18 +42,18 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
     private let notificationCenter: WebNotificationService
     private var appActivationCancellable: AnyCancellable?
     /// macOS can keep reporting `.notDetermined` after notifications are turned off in System Settings, while it
-    /// refuses every request without asking. After such a refusal the system permission is treated as disabled and
+    /// refuses every request without asking. After such a refusal the system permission is treated as denied and
     /// reported as `.denied` until macOS reports a decision.
-    private var isSystemPermissionDisabled = false
+    private var isSystemPermissionDenied = false
 
     var authorizationStatus: UNAuthorizationStatus {
         get async {
             let status = await notificationCenter.authorizationStatus()
             guard status == .notDetermined else {
-                isSystemPermissionDisabled = false
+                isSystemPermissionDenied = false
                 return status
             }
-            return isSystemPermissionDisabled ? .denied : status
+            return isSystemPermissionDenied ? .denied : status
         }
     }
 
@@ -92,7 +92,7 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
             return granted
         } catch {
             if (error as? UNError)?.code == .notificationsNotAllowed {
-                isSystemPermissionDisabled = true
+                isSystemPermissionDenied = true
             }
             await updateAuthorizationStatus()
             throw error

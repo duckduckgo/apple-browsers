@@ -22,7 +22,6 @@ import UIKit
 import SwiftUI
 import SyncUI_iOS
 import DDGSync
-import AVFoundation
 import os.log
 import FeatureFlags_iOS
 import PixelKit
@@ -616,6 +615,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                                             stringForQRCode: String,
                                             source: SyncSetupSource) {
         scanSetupSource = source
+        scanScreenCameraPermission = nil
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
@@ -646,23 +646,22 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
-        checkCameraPermission(model: model)
+        Task { @MainActor in
+            await checkCameraPermission(model: model)
+        }
     }
 
-    func checkCameraPermission(model: ScanOrPasteCodeViewModel) {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status == .notDetermined {
-            Task { @MainActor in
-                _ = await AVCaptureDevice.requestAccess(for: .video)
-                self.checkCameraPermission(model: model)
-            }
-            return
-        }
-
-        switch status {
-        case .denied: model.videoPermission = .denied
-        case .authorized: model.videoPermission = .authorised
-        default: assertionFailure("Unexpected status \(status)")
+    @MainActor
+    func checkCameraPermission(model: ScanOrPasteCodeViewModel) async {
+        switch SyncCameraPermissionPixelValue(cameraAuthorization.authorizationStatus) {
+        case .authorized:
+            model.videoPermission = .authorised
+        case .denied:
+            model.videoPermission = .denied
+        case .notDetermined:
+            let granted = await cameraAuthorization.requestAccess()
+            pixelFiring?.fire(SyncCameraPermissionPixel.promptResult(granted: granted))
+            model.videoPermission = granted ? .authorised : .denied
         }
     }
 
@@ -838,16 +837,22 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func scanQRCodeScreenShown() {
-        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown)
+        let cameraPermission = SyncCameraPermissionPixelValue(cameraAuthorization.authorizationStatus)
+        if scanScreenCameraPermission == nil {
+            scanScreenCameraPermission = cameraPermission
+        }
+        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown,
+                                     additionalParameters: [SyncCameraPermissionPixelValue.parameterKey: cameraPermission.rawValue])
     }
 
-    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event) {
+    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event, additionalParameters: [String: String] = [:]) {
         var parameters = [
             SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
             SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
             PixelParameters.uiVersion: syncUIVersion
         ]
         parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
+        parameters.merge(additionalParameters) { _, new in new }
         pixelFiring?.fire(pixel, options: .parameters(parameters))
     }
 

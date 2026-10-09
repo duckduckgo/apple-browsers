@@ -355,10 +355,12 @@ enum TabTerminationTelemetryPixel: PixelKit.Event {
 enum WebContentHealthPixel: PixelKit.Event {
 
     case terminationReloadResult(outcome: TerminationReloadTracker.Outcome, recovery: TerminationReloadTracker.Recovery)
+    case unresponsive(appState: String)
 
     var name: String {
         switch self {
         case .terminationReloadResult: return "web-content_termination-reload-result"
+        case .unresponsive: return "web-content_unresponsive"
         }
     }
 
@@ -366,6 +368,8 @@ enum WebContentHealthPixel: PixelKit.Event {
         switch self {
         case .terminationReloadResult(let outcome, let recovery):
             return ["outcome": outcome.rawValue, "recovery": recovery.rawValue]
+        case .unresponsive(let appState):
+            return ["app_state": appState]
         }
     }
 

@@ -4638,6 +4638,13 @@ extension TabViewController: WKUIDelegate {
     func beginTerminationReload(_ recovery: TerminationReloadTracker.Recovery) {
         terminationReloadTracker.begin(recovery)
     }
+
+    // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
+    @objc(_webViewWebProcessDidBecomeUnresponsive:)
+    func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
+        let appState = UIApplication.shared.applicationState == .background ? "background" : "foreground"
+        pixelFiring?.fire(WebContentHealthPixel.unresponsive(appState: appState), frequency: .dailyAndCount)
+    }
     
     func webView(_ webView: WKWebView,
                  runJavaScriptAlertPanelWithMessage message: String,

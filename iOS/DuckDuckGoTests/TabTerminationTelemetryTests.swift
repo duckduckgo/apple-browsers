@@ -237,6 +237,12 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertNil(tracker.pendingRecovery)
     }
 
+    func testUnresponsivePixelNameAndParameters() {
+        let pixel = WebContentHealthPixel.unresponsive(appState: "foreground")
+        XCTAssertEqual(pixel.name, "web-content_unresponsive")
+        XCTAssertEqual(pixel.parameters, ["app_state": "foreground"])
+    }
+
     private func makeTelemetry(featureEnabled: Bool = true,
                                pixelFiring: MockTabTerminationPixelFiring,
                                applicationState: UIApplication.State = .active,

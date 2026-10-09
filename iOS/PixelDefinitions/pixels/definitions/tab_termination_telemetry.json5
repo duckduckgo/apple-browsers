@@ -119,5 +119,19 @@
                 "enum": ["immediate", "deferred"]
             }
         ]
+    },
+    "web-content_unresponsive": {
+        "description": "Fires when WebKit reports that a tab's web content process stopped responding (private WKNavigationDelegate callback _webViewWebProcessDidBecomeUnresponsive:), e.g. a JavaScript busy loop or a long layout. Detects pages that are alive but hung.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "app_state",
+                "description": "App state when WebKit reported the hang",
+                "enum": ["foreground", "background"]
+            }
+        ]
     }
 }

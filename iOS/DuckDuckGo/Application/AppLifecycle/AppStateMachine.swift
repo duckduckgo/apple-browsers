@@ -184,6 +184,10 @@ final class AppStateMachine {
     }
 
     func handle(_ event: AppEvent) {
+        // Before dispatching, so a window dropped in `initializing` or `launching` still counts.
+        if case .willConnectToWindow = event {
+            launchBreadcrumb.markSceneConnected()
+        }
         switch currentState {
         case .initializing(let initializing):
             respond(to: event, in: initializing)
@@ -373,6 +377,7 @@ struct LaunchBreadcrumb {
 
     static let key = "com.duckduckgo.app-lifecycle.launch-breadcrumb"
     static let pendingReportKey = "com.duckduckgo.app-lifecycle.launch-breadcrumb.pending-report"
+    static let sceneConnectedKey = "com.duckduckgo.app-lifecycle.launch-breadcrumb.scene-connected"
 
     private let store: UserDefaults
     private let pixelFiring: () -> (any PixelKitFiring)?
@@ -391,13 +396,26 @@ struct LaunchBreadcrumb {
         store.dictionary(forKey: Self.pendingReportKey) as? [String: String]
     }
 
+    var sceneConnected: Bool {
+        store.bool(forKey: Self.sceneConnectedKey)
+    }
+
     /// Starts a new launch. A breadcrumb left by the previous launch is kept for `reportIncompleteLaunch()`, so it
     /// survives even if this launch hangs or crashes before reporting it.
+    ///
+    /// A background launch (fetch, `BGTask`) finishes launching without a scene and is later killed while suspended.
+    /// That is not a failure, so a breadcrumb at `launched` without a scene is dropped. With a scene, the same
+    /// breadcrumb means the window was never attached, e.g. the black screen after a dropped `willConnectToWindow`.
     func startLaunch() {
-        if let current {
+        if let current, current["step"] != Step.launched.rawValue || sceneConnected {
             store.set(current, forKey: Self.pendingReportKey)
         }
+        store.removeObject(forKey: Self.sceneConnectedKey)
         mark(.launchingStarted)
+    }
+
+    func markSceneConnected() {
+        store.set(true, forKey: Self.sceneConnectedKey)
     }
 
     func mark(_ step: Step) {
@@ -406,6 +424,7 @@ struct LaunchBreadcrumb {
 
     func clear() {
         store.removeObject(forKey: Self.key)
+        store.removeObject(forKey: Self.sceneConnectedKey)
     }
 
     /// Reports a launch that never finished. Called as early as PixelKit allows, so a launch that fails every time

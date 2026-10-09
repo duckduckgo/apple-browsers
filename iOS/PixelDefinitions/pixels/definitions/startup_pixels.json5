@@ -129,7 +129,7 @@
         ]
     },
     "app-lifecycle_previous-launch-incomplete": {
-        "description": "Fires at launch when the previous launch never reached the Foreground or Background state, e.g. a black screen the user had to force quit, a hang, or a kill or crash during launch. step tells the last launch step that launch reached.",
+        "description": "Fires at launch when the previous launch never reached the Foreground or Background state, e.g. a black screen the user had to force quit, a hang, or a kill or crash during launch. step tells the last launch step that launch reached. A background launch that finished without connecting a scene is not reported.",
         "owners": ["hassaanelgarem"],
         "triggers": ["startup"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

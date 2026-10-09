@@ -583,7 +583,7 @@ final class LaunchBreadcrumbTests {
     @available(iOS 16, macOS 13, *)
     @Test("A launch that terminates is marked as terminating and keeps the previous breadcrumb", .timeLimit(.minutes(1)))
     func terminatingLaunch() {
-        let previous = ["step": "launched"]
+        let previous = ["step": "main-coordinator"]
         store.set(previous, forKey: LaunchBreadcrumb.key)
         initializing.shouldThrowOnLaunching = true
 
@@ -607,6 +607,44 @@ final class LaunchBreadcrumbTests {
         #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [crashed, crashed])
         #expect(pixelKit.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
         #expect(launchBreadcrumb.pendingReport == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A background launch that never connects a scene is not reported", .timeLimit(.minutes(1)))
+    func backgroundLaunchWithoutSceneIsNotReported() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        #expect(launchBreadcrumb.current?["step"] == "launched")
+
+        // iOS kills the suspended app; the next launch starts.
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.reportIncompleteLaunch()
+
+        #expect(launchBreadcrumb.pendingReport == nil)
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch whose window was never attached is reported", .timeLimit(.minutes(1)))
+    func launchWithSceneButNoUIIsReported() {
+        // The window arrives while Launching is still being made, is dropped, and launch ends at `launched`.
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.markSceneConnected()
+        launchBreadcrumb.mark(.launched)
+
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.reportIncompleteLaunch()
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["step": "launched"]])
+        #expect(launchBreadcrumb.sceneConnected == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A window dropped before launch finishes still counts as a connected scene", .timeLimit(.minutes(1)))
+    func droppedWindowMarksSceneConnected() {
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+
+        #expect(stateMachine.currentState.name == "initializing")
+        #expect(launchBreadcrumb.sceneConnected)
     }
 
     @available(iOS 16, macOS 13, *)

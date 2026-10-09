@@ -449,13 +449,13 @@
                 "key": "memoryPressure",
                 "type": "string",
                 "description": "System memory pressure level. Only sent when Page Signals are enabled.",
-                "enum": ["normal", "warning", "critical"]
+                "enum": ["unknown", "normal", "warning", "critical"]
             },
             {
                 "key": "dnsResolution",
                 "type": "string",
                 "description": "DNS resolution outcome for the site host. Only sent when Page Signals are enabled.",
-                "enum": ["resolved", "unresolved", "blocked"]
+                "enum": ["resolved", "blocked", "privateIP", "invalid", "unresolved"]
             },
             {
                 "key": "resourceLoadErrors",
@@ -883,13 +883,13 @@
                 "key": "memoryPressure",
                 "type": "string",
                 "description": "System memory pressure level. Only sent when Page Signals are enabled.",
-                "enum": ["normal", "warning", "critical"]
+                "enum": ["unknown", "normal", "warning", "critical"]
             },
             {
                 "key": "dnsResolution",
                 "type": "string",
                 "description": "DNS resolution outcome for the site host. Only sent when Page Signals are enabled.",
-                "enum": ["resolved", "unresolved", "blocked"]
+                "enum": ["resolved", "blocked", "privateIP", "invalid", "unresolved"]
             },
             {
                 "key": "resourceLoadErrors",

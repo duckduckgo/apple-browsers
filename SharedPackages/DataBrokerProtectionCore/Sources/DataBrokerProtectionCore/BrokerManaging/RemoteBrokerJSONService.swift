@@ -343,8 +343,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         /// 2. Download all.zip if not exists
         do {
             if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
-                let request = try Endpoint.request(for: .allBrokers,
+                var request = try Endpoint.request(for: .allBrokers,
                                                    endpointURL: settings.endpointURL)
+                request.cachePolicy = .reloadIgnoringLocalCacheData
 
                 let _: URL = try await withCheckedThrowingContinuation { [weak fileManager] continuation in
                     let task = urlSession.downloadTask(with: request) { url, response, error in
@@ -405,7 +406,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         var hasDigestMismatch = false
         for fileURL in fileURLs {
             let fileName = fileURL.lastPathComponent
-            guard changedBrokerFileNames.contains(fileName) else { continue }
+            guard changedBrokerFileNames.contains(fileName), activeBrokers.contains(fileName) else { continue }
 
             do {
                 let data = try Data(contentsOf: fileURL)
@@ -416,10 +417,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 }
 
                 let brokerResource = try DataBroker.initFromData(data).with(eTag: eTagMapping[fileName] ?? "")
-                if activeBrokers.contains(fileName) {
-                    try upsertBroker(brokerResource)
-                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: brokerResource.broker.removedAtTimestamp, isFreeScan: isFreeScan))
-                }
+                try upsertBroker(brokerResource)
+                pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: brokerResource.broker.removedAtTimestamp, isFreeScan: isFreeScan))
             } catch let error as DecodingError {
                 Logger.dataBrokerProtection.log("🧩 Failed to decode JSON file \(fileURL.lastPathComponent): \(error), skipping update")
                 pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, isFreeScan: isFreeScan, error: error))

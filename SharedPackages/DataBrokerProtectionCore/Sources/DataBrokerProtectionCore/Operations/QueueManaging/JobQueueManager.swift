@@ -391,7 +391,8 @@ private extension JobQueueManager {
 
         jobQueue.addBarrierBlock1 { [weak self] in
             if let self, self.activeRunID != runID { return }
-            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
+            let oneTimeError = jobDependencies.isPausedForRevokedSigningKey ? BrokerProfileJobQueueError.pausedForRevokedSigningKey : nil
+            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: oneTimeError, operationErrors: self?.operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             self?.resetMode()
             if let self {

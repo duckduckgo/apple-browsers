@@ -1282,7 +1282,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self.isOmnibarFocusPending = false
             let validRequests = requests.map { $0.isValid() && ($0.allowsInactive || self.isOmnibarEditing) }
             let selectsPrefill = zip(requests, validRequests).contains { !$0.0.allowsInactive && $0.1 }
-            guard self.isOmnibarSession, !(self.isOnboardingLocked && requests.contains(where: { $0.allowsInactive })), validRequests.contains(true) else {
+            guard self.isOmnibarSession, !self.isOnboardingLocked, validRequests.contains(true) else {
                 requests.forEach { $0.completion?(false) }
                 return
             }

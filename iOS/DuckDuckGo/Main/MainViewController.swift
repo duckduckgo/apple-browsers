@@ -317,7 +317,7 @@ class MainViewController: UIViewController {
     private var isAttachingNewTabPageAfterFire = false
     /// The selected New Tab page is installed while the tab switcher still covers it.
     /// Start its analytics visit after the switcher finishes dismissing.
-    private var pendingNewTabPageVisitStart: (trigger: NewTabPageSessionWideEventData.Trigger, willBeginEditing: Bool)?
+    private var pendingNewTabPageVisitStart: NewTabPageSessionWideEventData.Trigger?
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
@@ -2368,25 +2368,17 @@ class MainViewController: UIViewController {
         omniBar.isInputFirstResponder || unifiedToggleInputCoordinator?.viewController.isInputFirstResponder == true
     }
 
-    /// True right after either input accepted the app's focus request. Unified input applies a new session's
-    /// focus asynchronously, but enters its editing state synchronously when it accepts the request; resuming
-    /// a suspended session takes first responder synchronously and enters the editing state later.
-    private var isAutomaticFocusAccepted: Bool {
-        unifiedToggleInputCoordinator?.isOmnibarEditing == true || isInputFocused
-    }
-
     /// Restores the keyboard after an escape-hatch burn that started in focus mode, using the unified-input
     /// session when active (symmetric with `dismissOmniBar`) and the legacy omnibar otherwise.
     private func restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: Bool) {
-        guard wasInFocusMode else { return }
+        guard wasInFocusMode, isAppOpenKeyboardWindowVisible, presentedViewController == nil else { return }
         if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
             coordinator.activateInput()
+            if isNewTabPageVisible, isInputFocused {
+                newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+            }
         } else {
-            enterSearch()
-        }
-        // The page after the burn started its visit with the keyboard down.
-        if isNewTabPageVisible, isAutomaticFocusAccepted {
-            newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+            enterSearchAutomatically()
         }
     }
 
@@ -2505,9 +2497,7 @@ class MainViewController: UIViewController {
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
         let chatPathCompletionPending = isChatPathCompletionPending
-        // Resolved before the instrumentation call below, so the wide event records the mode
-        // the app decided on rather than racing the keyboard to observe it. Behind the flag a new tab
-        // also keeps the keyboard hidden during onboarding.
+        // Keep the UI decision separate from reporting whether the input accepted focus.
         let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
             && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
 
@@ -2566,23 +2556,29 @@ class MainViewController: UIViewController {
             isAttachingNewTabPageAfterFire = false
 
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: willBeginEditing)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: isInputFocused)
 
             if startsNewTabPageSessionVisit {
-                startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : sessionTrigger,
-                                                      willBeginEditing: willBeginEditing)
+                startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : sessionTrigger)
             }
         } else {
             // A pick in the tab switcher attaches the page before the switcher starts dismissing.
             pendingNewTabPageVisitStart = startsNewTabPageSessionVisit && presentedViewController === tabSwitcherController
-                ? (isAttachingNewTabPageAfterFire ? .newTabOpenedAfterFire : sessionTrigger, willBeginEditing) : nil
+                ? (isAttachingNewTabPageAfterFire ? .newTabOpenedAfterFire : sessionTrigger) : nil
         }
 
-        if willBeginEditing {
-            omniBar.beginEditing(animated: true)
-        }
+        beginEditingOnAttachedNewTabPageIfNeeded(willBeginEditing: willBeginEditing, openedAfterIdle: openedAfterIdle)
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func beginEditingOnAttachedNewTabPageIfNeeded(willBeginEditing: Bool, openedAfterIdle: Bool) {
+        guard willBeginEditing else { return }
+        enterSearchAutomatically { [weak self] didFocus in
+            if openedAfterIdle && didFocus {
+                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            }
+        }
     }
 
     private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {
@@ -2607,7 +2603,7 @@ class MainViewController: UIViewController {
     }
 
     /// Opens a New Tab Page visit for the Starting Experience Success Rate wide event.
-    func startNewTabPageSessionInstrumentation(trigger: NewTabPageSessionWideEventData.Trigger, willBeginEditing: Bool) {
+    func startNewTabPageSessionInstrumentation(trigger: NewTabPageSessionWideEventData.Trigger) {
         // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
         // trip to the VPN screen it was taken for ended without coming back here.
         vpnConnectedWhenLeavingNewTabPage = nil
@@ -2615,7 +2611,7 @@ class MainViewController: UIViewController {
 
         newTabPageSessionInstrumentation.visitStarted(
             trigger: trigger,
-            launchKeyboardMode: willBeginEditing ? .up : .down,
+            launchKeyboardMode: isInputFocused ? .up : .down,
             toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         )
     }
@@ -2953,7 +2949,7 @@ class MainViewController: UIViewController {
             }
             defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
         } else {
-            focusCompleted(enterSearchAutomatically())
+            enterSearchAutomatically(completion: focusCompleted)
         }
     }
 
@@ -2971,23 +2967,46 @@ class MainViewController: UIViewController {
 
     /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
     func enterSearchOnAppOpen() {
-        if enterSearchAutomatically() {
-            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+        enterSearchAutomatically { [weak self] didFocus in
+            if didFocus {
+                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            }
         }
     }
 
     /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because
     /// focus is decided a moment later, so the visit is told the keyboard came up once an input accepts focus.
-    /// Returns whether an input accepted focus.
-    @discardableResult
-    private func enterSearchAutomatically() -> Bool {
-        guard presentedViewController == nil else { return false }
-        enterSearch()
-        guard isAutomaticFocusAccepted else { return false }
-        if isNewTabPageVisible {
-            newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+    private func enterSearchAutomatically(completion: @escaping (Bool) -> Void = { _ in }) {
+        let requestID = appOpenKeyboardRequestID
+        let tabID = tabManager.currentTabsModel.currentTab?.uid
+        let page = newTabPageViewController
+        let isRequestValid = { [weak self] in
+            guard let self else { return false }
+            return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible &&
+                tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === page &&
+                presentedViewController == nil
         }
-        return true
+        guard isRequestValid() else {
+            completion(false)
+            return
+        }
+        let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
+            guard let self, didFocus, isRequestValid() else {
+                completion(false)
+                return
+            }
+            if isNewTabPageVisible {
+                newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+            }
+            completion(true)
+        }
+        showBars()
+        if let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
+            defaultOmniBar.beginEditingAutomatically(isRequestValid: isRequestValid, completion: focusCompleted)
+        } else {
+            viewCoordinator.omniBar.beginEditing(animated: true)
+            focusCompleted(isInputFocused)
+        }
     }
 
     private func rememberNewTabPageInputFocusForTabSwitch() {
@@ -4125,7 +4144,7 @@ class MainViewController: UIViewController {
             guard let self, appOpenKeyboardRequestID == requestID else { return }
             // Foregrounding skipped this visit while another screen covered the page.
             if isNewTabPageVisible, presentedViewController == nil {
-                startNewTabPageSessionInstrumentation(trigger: .appOpen, willBeginEditing: false)
+                startNewTabPageSessionInstrumentation(trigger: .appOpen)
             }
             completion()
         }
@@ -7757,10 +7776,10 @@ extension MainViewController: TabSwitcherDelegate {
         remoteMessageImpressionReporter.scheduleCheck()
         // Started before the keyboard below, which then upgrades the visit.
         if let visit = pendingNewTabPageVisitStart, isNewTabPageVisible, presentedViewController == nil {
-            if visit.trigger == .newTabOpenedAfterFire {
+            if visit == .newTabOpenedAfterFire {
                 isAttachingNewTabPageAfterFire = false
             }
-            startNewTabPageSessionInstrumentation(trigger: visit.trigger, willBeginEditing: visit.willBeginEditing)
+            startNewTabPageSessionInstrumentation(trigger: visit)
         }
         pendingNewTabPageVisitStart = nil
         let pendingKeyboard = pendingTabSwitcherKeyboard

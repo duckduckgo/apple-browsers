@@ -1281,17 +1281,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func testWhenOnboardingLocksQueuedAutomaticFocusThenKeyboardDoesNotActivate() {
-        var scheduledFocus: [() -> Void] = []
-        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
-        showAppOpenInput()
-        var completions: [Bool] = []
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, allowsInactiveFocus: true, onFocus: { completions.append($0) })
-        sut.setOnboardingControlsLocked(true)
+        for allowsInactiveFocus in [false, true] {
+            var scheduledFocus: [() -> Void] = []
+            sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+            showAppOpenInput()
+            var completions: [Bool] = []
+            sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                    allowsInactiveFocus: allowsInactiveFocus, onFocus: { completions.append($0) })
+            XCTAssertTrue(sut.isOmnibarEditing)
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+            XCTAssertTrue(completions.isEmpty)
+            sut.setOnboardingControlsLocked(true)
 
-        scheduledFocus.removeFirst()()
+            scheduledFocus.removeFirst()()
 
-        XCTAssertEqual(completions, [false])
-        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+            XCTAssertEqual(completions, [false])
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        }
     }
 
     func testWhenOrdinaryActivationBecomesInactiveBeforeFocusThenKeyboardStaysDismissed() {
@@ -1307,6 +1313,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(completions, [false])
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenOrdinaryActivationIsCancelledBeforeFocusThenInputDoesNotFocus() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var isRequestValid = true
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(cardPosition: .bottom, isFocusRequestValid: { isRequestValid },
+                                onFocus: { completions.append($0) })
+
+        isRequestValid = false
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 

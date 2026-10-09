@@ -45,6 +45,7 @@ class TabsBarCell: UICollectionViewCell {
     let removeButton = BrowserChromeButton(.tabSwitcher)
     private let faviconImage = UIImageView()
     private let separatorView = UIView()
+    private let leadingSeparatorView = UIView()
 
     private let titleStackView = UIStackView()
     private let faviconContainerView = UIView()
@@ -82,12 +83,14 @@ class TabsBarCell: UICollectionViewCell {
         isPointerHovering = false
         isCurrent = false
         contentView.isHidden = false
+        leadingSeparatorView.isHidden = true
     }
 
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
         super.apply(layoutAttributes)
         // UIKit can raise a displaced tab during reordering; keep its background below the flare.
         layer.zPosition = isCurrent ? 2 : min(CGFloat(layoutAttributes.zIndex), 0)
+        setNeedsLayout()
         tabPointerInteraction.invalidate()
         removeButton.interactions.compactMap { $0 as? UIPointerInteraction }.forEach { $0.invalidate() }
     }
@@ -117,6 +120,7 @@ class TabsBarCell: UICollectionViewCell {
         titleStackView.addArrangedSubview(label)
 
         separatorView.translatesAutoresizingMaskIntoConstraints = false
+        leadingSeparatorView.translatesAutoresizingMaskIntoConstraints = false
 
         removeButton.translatesAutoresizingMaskIntoConstraints = false
         removeButton.type = .tabSwitcher
@@ -131,6 +135,7 @@ class TabsBarCell: UICollectionViewCell {
         faviconContainerView.addSubview(faviconImage)
         contentView.addSubview(titleStackView)
         contentView.addSubview(separatorView)
+        contentView.addSubview(leadingSeparatorView)
         contentView.addSubview(removeButton)
         contentView.addInteraction(tabPointerInteraction)
         contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleHover)))
@@ -164,6 +169,11 @@ class TabsBarCell: UICollectionViewCell {
             separatorView.heightAnchor.constraint(equalTo: contentView.heightAnchor,
                                                   constant: -Constants.separatorInset),
 
+            leadingSeparatorView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            leadingSeparatorView.centerYAnchor.constraint(equalTo: separatorView.centerYAnchor),
+            leadingSeparatorView.widthAnchor.constraint(equalTo: separatorView.widthAnchor),
+            leadingSeparatorView.heightAnchor.constraint(equalTo: separatorView.heightAnchor),
+
             removeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             removeButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             removeButton.heightAnchor.constraint(equalTo: contentView.heightAnchor),
@@ -186,6 +196,7 @@ class TabsBarCell: UICollectionViewCell {
     
     override func layoutSubviews() {
         super.layoutSubviews()
+        updateLeadingSeparator()
         
         if isPressed {
             layer.masksToBounds = false
@@ -226,13 +237,38 @@ class TabsBarCell: UICollectionViewCell {
         layer.zPosition = isCurrent ? 2 : min(layer.zPosition, 0)
         // Edge tabs overlap; an opaque inactive tab keeps the covered title from showing through.
         backgroundColor = isCurrent ? .clear : theme.tabsBarBackgroundColor
-        if !isCurrent {
-            separatorView.backgroundColor = theme.tabsBarSeparatorColor
-        }
+        separatorView.backgroundColor = theme.tabsBarSeparatorColor
         separatorView.isHidden = isCurrent || isNextCurrent
+        leadingSeparatorView.backgroundColor = theme.tabsBarSeparatorColor
+        updateLeadingSeparator()
 
         hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
         updateCloseButtonVisibility()
+    }
+
+    private func updateLeadingSeparator() {
+        guard !isCurrent,
+              let collectionView = superview as? UICollectionView,
+              let indexPath = collectionView.indexPath(for: self) else {
+            leadingSeparatorView.isHidden = true
+            return
+        }
+        if let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+           let currentIndex = layout.currentIndex?(),
+           let current = layout.layoutAttributesForItem(at: IndexPath(item: currentIndex, section: indexPath.section)),
+           current.frame.minX <= frame.minX, frame.minX <= current.frame.maxX {
+            leadingSeparatorView.isHidden = true
+            return
+        }
+        let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
+        let isPinnedAtLeadingEdge = frame.minX == leading && leading > 0
+        let previous = indexPath.item > 0
+            ? collectionView.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) : nil
+        // A leading overlap covers the previous tab's trailing separator.
+        let coversPreviousSeparator = previous.map {
+            CGFloat($0.zIndex) < layer.zPosition && $0.frame.minX <= frame.minX && $0.frame.maxX > frame.minX
+        } ?? false
+        leadingSeparatorView.isHidden = !isPinnedAtLeadingEdge && !coversPreviousSeparator
     }
 
     /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.
@@ -262,6 +298,8 @@ class TabsBarCell: UICollectionViewCell {
 
         labelRemoveButtonConstraint?.isActive = false
         separatorView.isHidden = true
+        leadingSeparatorView.backgroundColor = nil
+        leadingSeparatorView.isHidden = true
         removeButton.isHidden = true
     }
 

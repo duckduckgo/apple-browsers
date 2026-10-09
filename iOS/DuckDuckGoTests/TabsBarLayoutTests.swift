@@ -303,6 +303,38 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertGreaterThan(outgoing.visiblePointerRect(in: outgoing.contentView).width, 0)
     }
 
+    func testLeadingSeparatorsMarkAccordionEdgesWithoutDoublingOrdinaryDividers() throws {
+        let (collectionView, _) = makeCollectionView(currentIndex: { 4 }, contentOffset: -10)
+        for (offset, expectedLeadingSeparators) in [(CGFloat(-10), Set<Int>()), (0, [0, 1]), (300, [2, 3]), (-10, [])] {
+            collectionView.contentOffset.x = offset
+            collectionView.layoutIfNeeded()
+            for cell in collectionView.visibleCells.compactMap({ $0 as? TabsBarCell }) {
+                cell.layoutIfNeeded()
+                let index = try XCTUnwrap(collectionView.indexPath(for: cell)).item
+                let separators = cell.contentView.subviews.filter { $0.bounds.width == 1 && $0.bounds.height == 24 }
+                let leading = try XCTUnwrap(separators.first { $0.frame.minX == 0 })
+                let trailing = try XCTUnwrap(separators.first { $0.frame.maxX == cell.bounds.width })
+                let isExposed = leading.frame.intersects(cell.visiblePointerRect(in: cell.contentView))
+                XCTAssertEqual(!leading.isHidden && isExposed, expectedLeadingSeparators.contains(index), "Tab \(index) at offset \(offset)")
+                for style in [UIUserInterfaceStyle.light, .dark] {
+                    let traits = UITraitCollection(userInterfaceStyle: style)
+                    XCTAssertEqual(leading.backgroundColor?.resolvedColor(with: traits), trailing.backgroundColor?.resolvedColor(with: traits))
+                }
+                XCTAssertEqual(trailing.isHidden, index == 3 || index == 4)
+            }
+        }
+    }
+
+    func testLeadingSeparatorDoesNotMarkPinnedSelectedTabsOutline() throws {
+        let (collectionView, _) = makeCollectionView(currentIndex: { 0 }, contentOffset: 350)
+        let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 0, section: 0)))
+        let neighbor = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)))
+        neighbor.layoutIfNeeded()
+        XCTAssertEqual(neighbor.frame.minX, selected.frame.maxX)
+        let leading = try XCTUnwrap(neighbor.contentView.subviews.first { $0.frame.minX == 0 && $0.bounds.width == 1 })
+        XCTAssertTrue(leading.isHidden)
+    }
+
     func testReorderAttributesKeepInactiveCellsBelowSelectionAndResetOnReuse() throws {
         let (collectionView, layout) = makeCollectionView(currentIndex: { 2 }, contentOffset: 10)
         let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 2, section: 0)) as? TabsBarCell)

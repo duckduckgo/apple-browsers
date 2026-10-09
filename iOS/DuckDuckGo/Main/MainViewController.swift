@@ -317,7 +317,7 @@ class MainViewController: UIViewController {
     private var isAttachingNewTabPageAfterFire = false
     /// The selected New Tab page is installed while the tab switcher still covers it.
     /// Start its analytics visit after the switcher finishes dismissing.
-    private var pendingNewTabPageVisitStart: (isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool)?
+    private var pendingNewTabPageVisitStart: (trigger: NewTabPageSessionWideEventData.Trigger, willBeginEditing: Bool)?
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
@@ -2447,7 +2447,8 @@ class MainViewController: UIViewController {
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
                                       openedAfterIdle: Bool = false,
-                                      startsNewTabPageSessionVisit: Bool = true) {
+                                      startsNewTabPageSessionVisit: Bool = true,
+                                      sessionTrigger: NewTabPageSessionWideEventData.Trigger = .appOpen) {
         reportDuckAISessionCurrentTab()
         guard !autoClearInProgress else { return }
 
@@ -2568,12 +2569,13 @@ class MainViewController: UIViewController {
             fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: willBeginEditing)
 
             if startsNewTabPageSessionVisit {
-                startNewTabPageSessionInstrumentation(isNewTab: isNewTab, willBeginEditing: willBeginEditing, isAfterFire: isAfterFire)
+                startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : sessionTrigger,
+                                                      willBeginEditing: willBeginEditing)
             }
         } else {
             // A pick in the tab switcher attaches the page before the switcher starts dismissing.
             pendingNewTabPageVisitStart = startsNewTabPageSessionVisit && presentedViewController === tabSwitcherController
-                ? (isNewTab, willBeginEditing, isAttachingNewTabPageAfterFire) : nil
+                ? (isAttachingNewTabPageAfterFire ? .newTabOpenedAfterFire : sessionTrigger, willBeginEditing) : nil
         }
 
         if willBeginEditing {
@@ -2605,21 +2607,11 @@ class MainViewController: UIViewController {
     }
 
     /// Opens a New Tab Page visit for the Starting Experience Success Rate wide event.
-    ///
-    /// Reported as `appOpen` when the arrival is none of a new tab or a burn: a cold launch, a
-    /// return from the background, or switching to an already empty tab.
-    func startNewTabPageSessionInstrumentation(isNewTab: Bool, willBeginEditing: Bool, isAfterFire: Bool) {
+    func startNewTabPageSessionInstrumentation(trigger: NewTabPageSessionWideEventData.Trigger, willBeginEditing: Bool) {
         // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
         // trip to the VPN screen it was taken for ended without coming back here.
         vpnConnectedWhenLeavingNewTabPage = nil
         pendingNewTabPageVisitStart = nil
-
-        let trigger: NewTabPageSessionWideEventData.Trigger
-        if isAfterFire {
-            trigger = .newTabOpenedAfterFire
-        } else {
-            trigger = isNewTab ? .newTabOpened : .appOpen
-        }
 
         newTabPageSessionInstrumentation.visitStarted(
             trigger: trigger,
@@ -3178,7 +3170,9 @@ class MainViewController: UIViewController {
         }
 
         if tab.link == nil {
-            attachHomeScreen(previousTab: previousTab)
+            attachHomeScreen(previousTab: previousTab,
+                             startsNewTabPageSessionVisit: shouldSaveTabs || isAttachingNewTabPageAfterFire,
+                             sessionTrigger: .newTabOpened)
         } else {
             attachTab(tab: tab)
         }
@@ -4103,7 +4097,8 @@ class MainViewController: UIViewController {
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,
                          openedAfterIdle: openedAfterIdle,
-                         startsNewTabPageSessionVisit: startsNewTabPageSessionVisit)
+                         startsNewTabPageSessionVisit: startsNewTabPageSessionVisit,
+                         sessionTrigger: openedAfterIdle ? .appOpen : .newTabOpened)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -4130,7 +4125,7 @@ class MainViewController: UIViewController {
             guard let self, appOpenKeyboardRequestID == requestID else { return }
             // Foregrounding skipped this visit while another screen covered the page.
             if isNewTabPageVisible, presentedViewController == nil {
-                startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
+                startNewTabPageSessionInstrumentation(trigger: .appOpen, willBeginEditing: false)
             }
             completion()
         }
@@ -7762,10 +7757,10 @@ extension MainViewController: TabSwitcherDelegate {
         remoteMessageImpressionReporter.scheduleCheck()
         // Started before the keyboard below, which then upgrades the visit.
         if let visit = pendingNewTabPageVisitStart, isNewTabPageVisible, presentedViewController == nil {
-            if visit.isAfterFire {
+            if visit.trigger == .newTabOpenedAfterFire {
                 isAttachingNewTabPageAfterFire = false
             }
-            startNewTabPageSessionInstrumentation(isNewTab: visit.isNewTab, willBeginEditing: visit.willBeginEditing, isAfterFire: visit.isAfterFire)
+            startNewTabPageSessionInstrumentation(trigger: visit.trigger, willBeginEditing: visit.willBeginEditing)
         }
         pendingNewTabPageVisitStart = nil
         let pendingKeyboard = pendingTabSwitcherKeyboard

@@ -287,6 +287,10 @@ final class BrowserToolbarView: UIView {
     /// 0 = button row fully in layout, 1 = button row and field-to-buttons gap collapsed out of layout
     /// so the address field keeps its height while the chrome shrinks around it.
     private var buttonRowCollapseProgress: CGFloat = 0
+    private enum CornerStyle {
+        case square, concentric, capsule
+    }
+    private var appliedCornerStyle: CornerStyle?
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
@@ -552,7 +556,10 @@ final class BrowserToolbarView: UIView {
         contentStackLeadingConstraint.constant = currentContentStackHorizontalInset
         contentStackTrailingConstraint.constant = -currentContentStackHorizontalInset
         let buttonRowPadding = currentButtonRowHorizontalPadding
-        buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
+        let margins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
+        if buttonStack.layoutMargins != margins {
+            buttonStack.layoutMargins = margins
+        }
     }
 
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
@@ -945,6 +952,8 @@ final class BrowserToolbarView: UIView {
         let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
 
         guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
+            guard buttonRowCollapseProgress != 0 || buttonsHeightConstraint.constant != fullHeight
+                    || buttonStack.alpha != 1 || buttonStack.transform != .identity else { return fullHeight }
             buttonRowCollapseProgress = 0
             buttonStack.alpha = 1
             buttonStack.transform = .identity
@@ -954,15 +963,18 @@ final class BrowserToolbarView: UIView {
         }
 
         let progress = collapseProgress.clamped(to: 0...1)
+        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+        let height = fullHeight - (fullHeight - singleRowHeight) * progress
+        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
+        let transform = CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
+        guard buttonRowCollapseProgress != progress || buttonsHeightConstraint.constant != height
+                || buttonStack.alpha != 1 - progress || buttonStack.transform != transform else { return height }
         buttonRowCollapseProgress = progress
         applyContentStackMetrics()
         buttonStack.alpha = 1 - progress
-        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
-        buttonStack.transform = CGAffineTransform(scaleX: scale, y: scale)
-            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
+        buttonStack.transform = transform
 
-        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
-        let height = fullHeight - (fullHeight - singleRowHeight) * progress
         buttonsHeightConstraint.constant = height
         updateCornerStyle()
         return height
@@ -1003,24 +1015,30 @@ final class BrowserToolbarView: UIView {
     }
 
     private func updateCornerStyle() {
-        guard isFloatingStyleEnabled else {
-            materialBackgroundView.contentView.layer.cornerRadius = 0
-            chromeContentHost.layer.cornerRadius = 0
+        let usesRestStateCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
+        if #available(iOS 26, *) {
+            let style: CornerStyle = !isFloatingStyleEnabled ? .square : (usesRestStateCorners ? .concentric : .capsule)
+            // Corner configurations track size changes themselves. Reassigning them during
+            // every layout pass needlessly rebuilds the glass's corner treatment.
+            guard style != appliedCornerStyle else { return }
+            appliedCornerStyle = style
+            let configuration: UICornerConfiguration
+            switch style {
+            case .square:
+                configuration = .corners(radius: .fixed(0))
+            case .concentric:
+                configuration = .corners(radius: .containerConcentric(minimum: Self.floatingUICornerRadius))
+            case .capsule:
+                configuration = .capsule()
+            }
+            materialBackgroundView.cornerConfiguration = configuration
+            chromeContentHost.cornerConfiguration = configuration
             return
         }
 
-        let usesRestStateCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
-
-        if #available(iOS 26, *) {
-            if usesRestStateCorners {
-                let configuration = UICornerConfiguration.corners(
-                    radius: .containerConcentric(minimum: Self.floatingUICornerRadius))
-                materialBackgroundView.cornerConfiguration = configuration
-                chromeContentHost.cornerConfiguration = configuration
-            } else {
-                materialBackgroundView.cornerConfiguration = .capsule()
-                chromeContentHost.cornerConfiguration = .capsule()
-            }
+        guard isFloatingStyleEnabled else {
+            materialBackgroundView.contentView.layer.cornerRadius = 0
+            chromeContentHost.layer.cornerRadius = 0
             return
         }
 

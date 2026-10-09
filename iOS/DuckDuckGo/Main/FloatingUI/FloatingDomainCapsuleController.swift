@@ -136,20 +136,13 @@ final class FloatingDomainCapsuleController {
         label.isAccessibilityElement = false
         return label
     }()
-    private var centerYConstraint: NSLayoutConstraint?
     private var hasAppliedGlassStyleAtValidSize = false
-    private var widthConstraint: NSLayoutConstraint?
-    private var heightConstraint: NSLayoutConstraint?
 
     lazy var button: UIButton = {
         let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
         button.alpha = 0
         button.backgroundColor = .clear
-        button.layer.cornerCurve = .continuous
-        button.layer.cornerRadius = 14
-        button.layer.masksToBounds = true
         button.accessibilityIdentifier = "Browser.FloatingDomainCapsule"
         button.addTarget(self, action: #selector(onCapsuleTapped), for: .touchUpInside)
         return button
@@ -167,6 +160,9 @@ final class FloatingDomainCapsuleController {
         backgroundView.layer.cornerCurve = .continuous
         backgroundView.layer.cornerRadius = 14
         backgroundView.clipsToBounds = true
+        if #available(iOS 26, *) {
+            backgroundView.cornerConfiguration = .capsule()
+        }
         button.insertSubview(backgroundView, at: 0)
 
         NSLayoutConstraint.activate([
@@ -187,20 +183,6 @@ final class FloatingDomainCapsuleController {
 
         applyGlassStyle()
         view.addSubview(button)
-
-        let widthConstraint = button.widthAnchor.constraint(equalToConstant: 0)
-        let heightConstraint = button.heightAnchor.constraint(equalToConstant: 0)
-        let centerYConstraint = button.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 0)
-        self.widthConstraint = widthConstraint
-        self.heightConstraint = heightConstraint
-        self.centerYConstraint = centerYConstraint
-
-        NSLayoutConstraint.activate([
-            button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            widthConstraint,
-            heightConstraint,
-            centerYConstraint
-        ])
     }
 
     func update(addressBarPosition: AddressBarPosition,
@@ -287,12 +269,12 @@ final class FloatingDomainCapsuleController {
         let height = capsuleHeight + (expandedFrame.height - capsuleHeight) * morphP
         let centerY = restCenterY + (expandedFrame.midY - restCenterY) * morphP
 
-        widthConstraint?.constant = width
-        heightConstraint?.constant = height
-        centerYConstraint?.constant = centerY
-
-        button.layer.cornerRadius = height / 2
-        backgroundView.layer.cornerRadius = height / 2
+        // This overlay does not participate in the browser's layout. Updating its frame avoids
+        // invalidating the root constraint graph for every step of the morph.
+        button.frame = CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height)
+        if #unavailable(iOS 26) {
+            backgroundView.layer.cornerRadius = height / 2
+        }
 
         if !hasAppliedGlassStyleAtValidSize, width > 0, height > 0 {
             hasAppliedGlassStyleAtValidSize = true

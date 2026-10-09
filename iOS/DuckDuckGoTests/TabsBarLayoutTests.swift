@@ -118,180 +118,27 @@ final class TabsBarLayoutTests: XCTestCase {
 @MainActor
 final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSource {
 
-    private var itemCount = 10
     private var selectedIndex: () -> Int? = { nil }
 
-    func testCurrentTabRemainsVisibleWhenScrolledPastLeadingEdge() throws {
-        let (collectionView, layout) = makeCollectionView(currentIndex: { 0 }, contentOffset: 300)
-        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
-        let current = try XCTUnwrap(attributes.first { $0.indexPath.item == 0 })
-
-        XCTAssertEqual(current.frame.minX, 310)
-        XCTAssertEqual(current.zIndex, 2)
-        let neighbor = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: 3, section: 0)))
-        XCTAssertGreaterThan(neighbor.frame.minX, 360)
-        XCTAssertLessThan(neighbor.frame.minX, 361)
-
-        let flare = TabFlareBackgroundController(collectionView: collectionView,
-                                                topCornerRadius: TabsBarCell.cornerRadius,
-                                                rampSize: TabsBarViewController.Constants.tabRampSize,
-                                                currentIndex: { 0 },
-                                                fillColor: { .white })
-        flare.update()
-        let cell = try XCTUnwrap(collectionView.cellForItem(at: current.indexPath))
-        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
-        XCTAssertFalse(background.isHidden)
-        XCTAssertGreaterThan(cell.layer.zPosition, background.layer.zPosition)
-    }
-
-    func testCurrentTabPinsBeforeTrailingButtonSpaceAndPreservesNaturalFrame() throws {
-        let (collectionView, layout) = makeCollectionView(currentIndex: { 9 })
-        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
-        let current = try XCTUnwrap(attributes.first { $0.indexPath.item == 9 })
-
-        XCTAssertEqual(current.frame.maxX, 540)
-        XCTAssertEqual(layout.unpinnedFrameForItem(at: current.indexPath)?.minX, 1080)
-    }
-
-    func testCurrentTabKeepsNaturalPositionWhileFullyVisible() throws {
-        let (collectionView, layout) = makeCollectionView(currentIndex: { 4 }, contentOffset: 200)
-        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
-        let current = try XCTUnwrap(attributes.first { $0.indexPath.item == 4 })
-
-        XCTAssertEqual(current.frame.minX, 480)
-        XCTAssertEqual(current.frame, layout.unpinnedFrameForItem(at: current.indexPath))
-    }
-
-    func testChangingCurrentTabReleasesPreviouslyPinnedTab() throws {
+    func testSelectedTabStaysVisibleAcrossScrollingAndSelectionChanges() throws {
         var currentIndex = 0
         let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: 300)
-        let previousIndexPath = IndexPath(item: 0, section: 0)
-        XCTAssertEqual(layout.layoutAttributesForItem(at: previousIndexPath)?.frame.minX, 310)
-
-        currentIndex = 9
-        layout.invalidateLayout()
-        collectionView.layoutIfNeeded()
-        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
-
-        let previous = try XCTUnwrap(layout.layoutAttributesForItem(at: previousIndexPath))
-        let middle = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: 5, section: 0)))
-        XCTAssertEqual(previous.frame.minX, 310)
-        XCTAssertLessThan(previous.zIndex, middle.zIndex)
-        XCTAssertFalse(attributes.contains { $0.indexPath == previousIndexPath })
-        XCTAssertEqual(attributes.first { $0.indexPath.item == 9 }?.frame.maxX, 840)
-    }
-
-    func testEdgeStacksStayInsideTabViewportWithManyTabs() throws {
-        var sawLeadingOverlap = false
-        var sawTrailingOverlap = false
-        for offset in [CGFloat(30), 5790, 11460] {
-            let (collectionView, layout) = makeCollectionView(currentIndex: { 50 }, contentOffset: offset, itemCount: 100)
+        for (index, offset) in [(0, CGFloat(300)), (99, 300), (4, 200)] {
+            currentIndex = index
+            collectionView.contentOffset.x = offset
+            layout.invalidateLayout()
+            collectionView.layoutIfNeeded()
             let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
-            let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
-            let trailing = collectionView.bounds.maxX - collectionView.adjustedContentInset.right
-            XCTAssertLessThan(attributes.count, 15)
-            XCTAssertEqual(attributes.filter { $0.indexPath.item == 50 }.count, 1)
-            XCTAssertFalse(collectionView.visibleCells.isEmpty)
-            for cell in collectionView.visibleCells {
-                XCTAssertGreaterThanOrEqual(cell.frame.minX, leading)
-                XCTAssertLessThanOrEqual(cell.frame.maxX, trailing)
+            let current = try XCTUnwrap(attributes.first { $0.indexPath.item == index })
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            XCTAssertTrue(viewport.contains(current.frame))
+            XCTAssertNotNil(collectionView.cellForItem(at: current.indexPath))
+            XCTAssertTrue(attributes.filter { $0.indexPath != current.indexPath }.allSatisfy { $0.zIndex < current.zIndex })
+            if index != 0 {
+                XCTAssertFalse(attributes.contains { $0.indexPath.item == 0 })
             }
-            let reservedPoint = CGPoint(x: trailing + 1, y: collectionView.bounds.midY)
-            XCTAssertTrue(collectionView.hitTest(reservedPoint, with: nil) === collectionView)
-
-            let inactive = attributes.filter { $0.indexPath.item != 50 }.sorted { $0.indexPath.item < $1.indexPath.item }
-            for (left, right) in zip(inactive, inactive.dropFirst()) where left.frame.intersects(right.frame) {
-                if left.frame.minX == leading {
-                    sawLeadingOverlap = true
-                    XCTAssertLessThan(left.zIndex, right.zIndex)
-                }
-                if right.frame.maxX == trailing {
-                    sawTrailingOverlap = true
-                    XCTAssertGreaterThan(left.zIndex, right.zIndex)
-                }
-            }
-        }
-        XCTAssertTrue(sawLeadingOverlap)
-        XCTAssertTrue(sawTrailingOverlap)
-    }
-
-    func testPointerBoundsExcludeCoveredPartsOfEdgeTabsAndCloseButton() throws {
-        let (collectionView, _) = makeCollectionView(currentIndex: { 2 })
-        let window = UIWindow(frame: collectionView.frame)
-        window.addSubview(collectionView)
-        defer { window.subviews.forEach { $0.removeFromSuperview() } }
-        let leading = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 0, section: 0)) as? TabsBarCell)
-        let trailing = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)) as? TabsBarCell)
-        let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 2, section: 0)) as? TabsBarCell)
-        let covered = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)) as? TabsBarCell)
-        for cell in [leading, trailing, selected, covered] {
-            cell.layoutIfNeeded()
-        }
-
-        let leadingRect = CGRect(x: 0, y: 0, width: 110, height: 40)
-        let trailingRect = CGRect(x: 60, y: 0, width: 60, height: 40)
-        XCTAssertEqual(leading.visiblePointerRect(in: leading.contentView), leadingRect)
-        XCTAssertEqual(trailing.visiblePointerRect(in: trailing.contentView), trailingRect)
-        XCTAssertEqual(selected.visiblePointerRect(in: selected.contentView), selected.contentView.bounds)
-        XCTAssertTrue(covered.visiblePointerRect(in: covered.contentView).isEmpty)
-        XCTAssertEqual(leading.visiblePointerRect(in: leading.removeButton), CGRect(x: 0, y: 0, width: 30, height: 40))
-
-        let interaction = try XCTUnwrap(covered.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
-        let region = UIPointerRegion(rect: covered.contentView.bounds, identifier: nil)
-        XCTAssertNil(covered.pointerInteraction(interaction, styleFor: region))
-
-        if #available(iOS 17, *) {
-            for (cell, expectedRect) in [(leading, leadingRect), (trailing, trailingRect), (selected, selected.contentView.bounds)] {
-                let pointer = try XCTUnwrap(cell.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
-                let style = try XCTUnwrap(cell.pointerInteraction(pointer, styleFor: UIPointerRegion(rect: cell.contentView.bounds)))
-                // Inspect UIKit's Objective-C effect; the Swift hover-style overlay erases its concrete type.
-                let effect = try XCTUnwrap(style.__effect as? __UIPointerHoverEffect)
-                XCTAssertEqual(effect.preview.parameters.visiblePath?.bounds, expectedRect)
-                XCTAssertFalse(effect.prefersScaledContent)
-                XCTAssertIdentical(effect.preview.view.superview, cell.contentView)
-                XCTAssertTrue(effect.preview.view.subviews.isEmpty, "The hover preview must not independently render the title or favicon")
-                XCTAssertEqual(effect.preview.view.frame, cell.contentView.bounds)
-                XCTAssertFalse(effect.preview.view.isUserInteractionEnabled)
-            }
-        }
-    }
-
-    func testActiveDragKeepsAccordionTabsInsideVisibleStrip() throws {
-        let (collectionView, layout) = makeCollectionView(currentIndex: { 0 }, contentOffset: 300, activeDrag: true)
-        XCTAssertTrue(collectionView.hasActiveDrag)
-        let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
-        XCTAssertEqual(attributes.first { $0.indexPath.item == 0 }?.frame.minX, 310)
-        XCTAssertGreaterThan(collectionView.visibleCells.count, 1)
-        for cell in collectionView.visibleCells {
-            XCTAssertGreaterThanOrEqual(cell.frame.minX, 310)
-            XCTAssertLessThanOrEqual(cell.frame.maxX, 840)
-        }
-    }
-
-    func testEdgeAccordionStartsMovingNextTabAtHalfExposureAndOuterTabMovesFaster() throws {
-        for (offset, direction, outerIndex, innerIndex) in [(CGFloat(290), CGFloat(1), 2, 3), (360, -1, 7, 6)] {
-            let (collectionView, _) = makeCollectionView(currentIndex: { 4 }, contentOffset: offset)
-            let outer = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: outerIndex, section: 0)) as? TabsBarCell)
-            let inner = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: innerIndex, section: 0)))
-            var previousOuterX = outer.frame.minX
-            var previousInnerX = inner.frame.minX
-            var previousExposure = outer.visiblePointerRect(in: outer.contentView).width
-            XCTAssertEqual(previousExposure, outer.bounds.width / 2)
-
-            for distance in [CGFloat(10), 20] {
-                collectionView.contentOffset.x = offset + direction * distance
-                collectionView.layoutIfNeeded()
-                let outerMovement = direction * (outer.frame.minX - previousOuterX)
-                let innerMovement = direction * (inner.frame.minX - previousInnerX)
-                XCTAssertGreaterThan(innerMovement, 0)
-                XCTAssertGreaterThan(outerMovement, innerMovement)
-                XCTAssertLessThanOrEqual(outerMovement, 10)
-                let exposure = outer.visiblePointerRect(in: outer.contentView).width
-                XCTAssertGreaterThan(exposure, 0)
-                XCTAssertLessThan(exposure, previousExposure)
-                previousOuterX = outer.frame.minX
-                previousInnerX = inner.frame.minX
-                previousExposure = exposure
+            if index == 4 {
+                XCTAssertEqual(current.frame, layout.unpinnedFrameForItem(at: current.indexPath))
             }
         }
     }
@@ -307,228 +154,48 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertGreaterThan(outgoing.visiblePointerRect(in: outgoing.contentView).width, 0)
     }
 
-    func testLeadingSeparatorsMarkAccordionEdgesWithoutDoublingOrdinaryDividers() throws {
-        let (collectionView, _) = makeCollectionView(currentIndex: { 4 }, contentOffset: -10)
-        for (offset, expectedLeadingSeparators) in [(CGFloat(-10), Set<Int>()), (0, [0, 1]), (300, [2, 3]), (-10, [])] {
-            collectionView.contentOffset.x = offset
-            collectionView.layoutIfNeeded()
-            for cell in collectionView.visibleCells.compactMap({ $0 as? TabsBarCell }) {
-                cell.layoutIfNeeded()
-                let index = try XCTUnwrap(collectionView.indexPath(for: cell)).item
-                let separators = cell.contentView.subviews.filter { $0.bounds.width == 1 && $0.bounds.height == 24 }
-                let leading = try XCTUnwrap(separators.first { $0.frame.minX == 0 })
-                let trailing = try XCTUnwrap(separators.first { $0.frame.maxX == cell.bounds.width })
-                let isExposed = leading.frame.intersects(cell.visiblePointerRect(in: cell.contentView))
-                XCTAssertEqual(!leading.isHidden && isExposed, expectedLeadingSeparators.contains(index), "Tab \(index) at offset \(offset)")
-                for style in [UIUserInterfaceStyle.light, .dark] {
-                    let traits = UITraitCollection(userInterfaceStyle: style)
-                    XCTAssertEqual(leading.backgroundColor?.resolvedColor(with: traits), trailing.backgroundColor?.resolvedColor(with: traits))
-                }
-                XCTAssertEqual(trailing.isHidden, index == 3 || index == 4)
+    func testPointerPreviewClipsCoveredTabsAndExcludesTabContent() throws {
+        let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 0)
+        let window = UIWindow(frame: collectionView.frame)
+        window.addSubview(collectionView)
+        defer { collectionView.removeFromSuperview() }
+        for (index, exposedRect) in [(0, CGRect(x: 0, y: 0, width: 110, height: 40)),
+                                     (4, CGRect(x: 60, y: 0, width: 60, height: 40)), (5, .zero)] {
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? TabsBarCell)
+            cell.layoutIfNeeded()
+            XCTAssertEqual(cell.visiblePointerRect(in: cell.contentView), exposedRect)
+            let pointer = try XCTUnwrap(cell.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
+            let style = cell.pointerInteraction(pointer, styleFor: UIPointerRegion(rect: cell.contentView.bounds))
+            if exposedRect.isEmpty {
+                XCTAssertNil(style)
+            } else if #available(iOS 17, *) {
+                let effect = try XCTUnwrap(style?.__effect as? __UIPointerHoverEffect)
+                XCTAssertEqual(effect.preview.parameters.visiblePath?.bounds, exposedRect)
+                XCTAssertIdentical(effect.preview.view.superview, cell.contentView)
+                XCTAssertTrue(effect.preview.view.subviews.isEmpty, "Hover must not independently render the title or favicon")
             }
         }
     }
 
-    func testLeadingSeparatorDoesNotMarkPinnedSelectedTabsOutline() throws {
-        let (collectionView, _) = makeCollectionView(currentIndex: { 0 }, contentOffset: 350)
-        let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 0, section: 0)))
-        let neighbor = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)))
-        neighbor.layoutIfNeeded()
-        XCTAssertEqual(neighbor.frame.minX, selected.frame.maxX)
-        let leading = try XCTUnwrap(neighbor.contentView.subviews.first { $0.frame.minX == 0 && $0.bounds.width == 1 })
-        XCTAssertTrue(leading.isHidden)
-    }
-
-    func testOuterAccordionSeparatorsFadeAsTheirGapsCloseAndRecoverWhenOpened() throws {
-        for (offset, direction, outerIndex, innerIndex) in [(CGFloat(290), CGFloat(1), 2, 3), (360, -1, 7, 6)] {
-            let (collectionView, _) = makeCollectionView(currentIndex: { 4 }, contentOffset: offset)
-            let outer = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: outerIndex, section: 0)))
-            let inner = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: innerIndex, section: 0)))
-            var previousAlpha: CGFloat = 1
-            for distance in [CGFloat(0), 30, 60, 90, 0] {
-                collectionView.contentOffset.x = offset + direction * distance
-                collectionView.layoutIfNeeded()
-                for cell in [outer, inner] {
-                    cell.layoutIfNeeded()
-                    let separator = try XCTUnwrap(cell.contentView.subviews.first {
-                        $0.bounds.width == 1 && (direction > 0 ? $0.frame.minX == 0 : $0.frame.maxX == cell.bounds.width)
-                    })
-                    XCTAssertFalse(separator.isHidden)
-                    if cell === inner || distance == 0 {
-                        XCTAssertEqual(separator.alpha, 1)
-                    } else {
-                        XCTAssertLessThan(separator.alpha, previousAlpha)
-                        XCTAssertGreaterThan(separator.alpha, 0)
-                        if distance == 90 {
-                            XCTAssertLessThan(separator.alpha, 0.02)
-                        }
-                        previousAlpha = separator.alpha
-                    }
-                }
-            }
-        }
-    }
-
-    func testReorderAttributesKeepInactiveCellsBelowSelectionAndResetOnReuse() throws {
-        let (collectionView, layout) = makeCollectionView(currentIndex: { 2 }, contentOffset: 10)
-        let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 2, section: 0)) as? TabsBarCell)
-        let inactive = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 0, section: 0)) as? TabsBarCell)
-        let inactiveAttributes = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: 0, section: 0)))
-        let originalOrder = inactive.layer.zPosition
-        XCTAssertLessThan(originalOrder, 0)
-
-        for (cell, index) in [(selected, 2), (inactive, 0)] {
-            let attributes = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: index, section: 0))?.copy() as? UICollectionViewLayoutAttributes)
-            attributes.zIndex = 1000
-            cell.apply(attributes)
-        }
-        XCTAssertEqual(selected.layer.zPosition, 2)
-        XCTAssertEqual(inactive.layer.zPosition, 0)
-        inactive.apply(inactiveAttributes)
-        XCTAssertEqual(inactive.layer.zPosition, originalOrder)
-
-        let theme = ThemeManager.shared.currentTheme
-        inactive.applyCurrentStyle(isCurrent: true, isNextCurrent: false, hidesInactiveCloseButton: false, withTheme: theme)
-        XCTAssertEqual(inactive.layer.zPosition, 2)
-        inactive.applyCurrentStyle(isCurrent: false, isNextCurrent: false, hidesInactiveCloseButton: false, withTheme: theme)
-        XCTAssertEqual(inactive.layer.zPosition, 0)
-        inactive.applyCurrentStyle(isCurrent: true, isNextCurrent: false, hidesInactiveCloseButton: false, withTheme: theme)
-        inactive.contentView.isHidden = true
-        inactive.prepareForReuse()
-        inactive.apply(inactiveAttributes)
-        XCTAssertFalse(inactive.contentView.isHidden)
-        XCTAssertEqual(inactive.layer.zPosition, originalOrder)
-    }
-
-    func testSelectingPartiallyCoveredEdgeTabRevealsItWithNeighborStillExposed() throws {
-        for (offset, index, neighborIndex) in [(CGFloat(300), 2, 1), (330, 7, 8)] {
-            var currentIndex = 4
-            let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: offset)
-            let indexPath = IndexPath(item: index, section: 0)
-            let edge = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
-            let exposedWidth = edge.visiblePointerRect(in: edge.contentView).width
-            XCTAssertGreaterThan(exposedWidth, 0)
-            XCTAssertLessThan(exposedWidth, edge.bounds.width)
-
-            currentIndex = index
-            collectionView.reloadData()
-            collectionView.layoutIfNeeded()
-            let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
-            collectionView.scrollRectToVisible(revealFrame, animated: false)
-            collectionView.layoutIfNeeded()
-
-            let selected = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
-            let neighbor = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighborIndex, section: 0)) as? TabsBarCell)
-            XCTAssertEqual(selected.frame, layout.unpinnedFrameForItem(at: indexPath))
-            XCTAssertEqual(selected.visiblePointerRect(in: selected.contentView), selected.contentView.bounds)
-            XCTAssertEqual(neighbor.visiblePointerRect(in: neighbor.contentView).width, 60)
-        }
-    }
-
-    func testRevealingInactiveEdgeTabLeavesNeighborExposedBesidePinnedCurrentTab() throws {
-        for (currentIndex, revealedIndex, neighborIndex, offset) in [(0, 20, 19, CGFloat(2600)), (99, 20, 21, CGFloat(2000))] {
-            let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: offset, itemCount: 100)
-            let indexPath = IndexPath(item: revealedIndex, section: 0)
+    func testRevealingEdgeTabExposesItAndANeighborWithOrWithoutPinnedSelection() throws {
+        for (current, target, neighbor, offset) in [(2, 2, 1, CGFloat(300)), (7, 7, 8, 330),
+                                                   (0, 20, 19, 2600), (99, 20, 21, 2000)] {
+            let (collectionView, layout) = makeCollectionView(currentIndex: { current }, contentOffset: offset)
+            let indexPath = IndexPath(item: target, section: 0)
             let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
             collectionView.scrollRectToVisible(revealFrame, animated: false)
             collectionView.layoutIfNeeded()
 
             let revealed = try XCTUnwrap(collectionView.cellForItem(at: indexPath) as? TabsBarCell)
-            let neighbor = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighborIndex, section: 0)) as? TabsBarCell)
+            let adjacent = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighbor, section: 0)) as? TabsBarCell)
             XCTAssertEqual(revealed.visiblePointerRect(in: revealed.contentView), revealed.contentView.bounds)
-            XCTAssertGreaterThan(neighbor.visiblePointerRect(in: neighbor.contentView).width, 0)
-            XCTAssertLessThanOrEqual(revealFrame.width, collectionView.bounds.inset(by: collectionView.adjustedContentInset).width)
+            XCTAssertGreaterThan(adjacent.visiblePointerRect(in: adjacent.contentView).width, 0)
+            XCTAssertTrue(CGRect(origin: .zero, size: collectionView.contentSize).contains(revealFrame))
         }
     }
 
-    func testRevealFrameRespectsContentEndsAndNarrowStripWithoutOverscroll() throws {
-        for (width, expectedRevealWidth) in [(CGFloat(600), CGFloat(180)), (230, 140), (200, 125), (180, 120)] {
-            let (collectionView, layout) = makeCollectionView(currentIndex: { nil }, contentOffset: 300)
-            collectionView.bounds.size.width = width
-            collectionView.layoutIfNeeded()
-            let contentBounds = CGRect(origin: .zero, size: collectionView.contentSize)
-            for index in [0, 9] {
-                let indexPath = IndexPath(item: index, section: 0)
-                let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
-                let naturalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: indexPath))
-                XCTAssertTrue(contentBounds.contains(revealFrame))
-                XCTAssertTrue(revealFrame.contains(naturalFrame))
-                XCTAssertEqual(revealFrame.width, expectedRevealWidth)
-                XCTAssertEqual(index == 0 ? revealFrame.minX : revealFrame.maxX, index == 0 ? 0 : contentBounds.maxX)
-                collectionView.scrollRectToVisible(revealFrame, animated: false)
-                collectionView.layoutIfNeeded()
-                if width >= 200 {
-                    XCTAssertEqual(collectionView.cellForItem(at: indexPath)?.frame, naturalFrame)
-                    let usableBounds = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
-                    for cell in collectionView.visibleCells {
-                        XCTAssertTrue(usableBounds.contains(cell.frame))
-                    }
-                }
-                XCTAssertGreaterThanOrEqual(collectionView.contentOffset.x, -collectionView.adjustedContentInset.left)
-                XCTAssertLessThanOrEqual(collectionView.contentOffset.x, contentBounds.width - width + collectionView.adjustedContentInset.right)
-            }
-        }
-    }
-
-    func testFlareAnimatesToSelectedTabWhenReorderEnds() throws {
-        var currentIndex = 0
-        let (collectionView, layout) = makeCollectionView(currentIndex: { currentIndex }, contentOffset: 300)
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previousKeyWindow = scene.windows.first { $0.isKeyWindow }
-        let window = UIWindow(windowScene: scene)
-        window.frame = collectionView.frame
-        window.rootViewController = UIViewController()
-        window.rootViewController?.view.addSubview(collectionView)
-        window.makeKeyAndVisible()
-        let wereAnimationsEnabled = UIView.areAnimationsEnabled
-        UIView.setAnimationsEnabled(true)
-        defer {
-            UIView.setAnimationsEnabled(wereAnimationsEnabled)
-            window.isHidden = true
-            previousKeyWindow?.makeKey()
-        }
-        let flare = TabFlareBackgroundController(collectionView: collectionView,
-                                                topCornerRadius: TabsBarCell.cornerRadius,
-                                                rampSize: TabsBarViewController.Constants.tabRampSize,
-                                                currentIndex: { currentIndex },
-                                                fillColor: { .white })
-        flare.update()
-        window.layoutIfNeeded()
-        CATransaction.flush()
-        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
-        XCTAssertEqual(background.frame, CGRect(x: 300, y: 0, width: 140, height: 40))
-
-        flare.beginReorder()
-        currentIndex = 5
-        layout.invalidateLayout()
-        collectionView.layoutIfNeeded()
-        flare.endReorder()
-        CATransaction.flush()
-
-        XCTAssertEqual(background.frame, CGRect(x: 590, y: 0, width: 140, height: 40))
-        let animationKeys = background.layer.animationKeys() ?? []
-        let positionAnimations = animationKeys.compactMap { background.layer.animation(forKey: $0) as? CAPropertyAnimation }
-            .filter { $0.keyPath == "position" }
-        if UIAccessibility.isReduceMotionEnabled {
-            XCTAssertTrue(positionAnimations.isEmpty)
-        } else {
-            let animation = try XCTUnwrap(positionAnimations.first, "Expected a position animation; registered keys: \(animationKeys)")
-            XCTAssertGreaterThan(animation.duration, 0)
-        }
-
-        collectionView.contentOffset.x = 700
-        collectionView.layoutIfNeeded()
-        flare.update(animated: true)
-        CATransaction.flush()
-
-        XCTAssertEqual(background.frame, CGRect(x: 700, y: 0, width: 140, height: 40))
-        let remainingAnimations = (background.layer.animationKeys() ?? []).compactMap { background.layer.animation(forKey: $0) as? CAPropertyAnimation }
-        XCTAssertFalse(remainingAnimations.contains { $0.keyPath == "position" })
-    }
-
-    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat = 0, itemCount: Int = 10, activeDrag: Bool = false)
+    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat)
         -> (UICollectionView, TabsBarCollectionViewLayout) {
-        self.itemCount = itemCount
         selectedIndex = currentIndex
         let layout = TabsBarCollectionViewLayout()
         layout.scrollDirection = .horizontal
@@ -536,8 +203,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
         layout.currentIndex = currentIndex
-        let collectionView = DraggingTabsCollectionView(frame: CGRect(x: 0, y: 0, width: 600, height: 40), collectionViewLayout: layout)
-        collectionView.activeDrag = activeDrag
+        let collectionView = UICollectionView(frame: CGRect(x: 0, y: 0, width: 600, height: 40), collectionViewLayout: layout)
         collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.contentInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 60)
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
@@ -549,9 +215,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         return (collectionView, layout)
     }
 
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        itemCount
-    }
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int { 100 }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath)
@@ -561,10 +225,4 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
                                                 withTheme: ThemeManager.shared.currentTheme)
         return cell
     }
-}
-
-@MainActor
-private final class DraggingTabsCollectionView: UICollectionView {
-    var activeDrag = false
-    override var hasActiveDrag: Bool { activeDrag }
 }

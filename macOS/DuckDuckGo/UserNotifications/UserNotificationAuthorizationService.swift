@@ -39,12 +39,20 @@ protocol UserNotificationAuthorizationServicing: AnyObject {
 final class UserNotificationAuthorizationService: UserNotificationAuthorizationServicing {
     @PublishedAfter private var currentAuthorizationStatus: UNAuthorizationStatus = .notDetermined
 
+    private let notificationCenter: WebNotificationService
     private var appActivationCancellable: AnyCancellable?
+    /// macOS can keep reporting `.notDetermined` after notifications are turned off in System Settings, while it
+    /// refuses every request without asking. Such a refusal is reported as `.denied` until macOS reports a decision.
+    private var isRequestRefusedBySystem = false
 
     var authorizationStatus: UNAuthorizationStatus {
         get async {
-            let settings = await UNUserNotificationCenter.current().notificationSettings()
-            return settings.authorizationStatus
+            let status = await notificationCenter.authorizationStatus()
+            guard status == .notDetermined else {
+                isRequestRefusedBySystem = false
+                return status
+            }
+            return isRequestRefusedBySystem ? .denied : status
         }
     }
 
@@ -56,9 +64,13 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
         $currentAuthorizationStatus.eraseToAnyPublisher()
     }
 
-    init(appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
+    init(
+        notificationCenter: WebNotificationService = UNUserNotificationCenter.current(),
+        appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification)
-            .eraseToAnyPublisher()) {
+            .eraseToAnyPublisher()
+    ) {
+        self.notificationCenter = notificationCenter
 
         Task {
             await updateAuthorizationStatus()
@@ -73,9 +85,17 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
     }
 
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
-        let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: options)
-        await updateAuthorizationStatus()
-        return granted
+        do {
+            let granted = try await notificationCenter.requestAuthorization(options: options)
+            await updateAuthorizationStatus()
+            return granted
+        } catch {
+            if (error as? UNError)?.code == .notificationsNotAllowed {
+                isRequestRefusedBySystem = true
+            }
+            await updateAuthorizationStatus()
+            throw error
+        }
     }
 
     private func updateAuthorizationStatus() async {

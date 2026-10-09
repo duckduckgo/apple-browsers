@@ -471,6 +471,8 @@ extension SimplifiedSyncSettingsView {
     @ViewBuilder
     func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
         if device.isThirdParty {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+        } else if device.isUnknownType {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceAll)
         } else {
             switch device.type {

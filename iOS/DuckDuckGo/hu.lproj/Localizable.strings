@@ -5353,9 +5353,6 @@
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Kikapcsolod a Sync & Backup funkciót és törlöd a szerveradatokat?";
 
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Új eszköz hozzáadva!";
-
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Helyreállítási kód másolva";
 

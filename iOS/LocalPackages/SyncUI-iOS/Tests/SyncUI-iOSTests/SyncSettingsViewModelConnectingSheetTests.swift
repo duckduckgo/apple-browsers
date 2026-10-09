@@ -38,9 +38,9 @@ final class SyncSettingsViewModelConnectingSheetTests {
     func showSuccessForRecovery() {
         let sut = makeSUT()
 
-        sut.showSuccess(recoveryCode: "recovery-code", isRecovery: true)
+        sut.showSuccess(recoveryCode: "recovery-code", destination: .recovery)
 
-        #expect(sut.connectingSheetPhase == .success(isRecovery: true))
+        #expect(sut.connectingSheetPhase == .success(.recovery))
         #expect(sut.recoveryCode == "recovery-code")
     }
 
@@ -49,9 +49,9 @@ final class SyncSettingsViewModelConnectingSheetTests {
     func showSuccessForDeviceAdded() {
         let sut = makeSUT()
 
-        sut.showSuccess(recoveryCode: "device-code", isRecovery: false)
+        sut.showSuccess(recoveryCode: "device-code", destination: .newlySyncing)
 
-        #expect(sut.connectingSheetPhase == .success(isRecovery: false))
+        #expect(sut.connectingSheetPhase == .success(.newlySyncing))
         #expect(sut.recoveryCode == "device-code")
     }
 
@@ -61,21 +61,55 @@ final class SyncSettingsViewModelConnectingSheetTests {
         let sut = makeSUT()
         sut.connectingSheetPhase = .waitingForOtherDevice
 
-        sut.showSuccess(recoveryCode: "device-code", isRecovery: false)
+        sut.showSuccess(recoveryCode: "device-code", destination: .newlySyncing)
 
-        #expect(sut.connectingSheetPhase == .connecting(isRecovery: false, isFinishing: true))
+        #expect(sut.connectingSheetPhase == .connecting(isRecovery: false, successDestination: .newlySyncing))
 
         sut.connectingAnimationDidFinish()
 
-        #expect(sut.connectingSheetPhase == .success(isRecovery: false))
+        #expect(sut.connectingSheetPhase == .success(.newlySyncing))
         #expect(sut.recoveryCode == "device-code")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Already-syncing success keeps its destination through animation and until Done", .timeLimit(.minutes(1)))
+    func alreadySyncingSuccessKeepsDestinationThroughAnimation() {
+        let sut = makeSUT()
+        let destination = SyncSettingsViewModel.SuccessDestination.alreadySyncing
+        sut.connectingSheetPhase = .waitingForOtherDevice
+
+        sut.showSuccess(recoveryCode: "device-code", destination: destination)
+
+        #expect(sut.connectingSheetPhase == .connecting(isRecovery: false, successDestination: destination))
+
+        sut.connectingAnimationDidFinish()
+
+        #expect(sut.connectingSheetPhase == .success(destination))
+        #expect(sut.recoveryCode == "device-code")
+
+        sut.doneFromConnectingSheet()
+
+        #expect(sut.connectingSheetPhase == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A later full success does not retain the previous short destination", .timeLimit(.minutes(1)))
+    func laterFullSuccessDoesNotRetainShortDestination() {
+        let sut = makeSUT()
+        sut.showSuccess(recoveryCode: "host-code", destination: .alreadySyncing)
+        sut.doneFromConnectingSheet()
+
+        sut.showSuccess(recoveryCode: "joiner-code", destination: .newlySyncing)
+
+        #expect(sut.connectingSheetPhase == .success(.newlySyncing))
+        #expect(sut.recoveryCode == "joiner-code")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Done from the connecting sheet dismisses it", .timeLimit(.minutes(1)))
     func doneFromConnectingSheetDismisses() {
         let sut = makeSUT()
-        sut.showSuccess(recoveryCode: "recovery-code", isRecovery: true)
+        sut.showSuccess(recoveryCode: "recovery-code", destination: .recovery)
 
         sut.doneFromConnectingSheet()
 

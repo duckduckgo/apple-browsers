@@ -85,12 +85,19 @@ public class SyncSettingsViewModel: ObservableObject {
         public let credentialId: String?
         public let isThisDevice: Bool
 
-        // Keep these values aligned with DDGSync.SyncCredentialID without coupling SyncUI_iOS to DDGSync.
+        // Keep these values aligned with DDGSync.SyncCredentialID and the RegisteredDeviceMapper
+        // placeholder type without coupling SyncUI_iOS to DDGSync.
         public static let defaultCredentialId = "ddg"
         public static let thirdPartyCredentialId = "3party"
+        public static let unknownDeviceType = "unknown"
 
         public var isThirdParty: Bool {
             credentialId == Self.thirdPartyCredentialId
+        }
+
+        /// The device's metadata could not be decrypted, so its real type is not known.
+        public var isUnknownType: Bool {
+            type == Self.unknownDeviceType
         }
 
         public init(id: String, name: String, type: String, credentialId: String? = nil, isThisDevice: Bool) {
@@ -192,11 +199,17 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
+    public enum SuccessDestination: Equatable {
+        case newlySyncing
+        case alreadySyncing
+        case recovery
+    }
+
     public enum ConnectingSheetPhase: Equatable, Identifiable {
-        case connecting(isRecovery: Bool, isFinishing: Bool = false)
+        case connecting(isRecovery: Bool, successDestination: SuccessDestination? = nil)
         case syncAnotherDevice(isConnecting: Bool)
         case waitingForOtherDevice
-        case success(isRecovery: Bool)
+        case success(SuccessDestination)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -514,19 +527,20 @@ public class SyncSettingsViewModel: ObservableObject {
         beginSimplifiedSyncSetup()
     }
 
-    public func showSuccess(recoveryCode: String, isRecovery: Bool) {
+    public func showSuccess(recoveryCode: String, destination: SuccessDestination) {
         self.recoveryCode = recoveryCode
+        let isRecovery = destination == .recovery
         switch connectingSheetPhase {
         case .connecting, .waitingForOtherDevice:
-            connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
+            connectingSheetPhase = .connecting(isRecovery: isRecovery, successDestination: destination)
         default:
-            connectingSheetPhase = .success(isRecovery: isRecovery)
+            connectingSheetPhase = .success(destination)
         }
     }
 
     public func connectingAnimationDidFinish() {
-        guard case .connecting(let isRecovery, true) = connectingSheetPhase else { return }
-        connectingSheetPhase = .success(isRecovery: isRecovery)
+        guard case .connecting(_, let successDestination?) = connectingSheetPhase else { return }
+        connectingSheetPhase = .success(successDestination)
     }
 
     public func doneFromConnectingSheet() {

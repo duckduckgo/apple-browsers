@@ -836,8 +836,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
     func testJoinStatusDeadlineRemoteSettingUsesDefaultAndClampsBounds() {
         let key = "joinStatusDeadlineMs"
 
-        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [:]), 30)
-        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: "invalid"]), 30)
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [:]), 5)
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: "invalid"]), 5)
         XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: 1_000]), 5)
         XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: 45_000]), 45)
         XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: 180_000]), 120)

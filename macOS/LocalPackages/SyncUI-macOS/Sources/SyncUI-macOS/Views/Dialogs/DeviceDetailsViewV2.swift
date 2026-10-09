@@ -41,8 +41,10 @@ struct DeviceDetailsViewV2: View {
         switch device.kind {
         case .current, .desktop:
             return Image(.desktopSyncAddedFeature128)
-        case .mobile, .thirdParty:
+        case .mobile:
             return Image(.mobileSyncAddedFeature128)
+        case .thirdParty, .unknown:
+            return Image(.browserV2SyncedFeature128)
         }
     }
 

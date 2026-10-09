@@ -169,7 +169,7 @@ struct ReturnToTabCard: View {
             )
             destructiveActionButtons
             Section {
-                afterInactivityPicker
+                afterInactivitySettingsButton
                 MenuActionButton(
                     text: UserText.escapeHatchMenuHideTheseShortcuts,
                     icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
@@ -194,22 +194,16 @@ struct ReturnToTabCard: View {
         }
     }
 
-    private var afterInactivityPicker: some View {
-        Picker(selection: model.afterInactivityOptionBinding) {
-            ForEach(AfterInactivityOption.allCases, id: \.self) { option in
-                Text(option.description)
-                    .tag(option)
-            }
-        } label: {
+    private var afterInactivitySettingsButton: some View {
+        Button(action: model.openAfterInactivitySettingsFromMenu) {
             Text(UserText.settingsAfterInactivityLabel)
-            Text(model.afterInactivityOptionBinding.wrappedValue.description)
+            Text(model.afterInactivityOption.description)
                 .foregroundColor(.secondary)
                 .font(.subheadline)
 
             Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
                 .foregroundColor(Color(designSystemColor: .icons))
         }
-        .pickerStyle(.menu)
     }
 
     private var swipeableActionsView: some View {

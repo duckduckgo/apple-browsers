@@ -26,7 +26,12 @@ import PixelExperimentKit
 import PrivacyConfig
 import os.log
 
-final class StatisticsLoader {
+/// Refreshes the search and Duck.ai retention ATBs when the user submits a Duck.ai prompt.
+protocol DuckAIPromptAtbRefreshing {
+    func refreshRetentionAtbOnDuckAiPromptSubmition(completion: @escaping () -> Void)
+}
+
+final class StatisticsLoader: DuckAIPromptAtbRefreshing {
 
     typealias Completion =  (() -> Void)
 

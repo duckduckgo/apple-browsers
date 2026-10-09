@@ -280,6 +280,15 @@ final class LocalBookmarkStore: BookmarkStore {
         cacheReadOnlyTopLevelBookmarksFolders()
     }
 
+    func bookmarksCount() -> Int {
+        let context = makeContext()
+        var count = 0
+        context.performAndWait {
+            count = (try? context.count(for: Bookmark.bookmarksFetchRequest())) ?? 0
+        }
+        return count
+    }
+
     func loadAll(type: BookmarkStoreFetchPredicateType, completion: @escaping ([BaseBookmarkEntity]?, Error?) -> Void) {
         func mainQueueCompletion(bookmarks: [BaseBookmarkEntity]?, error: Error?) {
             DispatchQueue.main.async {

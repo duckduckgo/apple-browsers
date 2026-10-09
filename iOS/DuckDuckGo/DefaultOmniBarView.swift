@@ -2510,8 +2510,10 @@ extension DefaultOmniBarView {
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
             setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall)
-            aiChatSendButton.backgroundColor = accentColor
-            aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            // An enabled "Ask" is the disclaimer's call to action, so it keeps the primary fill in Fire mode too.
+            let isTermsLabel = termsOfServiceSendButton != nil
+            aiChatSendButton.backgroundColor = isTermsLabel ? UIColor(designSystemColor: .buttonsPrimaryDefault) : accentColor
+            aiChatSendButton.tintColor = UIColor(designSystemColor: isTermsLabel ? .buttonsPrimaryText : .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else if !hasText && attachments.isEmpty && termsOfServiceSendButton == nil {
             setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.voice)

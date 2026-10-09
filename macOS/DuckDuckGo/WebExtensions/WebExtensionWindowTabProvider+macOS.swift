@@ -54,29 +54,44 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         using configuration: WKWebExtension.WindowConfiguration,
         for context: WKWebExtensionContext
     ) async throws -> (any WKWebExtensionWindow)? {
-        let tabs = configuration.tabURLs.map {
-            Tab(content: .contentFromURL($0, source: .ui), webViewConfiguration: context.webViewConfiguration)
+        // Like Chrome, a popup window holds one page: further pages open in a regular window.
+        let isPopup = configuration.windowType == .popup
+        // Only the extension's own pages load with its web view configuration; websites get a regular tab's.
+        let tabs = configuration.tabURLs.map { url in
+            let isExtensionPage = url.scheme == context.baseURL.scheme
+            return Tab(content: .contentFromURL(url, source: .ui),
+                       webViewConfiguration: isExtensionPage ? context.webViewConfiguration : nil)
         }
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
         let tabCollectionViewModel = TabCollectionViewModel(
-            tabCollection: TabCollection(tabs: tabs, isPopup: configuration.windowType == .popup),
+            tabCollection: TabCollection(tabs: isPopup ? Array(tabs.prefix(1)) : tabs, isPopup: isPopup),
             burnerMode: burnerMode,
             windowControllersManager: windowControllersManager
         )
 
+        // WebKit reports a position or size the extension didn't specify as NaN, which means "use the default".
+        let frame = configuration.frame
         let mainWindow = windowControllersManager.openNewWindow(
             with: tabCollectionViewModel,
             burnerMode: burnerMode,
-            droppingPoint: configuration.frame.origin,
-            contentSize: configuration.frame.size,
+            droppingPoint: frame.origin.x.isNaN || frame.origin.y.isNaN ? nil : frame.origin,
+            contentSize: frame.size.width.isNaN || frame.size.height.isNaN ? nil : frame.size,
             showWindow: configuration.shouldBeFocused,
-            popUp: configuration.windowType == .popup,
+            popUp: isPopup,
             isMiniaturized: configuration.windowState == .minimized,
             isMaximized: configuration.windowState == .maximized,
             isFullscreen: configuration.windowState == .fullscreen
         )
 
-        try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
+        if isPopup {
+            // Appending to a popup that already has its page opens the tab in a regular window.
+            tabs.dropFirst().forEach { tabCollectionViewModel.append(tab: $0) }
+        }
+
+        // Like Chrome, an existing tab only moves into a regular window or an empty popup.
+        if !isPopup || tabs.isEmpty {
+            try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
+        }
 
         // swiftlint:disable:next force_cast
         return mainWindow?.windowController as! MainWindowController
@@ -124,7 +139,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         // WebKit's popover doesn't follow the app's theme on its own, so it takes the app's, also when it changes.
         popupAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.initial, .new]) { [weak popupPopover, weak popupWebView] app, _ in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 popupPopover?.appearance = app.effectiveAppearance
                 popupWebView?.appearance = app.effectiveAppearance
             }

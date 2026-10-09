@@ -49,6 +49,8 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
 
     func testWhenStoreIsCorruptedThenItIsRecreatedAndPixelIsFired() async throws {
         try Data(repeating: 0xAB, count: 4096).write(to: location.appendingPathComponent("PrivacyStats.sqlite"))
+        let staleJournal = location.appendingPathComponent("PrivacyStats.sqlite-journal")
+        try Data(repeating: 0xCD, count: 512).write(to: staleJournal)
 
         // Before the fix, creating PrivacyStats never returned here.
         let privacyStats = PrivacyStatsDatabase.makePrivacyStats(location: location, pixelFiring: pixelKit)
@@ -61,6 +63,7 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         XCTAssertEqual(call.pixel.parameters, ["stage": "initial"])
         XCTAssertEqual(call.pixel.error?.domain, NSCocoaErrorDomain)
         XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staleJournal.path))
     }
 
     func testWhenStoreFolderCannotBeCreatedThenUnavailablePrivacyStatsIsReturnedWithoutRetrying() throws {

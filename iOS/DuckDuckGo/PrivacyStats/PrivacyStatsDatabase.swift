@@ -107,8 +107,13 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     }
 
     private func deleteStoreFiles() {
-        for suffix in ["", "-wal", "-shm"] {
-            try? FileManager.default.removeItem(at: location.appendingPathComponent("\(Self.name).sqlite\(suffix)"))
+        // `destroyPersistentStore` removes the store and all of SQLite's sidecar files, and needs no loaded store.
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: NSManagedObjectModel())
+        do {
+            try coordinator.destroyPersistentStore(at: location.appendingPathComponent("\(Self.name).sqlite"),
+                                                   ofType: NSSQLiteStoreType)
+        } catch {
+            Logger.general.error("Could not delete Privacy Stats database: \(error.localizedDescription, privacy: .public)")
         }
     }
 

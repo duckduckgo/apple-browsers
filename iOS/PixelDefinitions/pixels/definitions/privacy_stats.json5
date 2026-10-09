@@ -1,0 +1,20 @@
+{
+    "privacy-stats_database_load_failed": {
+        "description": "Fired when the Privacy Stats Core Data store fails to load at launch. With stage=initial the store is then deleted and recreated; with stage=retry recreating it also failed and Privacy Stats is disabled for the session",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "stage",
+                "description": "Which load attempt failed",
+                "enum": ["initial", "retry"]
+            }
+        ]
+    }
+}

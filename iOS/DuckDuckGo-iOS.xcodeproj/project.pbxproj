@@ -1456,6 +1456,7 @@
 		C1FFBD462C761BE20073622B /* SyncPromoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FFBD452C761BE20073622B /* SyncPromoManagerTests.swift */; };
 		C1FFBD482C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FFBD472C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift */; };
 		8C4BA58815A143C61C18953E /* SyncDeviceDetailsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7114FFFEE417A0A0B305C1D5 /* SyncDeviceDetailsPixel.swift */; };
+		B42F2D7CFC64695CF0868235 /* SyncTurnOffPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02635AFDB0B67D56353B7F5 /* SyncTurnOffPixel.swift */; };
 		EBFE051393327D3D25F316AF /* SyncCameraPermissionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081DC8A12C9661FB3C858A9F /* SyncCameraPermissionPixel.swift */; };
 		C256781EC700D62BEDE36B94 /* LaunchTimeMetricsSubscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8FD41799FD12C35CD0E1600 /* LaunchTimeMetricsSubscriberTests.swift */; };
 		C2920E700F7D448614155BC5 /* FileLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16393FE1ECCB9CC00DDD653 /* FileLoader.swift */; };
@@ -3226,6 +3227,7 @@
 		C1FFBD452C761BE20073622B /* SyncPromoManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPromoManagerTests.swift; sourceTree = "<group>"; };
 		C1FFBD472C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncSettingsViewController+PlatformLinks.swift"; sourceTree = "<group>"; };
 		7114FFFEE417A0A0B305C1D5 /* SyncDeviceDetailsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDeviceDetailsPixel.swift; sourceTree = "<group>"; };
+		E02635AFDB0B67D56353B7F5 /* SyncTurnOffPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTurnOffPixel.swift; sourceTree = "<group>"; };
 		081DC8A12C9661FB3C858A9F /* SyncCameraPermissionPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCameraPermissionPixel.swift; sourceTree = "<group>"; };
 		CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowPresenterTests.swift; sourceTree = "<group>"; };
 		CB1143DD2AF6D4B600C1CCD3 /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -5477,6 +5479,7 @@
 				85047C762A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift */,
 				C1FFBD472C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift */,
 				7114FFFEE417A0A0B305C1D5 /* SyncDeviceDetailsPixel.swift */,
+				E02635AFDB0B67D56353B7F5 /* SyncTurnOffPixel.swift */,
 				081DC8A12C9661FB3C858A9F /* SyncCameraPermissionPixel.swift */,
 			);
 			name = Controllers;
@@ -9012,6 +9015,7 @@
 				985892522260B1B200EEB31B /* ProgressView.swift in Sources */,
 				C1FFBD482C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift in Sources */,
 				8C4BA58815A143C61C18953E /* SyncDeviceDetailsPixel.swift in Sources */,
+				B42F2D7CFC64695CF0868235 /* SyncTurnOffPixel.swift in Sources */,
 				EBFE051393327D3D25F316AF /* SyncCameraPermissionPixel.swift in Sources */,
 				3151F0EA27357FBA00226F58 /* SpeechRecognizer.swift in Sources */,
 				31BB23A52D3A969400809ABF /* ControlWidgetConfigurable.swift in Sources */,

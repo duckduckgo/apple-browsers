@@ -32,6 +32,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func showSyncWithAnotherDevice()
     func shareRecoveryPDF()
     func confirmAndDeleteAllData() async -> Bool
+    func deleteAllData() async -> Bool
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool
     func removeDevice(_ device: SyncSettingsViewModel.Device)
     func updateDeviceName(_ name: String)
@@ -45,6 +46,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
     func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent)
+    func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
@@ -146,6 +148,18 @@ public class SyncSettingsViewModel: ObservableObject {
         case otherDeviceRemoveDeviceTapped
     }
 
+    public enum TurnOffSyncSheetPixelEvent: Equatable {
+        case sheetShown
+        case optionSelected(TurnOffSyncOption)
+        case deleteServerDataConfirmationConfirmed
+        case deleteServerDataConfirmationDismissed
+    }
+
+    public enum TurnOffSyncOption: String {
+        case thisDevice = "this_device"
+        case allDevicesAndServerData = "all_devices_and_server_data"
+    }
+
     public enum SyncAnotherDeviceOption: String {
         case thisDeviceOnly = "this_device_only"
         case syncAnotherDevice = "sync_another_device"
@@ -215,6 +229,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
     @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
+    @Published var isTurnOffSyncSheetVisible: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false
@@ -231,6 +246,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
     private var isFlowAuthenticationDeferred = false
     private var postConnectingSheetDismissAction: (() -> Void)?
+    private var postTurnOffSyncSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
     let isImprovedPairingFlowEnabled: Bool
@@ -320,6 +336,66 @@ public class SyncSettingsViewModel: ObservableObject {
                 guard await commonAuthenticate() else { return }
             }
             if await delegate!.confirmAndDeleteAllData() {
+                isSyncEnabled = false
+            }
+        }
+    }
+
+    func turnOffSyncTapped() {
+        guard isImprovedPairingFlowEnabled else {
+            deleteAllData(requireAuthentication: true)
+            return
+        }
+        guard !isBusy else { return }
+        Task { @MainActor in
+            guard await commonAuthenticate() else { return }
+            isTurnOffSyncSheetVisible = true
+            delegate?.fireTurnOffSyncSheetPixel(event: .sheetShown)
+        }
+    }
+
+    func turnOffSyncSheetRemoveDeviceTapped() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .optionSelected(.thisDevice))
+    }
+
+    func turnOffSyncSheetDeleteServerDataTapped() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .optionSelected(.allDevicesAndServerData))
+    }
+
+    func turnOffSyncSheetRemoveDeviceConfirmed() {
+        dismissTurnOffSyncSheet { [weak self] in
+            self?.disableSync()
+        }
+    }
+
+    func turnOffSyncSheetDeleteServerDataConfirmed() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .deleteServerDataConfirmationConfirmed)
+        dismissTurnOffSyncSheet { [weak self] in
+            self?.deleteServerData()
+        }
+    }
+
+    func turnOffSyncSheetDeleteServerDataCancelled() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .deleteServerDataConfirmationDismissed)
+    }
+
+    func dismissTurnOffSyncSheet(then action: (() -> Void)? = nil) {
+        postTurnOffSyncSheetDismissAction = action
+        isTurnOffSyncSheetVisible = false
+    }
+
+    func turnOffSyncSheetDidDismiss() {
+        let action = postTurnOffSyncSheetDismissAction
+        postTurnOffSyncSheetDismissAction = nil
+        action?()
+    }
+
+    private func deleteServerData() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            if await delegate?.deleteAllData() == true {
                 isSyncEnabled = false
             }
         }
@@ -428,6 +504,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     func thisDeviceDetailsTurnOffSyncConfirmed() {
+        disableSync()
+    }
+
+    private func disableSync() {
         guard !isBusy else { return }
         isBusy = true
         Task { @MainActor in
@@ -662,5 +742,6 @@ public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
     func fireDeviceDetailsPixel(event _: SyncSettingsViewModel.DeviceDetailsPixelEvent) {}
+    func fireTurnOffSyncSheetPixel(event _: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
 }

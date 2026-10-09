@@ -34,6 +34,7 @@ public final class DataBrokerProtectionSettings {
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
         static let lastManifestVersionsKey = "dbp.lastManifestVersions"
+        static let bundleSigningKeyFingerprintKey = "dbp.bundleSigningKeyFingerprint"
         static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
     }
 
@@ -93,6 +94,15 @@ public final class DataBrokerProtectionSettings {
         }
         set {
             defaults.set(newValue, forKey: Keys.lastManifestVersionsKey)
+        }
+    }
+
+    public var bundleSigningKeyFingerprint: String? {
+        get {
+            defaults.string(forKey: Keys.bundleSigningKeyFingerprintKey)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.bundleSigningKeyFingerprintKey)
         }
     }
 

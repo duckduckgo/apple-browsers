@@ -212,11 +212,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenMainConfigIsUnchangedThenVerificationSuccessIsReported() async throws {
         settings.mainConfigETag = eTag
-        let notModified = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 304, httpVersion: nil, headerFields: [:])!
-        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
-            self?.mainConfigRequests.append(request)
-            return (notModified, nil)
-        }
+        appendNotModifiedResponse()
 
         try await makeService().checkForUpdates()
 
@@ -420,14 +416,47 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(firedVerificationSuccessCount, 1)
     }
 
-    func testLastManifestVersionsSurviveResettingBrokerDeliveryData() {
+    func testSigningKeyStateSurvivesResettingBrokerDeliveryData() {
         settings.mainConfigETag = "previous"
         settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion]
+        settings.bundleSigningKeyFingerprint = Self.testStagingKeyID
 
         settings.resetBrokerDeliveryData()
 
         XCTAssertNil(settings.mainConfigETag)
         XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(settings.bundleSigningKeyFingerprint, Self.testStagingKeyID)
+    }
+
+    // MARK: - Signing key changes
+
+    func testWhenSigningKeysAreFirstSeenOrUnchangedThenStoredBrokersAreKept() async throws {
+        settings.mainConfigETag = eTag
+        vault.brokers = [try inflatedAnyWhoBroker()]
+
+        for _ in 0..<2 {
+            appendNotModifiedResponse()
+            try await makeService().checkForUpdates(skipsLimiter: true)
+        }
+
+        XCTAssertEqual(settings.bundleSigningKeyFingerprint, Self.testStagingKeyID)
+        XCTAssertEqual(mainConfigRequests.map { $0.value(forHTTPHeaderField: "If-None-Match") }, [eTag, eTag])
+        XCTAssertEqual(vault.brokers.map(\.version), ["99.0.0"])
+    }
+
+    func testWhenSigningKeysChangeThenBrokersSignedByTheOldKeyAreReplaced() async throws {
+        settings.bundleSigningKeyFingerprint = Self.testProductionKeyID
+        settings.mainConfigETag = eTag
+        vault.brokers = [try inflatedAnyWhoBroker()]
+        try stageExtractedBrokers()
+        appendFixtureResponses()
+
+        try await makeService().checkForUpdates()
+
+        XCTAssertNil(mainConfigRequests.first?.value(forHTTPHeaderField: "If-None-Match"))
+        XCTAssertEqual(vault.lastUpdatedBrokerResource?.broker.url, "anywho.com")
+        XCTAssertEqual(vault.lastUpdatedBrokerResource?.broker.version, "0.4.0")
+        XCTAssertEqual(settings.bundleSigningKeyFingerprint, Self.testStagingKeyID)
     }
 
     func testVerificationPixelsFollowThePlatformNaming() throws {
@@ -508,6 +537,28 @@ final class BrokerBundleVerificationTests: XCTestCase {
                                        localBrokerProvider: localBrokerService,
                                        privacyConfigurationManager: privacyConfigurationManager,
                                        signingKeys: signingKeys)
+    }
+
+    /// A broker a compromised key could have signed: the real broker's ETag with a version no real update would exceed.
+    private func inflatedAnyWhoBroker() throws -> DataBroker {
+        let mainConfig = try JSONDecoder().decode(MainConfig.self, from: try fixture("main_config.json"))
+        return DataBroker(id: 1,
+                          name: "AnyWho",
+                          url: "anywho.com",
+                          steps: [],
+                          version: "99.0.0",
+                          schedulingConfig: .mock,
+                          optOutUrl: "",
+                          eTag: try XCTUnwrap(mainConfig.jsonETags.current["anywho.com.json"]),
+                          removedAt: nil)
+    }
+
+    private func appendNotModifiedResponse() {
+        let notModified = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 304, httpVersion: nil, headerFields: [:])!
+        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
+            self?.mainConfigRequests.append(request)
+            return (notModified, nil)
+        }
     }
 
     /// Stands in for a downloaded and extracted all.zip, so no archive request is made.

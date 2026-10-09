@@ -1712,9 +1712,48 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
             scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
 
             WebViewScrollViewInsetUpdater.update(scrollView,
-                                                 insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0))
+                                                 insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0),
+                                                 isFloatingUIEnabled: true)
 
             XCTAssertEqual(scrollView.contentOffset.y, -122)
+        }
+    }
+
+    func testInsetTopToleranceIsOnlyUsedForFloatingUI() {
+        let topInset: CGFloat = 97
+        for isFloatingUIEnabled in [false, true] {
+            for offsetY in [-topInset, -topInset + 0.0005] {
+                let scrollView = InsetScrollView()
+                scrollView.contentInset.top = topInset
+                scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
+
+                WebViewScrollViewInsetUpdater.update(scrollView,
+                                                     insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0),
+                                                     isFloatingUIEnabled: isFloatingUIEnabled)
+
+                XCTAssertEqual(scrollView.contentOffset.y, isFloatingUIEnabled || offsetY == -topInset ? -122 : offsetY)
+            }
+        }
+    }
+
+    private final class InsetScrollView: UIScrollView {
+        private var storedInsets = UIEdgeInsets.zero
+        private var storedOffset = CGPoint.zero
+
+        override var contentInset: UIEdgeInsets {
+            get { storedInsets }
+            set { storedInsets = newValue }
+        }
+
+        override var adjustedContentInset: UIEdgeInsets { storedInsets }
+
+        override var contentOffset: CGPoint {
+            get { storedOffset }
+            set { storedOffset = newValue }
+        }
+
+        override func setContentOffset(_ contentOffset: CGPoint, animated: Bool) {
+            self.contentOffset = contentOffset
         }
     }
 

@@ -19,9 +19,7 @@
 import Foundation
 @testable import AIChat
 
-/// An in-memory store. Setting an error makes that operation throw without touching the record.
 final class MockAIChatBonusStore: AIChatBonusStoring {
-
     var storedRecord: AIChatBonusRecord?
     var readError: Error?
     var writeError: Error?

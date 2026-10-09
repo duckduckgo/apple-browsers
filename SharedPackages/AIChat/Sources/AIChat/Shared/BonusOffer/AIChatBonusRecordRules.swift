@@ -44,8 +44,6 @@ enum AIChatBonusRecordUpdate: Equatable {
 
     /// Why a message was ignored
     enum IgnoreReason: String, Equatable {
-        /// A claim while a campaign is stored: it was already claimed, or has ended.
-        case campaignAlreadyStored
         /// A redeem outcome or an end with no Bonus ID stored.
         case noBonusId
         /// A redeem outcome for a Bonus ID other than the stored one.
@@ -65,8 +63,8 @@ enum AIChatBonusRecordRules {
     /// `/redeem` with the Bonus ID. The record is stored first so a crash during `/redeem` leaves an ID
     /// Duck.ai can submit again. Until the outcome arrives the boost is pending: no terms yet.
     ///
-    /// Does nothing while a campaign is stored, whether the boost is pending, active or ended: the
-    /// claim was already made, and an ended campaign can't be claimed again on this install.
+    /// Keeps the stored record while a campaign is stored, whether the boost is pending, active or ended:
+    /// the claim was already made, and an ended campaign can't be claimed again on this install.
     ///
     /// The new record carries over `dismissed`, so a user who dismissed the offer earlier still
     /// doesn't see the mini promo.
@@ -75,22 +73,20 @@ enum AIChatBonusRecordRules {
     ///   - record: The stored record, or `nil` when the device has none (first claim).
     ///   - campaignName: The campaign being claimed, from Duck.ai.
     ///   - bonusId: The freshly minted Bonus ID.
-    /// - Returns: The new record to write, or `.ignore(.campaignAlreadyStored)`.
+    /// - Returns: The record to return to Duck.ai: the stored one when a campaign is already there, otherwise a new one.
     static func claim(
         _ record: AIChatBonusRecord?,
         campaignName: String,
         bonusId: String
-    ) -> AIChatBonusRecordUpdate {
+    ) -> AIChatBonusRecord {
         // Do not mint a bonus id again if already minted
-        guard record?.campaignName == nil else { return .ignore(.campaignAlreadyStored) }
+        if let record, record.campaignName != nil { return record }
 
         // We don't set `lastRedeemAttemptAt`is only set on redeem.
-        return .write(
-            AIChatBonusRecord(
-                campaignName: campaignName,
-                bonusId: bonusId,
-                dismissed: record?.dismissed ?? false
-            )
+        return AIChatBonusRecord(
+            campaignName: campaignName,
+            bonusId: bonusId,
+            dismissed: record?.dismissed ?? false
         )
     }
 

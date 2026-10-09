@@ -37,7 +37,7 @@ struct AIChatBonusRecordRulesTests {
         let result = AIChatBonusRecordRules.claim(nil, campaignName: campaignName, bonusId: bonusId)
 
         // THEN
-        #expect(result == .write(AIChatBonusRecord(campaignName: campaignName, bonusId: bonusId)))
+        #expect(result == AIChatBonusRecord(campaignName: campaignName, bonusId: bonusId))
     }
 
     @Test("Check a claim after a dismiss mints and keeps dismissed")
@@ -55,20 +55,20 @@ struct AIChatBonusRecordRulesTests {
         let result = AIChatBonusRecordRules.claim(record, campaignName: campaignName, bonusId: bonusId)
 
         // THEN
-        #expect(result == .write(expectedRecord))
+        #expect(result == expectedRecord)
     }
 
-    @Test("Check a claim with a campaign stored changes nothing", arguments: [
+    @Test("Check a claim with a campaign stored keeps the stored record", arguments: [
         AIChatBonusRecordMock.pending,
         AIChatBonusRecordMock.active,
         AIChatBonusRecordMock.ended
     ])
-    func claimWithACampaignStoredIsIgnored(_ record: AIChatBonusRecord) {
+    func claimWithACampaignStoredKeepsTheRecord(_ record: AIChatBonusRecord) {
         // WHEN
         let result = AIChatBonusRecordRules.claim(record, campaignName: "other", bonusId: AIChatBonusRecordMock.otherBonusId)
 
         // THEN
-        #expect(result == .ignore(.campaignAlreadyStored))
+        #expect(result == record)
     }
 
     // MARK: - Redeem outcome

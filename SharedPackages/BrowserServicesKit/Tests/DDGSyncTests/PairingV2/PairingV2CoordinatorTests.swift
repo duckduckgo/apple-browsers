@@ -2008,29 +2008,47 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
     }
 
-    func testWhenV21ThirdPartyUpgradeFailsThenReportsScopeRejectedBeforeFailing() async throws {
-        let setup = try await makeNativeJoinerReadyForThirdPartyUpgrade(
-            upgradeError: ThirdPartyAccountUpgradeError.noUsableThirdPartyProtectedKeys,
-            advertisedVersion: .v2Point1,
-            peerVersion: .v2Point1
-        )
+    func testWhenV21ThirdPartyUpgradeFailsThenReportsExpectedReasonBeforeFailing() async throws {
+        let cases: [(error: Error, pairingError: PairingV2Error, reason: PairingV2RecoveryCodeDoneReason)] = [
+            (ThirdPartyAccountUpgradeError.invalidRecoveryCode, .upgradeFailed, .scopeRejected),
+            (ThirdPartyAccountUpgradeError.noUsableThirdPartyProtectedKeys, .missingThirdPartyKey, .loginFailed),
+            (ThirdPartyAccountUpgradeError.nativeCredentialCreationRequestFailed, .upgradeFailed, .loginFailed),
+            (ThirdPartyAccountUpgradeError.invalidCredentials, .invalidCredentials, .loginFailed),
+            (ThirdPartyAccountUpgradeError.finalNativeLoginFailed, .loginFailed, .loginFailed),
+            (ThirdPartyAccountUpgradeError.localStorageFailed, .localStorageFailed, .loginFailed),
+            (PairingV2Error.upgradeFailed, .upgradeFailed, .loginFailed),
+            (NSError(domain: "Test", code: 1), .upgradeFailed, .loginFailed)
+        ]
 
-        do {
-            try await setup.coordinator.pollOnce()
-            XCTFail("Expected missing third-party key to abort pairing")
-        } catch PairingV2Error.missingThirdPartyKey {
-        } catch {
-            XCTFail("Unexpected error: \(error)")
+        for testCase in cases {
+            let setup = try await makeNativeJoinerReadyForThirdPartyUpgrade(
+                upgradeError: testCase.error,
+                advertisedVersion: .v2Point1,
+                peerVersion: .v2Point1
+            )
+
+            do {
+                try await setup.coordinator.pollOnce()
+                XCTFail("Expected \(testCase.error) to abort pairing")
+            } catch let error as PairingV2Error {
+                XCTAssertEqual(error, testCase.pairingError)
+            } catch {
+                XCTFail("Unexpected error: \(error)")
+            }
+
+            XCTAssertEqual(
+                try decryptSentMessage(at: 2,
+                                       from: setup.messageExchanger,
+                                       peerPrivateKey: setup.peerKeyPair.privateKey,
+                                       messageCrypto: setup.messageCrypto),
+                .recoveryCodeDone(.init(reason: testCase.reason)),
+                "Incorrect report for \(testCase.error)"
+            )
+            XCTAssertEqual(try recoveryCodeDoneCount(in: setup.messageExchanger,
+                                                     peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                     messageCrypto: setup.messageCrypto), 1)
+            XCTAssertEqual(setup.coordinator.state, .failed(testCase.pairingError))
         }
-
-        XCTAssertEqual(
-            try decryptSentMessage(at: 2,
-                                   from: setup.messageExchanger,
-                                   peerPrivateKey: setup.peerKeyPair.privateKey,
-                                   messageCrypto: setup.messageCrypto),
-            .recoveryCodeDone(.init(reason: .scopeRejected))
-        )
-        XCTAssertEqual(setup.coordinator.state, .failed(.missingThirdPartyKey))
     }
 
     func testWhenNativeJoinerConfirmationIsDeniedThenDoesNotLoginIfRecoveryCodeArrives() async throws {

@@ -37,7 +37,12 @@ final class PairingV2MessageExchangerTests: XCTestCase {
     }
 
     func testWhenFetchMessagesReceives404ThenClassifiesUnavailable() async throws {
-        api.request = makeRequest(statusCode: 404)
+        let request = SequencedHTTPRequestingMock(results: [
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 404)),
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 404)),
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 404))
+        ])
+        api.request = request
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
@@ -46,6 +51,38 @@ final class PairingV2MessageExchangerTests: XCTestCase {
 
         XCTAssertEqual(error?.kind, .unavailable)
         XCTAssertEqual(error?.underlyingError as? PairingV2Error, .relayChannelUnavailable)
+        XCTAssertEqual(request.executeCallCount, 3)
+    }
+
+    func testWhenInitialFetchMessagesReceives404ThenRetriesAndSucceeds() async throws {
+        let request = SequencedHTTPRequestingMock(results: [
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 404)),
+            .init(data: Data("{\"messages\":[]}".utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.request = request
+        let exchanger = makeExchanger()
+
+        let messages = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
+
+        XCTAssertTrue(messages.isEmpty)
+        XCTAssertEqual(request.executeCallCount, 2)
+    }
+
+    func testWhenFetchMessagesReceives404AfterSuccessfulEmptyPollThenDoesNotRetry() async throws {
+        let request = SequencedHTTPRequestingMock(results: [
+            .init(data: Data("{\"messages\":[]}".utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 404))
+        ])
+        api.request = request
+        let exchanger = makeExchanger()
+
+        _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
+        let error = await relayRequestError {
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
+        }
+
+        XCTAssertEqual(error?.kind, .unavailable)
+        XCTAssertEqual(request.executeCallCount, 2)
     }
 
     func testWhenFetchMessagesReceives410ThenClassifiesExpired() async throws {
@@ -219,7 +256,10 @@ final class PairingV2MessageExchangerTests: XCTestCase {
     }
 
     private func makeExchanger() -> PairingV2MessageExchanger {
-        PairingV2MessageExchanger(endpoints: endpoints, api: api, firstMessagePostChannelUnavailableRetryDelays: [0, 0])
+        PairingV2MessageExchanger(endpoints: endpoints,
+                                  api: api,
+                                  firstMessagePostChannelUnavailableRetryDelays: [0, 0],
+                                  initialMessageGetChannelUnavailableRetryDelays: [0, 0])
     }
 
     private func makeRequest(statusCode: Int, body: String? = nil) -> HTTPRequestingMock {

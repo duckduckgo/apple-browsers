@@ -175,6 +175,9 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Del favoritter på tværs af enheder";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Tjek din anden enhed.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup er end-to-end-krypteret på alle dine enheder.";
 
@@ -275,7 +278,7 @@
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-appen";
 
 /* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Forbinder...";
+"sync.simplified.scan-or-view-code.connecting.status" = "Forbinder ...";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vend tilbage til denne enhed, når du har indsat koden.";
@@ -357,4 +360,3 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Du bruger Sync Development-miljøet";
-

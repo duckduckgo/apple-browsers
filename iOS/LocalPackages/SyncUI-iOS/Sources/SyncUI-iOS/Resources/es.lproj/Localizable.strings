@@ -175,6 +175,9 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Comparte tus favoritos en todos los dispositivos";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Comprueba tu otro dispositivo.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup está cifrado de extremo a extremo en todos tus dispositivos.";
 
@@ -357,4 +360,3 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Estás utilizando el entorno de sincronización de desarrollo.";
-

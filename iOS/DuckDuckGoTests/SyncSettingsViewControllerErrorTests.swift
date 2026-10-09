@@ -561,6 +561,48 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPairingV21StartsWaitingForJoinStatusThenPreservesRecoveryPhase() {
+        vc.viewModel.connectingSheetPhase = .connecting(isRecovery: true)
+
+        vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: true))
+    }
+
+    @MainActor
+    func testWhenPairingV21CompletesAfterDeviceListUpdateThenShowsSuccess() {
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        let devices = [
+            SyncSettingsViewModel.Device(id: "host", name: "Host", type: "phone", isThisDevice: true),
+            SyncSettingsViewModel.Device(id: "joiner", name: "Joiner", type: "phone", isThisDevice: false)
+        ]
+        vc.viewModel.devices = devices
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.devices, devices)
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+
+        vc.viewModel.connectingAnimationDidFinish()
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .success(isRecovery: false))
+    }
+
+    @MainActor
+    func testWhenJoinerWaitsThenReceivesCodeThenReturnsToConnecting() {
+        for isRecovery in [false, true] {
+            vc.codeCollectionIntent = isRecovery ? .recoverData : .syncAnotherDevice
+            vc.viewModel.connectingSheetPhase = .connecting(isRecovery: isRecovery)
+            vc.controllerDidUpdatePairingV2JoinStatus(.unknown)
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .waitingForOtherDevice)
+
+            vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: isRecovery))
+        }
+    }
+
+    @MainActor
     func testWhenControllerDidCreateSyncAccountWithoutShowingSyncEnabledThenDoesNotPresentCompletionUI() {
         let spyVC = SpySyncSettingsViewController(
             syncService: ddgSyncing,

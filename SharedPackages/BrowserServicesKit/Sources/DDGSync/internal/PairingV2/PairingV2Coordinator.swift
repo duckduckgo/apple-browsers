@@ -527,15 +527,15 @@ final class PairingV2Coordinator {
                 try await upgradeThirdPartyAccount(with: recoveryCode)
             } catch let error as ThirdPartyAccountUpgradeError {
                 let pairingError = pairingV2AccountUpgradeError(for: error)
-                await reportJoinStatus(.scopeRejected)
+                await reportJoinStatus(error == .invalidRecoveryCode ? .scopeRejected : .loginFailed)
                 try await execute(stateMachine.handle(.failed(pairingError)))
                 throw pairingError
             } catch let error as PairingV2Error {
-                await reportJoinStatus(.scopeRejected)
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(error)))
                 throw error
             } catch {
-                await reportJoinStatus(.scopeRejected)
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.upgradeFailed)))
                 throw PairingV2Error.upgradeFailed
             }

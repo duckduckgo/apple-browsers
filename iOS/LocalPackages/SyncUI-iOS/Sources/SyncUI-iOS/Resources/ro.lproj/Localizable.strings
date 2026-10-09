@@ -175,6 +175,9 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Distribuie favoritele pe toate dispozitivele";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Verifică-ți celălalt dispozitiv.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup este criptat de la un capăt la altul pe toate dispozitivele tale.";
 
@@ -275,7 +278,7 @@
 "sync.simplified.scan-or-view-code.app.name" = "Aplicația DuckDuckGo";
 
 /* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Se conectează...";
+"sync.simplified.scan-or-view-code.connecting.status" = "Se conectează…";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Revino la acest dispozitiv după ce lipești codul.";
@@ -357,4 +360,3 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Utilizează mediul de dezvoltare a sincronizării";
-

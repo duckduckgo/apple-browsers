@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
 @_spi(Testing) import PixelKit
 import PrivacyStats
@@ -62,7 +63,7 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         XCTAssertEqual(call.frequency, .dailyAndCount)
     }
 
-    func testWhenStoreCannotBeRecreatedThenUnavailablePrivacyStatsIsReturnedAndBothAttemptsFirePixel() throws {
+    func testWhenStoreFolderCannotBeCreatedThenUnavailablePrivacyStatsIsReturnedWithoutRetrying() throws {
         // A regular file in the store's path means the store directory can never be created.
         let blockingFile = location.appendingPathComponent("blocker")
         try Data().write(to: blockingFile)
@@ -70,8 +71,38 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         let privacyStats = PrivacyStatsDatabase.makePrivacyStats(location: blockingFile.appendingPathComponent("store"), pixelFiring: pixelKit)
 
         XCTAssertTrue(privacyStats is UnavailablePrivacyStats)
-        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["stage": "initial"], ["stage": "retry"]])
-        XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["stage": "initial"]])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount])
+    }
+
+    func testWhenStoreCannotBeOpenedThenItIsKeptAndUnavailablePrivacyStatsIsReturned() throws {
+        // An unreadable store stands in for one that is temporarily inaccessible, e.g. before first unlock.
+        let store = location.appendingPathComponent("PrivacyStats.sqlite")
+        try Data(repeating: 0xAB, count: 4096).write(to: store)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: store.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: store.path) }
+
+        let privacyStats = PrivacyStatsDatabase.makePrivacyStats(location: location, pixelFiring: pixelKit)
+
+        XCTAssertTrue(privacyStats is UnavailablePrivacyStats)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: store.path))
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["stage": "initial"]])
+    }
+
+    func testOnlyCorruptOrIncompatibleStoresCountAsCorrupt() {
+        func coreDataError(code: Int, sqliteCode: Int? = nil) -> NSError {
+            NSError(domain: NSCocoaErrorDomain, code: code, userInfo: sqliteCode.map { ["NSSQLiteErrorDomain": $0] } ?? [:])
+        }
+
+        XCTAssertTrue(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSFileReadCorruptFileError, sqliteCode: 26)))
+        XCTAssertTrue(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSFileReadCorruptFileError, sqliteCode: 11)))
+        XCTAssertTrue(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSFileReadCorruptFileError)))
+        XCTAssertTrue(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSPersistentStoreIncompatibleVersionHashError)))
+
+        XCTAssertFalse(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSMigrationError, sqliteCode: 13)), "disk full")
+        XCTAssertFalse(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSFileReadUnknownError, sqliteCode: 14)), "cannot open")
+        XCTAssertFalse(PrivacyStatsDatabase.isCorrupt(coreDataError(code: NSFileReadNoPermissionError)))
+        XCTAssertFalse(PrivacyStatsDatabase.isCorrupt(NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES))))
     }
 
     private func assertStoreIsUsable(_ privacyStats: PrivacyStatsProviding) async throws {

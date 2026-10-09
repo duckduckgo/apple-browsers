@@ -36,8 +36,9 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     private let pixelFiring: PixelFiring?
 
     /// `PrivacyStats` waits in `CoreDataDatabase.makeContext` until the store has loaded, so it must only be
-    /// created once the store is open; otherwise app launch hangs. Stats are rebuildable, so a store that cannot
-    /// be opened is deleted and recreated. If that fails too, Privacy Stats is unavailable for this session.
+    /// created once the store is open; otherwise app launch hangs. Stats are rebuildable, so a corrupt store is
+    /// deleted and recreated. Any other failure, or a failed recreate, makes Privacy Stats unavailable for this
+    /// session and keeps the store for the next launch.
     static func makePrivacyStats(location: URL = PrivacyStatsDatabase.defaultLocation,
                                  pixelFiring: PixelFiring? = PixelKit.shared) -> PrivacyStatsProviding {
         let database = PrivacyStatsDatabase(location: location, pixelFiring: pixelFiring)
@@ -59,8 +60,15 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     private func prepareStore() -> Bool {
         guard let error = loadStore() else { return true }
 
-        Logger.general.error("Could not load Privacy Stats database, recreating it: \(error.localizedDescription, privacy: .public)")
         pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, stage: .initial), frequency: .dailyAndCount)
+        // Disk full, protected data unavailable before first unlock or no permission are usually temporary,
+        // so the user's stats are kept for the next launch.
+        guard Self.isCorrupt(error) else {
+            Logger.general.error("Could not load Privacy Stats database: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+
+        Logger.general.error("Privacy Stats database is corrupt, recreating it: \(error.localizedDescription, privacy: .public)")
         deleteStoreFiles()
 
         guard let retryError = loadStore() else { return true }
@@ -79,6 +87,23 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
         }
         semaphore.wait()
         return loadError
+    }
+
+    /// Whether the store can never load as it is: the file is not a valid database, or it is from a model this
+    /// version cannot migrate. The SQLite result code wins when there is one, so a migration that failed because
+    /// the disk is full does not count.
+    static func isCorrupt(_ error: Error) -> Bool {
+        let error = error as NSError
+        guard error.domain == NSCocoaErrorDomain else { return false }
+        if let sqliteCode = error.userInfo[NSSQLiteErrorDomain] as? Int {
+            return sqliteCode == 11 || sqliteCode == 26 // SQLITE_CORRUPT, SQLITE_NOTADB
+        }
+        return [NSFileReadCorruptFileError,
+                NSPersistentStoreIncompatibleVersionHashError,
+                NSPersistentStoreIncompatibleSchemaError,
+                NSMigrationError,
+                NSMigrationMissingSourceModelError,
+                NSMigrationMissingMappingModelError].contains(error.code)
     }
 
     private func deleteStoreFiles() {

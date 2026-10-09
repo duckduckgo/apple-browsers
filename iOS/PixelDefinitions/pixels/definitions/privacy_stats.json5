@@ -1,6 +1,6 @@
 {
     "privacy-stats_database_load_failed": {
-        "description": "Fired when the Privacy Stats Core Data store fails to load at launch. With stage=initial the store is then deleted and recreated; with stage=retry recreating it also failed and Privacy Stats is disabled for the session",
+        "description": "Fired when the Privacy Stats Core Data store fails to load at launch. With stage=initial, a corrupt store is then deleted and recreated; any other error (e.g. disk full, protected data unavailable, no permission) keeps the store and disables Privacy Stats for the session. With stage=retry, recreating a corrupt store also failed and Privacy Stats is disabled for the session",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

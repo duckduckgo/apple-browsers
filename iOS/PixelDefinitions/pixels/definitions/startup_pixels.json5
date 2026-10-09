@@ -150,11 +150,6 @@
                     "ui-attached",
                     "terminating"
                 ]
-            },
-            {
-                "key": "app_state",
-                "description": "UIApplication state when the previous launch reached that step. background means a background launch without a scene",
-                "enum": ["active", "inactive", "background", "unknown"]
             }
         ]
     },

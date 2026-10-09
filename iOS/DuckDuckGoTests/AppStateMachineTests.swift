@@ -171,7 +171,7 @@ extension LaunchBreadcrumb {
 
     /// Keeps state machine tests out of the test host's `UserDefaults.standard` and away from real pixels.
     static var testing: LaunchBreadcrumb {
-        LaunchBreadcrumb(store: UserDefaults(suiteName: "AppStateMachineTests")!, applicationState: { .inactive }, pixelFiring: { nil })
+        LaunchBreadcrumb(store: UserDefaults(suiteName: "AppStateMachineTests")!, pixelFiring: { nil })
     }
 
 }
@@ -536,7 +536,7 @@ final class LaunchBreadcrumbTests {
     let pixelKit = PixelKitMock()
     let initializing = MockInitializing()
     lazy var store = UserDefaults(suiteName: suiteName)!
-    lazy var launchBreadcrumb = LaunchBreadcrumb(store: store, applicationState: { .inactive }, pixelFiring: { [pixelKit] in pixelKit })
+    lazy var launchBreadcrumb = LaunchBreadcrumb(store: store, pixelFiring: { [pixelKit] in pixelKit })
     lazy var stateMachine = AppStateMachine(initialState: .initializing(initializing),
                                             terminatingStateFactory: MockTerminatingStateFactory(),
                                             launchBreadcrumb: launchBreadcrumb)
@@ -549,9 +549,9 @@ final class LaunchBreadcrumbTests {
     @Test("A launch that reaches Foreground leaves no breadcrumb and fires nothing", .timeLimit(.minutes(1)))
     func completedLaunchClearsBreadcrumb() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(launchBreadcrumb.current == ["step": "launched", "app_state": "inactive"])
+        #expect(launchBreadcrumb.current == ["step": "launched"])
         stateMachine.handle(.willConnectToWindow(window: UIWindow()))
-        #expect(launchBreadcrumb.current == ["step": "ui-attached", "app_state": "inactive"])
+        #expect(launchBreadcrumb.current == ["step": "ui-attached"])
         stateMachine.handle(.didBecomeActive)
 
         #expect(launchBreadcrumb.current == nil)
@@ -571,7 +571,7 @@ final class LaunchBreadcrumbTests {
     @available(iOS 16, macOS 13, *)
     @Test("Starting a launch keeps the previous launch's breadcrumb for reporting", .timeLimit(.minutes(1)))
     func startingLaunchKeepsPreviousBreadcrumb() {
-        let previous = ["step": "persistent-stores", "app_state": "inactive"]
+        let previous = ["step": "persistent-stores"]
         store.set(previous, forKey: LaunchBreadcrumb.key)
 
         stateMachine.handle(.didFinishLaunching(isTesting: false))
@@ -583,7 +583,7 @@ final class LaunchBreadcrumbTests {
     @available(iOS 16, macOS 13, *)
     @Test("A launch that terminates is marked as terminating and keeps the previous breadcrumb", .timeLimit(.minutes(1)))
     func terminatingLaunch() {
-        let previous = ["step": "launched", "app_state": "background"]
+        let previous = ["step": "launched"]
         store.set(previous, forKey: LaunchBreadcrumb.key)
         initializing.shouldThrowOnLaunching = true
 
@@ -603,7 +603,7 @@ final class LaunchBreadcrumbTests {
             launchBreadcrumb.mark(.persistentStores)
         }
 
-        let crashed = ["step": "persistent-stores", "app_state": "inactive"]
+        let crashed = ["step": "persistent-stores"]
         #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [crashed, crashed])
         #expect(pixelKit.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
         #expect(launchBreadcrumb.pendingReport == nil)

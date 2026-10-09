@@ -375,14 +375,11 @@ struct LaunchBreadcrumb {
     static let pendingReportKey = "com.duckduckgo.app-lifecycle.launch-breadcrumb.pending-report"
 
     private let store: UserDefaults
-    private let applicationState: @MainActor () -> UIApplication.State
     private let pixelFiring: () -> (any PixelKitFiring)?
 
     init(store: UserDefaults = .standard,
-         applicationState: @escaping @MainActor () -> UIApplication.State = { UIApplication.shared.applicationState },
          pixelFiring: @escaping () -> (any PixelKitFiring)? = { PixelKit.shared }) {
         self.store = store
-        self.applicationState = applicationState
         self.pixelFiring = pixelFiring
     }
 
@@ -396,7 +393,6 @@ struct LaunchBreadcrumb {
 
     /// Starts a new launch. A breadcrumb left by the previous launch is kept for `reportIncompleteLaunch()`, so it
     /// survives even if this launch hangs or crashes before reporting it.
-    @MainActor
     func startLaunch() {
         if let current {
             store.set(current, forKey: Self.pendingReportKey)
@@ -404,9 +400,8 @@ struct LaunchBreadcrumb {
         mark(.launchingStarted)
     }
 
-    @MainActor
     func mark(_ step: Step) {
-        store.set(["step": step.rawValue, "app_state": applicationState().stringValue], forKey: Self.key)
+        store.set(["step": step.rawValue], forKey: Self.key)
     }
 
     func clear() {

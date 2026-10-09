@@ -227,7 +227,7 @@ enum CriticalAlertPixel: PixelKit.Event {
 
 }
 
-extension UIApplication.State {
+private extension UIApplication.State {
 
     var stringValue: String {
         switch self {

@@ -504,7 +504,6 @@ final class SceneLifecycleInstrumentationTests {
 
 }
 
-@available(iOS 16, macOS 13, *)
 @MainActor
 @Suite("Launch breadcrumb", .serialized)
 final class LaunchBreadcrumbTests {
@@ -525,6 +524,7 @@ final class LaunchBreadcrumbTests {
         UserDefaults().removePersistentDomain(forName: suiteName)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A launch that reaches Foreground leaves no breadcrumb and fires nothing", .timeLimit(.minutes(1)))
     func completedLaunchClearsBreadcrumb() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
@@ -537,6 +537,7 @@ final class LaunchBreadcrumbTests {
         #expect(pixelKit.actualFireCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A launch that reaches Background leaves no breadcrumb", .timeLimit(.minutes(1)))
     func backgroundLaunchClearsBreadcrumb() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
@@ -546,6 +547,7 @@ final class LaunchBreadcrumbTests {
         #expect(LaunchBreadcrumb.current == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A breadcrumb left by the previous launch is reported on the next launch", .timeLimit(.minutes(1)))
     func incompleteLaunchIsReported() {
         let previous = ["step": "persistent-stores", "app_state": "inactive"]
@@ -558,6 +560,7 @@ final class LaunchBreadcrumbTests {
         #expect(LaunchBreadcrumb.current?["step"] == "launched")
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A launch that terminates is reported as terminating, and still reports the previous launch", .timeLimit(.minutes(1)))
     func terminatingLaunch() {
         let previous = ["step": "launched", "app_state": "background"]
@@ -572,17 +575,17 @@ final class LaunchBreadcrumbTests {
 
 }
 
-@available(iOS 16, macOS 13, *)
 @MainActor
 @Suite("Critical alert pixel")
 final class CriticalAlertPixelTests {
 
     let pixelKit = PixelKitMock()
 
+    @available(iOS 16, macOS 13, *)
     @Test("Showing the alert for a full disk fires the pixel with the disk space reason", .timeLimit(.minutes(1)))
     func diskFullAlertFiresPixel() {
         let diskFull = NSError(domain: NSCocoaErrorDomain, code: 1,
-                               userInfo: [NSUnderlyingErrorKey: NSError(domain: NSSQLiteErrorDomain, code: 13)])
+                               userInfo: [NSUnderlyingErrorKey: NSError(domain: "NSSQLiteErrorDomain", code: 13)])
 
         Terminating(error: TerminationError.historyDatabase(diskFull), pixelFiring: pixelKit).alertAndTerminate(window: UIWindow())
 
@@ -590,6 +593,7 @@ final class CriticalAlertPixelTests {
                                                               frequency: .dailyAndCount)])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Showing the alert for other errors fires the pixel with the unrecoverable state reason", .timeLimit(.minutes(1)))
     func unrecoverableStateAlertFiresPixel() {
         let error = NSError(domain: NSCocoaErrorDomain, code: 1)

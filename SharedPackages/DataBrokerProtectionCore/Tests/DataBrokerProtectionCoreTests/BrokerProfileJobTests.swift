@@ -195,47 +195,6 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(database.optOutEvents.isEmpty)
     }
 
-    func testWhenSigningKeyIsRevoked_thenNoScansOrOptOutsRun() async {
-        let delegate = MockBrokerProfileJobStatusReportingDelegate()
-        let database = MockDatabase()
-        let privacyConfig = PrivacyConfigurationManagingMock()
-        privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
-        let mockDependencies = MockBrokerProfileJobDependencies()
-        mockDependencies.database = database
-        mockDependencies.privacyConfig = privacyConfig
-        mockDependencies.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "BrokerProfileJobTests.\(UUID().uuidString)")!)
-
-        let brokerId: Int64 = 1
-        database.brokerProfileQueryDataToReturn = [
-            makeBrokerProfileQueryData(
-                brokerId: brokerId,
-                profileQueryId: 1,
-                dataBroker: makeSubscriptionRequiredBroker(id: brokerId),
-                scanJobData: .mock(withBrokerId: brokerId)
-            )
-        ]
-
-        let job = BrokerProfileJob(dataBrokerID: brokerId,
-                                   jobType: .all,
-                                   showWebView: false,
-                                   statusReportingDelegate: delegate,
-                                   jobDependencies: mockDependencies)
-
-        let expectation = XCTestExpectation(description: "Job should finish")
-        job.completionBlock = {
-            expectation.fulfill()
-        }
-
-        job.start()
-        await fulfillment(of: [expectation], timeout: 15)
-
-        XCTAssertTrue(job.isFinished)
-        XCTAssertFalse(mockDependencies.mockScanRunner.wasScanCalled)
-        XCTAssertFalse(mockDependencies.mockOptOutRunner.wasOptOutCalled)
-        XCTAssertTrue(database.scanEvents.isEmpty)
-        XCTAssertTrue(database.optOutEvents.isEmpty)
-    }
-
     func testWhenOptOutDataIsPresent_ThenOptOutEventsAreCreated() async {
         let delegate = MockBrokerProfileJobStatusReportingDelegate()
         let database = MockDatabase()

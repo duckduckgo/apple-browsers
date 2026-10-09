@@ -27,7 +27,6 @@ public protocol EmailConfirmationJobDependencyProviding {
     var contentScopeProperties: ContentScopeProperties { get }
     var privacyConfig: PrivacyConfigurationManaging { get }
     var executionConfig: BrokerJobExecutionConfig { get }
-    var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
@@ -42,7 +41,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let contentScopeProperties: ContentScopeProperties
     public let privacyConfig: PrivacyConfigurationManaging
     public let executionConfig: BrokerJobExecutionConfig
-    public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
@@ -56,7 +54,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.contentScopeProperties = brokerDependencies.contentScopeProperties
         self.privacyConfig = brokerDependencies.privacyConfig
         self.executionConfig = brokerDependencies.executionConfig
-        self.dataBrokerProtectionSettings = brokerDependencies.dataBrokerProtectionSettings
         self.pixelHandler = brokerDependencies.pixelHandler
         self.emailConfirmationDataService = brokerDependencies.emailConfirmationDataService
         self.captchaService = brokerDependencies.captchaService
@@ -70,7 +67,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 contentScopeProperties: ContentScopeProperties,
                 privacyConfig: PrivacyConfigurationManaging,
                 executionConfig: BrokerJobExecutionConfig,
-                dataBrokerProtectionSettings: DataBrokerProtectionSettings,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
@@ -82,7 +78,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.contentScopeProperties = contentScopeProperties
         self.privacyConfig = privacyConfig
         self.executionConfig = executionConfig
-        self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
         self.pixelHandler = pixelHandler
         self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
@@ -90,11 +85,5 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.featureFlagger = featureFlagger
         self.wideEvent = wideEvent
         self.contentBlocking = contentBlocking
-    }
-}
-
-extension EmailConfirmationJobDependencyProviding {
-    var isPausedForRevokedSigningKey: Bool {
-        BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfig, settings: dataBrokerProtectionSettings).isAnyKeyRevoked
     }
 }

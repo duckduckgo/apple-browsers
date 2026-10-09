@@ -19,7 +19,6 @@
 
 import AuthenticationServices
 import SwiftUI
-import DesignResourcesKitIcons
 import BrowserServicesKit
 import Core
 import Common
@@ -99,9 +98,6 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         _ = Self.pixelKitSetup
-        // The extension has no FeatureFlagger to read `.appRebranding`, and the flag has shipped,
-        // so opt its visuals into the rebrand unconditionally. Revert this line to restore flag-gating.
-        AppRebrand.isAppRebranded = { true }
     }
 
     override func prepareCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier]) {

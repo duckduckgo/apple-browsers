@@ -121,9 +121,17 @@ final class KeyboardPresenter: KeyboardPresenting {
     func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil, hasCompletedAuthentication: Bool = true, isAfterIdleReturn: Bool = false) {
         let onAppLaunch = onAppLaunch()
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-            guard onAppLaunch, NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate) else { return }
+            guard !hasForegroundEnded, onAppLaunch,
+                  NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate) else { return }
+            let requestID = mainViewController.appOpenKeyboardRequestID
             pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
-            schedule { [self] in mainViewController.enterSearchOnAppOpen() }
+            mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+                guard isCurrentForeground(requestID) else { return }
+                schedule { [self] in
+                    guard isCurrentForeground(requestID) else { return }
+                    mainViewController.enterSearchOnAppOpen()
+                }
+            }
             return
         }
         let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate,
@@ -207,9 +215,12 @@ final class KeyboardPresenter: KeyboardPresenting {
     }
 
     private func isCurrentRequest(_ requestID: UUID) -> Bool {
-        !hasForegroundEnded
-            && mainViewController.appOpenKeyboardRequestID == requestID
+        isCurrentForeground(requestID)
             && featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+    }
+
+    private func isCurrentForeground(_ requestID: UUID) -> Bool {
+        !hasForegroundEnded && mainViewController.appOpenKeyboardRequestID == requestID
     }
 
 }

@@ -315,9 +315,15 @@ class MainViewController: UIViewController {
     /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
     /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
     private var isAttachingNewTabPageAfterFire = false
-    /// The selected New Tab page is installed while the tab switcher still covers it.
-    /// Start its analytics visit after the switcher finishes dismissing.
-    private var pendingNewTabPageVisitStart: NewTabPageSessionWideEventData.Trigger?
+    private var newTabPageReturnTimeAwayMs: Int?
+    private var hasNotedNewTabPageReturn = false
+    private var isAfterIdlePresentationPending = false
+    private lazy var newTabPagePresentation = NewTabPagePresentationCoordinator { [weak self] in
+        guard let self else { return false }
+        return isAppOpenKeyboardWindowVisible && isNewTabPageVisible
+            && presentedViewController == nil
+            && (!isAfterIdlePresentationPending || hasNotedNewTabPageReturn)
+    }
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
@@ -1089,6 +1095,7 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        recordPendingNewTabPagePresentationIfVisible()
         remoteMessageImpressionReporter.browserDidAppear()
 
         loadFindInPage()
@@ -1839,9 +1846,13 @@ class MainViewController: UIViewController {
 
     @objc private func onAppDidEnterBackground() {
         cancelPendingAppOpenKeyboard()
-        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+        if newTabPagePresentation.hasPresentedPage, let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        newTabPagePresentation.backgrounded()
+        isAttachingNewTabPageAfterFire = false
+        hasNotedNewTabPageReturn = false
+        newTabPageReturnTimeAwayMs = nil
         postIdleSessionInstrumentation.sessionCancelledByBackground()
         duckAISessionInstrumentation.sessionCancelledByBackground()
         recordNewTabPageSessionVPNChangeIfNeeded()
@@ -2373,6 +2384,7 @@ class MainViewController: UIViewController {
     private func restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: Bool) {
         guard wasInFocusMode, isAppOpenKeyboardWindowVisible, presentedViewController == nil else { return }
         if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
+            recordPendingNewTabPagePresentationIfVisible()
             coordinator.activateInput()
             if isNewTabPageVisible, isInputFocused {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
@@ -2395,13 +2407,18 @@ class MainViewController: UIViewController {
 
     /// Adds the after-idle treatment to an already-open New Tab page without rebuilding it or changing input focus.
     func showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
-        // Same visibility rule as `attachHomeScreen`: no hatch, or its pixels, behind another screen.
+        // Prepare behind App Lock, but do not replace a screen left over the New Tab Page.
         guard presentedViewController == nil || presentedViewController?.isBeingDismissed == true,
               let page = newTabPageViewController,
-              let currentTab = tabManager.currentTabsModel.currentTab,
-              let hatch = escapeHatchModelBuilder.makeAfterIdleHatchForKeptNewTabPage(router: self) else {
+              let currentTab = tabManager.currentTabsModel.currentTab else {
             return false
         }
+        noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        if isAfterIdlePresentationPending {
+            recordPendingNewTabPagePresentationIfVisible()
+            return true
+        }
+        guard let hatch = escapeHatchModelBuilder.makeAfterIdleHatchForKeptNewTabPage(router: self) else { return false }
 
         currentTab.openedAfterIdle = true
         if homePageConfiguration.mode == .coordinated {
@@ -2410,9 +2427,35 @@ class MainViewController: UIViewController {
         page.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
         configureUnifiedInputEscapeHatch(hatch)
-        postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: isInputFocused)
+        isAfterIdlePresentationPending = true
+        newTabPagePresentation.schedule(for: page, shown: { [weak self, weak currentTab] in
+            guard let self, currentTab === tabManager.currentTabsModel.currentTab else { return }
+            fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: isInputFocused)
+        })
         return true
+    }
+
+    func noteNewTabPageReturn(timeAwayMs: Int?) {
+        newTabPageReturnTimeAwayMs = timeAwayMs
+        hasNotedNewTabPageReturn = true
+    }
+
+    /// A cancelled unlock can leave the prepared card on the page for the next return.
+    func resumePendingAfterIdlePresentation(timeAwayMs: Int?) -> Bool {
+        guard isAfterIdlePresentationPending else { return false }
+        noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        recordPendingNewTabPagePresentationIfVisible()
+        return true
+    }
+
+    func recordPendingNewTabPagePresentationIfVisible() {
+        newTabPagePresentation.recordIfVisible()
+    }
+
+    func scheduleNewTabPageForegroundVisit(for page: any NewTabPage) {
+        newTabPagePresentation.schedule(for: page, visit: { [weak self] in
+            self?.startNewTabPageSessionInstrumentation(trigger: .appOpen)
+        })
     }
 
     private var isChatPathCompletionPending: Bool {
@@ -2544,41 +2587,45 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
-        // It's possible for this to be called when in the background of the
-        //  switcher, and we only want to show the pixel when it's actually
-        // about to shown to the user.
-        pendingNewTabPageVisitStart = nil
-        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
-            // Consumed here rather than before the guard, so an attach that happens behind a
-            // presented controller and records nothing cannot swallow the burn's trigger. Moving on
-            // to an existing tab clears it instead, in `attachTab`.
-            let isAfterFire = isAttachingNewTabPageAfterFire
-            isAttachingNewTabPageAfterFire = false
-
-            fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: isInputFocused)
-
-            if startsNewTabPageSessionVisit {
-                startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : sessionTrigger)
-            }
-        } else {
-            // A pick in the tab switcher attaches the page before the switcher starts dismissing.
-            pendingNewTabPageVisitStart = startsNewTabPageSessionVisit && presentedViewController === tabSwitcherController
-                ? (isAttachingNewTabPageAfterFire ? .newTabOpenedAfterFire : sessionTrigger) : nil
-        }
-
-        beginEditingOnAttachedNewTabPageIfNeeded(willBeginEditing: willBeginEditing, openedAfterIdle: openedAfterIdle)
+        scheduleAttachedNewTabPagePresentation(for: controller, trigger: sessionTrigger,
+                                               startsVisit: startsNewTabPageSessionVisit,
+                                               openedAfterIdle: openedAfterIdle, hatch: hatch,
+                                               willBeginEditing: willBeginEditing)
 
         syncService.scheduler.requestSyncImmediately()
     }
 
-    private func beginEditingOnAttachedNewTabPageIfNeeded(willBeginEditing: Bool, openedAfterIdle: Bool) {
-        guard willBeginEditing else { return }
-        enterSearchAutomatically { [weak self] didFocus in
-            if openedAfterIdle && didFocus {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+    private func scheduleAttachedNewTabPagePresentation(for controller: any NewTabPage,
+                                                        trigger: NewTabPageSessionWideEventData.Trigger,
+                                                        startsVisit: Bool, openedAfterIdle: Bool,
+                                                        hatch: EscapeHatchModel?, willBeginEditing: Bool) {
+        let isAfterFire = isAttachingNewTabPageAfterFire
+        let requestID = appOpenKeyboardRequestID
+        let wasKeyboardFeatureEnabled = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+        let recordsShown = presentedViewController == nil || presentedViewController !== tabSwitcherController
+        isAfterIdlePresentationPending = recordsShown && openedAfterIdle
+        newTabPagePresentation.schedule(for: controller, visit: startsVisit ? { [weak self] in
+            guard let self else { return }
+            isAttachingNewTabPageAfterFire = false
+            startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : trigger)
+        } : nil, shown: recordsShown ? { [weak self] in
+            guard let self else { return }
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch, focused: isInputFocused)
+        } : nil, focus: willBeginEditing ? { [weak self] in
+            guard let self, appOpenKeyboardRequestID == requestID, KeyboardSettings().onNewTab,
+                  !isNewTabPageKeyboardBlockedByDialog else { return }
+            let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
+                if openedAfterIdle && didFocus {
+                    self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+                }
             }
-        }
+            if wasKeyboardFeatureEnabled {
+                showKeyboardIfAllowed(completion: focusCompleted)
+            } else {
+                enterSearchAutomatically(completion: focusCompleted)
+            }
+        } : nil)
     }
 
     private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {
@@ -2590,6 +2637,7 @@ class MainViewController: UIViewController {
     }
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?, focused: Bool) {
+        isAfterIdlePresentationPending = false
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
         // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
@@ -2598,6 +2646,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.escapeHatchShown()
         }
         if openedAfterIdle {
+            postIdleSessionInstrumentation.noteReturn(timeAwayMs: newTabPageReturnTimeAwayMs)
             postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
         }
     }
@@ -2607,8 +2656,6 @@ class MainViewController: UIViewController {
         // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
         // trip to the VPN screen it was taken for ended without coming back here.
         vpnConnectedWhenLeavingNewTabPage = nil
-        pendingNewTabPageVisitStart = nil
-
         newTabPageSessionInstrumentation.visitStarted(
             trigger: trigger,
             launchKeyboardMode: isInputFocused ? .up : .down,
@@ -2629,6 +2676,8 @@ class MainViewController: UIViewController {
 
     fileprivate func removeHomeScreen() {
         cancelPendingAppOpenKeyboard()
+        newTabPagePresentation.cancel()
+        isAfterIdlePresentationPending = false
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
         restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
@@ -2923,6 +2972,7 @@ class MainViewController: UIViewController {
 
     /// In-app landings call this directly: the post-idle session's `focused` value belongs to the app open.
     private func showKeyboardIfAllowed(completion: @escaping (Bool) -> Void) {
+        recordPendingNewTabPagePresentationIfVisible()
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         let requestID = appOpenKeyboardRequestID
         let tabID = tabManager.currentTabsModel.currentTab?.uid
@@ -2938,6 +2988,7 @@ class MainViewController: UIViewController {
                 completion(false)
                 return
             }
+            recordPendingNewTabPagePresentationIfVisible()
             if onNewTabPage, isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
             }
@@ -2990,11 +3041,13 @@ class MainViewController: UIViewController {
             completion(false)
             return
         }
+        recordPendingNewTabPagePresentationIfVisible()
         let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
             guard let self, didFocus, isRequestValid() else {
                 completion(false)
                 return
             }
+            recordPendingNewTabPagePresentationIfVisible()
             if isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
             }
@@ -3218,7 +3271,7 @@ class MainViewController: UIViewController {
         // The user moved on to an existing tab, so whatever New Tab Page they reach later is not the
         // page a burn landed them on.
         isAttachingNewTabPageAfterFire = false
-        pendingNewTabPageVisitStart = nil
+        newTabPagePresentation.cancel()
 
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
@@ -4143,8 +4196,8 @@ class MainViewController: UIViewController {
             // Backgrounding also replaces the request, so nothing starts for a return the user already left.
             guard let self, appOpenKeyboardRequestID == requestID else { return }
             // Foregrounding skipped this visit while another screen covered the page.
-            if isNewTabPageVisible, presentedViewController == nil {
-                startNewTabPageSessionInstrumentation(trigger: .appOpen)
+            if let page = newTabPageViewController, presentedViewController == nil {
+                scheduleNewTabPageForegroundVisit(for: page)
             }
             completion()
         }
@@ -7774,14 +7827,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) {
         remoteMessageImpressionReporter.scheduleCheck()
-        // Started before the keyboard below, which then upgrades the visit.
-        if let visit = pendingNewTabPageVisitStart, isNewTabPageVisible, presentedViewController == nil {
-            if visit == .newTabOpenedAfterFire {
-                isAttachingNewTabPageAfterFire = false
-            }
-            startNewTabPageSessionInstrumentation(trigger: visit)
-        }
-        pendingNewTabPageVisitStart = nil
+        recordPendingNewTabPagePresentationIfVisible()
         let pendingKeyboard = pendingTabSwitcherKeyboard
         pendingTabSwitcherKeyboard = nil
         if let pendingKeyboard,

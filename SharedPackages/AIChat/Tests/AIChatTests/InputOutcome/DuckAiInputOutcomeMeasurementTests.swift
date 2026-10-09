@@ -20,8 +20,6 @@ import Foundation
 import Testing
 @testable import AIChat
 
-@available(iOS 16, macOS 13, *)
-@Suite(.timeLimit(.minutes(1)))
 struct DuckAiInputOutcomeMeasurementTests {
 
     private let firing = RecordingDuckAiInputOutcomePixelFiring()
@@ -31,7 +29,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         sut = DuckAiInputOutcomeMeasurement(pixelFiring: firing)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenAPromptIsSentThenItIsReportedOnceWithItsMethod() {
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
 
@@ -44,7 +43,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         ])
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenTheInputClosesWithoutAnOutcomeThenItIsReportedAbandonedOnce() {
         sut.inputOpened(surface: .promptBar, isTermsOfServiceDisclaimerShown: false)
 
@@ -57,7 +57,8 @@ struct DuckAiInputOutcomeMeasurementTests {
     }
 
     /// Callers re-sync on every state change, so a second opening must not replace the open input's surface or disclaimer state.
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenTheInputIsOpenThenAnotherOpeningIsIgnored() {
         sut.inputOpened(surface: .duckAI, isTermsOfServiceDisclaimerShown: false)
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
@@ -69,7 +70,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         ])
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenTheDisclaimerRendersWhileOpenThenItIsReportedShown() {
         sut.inputOpened(surface: .contextualChat, isTermsOfServiceDisclaimerShown: false)
 
@@ -79,7 +81,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         #expect(firing.events.map(\.isTermsOfServiceDisclaimerShown) == [true])
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenNoInputIsOpenThenNothingIsReported() {
         sut.termsOfServiceDisclaimerBecameVisible()
         sut.record(.promptSubmitted(.button))
@@ -89,7 +92,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         #expect(firing.events.isEmpty)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenTheNextOpeningClosesThenItReportsItsOwnOutcome() {
         sut.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: true)
         sut.record(.promptSubmitted(.button))
@@ -101,7 +105,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         #expect(firing.events.map(\.outcome) == [.promptSubmitted(.button), .abandoned])
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenAPromptIsReportedThenTheParametersCarryTheSubmitMethod() {
         let event = DuckAiInputOutcomeEvent(surface: .contextualChat, isTermsOfServiceDisclaimerShown: true, outcome: .promptSubmitted(.other))
 
@@ -113,7 +118,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         ])
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenASuggestedPromptIsReportedThenTheParametersHaveNoSubmitMethod() {
         let event = DuckAiInputOutcomeEvent(surface: .contextualChat, isTermsOfServiceDisclaimerShown: true, outcome: .suggestedPrompt)
 
@@ -124,7 +130,8 @@ struct DuckAiInputOutcomeMeasurementTests {
         ])
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func whenTheInputIsAbandonedThenTheParametersHaveNoSubmitMethod() {
         let event = DuckAiInputOutcomeEvent(surface: .promptBar, isTermsOfServiceDisclaimerShown: false, outcome: .abandoned)
 

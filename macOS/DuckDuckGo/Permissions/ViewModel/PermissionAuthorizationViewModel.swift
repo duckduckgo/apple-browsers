@@ -173,19 +173,27 @@ final class PermissionAuthorizationViewModel: ObservableObject {
 
         let output = decision.output
         if !isResumingStoredDecision {
-            for permission in permissions {
-                pixelFiring?.fire(PermissionPixel.authorizationDecision(permissionType: permission, decision: output.granted ? .allow : .deny))
-            }
+            fireAuthorizationPixels { PermissionPixel.AuthorizationAction(decision: decision, permissionType: $0) }
         }
         query.handleDecision(grant: output.granted, remember: output.remember)
     }
 
     private func onDismiss() {
         withExtendedLifetime(query) {
+            // A site already set to Always allow made no new choice, so closing doesn't cancel one.
+            if query != nil, !isResumingStoredDecision {
+                fireAuthorizationPixels { _ in .cancel }
+            }
             stopObservingSystemPermission()
             query?.wasDismissed = true
             query?.cancel()
             finish()
+        }
+    }
+
+    private func fireAuthorizationPixels(_ action: (PermissionType) -> PermissionPixel.AuthorizationAction) {
+        for permission in permissions {
+            pixelFiring?.fire(PermissionPixel.authorizationAction(permissionType: permission, action: action(permission)))
         }
     }
 
@@ -226,9 +234,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     /// The request stays pending and is granted once macOS allows.
     private func saveAlwaysAllowWhileSystemPermissionIsBlocked() {
         guard pendingDecision == .alwaysAllow, !isResumingStoredDecision, let query else { return }
-        for permission in permissions {
-            pixelFiring?.fire(PermissionPixel.authorizationDecision(permissionType: permission, decision: .allow))
-        }
+        fireAuthorizationPixels { PermissionPixel.AuthorizationAction(decision: .alwaysAllow, permissionType: $0) }
         // The site is now set to Always allow: granting later reports no new decision.
         isResumingStoredDecision = true
         query.saveAlwaysAllow()

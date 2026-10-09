@@ -811,6 +811,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         contexts.first { $0.uniqueIdentifier == identifier }
     }
 
+    /// Hands a script message from an extension page in a tab, where the controller's own message
+    /// handlers are not installed, to the API compatibility log.
+    public func handleAPICompatibilityMessage(_ message: WKScriptMessage) {
+        apiCompatibilityHandler.handle(message)
+    }
+
+#if os(macOS)
+    /// Answers an idle state request from an extension page in a tab, where the controller's own
+    /// message handlers are not installed.
+    public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        idleHandler.reply(to: message, replyHandler: replyHandler)
+    }
+#endif
+
     @MainActor
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
         lifecycleEventsContinuation?.yield(event)

@@ -1248,7 +1248,9 @@
 		377D801C2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */; };
 		377D801F2AB48191002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */; };
 		377DF17C306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */; };
+		7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */; };
 		377DF17D306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */; };
+		7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */; };
 		378205F8283BC6A600D1D4AA /* StartupPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */; };
 		378205FB283C277800D1D4AA /* MainMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205FA283C277800D1D4AA /* MainMenuTests.swift */; };
 		3783F92329432E1800BCA897 /* WebViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3783F92229432E1800BCA897 /* WebViewTests.swift */; };
@@ -4488,7 +4490,9 @@
 		DC2900022FD0000000000004 /* ChromeWebStorePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */; };
 		DC2900022FD0000000000005 /* ChromeWebStorePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */; };
 		DC2900022FD0000000000007 /* ChromeWebStoreUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */; };
+		7BD5A0152F0A0C0100000015 /* WebExtensionPageStubUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */; };
 		DC2900022FD0000000000008 /* ChromeWebStoreUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */; };
+		7BD5A0162F0A0C0100000016 /* WebExtensionPageStubUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */; };
 		DCABE414D64349E8947B38A7 /* WebsitePermissionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84EEF9CB3E34FACB67C22CA /* WebsitePermissionEntry.swift */; };
 		DD27DA7B0000000000000001 /* DataImportDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */; };
 		DD27DA7B0000000000000003 /* DataImportDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */; };
@@ -5531,6 +5535,7 @@
 		3776583027F8325B009A6B35 /* AutofillPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillPreferencesTests.swift; sourceTree = "<group>"; };
 		377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeSyncHandler.swift; sourceTree = "<group>"; };
 		377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStoreUserScript.swift; sourceTree = "<group>"; };
+		7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPageStubUserScript.swift; sourceTree = "<group>"; };
 		377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreCI.entitlements; sourceTree = "<group>"; };
 		378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPreferencesTests.swift; sourceTree = "<group>"; };
 		378205FA283C277800D1D4AA /* MainMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuTests.swift; sourceTree = "<group>"; };
@@ -7354,6 +7359,7 @@
 		DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPermissionPrompt.swift; sourceTree = "<group>"; };
 		DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStorePresenter.swift; sourceTree = "<group>"; };
 		DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStoreUserScriptTests.swift; sourceTree = "<group>"; };
+		7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPageStubUserScriptTests.swift; sourceTree = "<group>"; };
 		DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportDebugMenu.swift; sourceTree = "<group>"; };
 		DD27DA7C0000000000000002 /* DataDirectoryPermissionFixAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataDirectoryPermissionFixAvailability.swift; sourceTree = "<group>"; };
 		DD27DA7D0000000000000002 /* RequestDirectoryReadPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestDirectoryReadPermissionView.swift; sourceTree = "<group>"; };
@@ -8123,6 +8129,7 @@
 				1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */,
 				1E1B24AD2F4729C100D239CE /* WebExtensionAvailability+macOS.swift */,
 				377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */,
+				7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */,
 			);
 			path = WebExtensions;
 			sourceTree = "<group>";
@@ -8832,6 +8839,7 @@
 			children = (
 				7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */,
 				DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */,
+				7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */,
 			);
 			path = WebExtensions;
 			sourceTree = "<group>";
@@ -15829,6 +15837,7 @@
 				31224EF12F9F9922008E0118 /* BurnerDuckAiStorageRegistry.swift in Sources */,
 				3706FA93293F65D500E42796 /* WKWebView+Download.swift in Sources */,
 				377DF17D306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */,
+				7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */,
 				371E1D672D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */,
 				3706FA94293F65D500E42796 /* TabShadowConfig.swift in Sources */,
 				3706FA97293F65D500E42796 /* WindowDraggingView.swift in Sources */,
@@ -17198,6 +17207,7 @@
 				BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */,
 				C3A357144DFF4A47914A933D /* ContextMenuSubfeatureTests.swift in Sources */,
 				DC2900022FD0000000000007 /* ChromeWebStoreUserScriptTests.swift in Sources */,
+				7BD5A0152F0A0C0100000015 /* WebExtensionPageStubUserScriptTests.swift in Sources */,
 				7BBBD8942ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift in Sources */,
 				C9BE9F534296EB9B99954781 /* YouTubeAdBlockingTelemetryConsentRequirementTests.swift in Sources */,
 				92BB8FF182EF6C4500826314 /* MacOSEventHubPixelFiringTests.swift in Sources */,
@@ -18283,6 +18293,7 @@
 				9FFBEE642DDD7A100058B11A /* DefaultBrowserAndDockPromptDebugEventMapper.swift in Sources */,
 				379E877629E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */,
 				377DF17C306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */,
+				7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */,
 				B6DA06E42913ECEE00225DE2 /* ContextMenuManager.swift in Sources */,
 				B693955126F04BEB0015B914 /* GradientView.swift in Sources */,
 				C1858CD22C7C971D00C9BEAB /* FreemiumDBPFeature.swift in Sources */,
@@ -20100,6 +20111,7 @@
 				37CD54B527F1AC1300F1F7B9 /* PreferencesSidebarModelTests.swift in Sources */,
 				C5965506B4FA4A4E92FD11C9 /* ContextMenuSubfeatureTests.swift in Sources */,
 				DC2900022FD0000000000008 /* ChromeWebStoreUserScriptTests.swift in Sources */,
+				7BD5A0162F0A0C0100000016 /* WebExtensionPageStubUserScriptTests.swift in Sources */,
 				7BBBD8952ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift in Sources */,
 				A4D2EDD63CCEEDAAC428F0D3 /* YouTubeAdBlockingTelemetryConsentRequirementTests.swift in Sources */,
 				EE51291A027CBB88A19BB465 /* MacOSEventHubPixelFiringTests.swift in Sources */,

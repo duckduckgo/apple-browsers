@@ -4,7 +4,7 @@
         "owners": ["Bunn"],
         "meta": {
             "type": "ios-return-session",
-            "version": "2.0"
+            "version": "2.1"
         },
         "feature": {
             "name": "return-session",
@@ -58,6 +58,7 @@
                             "browsing_menu_webpage",
                             "tab_switcher",
                             "tabs_bar_button",
+                            "new_tab_long_press_menu",
                             "chat_history_new_chat",
                             "chat_history_open_chat",
                             "voice",

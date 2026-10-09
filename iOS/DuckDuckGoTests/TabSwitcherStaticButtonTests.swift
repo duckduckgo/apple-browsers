@@ -61,5 +61,39 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         button.tabCount = 99
         XCTAssertEqual("99", button.text)
     }
-    
+
+    func testWhenNewChatAvailableThenLongPressMenuEndsWithNewChat() {
+        XCTAssertEqual(newTabLongPressMenuTitles(isNewChatAvailable: true),
+                       [UserText.actionNewFireTab, UserText.actionNewTab, UserText.actionNewAIChat])
+    }
+
+    func testWhenNewChatUnavailableThenLongPressMenuHasOnlyTabItems() {
+        XCTAssertEqual(newTabLongPressMenuTitles(isNewChatAvailable: false),
+                       [UserText.actionNewFireTab, UserText.actionNewTab])
+    }
+
+    func testLongPressMenuPixelsKeepTheirNamesAndCarryMenuSource() {
+        let sources: [(NewTabLongPressMenu.Source, String)] = [(.toolbar, "toolbar"), (.tabSwitcher, "tab_switcher"), (.tabsBar, "tabs_bar")]
+        for (source, expected) in sources {
+            let pixels: [(NewTabLongPressMenuPixel, String)] = [
+                (.displayed(source: source), "m_tab_long_press_menu_displayed"),
+                (.newFireTab(source: source), "m_tab_long_press_menu_new_fire_tab"),
+                (.newNormalTab(source: source), "m_tab_long_press_menu_new_normal_tab"),
+                (.newChat(source: source), "tab_long_press_menu_new_chat")
+            ]
+            for (pixel, name) in pixels {
+                XCTAssertEqual(pixel.name, name)
+                XCTAssertEqual(pixel.parameters, ["source": expected])
+            }
+        }
+    }
+
+    private func newTabLongPressMenuTitles(isNewChatAvailable: Bool) -> [String] {
+        let actions = NewTabLongPressMenu.Actions(onNewFireTab: {},
+                                                  onNewTab: {},
+                                                  onNewChat: {},
+                                                  isNewChatAvailable: { isNewChatAvailable })
+        return NewTabLongPressMenu.items(source: .toolbar, actions: actions, pixelFiring: nil).map(\.title)
+    }
+
 }

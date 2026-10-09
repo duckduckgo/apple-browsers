@@ -41,6 +41,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController)
@@ -581,6 +582,10 @@ class TabsBarViewController: UIViewController {
         }
     }
 
+    private func requestNewChat() {
+        delegate?.tabsBarDidRequestNewChat(self)
+    }
+
     private func configureTabSwitcherLongPressMenu() {
         tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
     }
@@ -591,31 +596,12 @@ class TabsBarViewController: UIViewController {
             return
         }
 
-        let menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "tabs_bar"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                                     PixelParameters.source: "tabs_bar"
-                                 ]))
-                                 self?.requestNewTab(type: .fire)
-                             },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                                     PixelParameters.source: "tabs_bar"
-                                 ]))
-                                 self?.requestNewTab(type: .normal)
-                             }
-                ])
-            }
-        ])
-
-        addTabButton.menu = menu
+        addTabButton.menu = NewTabLongPressMenu.make(source: .tabsBar, actions: .init(
+            onNewFireTab: { [weak self] in self?.requestNewTab(type: .fire) },
+            onNewTab: { [weak self] in self?.requestNewTab(type: .normal) },
+            onNewChat: { [weak self] in self?.requestNewChat() },
+            isNewChatAvailable: { [weak self] in self?.isNewChatAvailable ?? false }
+        ))
         addTabButton.showsMenuAsPrimaryAction = false
     }
 
@@ -717,6 +703,14 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 
     func launchNewFireTab(_ button: TabSwitcherButton) {
         requestNewTab(type: .fire)
+    }
+
+    func launchNewChat(_ button: TabSwitcherButton) {
+        requestNewChat()
+    }
+
+    var isNewChatAvailable: Bool {
+        aiChatSettings?.isAIChatEnabled ?? false
     }
 }
 
@@ -1082,6 +1076,10 @@ extension MainViewController: TabsBarDelegate {
         recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
+    }
+
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {
+        newChatLongPressMenuAction()
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {

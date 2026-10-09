@@ -19,8 +19,6 @@
 
 import AIChat
 import Core
-import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckAiDataStore
 import HangMetrics
 import Persistence
@@ -74,20 +72,6 @@ struct Launching: LaunchingHandling {
         // that hangs or crashes later in this init still reports the previous one.
         let launchBreadcrumb = LaunchBreadcrumb()
         launchBreadcrumb.reportIncompleteLaunch()
-
-        // Wire the DesignSystem rebrand singleton to the live feature flag.
-        // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
-        // so call sites don't need to read the flag directly.
-        AppRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
-        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
-        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
-        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
 
         favicons = Favicons(fireproofing: fireproofing)
 
@@ -261,7 +245,7 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager

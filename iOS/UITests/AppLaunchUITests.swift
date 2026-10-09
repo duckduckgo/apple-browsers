@@ -58,7 +58,6 @@ final class AppLaunchUITests: XCTestCase {
             "-ff.fireMode", "true",
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
-            "-ff.appRebranding", "false",
             "-com.duckduckgo.app.autoClearActionKey", "3",
             "-com.duckduckgo.app.autoClearTimingKey", "0",
         ]

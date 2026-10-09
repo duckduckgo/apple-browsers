@@ -471,6 +471,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         pixelFiring?.fire(pixel)
     }
 
+    func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent) {
+        let pixel: SyncTurnOffPixel
+        switch event {
+        case .sheetShown: pixel = .sheetShown
+        case .optionSelected(let option): pixel = .optionSelected(option)
+        case .deleteServerDataConfirmationConfirmed: pixel = .deleteServerDataConfirmationConfirmed
+        case .deleteServerDataConfirmationDismissed: pixel = .deleteServerDataConfirmationDismissed
+        }
+        pixelFiring?.fire(pixel)
+    }
+
     @MainActor
     func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {
         guard needsPreservedAccountCleanupBeforeServerOperation else {
@@ -764,8 +775,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func confirmAndDeleteAllData() async -> Bool {
-        let deviceCount = viewModel.devices.count
-        let pixelParameters = uiVersionParameters
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.simplifiedSyncDeleteAllConfirmTitle,
                                           message: UserText.simplifiedSyncDeleteAllConfirmMessage,
@@ -775,25 +784,30 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             self.onConfirmAndDeleteAllData = { [weak self] in
                 Task { @MainActor in
-                    do {
-                        try await self?.syncService.deleteAccount()
-                        var parameters = pixelParameters
-                        parameters[PixelParameters.connectedDevices] = "\(deviceCount)"
-                        self?.pixelFiring?.fire(Pixel.Event.syncDisabledAndDeleted, options: .parameters(parameters))
-                        self?.viewModel.isSyncEnabled = false
-                        self?.syncPausedStateManager.syncDidTurnOff()
-                        ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
-                        continuation.resume(returning: true)
-                    } catch {
-                        await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
-                        continuation.resume(returning: false)
-                    }
+                    continuation.resume(returning: await self?.deleteAllData() ?? false)
                 }
             }
             alert.addAction(title: UserText.syncDeleteAllConfirmAction, style: .destructive) {
                 self.onConfirmAndDeleteAllData?()
             }
             self.present(alert, animated: true)
+        }
+    }
+
+    @MainActor
+    func deleteAllData() async -> Bool {
+        var parameters = uiVersionParameters
+        parameters[PixelParameters.connectedDevices] = "\(viewModel.devices.count)"
+        do {
+            try await syncService.deleteAccount()
+            pixelFiring?.fire(Pixel.Event.syncDisabledAndDeleted, options: .parameters(parameters))
+            viewModel.isSyncEnabled = false
+            syncPausedStateManager.syncDidTurnOff()
+            ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
+            return true
+        } catch {
+            await handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
+            return false
         }
     }
 

@@ -256,6 +256,67 @@ final class SyncSettingsViewControllerPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Turn off sheet events fire the matching turn off sheet pixel",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (SyncSettingsViewModel.TurnOffSyncSheetPixelEvent.sheetShown, "sync_turn_off_sheet_shown", [String: String]?.none),
+            (.optionSelected(.thisDevice), "sync_turn_off_option_selected", ["option": "this_device"]),
+            (.optionSelected(.allDevicesAndServerData), "sync_turn_off_option_selected", ["option": "all_devices_and_server_data"]),
+            (.deleteServerDataConfirmationConfirmed, "sync_delete_server_data_confirmation_confirmed", nil),
+            (.deleteServerDataConfirmationDismissed, "sync_delete_server_data_confirmation_dismissed", nil)
+          ])
+    func turnOffSheetEventFiresMatchingPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent,
+                                             expectedName: String,
+                                             expectedParameters: [String: String]?) {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.fireTurnOffSyncSheetPixel(event: event)
+
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == expectedName &&
+            $0.pixel.parameters == expectedParameters &&
+            ($0.additionalParameters ?? [:]).isEmpty &&
+            $0.includeAppVersionParameter == true
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning off sync without a confirmation fires the sync disabled pixel", .timeLimit(.minutes(1)))
+    func disablingSyncFiresSyncDisabledPixel() async {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        let didDisable = await vc.disableSync()
+
+        #expect(didDisable)
+        #expect(ddgSyncing.disconnectCalled)
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == Pixel.Event.syncDisabled.name &&
+            $0.additionalParameters == ["ui_version": "v2"]
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Deleting server data without a confirmation fires the disabled and deleted pixel with the device count", .timeLimit(.minutes(1)))
+    func deletingServerDataFiresDisabledAndDeletedPixel() async {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+        vc.viewModel.isSyncEnabled = true
+        vc.viewModel.devices = [
+            .init(id: "1", name: "iPhone", type: "phone", isThisDevice: true),
+            .init(id: "2", name: "Mac", type: "desktop", isThisDevice: false)
+        ]
+
+        let didDelete = await vc.deleteAllData()
+
+        #expect(didDelete)
+        #expect(!vc.viewModel.isSyncEnabled)
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == Pixel.Event.syncDisabledAndDeleted.name &&
+            $0.additionalParameters == ["ui_version": "v2", "connected_devices": "2"]
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Updating the device name fires the name updated pixel", .timeLimit(.minutes(1)))
     func updatingDeviceNameFiresNameUpdatedPixel() async throws {
         let vc = makeViewController(source: nil, enabledFeatureFlags: [])

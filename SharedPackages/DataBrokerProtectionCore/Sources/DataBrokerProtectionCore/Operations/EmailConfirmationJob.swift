@@ -99,11 +99,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
-        guard !jobDependencies.isPausedForRevokedSigningKey else {
-            Logger.dataBrokerProtection.log("✉️ Skipping email confirmation job: PIR is paused because a broker bundle signing key was revoked")
-            return
-        }
-
         Logger.dataBrokerProtection.log("✉️ Starting email confirmation job for broker: \(self.jobData.brokerId), profile: \(self.jobData.extractedProfileId)")
 
         // Fetch the broker data
@@ -244,7 +239,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 contentBlocking: jobDependencies.contentBlocking,
                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
-                    return !self.isCancelled && !Task.isCancelled && !self.jobDependencies.isPausedForRevokedSigningKey
+                    return !self.isCancelled && !Task.isCancelled
                 }
             )
         }
@@ -263,7 +258,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 challengePixelBrokerVersion: broker.version,
                 shouldContinueActionHandler: { [weak self] in
                     guard let self = self else { return false }
-                    return !self.isCancelled && !Task.isCancelled && !self.jobDependencies.isPausedForRevokedSigningKey
+                    return !self.isCancelled && !Task.isCancelled
                 },
                 applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
                 contentBlocking: jobDependencies.contentBlocking,

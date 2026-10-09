@@ -174,8 +174,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
         for jobData in filteredAndSortedJobData {
-            if isCancelled || jobDependencies.isPausedForRevokedSigningKey {
-                Logger.dataBrokerProtection.log("Cancelled operation or PIR paused, returning...")
+            if isCancelled {
+                Logger.dataBrokerProtection.log("Cancelled operation, returning...")
                 return
             }
 
@@ -218,7 +218,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             isManual: jobType == .manualScan,
                             shouldRunNextStep: { [weak self] in
                                 guard let self = self else { return false }
-                                return !self.isCancelled && !Task.isCancelled && !self.jobDependencies.isPausedForRevokedSigningKey
+                                return !self.isCancelled && !Task.isCancelled
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
@@ -230,7 +230,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             showWebView: showWebView,
                             shouldRunNextStep: { [weak self] in
                                 guard let self = self else { return false }
-                                return !self.isCancelled && !Task.isCancelled && !self.jobDependencies.isPausedForRevokedSigningKey
+                                return !self.isCancelled && !Task.isCancelled
                             })
                     }
                 } else {

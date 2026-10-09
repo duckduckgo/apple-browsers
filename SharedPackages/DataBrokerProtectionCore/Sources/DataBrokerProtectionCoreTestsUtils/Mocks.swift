@@ -184,15 +184,6 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
     public var isInternalUser: Bool = false
 }
 
-public extension PrivacyConfigurationManagingMock {
-    static let builtInBundleSigningKeyIDs = (BrokerBundleSigningKeys.builtIn.production + BrokerBundleSigningKeys.builtIn.staging)
-        .compactMap { BrokerBundleSigningKey(base64SPKI: $0)?.id }
-
-    func setRevokedBundleSigningKeyIDs(_ keyIDs: [String]) {
-        (privacyConfig as? PrivacyConfigurationMock)?.featureSettings[.dbp] = ["revokedBundleSigningKeys": keyIDs]
-    }
-}
-
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
     public var currentConfig: Data = Data()
 
@@ -221,7 +212,6 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     public var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
     public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
-    public var featureSettings: [PrivacyFeature: PrivacyConfigurationData.PrivacyFeature.FeatureSettings] = [:]
 
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return isSubfeatureEnabledCheck?(subfeature) ?? false
@@ -264,7 +254,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     public func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
-        featureSettings[feature] ?? [:]
+        [String: Any]()
     }
 
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {

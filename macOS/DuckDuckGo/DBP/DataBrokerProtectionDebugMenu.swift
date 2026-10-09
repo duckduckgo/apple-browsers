@@ -101,8 +101,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                                        settings: DataBrokerProtectionSettings(defaults: .dbp),
                                        vault: vault,
                                        authenticationManager: authenticationManager,
-                                       localBrokerProvider: nil,
-                                       privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager)
+                                       localBrokerProvider: nil)
     }()
 
     init() {

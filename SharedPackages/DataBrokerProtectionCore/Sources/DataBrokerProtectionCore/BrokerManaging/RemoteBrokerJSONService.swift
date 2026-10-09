@@ -22,7 +22,6 @@ import ZIPFoundation
 import Common
 import os.log
 import BrowserServicesKit
-import PrivacyConfig
 
 public protocol ZipArchiveHandling: FileManager, Sendable {
     func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws
@@ -132,7 +131,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let signingKeys: BrokerBundleSigningKeys
 
     public init(featureFlagger: FeatureFlagging,
@@ -143,7 +141,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 localBrokerProvider: BrokerJSONFallbackProvider?,
-                privacyConfigurationManager: PrivacyConfigurationManaging,
                 signingKeys: BrokerBundleSigningKeys = .builtIn) {
         self.featureFlagger = featureFlagger
         self.settings = settings
@@ -153,7 +150,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
-        self.privacyConfigurationManager = privacyConfigurationManager
         self.signingKeys = signingKeys
     }
 
@@ -184,23 +180,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 return
             }
 
-            /// 2. Skip the update while any of our signing keys is revoked
-            let keyRevocationChecker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager,
-                                                                        settings: settings,
-                                                                        signingKeys: signingKeys)
-            if keyRevocationChecker.isAnyKeyRevoked {
-                Logger.dataBrokerProtection.log("🧩 Broker bundle signing key revoked, skipping update")
-                settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
-                throw BrokerBundleVerificationError.keyRevoked
-            }
-
-            /// 3. Re-download every broker if an app update changed the signing keys
+            /// 2. Re-download every broker if an app update changed the signing keys
             try resetBrokerUpdateStateIfSigningKeysChanged()
 
-            /// 4. Use bundled JSONs to populate/update the database
+            /// 3. Use bundled JSONs to populate/update the database
             try? await localBrokerProvider?.checkForUpdates()
 
-            /// 5. Hit main_config.json endpoint for ETag and active broker changes
+            /// 4. Hit main_config.json endpoint for ETag and active broker changes
             ///    Neither it nor its signature may come from the local cache, or they could be from different points in time
             var request = try Endpoint.request(for: .mainConfig,
                                                endpointURL: settings.endpointURL,
@@ -221,13 +207,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 throw Error.serverError(httpCode: response.statusCode)
             }
 
-            /// 6. Verify the signature over the exact bytes received, then reject rollbacks
+            /// 5. Verify the signature over the exact bytes received, then reject rollbacks
             let (mainConfig, signingKey) = try await verifiedMainConfig(from: data)
 
-            /// 7. Download, extract, and process changed broker JSONs
+            /// 6. Download, extract, and process changed broker JSONs
             try await checkForBrokerJSONUpdatesFromMainConfig(mainConfig, eTag: newETag)
 
-            /// 8. Update last successful update timestamp
+            /// 7. Update last successful update timestamp
             settings.lastManifestVersions[signingKey.id] = mainConfig.manifestVersion
             settings.mainConfigETag = newETag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()

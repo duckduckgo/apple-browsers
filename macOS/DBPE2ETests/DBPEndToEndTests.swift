@@ -50,11 +50,8 @@ final class DBPEndToEndTests: XCTestCase {
         loginItemsManager = LoginItemsManager()
         await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
 
-        let privacyConfig = PrivacyConfigurationManagingMock()
         communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                     privacyConfig: privacyConfig,
-                                                     keyRevocationChecker: BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfig,
-                                                                                                            settings: dbpSettings))
+                                                     privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager!.communicator
 
         communicationDelegate = pirProtectionManager.dataManager!.communicator

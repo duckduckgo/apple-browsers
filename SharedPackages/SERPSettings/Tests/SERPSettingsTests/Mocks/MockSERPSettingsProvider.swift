@@ -172,6 +172,7 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
+    var hasAcceptedTermsAndConditions: Bool = false
 
     func reset() {
         isAIFeaturesEnabled = false
@@ -184,6 +185,7 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggle = true
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
+        hasAcceptedTermsAndConditions = false
     }
 }
 #endif

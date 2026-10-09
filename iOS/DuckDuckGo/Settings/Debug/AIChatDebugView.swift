@@ -328,7 +328,7 @@ private struct AIChatTermsOfServiceSection: View {
                 footer: Text(verbatim: status ?? defaultFooter)) {
             Button {
                 let store = DuckAiTermsOfServiceStore()
-                store.reset()
+                store.resetForDebugging()
                 status = "Native acceptance cleared (accepted: \(store.hasAccepted))."
             } label: {
                 Text(verbatim: "Reset native acceptance")

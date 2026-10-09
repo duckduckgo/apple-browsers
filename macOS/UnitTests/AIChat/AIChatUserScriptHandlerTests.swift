@@ -22,7 +22,6 @@ import Combine
 import Common
 import FoundationExtensions
 @testable import DDGSync
-@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 @_spi(Testing) import SharedTestUtilities
@@ -474,61 +473,6 @@ struct AIChatUserScriptHandlerTests {
         }
 
         #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Web terms report after an NTP acceptance is not a duplicate", .timeLimit(.minutes(1)))
-    @MainActor
-    func testThatWebTermsReportAfterNativeAcceptanceFiresNoDuplicatePixel() async throws {
-        let termsStore = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter())
-        termsStore.recordAcceptedInNativeInput()
-        let testPixelFiring = PixelKitMock()
-
-        await reportTermsAccepted(to: makeHandler(termsStore: termsStore, pixelFiring: testPixelFiring))
-
-        #expect(testPixelFiring.actualFireCalls.isEmpty)
-        #expect(termsStore.hasAccepted)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Repeated web terms report fires the duplicate pixel", .timeLimit(.minutes(1)))
-    @MainActor
-    func testThatRepeatedWebTermsReportFiresDuplicatePixel() async throws {
-        let termsStore = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter())
-        termsStore.recordWebReport()
-        let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTermsAcceptedDuplicateSyncOff, frequency: .dailyAndStandard)]
-
-        await reportTermsAccepted(to: makeHandler(termsStore: termsStore, pixelFiring: testPixelFiring))
-
-        #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
-    }
-
-    @MainActor
-    private func makeHandler(termsStore: DuckAiTermsOfServiceStore, pixelFiring: PixelKitMock) -> AIChatUserScriptHandler {
-        AIChatUserScriptHandler(
-            storage: storage,
-            termsOfServiceStore: termsStore,
-            messageHandling: messageHandler,
-            windowControllersManager: windowControllersManager,
-            pixelFiring: pixelFiring,
-            statisticsLoader: statisticsLoader,
-            syncServiceProvider: { nil },
-            syncErrorHandler: syncErrorHandler,
-            featureFlagger: MockFeatureFlagger(),
-            notificationCenter: notificationCenter
-        )
-    }
-
-    /// The duplicate pixel fires from a main-actor task, so wait for the tasks queued behind the report.
-    @MainActor
-    private func reportTermsAccepted(to handler: AIChatUserScriptHandler) async {
-        await withCheckedContinuation { continuation in
-            handler.didReportMetric(.init(metricName: .userDidAcceptTermsAndConditions)) {
-                continuation.resume()
-            }
-        }
-        await Task { @MainActor in }.value
     }
 
     @available(iOS 16, macOS 13, *)

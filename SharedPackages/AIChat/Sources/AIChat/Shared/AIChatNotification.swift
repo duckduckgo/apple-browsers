@@ -31,7 +31,6 @@ public extension NSNotification.Name {
     static let aiChatOpenFilePicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.openFilePicker")
     static let aiChatCustomizeResponsesModalClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesModalClosed")
     static let aiChatCustomizeResponsesDidChange: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesDidChange")
-    static let aiChatTermsOfServiceDidChange: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.termsOfServiceDidChange")
 }
 
 /// `userInfo` keys for AIChat notifications.

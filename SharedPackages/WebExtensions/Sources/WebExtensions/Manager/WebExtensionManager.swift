@@ -864,12 +864,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     func notifyUpdate() {
-#if os(macOS)
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            commandShortcuts.apply(to: loadedExtensions)
-        }
-#endif
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)

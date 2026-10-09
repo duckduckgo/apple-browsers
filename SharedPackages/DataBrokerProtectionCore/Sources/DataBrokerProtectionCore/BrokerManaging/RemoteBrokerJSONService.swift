@@ -194,10 +194,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 throw BrokerBundleVerificationError.keyRevoked
             }
 
-            /// 3. Use bundled JSONs to populate/update the database
+            /// 3. Re-download every broker if an app update changed the signing keys
+            try resetBrokerUpdateStateIfSigningKeysChanged()
+
+            /// 4. Use bundled JSONs to populate/update the database
             try? await localBrokerProvider?.checkForUpdates()
 
-            /// 4. Hit main_config.json endpoint for ETag and active broker changes
+            /// 5. Hit main_config.json endpoint for ETag and active broker changes
             ///    Neither it nor its signature may come from the local cache, or they could be from different points in time
             var request = try Endpoint.request(for: .mainConfig,
                                                endpointURL: settings.endpointURL,
@@ -218,13 +221,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 throw Error.serverError(httpCode: response.statusCode)
             }
 
-            /// 5. Verify the signature over the exact bytes received, then reject rollbacks
+            /// 6. Verify the signature over the exact bytes received, then reject rollbacks
             let (mainConfig, signingKey) = try await verifiedMainConfig(from: data)
 
-            /// 6. Download, extract, and process changed broker JSONs
+            /// 7. Download, extract, and process changed broker JSONs
             try await checkForBrokerJSONUpdatesFromMainConfig(mainConfig, eTag: newETag)
 
-            /// 7. Update last successful update timestamp
+            /// 8. Update last successful update timestamp
             settings.lastManifestVersions[signingKey.id] = mainConfig.manifestVersion
             settings.mainConfigETag = newETag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
@@ -237,6 +240,22 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService checkForUpdates"))
             throw error
         }
+    }
+
+    // A compromised key could have signed brokers with inflated versions and the real brokers' ETags. Without this
+    // reset, the client would keep those brokers after the app update that drops the key.
+    private func resetBrokerUpdateStateIfSigningKeysChanged() throws {
+        let fingerprint = signingKeys.keys(isProductionEndpoint: settings.isProductionEndpoint).map(\.id).sorted().joined(separator: ",")
+        guard let storedFingerprint = settings.bundleSigningKeyFingerprint else {
+            settings.bundleSigningKeyFingerprint = fingerprint
+            return
+        }
+        guard storedFingerprint != fingerprint else { return }
+
+        Logger.dataBrokerProtection.log("🧩 Broker bundle signing keys changed, re-downloading all brokers")
+        try vault.resetBrokerVersionsAndETags()
+        settings.mainConfigETag = nil
+        settings.bundleSigningKeyFingerprint = fingerprint
     }
 
     private func verifiedMainConfig(from data: Data) async throws -> (MainConfig, BrokerBundleSigningKey) {

@@ -95,6 +95,140 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
 
         XCTAssertEqual(mockHandler.putEntryCalls, 0)
     }
+
+    // MARK: - Values returned to the web
+
+    func testWhenStoredChatHasPartIndexZeroAndOneThenGetChatReturnsNumbersNotBooleans() async throws {
+        mockHandler.stubbedChats = [DuckAiChatRecord(chatId: "canonical-chat", data: Data(Self.canonicalChatJSON.utf8))]
+
+        let response = try await response(of: "getChat", params: ["chatId": "canonical-chat"])
+
+        let chat = try XCTUnwrap(response["chat"] as? [String: Any])
+        let messages = try XCTUnwrap(chat["messages"] as? [[String: Any]])
+        let parts = try XCTUnwrap(messages[1]["content"] as? [[String: Any]])
+        let partIndexes = parts.prefix(2).map { $0["partIndex"] }
+        XCTAssertEqual(partIndexes.map { $0 as? NSNumber }, [0, 1])
+        XCTAssertFalse(partIndexes.contains { isBoolean($0) })
+    }
+
+    func testWhenGetChatReturnsCanonicalChatThenEveryValueKeepsItsStoredTypeAndValue() async throws {
+        mockHandler.stubbedChats = [DuckAiChatRecord(chatId: "canonical-chat", data: Data(Self.canonicalChatJSON.utf8))]
+
+        let response = try await response(of: "getChat", params: ["chatId": "canonical-chat"])
+
+        assertSameJSON(response["chat"], try parsed(Self.canonicalChatJSON))
+    }
+
+    func testWhenGetAllChatsReturnsLegacyAndCanonicalChatsThenEveryValueKeepsItsStoredTypeAndValue() async throws {
+        mockHandler.stubbedChats = [
+            DuckAiChatRecord(chatId: "legacy-chat", data: Data(Self.legacyChatJSON.utf8)),
+            DuckAiChatRecord(chatId: "canonical-chat", data: Data(Self.canonicalChatJSON.utf8))
+        ]
+
+        let response = try await response(of: "getAllChats")
+
+        let chats = try XCTUnwrap(response["chats"] as? [Any])
+        assertSameJSON(chats, [try parsed(Self.legacyChatJSON), try parsed(Self.canonicalChatJSON)])
+    }
+
+    func testWhenGetAllEntriesReturnsStoredValuesThenEveryValueKeepsItsStoredTypeAndValue() async throws {
+        let entriesJSON = """
+            {"isRecentChatsOn":true,"duckaiHasAgreedToTerms":"true","windowIndex":0,"percentage":1,"ratio":0.5,
+             "negative":-1,"int64Max":9223372036854775807,"uint64Max":18446744073709551615,"missing":null,
+             "nested":{"enabled":false,"index":1,"values":[0,1,true,false,2]}}
+            """
+        mockHandler.stubbedGetAllEntries = try parsed(entriesJSON)
+
+        let response = try await response(of: "getAllEntries")
+
+        assertSameJSON(response["entries"], try parsed(entriesJSON))
+    }
+
+    func testWhenGetFileReturnsStoredPayloadThenEveryValueKeepsItsStoredTypeAndValue() async throws {
+        let fileJSON = #"{"data":"aGVsbG8=","mimeType":"image/jpeg","fileName":"image-1.jpeg","width":1,"height":0,"moderated":false}"#
+        mockHandler.stubbedFiles = [DuckAiFileContent(uuid: "file-1", chatId: "canonical-chat", data: Data(fileJSON.utf8))]
+
+        let response = try await response(of: "getFile", params: ["uuid": "file-1"])
+
+        assertSameJSON(response, try parsed(fileJSON))
+    }
+
+    // MARK: - Fixtures and helpers
+
+    private static let canonicalChatJSON = """
+        {"version":"1.2","chatId":"canonical-chat","title":"Duck pictures","model":"gpt-5-mini","pinned":false,
+         "lastEdit":"2026-01-01T10:00:05.000Z","reasoningMode":"fast","conversationLimitPercentage":0,
+         "fileRefs":["00000000-0000-4000-8000-000000000001"],
+         "messages":[
+          {"id":"m1","role":"user","createdAt":"2026-01-01T10:00:00.000Z",
+           "content":[{"type":"text","text":"Draw a duck"}],
+           "meta":{"recovery":{"messageId":"r1","generationTimestamp":1767261600000}}},
+          {"id":"m2","role":"assistant","createdAt":"2026-01-01T10:00:01.000Z",
+           "content":[
+            {"type":"reasoning-progress","id":"rs1","partIndex":0,"text":"Planning","complete":true},
+            {"type":"reasoning-progress","id":"rs1","partIndex":1,"text":"Drawing","complete":false},
+            {"type":"reasoning","id":"rs1","encryptedText":"opaque","redacted":false},
+            {"type":"ui-component","id":"ui1","name":"generate-image","toolCallId":"call_1",
+             "data":{"status":"success","width":1024,"height":1024,"generationDurationMs":1},
+             "ref":{"id":"00000000-0000-4000-8000-000000000001","handlerId":"native","handlerVersion":1}},
+            {"type":"tool-call","toolCallId":"call_1","toolName":"GenerateImage","toolArguments":"{}"},
+            {"type":"tool-result","toolCallId":"call_1","result":"ok","data":null},
+            {"type":"text","text":"Here is your duck."}],
+           "meta":{"status":"active","model":"gpt-5-mini","reasoningDurationMs":0,"origin":"text"}}]}
+        """
+
+    private static let legacyChatJSON = """
+        {"chatId":"legacy-chat","title":"Duck facts","model":"gpt-5-mini","pinned":true,"lastEdit":"2026-09-01T10:00:01.000Z",
+         "messages":[
+          {"role":"user","content":"Tell me about ducks","createdAt":"2026-09-01T10:00:00.000Z"},
+          {"role":"assistant","content":"","createdAt":"2026-09-01T10:00:01.000Z","status":"active","reasoningDurationMs":1,
+           "parts":[
+            {"type":"reasoning","state":"progress","id":"rs1","partIndex":0,"text":"Thinking","complete":true},
+            {"type":"tool-invocation","state":"call","toolCallId":"call_1","toolName":"WebSearch","toolArguments":"{}"},
+            {"type":"text","text":"Ducks are waterfowl."}]}]}
+        """
+
+    private func response(of method: String, params: [String: Any] = [:]) async throws -> [String: Any] {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: method))
+        let result = try await handler(params, WKScriptMessage.mock())
+        let encodable = try XCTUnwrap(result)
+        let data = try JSONEncoder().encode(encodable)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    private func parsed(_ json: String) throws -> [String: Any] {
+        try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+    }
+
+    private func isBoolean(_ value: Any?) -> Bool {
+        guard let number = value as? NSNumber else { return false }
+        return CFGetTypeID(number) == CFBooleanGetTypeID()
+    }
+
+    /// `NSNumber` equality treats `false` and `0` as equal, so booleans are compared separately.
+    private func assertSameJSON(_ returned: Any?, _ stored: Any?, path: String = "$", file: StaticString = #filePath, line: UInt = #line) {
+        switch (returned, stored) {
+        case let (returned as [String: Any], stored as [String: Any]):
+            XCTAssertEqual(Set(returned.keys), Set(stored.keys), "keys at \(path)", file: file, line: line)
+            for (key, value) in stored {
+                assertSameJSON(returned[key], value, path: "\(path).\(key)", file: file, line: line)
+            }
+        case let (returned as [Any], stored as [Any]):
+            XCTAssertEqual(returned.count, stored.count, "count at \(path)", file: file, line: line)
+            for (index, (returnedElement, storedElement)) in zip(returned, stored).enumerated() {
+                assertSameJSON(returnedElement, storedElement, path: "\(path)[\(index)]", file: file, line: line)
+            }
+        case let (returned as NSNumber, stored as NSNumber):
+            XCTAssertEqual(isBoolean(returned), isBoolean(stored), "boolean vs number at \(path)", file: file, line: line)
+            XCTAssertEqual(returned, stored, "value at \(path)", file: file, line: line)
+        case let (returned as String, stored as String):
+            XCTAssertEqual(returned, stored, "value at \(path)", file: file, line: line)
+        case (is NSNull, is NSNull):
+            break
+        default:
+            XCTFail("\(path): returned \(String(describing: returned)), stored \(String(describing: stored))", file: file, line: line)
+        }
+    }
 }
 
 // MARK: - Test helpers
@@ -111,6 +245,8 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     var stubbedIsMigrationDone = false
     var stubbedGetAllEntries: [String: Any] = [:]
     var stubbedGetAllEntriesError: Error?
+    var stubbedChats: [DuckAiChatRecord] = []
+    var stubbedFiles: [DuckAiFileContent] = []
     var putEntryCalls = 0
 
     func putEntry(key: String, value: Any) throws { putEntryCalls += 1 }
@@ -124,12 +260,12 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     func replaceAllEntries(_ entries: [String: Any]) throws {}
     func putChat(chatId: String, data: Data) throws {}
     func putChats(_ chats: [DuckAiChatRecord]) throws {}
-    func getChat(chatId: String) throws -> DuckAiChatRecord? { nil }
-    func getAllChats() throws -> [DuckAiChatRecord] { [] }
+    func getChat(chatId: String) throws -> DuckAiChatRecord? { stubbedChats.first { $0.chatId == chatId } }
+    func getAllChats() throws -> [DuckAiChatRecord] { stubbedChats }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
     func putFile(uuid: String, chatId: String, data: Data) throws {}
-    func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
+    func getFile(uuid: String) throws -> DuckAiFileContent? { stubbedFiles.first { $0.uuid == uuid } }
     func listFiles() throws -> [DuckAiFileMetadata] { [] }
     func deleteFile(uuid: String) throws {}
     func deleteFiles(chatId: String) throws {}

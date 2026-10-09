@@ -219,7 +219,7 @@ struct Launching: LaunchingHandling {
         let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
             featureFlagger: featureFlagger,
             runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
-            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             freemiumPIRDebugSettings: freemiumPIRDebugSettings
         )
 

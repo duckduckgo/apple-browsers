@@ -92,7 +92,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                 featureFlagger: MockFeatureFlagger(),
                 runPrerequisitesDelegate: nil,
-                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                subscriptionManager: SubscriptionManagerMock(),
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,

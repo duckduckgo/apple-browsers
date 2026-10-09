@@ -30,6 +30,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let customizeButtonTrailingMargin: CGFloat = 20
         static let customizeButtonSize: CGFloat = 44
         static let portraitContentTopInset: CGFloat = 96
+        static let stickySearchInputTopMargin: CGFloat = 8
+        static let stickySearchInputBackdropBottomPadding: CGFloat = 8
+        static let stickySearchInputBackdropFadeDistance: CGFloat = 12
         static let entranceTranslation: CGFloat = 12
         static let entranceDuration: TimeInterval = 0.25
     }
@@ -83,6 +86,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         return stackView
     }()
 
+    /// Covers content scrolling beneath the search input while it is pinned to the top of the page.
+    private let stickySearchInputBackdropView: UIVisualEffectView = {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+        view.isUserInteractionEnabled = false
+        view.alpha = 0
+        return view
+    }()
+
     private lazy var contentTopConstraint = blocksStackView.topAnchor.constraint(
         equalTo: scrollView.contentLayoutGuide.topAnchor,
         constant: Metrics.portraitContentTopInset)
@@ -128,6 +139,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.clipsToBounds = true
         addSubviews()
         installBlocks()
+        installStickySearchInput()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -161,6 +173,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
            scrollView.contentOffset != preservedOffset {
             scrollView.setContentOffset(preservedOffset, animated: false)
         }
+        updateStickySearchInput()
     }
 
     @objc private func customizeButtonTapped() {
@@ -251,7 +264,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
-        contentContainerView.addSubview(customizeButton)
+        scrollView.addSubview(customizeButton)
 
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -278,9 +291,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             // thing that can make the page scroll.
             blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
 
-            customizeButton.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor,
+            customizeButton.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor,
                                                  constant: Metrics.customizeButtonTopMargin),
-            customizeButton.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor,
+            customizeButton.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor,
                                                       constant: -Metrics.customizeButtonTrailingMargin),
             customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
             customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
@@ -295,6 +308,35 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
+    }
+
+    private func installStickySearchInput() {
+        scrollView.delegate = self
+        guard let searchInputView else { return }
+        // Not an arranged subview: the stack lays out blocks only, while the backdrop follows the pinned input.
+        blocksStackView.addSubview(stickySearchInputBackdropView)
+        blocksStackView.bringSubviewToFront(searchInputView)
+    }
+
+    /// Keeps the search input pinned below the top of the page once scrolling would carry it offscreen.
+    private func updateStickySearchInput() {
+        guard let searchInputView else { return }
+        let restingFrame = searchInputView.frame.applying(CGAffineTransform(translationX: 0, y: -searchInputView.transform.ty))
+        let pinnedMinY = blocksStackView.convert(CGPoint(x: 0, y: scrollView.bounds.minY + scrollView.adjustedContentInset.top),
+                                                 from: scrollView).y + Metrics.stickySearchInputTopMargin
+        // Stay inside the stack's bounds so the translated input keeps receiving touches.
+        let maximumTranslation = max(0, blocksStackView.bounds.height - restingFrame.maxY)
+        let translation = min(max(0, pinnedMinY - restingFrame.minY), maximumTranslation)
+        searchInputView.transform = CGAffineTransform(translationX: 0, y: translation)
+
+        // Extend the backdrop beneath the status bar and horizontal safe areas, which the scroll view does not clip.
+        let pageBoundsInStack = blocksStackView.convert(contentContainerView.bounds, from: contentContainerView)
+        let backdropMaxY = restingFrame.maxY + translation + Metrics.stickySearchInputBackdropBottomPadding
+        stickySearchInputBackdropView.frame = CGRect(x: pageBoundsInStack.minX,
+                                                     y: pageBoundsInStack.minY,
+                                                     width: pageBoundsInStack.width,
+                                                     height: max(0, backdropMaxY - pageBoundsInStack.minY))
+        stickySearchInputBackdropView.alpha = min(1, translation / Metrics.stickySearchInputBackdropFadeDistance)
     }
 
     func refreshSearchInputSettings() {
@@ -429,5 +471,13 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+        stickySearchInputBackdropView.isHidden = isEditing
+    }
+}
+
+extension RedesignedNewTabPageViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateStickySearchInput()
     }
 }

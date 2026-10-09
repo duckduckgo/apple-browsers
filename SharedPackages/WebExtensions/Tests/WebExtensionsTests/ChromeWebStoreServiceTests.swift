@@ -45,7 +45,8 @@ final class ChromeWebStoreServiceTests: XCTestCase {
     private func service(_ manager: WebExtensionManager, fixture: ChromeWebStoreFixture,
                          download: (() async throws -> Data)? = nil) -> ChromeWebStoreService {
         ChromeWebStoreService(manager: manager, catalog: catalog,
-                              downloader: StoreDownloaderMock(action: download ?? { fixture.package }), presenter: presenter)
+                              downloader: StoreDownloaderMock(action: download ?? { fixture.package }), presenter: presenter,
+                              verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash))
     }
 
     func testInstallRestoreAndRemove() async throws {

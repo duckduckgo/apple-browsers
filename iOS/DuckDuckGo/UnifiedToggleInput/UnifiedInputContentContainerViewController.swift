@@ -612,7 +612,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             loader: loader,
             // Empty when "Search Suggestions" is off, else `effectiveTopHits` falls back to a phrase row.
             query: { [weak self] in self?.appSettings.autocomplete == true ? (self?.switchBarHandler.currentText ?? "") : "" },
-            showAskAIChat: aiChatSettings.isAIChatEnabled
+            aiChatSettings: aiChatSettings
         )
 
         let customizationStore = NewTabPageCustomizationStore()

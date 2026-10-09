@@ -37,4 +37,43 @@ final class PermissionAuthorizationViewControllerTests: XCTestCase {
         viewController.query = query
         XCTAssertTrue(viewController.view.subviews.first is NSHostingView<PermissionAuthorizationView>)
     }
+
+    // MARK: - Authorization in progress
+
+    @MainActor
+    func testAuthorizationIsNotInProgressOnceQueryIsReleased() {
+        let viewController = makeViewController()
+        var query: PermissionAuthorizationQuery? = makeQuery()
+        viewController.query = query
+        XCTAssertTrue(viewController.isAuthorizationInProgress)
+
+        query = nil
+
+        XCTAssertNil(viewController.query)
+        XCTAssertFalse(viewController.isAuthorizationInProgress)
+    }
+
+    @MainActor
+    func testAuthorizationIsNotInProgressOnceQueryIsCompletedElsewhere() {
+        let viewController = makeViewController()
+        let query = makeQuery()
+        viewController.query = query
+        XCTAssertTrue(viewController.isAuthorizationInProgress)
+
+        query.cancel()
+
+        XCTAssertFalse(viewController.isAuthorizationInProgress)
+    }
+
+    // MARK: - Helpers
+
+    private func makeViewController() -> PermissionAuthorizationViewController {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        return PermissionAuthorizationViewController(featureFlagger: featureFlagger, systemPermissionManager: SystemPermissionManagerMock())
+    }
+
+    private func makeQuery() -> PermissionAuthorizationQuery {
+        PermissionAuthorizationQuery(domain: "example.com", url: URL(string: "https://example.com"), permissions: [.camera]) { _ in }
+    }
 }

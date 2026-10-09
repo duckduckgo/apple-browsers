@@ -106,5 +106,65 @@
                 "type": "boolean"
             }
         ]
+    },
+    "app-lifecycle_active-without-main-ui": {
+        "description": "Fires when a scene becomes active but none of its visible windows shows app UI (the MainViewController, or the authentication or blank snapshot overlay shown over it), meaning the user sees a black screen. Measures user impact of a scene reconnecting while the app is still in the Connected state during launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "app-lifecycle_scene-did-disconnect": {
+        "description": "Fires when iOS disconnects the app's scene (sceneDidDisconnect). The state parameter tells which app state machine state the app was in, to find what triggers scene reconnects during launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "description": "App state machine state when the scene disconnected",
+                "enum": ["initializing", "launching", "connected", "foreground", "background", "terminating", "simulated"]
+            }
+        ]
+    },
+    "app-lifecycle_previous-launch-incomplete": {
+        "description": "Fires at launch when the previous launch never reached the Foreground or Background state, e.g. a black screen the user had to force quit, a hang, or a kill or crash during launch. step tells the last launch step that launch reached. A background launch that finished without connecting a scene is not reported.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "step",
+                "description": "Last launch step the previous launch reached, in launch order",
+                "enum": [
+                    "launching-started",
+                    "key-value-store",
+                    "persistent-stores",
+                    "sync",
+                    "content-blocking",
+                    "main-coordinator",
+                    "launched",
+                    "window-connected",
+                    "ui-attached",
+                    "terminating"
+                ]
+            }
+        ]
+    },
+    "app-lifecycle_critical-alert-shown": {
+        "description": "Fires when the app shows a critical alert before terminating because a store could not be loaded at launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "Why the alert was shown",
+                "enum": ["insufficient-disk-space", "unrecoverable-state"]
+            }
+        ]
     }
 }

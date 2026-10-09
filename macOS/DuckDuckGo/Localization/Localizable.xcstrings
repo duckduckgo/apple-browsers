@@ -9571,6 +9571,66 @@
         }
       }
     },
+    "aichat.termsOfService.ask.button" : {
+      "comment" : "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; clicking it sends the prompt and accepts the terms",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask"
+          }
+        }
+      }
+    },
+    "aichat.termsOfService.create.button" : {
+      "comment" : "Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; clicking it sends the prompt and accepts the terms",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Create"
+          }
+        }
+      }
+    },
+    "aichat.termsOfService.disclaimer" : {
+      "comment" : "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; clicking the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo anonymizes your chats. By clicking 'Ask' you agree to our %@."
+          }
+        }
+      }
+    },
+    "aichat.termsOfService.disclaimer.create" : {
+      "comment" : "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; clicking the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo anonymizes your chats. By clicking 'Create' you agree to our %@."
+          }
+        }
+      }
+    },
+    "aichat.termsOfService.disclaimer.link" : {
+      "comment" : "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy Policy and Terms of Service"
+          }
+        }
+      }
+    },
     "aichat.toggle.ask.label" : {
       "comment" : "Label for the ask AI segment in the address bar toggle control",
       "extractionState" : "extracted_with_value",

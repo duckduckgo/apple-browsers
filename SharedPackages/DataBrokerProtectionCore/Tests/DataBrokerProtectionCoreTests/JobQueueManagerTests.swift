@@ -1080,6 +1080,29 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssertEqual(mockQueueDelegate.events.filter { $0 == .willEnqueue }.count, 1)
     }
 
+    func testWhenSigningKeyIsRevokedDuringARun_thenTheRunReportsThePause() async {
+        let queue = OperationQueue()
+        queue.isSuspended = true
+        sut = JobQueueManager(jobQueue: queue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        let privacyConfig = PrivacyConfigurationManagingMock()
+        mockOperationsCreator.operationCollections = [MockBrokerProfileJob(id: 1, jobType: .manualScan, statusReportingDelegate: sut)]
+        let runFinished = expectation(description: "Run finished")
+        var reportedError: Error?
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: makeDependencies(privacyConfig: privacyConfig),
+                                                    errorHandler: { reportedError = $0?.oneTimeError },
+                                                    completion: { runFinished.fulfill() })
+
+        privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
+        queue.isSuspended = false
+        await fulfillment(of: [runFinished], timeout: 5)
+
+        XCTAssertEqual(reportedError as? BrokerProfileJobQueueError, .pausedForRevokedSigningKey)
+    }
+
     func testWhenRevokedKeyIsDropped_thenJobsAreEnqueuedAgain() {
         sut = makeSUT()
         let privacyConfig = PrivacyConfigurationManagingMock()

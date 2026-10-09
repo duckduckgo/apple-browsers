@@ -19,8 +19,10 @@
 import Foundation
 import CryptoKit
 import os.log
+import PrivacyConfig
 
 public enum BrokerBundleVerificationError: String, Error, CaseIterable {
+    case keyRevoked = "key_revoked"
     case signatureMissing = "signature_missing"
     case signatureInvalid = "signature_invalid"
     case rollback
@@ -79,6 +81,32 @@ public struct BrokerBundleSigningKeys: Decodable, Equatable {
             }
             return key
         }
+    }
+}
+
+/// PIR pauses while privacy-config lists any of the app's signing keys as revoked. This isn't stored, because the
+/// list is additive only: PIR resumes once an app update drops the revoked key.
+public struct BrokerBundleKeyRevocationChecker {
+    static let revokedKeysSettingsKey = "revokedBundleSigningKeys"
+
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let settings: DataBrokerProtectionSettings
+    private let signingKeys: BrokerBundleSigningKeys
+
+    public init(privacyConfigurationManager: PrivacyConfigurationManaging,
+                settings: DataBrokerProtectionSettings,
+                signingKeys: BrokerBundleSigningKeys = .builtIn) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.settings = settings
+        self.signingKeys = signingKeys
+    }
+
+    public var isAnyKeyRevoked: Bool {
+        let revokedKeyIDs = privacyConfigurationManager.privacyConfig.settings(for: .dbp)[Self.revokedKeysSettingsKey] as? [String] ?? []
+        guard !revokedKeyIDs.isEmpty else { return false }
+
+        let normalizedRevokedKeyIDs = Set(revokedKeyIDs.map { $0.lowercased() })
+        return signingKeys.keys(isProductionEndpoint: settings.isProductionEndpoint).contains { normalizedRevokedKeyIDs.contains($0.id) }
     }
 }
 

@@ -73,7 +73,8 @@ public final class DBPUIViewModel {
                                                       prefs: prefs,
                                                       delegate: dataManager.communicator,
                                                       webUISettings: webUISettings,
-                                                      vpnBypassService: vpnBypassService)
+                                                      vpnBypassService: vpnBypassService,
+                                                      dbpSettings: DataBrokerProtectionSettings(defaults: .dbp))
         } catch {
             if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
                 pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))

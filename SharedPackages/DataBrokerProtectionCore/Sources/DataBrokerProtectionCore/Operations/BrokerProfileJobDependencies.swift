@@ -151,3 +151,9 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         await isAuthenticatedUserProvider()
     }
 }
+
+extension BrokerProfileJobDependencyProviding {
+    var isPausedForRevokedSigningKey: Bool {
+        BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfig, settings: dataBrokerProtectionSettings).isAnyKeyRevoked
+    }
+}

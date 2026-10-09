@@ -57,13 +57,15 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
     ) async throws -> (any WKWebExtensionWindow)? {
         // Like Chrome, a popup window holds one page: further pages open as tabs in the last active regular window.
         let isPopup = configuration.windowType == .popup
-        // Only the extension's own pages load with its web view configuration; websites get a regular tab's.
+        let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
+        // Only the extension's own pages load with its web view configuration; websites get a tab of the
+        // window's kind, so a private window's websites use its own data store.
         let tabs = configuration.tabURLs.map { url in
             let isExtensionPage = url.scheme == context.baseURL.scheme
             return Tab(content: .contentFromURL(url, source: .ui),
-                       webViewConfiguration: isExtensionPage ? context.webViewConfiguration : nil)
+                       webViewConfiguration: isExtensionPage ? context.webViewConfiguration : nil,
+                       burnerMode: isExtensionPage ? .regular : burnerMode)
         }
-        let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
         // Looked up before the popup opens, since the popup becomes the last active window.
         let regularWindowTabs = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         let tabCollectionViewModel = TabCollectionViewModel(
@@ -88,7 +90,8 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
         if isPopup, tabs.count > 1 {
             let extraTabs = Array(tabs.dropFirst())
-            if let regularWindowTabs, !regularWindowTabs.isPopup, regularWindowTabs.burnerMode == burnerMode {
+            // Each private window has its own data store, so a private popup's extra pages get a new window sharing its store.
+            if !burnerMode.isBurner, let regularWindowTabs, !regularWindowTabs.isPopup, !regularWindowTabs.burnerMode.isBurner {
                 extraTabs.forEach { regularWindowTabs.append(tab: $0) }
             } else {
                 windowControllersManager.openNewWindow(with: TabCollectionViewModel(tabCollection: TabCollection(tabs: extraTabs),

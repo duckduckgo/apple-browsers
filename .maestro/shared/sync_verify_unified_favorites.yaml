@@ -5,8 +5,8 @@ appId: com.duckduckgo.mobile.ios
     element: Sync & Backup
 - tapOn: Sync & Backup
 - scroll
-- assertVisible: Unify Favorites Across Devices
-# Enable "Unify Favorites Across Devices" only if it is currently off.
+- assertVisible: Share Favorites Across Devices
+# Enable "Share Favorites Across Devices" only if it is currently off.
 - runFlow:
     when:
       visible:

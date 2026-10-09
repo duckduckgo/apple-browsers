@@ -3195,9 +3195,10 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
-            // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
-            // treat this as a denial of the website permission to prevent the popover from re-appearing
-            if !authPopover.viewController.isAuthorizationInProgress,
+            // Legacy prompt: if the popover was closed while authorization was no longer in progress (e.g., system
+            // permission denied), treat this as a denial of the website permission to prevent the popover from re-appearing
+            if !featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+               !authPopover.viewController.isAuthorizationInProgress,
                let query = authPopover.viewController.query,
                !query.isComplete {
                 query.handleDecision(grant: false, remember: nil)

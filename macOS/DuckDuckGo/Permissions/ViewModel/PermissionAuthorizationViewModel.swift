@@ -105,21 +105,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     func send(action: Action) {
         switch action {
         case .onAppear:
-            viewState.title = makeTitle()
-            if case .decision(var decision) = viewState.content {
-                decision.learnMore = permissionType.learnMoreURL.map {
-                    PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
-                }
-                if case .externalScheme = permissionType, domain.isEmpty {
-                    // A link typed in the address bar has no website to save the choice for, as on Windows
-                    decision.buttons = decision.buttons.filter { $0.action == .allowThisVisit }
-                }
-                viewState.content = .decision(decision)
-            }
-            if query?.isSystemPermissionDisabled == true, pendingDecision == nil {
-                isResumingStoredDecision = true
-                allow(.alwaysAllow)
-            }
+            onAppear()
 
         case .allowThisVisit:
             allow(.allowThisVisit)
@@ -145,7 +131,25 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Decisions
+    // MARK: - Private
+
+    private func onAppear() {
+        viewState.title = makeTitle()
+        if case .decision(var decision) = viewState.content {
+            decision.learnMore = permissionType.learnMoreURL.map {
+                PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+            }
+            if case .externalScheme = permissionType, domain.isEmpty {
+                // A link typed in the address bar has no website to save the choice for, as on Windows
+                decision.buttons = decision.buttons.filter { $0.action == .allowThisVisit }
+            }
+            viewState.content = .decision(decision)
+        }
+        if query?.opensOnSystemPermissionStep == true, pendingDecision == nil {
+            isResumingStoredDecision = true
+            allow(.alwaysAllow)
+        }
+    }
 
     private func allow(_ decision: PermissionPromptDecision) {
         pendingDecision = decision

@@ -862,6 +862,54 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.firedDeviceDetailsPixelEvents.isEmpty)
     }
 
+    func testWhenImprovedPairingFlowOnAndThisDeviceDetailsTurnOffSyncTappedThenShowsDeviceConfirmationInsteadOfTurnOffAlert() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        var isTurnOffAlertShown = false
+        delegate.onSimplifiedConfirmAndDisableSync = { isTurnOffAlertShown = true }
+
+        sut.thisDeviceDetailsTurnOffSyncTapped()
+        await Task.yield()
+
+        XCTAssertTrue(sut.isThisDeviceTurnOffConfirmationVisible)
+        XCTAssertFalse(isTurnOffAlertShown)
+        XCTAssertEqual(delegate.firedDeviceDetailsPixelEvents, [.thisDeviceTurnOffSyncTapped])
+    }
+
+    func testWhenImprovedPairingFlowOffAndThisDeviceDetailsTurnOffSyncTappedThenDeviceConfirmationIsNotShown() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: false)
+        let turnOffAlertShown = expectation(description: "Turn off alert shown")
+        delegate.onSimplifiedConfirmAndDisableSync = { turnOffAlertShown.fulfill() }
+
+        sut.thisDeviceDetailsTurnOffSyncTapped()
+
+        await fulfillment(of: [turnOffAlertShown], timeout: 5)
+        XCTAssertFalse(sut.isThisDeviceTurnOffConfirmationVisible)
+    }
+
+    func testWhenThisDeviceDetailsTurnOffSyncConfirmedThenDisablesSyncWithoutFurtherConfirmation() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        var isTurnOffAlertShown = false
+        delegate.onSimplifiedConfirmAndDisableSync = { isTurnOffAlertShown = true }
+        let syncDisabled = expectation(description: "Sync disabled")
+        let cancellable = sut.$isSyncEnabled
+            .dropFirst()
+            .sink { isEnabled in
+                if !isEnabled {
+                    syncDisabled.fulfill()
+                }
+            }
+
+        sut.thisDeviceDetailsTurnOffSyncConfirmed()
+
+        await fulfillment(of: [syncDisabled], timeout: 5)
+        XCTAssertFalse(isTurnOffAlertShown)
+        cancellable.cancel()
+    }
+
     func testWhenOtherDeviceDetailsRemoveDeviceTappedThenFiresRemoveDevicePixel() {
         let delegate = MockSyncSettingsViewModelDelegate()
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
@@ -937,6 +985,7 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var firedSyncSetupPixelEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] = []
     var firedDeviceDetailsPixelEvents: [SyncSettingsViewModel.DeviceDetailsPixelEvent] = []
     var onSimplifiedConfirmAndDisableSync: (() -> Void)?
+    var onDisableSync: (() -> Void)?
 
     var syncBookmarksPausedTitle: String?
     var syncCredentialsPausedTitle: String?
@@ -987,6 +1036,10 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     }
     func simplifiedConfirmAndDisableSync() async -> Bool {
         onSimplifiedConfirmAndDisableSync?()
+        return true
+    }
+    func disableSync() async -> Bool {
+        onDisableSync?()
         return true
     }
     func confirmAndDeleteAllData() async -> Bool { true }

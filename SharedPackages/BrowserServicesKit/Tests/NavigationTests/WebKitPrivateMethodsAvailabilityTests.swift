@@ -43,6 +43,21 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         XCTAssertTrue(WKUserScript.instancesRespond(to: NSSelectorFromString("_contentWorld")))
     }
 
+#if PRIVATE_PAGE_SIGNALS_ENABLED
+    func testWebViewRespondsTo_resourceLoadDelegate() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_resourceLoadDelegate")))
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_setResourceLoadDelegate:")))
+    }
+
+    func testResourceLoadInfoRespondsTo_originalURL() {
+        XCTAssertEqual(NSClassFromString("_WKResourceLoadInfo")?.instancesRespond(to: NSSelectorFromString("originalURL")), true)
+    }
+
+    func testContentRuleListActionRespondsTo_blockedLoad() {
+        XCTAssertEqual(NSClassFromString("_WKContentRuleListAction")?.instancesRespond(to: NSSelectorFromString("blockedLoad")), true)
+    }
+#endif
+
 #if _SESSION_STATE_WITH_FILTER_ENABLED
     func testSessionStateDataAvailability() throws {
         XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.sessionStateData))

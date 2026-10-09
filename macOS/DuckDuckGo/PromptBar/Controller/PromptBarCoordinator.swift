@@ -49,6 +49,10 @@ final class PromptBarCoordinator {
         presenter.toggle(source: source)
     }
 
+    func showPromptBarForLauncherPromo() {
+        presenter.showForLauncherPromo(shortcut: preferences.keyboardShortcut.displayString)
+    }
+
     private func applyShortcut(_ shortcut: PromptBarShortcut?) {
         guard let shortcut else {
             shortcutRegistrar.unregister()

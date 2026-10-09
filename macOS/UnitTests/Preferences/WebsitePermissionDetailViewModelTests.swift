@@ -144,6 +144,15 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         }
     }
 
+    func testWhenNothingIsSavedAndSearchHasTextThenDetailReportsNoResults() {
+        let sut = makeSUT(category: .notifications, entries: [])
+
+        sut.send(action: .setSearchQuery("missing"))
+
+        XCTAssertFalse(sut.viewState.isEmpty)
+        XCTAssertTrue(sut.viewState.hasNoResults)
+    }
+
     func testWhenPermissionsUpdateThenDetailPreservesItsSearchQuery() {
         let sut = makeSUT(
             category: .notifications,
@@ -450,6 +459,25 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["discord.com"])
         XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
+    }
+
+    func testWhenLocalFileHasAPermissionThenItIsListedAsLocalFileApartFromLocalhost() throws {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "zebra.com", permissionType: .camera, decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "localhost", permissionType: .camera, decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: .localFilePermissionDomain, permissionType: .camera, decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.displayName), [UserText.websitePermissionsLocalFile, "localhost", "zebra.com"])
+        let localFileRow = try XCTUnwrap(sut.viewState.sites.first { $0.domain == .localFilePermissionDomain })
+        XCTAssertNil(localFileRow.faviconURL)
+
+        sut.send(action: .setSearchQuery("file"))
+
+        XCTAssertEqual(sut.viewState.visibleSites.map(\.domain), [.localFilePermissionDomain])
     }
 
     // MARK: - Pixels

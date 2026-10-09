@@ -76,7 +76,7 @@ final class DataClearingPixelsReporter {
     }
 
     func fireUserActionBeforeCompletionPixel() {
-        pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+        pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .dailyAndStandard)
     }
 
     // MARK: - Data Clearing Completion

@@ -124,12 +124,18 @@ enum WebViewScrollViewInsetUpdater {
             && scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
     }
 
-    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, animated: Bool = false) {
+    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, isFloatingUIEnabled: Bool = false, animated: Bool = false) {
         if scrollView.contentInset != insets {
-            let isPinnedToTop = scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+            let isPinnedToTop = isFloatingUIEnabled
+                ? scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+                : scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
             scrollView.contentInset = insets
             if isPinnedToTop {
-                scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
+                if isFloatingUIEnabled {
+                    scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
+                } else {
+                    scrollView.contentOffset.y = -insets.top
+                }
             }
         }
 
@@ -1201,7 +1207,7 @@ class TabViewController: UIViewController {
     }
 
     func applyDeferredFloatingUIInsetsIfNeeded() {
-        guard hasDeferredFloatingUIInsets, let webView,
+        guard floatingUIManager.isFloatingUIEnabled, hasDeferredFloatingUIInsets, let webView,
               !WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) else { return }
         applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent)
     }
@@ -1328,7 +1334,8 @@ class TabViewController: UIViewController {
         // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
         hasDeferredFloatingUIInsets = false
         if shouldUpdateScrollInsets {
-            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets, animated: animateTopAlignment)
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
+                                               isFloatingUIEnabled: true, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
         }
         setWebViewObscuredContentInsetsIfSupported(obscuredInsets)

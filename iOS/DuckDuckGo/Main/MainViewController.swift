@@ -4214,7 +4214,11 @@ class MainViewController: UIViewController {
             completion()
             return
         }
-        presented.dismiss(animated: true, completion: completion)
+        let requestID = appOpenKeyboardRequestID
+        presented.dismiss(animated: true) { [weak self] in
+            guard let self, appOpenKeyboardRequestID == requestID else { return }
+            completion()
+        }
     }
     
     func updateFindInPage() {

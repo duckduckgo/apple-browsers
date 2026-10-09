@@ -100,5 +100,24 @@
             "form_factor"
         ],
         "parameters": ["appVersion"]
+    },
+    "web-content_termination-reload-result": {
+        "description": "Fires once per reload of the current tab after its web content process terminated, when that reload ends: the first navigation that finishes or fails (cancellations excluded), or another termination before either. Compare with m_d_wktct to find reloads that never ended, and use recovery to check that tabs killed in the background are still reloaded when the app becomes active.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "description": "How the reload ended",
+                "enum": ["finished", "failed", "terminated"]
+            },
+            {
+                "key": "recovery",
+                "description": "immediate: reloaded when the termination was reported. deferred: the termination was reported in the background and the reload ran when the app became active",
+                "enum": ["immediate", "deferred"]
+            }
+        ]
     }
 }

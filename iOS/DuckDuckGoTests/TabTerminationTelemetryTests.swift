@@ -22,6 +22,7 @@ import FeatureFlags_iOS
 import PixelKit
 import PrivacyConfigTestsUtils
 import UIKit
+import WebKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -200,6 +201,40 @@ final class TabTerminationTelemetryTests: XCTestCase {
             XCTAssertEqual(settings.maximumCapacity(isPad: false), 20)
             XCTAssertEqual(settings.maximumCapacity(isPad: true), 10)
         }
+    }
+
+    func testWhenTerminationReloadEndsThenResultPixelFiresOnceWithOutcomeAndRecovery() throws {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        var tracker = TerminationReloadTracker(pixelFiring: pixelFiring)
+
+        tracker.didFinish()
+        XCTAssertTrue(pixelFiring.calls.isEmpty, "Navigations without a termination reload are not reported")
+
+        tracker.begin(.deferred)
+        tracker.didFail(with: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+        tracker.didFail(with: NSError(domain: WKError.errorDomain, code: WKError.Code.frameLoadInterruptedByPolicyChange.rawValue))
+        XCTAssertTrue(pixelFiring.calls.isEmpty, "Cancellations keep waiting for the real result")
+
+        tracker.didFinish()
+        tracker.didFinish()
+
+        let call = try XCTUnwrap(pixelFiring.call(named: "web-content_termination-reload-result"))
+        XCTAssertEqual(call.event.parameters, ["outcome": "finished", "recovery": "deferred"])
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(pixelFiring.calls.count, 1)
+    }
+
+    func testWhenTerminationReloadFailsOrTerminatesThenOutcomeIsReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        var tracker = TerminationReloadTracker(pixelFiring: pixelFiring)
+
+        tracker.begin(.immediate)
+        tracker.didFail(with: NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet))
+        tracker.begin(.immediate)
+        tracker.didTerminate()
+
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] }, ["failed", "terminated"])
+        XCTAssertNil(tracker.pendingRecovery)
     }
 
     private func makeTelemetry(featureEnabled: Bool = true,

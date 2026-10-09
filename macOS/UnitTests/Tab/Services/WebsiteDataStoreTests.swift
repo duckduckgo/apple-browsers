@@ -162,6 +162,38 @@ final class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(dataStore.records.first?.displayName, "duck.ai")
     }
 
+    @MainActor func testWhenClearedThenUnrelatedSubstringDomainsAreRemoved() async {
+        let dataStore = MockDataStore()
+        dataStore.cookieStore = MockHTTPCookieStore()
+
+        // Exclude cookies so the mock can remove these records through the storage-only clear.
+        let storageTypes: Set<String> = [
+            WKWebsiteDataTypeLocalStorage,
+            WKWebsiteDataTypeIndexedDBDatabases
+        ]
+        dataStore.records = [
+            "go.com",
+            "k.ai",
+            "example.com",
+            "duckduckgo.com",
+            "duck.ai"
+        ].map {
+            MockDataRecord(recordName: $0, types: storageTypes)
+        }
+
+        let webCacheManager = WebCacheManager(
+            fireproofDomains: MockPreservedLogins(domains: []),
+            websiteDataStore: dataStore
+        )
+
+        await webCacheManager.clear()
+
+        XCTAssertEqual(
+            Set(dataStore.records.map(\.displayName)),
+            Set(["duckduckgo.com", "duck.ai"])
+        )
+    }
+
     func testWhenClearedThenCookiesForLoginsAreRetained() {
         let logins = MockPreservedLogins(domains: [
             "example.com"

@@ -165,7 +165,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     /// Scripts for the pages of third-party extensions. Each returns early in our own extensions.
     /// The compatibility script comes first, so the stubs can report through it.
-    static let thirdPartyScriptSources = [WebExtensionAPICompatibilityScript.source, WebExtensionAPIStubScript.source]
+    public static let thirdPartyScriptSources = [WebExtensionAPICompatibilityScript.source, WebExtensionAPIStubScript.source]
 
     /// Loads `context`, first adding the third-party scripts when it is the first third-party extension to load.
     ///

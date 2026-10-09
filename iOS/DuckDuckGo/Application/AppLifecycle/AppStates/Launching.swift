@@ -68,9 +68,15 @@ struct Launching: LaunchingHandling {
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
+        // that hangs or crashes later in this init still reports the previous one.
+        let launchBreadcrumb = LaunchBreadcrumb()
+        launchBreadcrumb.reportIncompleteLaunch()
+
         favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+        launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
         // Initialize configuration with the key-value store
@@ -87,6 +93,7 @@ struct Launching: LaunchingHandling {
         // MARK: - Application Setup
         // Handles one-time application setup during launch
         try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+        launchBreadcrumb.mark(.persistentStores)
 
         // Migrate existing fireproofed domains to eTLD+1 store
         fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
@@ -124,6 +131,7 @@ struct Launching: LaunchingHandling {
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                       faviconStoring: favicons,
                                       duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+        launchBreadcrumb.mark(.sync)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -160,6 +168,7 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability)
+        launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
         // EventHub gets its own store, matching macOS, so its period state never shares a file with app
@@ -352,6 +361,7 @@ struct Launching: LaunchingHandling {
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub
         )
+        launchBreadcrumb.mark(.mainCoordinator)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

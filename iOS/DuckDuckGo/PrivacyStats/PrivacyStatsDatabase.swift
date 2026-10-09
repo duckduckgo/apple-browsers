@@ -21,6 +21,7 @@ import Foundation
 import CoreData
 import PrivacyStats
 import Persistence
+import PixelKit
 import Common
 import FoundationExtensions
 
@@ -28,20 +29,29 @@ import FoundationExtensions
 final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 
     private let database: CoreDataDatabase
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(database: CoreDataDatabase = PrivacyStatsDatabase.makeDatabase(location: PrivacyStatsDatabase.defaultLocation)) {
+    init(database: CoreDataDatabase = PrivacyStatsDatabase.makeDatabase(location: PrivacyStatsDatabase.defaultLocation),
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.database = database
+        self.pixelFiring = pixelFiring
     }
 
     func initializeDatabase() -> CoreDataDatabase {
         let semaphore = DispatchSemaphore(value: 0)
+        var loadError: Error?
         database.loadStore { _, error in
-            if let error {
-                assertionFailure("Could not create Privacy Stats database stack: \(error.localizedDescription)")
-            }
+            loadError = error
             semaphore.signal()
         }
         semaphore.wait()
+        if let loadError {
+            // `PrivacyStats` would otherwise wait in `CoreDataDatabase.makeContext` forever and freeze the launch.
+            // Give the pixel a moment to send before terminating, as `Terminating` does.
+            pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(loadError), frequency: .dailyAndCount)
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not create Privacy Stats database stack: \(loadError.localizedDescription)")
+        }
         return database
     }
 
@@ -62,4 +72,22 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
         }
         return CoreDataDatabase(name: "PrivacyStats", containerLocation: location, model: model)
     }
+}
+
+enum PrivacyStatsDatabasePixel: PixelKit.Event {
+
+    case loadFailed(Error)
+
+    var name: String { "privacy-stats_database_load_failed" }
+
+    var parameters: [String: String]? { nil }
+
+    var error: NSError? {
+        switch self {
+        case .loadFailed(let error):
+            return error as NSError
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

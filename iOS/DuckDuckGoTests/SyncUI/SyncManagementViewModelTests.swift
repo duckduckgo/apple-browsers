@@ -169,6 +169,11 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         return true
     }
 
+    func disableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
     func showRecoveryCodeEntry() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }

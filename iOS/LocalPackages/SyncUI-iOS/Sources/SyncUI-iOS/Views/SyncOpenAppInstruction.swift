@@ -38,16 +38,14 @@ struct SyncOpenAppInstruction: View {
         let prefix = parts.first ?? ""
         let suffix = parts.dropFirst().joined()
 
-        return Text(prefix)
-            .foregroundColor(Color(designSystemColor: .textSecondary))
+        return Text(SyncInstructionText.attributed(markdown: prefix))
             + Text(Image(uiImage: Self.appIcon))
                 .baselineOffset(-3)
             + Text(verbatim: "\u{00A0}")
             + Text(appName)
                 .fontWeight(.semibold)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            + Text(suffix)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            + Text(SyncInstructionText.attributed(markdown: suffix))
     }
 
     private static let appIcon: UIImage = {

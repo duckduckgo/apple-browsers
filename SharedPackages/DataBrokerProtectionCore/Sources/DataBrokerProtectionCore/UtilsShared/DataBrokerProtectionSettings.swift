@@ -85,6 +85,8 @@ public final class DataBrokerProtectionSettings {
     }
 
     /// The last `manifest_version` accepted for each signing key, keyed by key ID.
+    /// It's per key because a compromised key could sign a huge `manifest_version`, and a single value would then reject
+    /// every manifest from the replacement key.
     public var lastManifestVersions: [String: Int] {
         get {
             defaults.dictionary(forKey: Keys.lastManifestVersionsKey) as? [String: Int] ?? [:]

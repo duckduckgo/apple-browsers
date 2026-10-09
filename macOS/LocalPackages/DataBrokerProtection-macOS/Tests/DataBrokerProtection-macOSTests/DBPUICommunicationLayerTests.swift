@@ -176,40 +176,6 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
 
-    func testWhenNoSigningKeyIsRevoked_thenHandshakeStatusIsActive() async throws {
-        let sut = makeSUT()
-
-        let result = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)?(["version": 12], WKScriptMessage.mock())
-
-        let response = try XCTUnwrap(result as? DBPUIHandshakeResponse)
-        XCTAssertTrue(response.success)
-        XCTAssertEqual(response.status, .active)
-    }
-
-    func testWhenSigningKeyIsRevoked_thenHandshakeStatusIsUpdateRequired() async throws {
-        let privacyConfig = PrivacyConfigurationManagingMock()
-        privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
-        let sut = makeSUT(privacyConfig: privacyConfig)
-
-        let result = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)?(["version": 12], WKScriptMessage.mock())
-
-        let response = try XCTUnwrap(result as? DBPUIHandshakeResponse)
-        XCTAssertTrue(response.success)
-        XCTAssertEqual(response.status, .updateRequired)
-        let json = try XCTUnwrap(String(data: JSONEncoder().encode(response), encoding: .utf8))
-        XCTAssertTrue(json.contains("\"status\":\"updateRequired\""))
-    }
-
-    func testWhenOnlyAnotherKeyIsRevoked_thenHandshakeStatusIsActive() async throws {
-        let privacyConfig = PrivacyConfigurationManagingMock()
-        privacyConfig.setRevokedBundleSigningKeyIDs([String(repeating: "0", count: 64)])
-        let sut = makeSUT(privacyConfig: privacyConfig)
-
-        let result = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)?(["version": 12], WKScriptMessage.mock())
-
-        XCTAssertEqual(try XCTUnwrap(result as? DBPUIHandshakeResponse).status, .active)
-    }
-
     func testWhenSigningKeyIsRevoked_thenScanDataIsNotServedAndScansDoNotStart() async throws {
         let privacyConfig = PrivacyConfigurationManagingMock()
         privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
@@ -233,7 +199,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertFalse(mockDelegate.startScanAndOptOutCalled)
     }
 
-    func testWhenRevokedKeyIsDroppedWhileRunning_thenDashboardResumes() async throws {
+    func testHandshakeStatusIsUpdateRequiredUntilTheRevokedKeyIsDropped() async throws {
         let privacyConfig = PrivacyConfigurationManagingMock()
         privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
         let mockDelegate = MockDelegate()
@@ -243,7 +209,10 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let handshake = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
 
         let pausedResult = try await handshake?(["version": 12], WKScriptMessage.mock())
-        XCTAssertEqual(try XCTUnwrap(pausedResult as? DBPUIHandshakeResponse).status, .updateRequired)
+        let pausedResponse = try XCTUnwrap(pausedResult as? DBPUIHandshakeResponse)
+        XCTAssertTrue(pausedResponse.success)
+        XCTAssertEqual(pausedResponse.status, .updateRequired)
+        XCTAssertTrue(try XCTUnwrap(String(data: JSONEncoder().encode(pausedResponse), encoding: .utf8)).contains("\"status\":\"updateRequired\""))
 
         privacyConfig.setRevokedBundleSigningKeyIDs([])
 

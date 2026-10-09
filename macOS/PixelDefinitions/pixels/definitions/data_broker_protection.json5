@@ -1328,9 +1328,9 @@
             "channel"
         ]
     },
-    "dbp_bundle_verification_failure_macos": {
+    "m_mac_dbp_bundle_verification_failure": {
         "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, when another error stops verification, or when a built-in bundle signing key has been revoked. The update is skipped and retried on the next check.",
-        "owners": ["noisysocks"],
+        "owners": ["noisysocks", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": [
@@ -1345,9 +1345,9 @@
             }
         ]
     },
-    "dbp_bundle_verification_success_macos": {
-        "description": "Fired when a PIR broker update check passes bundle verification, including when the main config hasn't changed. Compare with dbp_bundle_verification_failure_macos to see whether verification is working.",
-        "owners": ["noisysocks"],
+    "m_mac_dbp_bundle_verification_success": {
+        "description": "Fired when a PIR broker update check passes bundle verification, including when the main config hasn't changed. Compare with m_mac_dbp_bundle_verification_failure to see whether verification is working.",
+        "owners": ["noisysocks", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource", "channel"]

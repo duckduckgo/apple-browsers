@@ -56,7 +56,6 @@ public struct DBPUIHandshakeUserData: Codable, Equatable {
     }
 }
 
-/// Whether PIR is running. The dashboard owns what's shown for each status.
 public enum DBPUIStatus: String, Codable {
     case active
     /// PIR is paused until an app update, because a broker bundle signing key was revoked

@@ -62,7 +62,6 @@ enum BrokerProfileJobQueueMode {
 public enum BrokerProfileJobQueueError: Error {
     case cannotInterrupt
     case interrupted
-    /// A broker bundle signing key has been revoked, so no scans or opt-outs run until an app update drops it.
     case pausedForRevokedSigningKey
 }
 

@@ -128,6 +128,20 @@ struct ObsoleteTemporaryInputFileExceptionError: Error, CustomStringConvertible 
     }
 }
 
+struct UnhandledPackageFilesError: Error, CustomStringConvertible {
+    var target: String
+    var filePaths: [String]
+
+    var description: String {
+        let files = filePaths.joined(separator: "\n\t")
+        return """
+        Package target '\(target)' contains files that are neither compiled, declared as resources nor excluded. \
+        Add them to `resources:` or `exclude:` in Package.swift:
+        \t\(files)
+        """
+    }
+}
+
 struct CombinedError: Error, CustomStringConvertible {
 
     private var errors: [Error]

@@ -25,10 +25,15 @@ import Foundation
 // set this flag so the browser code sees the same DEBUG condition as before the move.
 let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 
+// Fails the build when a file under a target directory is neither compiled, a declared resource nor excluded.
+let inputFilesChecker: Target.PluginUsage = .plugin(name: "InputFilesChecker", package: "BuildToolPlugins")
+
 /// The macOS browser code, built in place from `macOS/DuckDuckGo`.
 ///
-/// - `DuckDuckGoBrowser` (static) is linked into the "DuckDuckGo Privacy Browser" app targets,
-///   which only add the entry point, Info.plist, entitlements and bundle resources.
+/// - `DuckDuckGoBrowserDMG` and `DuckDuckGoBrowserAppStore` (static) are linked into the
+///   "DuckDuckGo Privacy Browser" and "DuckDuckGo Privacy Browser App Store" app targets, which only add
+///   the entry point, Info.plist, entitlements and bundle resources. Each adds the libraries of its
+///   distribution (updater, crash collection, ...): the browser code finds their conformances at runtime.
 ///
 /// Bundle resources (strings, JSON, scripts, storyboards, app icons) stay in the app targets and are
 /// read from `Bundle.main`. Asset catalogs and Core Data models are processed here, so that their
@@ -40,7 +45,8 @@ let package = Package(
         .macOS("12.3")
     ],
     products: [
-        .library(name: "DuckDuckGoBrowser", type: .static, targets: ["DuckDuckGo_Privacy_Browser"]),
+        .library(name: "DuckDuckGoBrowserDMG", type: .static, targets: ["DuckDuckGoBrowserDMG"]),
+        .library(name: "DuckDuckGoBrowserAppStore", type: .static, targets: ["DuckDuckGoBrowserAppStore"]),
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/BareBonesBrowser.git", exact: "0.1.0"),
@@ -75,6 +81,7 @@ let package = Package(
         .package(path: "../LocalPackages/AppKitExtensions"),
         .package(path: "../LocalPackages/AppUpdater"),
         .package(path: "../LocalPackages/BWIntegration"),
+        .package(path: "../LocalPackages/BuildToolPlugins"),
         .package(path: "../LocalPackages/CommonObjCExtensions"),
         .package(path: "../LocalPackages/CrashReporting"),
         .package(path: "../LocalPackages/DataBrokerProtection-macOS"),
@@ -109,7 +116,6 @@ let package = Package(
                 .product(name: "AppInfoRetriever", package: "AppInfoRetriever"),
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .product(name: "AppUpdaterShared", package: "AppUpdater"),
-                .product(name: "SparkleAppUpdater", package: "AppUpdater"),
                 .product(name: "AttributedMetric", package: "AttributedMetric"),
                 .product(name: "AutomationServer", package: "AutomationServer"),
                 .product(name: "BareBonesBrowserKit", package: "BareBonesBrowser"),
@@ -137,8 +143,6 @@ let package = Package(
                 .product(name: "Suggestions", package: "BrowserServicesKit"),
                 .product(name: "SyncDataProviders", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
-                .product(name: "BWIntegration", package: "BWIntegration"),
-                .product(name: "BWManagement", package: "BWIntegration"),
                 .product(name: "BWManagementShared", package: "BWIntegration"),
                 .product(name: "CombineSchedulers", package: "combine-schedulers"),
                 .product(name: "Common", package: "Common"),
@@ -176,7 +180,6 @@ let package = Package(
                 .product(name: "SubscriptionUI", package: "SubscriptionUI"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "SyncUI-macOS", package: "SyncUI-macOS"),
-                .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "UIComponents", package: "UIComponents"),
                 .product(name: "URLPredictor", package: "URLPredictor"),
@@ -188,6 +191,8 @@ let package = Package(
             ],
             path: ".",
             exclude: [
+                // Separate targets.
+                "Distribution",
                 // Shared with the helper targets; the Xcode targets bundle them.
                 "AppIcons",
                 "ContentBlocker/Resources/macos-config.json",
@@ -229,7 +234,30 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
-            ] + (forceDebug ? [.define("DEBUG")] : [])
+            ] + (forceDebug ? [.define("DEBUG")] : []),
+            plugins: [inputFilesChecker]
+        ),
+        .target(
+            name: "DuckDuckGoBrowserDMG",
+            dependencies: [
+                "DuckDuckGo_Privacy_Browser",
+                .product(name: "BWIntegration", package: "BWIntegration"),
+                .product(name: "BWManagement", package: "BWIntegration"),
+                .product(name: "SparkleAppUpdater", package: "AppUpdater"),
+                .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
+            ],
+            path: "Distribution/DMG",
+            plugins: [inputFilesChecker]
+        ),
+        .target(
+            name: "DuckDuckGoBrowserAppStore",
+            dependencies: [
+                "DuckDuckGo_Privacy_Browser",
+                .product(name: "AppStoreAppUpdater", package: "AppUpdater"),
+                .product(name: "AppStoreCrashCollection", package: "CrashReporting"),
+            ],
+            path: "Distribution/AppStore",
+            plugins: [inputFilesChecker]
         ),
     ],
     swiftLanguageVersions: [.v5]

@@ -18,7 +18,9 @@
 
 import Foundation
 import PackagePlugin
+#if canImport(XcodeProjectPlugin)
 import XcodeProjectPlugin
+#endif
 
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("InfoPlist.xcstrings", .resource),
@@ -122,11 +124,19 @@ struct InputFile: Hashable, Comparable {
 }
 
 @main
-struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
+struct TargetSourcesChecker: BuildToolPlugin {
+    /// Swift package targets: every file under the target directory must be compiled, declared as a resource or excluded.
+    /// SwiftPM only warns about unhandled files; here they fail the build so they're not silently left out of the bundle.
     func createBuildCommands(context: PackagePlugin.PluginContext, target: PackagePlugin.Target) async throws -> [PackagePlugin.Command] {
-        return []
+        guard let module = target as? SourceModuleTarget else { return [] }
+        let unhandledFiles = module.sourceFiles.filter { $0.type == .unknown }.map(\.path.string).sorted()
+        guard !unhandledFiles.isEmpty else { return [] }
+        throw UnhandledPackageFilesError(target: target.name, filePaths: unhandledFiles)
     }
+}
 
+#if canImport(XcodeProjectPlugin)
+extension TargetSourcesChecker: XcodeBuildToolPlugin {
     func createBuildCommands(context: XcodePluginContext, target: XcodeTarget) throws -> [Command] {
         var appTargets: [XcodeTarget] = []
         var unitTestsTargets: [XcodeTarget] = []
@@ -322,6 +332,7 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         try CombinedError(errors: errors).throwIfNonEmpty()
     }
 }
+#endif
 
 // Explicitely use module name to silence warning for protocol conformance for protocols defined in an external library.
 // We run e2e tests on Xcode 15 so we can't use @retroactive keyword.

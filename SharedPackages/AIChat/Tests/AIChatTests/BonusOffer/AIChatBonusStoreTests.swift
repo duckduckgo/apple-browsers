@@ -25,12 +25,7 @@ import Testing
 struct AIChatBonusStoreTests {
     private let serviceName = (Bundle.main.bundleIdentifier ?? "com.duckduckgo") + ".aichat.bonus-offer.record"
 
-    private let claimedRecord = AIChatBonusRecord(
-        campaignName: "launch",
-        bonusId: "8a7b9c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
-        terms: AIChatBonusRecord.Terms(multiplier: 2, expiresAt: 1_790_000_000),
-        lastRedeemAttemptAt: 1_780_000_000_000
-    )
+    private let claimedRecord = AIChatBonusRecordMock.active
 
     private let keychain = MockAIChatBonusKeychainService()
     private let sut: AIChatBonusStore

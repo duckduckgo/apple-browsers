@@ -41,6 +41,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     var hasInlineSearchInput: Bool { true }
 
+    private let onboardingCoordinator: NewTabPageOnboardingCoordinator?
+    var isPresentingOnboardingDialog: Bool { onboardingCoordinator?.isPresentingDialog == true }
+
     private let blocks: [any NewTabPageBlock]
     private let favoritesModel: FavoritesViewModel?
     private let pageModel: NewTabPageViewModel?
@@ -104,13 +107,16 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          favoritesModel: FavoritesViewModel? = nil,
          pageModel: NewTabPageViewModel? = nil,
          messagesModel: NewTabPageMessagesModel? = nil,
-         searchInputModel: NewTabPageSearchInputModel? = nil) {
+         searchInputModel: NewTabPageSearchInputModel? = nil,
+         onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
+        self.onboardingCoordinator = onboardingCoordinator
         self.blocks = blocks
         self.favoritesModel = favoritesModel
         self.pageModel = pageModel
         self.messagesModel = messagesModel
         self.searchInputModel = searchInputModel
         super.init(nibName: nil, bundle: nil)
+        onboardingCoordinator?.page = self
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
             self?.notifyRemoteMessageSurfaceChanged()
         }
@@ -154,6 +160,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        onboardingCoordinator?.refreshContextualOnboardingDialogLayout()
         // Reattachment and keyboard transitions temporarily change the viewport and safe area.
         // Keep those layouts from changing the loaded page's resting scroll position.
         let editingOffset = inputEditingLayout.flatMap { $0.isGeometryValid ? $0.contentOffset : nil }
@@ -178,12 +185,17 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         finishRestoringScrollPosition()
+        if presentedViewController?.isBeingDismissed ?? true {
+            onboardingCoordinator?.pageDidAppear()
+        }
         isRemoteMessageSurfacePresented = true
         notifyRemoteMessageSurfaceChanged()
 
-        // The page is attached with alpha 0 ahead of a contextual dialog so content cannot flash
-        // for a frame first, and is expected to restore it itself.
-        view.alpha = 1
+        // MainViewController pre-hides the chat-path handoff before its queued completion request.
+        // The coordinator restores alpha after hiding the modules and preparing the dialog.
+        if onboardingCoordinator?.isAwaitingChatPathCompletion != true {
+            view.alpha = 1
+        }
         guard isEntranceAnimationPending else { return }
         isEntranceAnimationPending = false
         let animator = UIViewPropertyAnimator(duration: Metrics.entranceDuration, curve: .easeOut) { [weak self] in
@@ -213,12 +225,13 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         isRemoteMessageSurfacePresented = false
+        onboardingCoordinator?.pageWillDisappear()
         notifyRemoteMessageSurfaceChanged()
         finishEntranceAnimation()
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        isRemoteMessageSurfacePresented && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
+        isRemoteMessageSurfacePresented && !isPresentingOnboardingDialog && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
     }
 
     private func notifyRemoteMessageSurfaceChanged() {
@@ -311,6 +324,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     func dismiss() {
         detachedContentOffset = scrollView.contentOffset
+        onboardingCoordinator?.detach()
         delegate = nil
         chromeDelegate = nil
 
@@ -329,12 +343,12 @@ extension RedesignedNewTabPageViewController: HomeScreenTransitionSource {
     var rootContainerView: UIView { view }
 }
 
-/// The logo is not hosted on this page; favorites participate in the existing content handoff.
+/// The welcome block and favorites participate in the content handoff.
 extension RedesignedNewTabPageViewController: NewTabPageContentHandoff {
 
     var isShowingLogo: Bool { false }
 
-    var isShowingFavorites: Bool { restingContentIsFavorites && !areFavoritesHidden }
+    var isShowingFavorites: Bool { restingContentIsFavorites && !areFavoritesHidden && !isPresentingOnboardingDialog }
 
     var restingContentIsLogo: Bool { false }
 
@@ -342,7 +356,9 @@ extension RedesignedNewTabPageViewController: NewTabPageContentHandoff {
         NewTabPageCustomizationStore().isFavoritesSectionVisible && favoritesModel?.isEmpty == false
     }
 
-    func setLogoHidden(_ hidden: Bool) {}
+    func setLogoHidden(_ hidden: Bool) {
+        blocks.first { $0.id == .welcome }?.viewController.view.alpha = hidden ? 0 : 1
+    }
 
     func setFavoritesHidden(_ hidden: Bool) {
         areFavoritesHidden = hidden
@@ -368,33 +384,49 @@ extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
     }
 }
 
-/// Contextual dialogs are not hosted on this page yet.
-extension RedesignedNewTabPageViewController: NewTabPageOnboardingPresenting {
+extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
+
+    var hidesOnboardingContentBeforeInputActivation: Bool { true }
+
+    func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
+        // Keep the scroll position and block sizes intact beneath the dialog.
+        contentContainerView.isHidden = hidden
+        view.accessibilityElementsHidden = inputEditingLayout != nil && !isPresentingOnboardingDialog
+        delegate?.newTabPageDidChangeOnboardingPresentation(self)
+        notifyRemoteMessageSurfaceChanged()
+    }
 
     func showNextDaxDialog() {
-        assertionFailure("Contextual onboarding is not implemented on the redesigned New Tab Page")
+        onboardingCoordinator?.showNextDaxDialog()
     }
 
     func onboardingCompleted() {
-        assertionFailure("Contextual onboarding is not implemented on the redesigned New Tab Page")
+        onboardingCoordinator?.onboardingCompleted()
     }
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode?) {
-        assertionFailure("Contextual onboarding is not implemented on the redesigned New Tab Page")
+        onboardingCoordinator?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message, textEntryMode: textEntryMode)
     }
 
-    func refreshContextualOnboardingDialogLayout() {}
+    func refreshContextualOnboardingDialogLayout() {
+        onboardingCoordinator?.refreshContextualOnboardingDialogLayout()
+    }
 
-    func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {}
+    func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
+        onboardingCoordinator?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+    }
 }
 
 extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
+
+    var canAnimateSearchInput: Bool { !isPresentingOnboardingDialog }
 
     var searchInputView: UIView? {
         blocks.first { $0.id == .searchInput }?.viewController.view
     }
 
     func searchInputTransitionFrame(in targetView: UIView) -> CGRect? {
+        guard canAnimateSearchInput else { return nil }
         guard let window = view.window else { return nil }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid, inputEditingLayout.windowBounds == window.bounds {
             return inputEditingLayout.inputFrameInWindow.map { targetView.convert($0, from: window) }
@@ -424,7 +456,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
             restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
-        view.accessibilityElementsHidden = isEditing
+        view.accessibilityElementsHidden = isEditing && !isPresentingOnboardingDialog
         searchInputView?.isUserInteractionEnabled = !isEditing
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1

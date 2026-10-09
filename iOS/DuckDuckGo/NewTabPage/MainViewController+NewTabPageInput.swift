@@ -30,7 +30,14 @@ extension MainViewController {
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isHandingOff: isAddressBarHandOffInProgress,
-            isDismissing: viewCoordinator.isInlineInputDismissInProgress)
+            isDismissing: viewCoordinator.isInlineInputDismissInProgress,
+            isPresentingOnboardingDialog: newTabPageViewController?.isPresentingOnboardingDialog == true)
+    }
+
+    func newTabPageDidChangeOnboardingPresentation(_ controller: any NewTabPage) {
+        guard controller === newTabPageViewController else { return }
+        updateAddressBarSuppressionForNewTabPage()
+        controller.refreshContextualOnboardingDialogLayout()
     }
 
     func updateAddressBarSuppressionForNewTabPage() {

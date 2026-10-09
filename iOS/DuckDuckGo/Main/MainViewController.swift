@@ -2477,7 +2477,7 @@ class MainViewController: UIViewController {
 
         // Suppress the NTP before it enters the view hierarchy so the Dax logo can't flash
         // on the one frame between addToContentContainer and the async alpha-0 set inside
-        // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageViewController
+        // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageOnboardingCoordinator
         // on every dismissal path.
         if daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled {
             controller.view.alpha = 0
@@ -7220,7 +7220,7 @@ extension MainViewController: TabDelegate {
               aiChatSettings.isAIChatEnabled else { return }
         let message = UserText.Onboarding.DuckAIQuery.completionOnboardingMessage
         // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
-        // flash before the editing-state transition begins. Restored by NewTabPageViewController
+        // flash before the editing-state transition begins. Restored by NewTabPageOnboardingCoordinator
         // on every dismissal path.
         newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in

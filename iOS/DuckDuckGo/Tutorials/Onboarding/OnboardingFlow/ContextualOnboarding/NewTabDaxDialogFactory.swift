@@ -58,7 +58,7 @@ protocol NewTabDaxDialogProviding {
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
-    private var delegate: OnboardingNavigationDelegate?
+    private weak var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
@@ -91,7 +91,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            // `.final` is intercepted in NewTabPageViewController and rendered via `createEndOfJourneyDialog`
+            // `.final` is intercepted in NewTabPageOnboardingCoordinator and rendered via `createEndOfJourneyDialog`
             // (content-driven), so it never reaches this switch.
             // swiftlint:disable redundant_discardable_let
             let _ = assertionFailure("Should not be reached.")

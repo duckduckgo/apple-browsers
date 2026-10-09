@@ -162,13 +162,9 @@ After re-recording, inspect every diff and commit only the intentional ones.
 
 ## Skipping
 
-`SKIP_SNAPSHOT_TESTS=1` in the test scheme's env (or on the command line, same place as `GENERATE_SNAPSHOTS`) turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
+`SKIP_SNAPSHOT_TESTS=1` in the test scheme's env turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
 
-```bash
-xcodebuild test ... SKIP_SNAPSHOT_TESTS=1
-```
-
-**Currently pinned on.** The variable is hardcoded to `1` in the test-action environment of the app schemes (`iOS Browser`, `macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`), so image snapshots are skipped for everyone — locally and in CI — while snapshot references and CI runners stabilise. To re-enable snapshots, set the value back to `$(SKIP_SNAPSHOT_TESTS)` (or disable the entry) in those schemes.
+The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `1` because the CI runners are still on macOS 26, while macOS references are pinned to macOS 27. To pause or resume snapshots for a platform, change the value in that platform's schemes.
 
 ## Conventions
 

@@ -146,6 +146,15 @@ iOS renders in a pinnable simulator runtime, so it validates major.minor. macOS 
 
 When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expectedMacOSVersion` and re-record affected references.
 
+## Comparison tolerance
+
+Every image helper compares with two thresholds:
+
+- `perceptualPrecision` (default `0.98`): how close a pixel's color must be to the reference to count as matching.
+- `precision` (default `0.9999`): the fraction of pixels that must match. Up to 0.01% may differ — about 300 pixels on a full @3x iPhone screen.
+
+Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. Override either argument on a single call only when a view needs a different budget.
+
 ## Reference storage
 
 Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.

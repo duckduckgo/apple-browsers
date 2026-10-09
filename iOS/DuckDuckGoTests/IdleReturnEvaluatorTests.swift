@@ -147,4 +147,40 @@ final class IdleReturnEvaluatorTests {
         let evaluator = makeEvaluator(effectiveOption: .lastUsedTab, secondsSinceLastBackground: 61)
         #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .lut, timeAwayMs: 61_000))
     }
+
+    @available(iOS 16, *)
+    @Test("A return marked as landed at launch is reported as landed", .timeLimit(.minutes(1)))
+    func markedReturnIsReportedAsLanded() {
+        let evaluator = makeEvaluator(secondsSinceLastBackground: 61)
+
+        evaluator.markReturnLandedAtLaunch()
+
+        #expect(evaluator.evaluateReturn() == .landedAtLaunch(timeAwayMs: 61_000))
+        #expect(evaluator.evaluateReturn().isAfterIdle)
+    }
+
+    @available(iOS 16, *)
+    @Test("A mark does not carry over to the next time the app is backgrounded", .timeLimit(.minutes(1)))
+    func markDoesNotCarryOverToTheNextBackground() throws {
+        let storage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys> = InMemoryThrowingKeyValueStore().throwingKeyedStoring()
+        try storage.set(Self.now.addingTimeInterval(-600), for: \.lastBackgroundDate)
+        let evaluator = IdleReturnEvaluator(eligibilityManager: MockIdleReturnEligibilityManager(),
+                                            lastBackgroundDateStorage: storage,
+                                            now: { Self.now })
+        evaluator.markReturnLandedAtLaunch()
+
+        try storage.set(Self.now.addingTimeInterval(-400), for: \.lastBackgroundDate)
+
+        #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .ntp, timeAwayMs: 400_000))
+    }
+
+    @available(iOS 16, *)
+    @Test("A marked return is ordinary once the feature is unavailable", .timeLimit(.minutes(1)))
+    func markedReturnIsOrdinaryWhenFeatureUnavailable() {
+        let evaluator = makeEvaluator(featureAvailable: false, secondsSinceLastBackground: 61)
+
+        evaluator.markReturnLandedAtLaunch()
+
+        #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 61_000))
+    }
 }

@@ -113,6 +113,7 @@ final class MainCoordinator {
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         idleReturnEvaluator: IdleReturnEvaluating,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -297,6 +298,7 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        idleReturnEvaluator: idleReturnEvaluator,
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
@@ -961,12 +963,25 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        presentNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, completion: completion) { [weak self] allowingKeyboard in
+            self?.controller.newTab(reuseExisting: true, allowingKeyboard: allowingKeyboard, openedAfterIdle: true)
+        }
+    }
+
+    func recordNewTabPageLandedAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        presentNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, completion: completion) { [weak self] allowingKeyboard in
+            self?.controller.recordNewTabPageArrivalForIdleReturnAtLaunch(allowingKeyboard: allowingKeyboard)
+        }
+    }
+
+    private func presentNewTabPageAfterIdleReturn(timeAwayMs: Int?,
+                                                  completion: @escaping (IdleReturnNewTabPageResult) -> Void,
+                                                  present: @escaping (_ allowingKeyboard: Bool) -> Void) {
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-        controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) { [weak self] in
-            guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+        controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) {
+            present(!deferKeyboard)
             completion(.openedNewTab)
         }
     }

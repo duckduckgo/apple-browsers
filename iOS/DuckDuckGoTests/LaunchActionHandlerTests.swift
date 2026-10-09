@@ -95,6 +95,8 @@ final class MockIdleReturnEvaluator: IdleReturnEvaluating {
     func evaluateReturn() -> IdleReturnOutcome {
         return outcome
     }
+
+    func markReturnLandedAtLaunch() {}
 }
 
 @MainActor
@@ -103,6 +105,7 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var showNewTabPageAfterIdleReturnResult: IdleReturnNewTabPageResult = .suppressed
     var completesNewTabPageImmediately = true
     var newTabPageCompletion: ((IdleReturnNewTabPageResult) -> Void)?
+    var recordNewTabPageLandedAtLaunchCalled = false
     var markLastUsedTabAsResumedAfterIdleCalled = false
     var recordOrdinaryReturnCalled = false
     var lastTimeAwayMs: Int?
@@ -120,6 +123,12 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
         } else {
             newTabPageCompletion = completion
         }
+    }
+
+    func recordNewTabPageLandedAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        recordNewTabPageLandedAtLaunchCalled = true
+        lastTimeAwayMs = timeAwayMs
+        newTabPageCompletion = completion
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
@@ -476,6 +485,27 @@ final class LaunchActionHandlerTests {
 
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A return the launch already landed is recorded on that page, not opened again", .timeLimit(.minutes(1)))
+    func landedAtLaunchIsRecordedNotOpened() throws {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        idleReturnEvaluator.outcome = .landedAtLaunch(timeAwayMs: 42_000)
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: nil, isFirstForeground: true))
+
+        #expect(idleReturnDelegate.recordNewTabPageLandedAtLaunchCalled)
+        #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.recordOrdinaryReturnCalled)
+        #expect(idleReturnDelegate.lastTimeAwayMs == 42_000)
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+
+        let completion = try #require(idleReturnDelegate.newTabPageCompletion)
+        completion(.openedNewTab)
+
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 1)
     }
 
     @available(iOS 16, *)

@@ -66,6 +66,8 @@ protocol OnboardingPresenting: AnyObject {
 protocol IdleReturnLaunchDelegate: AnyObject {
     /// Completes after any screen dismissal and New Tab Page creation finish.
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
+    /// Completes like `showNewTabPageAfterIdleReturn`, for an NTP the launch already put up.
+    func recordNewTabPageLandedAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
@@ -133,9 +135,9 @@ final class LaunchActionHandler: LaunchActionHandling {
             let outcome = idleReturnEvaluator.evaluateReturn()
             let isAfterIdleReturn = outcome.isAfterIdle
             switch outcome {
-            case .afterIdle(.ntp, let timeAwayMs):
+            case .afterIdle(.ntp, let timeAwayMs), .landedAtLaunch(let timeAwayMs):
                 let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) { [self] result in
+                let showKeyboard: (IdleReturnNewTabPageResult) -> Void = { [self] result in
                     guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
                     switch result {
                     case .keptCurrent:
@@ -147,6 +149,11 @@ final class LaunchActionHandler: LaunchActionHandling {
                     case .suppressed:
                         break
                     }
+                }
+                if case .landedAtLaunch = outcome {
+                    idleReturnDelegate?.recordNewTabPageLandedAtLaunch(timeAwayMs: timeAwayMs, completion: showKeyboard)
+                } else {
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, completion: showKeyboard)
                 }
                 return
             case .afterIdle(.lut, let timeAwayMs):

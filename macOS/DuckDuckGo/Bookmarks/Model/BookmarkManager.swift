@@ -136,6 +136,11 @@ final class LocalBookmarkManager: BookmarkManager {
 
     // MARK: - Bookmarks
 
+    /// Reads the persistent store synchronously rather than `list`, so it's correct before bookmarks load and safe to call off the main thread.
+    func bookmarksCount() -> Int {
+        bookmarkStore.bookmarksCount()
+    }
+
     func loadBookmarks() {
         bookmarkStore.loadAll(type: .topLevelEntities) { [weak self] (topLevelEntities, error) in
             guard error == nil, let topLevelEntities = topLevelEntities else {

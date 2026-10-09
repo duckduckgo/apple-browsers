@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+        // swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.16.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.22.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -300,6 +300,7 @@ let package = Package(
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_PAGE_SIGNALS_ENABLED", .when(platforms: [.macOS, .iOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
@@ -693,6 +694,7 @@ let package = Package(
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_PAGE_SIGNALS_ENABLED", .when(platforms: [.macOS, .iOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),

@@ -34,6 +34,8 @@ final class UTIModelSelector {
     /// The chip / reasoning-picker mutations the selector drives on the input bar.
     struct ViewSurface {
         let setModelName: (String) -> Void
+        /// The provider icon the chip shows alone when the toolbar is too narrow for the name.
+        let setModelIcon: (UIImage?) -> Void
         let setModelPickerMenu: (UIMenu?) -> Void
         let setModelChipHidden: (Bool) -> Void
         /// Hides the chip's chevron, turning it from a dropdown into a read-only label.
@@ -279,6 +281,7 @@ final class UTIModelSelector {
         let shortName = modelMenuFactory.selectedShortName(models: modelStore.models, selectedId: selectedId)
         if let shortName {
             view.setModelName(shortName)
+            view.setModelIcon(modelStore.models.first { $0.id == selectedId }?.updatedModelPickerMenuIcon)
         }
         applyModelPickerAffordance()
     }

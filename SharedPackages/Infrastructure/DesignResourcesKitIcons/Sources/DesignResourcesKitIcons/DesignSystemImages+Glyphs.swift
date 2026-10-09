@@ -158,6 +158,7 @@ public extension DesignSystemImages {
             public static var priceTag: DesignSystemImage { .init(resource: .priceTag16) }
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility16) }
             public static var add: DesignSystemImage { .init(resource: .add16) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop16) }
@@ -547,6 +548,7 @@ public extension DesignSystemImages {
             public static var eye: DesignSystemImage { .init(resource: .eye24) }
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }
+            public static var exclamationRecolorableInvert: DesignSystemImage { .init(resource: .exclamationRecolorableInvert24) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid24) }
             public static var expand: DesignSystemImage { .init(resource: .expand24) }
             public static var favorite: DesignSystemImage { .init(resource: .favorite24) }

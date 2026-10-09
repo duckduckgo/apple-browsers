@@ -62,6 +62,50 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         }
     }
 
+    func testUpdatingUnchangedStartActionsPreservesChipViews() throws {
+        let sut = makeBasicInputSUT()
+        sut.loadViewIfNeeded()
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        let chip = try XCTUnwrap(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView })
+
+        sut.view.isHidden = true
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        sut.view.isHidden = false
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+
+        XCTAssertTrue(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView } === chip)
+        XCTAssertEqual(sut.startActionCount, 1)
+    }
+
+    func testUpdatingSuggestionWithSameIDRendersChangedContent() throws {
+        let sut = makeBasicInputSUT()
+        sut.loadViewIfNeeded()
+        let original = ContextualSuggestedPrompt(id: "summary", label: "Original", prompt: "Original prompt", icon: nil)
+        sut.updateStartActions(suggestions: [original], quickActions: [])
+        let originalChip = try XCTUnwrap(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView })
+        let updated = ContextualSuggestedPrompt(id: "summary", label: "Updated", prompt: "Updated prompt", icon: "summary")
+
+        sut.updateStartActions(suggestions: [updated], quickActions: [])
+
+        let updatedChip = try XCTUnwrap(findSubview(in: sut.view) { $0 is AIChatQuickActionChipView })
+        XCTAssertFalse(updatedChip === originalChip)
+        XCTAssertNotNil(findSubview(in: updatedChip) { ($0 as? UILabel)?.text == "Updated" })
+    }
+
+    func testClearingThenRestoringStartActionsRecreatesChips() {
+        let sut = makeBasicInputSUT()
+        sut.loadViewIfNeeded()
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+
+        sut.updateStartActions(suggestions: [], quickActions: [])
+        XCTAssertEqual(sut.startActionCount, 0)
+        sut.updateSuggestionsLoading(true)
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        sut.updateSuggestionsLoading(false)
+
+        XCTAssertEqual(sut.startActionCount, 1)
+    }
+
     // MARK: - Terms of Service
 
     func testWhenTermsAreNotAcceptedThenTheDisclaimerShowsBelowTheInput() throws {
@@ -74,6 +118,35 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
 
         XCTAssertFalse(card.isHidden)
         XCTAssertLessThan(input.convert(input.bounds, to: sut.view).maxY, card.frame.maxY)
+    }
+
+    func testWhenAskIsTappedWithTheDisclaimerOnScreenThenAButtonPromptIsReported() {
+        let firing = RecordingContextualInputOutcomePixelFiring()
+        let sut = makeBasicInputSUT(inputOutcomePixelFiring: firing)
+        let window = show(sut)
+        defer { window.isHidden = true }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        sut.recordInputOutcome(.promptSubmitted(.button))
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertEqual(firing.events, [
+            DuckAiInputOutcomeEvent(surface: .contextualChat, isTermsOfServiceDisclaimerShown: true, outcome: .promptSubmitted(.button))
+        ])
+    }
+
+    func testWhenTheInputLeavesTheScreenWithoutAPromptThenItIsReportedAbandoned() {
+        let firing = RecordingContextualInputOutcomePixelFiring()
+        let sut = makeBasicInputSUT(inputOutcomePixelFiring: firing)
+        let window = show(sut)
+        defer { window.isHidden = true }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        sut.beginAppearanceTransition(false, animated: false)
+        sut.endAppearanceTransition()
+
+        XCTAssertEqual(firing.events.map(\.outcome), [.abandoned])
+        XCTAssertEqual(firing.events.map(\.isTermsOfServiceDisclaimerShown), [true])
     }
 
     func testWhenTermsAreAcceptedThenNoDisclaimerShows() {
@@ -176,10 +249,13 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         DuckAiTermsOfServiceDisclaimer(feature: StubNativeTermsOfServiceFeature(isAvailable: true), store: termsStore)
     }
 
-    private func makeBasicInputSUT() -> AIChatContextualInputViewController {
+    private func makeBasicInputSUT(
+        inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring = RecordingContextualInputOutcomePixelFiring()
+    ) -> AIChatContextualInputViewController {
         AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper(),
                                             showsBasicNativeInput: true,
-                                            termsOfServiceDisclaimer: makeDisclaimer())
+                                            termsOfServiceDisclaimer: makeDisclaimer(),
+                                            inputOutcomePixelFiring: inputOutcomePixelFiring)
     }
 
     private func show(_ viewController: UIViewController) -> UIWindow {
@@ -204,5 +280,13 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
             }
         }
         return nil
+    }
+}
+
+private final class RecordingContextualInputOutcomePixelFiring: DuckAiInputOutcomePixelFiring {
+    private(set) var events: [DuckAiInputOutcomeEvent] = []
+
+    func fire(_ event: DuckAiInputOutcomeEvent) {
+        events.append(event)
     }
 }

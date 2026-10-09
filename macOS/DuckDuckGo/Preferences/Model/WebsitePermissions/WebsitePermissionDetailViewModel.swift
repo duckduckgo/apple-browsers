@@ -160,10 +160,10 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private func searchableValues(for site: WebsitePermissionDetailViewState.SiteRow) -> [String] {
         guard case .externalScheme(let scheme) = site.permissionType else {
-            return [site.domain]
+            return [site.displayName]
         }
 
-        return [site.domain, "\(scheme)://", site.externalAppName].compactMap { $0 }
+        return [site.displayName, "\(scheme)://", site.externalAppName].compactMap { $0 }
     }
 
     private func foldedForSearch(_ text: String) -> String {

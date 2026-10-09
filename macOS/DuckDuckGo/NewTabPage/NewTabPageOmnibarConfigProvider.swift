@@ -100,6 +100,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
     private let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring?
+    private let duckAiLauncherPromo: DuckAiLauncherPromo?
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
@@ -121,6 +122,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
          attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring? = nil,
+         duckAiLauncherPromo: DuckAiLauncherPromo? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -133,6 +135,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
         self.attachmentPrivacyDisclosureStore = attachmentPrivacyDisclosureStore
+        self.duckAiLauncherPromo = duckAiLauncherPromo
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -175,15 +178,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             guard isAIChatShortcutEnabled && isAIChatSettingVisible else {
                 return .search
             }
-            do {
-                if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
-                   let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
-                    return mode
-                }
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
-            }
-            return .search
+            return Self.storedMode(in: keyValueStore)
         }
         set {
             firePixel(NewTabPagePixel.omnibarModeChanged(mode: newValue == .search ? .search : .duckAI))
@@ -194,6 +189,20 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             }
             modeSubject.send(newValue)
         }
+    }
+
+    /// The mode last picked on the New Tab Page, whether or not Duck.ai is currently offered there.
+    /// Static so it can be read without building a provider.
+    static func storedMode(in keyValueStore: ThrowingKeyValueStoring) -> NewTabPageDataModel.OmnibarMode {
+        do {
+            if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
+               let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
+                return mode
+            }
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
+        }
+        return .search
     }
 
     var isAIChatShortcutEnabled: Bool {
@@ -499,6 +508,35 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private var isAttachmentPrivacyDisclosureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
+    }
+
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
+        duckAiLauncherPromo?.presentation()
+    }
+
+    @MainActor
+    func launcherPromoShown() {
+        duckAiLauncherPromo?.shown(on: .newTab)
+    }
+
+    @MainActor
+    func selectLauncherPromoCta() {
+        duckAiLauncherPromo?.tryNow(on: .newTab)
+    }
+
+    @MainActor
+    func dismissLauncherPromo() {
+        duckAiLauncherPromo?.dismiss(on: .newTab)
+    }
+
+    @MainActor
+    func launcherPromoIgnored() {
+        duckAiLauncherPromo?.ignore(on: .newTab)
+    }
+
+    var launcherPromoPublisher: AnyPublisher<Void, Never> {
+        duckAiLauncherPromo?.changesPublisher ?? Empty().eraseToAnyPublisher()
     }
 
     @MainActor

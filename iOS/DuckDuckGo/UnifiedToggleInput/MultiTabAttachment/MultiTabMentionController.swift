@@ -33,14 +33,19 @@ final class MultiTabMentionController: TextEntryMentionHandling {
         let tabs: () -> [MultiTabAttachmentCandidate]
         let attachedTabIds: () -> Set<TabUID>
         let canAttach: (TabUID) -> Bool
-        let toggleAttachment: (MultiTabAttachmentCandidate) -> Bool
+        let attachTab: (MultiTabAttachmentCandidate) -> Bool
     }
 
     struct Suggestion: Equatable {
         let candidate: MultiTabAttachmentCandidate
-        let isSelected: Bool
         let isEnabled: Bool
     }
+
+    var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface?)?
+    var onPickerEvent: ((MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void)?
+    private lazy var pixelSession = MultiTabPickerPixelSession(
+        surfaceProvider: { [weak self] in self?.pixelSurfaceProvider?() },
+        report: { [weak self] in self?.onPickerEvent?($0, $1) })
 
     var onSuggestionsChanged: (([Suggestion]?) -> Void)?
     private let environment: Environment
@@ -62,6 +67,7 @@ final class MultiTabMentionController: TextEntryMentionHandling {
     }
 
     func dismiss() {
+        pixelSession.finish()
         pendingUpdate?.cancel()
         pendingUpdate = nil
         activeToken = nil
@@ -90,22 +96,22 @@ final class MultiTabMentionController: TextEntryMentionHandling {
             dismiss()
             return
         }
-        let candidates = MultiTabAttachmentCandidateFilter.filter(environment.tabs(), query: token.query)
-        if candidates.isEmpty, token.query.rangeOfCharacter(from: .whitespaces) != nil {
-            dismiss()
-            return
+        let attachedIDs = environment.attachedTabIds()
+        let availableTabs = environment.tabs().filter { !attachedIDs.contains($0.tabId) }
+        let candidates = MultiTabAttachmentCandidateFilter.filter(availableTabs, query: token.query)
+        if candidates.isEmpty {
+            pixelSession.finish()
+        } else {
+            pixelSession.show()
         }
         self.textView = textView
         activeToken = token
-        let selectedIDs = environment.attachedTabIds()
-        onSuggestionsChanged?(candidates.map {
-            let isSelected = selectedIDs.contains($0.tabId)
-            return Suggestion(candidate: $0, isSelected: isSelected,
-                              isEnabled: isSelected || environment.canAttach($0.tabId))
+        onSuggestionsChanged?(candidates.isEmpty ? nil : candidates.map {
+            Suggestion(candidate: $0, isEnabled: environment.canAttach($0.tabId))
         })
     }
 
-    /// Metadata or attachment changes refresh only an already visible suggestion list.
+    /// Keeps an active mention up to date even while all matching tabs are attached.
     func refresh() {
         guard !isAccepting, activeToken != nil, let textView else { return }
         update(in: textView)
@@ -128,7 +134,10 @@ final class MultiTabMentionController: TextEntryMentionHandling {
             isAccepting = false
         }
         // A tab may close or navigate while suggestions are visible. Keep the token if attachment fails.
-        guard environment.toggleAttachment(candidate) else { return }
+        guard !environment.attachedTabIds().contains(candidate.tabId),
+              environment.canAttach(candidate.tabId),
+              environment.attachTab(candidate) else { return }
+        pixelSession.finish(didChoose: true)
         textView.replace(range, withText: "")
         textView.selectedRange = NSRange(location: activeToken.range.location, length: 0)
         textView.delegate?.textViewDidChange?(textView)

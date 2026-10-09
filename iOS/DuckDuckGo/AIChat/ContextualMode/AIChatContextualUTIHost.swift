@@ -54,6 +54,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// The user accepted the offer to attach the page they navigated to.
     var onSuggestionAccepted: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
+    /// Counted once per prompt: the user script echoes the first one back as a second delivery.
+    var onPromptSent: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
@@ -220,6 +222,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// Uploads and explicit tab attachments currently in the input; the current-page chip is counted by the session.
     var attachmentCount: Int {
         coordinator.attachmentCount
+    }
+
+    var hasAttachedTabs: Bool {
+        coordinator.hasAttachedTabs
     }
 
     /// Fires when the input's attachments change.
@@ -464,7 +470,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private func showTabMentionSuggestions(_ suggestions: [MultiTabMentionController.Suggestion]?) {
         guard let suggestions, let parent = coordinator.viewController.parent else {
             guard tabMentionSuggestionsView != nil else { return }
-            tabMentionSuggestionsView?.removeFromSuperview()
+            tabMentionSuggestionsView?.dismiss()
             tabMentionSuggestionsView = nil
             onTabMentionVisibilityChanged?(false)
             return
@@ -478,17 +484,27 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     private func makeTabMentionSuggestionsView(in parent: UIViewController) -> MultiTabMentionSuggestionsView {
-        let suggestionsView = MultiTabMentionSuggestionsView(usesGlassBackground: parent is AIChatContextualFloatingInputViewController)
+        let suggestionsView = MultiTabMentionSuggestionsView(showsGlassShadow: parent is AIChatContextualSheetViewController)
+        suggestionsView.overrideUserInterfaceStyle = coordinator.viewController.handler.isFireTab ? .dark : .unspecified
         suggestionsView.onSelect = { [weak self] in self?.coordinator.selectTabMention($0) }
         suggestionsView.onDismiss = { [weak self] in self?.coordinator.dismissTabMentions() }
-        parent.view.addSubview(suggestionsView)
-        let topAnchor = (parent as? AIChatContextualSheetViewController)?.inputSuggestionsTopAnchor
-            ?? parent.view.safeAreaLayoutGuide.topAnchor
+        parent.view.insertSubview(suggestionsView, belowSubview: coordinator.viewController.view)
+
+        let topAnchor: NSLayoutYAxisAnchor
+        if let sheet = parent as? AIChatContextualSheetViewController {
+            topAnchor = sheet.inputSuggestionsTopAnchor
+        } else if let browser = parent.parent as? MainViewController,
+                  browser.viewCoordinator.addressBarPosition == .top {
+            topAnchor = browser.viewCoordinator.navigationBarContainer.bottomAnchor
+        } else {
+            topAnchor = parent.view.safeAreaLayoutGuide.topAnchor
+        }
         NSLayoutConstraint.activate([
             suggestionsView.leadingAnchor.constraint(equalTo: inputCardLeadingAnchor),
             suggestionsView.trailingAnchor.constraint(equalTo: inputCardTrailingAnchor),
-            suggestionsView.bottomAnchor.constraint(equalTo: inputCardTopAnchor, constant: -12),
+            suggestionsView.bottomAnchor.constraint(equalTo: inputCardTopAnchor, constant: -8),
             suggestionsView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 8),
+            suggestionsView.topAnchor.constraint(greaterThanOrEqualTo: parent.view.safeAreaLayoutGuide.topAnchor, constant: 8),
         ])
         return suggestionsView
     }
@@ -518,6 +534,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func submitQuickActionPrompt(_ prompt: String) {
         coordinator.submitProgrammatic(text: prompt)
+    }
+
+    func submitSuggestedPrompt(_ prompt: String) {
+        coordinator.submitProgrammatic(text: prompt, trigger: .suggestedPrompt)
     }
 
     func discardTabAttachments() {
@@ -580,6 +600,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     func unifiedToggleInputDidSubmitPromptToBoundChat() {
+        onPromptSent?()
         reportFirstPromptSubmission()
     }
 
@@ -594,6 +615,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            images: [AIChatNativePrompt.NativePromptImage]?,
                                            files: [AIChatNativePrompt.NativePromptFile]?,
                                            termsAccepted: Bool) {
+        onPromptSent?()
         guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,

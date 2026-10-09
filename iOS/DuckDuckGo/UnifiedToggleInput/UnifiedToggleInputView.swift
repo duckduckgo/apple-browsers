@@ -253,6 +253,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelName = newValue }
     }
 
+    var modelIcon: UIImage? {
+        get { toolsToolbar.modelIcon }
+        set { toolsToolbar.modelIcon = newValue }
+    }
+
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }
@@ -624,7 +629,7 @@ final class UnifiedToggleInputView: UIView {
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
     private let toggleView = UnifiedToggleInputToggleView()
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
-    private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
+    private let attachmentsStrip: UnifiedToggleInputAttachmentsStripView
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
@@ -810,10 +815,12 @@ final class UnifiedToggleInputView: UIView {
 
     init(handler: UnifiedToggleInputHandler,
          isToggleEnabled: Bool = true,
-         placesAttachmentsAboveInput: Bool = false) {
+         placesAttachmentsAboveInput: Bool = false,
+         usesCompactAttachmentLayout: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
+        self.attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
@@ -1643,7 +1650,8 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateSubmitButtonStyle() {
         toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
-        toolsToolbar.usesAskSubmitButton = handler.usesAskSubmitButton
+        toolsToolbar.termsOfServiceSendButton = handler.termsOfServiceSendButton
+        toolsToolbar.reservesTermsOfServiceSendButton = handler.reservesTermsOfServiceSendButton
     }
 
     private func submitCurrentInput() {
@@ -2049,7 +2057,14 @@ private extension UnifiedToggleInputView {
             }
             .store(in: &cancellables)
 
-        handler.usesAskSubmitButtonPublisher
+        handler.termsOfServiceSendButtonPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.reservesTermsOfServiceSendButtonPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateSubmitButtonStyle()

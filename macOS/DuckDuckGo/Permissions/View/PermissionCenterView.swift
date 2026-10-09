@@ -65,7 +65,7 @@ struct PermissionCenterView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header - only show if there are permission items
             if !viewModel.permissionItems.isEmpty {
-                Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
+                Text(String(format: UserText.permissionCenterTitle, viewModel.domain.permissionDisplayName))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
@@ -630,6 +630,7 @@ struct ExternalSchemeRowView: View {
             button.bezelStyle = .accessoryBarAction
             button.isBordered = true
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            button.setAccessibilityIdentifier("PermissionCenterView.externalSchemeDecisionPopUp")
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
                 let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")

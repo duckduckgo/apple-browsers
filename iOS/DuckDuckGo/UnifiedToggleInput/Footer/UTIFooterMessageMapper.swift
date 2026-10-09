@@ -31,11 +31,11 @@ struct UTIFooterMessageMapper {
     }
 
     /// Required, so it carries no close button: sending the prompt is what retires it.
-    func termsOfServiceMessage() -> UTIFooterMessage {
+    func termsOfServiceMessage(sendButton: DuckAiTermsOfServiceSendButton = .ask) -> UTIFooterMessage {
         let linkText = UserText.duckAITermsOfServiceDisclaimerLink
         return UTIFooterMessage(
             icon: .shield,
-            title: String(format: UserText.duckAITermsOfServiceDisclaimer, linkText),
+            title: String(format: sendButton.disclaimerFormat, linkText),
             subtitle: nil,
             primaryAction: nil,
             isDismissible: false,
@@ -74,20 +74,24 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    func multiTabPromotionMessage() -> UTIFooterMessage {
-        UTIFooterMessage(
+    func multiTabPromotionMessage(title: String = UserText.aiChatMultiTabPromotion) -> UTIFooterMessage {
+        let emphasizedText = title.range(of: "·").map {
+            String(title[..<$0.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        } ?? ""
+
+        return UTIFooterMessage(
             icon: .gift,
-            title: UserText.aiChatMultiTabPromotion,
+            title: title,
             subtitle: nil,
             primaryAction: nil,
             isDismissible: true,
-            titleFormatting: .init(emphasizedText: UserText.aiChatMultiTabPromotionNew,
+            titleFormatting: .init(emphasizedText: emphasizedText,
                                    attachmentPlaceholder: "{attachment}",
                                    attachmentAccessibilityLabel: UserText.aiChatMultiTabPromotionAttachment)
         )
     }
 
-    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"
+    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files"
 
     func message(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool = true) -> UTIFooterMessage {
         UTIFooterMessage(

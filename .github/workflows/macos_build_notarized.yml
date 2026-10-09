@@ -93,7 +93,7 @@ jobs:
 
     name: Export Notarized App
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     outputs:
       app-version: ${{ steps.set-outputs.outputs.app-version }}
@@ -104,7 +104,7 @@ jobs:
       dsym-url: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-url }}
 
     env:
-      RUNS_ON: image:osx-tahoe-26,m4pro # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,m4pro # keep this in sync with runs-on above
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
@@ -253,6 +253,18 @@ jobs:
           ./scripts/archive.sh ${{ env.release-type }}
         fi
 
+    - name: Upload archive failure diagnostics
+      if: failure() && steps.archive.outcome == 'failure'
+      uses: actions/upload-artifact@v6
+      with:
+        name: archive-diagnostics-${{ env.release-type }}-${{ github.run_attempt }}
+        path: |
+          macOS/release/archive.log
+          macOS/release/export.log
+          macOS/release/DerivedData/**/swbuild.tmp.*/Data.noindex/**
+        retention-days: 7
+        if-no-files-found: warn
+
     - name: Report job duration
       continue-on-error: true
       uses: ./.github/actions/measure-duration
@@ -384,7 +396,7 @@ jobs:
     needs: export-notarized-app
     if: ${{ github.event.inputs.create-dmg == true || inputs.create-dmg == true }}
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     outputs:
       dmg-url: ${{ steps.upload-dmg-to-s3.outputs.dmg-url }}
@@ -396,7 +408,7 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
       upload-to: ${{ needs.export-notarized-app.outputs.upload-to }}
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
-      RUNS_ON: image:osx-tahoe-26,m4pro # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,m4pro # keep this in sync with runs-on above
 
     steps:
 
@@ -586,7 +598,7 @@ jobs:
     needs: [export-notarized-app, create-dmg]
     if: ${{ always() && inputs.skip-notify == false }}
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     env:
       branch: ${{ inputs.branch || github.ref_name }}

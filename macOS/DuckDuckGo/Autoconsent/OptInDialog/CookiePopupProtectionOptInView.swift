@@ -102,7 +102,7 @@ struct CookiePopupProtectionOptInView: View {
     private var titlebar: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Image("Logo-Horizontal-Registered")
+                Image(.logoHorizontalRegistered)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 102, height: 28)

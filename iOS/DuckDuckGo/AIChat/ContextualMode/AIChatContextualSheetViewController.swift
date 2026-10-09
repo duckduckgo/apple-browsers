@@ -769,7 +769,7 @@ private extension AIChatContextualSheetViewController {
     }
 
     func createContextChipView(context: AIChatPageContext, onRemove: @escaping () -> Void) -> AIChatContextChipView {
-        let chipView = AIChatContextChipView()
+        let chipView = AIChatContextChipView(style: .standalone)
         chipView.configure(state: .attached(title: context.title, favicon: context.favicon))
         chipView.onRemove = onRemove
         return chipView
@@ -1053,7 +1053,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         guard isFrontendReady else { return false }
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
 
-        submitSuggestionPrompt(query)
+        submitSuggestionPrompt(query, isSuggestedPrompt: false)
         return true
     }
 
@@ -1357,7 +1357,8 @@ private extension AIChatContextualSheetViewController {
     }
 
     /// Only an Ask tap accepts the Terms of Service; chips and Summarize send without it.
-    func submitPromptFromNativeInput(_ prompt: String, sentWithAsk: Bool) {
+    func submitPromptFromNativeInput(_ prompt: String, sentWithAsk: Bool, isSuggestedPrompt: Bool = false) {
+        contextualInputViewController.recordInputOutcome(isSuggestedPrompt ? .suggestedPrompt : .promptSubmitted(sentWithAsk ? .button : .other))
         let termsAccepted: Bool
         if sentWithAsk {
             termsAccepted = contextualInputViewController.acceptTermsIfDisclaimerShown()
@@ -1369,11 +1370,16 @@ private extension AIChatContextualSheetViewController {
         delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
     }
 
-    func submitSuggestionPrompt(_ prompt: String) {
+    /// `isSuggestedPrompt` is false for a search query handed over from the results page.
+    func submitSuggestionPrompt(_ prompt: String, isSuggestedPrompt: Bool = true) {
         if let persistentUTIHost {
-            persistentUTIHost.submitQuickActionPrompt(prompt)
+            if isSuggestedPrompt {
+                persistentUTIHost.submitSuggestedPrompt(prompt)
+            } else {
+                persistentUTIHost.submitQuickActionPrompt(prompt)
+            }
         } else {
-            submitPromptFromNativeInput(prompt, sentWithAsk: false)
+            submitPromptFromNativeInput(prompt, sentWithAsk: false, isSuggestedPrompt: isSuggestedPrompt)
         }
     }
 
@@ -1573,7 +1579,13 @@ private extension AIChatContextualSheetViewController {
 
         let utiView = persistentUTIHost.mount(in: self)
         persistentUTIHost.onTabMentionVisibilityChanged = { [weak self] isVisible in
-            self?.contextualInputViewController.view.isHidden = isVisible
+            guard let self else { return }
+            if !isVisible {
+                let state = self.sessionState.viewState
+                self.contextualInputViewController.updateStartActions(suggestions: state.suggestions, quickActions: state.quickActions)
+                self.contextualInputViewController.updateSuggestionsLoading(state.suggestionsLoadState == .loading)
+            }
+            self.contextualInputViewController.view.isHidden = isVisible
         }
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
         contentContainerBottomConstraint?.isActive = false

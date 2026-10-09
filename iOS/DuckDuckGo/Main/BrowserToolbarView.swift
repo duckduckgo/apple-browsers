@@ -507,6 +507,8 @@ final class BrowserToolbarView: UIView {
 
     func setToolbarButtons(_ views: [UIView]) {
         toolbarButtonViews = views
+        guard !buttonStack.arrangedSubviews.elementsEqual(views, by: { $0 === $1 })
+                || views.contains(where: { $0.superview !== buttonStack }) else { return }
         rebuildButtonRow()
     }
 
@@ -515,7 +517,6 @@ final class BrowserToolbarView: UIView {
             buttonStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        buttonStack.distribution = .equalCentering
         toolbarButtonViews.forEach { view in
             view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
             buttonStack.addArrangedSubview(view)
@@ -556,12 +557,12 @@ final class BrowserToolbarView: UIView {
 
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
         endOmnibarSwipe()
-        hostedOmnibarView?.removeFromSuperview()
-        hostedOmnibarView = nil
         isOmnibarMorphing = false
         buttonRowCollapseProgress = 0
         
         guard let view else {
+            hostedOmnibarView?.removeFromSuperview()
+            hostedOmnibarView = nil
             applyOmnibarDetachmentPose()
             return
         }
@@ -569,19 +570,21 @@ final class BrowserToolbarView: UIView {
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: isFloatingStyleEnabled)
         applyContentStackMetrics()
-        rebuildButtonRow()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isUserInteractionEnabled = true
         (view as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
-        omnibarContainer.addSubview(view)
-        hostedOmnibarView = view
-        
-        NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: omnibarContainer.leadingAnchor, constant: Self.omnibarHorizontalInset),
-            view.trailingAnchor.constraint(equalTo: omnibarContainer.trailingAnchor, constant: -Self.omnibarHorizontalInset),
-            view.topAnchor.constraint(equalTo: omnibarContainer.topAnchor),
-            view.bottomAnchor.constraint(equalTo: omnibarContainer.bottomAnchor),
-        ])
+        if hostedOmnibarView !== view || view.superview !== omnibarContainer {
+            hostedOmnibarView?.removeFromSuperview()
+            omnibarContainer.addSubview(view)
+            hostedOmnibarView = view
+
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: omnibarContainer.leadingAnchor, constant: Self.omnibarHorizontalInset),
+                view.trailingAnchor.constraint(equalTo: omnibarContainer.trailingAnchor, constant: -Self.omnibarHorizontalInset),
+                view.topAnchor.constraint(equalTo: omnibarContainer.topAnchor),
+                view.bottomAnchor.constraint(equalTo: omnibarContainer.bottomAnchor),
+            ])
+        }
         
         updateCornerStyle()
         scheduleHostedOmnibarMaterialRefresh()
@@ -602,7 +605,6 @@ final class BrowserToolbarView: UIView {
         // Settled into the buttons-only pose now, so drop the embedded (bottom omnibar) metrics.
         isOmnibarMorphing = false
         applyContentStackMetrics()
-        rebuildButtonRow()
         updateCornerStyle()
     }
 
@@ -613,7 +615,6 @@ final class BrowserToolbarView: UIView {
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
         applyContentStackMetrics()
-        rebuildButtonRow()
         updateCornerStyle()
     }
 
@@ -1038,7 +1039,6 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.applyContentStackMetrics()
-            self.rebuildButtonRow()
             // Keep the buttons-only height in sync with the style (49 legacy / 62 floating standalone).
             // The embedded-omnibar height is floating-only and owned by `setOmnibarView`, so leave it.
             if !self.hasEmbeddedOmnibar {

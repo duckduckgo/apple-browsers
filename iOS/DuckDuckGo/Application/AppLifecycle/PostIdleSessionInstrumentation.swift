@@ -54,6 +54,9 @@ protocol PostIdleSessionInstrumentation: AnyObject {
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
                         focused: Bool)
 
+    /// Records automatic address-bar focus on arrival without counting it as an interaction.
+    func keyboardRaisedOnArrival()
+
     /// User scrolled or activated an in-page link. Idempotent within a session.
     func pageEngaged()
 
@@ -143,6 +146,16 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         let postIdleData = PostIdleSessionWideEventData(surface: afterIdleSurface, startedAt: startedAt)
         postIdleSessionID = postIdleData.globalData.id
         wideEvent.startFlow(postIdleData)
+    }
+
+    func keyboardRaisedOnArrival() {
+        guard let globalID = returnSessionID,
+              let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID),
+              data.firstInteractionInterval.end == nil,
+              !data.focused else { return }
+        wideEvent.updateFlow(globalID: globalID) { (data: inout ReturnSessionWideEventData) in
+            data.focused = true
+        }
     }
 
     func pageEngaged() {

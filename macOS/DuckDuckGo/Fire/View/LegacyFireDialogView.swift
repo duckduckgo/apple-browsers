@@ -694,7 +694,7 @@ private struct RowWithPressEffect<Content: View>: View {
 
     @ViewBuilder
     private var pressBackground: some View {
-        let background = Color.buttonMouseDown
+        let background = Color(.buttonMouseDown)
 
         switch roundedCorners {
         case .top:

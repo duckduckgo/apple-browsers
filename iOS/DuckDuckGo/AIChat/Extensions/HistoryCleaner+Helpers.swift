@@ -21,6 +21,7 @@ import Foundation
 import WebKit
 import PrivacyConfig
 import AIChat
+import PixelKit
 
 extension HistoryCleaner {
 
@@ -28,6 +29,7 @@ extension HistoryCleaner {
         HistoryCleaner(featureFlagger: featureFlagger,
                        privacyConfig: privacyConfig,
                        nativeStorageHandler: nativeStorageHandler,
-                       featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+                       featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+                       onBlobCleanup: AIChatLeftoverImagesPixelReporter(pixelFiring: PixelKit.shared).report)
     }
 }

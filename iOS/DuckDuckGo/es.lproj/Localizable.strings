@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Probar Gratis";
+"action.title.vpn.free-trial-badge" = "Probar gratis";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo.";
@@ -295,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Solo puedes adjuntar %d imágenes a la vez.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Añadir pestañas";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Preguntar sobre el documento";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Preguntar sobre la página";
 
@@ -304,11 +310,23 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Añadir imagen";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Continuar en Duck.ai";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Hacer foto";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Los archivos se analizan automáticamente en busca de contenido ilegal. Los chats marcados tienen una retención de datos limitada. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Más información";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Ese mensaje es demasiado largo para enviar con archivos adjuntos.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Pestañas recientes";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Los archivos adjuntos no están disponibles temporalmente. Inténtelo de nuevo más tarde.";
@@ -321,6 +339,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Este tipo de archivo no es compatible, adjunte un %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "No hay pestañas coincidentes";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Selecciona hasta %d pestañas";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d de %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Añadir pestañas";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ no puede crear imágenes. La visibilidad cero del proveedor no se aplicará hasta que vuelvas a cambiar.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ no admite la creación de imágenes.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Ahora usas %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Al editar, se reemplazará la respuesta por una nueva.";
@@ -423,6 +462,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Probar gratis";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Novedad · Escribe «@» o pulsa el icono {attachment} para añadir una pestaña.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "archivo adjunto";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Para tareas de análisis";
@@ -1440,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Configuración";
 
 /* No comment provided by engineer. */
 "Confirm" = "Confirmar";
@@ -2585,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Introduce un número de días que no sea negativo. La fecha de instalación se fijará hace esa cantidad de días.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Evento añadido al calendario de Apple";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importar contraseñas";
 
@@ -3161,9 +3197,6 @@
 "keyCommandZoomOut" = "Alejar";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Procesado por última vez: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Cargando productos disponibles...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Nombre de host de la política de mensajes";
-
-/* No comment provided by engineer. */
-"Messages" = "Mensajes";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3629,7 @@
 "No extensions installed" = "No hay extensiones instaladas";
 
 /* No comment provided by engineer. */
-"No Logs" = "Sin registros";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "No hay coincidencias para \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Sin mensajes";
 
 /* No comment provided by engineer. */
 "No results found" = "No se han encontrado resultados";
@@ -4137,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo no puede cargar esta página.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Registros de procesamiento recientes";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Familiares: %@";
@@ -4924,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Novedades";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Muestra los registros del último minuto para ayudar a diagnosticar problemas inmediatamente después de una actualización.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selecciona la opción que describa mejor el problema que has encontrado.";
 
@@ -4971,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Estado: invalidado";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nombre de host almacenado: %@";
@@ -5462,9 +5477,6 @@
 "theme.name.light" = "Claro";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Esta lista contiene mensajes que se han mostrado y, como máximo, un mensaje que está programado para mostrarse. Es posible que haya más mensajes en la configuración que se vayan a mostrar, pero aún no han sido procesados.";
-
-/* No comment provided by engineer. */
 "Title" = "Título";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5487,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Contacto añadido";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versión: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Buscar";
@@ -5887,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ no puede crear imágenes. La visibilidad cero del proveedor no se aplicará hasta que vuelvas a cambiar.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ no admite la creación de imágenes.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Ahora usas %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Todos los chats";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Los archivos se analizan automáticamente en busca de contenido ilegal. Los chats marcados tienen una retención de datos limitada. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Más información";

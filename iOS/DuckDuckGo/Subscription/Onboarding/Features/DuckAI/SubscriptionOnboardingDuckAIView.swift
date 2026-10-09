@@ -57,7 +57,8 @@ struct SubscriptionOnboardingDuckAIView: View {
             navigationButton: viewModel.isShowingInterstitial ? nil : navigationButton,
             header: header,
             footer: footer,
-            scrollsContent: false) {
+            scrollsContent: false,
+            footerBlur: true) {
             modelPicker
         }
         .onAppear { viewModel.onAppear() }

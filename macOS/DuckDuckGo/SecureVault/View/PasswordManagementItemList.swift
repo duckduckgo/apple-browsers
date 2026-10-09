@@ -191,29 +191,12 @@ private struct PasswordManagementItemStackContentsView: View {
         (model.sortDescriptor.category == .allItems || model.sortDescriptor.category == .logins)
     }
 
-    private var shouldDisplaySyncPromoRow: Bool {
-        guard model.emptyState == .none && model.filter.isEmpty else {
-            return false
-        }
-
-        switch model.sortDescriptor.category {
-        case .allItems:
-            return model.syncPromoManager.shouldPresentPromoFor(.autofill)
-        case .logins:
-            return model.syncPromoManager.shouldPresentPromoFor(.passwords)
-        case .cards:
-            return model.syncPromoManager.shouldPresentPromoFor(.creditCards)
-        case .identities:
-            return model.syncPromoManager.shouldPresentPromoFor(.identities)
-        }
-    }
-
     var body: some View {
         Spacer(minLength: 10)
 
         if shouldDisplayExternalPasswordManagerRow {
             ExternalPasswordManagerItemSection(model: model, style: style)
-        } else if shouldDisplaySyncPromoRow {
+        } else if model.shouldDisplaySyncPromoRow {
             SyncPromoItemSection(model: model, style: style)
         }
 
@@ -426,11 +409,11 @@ private struct PasswordManagementSortButton: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 4)
-                .foregroundColor(showHoverState ? .secureVaultCategoryDefault : .clear)
+                .foregroundColor(showHoverState ? Color(.secureVaultCategoryDefault) : .clear)
                 .frame(width: Constants.buttonSize, height: Constants.buttonSize)
 
             Menu {
-                Picker("", selection: $model.sortDescriptor.parameter) {
+                Picker("" as String, selection: $model.sortDescriptor.parameter) {
                     ForEach(SecureVaultSorting.SortParameter.allCases, id: \.self) { parameter in
                         Text(parameter.title)
                             .tag(parameter)
@@ -441,7 +424,7 @@ private struct PasswordManagementSortButton: View {
 
                 Divider()
 
-                Picker("", selection: $model.sortDescriptor.order) {
+                Picker("" as String, selection: $model.sortDescriptor.order) {
                     ForEach(SecureVaultSorting.SortOrder.allCases, id: \.self) { order in
                         Text(order.title(for: model.sortDescriptor.parameter.type))
                             .tag(order)

@@ -50,11 +50,11 @@ final class DuckPlayerTests: XCTestCase {
         let otherFaviconView = FaviconView(url: URL(string: "http://example.com")!)
 
         duckPlayer.mode = .enabled
-        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage.duckPlayer)
+        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage(resource: .duckPlayer))
         XCTAssertNil(duckPlayer.image(for: otherFaviconView))
 
         duckPlayer.mode = .alwaysAsk
-        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage.duckPlayer)
+        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage(resource: .duckPlayer))
         XCTAssertNil(duckPlayer.image(for: otherFaviconView))
 
         duckPlayer.mode = .disabled
@@ -119,6 +119,46 @@ final class DuckPlayerTests: XCTestCase {
                                                  contentBlocking: ContentBlockingMock(),
                                                  burnerMode: .regular)
         XCTAssertEqual(configuration.allowsPictureInPictureMediaPlayback, !NSApp.isSandboxed)
+    }
+
+    func testWhenPrivacyConfigUpdatesWithoutDuckPlayerChange_ThenModeIsNotRepublished() {
+        let configManager = MockPrivacyConfigurationManager()
+        duckPlayer = DuckPlayer(
+            preferences: .init(persistor: DuckPlayerPreferencesPersistorMock()),
+            privacyConfigurationManager: configManager
+        )
+        let modeRepublished = expectation(description: "mode republished")
+        modeRepublished.isInverted = true
+        let cancellable = duckPlayer.$mode.dropFirst().sink { _ in modeRepublished.fulfill() }
+
+        configManager.updatesSubject.send()
+        configManager.updatesSubject.send()
+
+        wait(for: [modeRepublished], timeout: 0.5)
+        cancellable.cancel()
+    }
+
+    func testWhenDuckPlayerIsReenabledInPrivacyConfig_ThenModeFollowsPreferencesAgain() {
+        let config = MockPrivacyConfiguration()
+        let configManager = MockPrivacyConfigurationManager(privacyConfig: config)
+        let preferences = DuckPlayerPreferences(persistor: DuckPlayerPreferencesPersistorMock())
+        duckPlayer = DuckPlayer(preferences: preferences, privacyConfigurationManager: configManager)
+
+        config.isFeatureEnabledCheck = { feature, _ in feature != .duckPlayer }
+        configManager.updatesSubject.send()
+        config.isFeatureEnabledCheck = nil
+        configManager.updatesSubject.send()
+        waitForMainQueue()
+
+        preferences.duckPlayerMode = .enabled
+
+        XCTAssertEqual(duckPlayer.mode, .enabled)
+    }
+
+    private func waitForMainQueue() {
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
     }
 
     private func duckPlayerURL() -> URL {

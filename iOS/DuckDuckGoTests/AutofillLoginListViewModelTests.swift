@@ -319,7 +319,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
     }
 
     func testWhenDeletingLoginThenUndoRestoresCredentialContentsWithNewIdentity() throws {
-        let vault = try MockSecureVaultFactory.makeVault(reporter: nil)
+        let vault = MockSecureVault(providers: try MockSecureVaultFactory.makeSecureStorageProviders(reporter: nil))
         let account = SecureVaultModels.WebsiteAccount(id: "1",
                                                        title: "Example login",
                                                        username: "user@example.com",

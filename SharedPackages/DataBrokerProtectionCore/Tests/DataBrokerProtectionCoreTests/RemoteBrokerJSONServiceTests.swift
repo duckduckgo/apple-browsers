@@ -38,6 +38,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
     var settings: DataBrokerProtectionSettings!
     let fileManager = MockFileManager(fixtureBundle: .module)
     let authenticationManager = MockAuthenticationManager()
+    let privacyConfigurationManager = PrivacyConfigurationManagingMock()
     let signingKey = P256.Signing.PrivateKey()
     var signingKeys: BrokerBundleSigningKeys {
         .init(production: [signingKey.publicKey.derRepresentation.base64EncodedString()], staging: [])
@@ -71,6 +72,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
                                                           authenticationManager: authenticationManager,
                                                           pixelHandler: pixelHandler,
                                                           localBrokerProvider: localBrokerJSONService,
+                                                          privacyConfigurationManager: privacyConfigurationManager,
                                                           signingKeys: signingKeys)
     }
 
@@ -241,6 +243,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
             signingKeys: signingKeys
         )
 
@@ -285,6 +288,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
             signingKeys: signingKeys
         )
 
@@ -337,6 +341,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
             signingKeys: signingKeys
         )
 
@@ -397,6 +402,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
             signingKeys: signingKeys
         )
 
@@ -444,6 +450,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
             signingKeys: signingKeys
         )
 
@@ -502,6 +509,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
             localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
             signingKeys: signingKeys
         )
 

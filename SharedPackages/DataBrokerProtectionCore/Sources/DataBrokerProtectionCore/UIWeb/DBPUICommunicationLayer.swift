@@ -96,6 +96,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     private let webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let vpnBypassService: VPNBypassServiceProvider?
     private let privacyConfig: PrivacyConfigurationManaging
+    private let keyRevocationChecker: BrokerBundleKeyRevocationChecker
 
     public var messageOriginPolicy: MessageOriginPolicy
     public var featureName: String = "dbpuiCommunication"
@@ -111,10 +112,12 @@ public struct DBPUICommunicationLayer: Subfeature {
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 vpnBypassService: VPNBypassServiceProvider? = nil,
-                privacyConfig: PrivacyConfigurationManaging) {
+                privacyConfig: PrivacyConfigurationManaging,
+                keyRevocationChecker: BrokerBundleKeyRevocationChecker) {
         self.webURLSettings = webURLSettings
         self.vpnBypassService = vpnBypassService
         self.privacyConfig = privacyConfig
+        self.keyRevocationChecker = keyRevocationChecker
         self.messageOriginPolicy = .only(rules: [
             .exact(hostname: webURLSettings.selectedURLHostname)
         ])
@@ -162,14 +165,24 @@ public struct DBPUICommunicationLayer: Subfeature {
 
         // Attempt to get handshake user data, but fallback to a default
         let userData = (await delegate?.getHandshakeUserData()) ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
+        let status: DBPUIStatus = isPaused ? .updateRequired : .active
 
         if result.version != Constants.version {
             Logger.dataBrokerProtection.log("Incorrect protocol version presented by UI")
-            return DBPUIHandshakeResponse(version: Constants.version, success: false, userdata: userData)
+            return DBPUIHandshakeResponse(version: Constants.version, success: false, status: status, userdata: userData)
         }
 
         Logger.dataBrokerProtection.log("Successful handshake made by UI")
-        return DBPUIHandshakeResponse(version: Constants.version, success: true, userdata: userData)
+        return DBPUIHandshakeResponse(version: Constants.version, success: true, status: status, userdata: userData)
+    }
+
+    /// While paused, the dashboard shows an update notice instead, and scan data could be from untrusted brokers
+    private var isPaused: Bool {
+        keyRevocationChecker.isAnyKeyRevoked
+    }
+
+    private var updateRequiredResponse: DBPUIStandardResponse {
+        DBPUIStandardResponse(version: Constants.version, success: false, id: "UPDATE_REQUIRED", message: "PIR is paused until the app is updated")
     }
 
     public func saveProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -301,6 +314,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func startScanAndOptOut(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return updateRequiredResponse }
+
         if delegate?.startScanAndOptOut() == true {
             return DBPUIStandardResponse(version: Constants.version, success: true)
         }
@@ -309,6 +324,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func initialScanStatus(params: Any, origin: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return updateRequiredResponse }
+
         guard let initialScanState = await delegate?.getInitialScanState() else {
             return DBPUIStandardResponse(version: Constants.version, success: false, id: "NOT_FOUND", message: "No initial scan data found")
         }
@@ -317,6 +334,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func maintenanceScanStatus(params: Any, origin: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return updateRequiredResponse }
+
         guard let maintenanceScanStatus = await delegate?.getMaintenanceScanState() else {
             return DBPUIStandardResponse(version: Constants.version, success: false, id: "NOT_FOUND", message: "No maintenance data found")
         }
@@ -325,6 +344,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getDataBrokers(params: Any, origin: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return DBPUIDataBrokerList(dataBrokers: []) }
+
         let dataBrokers = await delegate?.getDataBrokers() ?? [DBPUIDataBroker]()
         return DBPUIDataBrokerList(dataBrokers: dataBrokers)
     }

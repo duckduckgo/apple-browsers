@@ -20,7 +20,7 @@
 import Foundation
 import Testing
 import Core
-import Persistence
+@_spi(Testing) import Persistence
 import PrivacyConfig
 @testable import DuckDuckGo
 

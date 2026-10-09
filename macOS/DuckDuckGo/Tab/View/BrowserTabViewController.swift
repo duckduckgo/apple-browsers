@@ -1200,6 +1200,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .historyEntry),
              .url(_, _, source: .bookmark),
              .url(_, _, source: .ui),
+             .url(_, _, source: .attributedUI),
              .url(_, _, source: .link),
              .url(_, _, source: .appOpenUrl),
              .url(_, _, source: .switchToOpenTab),

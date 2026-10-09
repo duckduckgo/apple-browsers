@@ -219,6 +219,7 @@ final class TabViewModel: NSObject {
                      .url(_, _, source: .historyEntry),
                      .url(_, _, source: .bookmark),
                      .url(_, _, source: .ui),
+                     .url(_, _, source: .attributedUI),
                      .url(_, _, source: .appOpenUrl),
                      .url(_, _, source: .switchToOpenTab),
                      .url(_, _, source: .reload),

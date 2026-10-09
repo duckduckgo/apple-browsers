@@ -1372,6 +1372,7 @@ enum AIChatAddressBarAction: String, CaseIterable {
 /// How a tab reached Duck.ai directly, as `aiChatDuckAIDirectNavigation` reports it.
 enum AIChatDirectNavigationVia: String, CaseIterable {
     case typed, suggestion, bookmark, favorite, history, external, link
+    case newTabPage = "new_tab_page"
 
     /// The chat's source when no Duck.ai surface stamped it.
     var conversationSource: AIChatConversationSource {
@@ -1383,6 +1384,7 @@ enum AIChatDirectNavigationVia: String, CaseIterable {
         case .history: .directHistory
         case .external: .directExternal
         case .link: .directLink
+        case .newTabPage: .directNewTabPage
         }
     }
 }

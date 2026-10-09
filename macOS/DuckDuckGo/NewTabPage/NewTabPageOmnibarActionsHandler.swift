@@ -90,11 +90,16 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         NewTabPageLinkOpener.open(
             url,
-            source: .ui,
+            source: Self.searchBoxSource(for: url),
             sender: .userScript,
             target: target.linkOpenTarget,
             sourceWindow: mainWindowController.window
         )
+    }
+
+    /// Duck.ai reached from the search box is a direct navigation; the box's Duck.ai mode is a separate path.
+    private static func searchBoxSource(for url: URL) -> TabContent.URLSource {
+        url.isDuckAIURL ? .attributedUI(.directNewTabPage) : .ui
     }
 
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
@@ -130,7 +135,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                 }
                 NewTabPageLinkOpener.open(
                     suggestionUrl,
-                    source: .ui,
+                    source: Self.searchBoxSource(for: suggestionUrl),
                     sender: .userScript,
                     target: target.linkOpenTarget,
                     sourceWindow: mainWindowController.window

@@ -113,10 +113,13 @@ public enum AIChatConversationSource: String, CaseIterable {
     case sidebarHandoff = "sidebar-handoff"
 
     case settings = "settings"
+    /// The subscription's own Duck.ai links: More Options, the Settings subscription pane and the
+    /// subscription welcome page. The same value Windows reports.
+    case subscriptionPage = "subscription-page"
 
     /// Duck.ai reached by navigating to it directly rather than from a Duck.ai surface: typed in the
     /// address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link
-    /// from another app, or a link on a web page.
+    /// from another app, a link on a web page, or typed in the New Tab Page search box.
     case directTyped = "direct-typed"
     case directSuggestion = "direct-suggestion"
     case directBookmark = "direct-bookmark"
@@ -124,10 +127,16 @@ public enum AIChatConversationSource: String, CaseIterable {
     case directHistory = "direct-history"
     case directExternal = "direct-external"
     case directLink = "direct-link"
+    case directNewTabPage = "direct-new-tab-page"
 
     /// No native surface opens this one; it is read from the funnel marker duckduckgo.com puts on
     /// the chat URL when its homepage hands a prompt over (`URL.isDuckAIOpenedFromHomepage`).
     case duckduckgoHomepage = "duckduckgo-homepage"
+
+    /// A link on a Duck.ai or duckduckgo.com page that opened Duck.ai, other than the homepage
+    /// handoff. Like the `direct-*` values, only used when no surface stamped the chat.
+    case duckAILink = "duck-ai-link"
+    case duckDuckGoLink = "duckduckgo-link"
 
     /// Named for the attribution gap it measures: a chat no surface stamped and no direct navigation
     /// explains, such as a session restored at startup or an entry point nobody has instrumented yet.

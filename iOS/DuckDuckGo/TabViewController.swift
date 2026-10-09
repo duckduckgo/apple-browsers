@@ -96,6 +96,9 @@ enum WebViewPreviewSnapshotPolicy {
 
 enum WebViewScrollViewInsetUpdater {
 
+    // WebKit's resting offset and adjusted inset can differ by floating-point rounding.
+    private static let topPositionTolerance: CGFloat = 0.001
+
     struct AdjustmentBehavior {
         let contentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
         let automaticallyAdjustsScrollIndicatorInsets: Bool
@@ -116,15 +119,30 @@ enum WebViewScrollViewInsetUpdater {
         scrollView.automaticallyAdjustsScrollIndicatorInsets = behavior.automaticallyAdjustsScrollIndicatorInsets
     }
 
-    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
+    static func shouldDeferDuringTopBounce(_ scrollView: UIScrollView) -> Bool {
+        (scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating)
+            && scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+    }
+
+    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, isFloatingUIEnabled: Bool = false, animated: Bool = false) {
         if scrollView.contentInset != insets {
-            let isPinnedToTop = scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+            let isPinnedToTop = isFloatingUIEnabled
+                ? scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+                : scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
             scrollView.contentInset = insets
             if isPinnedToTop {
-                scrollView.contentOffset.y = -insets.top
+                if isFloatingUIEnabled {
+                    scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
+                } else {
+                    scrollView.contentOffset.y = -insets.top
+                }
             }
         }
 
+        updateScrollIndicatorInsets(scrollView, insets: insets)
+    }
+
+    static func updateScrollIndicatorInsets(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
         if scrollView.verticalScrollIndicatorInsets != insets {
             scrollView.verticalScrollIndicatorInsets = insets
         }
@@ -324,6 +342,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private var hasAppliedFloatingUIScrollViewInsets = false
+    private var hasDeferredFloatingUIInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -1187,6 +1206,12 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: barsVisibilityPercent)
     }
 
+    func applyDeferredFloatingUIInsetsIfNeeded() {
+        guard floatingUIManager.isFloatingUIEnabled, hasDeferredFloatingUIInsets, let webView,
+              !WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) else { return }
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent)
+    }
+
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
         updateWebViewBottomConstraint(for: barsVisibilityPercent)
 
@@ -1287,17 +1312,39 @@ class TabViewController: UIViewController {
         if additionalSafeAreaInsets != .zero {
             additionalSafeAreaInsets = .zero
         }
-        if WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+        // Indicators follow the visible chrome even while page geometry is held for a bounce.
+        // Apply after WebKit's inset setters as well, so they cannot leave stale indicator insets.
+        defer {
+            WebViewScrollViewInsetUpdater.updateScrollIndicatorInsets(webView.scrollView, insets: obscuredInsets)
+        }
+        // WebKit clamps overscroll when obscuredContentInsets changes, even for bottom-only changes.
+        // Keep both inset types stable until the bounce ends or the gesture moves back into the page.
+        if hasAppliedFloatingUIScrollViewInsets,
+           WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) {
+            hasDeferredFloatingUIInsets = true
+            return
+        }
+        let hadDeferredInsets = hasDeferredFloatingUIInsets
+        let animateTopAlignment = hadDeferredInsets
+            && !webView.scrollView.isTracking && !webView.scrollView.isDragging && !webView.scrollView.isDecelerating
+        let shouldUpdateScrollInsets = WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
-        ) {
-            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
+        )
+        // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
+        hasDeferredFloatingUIInsets = false
+        if shouldUpdateScrollInsets {
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
+                                               isFloatingUIEnabled: true, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
         }
         setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+        // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
+        hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        hasDeferredFloatingUIInsets = false
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false

@@ -32,11 +32,11 @@ struct MemoryPressureMonitorTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Level is normal until the first event", .timeLimit(.minutes(1)))
-    func levelIsNormalInitially() {
+    @Test("Level is unknown until the first event", .timeLimit(.minutes(1)))
+    func levelIsUnknownInitially() {
         let monitor = MemoryPressureMonitor(isEnabledProvider: { true })
 
-        #expect(monitor.currentLevel == .normal)
+        #expect(monitor.currentLevel == .unknown)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -18,6 +18,7 @@
 
 import AVFoundation
 import Combine
+import Common
 import CommonObjCExtensions
 
 import Foundation
@@ -2080,5 +2081,26 @@ extension PermissionModelTests {
 
             XCTAssertNotNil(model.authorizationQuery, "\(permission.rawValue): the site exception should restore prompting")
         }
+    }
+
+    func testWhenNewPromptsAreEnabledThenLocalFilesUseTheirOwnDomainApartFromLocalhost() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        let fileURL = URL(fileURLWithPath: "/tmp/page.html")
+        let localhostURL = try XCTUnwrap(URL(string: "https://localhost:8080/page.html"))
+
+        XCTAssertEqual(model.permissionDomain(for: fileURL), .localFilePermissionDomain)
+        XCTAssertEqual(model.permissionDomain(for: fileURL.securityOrigin), .localFilePermissionDomain)
+        XCTAssertEqual(model.permissionDomain(for: localhostURL), "localhost")
+        XCTAssertEqual(model.permissionDomain(for: localhostURL.securityOrigin), "localhost")
+        XCTAssertEqual(String.localFilePermissionDomain.permissionDisplayName, UserText.websitePermissionsLocalFile)
+        XCTAssertEqual("localhost".permissionDisplayName, "localhost")
+    }
+
+    func testWhenNewPromptsAreDisabledThenLocalFilesKeepTheirPreviousDomains() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = false
+        let fileURL = URL(fileURLWithPath: "/tmp/page.html")
+
+        XCTAssertEqual(model.permissionDomain(for: fileURL), "localhost")
+        XCTAssertEqual(model.permissionDomain(for: fileURL.securityOrigin), "")
     }
 }

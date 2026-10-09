@@ -661,7 +661,7 @@ extension LegacyPermissionAuthorizationSwiftUIView {
         onDismiss: @escaping () -> Void,
         onLearnMore: (() -> Void)? = nil
     ) {
-        self.domain = domain
+        self.domain = domain.permissionDisplayName
         self.permissionType = permissionType
         self.showsTwoStepUI = showsTwoStepUI
         self.isSystemPermissionDisabled = isSystemPermissionDisabled

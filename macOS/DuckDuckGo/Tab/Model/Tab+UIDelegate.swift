@@ -152,7 +152,7 @@ extension Tab: WKUIDelegate {
             return
         }
 
-        self.permissions.permissions(permissions, requestedForDomain: origin.host, decisionHandler: decisionHandler)
+        self.permissions.permissions(permissions, requestedForDomain: self.permissions.permissionDomain(for: SecurityOrigin(origin)), decisionHandler: decisionHandler)
     }
 
     /// Legacy variant of `requestMediaCapturePermissionFor:`: WebKit only calls it when that one isn't implemented.
@@ -166,7 +166,7 @@ extension Tab: WKUIDelegate {
                  decisionHandler: @escaping (Bool) -> Void) {
         let devices = _WKCaptureDevices(rawValue: devices)
         guard let permissions = [PermissionType](devices: devices),
-              let host = url.isFileURL ? .localhost : url.host,
+              case let host = self.permissions.permissionDomain(for: url),
               !host.isEmpty else {
             decisionHandler(false)
             return
@@ -186,8 +186,7 @@ extension Tab: WKUIDelegate {
     /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L131
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void) {
-        let url = frame.safeRequest?.url ?? .empty
-        let host = url.isFileURL ? .localhost : (url.host ?? "")
+        let host = self.permissions.permissionDomain(for: frame.safeRequest?.url ?? .empty)
         self.permissions.permissions(.geolocation, requestedForDomain: host, decisionHandler: decisionHandler)
     }
 
@@ -199,8 +198,7 @@ extension Tab: WKUIDelegate {
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-        let url = frame.safeRequest?.url ?? .empty
-        let host = url.isFileURL ? .localhost : (url.host ?? "")
+        let host = self.permissions.permissionDomain(for: frame.safeRequest?.url ?? .empty)
         self.permissions.permissions(.geolocation, requestedForDomain: host) { granted in
             decisionHandler(granted ? .grant : .deny)
         }

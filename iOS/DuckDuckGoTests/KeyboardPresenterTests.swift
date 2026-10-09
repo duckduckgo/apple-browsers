@@ -249,18 +249,20 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Flag-off requests retain legacy scheduling and ignore the cancellation token", .timeLimit(.minutes(1)))
-    func flagOffPreservesLegacyCallback() {
+    @Test("Flag-off requests retain their policy across flag changes but respect cancellation", .timeLimit(.minutes(1)), arguments: [false, true])
+    func flagOffPreservesLegacyCallback(cancelRequest: Bool) {
         featureFlagger.enabledFeatureFlags = []
         onAppLaunch = true
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
-        target.appOpenKeyboardRequestID = UUID()
+        if cancelRequest {
+            target.appOpenKeyboardRequestID = UUID()
+        }
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
 
         scheduledActions.forEach { $0() }
 
         #expect(target.closeScreensCallCount == 0)
-        #expect(target.legacyKeyboardCallCount == 1)
+        #expect(target.legacyKeyboardCallCount == (cancelRequest ? 0 : 1))
         #expect(target.allowedKeyboardCallCount == 0)
     }
 
@@ -351,7 +353,27 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A locked app holds the flag-on keyboard until unlock, unless the request is cancelled first",
+    @Test("A page created behind App Lock holds its keyboard until unlock", .timeLimit(.minutes(1)))
+    func createdNewTabPageWaitsForUnlock() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.isWindowVisible = false
+
+        presenter.showKeyboardOnNewTabPageCreated()
+        scheduledActions.forEach { $0() }
+
+        #expect(scheduledActions.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
+
+        #expect(target.closeScreensCallCount == 0)
+        #expect(target.allowedKeyboardCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A locked idle return closes the old screen before waiting for unlock and respects cancellation",
           .timeLimit(.minutes(1)), arguments: [false, true])
     func lockedAppWaitsForUnlock(cancelBeforeUnlock: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
@@ -359,7 +381,11 @@ final class KeyboardPresenterTests {
 
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
 
-        #expect(target.closeScreensCallCount == 0)
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.windowVisibleHandler == nil)
+        #expect(scheduledActions.isEmpty)
+        target.dismissalCompletion?()
+        #expect(target.windowVisibleHandler != nil)
         #expect(scheduledActions.isEmpty)
 
         if cancelBeforeUnlock {
@@ -367,16 +393,15 @@ final class KeyboardPresenterTests {
         }
         target.isWindowVisible = true
         target.windowVisibleHandler?()
-        target.dismissalCompletion?()
         scheduledActions.forEach { $0() }
 
-        #expect(target.closeScreensCallCount == (cancelBeforeUnlock ? 0 : 1))
+        #expect(target.closeScreensCallCount == 1)
         #expect(target.allowedKeyboardCallCount == (cancelBeforeUnlock ? 0 : 1))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Flag-off requests do not wait for the window", .timeLimit(.minutes(1)))
-    func flagOffDoesNotWaitForWindow() {
+    @Test("Flag-off requests wait for unlock and respect cancellation", .timeLimit(.minutes(1)), arguments: [false, true])
+    func flagOffWaitsForWindow(cancelBeforeUnlock: Bool) {
         featureFlagger.enabledFeatureFlags = []
         onAppLaunch = true
         target.isWindowVisible = false
@@ -384,8 +409,21 @@ final class KeyboardPresenterTests {
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
         scheduledActions.forEach { $0() }
 
-        #expect(target.windowVisibleHandler == nil)
-        #expect(target.legacyKeyboardCallCount == 1)
+        #expect(target.windowVisibleHandler != nil)
+        #expect(scheduledActions.isEmpty)
+        #expect(target.legacyKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.count == 1)
+
+        if cancelBeforeUnlock {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
+
+        #expect(target.legacyKeyboardCallCount == (cancelBeforeUnlock ? 0 : 1))
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -402,7 +440,7 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("An idle return behind App Lock closes only the screen left open before the unlock", .timeLimit(.minutes(1)))
+    @Test("A locked idle return prepares the old screen before a launch prompt and waits for that prompt", .timeLimit(.minutes(1)))
     func lockedIdleReturnClosesOnlyScreenLeftOpen() {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         let settings = UIViewController()
@@ -410,18 +448,35 @@ final class KeyboardPresenterTests {
         target.isWindowVisible = false
 
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.closedScreen === settings)
+        #expect(target.windowVisibleHandler == nil)
+        target.dismissalCompletion?()
+
         target.presentedViewController = UIViewController()
+        promptPending = true
         target.isWindowVisible = true
         target.windowVisibleHandler?()
+        scheduledActions.forEach { $0() }
 
+        #expect(target.closeScreensCallCount == 1)
         #expect(target.closedScreen === settings)
+        #expect(promptCloseHandler != nil)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        target.presentedViewController = nil
+        promptPending = false
+        promptCloseHandler?()
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("A launch task that outlives its foreground cannot raise the keyboard or replace a later wait",
-          .timeLimit(.minutes(1)), arguments: [false, true])
-    func endedForegroundCannotFocus(endsBeforeRequest: Bool) {
-        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+          .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func endedForegroundCannotFocus(flagOn: Bool, endsBeforeRequest: Bool) {
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        onAppLaunch = true
         target.isWindowVisible = false
         if endsBeforeRequest {
             presenter.foregroundDidEnd()
@@ -435,18 +490,6 @@ final class KeyboardPresenterTests {
 
         #expect((target.windowVisibleHandler == nil) == endsBeforeRequest)
         #expect(target.allowedKeyboardCallCount == 0)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Flag-off requests ignore the end of their foreground", .timeLimit(.minutes(1)))
-    func flagOffIgnoresEndedForeground() {
-        featureFlagger.enabledFeatureFlags = []
-        onAppLaunch = true
-        presenter.foregroundDidEnd()
-
-        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
-        scheduledActions.forEach { $0() }
-
-        #expect(target.legacyKeyboardCallCount == 1)
+        #expect(target.legacyKeyboardCallCount == 0)
     }
 }

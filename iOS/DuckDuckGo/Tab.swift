@@ -82,8 +82,14 @@ public class Tab: NSObject, NSCoding {
         }
     }
     
+    /// Remembers input focus across tab switches for this page; deliberately not persisted.
+    var wasInputFocusedBeforeTabSwitch = false
+
     var link: Link? {
         didSet {
+            if link != nil {
+                wasInputFocusedBeforeTabSwitch = false
+            }
             notifyObservers()
         }
     }
@@ -127,6 +133,9 @@ public class Tab: NSObject, NSCoding {
 
     /// Whether this NTP was shown by the idle-return flow. One-shot: cleared when the user leaves the NTP.
     var openedAfterIdle: Bool = false
+
+    /// Runtime-only: prevents later app returns from recreating this page's used or dismissed after-idle hatch.
+    var hasPresentedAfterIdleEscapeHatch: Bool = false
 
     /// Indicates whether this tab was created after tab history tracking was implemented.
     /// Legacy tabs (created before this feature) will have incomplete history and should not support tab burning.

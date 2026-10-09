@@ -85,12 +85,11 @@ extension MainViewController {
         // A screen the app left presented, such as Bookmarks or Settings, is what the user comes
         // back to, so the page underneath it is not an arrival. Nor is its dismissal: only the page
         // being put on screen opens a visit.
-        guard isNewTabPageVisible, presentedViewController == nil else { return }
+        guard let page = newTabPageViewController, presentedViewController == nil else { return }
 
-        // Not a burn arrival: a burn reports itself through the attach it causes.
-        startNewTabPageSessionInstrumentation(isNewTab: false,
-                                              willBeginEditing: keyboardShowing,
-                                              isAfterFire: false)
+        // Not a burn arrival: a burn reports itself through the attach it causes. Input focus, not the
+        // observed keyboard, which a hardware keyboard hides and which can lag the background cycle.
+        scheduleNewTabPageForegroundVisit(for: page)
     }
 
     /// Records a New Tab Page action, but only while the New Tab Page is the surface on screen.
@@ -237,5 +236,78 @@ extension MainViewController {
 
         guard let terminalAction else { return }
         newTabPageSessionInstrumentation.visitEnded(terminalAction: terminalAction)
+    }
+}
+
+
+@MainActor
+final class NewTabPagePresentationCoordinator {
+    private let notificationCenter: NotificationCenter
+    private let isVisible: () -> Bool
+    private var observers: [NSObjectProtocol] = []
+    private weak var page: AnyObject?
+    private var pendingVisit: (() -> Void)?
+    private var pendingShown: (() -> Void)?
+    private var pendingFocus: (() -> Void)?
+    private(set) var hasPresentedPage = false
+
+    init(notificationCenter: NotificationCenter = .default, isVisible: @escaping () -> Bool) {
+        self.notificationCenter = notificationCenter
+        self.isVisible = isVisible
+        for notification in [UIWindow.didBecomeKeyNotification, UIApplication.didBecomeActiveNotification] {
+            observers.append(notificationCenter.addObserver(forName: notification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.recordIfVisible()
+                }
+            })
+        }
+    }
+
+    deinit {
+        observers.forEach(notificationCenter.removeObserver)
+    }
+
+    func schedule(for page: AnyObject, visit: (() -> Void)? = nil, shown: (() -> Void)? = nil, focus: (() -> Void)? = nil) {
+        if self.page !== page {
+            cancel()
+            self.page = page
+        }
+        if let visit { pendingVisit = visit }
+        if let shown { pendingShown = shown }
+        if let focus { pendingFocus = focus }
+        recordIfVisible()
+    }
+
+    func recordIfVisible() {
+        guard page != nil else {
+            cancel()
+            return
+        }
+        guard isVisible() else { return }
+        let visit = pendingVisit
+        let shown = pendingShown
+        let focus = pendingFocus
+        pendingVisit = nil
+        pendingShown = nil
+        pendingFocus = nil
+        hasPresentedPage = true
+        visit?()
+        shown?()
+        focus?()
+    }
+
+    func backgrounded() {
+        pendingVisit = nil
+        pendingFocus = nil
+        hasPresentedPage = false
+        // An unseen card remains installed across a cancelled unlock; report it when it is finally shown.
+    }
+
+    func cancel() {
+        page = nil
+        pendingVisit = nil
+        pendingShown = nil
+        pendingFocus = nil
+        hasPresentedPage = false
     }
 }

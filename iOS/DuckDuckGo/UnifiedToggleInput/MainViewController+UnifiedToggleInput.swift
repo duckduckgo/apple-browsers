@@ -1340,12 +1340,19 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.activateFromOmnibar(prefilledText: currentText,
                                         inputMode: inputMode,
                                         cardPosition: position,
+                                        allowsInactiveFocus: true,
                                         isFocusRequestValid: isRequestValid,
                                         onFocus: completion)
         return .intercept
     }
 
-    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?,
+                                     isRequestValid: @escaping () -> Bool,
+                                     onFocus: ((Bool) -> Void)?) -> UnifiedToggleInputActivationDecision {
+        guard isRequestValid() else {
+            onFocus?(false)
+            return .intercept
+        }
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
@@ -1360,13 +1367,14 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         let inputMode = textEntryMode
             ?? tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
             ?? .search
-        coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
         resetSERPFlowForQuery(currentText)
         coordinator.activateFromOmnibar(prefilledText: currentText,
                                         inputMode: inputMode,
-                                        cardPosition: position)
+                                        cardPosition: position,
+                                        isFocusRequestValid: isRequestValid,
+                                        onFocus: onFocus)
         return .intercept
     }
 
@@ -1614,7 +1622,6 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             view.addSubview(snapshot)
         }
         closeTab(tab, behavior: .onlyClose)
-        showKeyboardOnNewTabPageIfAllowed()
         guard let snapshot else { return }
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
             snapshot.alpha = 0

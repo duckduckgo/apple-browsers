@@ -423,16 +423,16 @@ final class LaunchActionHandlerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(
-        "When idle return keeps the current NTP and the flag is on then keyboard presenter is called",
+        "When idle return keeps the current NTP and the flag is on then keyboard focus waits for preparation",
         .timeLimit(.minutes(1)),
         arguments: [false, true]
     )
-    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled(isFirstForeground: Bool) {
+    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled(isFirstForeground: Bool) throws {
         let date = Date()
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
-        idleReturnDelegate.showNewTabPageAfterIdleReturnResult = .keptCurrent
+        idleReturnDelegate.completesNewTabPageImmediately = false
 
         launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date,
                                                                isFirstForeground: isFirstForeground,
@@ -440,10 +440,16 @@ final class LaunchActionHandlerTests {
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+
+        let completion = try #require(idleReturnDelegate.newTabPageCompletion)
+        completion(.keptCurrent)
+
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == (isFirstForeground ? nil : date))
         #expect(!keyboardPresenter.hasCompletedAuthentication)
-        #expect(keyboardPresenter.isAfterIdleReturn)
+        #expect(!keyboardPresenter.isAfterIdleReturn)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
     }
 

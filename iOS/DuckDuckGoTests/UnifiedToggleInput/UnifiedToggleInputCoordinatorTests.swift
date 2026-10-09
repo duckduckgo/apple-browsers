@@ -1280,18 +1280,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         assertAppOpenDraftAndToolArePreserved()
     }
 
-    func testWhenOnboardingLocksQueuedFocusThenKeyboardDoesNotActivate() {
-        var scheduledFocus: [() -> Void] = []
-        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
-        showAppOpenInput()
-        var completions: [Bool] = []
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, onFocus: { completions.append($0) })
-        sut.setOnboardingControlsLocked(true)
+    func testWhenOnboardingLocksQueuedAutomaticFocusThenKeyboardDoesNotActivate() {
+        for allowsInactiveFocus in [false, true] {
+            var scheduledFocus: [() -> Void] = []
+            sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+            showAppOpenInput()
+            var completions: [Bool] = []
+            sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                    allowsInactiveFocus: allowsInactiveFocus, onFocus: { completions.append($0) })
+            XCTAssertTrue(sut.isOmnibarEditing)
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+            XCTAssertTrue(completions.isEmpty)
+            sut.setOnboardingControlsLocked(true)
 
-        scheduledFocus.removeFirst()()
+            scheduledFocus.removeFirst()()
 
-        XCTAssertEqual(completions, [false])
-        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+            XCTAssertEqual(completions, [false])
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        }
     }
 
     func testWhenOrdinaryActivationBecomesInactiveBeforeFocusThenKeyboardStaysDismissed() {
@@ -1307,6 +1313,81 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(completions, [false])
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenOrdinaryActivationIsCancelledBeforeFocusThenInputDoesNotFocus() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var isRequestValid = true
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(cardPosition: .bottom, isFocusRequestValid: { isRequestValid },
+                                onFocus: { completions.append($0) })
+
+        isRequestValid = false
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenAutomaticLandingBecomesInactiveBeforeFocusThenInputStillFocuses() {
+        for isFloatingUIEnabled in [false, true] {
+            var scheduledFocus: [() -> Void] = []
+            sut = makeAppOpenCoordinator(isFloatingUIEnabled: isFloatingUIEnabled, schedule: { scheduledFocus.append($0) })
+            showAppOpenInput()
+            var completions: [Bool] = []
+            sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                    allowsInactiveFocus: true, onFocus: { completions.append($0) })
+            seedAppOpenDraftAndTool()
+            sut.updateOmnibarInputVisibility(false)
+            XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+
+            scheduledFocus.removeFirst()()
+
+            XCTAssertEqual(completions, [true])
+            XCTAssertEqual(sut.displayState, .omnibar(.active))
+            XCTAssertTrue(sut.viewController.isInputFirstResponder)
+            assertAppOpenDraftAndToolArePreserved()
+        }
+    }
+
+    func testWhenAutomaticLandingIsCancelledBeforeFocusThenInputStaysInactive() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var isRequestValid = true
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                allowsInactiveFocus: true,
+                                isFocusRequestValid: { isRequestValid }, onFocus: { completions.append($0) })
+        sut.updateOmnibarInputVisibility(false)
+        isRequestValid = false
+
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenAutomaticLandingSessionEndsBeforeFocusThenInputStaysHidden() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                allowsInactiveFocus: true, onFocus: { completions.append($0) })
+        sut.updateOmnibarInputVisibility(false)
+        sut.completeOmnibarDeactivation()
+        XCTAssertEqual(completions, [false])
+
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertEqual(sut.displayState, .hidden)
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
@@ -1419,8 +1500,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_activateFromOmnibar_respectsRequestedMode() {
+        sut.syncInputModeFromExternalSource(.search)
+        var publishedModes: [TextEntryMode] = []
+        sut.modeChangePublisher
+            .sink { publishedModes.append($0) }
+            .store(in: &cancellables)
+
         sut.activateFromOmnibar(inputMode: .aiChat)
+
         XCTAssertEqual(sut.inputMode, .aiChat)
+        XCTAssertTrue(publishedModes.isEmpty)
     }
 
     func test_activateFromOmnibar_withPrefilledText_setsPrefilledState() {

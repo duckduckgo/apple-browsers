@@ -4423,6 +4423,15 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "App Launch";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "New Tab";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Show keyboard on";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Displays a link to return to the last used tab when you launch the app after inactivity.";
 

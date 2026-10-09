@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "App-start";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Ny flik";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Visa tangentbord på";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Visar en länk för att återgå till den senast använda fliken när du öppnar appen efter inaktivitet.";
 

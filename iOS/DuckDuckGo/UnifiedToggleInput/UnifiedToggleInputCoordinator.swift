@@ -1209,6 +1209,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func activateFromOmnibar(prefilledText: String? = nil,
                              inputMode: TextEntryMode = .search,
                              cardPosition: UnifiedToggleInputCardPosition = .top,
+                             allowsInactiveFocus: Bool = false,
                              isFocusRequestValid: @escaping () -> Bool = { true },
                              onFocus: ((Bool) -> Void)? = nil) {
         restoreAttachmentsRetainedForDismiss()
@@ -1261,7 +1262,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             keyboardMonitor.scheduleFallback()
         }
 
-        requestOmnibarInputFocus(isRequestValid: isFocusRequestValid, completion: onFocus, allowsInactive: false)
+        requestOmnibarInputFocus(isRequestValid: isFocusRequestValid, completion: onFocus, allowsInactive: allowsInactiveFocus)
     }
 
     /// Resumes the existing editor without resetting its draft, mode, tools, or entrance presentation.

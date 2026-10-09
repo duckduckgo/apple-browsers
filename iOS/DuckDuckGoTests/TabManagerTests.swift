@@ -99,6 +99,8 @@ final class TabManagerTests: XCTestCase {
         mock.onRemovePreviewsWithIdNotIn = { previewsCleanedUp.fulfill() }
 
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        // Only this post may find excess previews: the host app's own first activation can land while we await.
+        mock.totalStoredPreviewsReturnValue = nil
         await fulfillment(of: [previewsCleanedUp], timeout: 5.0)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
         mock.onRemovePreviewsWithIdNotIn = nil
@@ -783,6 +785,12 @@ final class TabManagerTests: XCTestCase {
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+
+        // The web view outlives its controller until WebKit's pending main run loop work finishes. Wait for it here,
+        // or its 4s dealloc assertion can fire in a later suite that does not spin the run loop in time.
+        let webViewReleased = XCTestExpectation(description: "Web view released")
+        controller.webView.onDeinit { webViewReleased.fulfill() }
+        addTeardownBlock { self.wait(for: [webViewReleased], timeout: 3.0) }
     }
 
     func testWhenReportingFromTabTerminationErrorPageThenDirectFeedbackFormEntryPointIsUsed() throws {
@@ -892,6 +900,134 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
+    func testKeptNewTabPageRestoresPersistedFireTargetOnColdStart() throws {
+        let ntp = Tab()
+        ntp.hasPresentedAfterIdleEscapeHatch = true
+        let fireTab = Tab(link: Link(title: "Private page", url: URL(string: "https://example.com")!), fireTab: true)
+        let data = try NSKeyedArchiver.archivedData(withRootObject: [ntp, fireTab], requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? [Tab])
+        let store = MockKeyValueStore()
+        LastActiveTabStore(store: store).recordActiveTab(uid: fireTab.uid)
+        let manager = try makeManager(TabsModel(tabs: [restored[0]], desktop: false),
+                                      fireModel: TabsModel(tabs: [restored[1]], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let builder = makeEscapeHatchBuilder(manager: manager, lastActiveTabStore: LastActiveTabStore(store: store))
+        let router = EscapeHatchRouterStub()
+
+        let hatch = try XCTUnwrap(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+
+        XCTAssertFalse(restored[0].openedAfterIdle)
+        XCTAssertFalse(restored[0].hasPresentedAfterIdleEscapeHatch)
+        XCTAssertTrue(hatch.targetTab === restored[1])
+        XCTAssertEqual(hatch.tabType, .fire)
+        XCTAssertEqual(hatch.title, UserText.escapeHatchFireTabTitle)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+    }
+
+    func testKeptNewTabPageGetsFirstWarmIdleHatchAndPreservesConsumedState() throws {
+        let ntp = Tab()
+        let website = Tab(link: Link(title: "Page", url: URL(string: "https://example.com")!))
+        let manager = try makeManager(TabsModel(tabs: [ntp, website], currentIndex: 0, desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+        let store = LastActiveTabStore(store: MockKeyValueStore())
+        store.recordActiveTab(uid: website.uid)
+        let builder = makeEscapeHatchBuilder(manager: manager, lastActiveTabStore: store)
+        let router = EscapeHatchRouterStub()
+
+        let hatch = try XCTUnwrap(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+        XCTAssertTrue(hatch.targetTab === website)
+        XCTAssertFalse(ntp.hasPresentedAfterIdleEscapeHatch)
+        XCTAssertTrue(hatch.isReturnToTabCardVisible)
+        XCTAssertNotNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+
+        ntp.hasPresentedAfterIdleEscapeHatch = true
+        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+
+        // Leaving and returning to the page clears its after-idle context, but must not resurrect its hatch.
+        ntp.openedAfterIdle = false
+        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+    }
+
+    func testKeptNewTabPagePreservesPreviouslyPresentedAndHiddenEscapeHatch() throws {
+        let ntp = Tab()
+        let website = Tab(link: Link(title: "Page", url: URL(string: "https://example.com")!))
+        let manager = try makeManager(TabsModel(tabs: [ntp, website], currentIndex: 0, desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+        let store = LastActiveTabStore(store: MockKeyValueStore())
+        store.recordActiveTab(uid: website.uid)
+        let shortcutAdapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        let builder = makeEscapeHatchBuilder(manager: manager, lastActiveTabStore: store, shortcutAdapter: shortcutAdapter)
+        let router = EscapeHatchRouterStub()
+        let hatch = try XCTUnwrap(builder.makeAfterIdleHatch(router: router))
+        XCTAssertFalse(ntp.hasPresentedAfterIdleEscapeHatch)
+        XCTAssertNotNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+        ntp.hasPresentedAfterIdleEscapeHatch = true
+        hatch.hideShortcut()
+
+        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+        XCTAssertFalse(hatch.isReturnToTabCardVisible)
+        XCTAssertTrue(hatch.targetTab === website)
+    }
+
+    func testKeptNewTabPageDoesNotRestoreConsumedTabSwitcherOnlyHatch() throws {
+        let ntp = Tab()
+        let manager = try makeManager(TabsModel(tabs: [ntp], desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+        let shortcutAdapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        shortcutAdapter.setEnabled(false)
+        let builder = makeEscapeHatchBuilder(manager: manager,
+                                             lastActiveTabStore: LastActiveTabStore(store: MockKeyValueStore()),
+                                             shortcutAdapter: shortcutAdapter)
+        let router = EscapeHatchRouterStub()
+        let hatch = try XCTUnwrap(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+
+        XCTAssertFalse(hatch.isReturnToTabCardVisible)
+        XCTAssertFalse(ntp.hasPresentedAfterIdleEscapeHatch)
+        ntp.hasPresentedAfterIdleEscapeHatch = true
+        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: router))
+    }
+
+    func testKeptFireNewTabPageNeverGetsEscapeHatch() throws {
+        let fireNTP = Tab(fireTab: true)
+        let manager = try makeManager(TabsModel(desktop: false),
+                                      fireModel: TabsModel(tabs: [fireNTP], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        manager.setBrowsingMode(.fire, source: .tabSelection)
+        let shortcutAdapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        shortcutAdapter.setEnabled(false)
+        let builder = makeEscapeHatchBuilder(manager: manager,
+                                             lastActiveTabStore: LastActiveTabStore(store: MockKeyValueStore()),
+                                             shortcutAdapter: shortcutAdapter)
+
+        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(router: EscapeHatchRouterStub()))
+        XCTAssertFalse(fireNTP.hasPresentedAfterIdleEscapeHatch)
+        XCTAssertEqual(manager.currentBrowsingMode, .fire)
+    }
+
+    private func makeEscapeHatchBuilder(manager: TabManager,
+                                        lastActiveTabStore: LastActiveTabStoring,
+                                        shortcutAdapter: LastTabShortcutAdapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())) -> EscapeHatchModelBuilder {
+        let eligibility = MockIdleReturnEligibilityManager()
+        eligibility.isFeatureAvailableResult = true
+        eligibility.isEligibleForNTPAfterIdleResult = true
+        return EscapeHatchModelBuilder(previewsSource: MockTabPreviewsSource(),
+                                      tabManager: manager,
+                                      lastActiveTabStore: lastActiveTabStore,
+                                      idleReturnEligibilityManager: eligibility,
+                                      afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .newTab, keyValueStore: MockKeyValueFileStore()),
+                                      lastTabShortcutAdapter: shortcutAdapter,
+                                      instrumentation: DefaultNTPAfterIdleInstrumentation(eligibilityManager: eligibility, firePixel: { _ in }))
+    }
+
+    private final class EscapeHatchRouterStub: EscapeHatchActionRouter {
+        func escapeHatchDidRequestSwitch(to tab: Tab) {}
+        func escapeHatchDidRequestClose(_ tab: Tab) {}
+        func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect) {}
+        func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {}
+        func escapeHatchDidRequestTabSwitcher() {}
+        func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {}
     }
 
     func makeManager(_ model: TabsModel,

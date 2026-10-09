@@ -281,7 +281,7 @@ extension MainViewController {
             Logger.general.error("DuckAI onboarding resume missing stored prompt; opening AI Chat without a prompt")
         }
         if let tabToClose = currentTab?.tabModel {
-            closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
+            closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false, allowingKeyboard: false)
         }
         openAIChat(source: .onboarding, query, autoSend: query.map { !$0.isEmpty } ?? false, flowType: .mobileAppOnboarding)
     }

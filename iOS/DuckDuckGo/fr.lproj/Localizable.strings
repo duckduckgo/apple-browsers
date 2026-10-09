@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Clavier";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Au lancement de l'application";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nouvel onglet";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Afficher le clavier";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Affiche un lien permettant de revenir à l’onglet utilisé en dernier lorsque vous lancez l’application après une période d’inactivité.";
 

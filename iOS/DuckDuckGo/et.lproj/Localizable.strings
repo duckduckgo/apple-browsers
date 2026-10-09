@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatuur";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Rakenduse käivitamine";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Uus vaheleht";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Näita klaviatuuri";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Kuvab pärast tegevusetust rakenduse avamisel lingi, mille abil naasta viimati kasutatud vahelehele.";
 

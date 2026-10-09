@@ -1500,8 +1500,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_activateFromOmnibar_respectsRequestedMode() {
+        sut.syncInputModeFromExternalSource(.search)
+        var publishedModes: [TextEntryMode] = []
+        sut.modeChangePublisher
+            .sink { publishedModes.append($0) }
+            .store(in: &cancellables)
+
         sut.activateFromOmnibar(inputMode: .aiChat)
+
         XCTAssertEqual(sut.inputMode, .aiChat)
+        XCTAssertTrue(publishedModes.isEmpty)
     }
 
     func test_activateFromOmnibar_withPrefilledText_setsPrefilledState() {

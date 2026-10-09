@@ -69,13 +69,11 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private var swiftUIHostingView: NSView?
 
-    private var isFlowInProgress = false
-
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
     /// A query that was released or completed elsewhere, e.g. by a navigation, is no longer in progress.
     var isAuthorizationInProgress: Bool {
-        isFlowInProgress && query?.isComplete == false
+        query?.isComplete == false
     }
 
     weak var query: PermissionAuthorizationQuery? {
@@ -129,7 +127,6 @@ final class PermissionAuthorizationViewController: NSViewController {
         ])
 
         swiftUIHostingView = hostingView
-        isFlowInProgress = true
     }
 
     private func makeLegacyHostingView(for query: PermissionAuthorizationQuery) -> NSView {
@@ -174,7 +171,6 @@ final class PermissionAuthorizationViewController: NSViewController {
         viewModel.finish = { [weak self, weak query] in
             guard let self else { return }
             if let currentQuery = self.query, currentQuery !== query { return }
-            self.isFlowInProgress = false
             self.dismiss()
         }
         query.parameters.authorizationViewModel = viewModel
@@ -182,10 +178,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleDeny() {
-        defer {
-            isFlowInProgress = false
-            dismiss()
-        }
+        defer { dismiss() }
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .deny)
@@ -193,10 +186,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleAllow() {
-        defer {
-            isFlowInProgress = false
-            dismiss()
-        }
+        defer { dismiss() }
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .allow)
@@ -206,7 +196,6 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleDismiss() {
-        isFlowInProgress = false
         query?.cancel()
         dismiss()
     }

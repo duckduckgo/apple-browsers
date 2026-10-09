@@ -3188,19 +3188,12 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:
             updateZoomButtonVisibility()
-        case let authPopover as PermissionAuthorizationPopover:
+        case is PermissionAuthorizationPopover:
             if let button = popover.positioningView as? AddressBarButton {
                 button.backgroundColor = .clear
                 button.mouseOverColor = NSColor(resource: .buttonMouseOver)
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
-            }
-            // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
-            // treat this as a denial of the website permission to prevent the popover from re-appearing
-            if !authPopover.viewController.isAuthorizationInProgress,
-               let query = authPopover.viewController.query,
-               !query.isComplete {
-                query.handleDecision(grant: false, remember: nil)
             }
             updatePermissionCenterButtonIcon()
             // Check for other pending permission requests after popover closes

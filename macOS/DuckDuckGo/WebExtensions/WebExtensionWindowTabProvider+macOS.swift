@@ -54,7 +54,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         using configuration: WKWebExtension.WindowConfiguration,
         for context: WKWebExtensionContext
     ) async throws -> (any WKWebExtensionWindow)? {
-        // Like Chrome, a popup window holds one page: further pages open in a regular window.
+        // Like Chrome, a popup window holds one page: further pages open as tabs in the last active regular window.
         let isPopup = configuration.windowType == .popup
         // Only the extension's own pages load with its web view configuration; websites get a regular tab's.
         let tabs = configuration.tabURLs.map { url in
@@ -63,6 +63,8 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                        webViewConfiguration: isExtensionPage ? context.webViewConfiguration : nil)
         }
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
+        // Looked up before the popup opens, since the popup becomes the last active window.
+        let regularWindowTabs = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: isPopup ? Array(tabs.prefix(1)) : tabs, isPopup: isPopup),
             burnerMode: burnerMode,
@@ -83,9 +85,16 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             isFullscreen: configuration.windowState == .fullscreen
         )
 
-        if isPopup {
-            // Appending to a popup that already has its page opens the tab in a regular window.
-            tabs.dropFirst().forEach { tabCollectionViewModel.append(tab: $0) }
+        if isPopup, tabs.count > 1 {
+            let extraTabs = Array(tabs.dropFirst())
+            if let regularWindowTabs, !regularWindowTabs.isPopup, regularWindowTabs.burnerMode == burnerMode {
+                extraTabs.forEach { regularWindowTabs.append(tab: $0) }
+            } else {
+                windowControllersManager.openNewWindow(with: TabCollectionViewModel(tabCollection: TabCollection(tabs: extraTabs),
+                                                                                    burnerMode: burnerMode),
+                                                       burnerMode: burnerMode,
+                                                       showWindow: true)
+            }
         }
 
         // Like Chrome, an existing tab only moves into a regular window or an empty popup.

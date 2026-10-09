@@ -27,6 +27,7 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -48,6 +49,7 @@ public func assertImageSnapshot(
             of: view,
             as: .image(
                 drawHierarchyInKeyWindow: false,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize,
                 traits: configuration.traits
@@ -69,6 +71,7 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -90,6 +93,7 @@ public func assertImageSnapshot(
             of: viewController,
             as: .image(
                 drawHierarchyInKeyWindow: false,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize,
                 traits: configuration.traits
@@ -111,6 +115,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     drawHierarchyInKeyWindow: Bool = false,
     fileID: StaticString = #fileID,
@@ -133,6 +138,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
             configuration: configuration,
             size: size,
             record: record,
+            precision: precision,
             perceptualPrecision: perceptualPrecision,
             drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
             fileID: fileID,
@@ -222,6 +228,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     configuration: SnapshotImageConfiguration,
     size: SnapshotImageSize,
     record: Bool,
+    precision: Float,
     perceptualPrecision: Float,
     drawHierarchyInKeyWindow: Bool,
     fileID: StaticString,
@@ -236,6 +243,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
             of: view.fixedSize(),
             as: .image(
                 drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
                 traits: configuration.traits
@@ -255,6 +263,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
             of: view.frame(width: SnapshotDevice.iPhoneDefault.size.width).fixedSize(),
             as: .image(
                 drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
                 traits: configuration.traits
@@ -283,6 +292,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
             ),
             as: .image(
                 drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
                 traits: configuration.traits
@@ -307,6 +317,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
             of: view,
             as: .image(
                 drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
                 traits: configuration.traits

@@ -1813,6 +1813,29 @@ final class LocalBookmarkStoreTests: XCTestCase {
         XCTAssertEqual(totalFavorites, 1)
     }
 
+    // MARK: Count
+
+    @MainActor
+    func testWhenStoreHasNoBookmarks_ThenBookmarksCountIsZero() {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+
+        XCTAssertEqual(bookmarkStore.bookmarksCount(), 0)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreSavedInRootAndInFolder_ThenBookmarksCountIncludesAllBookmarksButNoFolders() async throws {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+        let folder = BookmarkFolder(id: UUID().uuidString, title: "Folder", parentFolderUUID: "bookmarks_root")
+        let rootBookmark = Bookmark(id: UUID().uuidString, url: "https://example1.com", title: "Example 1", isFavorite: true, parentFolderUUID: "bookmarks_root")
+        let nestedBookmark = Bookmark(id: UUID().uuidString, url: "https://example2.com", title: "Example 2", isFavorite: false, parentFolderUUID: folder.id)
+
+        _ = try await bookmarkStore.save(folder: folder)
+        _ = try await bookmarkStore.save(bookmark: rootBookmark, index: nil)
+        _ = try await bookmarkStore.save(bookmark: nestedBookmark, index: nil)
+
+        XCTAssertEqual(bookmarkStore.bookmarksCount(), 2)
+    }
+
     private func createMockImportedBookmarks() -> ImportedBookmarks {
         let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
         let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil)

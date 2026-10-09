@@ -318,6 +318,69 @@ class AutofillLoginListViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func testWhenDeletingLoginThenUndoRestoresCredentialContentsWithNewIdentity() throws {
+        let vault = MockSecureVault(providers: try MockSecureVaultFactory.makeSecureStorageProviders(reporter: nil))
+        let account = SecureVaultModels.WebsiteAccount(id: "1",
+                                                       title: "Example login",
+                                                       username: "user@example.com",
+                                                       domain: "example.com",
+                                                       signature: "original-signature",
+                                                       notes: "Recovery codes:\n1234-5678\nKeep these safe 🔐",
+                                                       created: Date(timeIntervalSince1970: 1_700_000_000),
+                                                       lastUpdated: Date(timeIntervalSince1970: 1_700_000_100),
+                                                       lastUsed: Date(timeIntervalSince1970: 1_700_000_200))
+        let password = Data("saved-password".utf8)
+        vault.storedAccounts = [account]
+        vault.storedCredentials[1] = .init(account: account, password: password)
+
+        var storedCredentials: [SecureVaultModels.WebsiteCredentials] = []
+        vault.storeWebsiteCredentialsHandler = { [unowned vault] credentials in
+            storedCredentials.append(credentials)
+            var restoredCredentials = credentials
+            restoredCredentials.account.id = "2"
+            vault.storedCredentials[2] = restoredCredentials
+            vault.storedAccounts = [restoredCredentials.account]
+            return 2
+        }
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                  tld: tld,
+                                                  secureVault: vault,
+                                                  privacyConfig: makePrivacyConfig(from: configDisabled),
+                                                  syncService: syncService,
+                                                  keyValueStore: mockStore,
+                                                  featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+
+        XCTAssertTrue(model.delete(account))
+        XCTAssertNil(try vault.websiteCredentialsFor(accountId: 1))
+
+        model.undoLastDelete()
+
+        XCTAssertEqual(storedCredentials.count, 1)
+        let credentialsToRestore = try XCTUnwrap(storedCredentials.first)
+        XCTAssertNil(credentialsToRestore.account.id)
+        XCTAssertEqual(credentialsToRestore.account.title, account.title)
+        XCTAssertEqual(credentialsToRestore.account.username, account.username)
+        XCTAssertEqual(credentialsToRestore.account.domain, account.domain)
+        XCTAssertEqual(credentialsToRestore.account.notes, account.notes)
+        XCTAssertEqual(credentialsToRestore.account.lastUsed, account.lastUsed)
+        XCTAssertEqual(credentialsToRestore.password, password)
+
+        let restoredCredentials = try XCTUnwrap(vault.websiteCredentialsFor(accountId: 2))
+        var expectedAccount = credentialsToRestore.account
+        expectedAccount.id = "2"
+        XCTAssertEqual(restoredCredentials.account, expectedAccount)
+        XCTAssertEqual(restoredCredentials.password, password)
+        XCTAssertEqual(model.sections.count, 1)
+        guard case .credentials(_, let items) = try XCTUnwrap(model.sections.first) else {
+            return XCTFail("Expected a credentials section after undo")
+        }
+        XCTAssertEqual(items.map(\.account), [expectedAccount])
+
+        model.undoLastDelete()
+
+        XCTAssertEqual(storedCredentials.count, 1)
+    }
+
     func testWhenOneAccountSavedAndDeleteAllThenNoAccountsAreShownAndVaultIsEmpty() throws {
         vault.storedAccounts = [
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())

@@ -19,6 +19,8 @@
 import Foundation
 
 public enum MemoryPressureLevel: String, Sendable {
+    /// No event received since launch.
+    case unknown
     case normal
     case warning
     case critical
@@ -36,7 +38,7 @@ public final class MemoryPressureMonitor: MemoryPressureProviding {
                                                                  queue: DispatchQueue(label: "com.duckduckgo.page-signals.memory-pressure-monitor"))
     private let isEnabledProvider: () -> Bool
     private let lock = NSLock()
-    private var level: MemoryPressureLevel = .normal
+    private var level: MemoryPressureLevel = .unknown
 
     public init(isEnabledProvider: @escaping () -> Bool) {
         self.isEnabledProvider = isEnabledProvider

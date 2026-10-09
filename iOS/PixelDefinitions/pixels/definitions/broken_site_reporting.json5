@@ -449,18 +449,18 @@
                 "key": "memoryPressure",
                 "type": "string",
                 "description": "System memory pressure level. Only sent when Page Signals are enabled.",
-                "enum": ["normal", "warning", "critical"]
+                "enum": ["unknown", "normal", "warning", "critical"]
             },
             {
                 "key": "dnsResolution",
                 "type": "string",
                 "description": "DNS resolution outcome for the site host. Only sent when Page Signals are enabled.",
-                "enum": ["resolved", "unresolved", "blocked"]
+                "enum": ["resolved", "blocked", "privateIP", "invalid", "unresolved"]
             },
             {
                 "key": "resourceLoadErrors",
                 "type": "string",
-                "description": "Comma-separated eTLD+1:error pairs for failed resource loads (error: dns, certificate, connection, client, server). Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
+                "description": "Comma-separated eTLD+1:(errorDomain,code) or eTLD+1:(statusCode,code) pairs for failed resource loads (non-2xx responses only), sorted alphabetically. Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
             },
             {
                 "key": "contentBlockedLoads",
@@ -883,18 +883,18 @@
                 "key": "memoryPressure",
                 "type": "string",
                 "description": "System memory pressure level. Only sent when Page Signals are enabled.",
-                "enum": ["normal", "warning", "critical"]
+                "enum": ["unknown", "normal", "warning", "critical"]
             },
             {
                 "key": "dnsResolution",
                 "type": "string",
                 "description": "DNS resolution outcome for the site host. Only sent when Page Signals are enabled.",
-                "enum": ["resolved", "unresolved", "blocked"]
+                "enum": ["resolved", "blocked", "privateIP", "invalid", "unresolved"]
             },
             {
                 "key": "resourceLoadErrors",
                 "type": "string",
-                "description": "Comma-separated eTLD+1:error pairs for failed resource loads (error: dns, certificate, connection, client, server). Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
+                "description": "Comma-separated eTLD+1:(errorDomain,code) or eTLD+1:(statusCode,code) pairs for failed resource loads (non-2xx responses only), sorted alphabetically. Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
             },
             {
                 "key": "contentBlockedLoads",

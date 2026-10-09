@@ -526,6 +526,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
             if let initialDelivery {
                 let frontendRequestedPrompt = await initialDelivery.waitUntilRequested()
+                self?.cancelTabContextSubmissionAfterFailedWait(frontendRequestedPrompt, generation: generation)
                 guard frontendRequestedPrompt else { return }
             }
             guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
@@ -556,9 +557,16 @@ final class AIChatUserScript: NSObject, Subfeature {
             if let initialDelivery {
                 request?.cancel()
                 hasReleasedRequest = true
-                await initialDelivery.waitUntilSubmitted()
+                let frontendSubmittedPrompt = await initialDelivery.waitUntilSubmitted()
+                self?.cancelTabContextSubmissionAfterFailedWait(frontendSubmittedPrompt, generation: generation)
             }
         }
+    }
+
+    @MainActor
+    private func cancelTabContextSubmissionAfterFailedWait(_ waitSucceeded: Bool, generation: Int) {
+        guard !waitSucceeded, tabContextSubmissionGeneration == generation else { return }
+        cancelPendingTabContextSubmission()
     }
 
     @MainActor

@@ -960,6 +960,9 @@ class MainViewController: UIViewController {
         chromeManager.onUserScrolled = { [weak self] in
             self?.postIdleSessionInstrumentation.pageEngaged()
         }
+        chromeManager.onScrollStateChanged = { [weak self] in
+            self?.currentTab?.applyDeferredFloatingUIInsetsIfNeeded()
+        }
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()

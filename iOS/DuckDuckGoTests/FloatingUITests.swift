@@ -1650,6 +1650,32 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
+    func testTopBounceDefersInsetsUntilScrollingSettlesOrMovesBackIntoPage() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset.top = 97.33333333333334
+
+        for state in [BounceScrollView.State.tracking, .dragging, .decelerating, .idle] {
+            scrollView.state = state
+            for offsetY: CGFloat in [-156, -97.33333333333333, -96] {
+                scrollView.contentOffset.y = offsetY
+                XCTAssertEqual(WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(scrollView),
+                               state != .idle && offsetY < -97,
+                               "state=\(state), offsetY=\(offsetY)")
+            }
+        }
+    }
+
+    private final class BounceScrollView: UIScrollView {
+        enum State { case idle, tracking, dragging, decelerating }
+        var state: State = .idle
+
+        override var isTracking: Bool { state == .tracking }
+        override var isDragging: Bool { state == .dragging }
+        override var isDecelerating: Bool { state == .decelerating }
+    }
+
     func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
         let scrollView = UIScrollView()
         scrollView.contentInsetAdjustmentBehavior = .automatic
@@ -1678,14 +1704,18 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
     }
 
     func testWhenPinnedToTopThenUpdatingInsetsPreservesPinnedPosition() {
-        let scrollView = UIScrollView()
-        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
-        scrollView.contentOffset = CGPoint(x: 0, y: -20)
+        let topInset: CGFloat = 97.33333333333334
+        for offsetY in [-topInset, -97.33333333333333] {
+            let scrollView = UIScrollView()
+            scrollView.contentInsetAdjustmentBehavior = .never
+            scrollView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+            scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
 
-        WebViewScrollViewInsetUpdater.update(scrollView,
-                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+            WebViewScrollViewInsetUpdater.update(scrollView,
+                                                 insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0))
 
-        XCTAssertEqual(scrollView.contentOffset.y, -50)
+            XCTAssertEqual(scrollView.contentOffset.y, -122)
+        }
     }
 
     func testWhenNotPinnedToTopThenUpdatingInsetsPreservesContentOffset() {

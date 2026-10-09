@@ -153,6 +153,8 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    var onPromptSubmitted: (() -> Void)?
+
     /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
     /// submit and teardown — two of the events — are this type's to report.
     private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
@@ -1419,6 +1421,7 @@ final class AIChatOmnibarController {
         if sentWithAsk {
             termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
         }
+        onPromptSubmitted?()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and

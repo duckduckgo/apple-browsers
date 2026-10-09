@@ -144,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var passwordsMenuBarCancellable: AnyCancellable?
     private var promptBarMenuBarController: PromptBarMenuBarController?
     private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarLauncherIntroductionCancellable: AnyCancellable?
     private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -280,6 +281,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let duckAiTermsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
 
     private var updateProgressCancellable: AnyCancellable?
+
+    @MainActor
+    private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
@@ -2689,7 +2693,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: content)
+            presenter: PromptBarPresenter(content: content,
+                                          presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
         )
         coordinator.start()
         promptBarCoordinator = coordinator
@@ -2713,6 +2719,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     self?.promptBarMenuBarController?.hide()
                 }
+            }
+        promptBarLauncherIntroductionCancellable = promptBarPreferences.$pendingLauncherIntroduction
+            .receive(on: DispatchQueue.main)
+            .filter { $0 }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                promptBarPreferences.pendingLauncherIntroduction = false
+                promptBarCoordinator?.showPromptBarForLauncherPromo()
             }
     }
 

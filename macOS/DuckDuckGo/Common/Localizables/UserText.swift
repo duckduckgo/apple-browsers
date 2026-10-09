@@ -740,10 +740,12 @@ struct UserText {
         return String(format: localized, shortcut, ownerName)
     }
     static let promptBarShortcutSpaceKey = NSLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
-    static let duckAiLauncherPromoMessage = NotLocalizedString("duckai.launcher-promo.message", value: "Chat privately outside the browser", comment: "Emphasized title of the New Tab Page Duck.ai promo inviting the user to turn on the Duck.ai launcher")
-    static let duckAiLauncherPromoAddToMenuBar = NotLocalizedString("duckai.launcher-promo.add-to-menu-bar", value: "Add Duck.ai to your menu bar", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is off")
-    static let duckAiLauncherPromoAddKeyboardShortcut = NotLocalizedString("duckai.launcher-promo.add-keyboard-shortcut", value: "Add a keyboard shortcut to Duck.ai", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off")
-    static let duckAiLauncherPromoTryNow = NotLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the New Tab Page Duck.ai launcher promo that turns the launcher on")
+    static let duckAiLauncherPromoMessage = NSLocalizedString("duckai.launcher-promo.message", value: "Chat privately from anywhere", comment: "Emphasized title of the Duck.ai launcher promo (New Tab Page and address bar) inviting the user to turn on the Duck.ai launcher")
+    static let duckAiLauncherPromoAddToMenuBar = NSLocalizedString("duckai.launcher-promo.add-to-menu-bar", value: "Show Duck.ai in the menu bar", comment: "Text after the title of the Duck.ai launcher promo (New Tab Page and address bar), shown while the Duck.ai menu bar icon is off")
+    static let duckAiLauncherPromoAddKeyboardShortcut = NSLocalizedString("duckai.launcher-promo.add-keyboard-shortcut", value: "Add Duck.ai keyboard shortcut", comment: "Text after the title of the Duck.ai launcher promo (New Tab Page and address bar), shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off")
+    static let duckAiLauncherIntroductionFormat = NSLocalizedString("duckai.launcher-promo.introduction", value: "Now you can access Duck.ai by pressing %1$@. You can change the shortcut in %2$@.", comment: "Message in the Duck.ai floating prompt bar right after the launcher promo's Try Now opened it. %1$@ is the keyboard shortcut, e.g. ⌥Space; %2$@ is a link reading Settings")
+    static let duckAiLauncherIntroductionSettings = NSLocalizedString("duckai.launcher-promo.introduction.settings", value: "Settings", comment: "Link in the Duck.ai prompt bar launcher message that opens Duck.ai Settings")
+    static let duckAiLauncherPromoTryNow = NSLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the Duck.ai launcher promo (New Tab Page and address bar) that turns the launcher on")
 
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")

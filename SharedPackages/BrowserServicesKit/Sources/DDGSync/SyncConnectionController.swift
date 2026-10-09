@@ -888,6 +888,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     private func makePairingV2Coordinator() -> PairingV2Coordinator {
+        let canUseExchangeV2Point1 = dependencies.syncFeatureFlags.canUseExchangeV2Point1()
         return PairingV2Coordinator(
             syncService: syncService,
             messageExchanger: dependencies.createPairingV2MessageExchanger(),
@@ -895,8 +896,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             deviceType: deviceType,
             flags: PairingV2RolloutFlags(isV2ScanningEnabled: isPairingV2ScanningEnabled,
                                          isV2CodeEnabled: isPairingV2PresentationEnabled),
-            shouldAuthenticateExchangeEndpoints: dependencies.syncFeatureFlags.canSendExchangeChannelSecret()
-                || dependencies.syncFeatureFlags.canUseExchangeV2Point1(),
+            canSendExchangeChannelSecret: dependencies.syncFeatureFlags.canSendExchangeChannelSecret(),
+            advertisedVersion: canUseExchangeV2Point1 ? .v2Point1 : .v2,
             confirmationDelegate: self,
             makeKeyPair: makePairingV2KeyPair
         )

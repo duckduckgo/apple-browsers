@@ -77,6 +77,139 @@ final class PairingV2CoordinatorTests: XCTestCase {
         try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
     }
 
+    private static let negotiationCases: [(local: PairingV2ProtocolVersion, peer: String, expected: PairingV2ProtocolVersion)] = [
+        (.v2Point1, "2.1", .v2Point1),
+        (.v2Point1, "2.9", .v2Point1),
+        (.v2Point1, "2", .v2),
+        (.v2Point1, "2.0", .v2),
+        (.v2, "2.1", .v2),
+        (.v2, "2", .v2)
+    ]
+
+    func testWhenPresentingThenAdvertisesLocalCapabilityAndNegotiatesFromHello() async throws {
+        let peerKeyPair = try makePeerKeyPair()
+        let crypto = PairingV2MessageCrypto()
+
+        for testCase in Self.negotiationCases {
+            let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: MockSyncDependencies())
+            let exchanger = PairingV2MessageExchangingMock()
+            let coordinator = makeCoordinator(syncService: syncService, messageExchanger: exchanger, advertisedVersion: testCase.local)
+
+            let payload = try await coordinator.startPresenting()
+            XCTAssertEqual(payload.version, testCase.local.rawValue)
+            XCTAssertEqual(coordinator.negotiatedVersion, .v2)
+            exchanger.fetchMessagesStub = try encryptedPeerMessages(
+                [.hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: testCase.peer))],
+                recipientPublicKey: payload.publicKey,
+                peerKeyPair: peerKeyPair,
+                messageCrypto: crypto)
+
+            try await coordinator.pollOnce()
+
+            XCTAssertEqual(coordinator.negotiatedVersion, testCase.expected, "Local: \(testCase.local.rawValue), peer: \(testCase.peer)")
+            let status = try XCTUnwrap(exchanger.sendCalls.first?.messages.first)
+            XCTAssertEqual(status.version, "2")
+            await coordinator.cancel()
+        }
+    }
+
+    func testWhenPresenterReceivesHelloWithMissingOrUnrecognizedCapabilityThenContinuesUsingV2() async throws {
+        let peerKeyPair = try makePeerKeyPair()
+        let localKeyPair = try makePeerKeyPair(channelID: "local-channel")
+        let recipientPublicKey = try XCTUnwrap(SecKeyCopyPublicKey(localKeyPair.privateKey))
+        let peerVersions: [String?] = [nil, "", " \t\n", "invalid", "1", "3", "3.1", "2.invalid", "2.-1", "2."]
+
+        for peerVersion in peerVersions {
+            let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: MockSyncDependencies())
+            let exchanger = PairingV2MessageExchangingMock()
+            let coordinator = makeCoordinator(syncService: syncService,
+                                              messageExchanger: exchanger,
+                                              advertisedVersion: .v2Point1,
+                                              makeKeyPair: { localKeyPair })
+            _ = try await coordinator.startPresenting()
+            var hello = ["type": "hello", "channel_id": peerKeyPair.channelID, "public_key": peerKeyPair.publicKey]
+            hello["version"] = peerVersion
+            let payload = try JSONSerialization.data(withJSONObject: hello)
+            let encrypted = try JWECompactCodec().encryptRSAOAEP256(payload: payload,
+                                                                  recipientPublicKey: recipientPublicKey,
+                                                                  kid: peerKeyPair.channelID)
+            exchanger.fetchMessagesStub = [.init(seq: 1, version: "2", payload: encrypted)]
+
+            try await coordinator.pollOnce()
+
+            XCTAssertEqual(coordinator.negotiatedVersion, .v2, peerVersion ?? "missing")
+            XCTAssertEqual(coordinator.state,
+                           .waitingForPeerStatus(.init(localClient: .init(name: "Mac", kind: .ddg, hasAccount: false, isPresenter: true),
+                                                       peerChannelID: nil)))
+            let status = try XCTUnwrap(exchanger.sendCalls.first?.messages.first)
+            XCTAssertEqual(status.version, "2")
+            XCTAssertEqual(try PairingV2MessageCrypto().decrypt(status, privateKey: peerKeyPair.privateKey),
+                           .recoveryCodeRequest(.init(type: "recovery_code_request", name: "Mac", kind: .ddg)))
+            await coordinator.cancel()
+        }
+    }
+
+    func testWhenScanningThenNegotiatesFromQRCodeButHelloAdvertisesLocalCapability() async throws {
+        let peerKeyPair = try makePeerKeyPair()
+        let crypto = PairingV2MessageCrypto()
+
+        for testCase in Self.negotiationCases {
+            let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: MockSyncDependencies())
+            let exchanger = PairingV2MessageExchangingMock()
+            let coordinator = makeCoordinator(syncService: syncService, messageExchanger: exchanger, advertisedVersion: testCase.local)
+
+            try await coordinator.startScanning(qrPayload: .init(version: testCase.peer,
+                                                                channelId: peerKeyPair.channelID,
+                                                                publicKey: peerKeyPair.publicKey))
+
+            XCTAssertEqual(coordinator.negotiatedVersion, testCase.expected, "Local: \(testCase.local.rawValue), peer: \(testCase.peer)")
+            let hello = try localHello(from: exchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: crypto)
+            XCTAssertEqual(hello.version, testCase.local.rawValue)
+            XCTAssertEqual(exchanger.sendCalls.flatMap(\.messages).map(\.version), ["2", "2"])
+            await coordinator.cancel()
+        }
+    }
+
+    func testWhenScannerReceivesRedundantHelloThenKeepsVersionNegotiatedFromQRCode() async throws {
+        let peerKeyPair = try makePeerKeyPair()
+        let crypto = PairingV2MessageCrypto()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: MockSyncDependencies())
+        let exchanger = PairingV2MessageExchangingMock()
+        let coordinator = makeCoordinator(syncService: syncService, messageExchanger: exchanger, advertisedVersion: .v2Point1)
+        try await coordinator.startScanning(qrPayload: .init(version: "2", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
+        let hello = try localHello(from: exchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: crypto)
+        exchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [.hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: "2.1"))],
+            recipientPublicKey: hello.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: crypto)
+
+        try await coordinator.pollOnce()
+
+        XCTAssertEqual(coordinator.negotiatedVersion, .v2)
+        guard case .waitingForPeerStatus = coordinator.state else {
+            return XCTFail("Expected redundant hello to be accepted")
+        }
+        await coordinator.cancel()
+    }
+
+    func testWhenStartingNewSessionThenDoesNotReusePreviousNegotiatedVersion() async throws {
+        let peerKeyPair = try makePeerKeyPair()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: MockSyncDependencies())
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: PairingV2MessageExchangingMock(),
+                                          advertisedVersion: .v2Point1)
+        try await coordinator.startScanning(qrPayload: .init(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
+        XCTAssertEqual(coordinator.negotiatedVersion, .v2Point1)
+        await coordinator.cancel()
+
+        let payload = try await coordinator.startPresenting()
+
+        XCTAssertEqual(payload.version, "2.1")
+        XCTAssertEqual(coordinator.negotiatedVersion, .v2)
+        await coordinator.cancel()
+    }
+
     func testWhenStartPresentingThenOpensLocalChannelAndReturnsQRCodePayload() async throws {
         let dependencies = MockSyncDependencies()
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
@@ -85,7 +218,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         let payload = try await coordinator.startPresenting()
 
-        XCTAssertEqual(payload.version, PairingV2ProtocolVersion.current)
+        XCTAssertEqual(payload.version, PairingV2ProtocolVersion.v2.rawValue)
         XCTAssertFalse(payload.channelId.isEmpty)
         XCTAssertFalse(payload.publicKey.isEmpty)
         XCTAssertEqual(messageExchanger.openChannelCalls, [payload.channelId])
@@ -174,7 +307,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let secret = "local-channel-secret"
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
-                                          shouldAuthenticateExchangeEndpoints: true,
+                                          canSendExchangeChannelSecret: true,
                                           makeChannelSecret: { secret })
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -187,6 +320,40 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(messageExchanger.closeChannelAuthorizationSecrets, [secret])
     }
 
+    func testWhenAdvertisingV21OrNewerThenAuthenticatesWithChannelSecretFlagDisabled() async throws {
+        let peerKeyPair = try makePeerKeyPair()
+        let secret = "local-channel-secret"
+
+        for rawVersion in ["2.1", "2.3"] {
+            let advertisedVersion = try XCTUnwrap(PairingV2ProtocolVersion(rawValue: rawVersion))
+            for isPresenter in [true, false] {
+                let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: MockSyncDependencies())
+                let messageExchanger = PairingV2MessageExchangingMock()
+                let coordinator = makeCoordinator(syncService: syncService,
+                                                  messageExchanger: messageExchanger,
+                                                  canSendExchangeChannelSecret: false,
+                                                  advertisedVersion: advertisedVersion,
+                                                  makeChannelSecret: { secret })
+
+                if isPresenter {
+                    _ = try await coordinator.startPresenting()
+                } else {
+                    try await coordinator.startScanning(qrPayload: .init(version: "2",
+                                                                        channelId: peerKeyPair.channelID,
+                                                                        publicKey: peerKeyPair.publicKey))
+                }
+                try await coordinator.pollOnce()
+                await coordinator.cancel()
+
+                XCTAssertEqual(coordinator.negotiatedVersion, .v2)
+                XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [secret])
+                XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, isPresenter ? [] : [secret, secret])
+                XCTAssertEqual(messageExchanger.fetchMessagesAuthorizationSecrets, [secret])
+                XCTAssertEqual(messageExchanger.closeChannelAuthorizationSecrets, [secret])
+            }
+        }
+    }
+
     func testWhenExchangeAuthenticationIsDisabledThenDoesNotGenerateOrSendSecret() async throws {
         let dependencies = MockSyncDependencies()
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
@@ -194,7 +361,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
-                                          shouldAuthenticateExchangeEndpoints: false,
+                                          canSendExchangeChannelSecret: false,
                                           makeChannelSecret: { throw PairingV2CoordinatorTestError.secretGenerationFailed })
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -216,7 +383,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                 let keyPair = try makePeerKeyPair(channelID: "local-channel")
                 let coordinator = makeCoordinator(syncService: syncService,
                                                   messageExchanger: messageExchanger,
-                                                  shouldAuthenticateExchangeEndpoints: shouldAuthenticate,
+                                                  canSendExchangeChannelSecret: shouldAuthenticate,
                                                   makeKeyPair: { keyPair },
                                                   makeChannelSecret: { "local-secret" })
                 let openStarted = expectation(description: "Local channel creation started")
@@ -268,7 +435,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                 let keyPair = try makePeerKeyPair(channelID: "local-channel")
                 let coordinator = makeCoordinator(syncService: syncService,
                                                   messageExchanger: messageExchanger,
-                                                  shouldAuthenticateExchangeEndpoints: shouldAuthenticate,
+                                                  advertisedVersion: shouldAuthenticate ? .v2Point1 : .v2,
                                                   makeKeyPair: { keyPair },
                                                   makeChannelSecret: { "local-secret" })
                 messageExchanger.openChannelHandler = { _ in
@@ -309,7 +476,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             let keyPair = try makePeerKeyPair(channelID: "local-channel")
             let coordinator = makeCoordinator(syncService: syncService,
                                               messageExchanger: messageExchanger,
-                                              shouldAuthenticateExchangeEndpoints: true,
+                                              canSendExchangeChannelSecret: true,
                                               makeKeyPair: { keyPair },
                                               makeChannelSecret: { "local-secret" })
 
@@ -339,7 +506,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
-                                          shouldAuthenticateExchangeEndpoints: true,
+                                          canSendExchangeChannelSecret: true,
                                           makeChannelSecret: { throw PairingV2CoordinatorTestError.secretGenerationFailed })
 
         let failure = await pairingFailure {
@@ -395,7 +562,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)),
                     recipientPublicKey: hello.publicKey,
@@ -429,7 +596,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .hello(.init(channelId: peerKeyPair.channelID, publicKey: "mismatched-public-key")),
                     recipientPublicKey: hello.publicKey,
@@ -932,7 +1099,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
                                                  name: "Peer",
@@ -948,7 +1115,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                        credentialId: SyncCredentialID.defaultCredential)
         messageExchanger.fetchMessagesStub = [
             .init(seq: 2,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeResponse(.init(recoveryCode: recoveryCode)),
                     recipientPublicKey: hello.publicKey,
@@ -999,7 +1166,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                        credentialId: SyncCredentialID.defaultCredential)
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
                                                  name: "Peer",
@@ -1008,7 +1175,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     recipientPublicKey: hello.publicKey,
                     senderChannelID: peerKeyPair.channelID).payload),
             .init(seq: 2,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeResponse(.init(recoveryCode: recoveryCode)),
                     recipientPublicKey: hello.publicKey,
@@ -1053,7 +1220,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                deviceName: "Mac",
                                                deviceType: "desktop",
                                                flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
-                                               shouldAuthenticateExchangeEndpoints: false,
+                                               canSendExchangeChannelSecret: false,
+                                               advertisedVersion: .v2,
                                                confirmationDelegate: confirmationDelegate)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -1061,7 +1229,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
                                                  name: "Peer",
@@ -1086,7 +1254,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let recoveryCode = "third-party-recovery-code"
         messageExchanger.fetchMessagesStub = [
             .init(seq: 2,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeResponse(.init(recoveryCode: recoveryCode)),
                     recipientPublicKey: hello.publicKey,
@@ -1155,7 +1323,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                deviceName: "Mac",
                                                deviceType: "desktop",
                                                flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
-                                               shouldAuthenticateExchangeEndpoints: false,
+                                               canSendExchangeChannelSecret: false,
+                                               advertisedVersion: .v2,
                                                confirmationDelegate: confirmationDelegate)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -1163,7 +1332,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
                                                  name: "Peer",
@@ -1176,7 +1345,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 2,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeResponse(.init(recoveryCode: "third-party-recovery-code")),
                     recipientPublicKey: hello.publicKey,
@@ -1210,7 +1379,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                deviceName: "Mac",
                                                deviceType: "desktop",
                                                flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
-                                               shouldAuthenticateExchangeEndpoints: false,
+                                               canSendExchangeChannelSecret: false,
+                                               advertisedVersion: .v2,
                                                confirmationDelegate: confirmationDelegate)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -1218,7 +1388,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 1,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
                                                  name: "Peer",
@@ -1231,7 +1401,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 2,
-                  version: PairingV2ProtocolVersion.current,
+                  version: PairingV2ProtocolVersion.v2.rawValue,
                   payload: try messageCrypto.encrypt(
                     .recoveryCodeResponse(.init(recoveryCode: "third-party-recovery-code")),
                     recipientPublicKey: hello.publicKey,
@@ -1245,7 +1415,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                  messageExchanger: PairingV2MessageExchanging,
                                  messageCrypto: PairingV2MessageCrypto = PairingV2MessageCrypto(),
                                  confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
-                                 shouldAuthenticateExchangeEndpoints: Bool = false,
+                                 canSendExchangeChannelSecret: Bool = false,
+                                 advertisedVersion: PairingV2ProtocolVersion = .v2,
                                  makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
                                  makeChannelSecret: @escaping () throws -> String = {
                                      try PairingV2ChannelSecretFactory.makeSecret()
@@ -1256,7 +1427,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                              deviceName: "Mac",
                              deviceType: "desktop",
                              flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
-                             shouldAuthenticateExchangeEndpoints: shouldAuthenticateExchangeEndpoints,
+                             canSendExchangeChannelSecret: canSendExchangeChannelSecret,
+                             advertisedVersion: advertisedVersion,
                              confirmationDelegate: confirmationDelegate,
                              makeKeyPair: makeKeyPair,
                              makeChannelSecret: makeChannelSecret)

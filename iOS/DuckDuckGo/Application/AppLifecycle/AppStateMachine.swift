@@ -215,17 +215,13 @@ final class AppStateMachine {
         if isTesting {
             currentState = .simulated(Simulated())
         } else {
-            let previousLaunch = launchBreadcrumb.current
-            launchBreadcrumb.mark(.launchingStarted)
+            launchBreadcrumb.startLaunch()
             do {
                 let launching = try initializing.makeLaunchingState()
                 launchBreadcrumb.mark(.launched)
-                // PixelKit is set up while making the Launching state.
-                launchBreadcrumb.reportIncompleteLaunch(previousLaunch)
                 currentState = .launching(launching)
             } catch {
                 launchBreadcrumb.mark(.terminating)
-                launchBreadcrumb.reportIncompleteLaunch(previousLaunch)
                 currentState = .terminating(terminatingStateFactory.makeTerminatingState(error: error))
             }
         }
@@ -376,6 +372,7 @@ struct LaunchBreadcrumb {
     }
 
     static let key = "com.duckduckgo.app-lifecycle.launch-breadcrumb"
+    static let pendingReportKey = "com.duckduckgo.app-lifecycle.launch-breadcrumb.pending-report"
 
     private let store: UserDefaults
     private let applicationState: @MainActor () -> UIApplication.State
@@ -393,6 +390,20 @@ struct LaunchBreadcrumb {
         store.dictionary(forKey: Self.key) as? [String: String]
     }
 
+    var pendingReport: [String: String]? {
+        store.dictionary(forKey: Self.pendingReportKey) as? [String: String]
+    }
+
+    /// Starts a new launch. A breadcrumb left by the previous launch is kept for `reportIncompleteLaunch()`, so it
+    /// survives even if this launch hangs or crashes before reporting it.
+    @MainActor
+    func startLaunch() {
+        if let current {
+            store.set(current, forKey: Self.pendingReportKey)
+        }
+        mark(.launchingStarted)
+    }
+
     @MainActor
     func mark(_ step: Step) {
         store.set(["step": step.rawValue, "app_state": applicationState().stringValue], forKey: Self.key)
@@ -402,9 +413,12 @@ struct LaunchBreadcrumb {
         store.removeObject(forKey: Self.key)
     }
 
-    func reportIncompleteLaunch(_ breadcrumb: [String: String]?) {
-        guard let breadcrumb else { return }
-        pixelFiring()?.fire(LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: breadcrumb), frequency: .dailyAndCount)
+    /// Reports a launch that never finished. Called as early as PixelKit allows, so a launch that fails every time
+    /// still reports the one before it.
+    func reportIncompleteLaunch() {
+        guard let pendingReport else { return }
+        store.removeObject(forKey: Self.pendingReportKey)
+        pixelFiring()?.fire(LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: pendingReport), frequency: .dailyAndCount)
     }
 
 }

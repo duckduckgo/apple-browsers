@@ -569,20 +569,19 @@ final class LaunchBreadcrumbTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A breadcrumb left by the previous launch is reported on the next launch", .timeLimit(.minutes(1)))
-    func incompleteLaunchIsReported() {
+    @Test("Starting a launch keeps the previous launch's breadcrumb for reporting", .timeLimit(.minutes(1)))
+    func startingLaunchKeepsPreviousBreadcrumb() {
         let previous = ["step": "persistent-stores", "app_state": "inactive"]
         store.set(previous, forKey: LaunchBreadcrumb.key)
 
         stateMachine.handle(.didFinishLaunching(isTesting: false))
 
-        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: previous),
-                                                              frequency: .dailyAndCount)])
+        #expect(launchBreadcrumb.pendingReport == previous)
         #expect(launchBreadcrumb.current?["step"] == "launched")
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A launch that terminates is reported as terminating, and still reports the previous launch", .timeLimit(.minutes(1)))
+    @Test("A launch that terminates is marked as terminating and keeps the previous breadcrumb", .timeLimit(.minutes(1)))
     func terminatingLaunch() {
         let previous = ["step": "launched", "app_state": "background"]
         store.set(previous, forKey: LaunchBreadcrumb.key)
@@ -590,8 +589,37 @@ final class LaunchBreadcrumbTests {
 
         stateMachine.handle(.didFinishLaunching(isTesting: false))
 
-        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [previous])
+        #expect(launchBreadcrumb.pendingReport == previous)
         #expect(launchBreadcrumb.current?["step"] == "terminating")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Every launch in a crash loop reports the launch before it", .timeLimit(.minutes(1)))
+    func crashLoopReportsEachLaunch() {
+        // Each iteration is a launch that reports, then crashes while loading the persistent stores.
+        for _ in 0..<3 {
+            launchBreadcrumb.startLaunch()
+            launchBreadcrumb.reportIncompleteLaunch()
+            launchBreadcrumb.mark(.persistentStores)
+        }
+
+        let crashed = ["step": "persistent-stores", "app_state": "inactive"]
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [crashed, crashed])
+        #expect(pixelKit.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
+        #expect(launchBreadcrumb.pendingReport == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Nothing is reported after a launch that finished", .timeLimit(.minutes(1)))
+    func nothingReportedAfterCompletedLaunch() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.didBecomeActive)
+
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.reportIncompleteLaunch()
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
     }
 
 }

@@ -70,6 +70,11 @@ struct Launching: LaunchingHandling {
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
 
+        // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
+        // that hangs or crashes later in this init still reports the previous one.
+        let launchBreadcrumb = LaunchBreadcrumb()
+        launchBreadcrumb.reportIncompleteLaunch()
+
         // Wire the DesignSystem rebrand singleton to the live feature flag.
         // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
         // so call sites don't need to read the flag directly.
@@ -86,7 +91,6 @@ struct Launching: LaunchingHandling {
 
         favicons = Favicons(fireproofing: fireproofing)
 
-        let launchBreadcrumb = LaunchBreadcrumb()
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()

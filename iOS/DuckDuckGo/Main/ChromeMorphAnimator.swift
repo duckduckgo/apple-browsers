@@ -26,7 +26,7 @@ import UIKit
 /// so an unhurried drag still reads as direct manipulation; anything faster is paced out, so a full
 /// hide or reveal always takes `fullTraversalDuration` however hard the page was flicked.
 ///
-/// There is deliberately no elapsed clock, no from/to pair and no notion of "retargeting": a new
+/// There is no from/to pair and no notion of restarting on "retargeting": a new
 /// target mid-flight is a plain assignment, which is what removes the stall and snap failure modes
 /// a start-time-based animation needs explicit handling to avoid.
 final class ChromeMorphAnimator {
@@ -40,6 +40,7 @@ final class ChromeMorphAnimator {
     private var legSpeed: CGFloat
 
     private var displayLink: CADisplayLink?
+    private var previousTargetTimestamp: CFTimeInterval?
     private var target: CGFloat = 1
     private var onProgress: ((CGFloat) -> Void)?
     private var onComplete: (() -> Void)?
@@ -90,13 +91,21 @@ final class ChromeMorphAnimator {
     func cancel() {
         displayLink?.invalidate()
         displayLink = nil
+        previousTargetTimestamp = nil
         onProgress = nil
         onComplete = nil
     }
 
     private func handleTick(_ link: CADisplayLink) {
-        // The frame's own duration, so there is no start timestamp to seed, carry over or go stale.
-        let frameDuration = CGFloat(max(link.targetTimestamp - link.timestamp, 0))
+        advance(timestamp: link.timestamp, targetTimestamp: link.targetTimestamp)
+    }
+
+    /// Uses time between delivered frames so a missed callback does not stretch the animation.
+    /// Retargeting preserves this clock and the currently displayed value.
+    func advance(timestamp: CFTimeInterval, targetTimestamp: CFTimeInterval) {
+        guard isAnimating else { return }
+        let frameDuration = CGFloat(max(targetTimestamp - (previousTargetTimestamp ?? timestamp), 0))
+        previousTargetTimestamp = targetTimestamp
         let remaining = target - currentValue
         let maxStep = legSpeed * frameDuration
 

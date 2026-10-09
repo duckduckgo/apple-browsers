@@ -632,7 +632,9 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 
-    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { .zero }
+    var obscuredContentInsets: UIEdgeInsets = .zero
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { obscuredContentInsets }
 
     var floatingNewTabPageTopObscuredHeight: CGFloat = 0
 

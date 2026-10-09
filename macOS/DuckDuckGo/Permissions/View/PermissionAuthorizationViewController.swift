@@ -69,11 +69,15 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private var swiftUIHostingView: NSView?
 
+    /// Legacy prompt only (`websitePermissionsPrompts` off): cleared by its Allow, Deny and dismiss handlers.
+    private var isLegacyFlowInProgress = false
+
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
     /// A query that was released or completed elsewhere, e.g. by a navigation, is no longer in progress.
     var isAuthorizationInProgress: Bool {
-        query?.isComplete == false
+        guard query?.isComplete == false else { return false }
+        return featureFlagger.isFeatureOn(.websitePermissionsPrompts) || isLegacyFlowInProgress
     }
 
     weak var query: PermissionAuthorizationQuery? {
@@ -127,6 +131,7 @@ final class PermissionAuthorizationViewController: NSViewController {
         ])
 
         swiftUIHostingView = hostingView
+        isLegacyFlowInProgress = true
     }
 
     private func makeLegacyHostingView(for query: PermissionAuthorizationQuery) -> NSView {
@@ -178,7 +183,10 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleDeny() {
-        defer { dismiss() }
+        defer {
+            isLegacyFlowInProgress = false
+            dismiss()
+        }
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .deny)
@@ -186,7 +194,10 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleAllow() {
-        defer { dismiss() }
+        defer {
+            isLegacyFlowInProgress = false
+            dismiss()
+        }
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .allow)
@@ -196,6 +207,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleDismiss() {
+        isLegacyFlowInProgress = false
         query?.cancel()
         dismiss()
     }

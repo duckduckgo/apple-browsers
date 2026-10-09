@@ -76,9 +76,9 @@ jobs:
       extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
       # Keeps artifact names of the App Store legs apart from the DMG ones when both run in the same workflow run
       artifact-suffix: ${{ inputs.build-type == 'appstore' && '-appstore' || '' }}
-      # Leg identity for result markers. notify-failure in macos_ui_tests.yml parses these names
+      # Job identity for result markers. notify-failure in macos_ui_tests.yml parses these names
       # (see scripts/ui_tests_rerun_report.sh), so test class names must not contain '-'.
-      result-marker-leg: ui-result-macos-ui-${{ inputs.build-type == 'appstore' && 'appstore-' || '' }}${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
+      result-marker-job: ui-result-macos-ui-${{ inputs.build-type == 'appstore' && 'appstore-' || '' }}${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
       TEST_PLAN: ${{ inputs.test-plan }}
 
     steps:
@@ -399,15 +399,15 @@ jobs:
         if-no-files-found: warn
         retention-days: 1
 
-    # Result markers let notify-failure in macos_ui_tests.yml report each leg's latest result.
-    # Attempt 1 marks only failures. A re-run also marks a pass when this leg failed in any
-    # earlier attempt, so a re-run that fixes the leg is reported as passing.
-    - name: Download earlier failure markers for this leg
+    # Result markers let notify-failure in macos_ui_tests.yml report each job's latest result.
+    # Attempt 1 marks only failures. A re-run also marks a pass when this job failed in any
+    # earlier attempt, so a re-run that fixes the job is reported as passing.
+    - name: Download earlier failure markers for this job
       if: always() && github.run_attempt > 1 && job.status == 'success'
       continue-on-error: true
       uses: actions/download-artifact@v7
       with:
-        pattern: ${{ env.result-marker-leg }}-attempt*-fail
+        pattern: ${{ env.result-marker-job }}-attempt*-fail
         path: ${{ runner.temp }}/earlier-failure-markers
 
     - name: Decide result marker
@@ -415,7 +415,7 @@ jobs:
       if: always() && (job.status != 'success' || github.run_attempt > 1)
       working-directory: ${{ github.workspace }}
       env:
-        LEG: ${{ env.result-marker-leg }}
+        RESULT_MARKER_JOB: ${{ env.result-marker-job }}
         ATTEMPT: ${{ github.run_attempt }}
         RESULT: ${{ job.status == 'success' && 'pass' || 'fail' }}
         EARLIER_FAILURE_MARKERS: ${{ runner.temp }}/earlier-failure-markers
@@ -424,7 +424,7 @@ jobs:
         if [[ "$RESULT" == "fail" ]] || [[ -n "$(ls -A "$EARLIER_FAILURE_MARKERS" 2>/dev/null)" ]]; then
           mkdir -p "$RUNNER_TEMP/result-marker"
           echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > "$RUNNER_TEMP/result-marker/marker.txt"
-          echo "name=${LEG}-attempt${ATTEMPT}-${RESULT}" >> "$GITHUB_OUTPUT"
+          echo "name=${RESULT_MARKER_JOB}-attempt${ATTEMPT}-${RESULT}" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Upload result marker

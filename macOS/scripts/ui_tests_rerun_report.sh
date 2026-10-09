@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-# Works out what notify-failure in macos_ui_tests.yml reports to Asana for one task type,
+# Works out what notify-failure in macos_ui_tests.yml reports to Asana for one leg,
 # from the workflow run's artifact names (one per line on stdin).
 #
 # Usage:
-#   ui_tests_rerun_report.sh report --type <production|internal|appstore> --attempt <n> --run-url <url>
+#   ui_tests_rerun_report.sh report --leg <production|internal|appstore> --attempt <n> --run-url <url>
 #
 # Prints GITHUB_OUTPUT lines: action (create|comment|none), failing_count, comment (when
 # action is comment) and description_suffix (when failing_count is above 0).
@@ -20,7 +20,7 @@ delimiter="EOF_UI_TESTS_RERUN_REPORT"
 print_usage_and_exit() {
 	cat <<- EOF >&2
 	Usage:
-	  $(basename "$0") report --type <production|internal|appstore> --attempt <n> --run-url <url>
+	  $(basename "$0") report --leg <production|internal|appstore> --attempt <n> --run-url <url>
 
 	EOF
 	echo "$1" >&2
@@ -38,7 +38,7 @@ read_command_line_arguments() {
 	while (( $# > 0 )); do
 		case "$1" in
 			--attempt) attempt="$2" ;;
-			--type) type="$2" ;;
+			--leg) leg="$2" ;;
 			--run-url) run_url="$2" ;;
 			*) print_usage_and_exit "Unknown option '$1'" ;;
 		esac
@@ -46,20 +46,20 @@ read_command_line_arguments() {
 	done
 
 	[[ "${attempt}" =~ ^[1-9][0-9]*$ ]] || print_usage_and_exit "Invalid --attempt '${attempt}'"
-	[[ "${type}" =~ ^(production|internal|appstore)$ ]] || print_usage_and_exit "Invalid --type '${type}'"
+	[[ "${leg}" =~ ^(production|internal|appstore)$ ]] || print_usage_and_exit "Invalid --leg '${leg}'"
 	[[ -n "${run_url}" ]] || print_usage_and_exit "Missing --run-url"
 }
 
-# Prints one tab-separated line per leg of the task type:
+# Prints one tab-separated line per job in the leg:
 # <latest attempt> <latest result> <result in this attempt, or -> <test>, macOS <os>, <mode>
-legs_for_type() {
-	awk -F'-' -v prefix="${marker_prefix}" -v type="${type}" -v attempt="${attempt}" '
+jobs_for_leg() {
+	awk -F'-' -v prefix="${marker_prefix}" -v leg="${leg}" -v attempt="${attempt}" '
 		{
 			if (index($0, prefix) != 1) next
-			if (NF == 9) leg_type = $(NF - 4)
-			else if (NF == 10 && $5 == "appstore") leg_type = "appstore"
+			if (NF == 9) job_leg = $(NF - 4)
+			else if (NF == 10 && $5 == "appstore") job_leg = "appstore"
 			else next
-			if (leg_type != type) next
+			if (job_leg != leg) next
 
 			mode = $(NF - 4)
 			marker_attempt = $(NF - 1)
@@ -91,16 +91,16 @@ print_output() {
 }
 
 report() {
-	local legs
+	local job_rows
 	local failing_count
 	local has_gid=false
 	local has_current
 	local action
 
-	legs="$(legs_for_type)"
-	failing_count="$(awk -F'\t' '$2 == "fail"' <<< "${legs}" | grep -c . || true)"
-	has_current="$(awk -F'\t' '$3 != "-" { found = 1 } END { print (found ? "true" : "false") }' <<< "${legs}")"
-	if grep -qxF "${gid_prefix}${type}" <<< "${listing}"; then
+	job_rows="$(jobs_for_leg)"
+	failing_count="$(awk -F'\t' '$2 == "fail"' <<< "${job_rows}" | grep -c . || true)"
+	has_current="$(awk -F'\t' '$3 != "-" { found = 1 } END { print (found ? "true" : "false") }' <<< "${job_rows}")"
+	if grep -qxF "${gid_prefix}${leg}" <<< "${listing}"; then
 		has_gid=true
 	fi
 
@@ -120,37 +120,37 @@ report() {
 	echo "failing_count=${failing_count}"
 
 	if [[ "${action}" == "comment" ]]; then
-		print_output "comment" "$(comment_text "${legs}" "${failing_count}")"
+		print_output "comment" "$(comment_text "${job_rows}" "${failing_count}")"
 	fi
 	if (( failing_count > 0 )); then
-		print_output "description_suffix" "$(description_suffix_text "${legs}")"
+		print_output "description_suffix" "$(description_suffix_text "${job_rows}")"
 	fi
 }
 
 comment_text() {
-	local legs=$1
+	local job_rows=$1
 	local failing_count=$2
 	local now_passing
 
 	if (( failing_count == 0 )); then
-		echo "UI Tests re-run (attempt ${attempt}): ✅ all previously failing combinations now pass"
+		echo "UI Tests re-run (attempt ${attempt}): ✅ all previously failing jobs now pass"
 		echo "${run_url}/attempts/${attempt}"
 		return
 	fi
 
 	if (( failing_count == 1 )); then
-		echo "UI Tests re-run (attempt ${attempt}): ❌ 1 combination still failing"
+		echo "UI Tests re-run (attempt ${attempt}): ❌ 1 job still failing"
 	else
-		echo "UI Tests re-run (attempt ${attempt}): ❌ ${failing_count} combinations still failing"
+		echo "UI Tests re-run (attempt ${attempt}): ❌ ${failing_count} jobs still failing"
 	fi
 	echo "${run_url}/attempts/${attempt}"
 	echo
 	echo "Still failing:"
 	awk -F'\t' -v attempt="${attempt}" '
 		$2 == "fail" { print "• " $4 (($1 < attempt) ? " (not re-run in this attempt)" : "") }
-	' <<< "${legs}"
+	' <<< "${job_rows}"
 
-	now_passing="$(awk -F'\t' '$3 == "pass" { print "• " $4 }' <<< "${legs}")"
+	now_passing="$(awk -F'\t' '$3 == "pass" { print "• " $4 }' <<< "${job_rows}")"
 	if [[ -n "${now_passing}" ]]; then
 		echo
 		echo "Now passing:"
@@ -159,15 +159,15 @@ comment_text() {
 }
 
 description_suffix_text() {
-	local legs=$1
-	echo "Failing combinations:"
-	awk -F'\t' '$2 == "fail" { print "• " $4 }' <<< "${legs}"
+	local job_rows=$1
+	echo "Failing jobs:"
+	awk -F'\t' '$2 == "fail" { print "• " $4 }' <<< "${job_rows}"
 }
 
 main() {
 	local command
 	local attempt
-	local type
+	local leg
 	local run_url
 	local listing
 

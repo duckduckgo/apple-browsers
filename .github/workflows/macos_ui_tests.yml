@@ -374,24 +374,24 @@ jobs:
         pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == 'true') && 'm_ci_apple_duration_macos_ui_tests_all' || 'm_ci_apple_duration_macos_ui_tests_latest' }}
 
   notify-failure:
-    name: Notify on failure (${{ matrix.type }})
+    name: Notify on failure (${{ matrix.leg }})
     if: ${{ always() && github.event_name == 'schedule' }}
     needs: [ui-tests-production, ui-tests-internal, ui-tests-appstore]
     runs-on: ubuntu-latest
 
-    # One job per Asana task type. The first attempt that fails creates the task and stores its
+    # One matrix entry per leg. The first attempt that fails creates the task and stores its
     # ID as an artifact, and later attempts of the same run comment on that task instead.
     strategy:
       fail-fast: false
       matrix:
         include:
-          - type: production
+          - leg: production
             task-name: GH Workflow Failure - UI Tests
             task-description: The UI Tests workflow has failed in production user mode.
-          - type: internal
+          - leg: internal
             task-name: GH Workflow Failure - UI Tests (internal mode, advance warning)
             task-description: The internal-mode UI Tests leg has failed. Advance warning for a feature still gated to internal users.
-          - type: appstore
+          - leg: appstore
             task-name: GH Workflow Failure - App Store UI Tests
             task-description: The App Store (sandboxed) UI Tests leg has failed.
 
@@ -413,7 +413,7 @@ jobs:
         artifacts=$(gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
           --jq '.artifacts[] | select(.expired | not) | .name')
         printf '%s\n' "$artifacts" | ./scripts/ui_tests_rerun_report.sh report \
-          --type "${{ matrix.type }}" \
+          --leg "${{ matrix.leg }}" \
           --attempt "${{ github.run_attempt }}" \
           --run-url "$RUN_URL" \
           >> "$GITHUB_OUTPUT"
@@ -423,7 +423,7 @@ jobs:
       continue-on-error: true
       uses: actions/download-artifact@v7
       with:
-        name: asana-task-gid-${{ matrix.type }}
+        name: asana-task-gid-${{ matrix.leg }}
         path: ${{ runner.temp }}/asana-task-gid
 
     - name: Read the Asana task ID
@@ -434,7 +434,7 @@ jobs:
         if [[ -f "$gid_file" ]]; then
           echo "gid=$(tr -d '[:space:]' < "$gid_file")" >> "$GITHUB_OUTPUT"
         else
-          echo "::warning::No Asana task ID found for ${{ matrix.type }}, so a new task will be created if anything is still failing."
+          echo "::warning::No Asana task ID found for ${{ matrix.leg }}, so a new task will be created if anything is still failing."
         fi
 
     - name: Comment on the Asana task
@@ -476,6 +476,6 @@ jobs:
       if: steps.create.outputs.taskId != '' && steps.create.outputs.taskId != '0'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: asana-task-gid-${{ matrix.type }}
+        name: asana-task-gid-${{ matrix.leg }}
         path: ${{ runner.temp }}/asana-task-gid-upload/
         retention-days: 5

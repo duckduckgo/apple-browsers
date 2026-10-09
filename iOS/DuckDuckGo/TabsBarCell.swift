@@ -46,6 +46,7 @@ class TabsBarCell: UICollectionViewCell {
     private let faviconImage = UIImageView()
     private let separatorView = UIView()
     private let leadingSeparatorView = UIView()
+    private let pointerHighlightView = UIView()
 
     private let titleStackView = UIStackView()
     private let faviconContainerView = UIView()
@@ -103,6 +104,8 @@ class TabsBarCell: UICollectionViewCell {
 
         contentView.layer.cornerRadius = Self.cornerRadius
         contentView.layer.cornerCurve = .circular
+        pointerHighlightView.translatesAutoresizingMaskIntoConstraints = false
+        pointerHighlightView.isUserInteractionEnabled = false
 
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -135,6 +138,7 @@ class TabsBarCell: UICollectionViewCell {
         removeButton.addTarget(self, action: #selector(onRemovePressed), for: .touchUpInside)
 
         faviconContainerView.addSubview(faviconImage)
+        contentView.addSubview(pointerHighlightView)
         contentView.addSubview(titleStackView)
         contentView.addSubview(separatorView)
         contentView.addSubview(leadingSeparatorView)
@@ -151,6 +155,11 @@ class TabsBarCell: UICollectionViewCell {
         labelRemoveButtonConstraint?.isActive = false
 
         NSLayoutConstraint.activate([
+            pointerHighlightView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            pointerHighlightView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            pointerHighlightView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            pointerHighlightView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
             titleStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                     constant: Constants.titleLeadingInset),
             titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -392,7 +401,8 @@ extension TabsBarCell: UIPointerInteractionDelegate {
         guard !rect.isEmpty else { return nil }
         let parameters = UIPreviewParameters()
         parameters.visiblePath = UIBezierPath(roundedRect: rect, cornerRadius: Self.cornerRadius)
-        let preview = UITargetedPreview(view: view, parameters: parameters)
+        // UIKit can reposition the hover preview during reveal scrolling; keep tab content out of it.
+        let preview = UITargetedPreview(view: view === contentView ? pointerHighlightView : view, parameters: parameters)
         return .init(effect: .hover(preview, prefersScaledContent: false))
     }
 

@@ -503,3 +503,100 @@ final class SceneLifecycleInstrumentationTests {
     }
 
 }
+
+@available(iOS 16, macOS 13, *)
+@MainActor
+@Suite("Launch breadcrumb", .serialized)
+final class LaunchBreadcrumbTests {
+
+    let suiteName = "LaunchBreadcrumbTests-\(UUID().uuidString)"
+    let pixelKit = PixelKitMock()
+    let initializing = MockInitializing()
+    lazy var stateMachine = AppStateMachine(initialState: .initializing(initializing),
+                                            terminatingStateFactory: MockTerminatingStateFactory())
+
+    init() {
+        LaunchBreadcrumb.store = UserDefaults(suiteName: suiteName)!
+        LaunchBreadcrumb.applicationState = { .inactive }
+        LaunchBreadcrumb.pixelFiring = { [pixelKit] in pixelKit }
+    }
+
+    deinit {
+        UserDefaults().removePersistentDomain(forName: suiteName)
+    }
+
+    @Test("A launch that reaches Foreground leaves no breadcrumb and fires nothing", .timeLimit(.minutes(1)))
+    func completedLaunchClearsBreadcrumb() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        #expect(LaunchBreadcrumb.current == ["step": "launched", "app_state": "inactive"])
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        #expect(LaunchBreadcrumb.current == ["step": "ui-attached", "app_state": "inactive"])
+        stateMachine.handle(.didBecomeActive)
+
+        #expect(LaunchBreadcrumb.current == nil)
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @Test("A launch that reaches Background leaves no breadcrumb", .timeLimit(.minutes(1)))
+    func backgroundLaunchClearsBreadcrumb() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.didEnterBackground)
+
+        #expect(LaunchBreadcrumb.current == nil)
+    }
+
+    @Test("A breadcrumb left by the previous launch is reported on the next launch", .timeLimit(.minutes(1)))
+    func incompleteLaunchIsReported() {
+        let previous = ["step": "persistent-stores", "app_state": "inactive"]
+        LaunchBreadcrumb.store.set(previous, forKey: LaunchBreadcrumb.key)
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: previous),
+                                                              frequency: .dailyAndCount)])
+        #expect(LaunchBreadcrumb.current?["step"] == "launched")
+    }
+
+    @Test("A launch that terminates is reported as terminating, and still reports the previous launch", .timeLimit(.minutes(1)))
+    func terminatingLaunch() {
+        let previous = ["step": "launched", "app_state": "background"]
+        LaunchBreadcrumb.store.set(previous, forKey: LaunchBreadcrumb.key)
+        initializing.shouldThrowOnLaunching = true
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [previous])
+        #expect(LaunchBreadcrumb.current?["step"] == "terminating")
+    }
+
+}
+
+@available(iOS 16, macOS 13, *)
+@MainActor
+@Suite("Critical alert pixel")
+final class CriticalAlertPixelTests {
+
+    let pixelKit = PixelKitMock()
+
+    @Test("Showing the alert for a full disk fires the pixel with the disk space reason", .timeLimit(.minutes(1)))
+    func diskFullAlertFiresPixel() {
+        let diskFull = NSError(domain: NSCocoaErrorDomain, code: 1,
+                               userInfo: [NSUnderlyingErrorKey: NSError(domain: NSSQLiteErrorDomain, code: 13)])
+
+        Terminating(error: TerminationError.historyDatabase(diskFull), pixelFiring: pixelKit).alertAndTerminate(window: UIWindow())
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: CriticalAlertPixel.shown(reason: .insufficientDiskSpace),
+                                                              frequency: .dailyAndCount)])
+    }
+
+    @Test("Showing the alert for other errors fires the pixel with the unrecoverable state reason", .timeLimit(.minutes(1)))
+    func unrecoverableStateAlertFiresPixel() {
+        let error = NSError(domain: NSCocoaErrorDomain, code: 1)
+
+        Terminating(error: TerminationError.historyDatabase(error), pixelFiring: pixelKit).alertAndTerminate(window: UIWindow())
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["reason": "unrecoverable-state"]])
+    }
+
+}

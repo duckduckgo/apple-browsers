@@ -127,5 +127,49 @@
                 "enum": ["initializing", "launching", "connected", "foreground", "background", "terminating", "simulated"]
             }
         ]
+    },
+    "app-lifecycle_previous-launch-incomplete": {
+        "description": "Fires at launch when the previous launch never reached the Foreground or Background state, e.g. a black screen the user had to force quit, a hang, or a kill or crash during launch. step tells the last launch step that launch reached.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "step",
+                "description": "Last launch step the previous launch reached, in launch order",
+                "enum": [
+                    "launching-started",
+                    "key-value-store",
+                    "persistent-stores",
+                    "sync",
+                    "content-blocking",
+                    "main-coordinator",
+                    "launched",
+                    "window-connected",
+                    "ui-attached",
+                    "terminating"
+                ]
+            },
+            {
+                "key": "app_state",
+                "description": "UIApplication state when the previous launch reached that step. background means a background launch without a scene",
+                "enum": ["active", "inactive", "background", "unknown"]
+            }
+        ]
+    },
+    "app-lifecycle_critical-alert-shown": {
+        "description": "Fires when the app shows a critical alert before terminating because a store could not be loaded at launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "Why the alert was shown",
+                "enum": ["insufficient-disk-space", "unrecoverable-state"]
+            }
+        ]
     }
 }

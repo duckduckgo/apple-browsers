@@ -131,7 +131,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Appearance
+    // MARK: - Private
 
     private func onAppear() {
         viewState.title = makeTitle()
@@ -146,8 +146,6 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             allow(.alwaysAllow)
         }
     }
-
-    // MARK: - Decisions
 
     private func allow(_ decision: PermissionPromptDecision) {
         pendingDecision = decision

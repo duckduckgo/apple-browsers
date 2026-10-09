@@ -241,13 +241,17 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertNil(covered.pointerInteraction(interaction, styleFor: region))
 
         if #available(iOS 17, *) {
-            for (cell, expectedRect) in [(leading, leadingRect), (trailing, trailingRect)] {
+            for (cell, expectedRect) in [(leading, leadingRect), (trailing, trailingRect), (selected, selected.contentView.bounds)] {
                 let pointer = try XCTUnwrap(cell.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
                 let style = try XCTUnwrap(cell.pointerInteraction(pointer, styleFor: UIPointerRegion(rect: cell.contentView.bounds)))
                 // Inspect UIKit's Objective-C effect; the Swift hover-style overlay erases its concrete type.
                 let effect = try XCTUnwrap(style.__effect as? __UIPointerHoverEffect)
                 XCTAssertEqual(effect.preview.parameters.visiblePath?.bounds, expectedRect)
                 XCTAssertFalse(effect.prefersScaledContent)
+                XCTAssertIdentical(effect.preview.view.superview, cell.contentView)
+                XCTAssertTrue(effect.preview.view.subviews.isEmpty, "The hover preview must not independently render the title or favicon")
+                XCTAssertEqual(effect.preview.view.frame, cell.contentView.bounds)
+                XCTAssertFalse(effect.preview.view.isUserInteractionEnabled)
             }
         }
     }

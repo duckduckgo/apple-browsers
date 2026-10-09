@@ -56,13 +56,11 @@ struct EscapeHatchModelBuilder {
            let targetTab = tabManager.allTabsModel.tabs.first(where: { $0.uid == lastUID }),
            targetTab !== currentTab,
            let model = makeCardModel(targetTab: targetTab, router: router) {
-            currentTab?.hasPresentedAfterIdleEscapeHatch = true
             return model
         }
 
         // No tab to return to. When the shortcut is hidden, still show the expanded pill (even with one tab).
         if !lastTabShortcutAdapter.isEnabled, let currentTab {
-            currentTab.hasPresentedAfterIdleEscapeHatch = true
             return makeTabSwitcherOnly(targetTab: currentTab, router: router)
         }
 

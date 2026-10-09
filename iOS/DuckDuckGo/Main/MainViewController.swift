@@ -2638,6 +2638,9 @@ class MainViewController: UIViewController {
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?, focused: Bool) {
         isAfterIdlePresentationPending = false
+        if openedAfterIdle, hatch != nil {
+            tabManager.currentTabsModel.currentTab?.hasPresentedAfterIdleEscapeHatch = true
+        }
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
         // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts

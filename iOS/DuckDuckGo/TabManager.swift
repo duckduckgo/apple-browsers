@@ -847,7 +847,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func invalidateCache(forController controller: TabViewController, reloadCurrent: Bool) {
+    func invalidateCache(forController controller: TabViewController,
+                         reloadCurrent: Bool,
+                         recovery: TerminationReloadMonitor.Recovery = .immediate) {
         if current() === controller {
             if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
                 controller.showTabTerminationErrorPage()
@@ -861,6 +863,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                     PixelKit.fire(Pixel.Event.aiChatTabDidReloadAfterTermination, frequency: .dailyAndCount)
                 }
 
+                controller.beginTerminationReload(recovery)
                 current()?.reload()
             } else {
                 controllerPendingTerminationRecovery = controller
@@ -1162,7 +1165,7 @@ extension TabManager {
     private func onApplicationBecameActive(_ notification: NSNotification) {
         if let controllerPendingTerminationRecovery {
             self.controllerPendingTerminationRecovery = nil
-            invalidateCache(forController: controllerPendingTerminationRecovery, reloadCurrent: true)
+            invalidateCache(forController: controllerPendingTerminationRecovery, reloadCurrent: true, recovery: .deferred)
         }
         assertTabPreviewCount()
     }

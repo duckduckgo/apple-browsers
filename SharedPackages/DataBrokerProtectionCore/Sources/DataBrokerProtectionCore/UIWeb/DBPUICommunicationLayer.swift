@@ -38,6 +38,13 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     }
 }
 
+public struct DBPUIOptOutEmail: Codable {
+    public let brokerName: String
+    public let to: String
+    public let subject: String
+    public let body: String
+}
+
 public protocol DBPUICommunicationDelegate: AnyObject {
     func getHandshakeUserData() async -> DBPUIHandshakeUserData?
     func saveProfile() async throws
@@ -56,6 +63,7 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
+    func openOptOutEmail(_ payload: DBPUIOptOutEmail) async -> Bool
     func applyVPNBypassSetting(_ bypass: Bool) async
     func removeOptOutFromDashboard(_ id: Int64) async
     func needBackgroundAppRefresh() async -> Bool
@@ -81,6 +89,7 @@ public enum DBPUIReceivedMethodName: String {
     case getBackgroundAgentMetadata
     case getFeatureConfig
     case openSendFeedbackModal
+    case openOptOutEmail
     case getVPNBypassSetting = "getVpnExclusionSetting"
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
@@ -106,7 +115,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
-        static let version = 12
+        static let version = 13
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -145,6 +154,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .getBackgroundAgentMetadata: return getBackgroundAgentMetadata
         case .getFeatureConfig: return getFeatureConfig
         case .openSendFeedbackModal: return openSendFeedbackModal
+        case .openOptOutEmail: return openOptOutEmail
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
@@ -358,6 +368,17 @@ public struct DBPUICommunicationLayer: Subfeature {
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         await delegate?.openSendFeedbackModal()
         return nil
+    }
+
+    func openOptOutEmail(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let payload = try? JSONDecoder().decode(DBPUIOptOutEmail.self, from: data) else {
+            Logger.dataBrokerProtection.error("openOptOutEmail: malformed payload")
+            return DBPUIStandardResponse(version: Constants.version, success: false)
+        }
+
+        let opened = await delegate?.openOptOutEmail(payload) ?? false
+        return DBPUIStandardResponse(version: Constants.version, success: opened)
     }
 
     func getVPNBypassSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {

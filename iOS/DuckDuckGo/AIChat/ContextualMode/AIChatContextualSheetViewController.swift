@@ -1358,6 +1358,7 @@ private extension AIChatContextualSheetViewController {
 
     /// Only an Ask tap accepts the Terms of Service; chips and Summarize send without it.
     func submitPromptFromNativeInput(_ prompt: String, sentWithAsk: Bool) {
+        contextualInputViewController.recordPromptSubmitted(sentWithAsk ? .button : .other)
         let termsAccepted: Bool
         if sentWithAsk {
             termsAccepted = contextualInputViewController.acceptTermsIfDisclaimerShown()

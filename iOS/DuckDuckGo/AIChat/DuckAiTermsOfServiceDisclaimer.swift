@@ -52,6 +52,10 @@ struct DuckAiTermsOfServiceDisclaimer {
     /// Off with the flag, so no prompt claims an acceptance made while native Terms of Service was on.
     var hasAccepted: Bool { feature.isAvailable && store.hasAccepted }
 
+    var inputTermsState: DuckAiInputTermsState {
+        DuckAiInputTermsState(isNativeDisclaimerEnabled: feature.isAvailable, hasAccepted: store.hasAccepted)
+    }
+
     /// Call only for an Ask tap. `visibleMessage` is what the input's card shows right now; a send made
     /// without seeing the disclaimer accepts nothing, and the web app shows its own card for that prompt instead.
     @discardableResult

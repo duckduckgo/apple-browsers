@@ -354,6 +354,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var attachmentPrivacyNoticeSource: UTIFooterAttachmentPrivacyNoticeSource?
     private var multiTabPromotionSource: UTIFooterMultiTabPromotionSource?
     private var contextualChatHasActiveConversation: () -> Bool = { false }
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let isNativeTermsOfServiceAvailable: Bool
+    private let inputOutcomePixelFiring: UTIPixelFiring
+    private var isContextualInputPresented = false
+    private lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
+        pixelFiring: DuckAiInputOutcomePixelAdapter(firing: inputOutcomePixelFiring)
+    )
 
     // MARK: - Initialization
 
@@ -451,10 +458,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             floatingUIManager: floatingUIManager
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
+        self.termsOfServiceStore = termsOfServiceStore
+        self.inputOutcomePixelFiring = pixelFiring
+        self.isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
+            ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
         super.init()
         viewController.delegate = self
-        let isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
-            ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
         setUpFooter(subscriptionManager: subscriptionManager,
                     termsOfServiceStore: isNativeTermsOfServiceAvailable ? termsOfServiceStore : nil)
         textModel = UTITextModel(sideEffects: .init(
@@ -899,6 +908,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         viewController.deactivateInput()
         footerController?.resetForPoseChange()
+        syncInputOutcomeMeasurement()
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
@@ -928,6 +938,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] showExpanded host=\(String(describing: self.host), privacy: .public) mode=\(String(describing: self.inputMode), privacy: .public) controller=\(self.footerController == nil ? "nil" : "present", privacy: .public)")
         refreshFooterSuppression()
         footerController?.refresh()
+        syncInputOutcomeMeasurement()
 
         intentSubject.send(.showExpanded(from: previousDisplayState))
         guard activatesInput else { return }
@@ -1088,8 +1099,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.viewController.isInputBlockedByUsageLimit = blocked
             self?.tabMentionController?.refresh()
         }
-        footerController?.onTermsOfServiceVisibilityChanged = { [weak self] _ in
+        footerController?.onTermsOfServiceVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }
+            if isVisible { inputOutcomeMeasurement.disclaimerBecameVisible() }
             syncInputBehaviorToHandler()
             updateFloatingReturnKeyState()
             onFloatingReturnKeyAvailabilityChanged?()
@@ -1191,6 +1203,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         viewController.deactivateInput()
         footerController?.resetForPoseChange()
+        syncInputOutcomeMeasurement()
         intentSubject.send(.hide)
     }
 
@@ -1220,6 +1233,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] omnibar session starting mode=\(String(describing: self.inputMode), privacy: .public)")
         refreshFooterSuppression()
         footerController?.refresh()
+        syncInputOutcomeMeasurement()
 
         viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
@@ -1339,6 +1353,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(renderState.viewConfig, animated: false)
         }
         applyToolbarPresentation()
+        syncInputOutcomeMeasurement()
         // Resign is sequenced by the dismiss animation, not here — see `hideUnifiedToggleInputOmnibar`.
         return true
     }
@@ -1363,6 +1378,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             refreshToolsPresentation()
             modeChangeSubject.send(effective)
             attachmentController.syncValidationErrorForCurrentMode()
+            syncInputOutcomeMeasurement()
         }
         updateFloatingReturnKeyState()
     }
@@ -1442,6 +1458,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             attachmentController.syncValidationErrorForCurrentMode()
             recordUserChoiceToStore()
             refreshFooterSuppression()
+            syncInputOutcomeMeasurement()
         }
     }
 
@@ -1460,6 +1477,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange {
             modeChangeSubject.send(effectiveMode)
             refreshToolsPresentation()
+            syncInputOutcomeMeasurement()
         }
         updateToolbarAIVoiceChat()
     }
@@ -1572,6 +1590,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
+        // Ahead of the collapse below, which closes the input.
+        inputOutcomeMeasurement.promptSubmitted(.other)
         let configuration = voicePromptSubmissionConfiguration
         recordDuckAISubmissionStarted(
             reasoningEffort: configuration.reasoningEffort,
@@ -1594,6 +1614,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Suggestions sent from outside the input never tap Ask, so they accept nothing.
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         Logger.aiChat.debug("[TermsOfService] External prompt submission: acceptance not recorded, termsAccepted=false")
+        inputOutcomeMeasurement.promptSubmitted(.other)
         let configuration = promptSubmissionConfiguration
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
@@ -1873,11 +1894,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func beginContextualInputPresentation() {
         multiTabPromotionSource?.beginPresentation()
         footerController?.refreshMultiTabPromotion()
+        isContextualInputPresented = true
+        syncInputOutcomeMeasurement()
     }
 
     func endContextualInputPresentation() {
         multiTabPromotionSource?.endPresentation()
         footerController?.refreshMultiTabPromotion()
+        isContextualInputPresented = false
+        syncInputOutcomeMeasurement()
     }
 
     func configureTabAttachments(source: MultiTabAttachmentSource?,
@@ -2189,6 +2214,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
+        inputOutcomeMeasurement.promptSubmitted(DuckAiInputSubmitMethod(trigger: trigger))
         let termsAccepted = acceptTermsOfServiceIfAskTapped(trigger)
         footerController?.recordPromptSubmitted()
 
@@ -2511,6 +2537,26 @@ private extension UnifiedToggleInputCoordinator {
         syncTermsOfServiceSendButtonToHandler()
     }
 
+    /// The input is measured while it's open in Duck.ai mode.
+    var isDuckAIInputOpen: Bool {
+        guard inputMode == .aiChat, isInputEditing else { return false }
+        return host != .contextualChat || isContextualInputPresented
+    }
+
+    /// Only a chat without a prompt is measured, so follow-ups in the Duck.ai tab and the sheet aren't counted.
+    func syncInputOutcomeMeasurement() {
+        guard isDuckAIInputOpen else {
+            inputOutcomeMeasurement.inputClosed()
+            return
+        }
+        guard !hasSubmittedPrompt else { return }
+        let termsState = DuckAiInputTermsState(isNativeDisclaimerEnabled: isNativeTermsOfServiceAvailable,
+                                                      hasAccepted: termsOfServiceStore.hasAccepted)
+        inputOutcomeMeasurement.inputOpened(surface: DuckAiInputSurface(pixelSurface),
+                                               termsState: termsState,
+                                               isDisclaimerShown: isTermsOfServiceDisclaimerShown)
+    }
+
     func syncTermsOfServiceSendButtonToHandler() {
         viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
         viewController.handler.reservesTermsOfServiceSendButton = footerController?.isTermsOfServicePending == true
@@ -2695,6 +2741,7 @@ private extension UnifiedToggleInputCoordinator {
                     && !isInputPaneExpanded
                     && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {
+                    inputOutcomeMeasurement.voiceStarted()
                     delegate?.unifiedToggleInputDidRequestAIVoiceChat()
                 } else {
                     guard viewController.handler.isVoiceSearchEnabled else { return }
@@ -2710,6 +2757,7 @@ private extension UnifiedToggleInputCoordinator {
                 guard let self else { return }
                 let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
                 self.pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContext)
+                self.inputOutcomeMeasurement.voiceStarted()
                 self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
@@ -2739,6 +2787,14 @@ private extension UnifiedToggleInputCoordinator {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.endEditMode()
+                self?.inputOutcomeMeasurement.inputClosed()
+            }
+            .store(in: &cancellables)
+        // An input still open on return counts as a new opening.
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncInputOutcomeMeasurement()
             }
             .store(in: &cancellables)
     }

@@ -120,6 +120,35 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         XCTAssertLessThan(input.convert(input.bounds, to: sut.view).maxY, card.frame.maxY)
     }
 
+    func testWhenAskIsTappedWithTheDisclaimerOnScreenThenAButtonPromptIsReported() {
+        let firing = RecordingContextualInputOutcomePixelFiring()
+        let sut = makeBasicInputSUT(inputOutcomePixelFiring: firing)
+        let window = show(sut)
+        defer { window.isHidden = true }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        sut.recordPromptSubmitted(.button)
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertEqual(firing.events, [
+            DuckAiInputOutcomeEvent(surface: .contextualChat, isDisclaimerShown: true, termsState: .notAccepted, outcome: .promptSubmitted(.button))
+        ])
+    }
+
+    func testWhenTheInputLeavesTheScreenWithoutAPromptThenItIsReportedAbandoned() {
+        let firing = RecordingContextualInputOutcomePixelFiring()
+        let sut = makeBasicInputSUT(inputOutcomePixelFiring: firing)
+        let window = show(sut)
+        defer { window.isHidden = true }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        sut.beginAppearanceTransition(false, animated: false)
+        sut.endAppearanceTransition()
+
+        XCTAssertEqual(firing.events.map(\.outcome), [.abandoned])
+        XCTAssertEqual(firing.events.map(\.isDisclaimerShown), [true])
+    }
+
     func testWhenTermsAreAcceptedThenNoDisclaimerShows() {
         termsStore.recordWebReport()
         let sut = makeBasicInputSUT()
@@ -220,10 +249,13 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         DuckAiTermsOfServiceDisclaimer(feature: StubNativeTermsOfServiceFeature(isAvailable: true), store: termsStore)
     }
 
-    private func makeBasicInputSUT() -> AIChatContextualInputViewController {
+    private func makeBasicInputSUT(
+        inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring = RecordingContextualInputOutcomePixelFiring()
+    ) -> AIChatContextualInputViewController {
         AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper(),
                                             showsBasicNativeInput: true,
-                                            termsOfServiceDisclaimer: makeDisclaimer())
+                                            termsOfServiceDisclaimer: makeDisclaimer(),
+                                            inputOutcomePixelFiring: inputOutcomePixelFiring)
     }
 
     private func show(_ viewController: UIViewController) -> UIWindow {
@@ -248,5 +280,13 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
             }
         }
         return nil
+    }
+}
+
+private final class RecordingContextualInputOutcomePixelFiring: DuckAiInputOutcomePixelFiring {
+    private(set) var events: [DuckAiInputOutcomeEvent] = []
+
+    func fire(_ event: DuckAiInputOutcomeEvent) {
+        events.append(event)
     }
 }

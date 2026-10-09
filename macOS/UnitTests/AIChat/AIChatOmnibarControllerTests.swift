@@ -219,8 +219,96 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(termsOfServiceStore.hasAccepted)
     }
 
-    private func makeTermsOfServiceController(store: DuckAiTermsOfServiceStore) -> AIChatOmnibarController {
-        featureFlagger.enabledFeatureFlags.append(.aiChatNativeTermsOfService)
+    // MARK: - Input outcome measurement
+
+    func testWhenTheInputClosesWithoutAPromptThenItIsReportedAbandoned() {
+        let pixelFiring = RecordingInputOutcomePixelFiring()
+        let controller = makeTermsOfServiceController(store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore()),
+                                                      isFlagOn: false,
+                                                      inputOutcomePixelFiring: pixelFiring)
+
+        controller.onOmnibarActivated(shouldFetchSuggestions: false)
+        controller.cleanup()
+
+        XCTAssertEqual(pixelFiring.events, [
+            DuckAiInputOutcomeEvent(surface: .addressBar, isDisclaimerShown: false, termsState: .unknown, outcome: .abandoned)
+        ])
+    }
+
+    func testWhenReturnSendsWithTheDisclaimerShownThenAnEnterPromptIsReported() {
+        let pixelFiring = RecordingInputOutcomePixelFiring()
+        let controller = makeTermsOfServiceController(store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore()),
+                                                      inputOutcomePixelFiring: pixelFiring)
+        controller.onOmnibarActivated(shouldFetchSuggestions: false)
+        controller.isTermsOfServiceDisclaimerShown = true
+        controller.updateText("what is privacy")
+
+        controller.submit()
+        controller.cleanup()
+
+        XCTAssertEqual(pixelFiring.events, [
+            DuckAiInputOutcomeEvent(surface: .addressBar, isDisclaimerShown: true, termsState: .notAccepted, outcome: .promptSubmitted(.enter))
+        ])
+    }
+
+    func testWhenAskIsClickedThenAButtonPromptIsReported() {
+        let pixelFiring = RecordingInputOutcomePixelFiring()
+        let controller = makeTermsOfServiceController(store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore()),
+                                                      inputOutcomePixelFiring: pixelFiring)
+        controller.isTermsOfServiceDisclaimerShown = true
+        controller.onOmnibarActivated(shouldFetchSuggestions: false)
+        controller.updateText("what is privacy")
+
+        controller.submit(sentWithAsk: true)
+
+        XCTAssertEqual(pixelFiring.events.map(\.outcome), [.promptSubmitted(.button)])
+        XCTAssertEqual(pixelFiring.events.map(\.isDisclaimerShown), [true])
+    }
+
+    /// Navigating away is not a prompt.
+    func testWhenTheInputClosesAfterOnlyAURLThenItIsReportedAbandoned() {
+        let pixelFiring = RecordingInputOutcomePixelFiring()
+        let controller = makeTermsOfServiceController(store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore()),
+                                                      inputOutcomePixelFiring: pixelFiring)
+        controller.onOmnibarActivated(shouldFetchSuggestions: false)
+        controller.updateText("duckduckgo.com")
+
+        controller.submit()
+        controller.cleanup()
+
+        XCTAssertEqual(pixelFiring.events.map(\.outcome), [.abandoned])
+    }
+
+    func testWhenVoiceChatOpensThenVoiceStartedIsReported() {
+        let pixelFiring = RecordingInputOutcomePixelFiring()
+        let controller = makeTermsOfServiceController(store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore()),
+                                                      inputOutcomePixelFiring: pixelFiring)
+        controller.onOmnibarActivated(shouldFetchSuggestions: false)
+
+        controller.openNewVoiceChat()
+        controller.cleanup()
+
+        XCTAssertEqual(pixelFiring.events.map(\.outcome), [.voiceStarted])
+    }
+
+    func testWhenTheUserHasAcceptedThenTheTermsStateIsAccepted() {
+        let pixelFiring = RecordingInputOutcomePixelFiring()
+        let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore())
+        store.recordAcceptedInNativeInput()
+        let controller = makeTermsOfServiceController(store: store, inputOutcomePixelFiring: pixelFiring)
+
+        controller.onOmnibarActivated(shouldFetchSuggestions: false)
+        controller.cleanup()
+
+        XCTAssertEqual(pixelFiring.events.map(\.termsState), [.accepted])
+    }
+
+    private func makeTermsOfServiceController(store: DuckAiTermsOfServiceStore,
+                                              isFlagOn: Bool = true,
+                                              inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring = RecordingInputOutcomePixelFiring()) -> AIChatOmnibarController {
+        if isFlagOn {
+            featureFlagger.enabledFeatureFlags.append(.aiChatNativeTermsOfService)
+        }
         let controller = AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
             surface: .addressBar,
@@ -233,7 +321,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
             subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            termsOfServiceStore: store
+            termsOfServiceStore: store,
+            inputOutcomePixelFiring: inputOutcomePixelFiring
         )
         controller.delegate = mockDelegate
         return controller
@@ -3282,5 +3371,13 @@ private class MockAIChatOmnibarSubscriptionUpselling: AIChatOmnibarSubscriptionU
 
     func presentSubscriptionActivation() {
         presentSubscriptionActivationCalled = true
+    }
+}
+
+private final class RecordingInputOutcomePixelFiring: DuckAiInputOutcomePixelFiring {
+    private(set) var events: [DuckAiInputOutcomeEvent] = []
+
+    func fire(_ event: DuckAiInputOutcomeEvent) {
+        events.append(event)
     }
 }

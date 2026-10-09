@@ -132,8 +132,16 @@ extension WebExtensionManager {
         do {
             extensionMessage = try parseMessage(message, extensionContext: extensionContext)
         } catch {
-            Logger.webExtensions.error("❌ Message parsing failed: \(error.localizedDescription)")
-            return ["error": error.localizedDescription]
+            guard extensionContext.needsChromeCompatibility else {
+                Logger.webExtensions.error("❌ Message parsing failed: \(error.localizedDescription)")
+                return ["error": error.localizedDescription]
+            }
+
+            // A message we cannot parse comes from a third-party extension that expects its own native host.
+            Logger.webExtensions.debug("📬 Message is not ours, so it goes to the native host: \(error.localizedDescription)")
+            return try await sendToNativeHost(message,
+                                              applicationIdentifier: applicationIdentifier,
+                                              for: extensionContext)
         }
 
         let result = await messageRouter.routeMessage(extensionMessage)
@@ -145,9 +153,29 @@ extension WebExtensionManager {
             Logger.webExtensions.error("❌ Message handling failed: \(error.localizedDescription)")
             return nil
         case .noHandler:
-            Logger.webExtensions.error("❌ No handler registered for feature: \(extensionMessage.featureName)")
+            guard extensionContext.needsChromeCompatibility else {
+                Logger.webExtensions.error("❌ No handler registered for feature: \(extensionMessage.featureName)")
+                return nil
+            }
+
+            Logger.webExtensions.debug("📬 No handler for \(extensionMessage.featureName), so it goes to the native host")
+            return try await sendToNativeHost(message,
+                                              applicationIdentifier: applicationIdentifier,
+                                              for: extensionContext)
+        }
+    }
+
+    private func sendToNativeHost(_ message: Any,
+                                  applicationIdentifier: String?,
+                                  for extensionContext: WKWebExtensionContext) async throws -> Any? {
+        guard let nativeMessagingHandler else {
+            Logger.webExtensions.error("❌ No native messaging handler, so the message is dropped")
             return nil
         }
+
+        return try await nativeMessagingHandler.sendMessage(message,
+                                                            applicationIdentifier: applicationIdentifier,
+                                                            for: extensionContext)
     }
 
     private func enrichResponse(_ response: Any?, with message: WebExtensionMessage) -> Any? {
@@ -168,12 +196,74 @@ extension WebExtensionManager {
         return wrapper
     }
 
+    /// Hands a new native messaging port to the handler.
+    ///
+    /// Uses the completion-handler form of the delegate method so a message handler is installed
+    /// synchronously, before WebKit processes the extension's next message. WebKit drops a port
+    /// message that arrives while the port has no handler, and an extension usually posts its first
+    /// message in the same turn as `connectNative()`. Messages that arrive while the host process
+    /// is starting are kept in order and replayed once the handler has installed its own.
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        connectUsing port: WKWebExtension.MessagePort,
-                                       for extensionContext: WKWebExtensionContext) async throws {
+                                       for extensionContext: WKWebExtensionContext,
+                                       completionHandler: @escaping (Error?) -> Void) {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
-        Logger.webExtensions.debug("🔗 Connected to extension: \(displayName)")
 
-        // Not supported
+        // Our own extensions have no native host: the port stays unsupported.
+        guard extensionContext.needsChromeCompatibility else {
+            Logger.webExtensions.debug("🔗 Connected to extension: \(displayName)")
+            completionHandler(nil)
+            return
+        }
+
+        let applicationIdentifier = port.applicationIdentifier ?? "(none)"
+        Logger.webExtensions.debug("🔗 \(displayName) opens a port to \(applicationIdentifier, privacy: .public)")
+
+        guard let nativeMessagingHandler else {
+            Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
+            completionHandler(nil)
+            return
+        }
+
+        let pending = PendingPortMessages()
+        port.messageHandler = { message, error in
+            pending.append(message: message, error: error)
+        }
+
+        Task { @MainActor in
+            do {
+                try await nativeMessagingHandler.connect(port,
+                                                         applicationIdentifier: port.applicationIdentifier,
+                                                         for: extensionContext)
+                // The handler has installed its own message handler, and nothing can slip in before the replay.
+                let replayed = pending.drain()
+                for (message, error) in replayed {
+                    port.messageHandler?(message, error)
+                }
+                if !replayed.isEmpty {
+                    Logger.webExtensions.debug("🔗 Replayed \(replayed.count, privacy: .public) message(s) that \(displayName) posted before its host was up")
+                }
+                completionHandler(nil)
+            } catch {
+                // WebKit only disconnects the port, so this is the one place the failure is recorded.
+                Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+                completionHandler(error)
+            }
+        }
+    }
+}
+
+/// Holds port messages that arrive before a native messaging host is ready for them.
+@available(macOS 15.4, iOS 18.4, *)
+private final class PendingPortMessages: @unchecked Sendable {
+    private var messages: [(message: Any?, error: Error?)] = []
+
+    func append(message: Any?, error: Error?) {
+        messages.append((message, error))
+    }
+
+    func drain() -> [(message: Any?, error: Error?)] {
+        defer { messages.removeAll() }
+        return messages
     }
 }

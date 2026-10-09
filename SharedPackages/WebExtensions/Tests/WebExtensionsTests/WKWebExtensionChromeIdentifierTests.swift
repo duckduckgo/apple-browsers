@@ -1,0 +1,109 @@
+//
+//  WKWebExtensionChromeIdentifierTests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import WebKit
+import XCTest
+
+@testable import WebExtensions
+
+@available(macOS 15.4, iOS 18.4, *)
+final class WKWebExtensionChromeIdentifierTests: XCTestCase {
+
+    /// The identifier Chrome derives from the Bitwarden key below, and the one
+    /// Bitwarden's host manifest lists in `allowed_origins`.
+    private static let bitwardenIdentifier = "nngceckbapebfimnlniiiahkandclblb"
+
+    private static let bitwardenPublicKey = """
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmqKbvreshyXRuN2gikeR1idqR6KL0Di89JZcMyD4bjJRZVmQO7aznSGSALIHzS\
+        AUGYocUYBNDOP5QAhImxXyQ1qG8+goXs93v9GzrNJETdVuCEhqBggC4/DFabryJZDiKvZ2Jl0DM7MsWdoybZPwrj70V3aJ/nVNOMkf868sc\
+        NTMliwitCqqjT5baTANsG0DkZWQExD4lSXzSZHH9MEO8q0iZ7RRlNuGRBAkZgNV8FwZRsPKm/rwQ9dy3VpgLcmLp5GiMt+kAEncqKAkuRYn\
+        hVXXBsKqIyYTMjHSLkLnpfFySyOPLBdS617i/PGNiP/MT6Xy6z//v5NozUgaAZ4gJQIDAQAB
+        """
+
+    private var createdExtensionURLs: [URL] = []
+
+    override func tearDown() {
+        for url in createdExtensionURLs {
+            try? FileManager.default.removeItem(at: url)
+        }
+        createdExtensionURLs.removeAll()
+        super.tearDown()
+    }
+
+    // MARK: - chromeExtensionIdentifier
+
+    func testWhenManifestHasBitwardenKey_ThenIdentifierMatchesChromeWebStoreIdentifier() async throws {
+        let bitwardenKey = Self.bitwardenPublicKey
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
+
+        XCTAssertEqual(webExtension.chromeExtensionIdentifier, Self.bitwardenIdentifier)
+    }
+
+    func testWhenManifestHasNoKey_ThenIdentifierIsNil() async throws {
+        let webExtension = try await makeExtension(manifest: manifest(key: nil))
+
+        XCTAssertNil(webExtension.chromeExtensionIdentifier)
+    }
+
+    func testWhenManifestKeyIsNotBase64_ThenIdentifierIsNil() async throws {
+        let webExtension = try await makeExtension(manifest: manifest(key: "not base64 at all!!"))
+
+        XCTAssertNil(webExtension.chromeExtensionIdentifier)
+    }
+
+    func testWhenManifestKeyIsEmpty_ThenIdentifierIsNil() async throws {
+        let webExtension = try await makeExtension(manifest: manifest(key: ""))
+
+        XCTAssertNil(webExtension.chromeExtensionIdentifier)
+    }
+
+    // MARK: - chromeExtensionOrigin
+
+    func testWhenManifestHasBitwardenKey_ThenOriginIsChromeExtensionOrigin() async throws {
+        let bitwardenKey = Self.bitwardenPublicKey
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
+
+        XCTAssertEqual(webExtension.chromeExtensionOrigin, "chrome-extension://\(Self.bitwardenIdentifier)/")
+    }
+
+    // MARK: - Helpers
+
+    private func manifest(key: String?) -> String {
+        let keyEntry = key.map { ",\n    \"key\": \"\($0)\"" } ?? ""
+        return """
+        {
+            "manifest_version": 3,
+            "name": "Test",
+            "version": "1.0"\(keyEntry)
+        }
+        """
+    }
+
+    private func makeExtension(manifest: String) async throws -> WKWebExtension {
+        let extensionDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("WKWebExtensionChromeIdentifierTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: extensionDir, withIntermediateDirectories: true)
+        createdExtensionURLs.append(extensionDir)
+
+        try manifest.write(to: extensionDir.appendingPathComponent("manifest.json"),
+                           atomically: true,
+                           encoding: .utf8)
+
+        return try await WKWebExtension(resourceBaseURL: extensionDir)
+    }
+}

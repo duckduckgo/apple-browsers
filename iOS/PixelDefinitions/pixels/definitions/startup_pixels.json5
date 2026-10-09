@@ -106,5 +106,26 @@
                 "type": "boolean"
             }
         ]
+    },
+    "app-lifecycle_active-without-main-ui": {
+        "description": "Fires when a scene becomes active but none of its visible windows has the MainViewController as root, meaning the user sees a black screen. Measures user impact of a scene reconnecting while the app is still in the Connected state during launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "app-lifecycle_scene-did-disconnect": {
+        "description": "Fires when iOS disconnects the app's scene (sceneDidDisconnect). The state parameter tells which app state machine state the app was in, to find what triggers scene reconnects during launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "description": "App state machine state when the scene disconnected",
+                "enum": ["initializing", "launching", "connected", "foreground", "background", "terminating", "simulated"]
+            }
+        ]
     }
 }

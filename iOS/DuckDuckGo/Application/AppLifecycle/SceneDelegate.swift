@@ -19,10 +19,13 @@
 
 import UIKit
 import Core
+import PixelKit
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+
+    private lazy var lifecycleInstrumentation = SceneLifecycleInstrumentation()
 
     private var appStateMachine: AppStateMachine {
         // swiftlint:disable:next force_cast
@@ -59,11 +62,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         /// Update: On iOS 17 and later, this behaves as expected.
         /// However, on iOS 16 and below, we've confirmed that a connected scene *can* unexpectedly disconnect and later reconnect.
         /// Because of this, the recovery path must remain in place for older OS versions.
+        lifecycleInstrumentation.sceneDidDisconnect(in: appStateMachine.currentState)
     }
 
     /// See: `Foreground.swift` -> `onTransition()`
     func sceneDidBecomeActive(_ scene: UIScene) {
         appStateMachine.handle(.didBecomeActive)
+        lifecycleInstrumentation.sceneDidBecomeActive(windows: (scene as? UIWindowScene)?.windows ?? [])
     }
 
     /// See: `Foreground.swift` -> `willLeave()`
@@ -108,6 +113,55 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     @available(iOS 26.0, *)
     func preferredWindowingControlStyle(for windowScene: UIWindowScene) -> UIWindowScene.WindowingControlStyle {
         WindowControlsRowLayout.isEnabled() ? .unified : .automatic
+    }
+
+}
+
+enum SceneLifecyclePixel: PixelKit.Event {
+
+    case activeWithoutMainUI
+    case sceneDidDisconnect(appState: String)
+
+    var name: String {
+        switch self {
+        case .activeWithoutMainUI: return "app-lifecycle_active-without-main-ui"
+        case .sceneDidDisconnect: return "app-lifecycle_scene-did-disconnect"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .activeWithoutMainUI: return nil
+        case .sceneDidDisconnect(let appState): return ["state": appState]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+
+}
+
+/// Instrumentation for the black screen after a scene reconnects during launch.
+@MainActor
+struct SceneLifecycleInstrumentation {
+
+    private let pixelFiring: (any PixelKitFiring)?
+    private let isMainUI: (UIViewController?) -> Bool
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         isMainUI: @escaping (UIViewController?) -> Bool = { $0 is MainViewController }) {
+        self.pixelFiring = pixelFiring
+        self.isMainUI = isMainUI
+    }
+
+    /// The scene became active but none of its visible windows shows the main UI, so the user sees a black screen.
+    func sceneDidBecomeActive(windows: [UIWindow]) {
+        guard !windows.contains(where: { !$0.isHidden && isMainUI($0.rootViewController) }) else { return }
+        pixelFiring?.fire(SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)
+    }
+
+    func sceneDidDisconnect(in state: AppState) {
+        pixelFiring?.fire(SceneLifecyclePixel.sceneDidDisconnect(appState: state.name), frequency: .dailyAndCount)
     }
 
 }

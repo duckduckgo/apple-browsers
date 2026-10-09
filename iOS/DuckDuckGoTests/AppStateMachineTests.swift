@@ -20,6 +20,7 @@
 import UIKit
 import Testing
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @MainActor
 final class MockInitializing: InitializingHandling {
@@ -435,6 +436,70 @@ final class BackgroundTests {
 
         stateMachine.handle(.willResignActive)
         #expect(stateMachine.currentState.name == "background")
+    }
+
+}
+
+@MainActor
+@Suite("Scene lifecycle pixels")
+final class SceneLifecycleInstrumentationTests {
+
+    private final class StubMainViewController: UIViewController {}
+
+    let pixelKit = PixelKitMock()
+    lazy var instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit, isMainUI: { $0 is StubMainViewController })
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active with no main UI in any window fires the pixel", .timeLimit(.minutes(1)))
+    func activeWithoutMainUIFires() {
+        let window = UIWindow()
+        window.rootViewController = UIViewController()
+
+        instrumentation.sceneDidBecomeActive(windows: [window, UIWindow()])
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active with the main UI only in a hidden window fires the pixel", .timeLimit(.minutes(1)))
+    func activeWithMainUIOnlyInHiddenWindowFires() {
+        let oldWindow = UIWindow()
+        oldWindow.rootViewController = StubMainViewController()
+        oldWindow.isHidden = true
+
+        instrumentation.sceneDidBecomeActive(windows: [oldWindow, UIWindow()])
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active with the main UI in a visible window does not fire the pixel", .timeLimit(.minutes(1)))
+    func activeWithMainUIDoesNotFire() {
+        let overlayWindow = UIWindow()
+        overlayWindow.rootViewController = UIViewController()
+        overlayWindow.isHidden = false
+        let mainWindow = UIWindow()
+        mainWindow.rootViewController = StubMainViewController()
+        mainWindow.isHidden = false
+
+        instrumentation.sceneDidBecomeActive(windows: [overlayWindow, mainWindow])
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Scene disconnect fires with the current app state", .timeLimit(.minutes(1)))
+    func sceneDidDisconnectFiresWithState() {
+        let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())))
+        instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
+        stateMachine.handle(.didBecomeActive)
+        instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
+        stateMachine.handle(.didEnterBackground)
+        instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
+
+        #expect(pixelKit.actualFireCalls == ["connected", "foreground", "background"].map {
+            ExpectedFireCall(pixel: SceneLifecyclePixel.sceneDidDisconnect(appState: $0), frequency: .dailyAndCount)
+        })
     }
 
 }

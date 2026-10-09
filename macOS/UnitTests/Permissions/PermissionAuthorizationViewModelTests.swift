@@ -150,62 +150,57 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
     // MARK: - System permission step
 
     func testWhenNotificationPermissionIsResetThenWebsiteChoicesPrecedeSystemRequest() async throws {
-        for hasStoredAllow in [false, true] {
-            for action in [PermissionAuthorizationViewModel.Action.allowThisVisit, .alwaysAllow] {
-                pixelFiring = PixelKitMock()
-                systemPermissionManager = SystemPermissionManagerMock()
-                systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
-                systemPermissionManager.defersAuthorizationResponse = true
-                let manager = PermissionManagerMock()
-                if hasStoredAllow {
-                    manager.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
-                }
-                let featureFlagger = MockFeatureFlagger()
-                featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
-                let model = PermissionModel(permissionManager: manager,
-                                            geolocationService: GeolocationServiceMock(),
-                                            systemPermissionManager: systemPermissionManager,
-                                            featureFlagger: featureFlagger)
-                var decisions: [Bool] = []
-                model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
-                    decisions.append(granted)
-                }
-                let query = try XCTUnwrap(model.authorizationQuery)
-                let viewModel = makeViewModel(query: query)
-
-                viewModel.send(action: .onAppear)
-
-                XCTAssertFalse(query.opensOnSystemPermissionStep)
-                XCTAssertNil(viewModel.viewState.systemPermissionStep)
-                XCTAssertEqual(viewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
-                XCTAssertTrue(decisions.isEmpty)
-                XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
-
-                viewModel.send(action: action)
-
-                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .request)
-                XCTAssertTrue(decisions.isEmpty)
-                XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
-
-                viewModel.send(action: .requestSystemPermission)
-
-                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
-                XCTAssertNil(viewModel.viewState.systemPermissionStep?.buttonAction)
-                XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.notification])
-                XCTAssertTrue(decisions.isEmpty)
-
-                respondToSystemPermissionRequest(with: .authorized)
-                await waitUntil { !decisions.isEmpty }
-
-                XCTAssertEqual(decisions, [true])
-                XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [
-                    PermissionPixel.authorizationDecision(permissionType: .notification, decision: .allow).name,
-                ])
-                XCTAssertNil(model.authorizationQuery)
-                XCTAssertEqual(manager.persistedDecision(forDomain: "example.com", permissionType: .notification),
-                               hasStoredAllow || action == .alwaysAllow ? .allow : nil)
-                withExtendedLifetime(viewModel) {}
+        for action in [PermissionAuthorizationViewModel.Action.allowThisVisit, .alwaysAllow] {
+            pixelFiring = PixelKitMock()
+            systemPermissionManager = SystemPermissionManagerMock()
+            systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
+            systemPermissionManager.defersAuthorizationResponse = true
+            let manager = PermissionManagerMock()
+            let featureFlagger = MockFeatureFlagger()
+            featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+            let model = PermissionModel(permissionManager: manager,
+                                        geolocationService: GeolocationServiceMock(),
+                                        systemPermissionManager: systemPermissionManager,
+                                        featureFlagger: featureFlagger)
+            var decisions: [Bool] = []
+            model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
+                decisions.append(granted)
             }
+            let query = try XCTUnwrap(model.authorizationQuery)
+            let viewModel = makeViewModel(query: query)
+
+            viewModel.send(action: .onAppear)
+
+            XCTAssertFalse(query.opensOnSystemPermissionStep)
+            XCTAssertNil(viewModel.viewState.systemPermissionStep)
+            XCTAssertEqual(viewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
+            XCTAssertTrue(decisions.isEmpty)
+            XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+            viewModel.send(action: action)
+
+            XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .request)
+            XCTAssertTrue(decisions.isEmpty)
+            XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+            viewModel.send(action: .requestSystemPermission)
+
+            XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
+            XCTAssertNil(viewModel.viewState.systemPermissionStep?.buttonAction)
+            XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.notification])
+            XCTAssertTrue(decisions.isEmpty)
+
+            respondToSystemPermissionRequest(with: .authorized)
+            await waitUntil { !decisions.isEmpty }
+
+            XCTAssertEqual(decisions, [true])
+            XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [
+                PermissionPixel.authorizationDecision(permissionType: .notification, decision: .allow).name,
+            ])
+            XCTAssertNil(model.authorizationQuery)
+            XCTAssertEqual(manager.persistedDecision(forDomain: "example.com", permissionType: .notification),
+                           action == .alwaysAllow ? .allow : nil)
+            withExtendedLifetime(viewModel) {}
         }
     }
 
@@ -504,12 +499,19 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         XCTAssertEqual(prompt.savedDecisions, [.allow])
     }
 
-    func testWhenSiteIsAlreadyAlwaysAllowedThenShowingThePromptDoesNotSaveItAgain() throws {
-        let prompt = try showPrompt(for: [.notification], systemPermissionState: .denied, savedDecision: .allow)
+    func testWhenSiteIsAlreadyAlwaysAllowedThenPromptOpensOnSystemPermissionStepWithoutSavingAgain() throws {
+        let expectedPhases: [(SystemPermissionAuthorizationState, PermissionAuthorizationViewState.SystemPermissionStep.Phase)] = [
+            (.denied, .openSettings),
+            (.notDetermined, .request),
+        ]
+        for (systemPermissionState, expectedPhase) in expectedPhases {
+            let prompt = try showPrompt(for: [.notification], systemPermissionState: systemPermissionState, savedDecision: .allow)
 
-        XCTAssertEqual(prompt.phase, .openSettings)
-        XCTAssertEqual(prompt.manager.setPermissionCalls.count, 1, "Saving again would move the site in Settings' Recent list")
-        XCTAssertTrue(firedPixelNames.isEmpty)
+            XCTAssertEqual(prompt.phase, expectedPhase)
+            XCTAssertNil(prompt.viewModel.viewState.decision)
+            XCTAssertEqual(prompt.manager.setPermissionCalls.count, 1, "Saving again would move the site in Settings' Recent list")
+            XCTAssertTrue(firedPixelNames.isEmpty)
+        }
     }
 
     func testWhenSiteIsAlwaysAllowedAndSystemPermissionIsGrantedOnReturnThenRequestIsGrantedWithoutDecisionPixel() async throws {

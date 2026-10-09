@@ -144,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var passwordsMenuBarCancellable: AnyCancellable?
     private var promptBarMenuBarController: PromptBarMenuBarController?
     private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarLauncherIntroductionCancellable: AnyCancellable?
     private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -187,6 +188,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
     }()
+
+    private(set) lazy var syncSetupBookmarksPromoManager = makeSyncSetupPromoManager(.bookmarks) { [bookmarkManager] in
+        bookmarkManager.bookmarksCount()
+    }
+
+    private(set) lazy var syncSetupAutofillPromoManager = makeSyncSetupPromoManager(.autofill) {
+        guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return 0 }
+        return ((try? vault.accountsCount()) ?? 0) + ((try? vault.creditCardsCount()) ?? 0) + ((try? vault.identitiesCount()) ?? 0)
+    }
+
+    private func makeSyncSetupPromoManager(_ content: SyncPromoContent, contentCount: @escaping () -> Int) -> SyncPromoManager {
+        SyncPromoManager(
+            content: content,
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            syncService: syncService,
+            contentCountProvider: contentCount,
+            // App Store builds only offer DuckDuckGo; skipping the getter there avoids its main-thread web extension check.
+            isDuckDuckGoPasswordManager: { AppVersion.isAppStoreBuild || AutofillPreferences().passwordManager == .duckduckgo },
+            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            openSyncSettings: { [weak self] in
+                self?.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
+            },
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }
 
     @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
         tabAndWindowCountProvider: windowControllersManager,
@@ -252,6 +281,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let duckAiTermsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
 
     private var updateProgressCancellable: AnyCancellable?
+
+    @MainActor
+    private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
@@ -1582,7 +1614,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             quitSurveyPromoObserver: quitSurveyPromoObserver,
             vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
             vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
-            autofillImportPromoObserver: autofillImportPromoObserver
+            autofillImportPromoObserver: autofillImportPromoObserver,
+            syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
+            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2659,7 +2693,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: content)
+            presenter: PromptBarPresenter(content: content,
+                                          presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
         )
         coordinator.start()
         promptBarCoordinator = coordinator
@@ -2683,6 +2719,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     self?.promptBarMenuBarController?.hide()
                 }
+            }
+        promptBarLauncherIntroductionCancellable = promptBarPreferences.$pendingLauncherIntroduction
+            .receive(on: DispatchQueue.main)
+            .filter { $0 }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                promptBarPreferences.pendingLauncherIntroduction = false
+                promptBarCoordinator?.showPromptBarForLauncherPromo()
             }
     }
 

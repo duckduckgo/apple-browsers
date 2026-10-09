@@ -124,6 +124,21 @@ final class UserNotificationAuthorizationServiceTests: XCTestCase {
         let finalStatus = service.cachedAuthorizationStatus
         XCTAssertTrue([.notDetermined, .denied, .authorized, .provisional].contains(finalStatus))
     }
+
+    func testWhenSystemRefusesRequestWhileReportingNotDeterminedThenStatusIsDenied() async throws {
+        let notificationCenter = MockWebNotificationService()
+        notificationCenter.authorizationStatusToReturn = .notDetermined
+        notificationCenter.requestAuthorizationError = UNError(.notificationsNotAllowed)
+        service = UserNotificationAuthorizationService(notificationCenter: notificationCenter,
+                                                       appActivationPublisher: appActivationSubject.eraseToAnyPublisher())
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        _ = try? await service.requestAuthorization(options: [.alert, .sound])
+
+        XCTAssertEqual(service.cachedAuthorizationStatus, .denied)
+        let refreshedStatus = await service.authorizationStatus
+        XCTAssertEqual(refreshedStatus, .denied)
+    }
 }
 
 final class UserNotificationAuthorizationServiceMock: UserNotificationAuthorizationServicing {

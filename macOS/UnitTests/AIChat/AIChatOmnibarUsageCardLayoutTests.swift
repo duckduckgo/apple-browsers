@@ -51,11 +51,37 @@ final class AIChatOmnibarUsageCardLayoutTests: XCTestCase {
         XCTAssertEqual(exposedBand(in: container), 0, accuracy: 0.5)
     }
 
+    // MARK: - Send button
+
+    func testWhenTheDisclaimerShowsOnAnEmptyInputThenSendIsADisabledAskUntilTyping() throws {
+        let container = loadContainer(requiresTermsOfService: true, voiceChatAccess: true)
+        let sendButton = try XCTUnwrap(submitButton(in: container.view))
+
+        XCTAssertEqual(sendButton.title, UserText.aiChatAskButtonTitle, "Ask stands in for the voice button")
+        XCTAssertFalse(sendButton.isEnabled)
+
+        container.omnibarController.updateText("best places to visit in japan")
+        drainMainQueue()
+
+        XCTAssertEqual(sendButton.title, UserText.aiChatAskButtonTitle)
+        XCTAssertTrue(sendButton.isEnabled)
+    }
+
+    func testWhenNoDisclaimerShowsOnAnEmptyInputThenSendIsTheVoiceButton() throws {
+        let container = loadContainer(requiresTermsOfService: false, voiceChatAccess: true)
+        let sendButton = try XCTUnwrap(submitButton(in: container.view))
+
+        XCTAssertEqual(sendButton.title, "")
+        XCTAssertNotNil(sendButton.image)
+        XCTAssertTrue(sendButton.isEnabled)
+    }
+
     // MARK: - Assembly
 
-    private func loadContainer(requiresTermsOfService: Bool) -> AIChatOmnibarContainerViewController {
+    private func loadContainer(requiresTermsOfService: Bool, voiceChatAccess: Bool = false) -> AIChatOmnibarContainerViewController {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub[FeatureFlag.aiChatNativeTermsOfService.rawValue] = requiresTermsOfService
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarVoiceChatAccess.rawValue] = voiceChatAccess
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -82,12 +108,21 @@ final class AIChatOmnibarUsageCardLayoutTests: XCTestCase {
         container.view.frame = NSRect(x: 0, y: 0, width: 600, height: 200)
 
         // The panel subscribes on the main queue, so its first resolve lands after `viewDidLoad`.
-        let settled = expectation(description: "main queue drained")
-        DispatchQueue.main.async { settled.fulfill() }
-        wait(for: [settled], timeout: 5)
+        drainMainQueue()
 
         container.view.layoutSubtreeIfNeeded()
         return container
+    }
+
+    private func drainMainQueue() {
+        let settled = expectation(description: "main queue drained")
+        DispatchQueue.main.async { settled.fulfill() }
+        wait(for: [settled], timeout: 5)
+    }
+
+    private func submitButton(in view: NSView) -> AIChatSubmitButton? {
+        if let button = view as? AIChatSubmitButton { return button }
+        return view.subviews.lazy.compactMap { self.submitButton(in: $0) }.first
     }
 
     private func usageWarningCard(in view: NSView) -> AIChatUsageWarningCardView? {

@@ -842,7 +842,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -936,6 +935,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
+
+    /// Kill switch for the "Sync your bookmarks" promo.
+    case syncSetupBookmarksPromo
+
+    /// Kill switch for the "Sync your autofill data" promo.
+    case syncSetupAutofillPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

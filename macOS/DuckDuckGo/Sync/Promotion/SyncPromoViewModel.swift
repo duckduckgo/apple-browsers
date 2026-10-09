@@ -23,8 +23,8 @@ struct SyncPromoViewModel {
 
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
 
-    var primaryButtonAction: (() -> Void)?
-    var dismissButtonAction: (() -> Void)?
+    var primaryButtonAction: (@MainActor () -> Void)?
+    var dismissButtonAction: (@MainActor () -> Void)?
 
     var title: String {
         switch touchpointType {

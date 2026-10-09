@@ -169,6 +169,7 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
+    private let syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
@@ -686,6 +687,8 @@ final class PasswordManagementViewController: NSViewController {
         super.viewDidAppear()
 
         moveFocusIntoPopover()
+
+        NotificationCenter.default.post(name: .passwordsPanelOpened, object: nil)
 
         if !isDirty {
             itemModel?.clearSecureVaultModel()
@@ -1394,8 +1397,6 @@ final class PasswordManagementViewController: NSViewController {
         replaceItemContainerChildView(with: view)
     }
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
-
     private func displaySyncPromoView() {
         let touchpoint: SyncPromoManager.Touchpoint
         switch listModel?.sortDescriptor.category {
@@ -1418,8 +1419,7 @@ final class PasswordManagementViewController: NSViewController {
                 self?.dismiss()
             },
             dismissButtonAction: { [weak self] in
-                self?.syncPromoManager.dismissPromoFor(touchpoint)
-                self?.refreshData()
+                self?.syncPromoManager.promoDismissed()
             }
         )
 

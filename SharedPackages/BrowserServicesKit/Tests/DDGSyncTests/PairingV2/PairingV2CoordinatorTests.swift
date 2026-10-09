@@ -34,7 +34,8 @@ private typealias NativeJoinerThirdPartyUpgradeSetup = (
     upgradeCoordinator: ThirdPartyAccountUpgradeCoordinatingMock,
     messageExchanger: PairingV2MessageExchangingMock,
     messageCrypto: PairingV2MessageCrypto,
-    peerKeyPair: PairingV2KeyPair
+    peerKeyPair: PairingV2KeyPair,
+    confirmationDelegate: PairingV2ConfirmationDelegateMock
 )
 
 private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDelegate {
@@ -46,6 +47,7 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
     var allowPeerToJoinCalls: [(peerName: String?, peerKind: PairingV2DeviceKind)] = []
     var joinPeerCalls: [(peerName: String?, peerKind: PairingV2DeviceKind)] = []
     var didCreateSyncAccountCalls: [PairingV2DeviceKind] = []
+    var sentJoinReports: [PairingV2JoinReport] = []
     var dismissConfirmationCallCount = 0
 
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
@@ -71,6 +73,10 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
 
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
         didCreateSyncAccountCalls.append(credentialKind)
+    }
+
+    func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async {
+        sentJoinReports.append(report)
     }
 }
 
@@ -1648,6 +1654,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.completedRegisteredDevices?.map(\.id), [RegisteredDevice.mock.id])
         XCTAssertEqual(coordinator.state, .completed(.loggedIn))
         XCTAssertEqual(messageExchanger.sendCalls.count, 2, "V2 joiners must not send recovery_code_done")
+        XCTAssertTrue(confirmationDelegate.sentJoinReports.isEmpty)
     }
 
     func testWhenV21NativeJoinerLogsInThenReportsSuccessBeforeCompleting() async throws {
@@ -1703,6 +1710,56 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                  messageCrypto: messageCrypto).last,
                        .bye(.init(reason: .done)))
         XCTAssertEqual(coordinator.state, .completed(.loggedIn))
+        XCTAssertEqual(confirmationDelegate.sentJoinReports, [
+            PairingV2JoinReport(hostHasAccount: true, hostKind: .ddg, joinerHasAccount: false,
+                                joinerKind: .ddg, protocolVersion: "2.1", didSucceed: true)
+        ])
+    }
+
+    func testWhenJoinReportTransportFailsThenDoesNotEmitSentReport() async throws {
+        let setup = try await makeNativeJoinerReadyForLogin()
+        setup.messageExchanger.sendHandler = { _, _ in
+            if setup.messageExchanger.sendCalls.count == 3 {
+                throw PairingV2CoordinatorTestError.loginFailed
+            }
+        }
+
+        try await setup.coordinator.pollOnce()
+        try await settlePendingConfirmation(in: setup.coordinator)
+
+        XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
+        XCTAssertTrue(setup.confirmationDelegate.sentJoinReports.isEmpty)
+    }
+
+    func testFreshJoinerReportsHostAccountStateFromNegotiationOnce() async throws {
+        let setup = try await makeNativeJoinerReadyForLogin(peerHasAccount: false)
+
+        try await setup.coordinator.pollOnce()
+        try await settlePendingConfirmation(in: setup.coordinator)
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(setup.confirmationDelegate.sentJoinReports, [
+            PairingV2JoinReport(hostHasAccount: false, hostKind: .ddg, joinerHasAccount: false,
+                                joinerKind: .ddg, protocolVersion: "2.1", didSucceed: true)
+        ])
+    }
+
+    func testExistingAccountJoinerReportsPreSwitchAccountState() async throws {
+        XCTAssertNotEqual(SyncAccount.mock.userId, "v2-ddg-user")
+        let setup = try await makeNativeJoinerReadyForLogin(localAccount: SyncAccount.mock)
+
+        do {
+            try await setup.coordinator.pollOnce()
+            try await settlePendingConfirmation(in: setup.coordinator)
+            XCTFail("Expected an account switch")
+        } catch SyncError.accountAlreadyExists {
+        }
+        try await setup.coordinator.completeAccountSwitch(didSucceed: true)
+
+        XCTAssertEqual(setup.confirmationDelegate.sentJoinReports, [
+            PairingV2JoinReport(hostHasAccount: true, hostKind: .ddg, joinerHasAccount: true,
+                                joinerKind: .ddg, protocolVersion: "2.1", didSucceed: true)
+        ])
     }
 
     func testWhenRecoveryCodeArrivesBeforeConfirmationThenRetainsItAcrossPollsUntilAccepted() async throws {
@@ -1813,6 +1870,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
                            .bye(.init(reason: .error)),
                            testCase.name)
             XCTAssertEqual(setup.coordinator.state, .failed(testCase.expectedError), testCase.name)
+            XCTAssertEqual(setup.confirmationDelegate.sentJoinReports, [
+                PairingV2JoinReport(hostHasAccount: true, hostKind: .ddg, joinerHasAccount: false,
+                                    joinerKind: .ddg, protocolVersion: "2.1", didSucceed: false)
+            ], testCase.name)
         }
     }
 
@@ -2006,6 +2067,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                  peerPrivateKey: setup.peerKeyPair.privateKey,
                                                  messageCrypto: setup.messageCrypto), 1)
         XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
+        XCTAssertEqual(setup.confirmationDelegate.sentJoinReports, [
+            PairingV2JoinReport(hostHasAccount: true, hostKind: .thirdParty, joinerHasAccount: false,
+                                joinerKind: .ddg, protocolVersion: "2.1", didSucceed: true)
+        ])
     }
 
     func testWhenV21ThirdPartyUpgradeFailsThenReportsExpectedReasonBeforeFailing() async throws {
@@ -2048,6 +2113,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                      peerPrivateKey: setup.peerKeyPair.privateKey,
                                                      messageCrypto: setup.messageCrypto), 1)
             XCTAssertEqual(setup.coordinator.state, .failed(testCase.pairingError))
+            XCTAssertEqual(setup.confirmationDelegate.sentJoinReports, [
+                PairingV2JoinReport(hostHasAccount: true, hostKind: .thirdParty, joinerHasAccount: false,
+                                    joinerKind: .ddg, protocolVersion: "2.1", didSucceed: false)
+            ])
         }
     }
 
@@ -2212,7 +2281,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     senderChannelID: peerKeyPair.channelID).payload)
         ]
 
-        return (coordinator, upgradeCoordinator, messageExchanger, messageCrypto, peerKeyPair)
+        return (coordinator, upgradeCoordinator, messageExchanger, messageCrypto, peerKeyPair, confirmationDelegate)
     }
 
     private func makeV21HostWaitingForJoinStatus(
@@ -2280,6 +2349,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
     }
 
     private func makeNativeJoinerReadyForLogin(loginError: Error? = nil,
+                                               localAccount: SyncAccount? = nil,
+                                               peerHasAccount: Bool = true,
                                                peerVersion: PairingV2ProtocolVersion = .v2Point1,
                                                joinStatusDeadline: TimeInterval = PairingV2PollingDefaults.joinStatusDeadline,
                                                now: @escaping () -> Date = Date.init) async throws -> (
@@ -2293,7 +2364,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let accountManager = AccountManagingMock()
         accountManager.loginError = loginError
         dependencies.account = accountManager
-        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = localAccount
 
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -2320,10 +2391,11 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
         messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
             [
-                .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
-                                             name: "Peer",
-                                             kind: .ddg,
-                                             userId: userId)),
+                peerHasAccount
+                    ? .recoveryCodeAvailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
+                                                   name: "Peer", kind: .ddg, userId: userId))
+                    : .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                                 name: "Peer", kind: .ddg)),
                 .recoveryCodeResponse(.init(recoveryCode: recoveryCode))
             ],
             recipientPublicKey: hello.publicKey,

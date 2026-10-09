@@ -620,6 +620,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             viewModel.connectingSheetPhase = .waitingForOtherDevice
         }
     }
+
+    func controllerDidSendPairingV2JoinReport(_ report: PairingV2JoinReport) {
+        pixelFiring?.fire(SyncJoinReportPixel(report: report), frequency: .dailyAndCount)
+    }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
         viewModel.$devices

@@ -932,6 +932,10 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         }
     }
 
+    func controllerDidSendPairingV2JoinReport(_ report: PairingV2JoinReport) {
+        pixelFiring?.fire(SyncJoinReportPixel(report: report), frequency: .dailyAndCount)
+    }
+
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.exchange,
                                                                       flowVersion: syncSetupFlowVersion,
@@ -1302,8 +1306,10 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         pairingV2PeerKind = nil
     }
 
-    private var syncSetupFlowVersion: String {
-        featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) ? SyncSetupPixelKitEvent.ParameterValue.v2 : SyncSetupPixelKitEvent.ParameterValue.v1
+    var syncSetupFlowVersion: String {
+        guard featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) else { return SyncSetupPixelKitEvent.ParameterValue.v1 }
+        return featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
+            ? SyncSetupPixelKitEvent.ParameterValue.v2Point1 : SyncSetupPixelKitEvent.ParameterValue.v2
     }
 
     private func syncSetupSource(for code: String, dialog: ManagementDialogKind, sourceHint: SyncSetupSource?) -> SyncSetupSource? {

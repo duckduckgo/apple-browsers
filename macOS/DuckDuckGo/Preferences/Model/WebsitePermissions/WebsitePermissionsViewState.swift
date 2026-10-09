@@ -100,8 +100,12 @@ extension WebsitePermissionsViewState {
             "\(domain)|\(permissionType.rawValue)"
         }
 
+        var displayName: String {
+            domain.permissionDisplayName
+        }
+
         var faviconURL: URL? {
-            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+            domain.permissionFaviconURL
         }
 
         var accessibilityIdentifier: String {

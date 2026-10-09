@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
+import Foundation
 import Suggestions
 
 /// Search-typing source: maps `SuggestionResult` categories to unified sections,
@@ -29,17 +31,22 @@ final class SearchSuggestionsSource: SuggestionsSource {
 
     private let loader: SearchSuggestionsLoader
     private let query: () -> String
-    private let showAskAIChat: Bool
+    private let aiChatSettings: AIChatSettingsProvider
 
     init(loader: SearchSuggestionsLoader,
          query: @escaping () -> String,
-         showAskAIChat: Bool) {
+         aiChatSettings: AIChatSettingsProvider,
+         notificationCenter: NotificationCenter = .default) {
         self.loader = loader
         self.query = query
-        self.showAskAIChat = showAskAIChat
-        let showChat = showAskAIChat
+        self.aiChatSettings = aiChatSettings
+        // Settings can change while this source and its current suggestions remain installed.
+        let settingsChanges = notificationCenter.publisher(for: .aiChatSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .map { _ in loader.result }
         sectionsPublisher = loader.$result
-            .map { result in Self.sections(from: result, query: query(), showAskAIChat: showChat) }
+            .merge(with: settingsChanges)
+            .map { result in Self.sections(from: result, query: query(), showAskAIChat: aiChatSettings.isAIChatEnabled) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -86,17 +93,18 @@ final class SearchSuggestionsSource: SuggestionsSource {
 
     /// Resolves a row id back to its `Suggestion` (across all categories).
     func suggestion(forRowID id: String) -> Suggestion? {
-        Self.suggestion(forRowID: id, in: loader.result, query: query())
+        // Reject a stale Ask Duck.ai row even before the settings notification updates the UI.
+        Self.suggestion(forRowID: id, in: loader.result, query: query(), showAskAIChat: aiChatSettings.isAIChatEnabled)
     }
 
-    static func suggestion(forRowID id: String, in result: SuggestionResult, query: String) -> Suggestion? {
+    static func suggestion(forRowID id: String, in result: SuggestionResult, query: String, showAskAIChat: Bool) -> Suggestion? {
         let all = effectiveTopHits(from: result, query: query) + result.duckduckgoSuggestions + result.localSuggestions
         for prefix in ["topHits", "ddg", "local"] {
             if let match = all.first(where: { SuggestionRowMapper.row(for: $0, query: query, idPrefix: prefix).id == id }) {
                 return match
             }
         }
-        if id == "askAIChat-askAIChat-\(query)" { return .askAIChat(value: query) }
+        if showAskAIChat, !query.isEmpty, id == "askAIChat-askAIChat-\(query)" { return .askAIChat(value: query) }
         return nil
     }
 }

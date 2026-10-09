@@ -28,8 +28,9 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
     /// Keeps the open popover on the app's theme while it changes.
     private var popupAppearanceObservation: NSKeyValueObservation?
-    /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab.
-    private var popupSelectedTabCancellable: AnyCancellable?
+    /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab,
+    /// or when another browser window becomes active, as Chrome does.
+    private var popupDismissalCancellable: AnyCancellable?
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -155,11 +156,21 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
 
-        popupSelectedTabCancellable = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        let selectedTabChange = (windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
             .$selectedTabViewModel
             .map { $0?.tab }
             .removeDuplicates(by: ===)
             .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()) ?? Empty().eraseToAnyPublisher()
+        // Only browser windows count, so the Web Inspector can open on the popup without closing it.
+        let otherBrowserWindowActivation = NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .compactMap { $0.object as? NSWindow }
+            .filter { [weak buttonWindow = button.window] window in
+                (window is MainWindow || window is PopUpWindow) && window !== buttonWindow
+            }
+            .map { _ in () }
+        popupDismissalCancellable = selectedTabChange.merge(with: otherBrowserWindowActivation)
             .first()
             .sink { _ in
                 action.closePopup()

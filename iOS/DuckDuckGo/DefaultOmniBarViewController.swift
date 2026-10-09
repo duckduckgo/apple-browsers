@@ -64,6 +64,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: dependencies.featureFlagger),
         store: termsOfServiceStore
     )
+    private let inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(pixelFiring: DuckAiInputOutcomePixelAdapter())
 
     private let attachmentPrivacyDisclosureOverride: AttachmentPrivacyDisclosure?
     private let attachmentPrivacyPixelFiring: PixelFiring?
@@ -171,6 +172,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             self?.handleAttachmentsChanged()
         }
 
+        // The popover isn't anchored until the expansion is laid out, so there's no size change to report yet.
+        omniBarView.onSearchAreaWillExpand = { [weak self] in
+            self?.applyFooterMessages(animated: false)
+        }
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
             // Ahead of the delegate, which anchors the suggestions popover below the card.
@@ -183,6 +188,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                 self.refreshFooterMessage(animated: false)
                 self.toolPickerController?.clearModelSwitchNotice()
             }
+            self.syncInputOutcomeMeasurement()
             self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
         }
         omniBarView.onFooterLinkTapped = { [weak self] id, url in
@@ -195,6 +201,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
         omniBarView.onFooterVisibilityChanged = { [weak self] ids in
             guard let self else { return }
+            if ids.contains(.termsConsent) { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
             if ids.contains(.attachmentPrivacy) {
                 if attachmentPrivacyNotice.recordDisplay() {
                     fireAttachmentPrivacyPixel(.shown)
@@ -211,6 +218,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                                selector: #selector(addressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(appDidEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(appWillEnterForeground),
+                                               name: UIApplication.willEnterForegroundNotification,
+                                               object: nil)
     }
 
     override func onAIChatSendPressed() {
@@ -218,6 +233,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let hasAttachments = attachmentController?.hasAttachments ?? false
         // Voice only stands in for an empty prompt; pending attachments are a submittable input.
         if text.isEmpty && !hasAttachments {
+            inputOutcomeMeasurement.record(.voiceStarted)
             omniDelegate?.onDuckAIVoiceModeRequested()
             return
         }
@@ -301,6 +317,23 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     // MARK: - Editing Lifecycle Overrides
 
+    func beginEditingOnNewTabPageAppOpen(isRequestValid: @escaping () -> Bool,
+                                         completion: @escaping (Bool) -> Void) {
+        if dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+           unifiedToggleInputOmnibarActivating?.activateFromOmnibarOnAppOpenIfNeeded(
+            currentText: extractCurrentTextForEditing(omniBarView.textField),
+            isRequestValid: isRequestValid,
+            completion: completion) == .intercept {
+            return
+        }
+        guard isRequestValid() else {
+            completion(false)
+            return
+        }
+        super.beginEditing(animated: true, forTextEntryMode: nil)
+        completion(isTextFieldEditing)
+    }
+
     override func setSelectedTextEntryMode(_ mode: TextEntryMode) {
         guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle else {
             super.setSelectedTextEntryMode(mode)
@@ -308,6 +341,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
 
         handleIPadModeToggleTransition(to: mode)
+        syncInputOutcomeMeasurement()
     }
 
     override func endEditing() {
@@ -471,6 +505,15 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         updateShadowAppearanceByApplyingLayerMask()
     }
 
+    @objc private func appDidEnterBackground() {
+        inputOutcomeMeasurement.inputClosed()
+    }
+
+    /// An input still open on return counts as a new opening.
+    @objc private func appWillEnterForeground() {
+        syncInputOutcomeMeasurement()
+    }
+
     // MARK: - Private Helper Methods
 
     private func updateShadowAppearanceByApplyingLayerMask() {
@@ -514,9 +557,11 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 // Before the collapse below takes the disclaimer off screen.
+                inputOutcomeMeasurement.record(.promptSubmitted(sentWithAsk ? .button : .enter))
                 if sentWithAsk {
                     termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message)
                 }
+                let termsAccepted = sentWithAsk && termsOfServiceDisclaimer.hasAccepted
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
                 PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
@@ -528,7 +573,7 @@ extension DefaultOmniBarViewController {
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
                 omniBarView.setSearchAreaExpanded(false, animated: false)
                 omniBarView.aiChatTextView.resignFirstResponder()
-                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: controlValues)
+                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: controlValues, termsAccepted: termsAccepted)
             }
         } else {
             omniDelegate?.onOmniQuerySubmitted(query)
@@ -744,6 +789,11 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshFooterMessage(animated: Bool) {
+        applyFooterMessages(animated: animated)
+        omniDelegate?.onOmniBarExpandedContentSizeChanged()
+    }
+
+    private func applyFooterMessages(animated: Bool) {
         attachmentPrivacyNotice.refresh()
         let sendButton = DuckAiTermsOfServiceSendButton(selectedTool: toolPickerController?.selectedTool)
         var messages: [UTIFooterItem] = []
@@ -760,7 +810,15 @@ extension DefaultOmniBarViewController {
         omniBarView.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? sendButton : nil
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
-        omniDelegate?.onOmniBarExpandedContentSizeChanged()
+    }
+
+    /// Only Duck.ai mode expands the search area, which is the Duck.ai input.
+    private func syncInputOutcomeMeasurement() {
+        guard omniBarView.isSearchAreaExpanded, selectedTextEntryMode == .aiChat else {
+            inputOutcomeMeasurement.inputClosed()
+            return
+        }
+        inputOutcomeMeasurement.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.

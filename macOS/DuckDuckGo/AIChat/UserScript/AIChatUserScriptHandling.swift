@@ -173,6 +173,9 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     /// Posted by the Customize Responses card placement when the user dismisses it.
     @MainActor func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -200,7 +203,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
-    private let statisticsLoader: StatisticsLoader?
+    private let statisticsLoader: DuckAIPromptAtbRefreshing?
     private let syncServiceProvider: () -> DDGSyncing?
     private let syncErrorHandler: SyncErrorHandling
     private let featureFlagger: FeatureFlagger
@@ -210,6 +213,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let browserTools: AIChatBrowserToolsService
     private let fireNewAIChatExperimentPixels: () -> Void
     private let featureDiscovery: FeatureDiscovery
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
 
     var isFireWindowProvider: (() -> Bool)?
     var isSidebarProvider: (() -> Bool)?
@@ -219,6 +223,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var conversationSource: AIChatConversationSource?
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
 
     /// How this document was reached when it was a direct navigation to Duck.ai; used only when no
     /// surface stamped the chat. The navigation can commit after the chat already loaded, so a late
@@ -249,7 +254,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
-        statisticsLoader: StatisticsLoader?,
+        statisticsLoader: DuckAIPromptAtbRefreshing?,
         syncServiceProvider: @escaping () -> DDGSyncing?,
         syncErrorHandler: SyncErrorHandling,
         featureFlagger: FeatureFlagger,
@@ -260,9 +265,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
         browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
-        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+        homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
         self.storage = storage
+        self.termsOfServiceStore = termsOfServiceStore
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.browserTools = browserTools
@@ -276,6 +284,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
         self.conversationSourceHandler = conversationSourceHandler
+        self.homepageAiChatsProvider = homepageAiChatsProvider
         self.fireNewAIChatExperimentPixels = fireNewAIChatExperimentPixels
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
@@ -332,6 +341,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosureProvider?().claim() ?? false)
     }
 
+    // MARK: - Homepage chat suggestions
+
+    @MainActor public func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
+    }
+
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a
     /// second chat must not keep the first one's source.
     func resetConversationSourceForNewDocument() {
@@ -368,8 +388,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
         let prompt = messageHandling.getDataForMessageType(.nativePrompt)
-        notePendingNativePromptIfNeeded(prompt as? AIChatNativePrompt)
-        return prompt
+        guard let nativePrompt = prompt as? AIChatNativePrompt else { return prompt }
+        notePendingNativePromptIfNeeded(nativePrompt)
+        return nativePrompt.withTermsAccepted(termsAcceptedMarker(for: nativePrompt))
     }
 
     @MainActor
@@ -518,7 +539,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
         notePendingNativePromptIfNeeded(prompt)
-        aiChatNativePromptSubject.send(prompt)
+        aiChatNativePromptSubject.send(prompt.withTermsAccepted(termsAcceptedMarker(for: prompt)))
+    }
+
+    /// `true` only when the prompt was sent with Ask and the acceptance is on record; every other prompt
+    /// reads `false`. `nil` omits the key wherever native Terms of Service is off.
+    private func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeTermsOfService) else { return nil }
+        let sentWithAsk = prompt.termsAccepted == true
+        let termsAccepted = sentWithAsk && termsOfServiceStore.hasAccepted
+        Logger.aiChat.debug("[TermsOfService] Prompt crosses the bridge with termsAccepted=\(termsAccepted, privacy: .public) (sentWithAsk=\(sentWithAsk, privacy: .public))")
+        return termsAccepted
     }
 
     private func notePendingNativePromptIfNeeded(_ prompt: AIChatNativePrompt?) {
@@ -1242,20 +1273,17 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         }
     }
 
+    /// A report owed for an acceptance made natively is the same acceptance, not a duplicate.
     private func handleTermsAccepted() {
-        let alreadyAccepted = storage.hasAcceptedTermsAndConditions
+        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
 
-        if alreadyAccepted {
-            let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
-            let pixel: AIChatPixel = syncIsOn
-                ? .aiChatTermsAcceptedDuplicateSyncOn
-                : .aiChatTermsAcceptedDuplicateSyncOff
-            Task { @MainActor [weak self] in
-                self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
-            }
+        let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
+        let pixel: AIChatPixel = syncIsOn
+            ? .aiChatTermsAcceptedDuplicateSyncOn
+            : .aiChatTermsAcceptedDuplicateSyncOff
+        Task { @MainActor [weak self] in
+            self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         }
-
-        storage.hasAcceptedTermsAndConditions = true
     }
 
     private func refreshAtbs(completion: (() -> Void)? = nil) {

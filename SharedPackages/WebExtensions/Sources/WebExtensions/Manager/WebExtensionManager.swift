@@ -142,7 +142,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
 
 #if os(macOS)
-    /// Answers `chrome.idle.queryState` for extension pages, including the ones in tabs.
+    /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
 #endif
 

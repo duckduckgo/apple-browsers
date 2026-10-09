@@ -16,6 +16,26 @@
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "permission_authorization": {
+        "description": "Fired when user answers the Website Permissions prompt, or closes it with the X button. Mirrors the Windows prompt pixel",
+        "owners": ["andremartingo"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type being requested",
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme"]
+            },
+            {
+                "description": "What the prompt resolved to. The '_once' values are choices that apply to this visit only",
+                "enum": ["always", "allow_once", "never", "deny_once", "cancel"]
+            },
+            {
+                "description": "Platform marker",
+                "enum": ["macos"]
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_permission_center_changed": {
         "description": "Fired when user changes a permission decision in the Permission Center dropdown",
         "owners": ["tomasstrba"],

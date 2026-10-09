@@ -44,11 +44,13 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
+    func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
+    func disableSync() async -> Bool
     func simplifiedCopyRecoveryCode()
 
     var syncBookmarksPausedTitle: String? { get }
@@ -137,6 +139,13 @@ public class SyncSettingsViewModel: ObservableObject {
         case anotherDevicePromptDismissed
     }
 
+    public enum DeviceDetailsPixelEvent: Equatable {
+        case thisDeviceScreenShown
+        case thisDeviceTurnOffSyncTapped
+        case otherDeviceScreenShown
+        case otherDeviceRemoveDeviceTapped
+    }
+
     public enum SyncAnotherDeviceOption: String {
         case thisDeviceOnly = "this_device_only"
         case syncAnotherDevice = "sync_another_device"
@@ -205,6 +214,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
+    @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false
@@ -223,7 +233,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private var postConnectingSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
-    private let isImprovedPairingFlowEnabled: Bool
+    let isImprovedPairingFlowEnabled: Bool
 
     public init(
         isOnDevEnvironment: @escaping () -> Bool,
@@ -401,6 +411,35 @@ public class SyncSettingsViewModel: ObservableObject {
         return RemoveDeviceViewModel(device: device) { [weak self] device in
             self?.delegate?.removeDevice(device)
         }
+    }
+
+    func deviceDetailsShown(for device: Device) {
+        delegate?.fireDeviceDetailsPixel(event: device.isThisDevice ? .thisDeviceScreenShown : .otherDeviceScreenShown)
+    }
+
+    func thisDeviceDetailsTurnOffSyncTapped() {
+        guard !isBusy else { return }
+        delegate?.fireDeviceDetailsPixel(event: .thisDeviceTurnOffSyncTapped)
+        if isImprovedPairingFlowEnabled {
+            isThisDeviceTurnOffConfirmationVisible = true
+        } else {
+            disableSyncToggleTapped()
+        }
+    }
+
+    func thisDeviceDetailsTurnOffSyncConfirmed() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            if await delegate?.disableSync() == true {
+                isSyncEnabled = false
+            }
+        }
+    }
+
+    func otherDeviceDetailsRemoveDeviceTapped() {
+        delegate?.fireDeviceDetailsPixel(event: .otherDeviceRemoveDeviceTapped)
     }
 
     public func syncEnabled(recoveryCode: String) {
@@ -622,5 +661,6 @@ public class SyncSettingsViewModel: ObservableObject {
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
+    func fireDeviceDetailsPixel(event _: SyncSettingsViewModel.DeviceDetailsPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
 }

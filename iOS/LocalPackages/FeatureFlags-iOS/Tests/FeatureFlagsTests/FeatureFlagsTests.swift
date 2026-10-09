@@ -147,22 +147,6 @@ final class FeatureFlagsTests: XCTestCase {
         }
     }
 
-    func testSuppressShowBarsGestureRecogniserDelayIsDefaultEnabledRemoteReleasableAndLocallyOverridable() {
-        let flag = FeatureFlag.suppressShowBarsGestureRecogniserDelay
-
-        guard case let .remoteReleasable(subfeature) = flag.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
-                       iOSBrowserConfigSubfeature.suppressShowBarsGestureRecogniserDelay.rawValue)
-        guard case .enabled = flag.defaultValue else {
-            XCTFail("Expected enabled default")
-            return
-        }
-        XCTAssertTrue(flag.supportsLocalOverriding)
-    }
-
     func testLegacyDeviceRenamePatchFlagIsDefaultEnabledAndRemoteReleasable() {
         let flag = FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename
         guard case let .remoteReleasable(subfeature) = flag.source else {
@@ -174,6 +158,22 @@ final class FeatureFlagsTests: XCTestCase {
                        SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename.rawValue)
         guard case .enabled = flag.defaultValue else {
             XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testAlwaysShowKeyboardOnNewTabPageIsDefaultDisabledRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.alwaysShowKeyboardOnNewTabPage
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .alwaysShowKeyboardOnNewTabPage)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "alwaysShowKeyboardOnNewTabPage")
+        guard case .disabled = flag.defaultValue else {
+            XCTFail("Expected disabled default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)

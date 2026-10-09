@@ -85,7 +85,8 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                             privacyConfig: privacyConfig,
                                             nativeStorageHandler: nativeStorageHandler,
-                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+                                            onBlobCleanup: AIChatLeftoverImagesPixelReporter(pixelFiring: pixelKit).report)
         self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelKit)
         subscribeToChanges()
     }
@@ -139,5 +140,59 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature)
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
+    }
+}
+
+/// Reports the one-time removal of Duck.ai images WebKit left on disk, so we know when the cleanup can be dropped.
+enum AIChatLeftoverImagesPixel: PixelKit.Event {
+
+    case removed(filesRemoved: Int)
+    case removalFailed(Error)
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .removed: return "aichat_leftover-images_removed_macos"
+        case .removalFailed: return "aichat_leftover-images_removal_failed_macos"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .removed(let filesRemoved): return ["files_removed": Self.bucket(filesRemoved)]
+        case .removalFailed: return nil
+        }
+    }
+
+    var error: NSError? {
+        switch self {
+        case .removed: return nil
+        case .removalFailed(let error): return error as NSError
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    static func bucket(_ count: Int) -> String {
+        switch count {
+        case 0: return "0"
+        case 1...10: return "1-10"
+        case 11...50: return "11-50"
+        case 51...200: return "51-200"
+        default: return "201+"
+        }
+    }
+}
+
+struct AIChatLeftoverImagesPixelReporter {
+
+    let pixelFiring: (any PixelKitFiring)?
+
+    func report(_ cleanup: AIChatBlobCleanupResult) {
+        if let error = cleanup.error {
+            pixelFiring?.fire(AIChatLeftoverImagesPixel.removalFailed(error), frequency: .dailyAndCount)
+        }
+        pixelFiring?.fire(AIChatLeftoverImagesPixel.removed(filesRemoved: cleanup.filesRemoved), frequency: .dailyAndCount)
     }
 }

@@ -29,7 +29,7 @@ struct RedesignedFavoriteItemView: View {
     let onMenuAction: ((MenuAction) -> Void)?
 
     var body: some View {
-        VStack(spacing: Metrics.iconToTitleSpacing) {
+        RedesignedFavoriteTileView(title: favorite.title) {
             RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .if(isEditable) {
                     $0.contextMenu {
@@ -37,13 +37,6 @@ struct RedesignedFavoriteItemView: View {
                         contextMenuItems()
                     }
                 }
-
-            Text(favorite.title)
-                .daxCaption1()
-                .lineLimit(Metrics.titleLineLimit)
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(maxWidth: .infinity, alignment: .top)
         }
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
@@ -100,8 +93,6 @@ struct RedesignedFavoriteIconView: View {
 }
 
 private enum Metrics {
-    static let iconToTitleSpacing: CGFloat = 6
-    static let titleLineLimit = 2
     static let sourceIconSize: CGFloat = 64
     static let faviconSize: CGFloat = 32
     static let tileSize: CGFloat = 48

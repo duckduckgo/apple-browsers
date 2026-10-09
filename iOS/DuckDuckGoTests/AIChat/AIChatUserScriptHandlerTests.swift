@@ -1388,20 +1388,33 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
     }
 
-    /// duck.ai on iPad keeps its own Terms of Service, even though the iPad inputs show the disclaimer.
-    func testWhenAcceptedInAnIPadInputThenPromptsCarryNoMarkerInAnyDisplayMode() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = false
-        mockIPadDuckAIControlsFeature.isAvailable = true
-        mockAIChatContextualModeFeature.isAvailable = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+    /// iPad's address bar sends into a full-tab chat, which has no native chat input, so the marker can't depend on one.
+    func testWhenAcceptedInAnIPadInputThenAskPromptsCarryTheMarkerInAnyDisplayMode() {
+        enableNativeTermsOfServiceOnIPad()
         recordAcceptedInNativeInput()
 
         for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
             aiChatUserScriptHandler.displayMode = displayMode
-            XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), "\(displayMode)")
+            XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true, "\(displayMode)")
+            XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: promptSentWithoutAsk), false, "\(displayMode)")
         }
+    }
+
+    func testWhenNativeTermsOfServiceFlagIsOffOnIPadThenPromptsCarryNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        MockDevicePlatform.isIphone = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
+
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    private func enableNativeTermsOfServiceOnIPad() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+        mockAIChatContextualModeFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
     }
 
     /// The page-loading path: the FE pulls the prompt, so it is stamped on the way out.

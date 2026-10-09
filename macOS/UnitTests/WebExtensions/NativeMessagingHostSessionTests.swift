@@ -21,9 +21,8 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 /// Exercises `NativeMessagingHostSession` against fake hosts, which are Python scripts that
-/// speak the native messaging wire format. Bitwarden's own host is a compiled binary that
-/// quits at once when its desktop app is absent, and case-by-case scripts stand in for the
-/// ways a host can end.
+/// speak the native messaging wire format. Case-by-case scripts stand in for the ways a host
+/// can end.
 @MainActor
 final class NativeMessagingHostSessionTests: XCTestCase {
 
@@ -188,9 +187,8 @@ final class NativeMessagingHostSessionTests: XCTestCase {
                        .messageTooLarge(length: 100 * 1024 * 1024))
     }
 
-    /// Bitwarden's extension opens a port from two services, each retrying every ten seconds
-    /// for as long as its desktop app stays away, so a refused connection happens over and
-    /// over. Every attempt has to end on its own and leave nothing behind.
+    /// An extension may retry a port for as long as its companion app stays away, so a refused
+    /// connection happens over and over. Every attempt has to end on its own and leave nothing behind.
     func testWhenTheSameHostIsConnectedRepeatedlyThenEverySessionFinishesAndLeavesNoProcess() throws {
         let executable = try makeHost(named: "farewell-host", script: Self.farewellHostScript)
 
@@ -213,6 +211,40 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         }
 
         XCTAssertTrue(waitForNoRunningHosts(), "A host process survived the reconnect loop")
+    }
+
+    // MARK: - One-shot exchange
+
+    func testWhenHostNeverAnswersThenExchangeTimesOutAndStopsTheHost() async throws {
+        let executable = try makeHost(named: "silent-host", script: Self.silentHostScript)
+        let session = makeSession(executable: executable)
+
+        let start = Date()
+        do {
+            _ = try await NativeMessagingHandler.exchange(["command": "ping"],
+                                                          with: session,
+                                                          hostName: "com.duckduckgo.test.host",
+                                                          timeout: 0.5)
+            XCTFail("Expected the exchange to time out")
+        } catch NativeMessagingHandler.HandlerError.timedOut(let host) {
+            XCTAssertEqual(host, "com.duckduckgo.test.host")
+        }
+
+        XCTAssertLessThan(Date().timeIntervalSince(start), 5)
+        XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived the timeout")
+    }
+
+    func testWhenHostAnswersThenExchangeReturnsTheReplyAndStopsTheHost() async throws {
+        let executable = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let session = makeSession(executable: executable)
+
+        let reply = try await NativeMessagingHandler.exchange(["command": "ping"],
+                                                              with: session,
+                                                              hostName: "com.duckduckgo.test.host",
+                                                              timeout: 5)
+
+        XCTAssertEqual(reply as? [String: String], ["command": "ping"])
+        XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived the exchange")
     }
 
     // MARK: - Helpers
@@ -293,11 +325,17 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         write_frame(payload)
     """
 
-    /// Says why it is leaving, and leaves at once. This is Bitwarden's proxy without its
-    /// desktop app, and the message is the only explanation the browser gets.
+    /// Says why it is leaving, and leaves at once, as a proxy does when its companion app is
+    /// absent. The message is the only explanation the browser gets.
     private static let farewellHostScript = NativeMessagingHostSessionTests.framingPreamble + """
     write_frame(b'{"type":"disconnected"}')
     sys.exit(0)
+    """
+
+    /// Reads its input and never answers.
+    private static let silentHostScript = NativeMessagingHostSessionTests.framingPreamble + """
+    while read_frame() is not None:
+        pass
     """
 
     /// Fails without a word.

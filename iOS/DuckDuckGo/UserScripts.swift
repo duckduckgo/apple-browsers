@@ -135,12 +135,14 @@ final class UserScripts: UserScriptsProvider {
             && duckAiNativeStorageHandler?.setupSucceeded != false
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
+        let homepageAiChatsProvider = HomepageAiChatsProvider(featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
-                                                          attachmentPrivacyWebKeySource: duckAiNativeStorageHandler)
+                                                          attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,
+                                                          homepageAiChatsProvider: homepageAiChatsProvider)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
@@ -161,6 +163,7 @@ final class UserScripts: UserScriptsProvider {
         } else {
             duckAiNativeStorageUserScript = nil
         }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
         pageContextUserScript = PageContextUserScript()
         internalFeedbackUserScript = InternalFeedbackUserScript(

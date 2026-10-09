@@ -2008,6 +2008,10 @@ public struct UserText {
     public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
     public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
 
+    public static let newTabPageFavoriteName = NotLocalizedString("new-tab-page.favorite.name", value: "Name", comment: "Name field placeholder in the Add Favorite sheet")
+    public static let newTabPageFavoriteURL = NotLocalizedString("new-tab-page.favorite.url", value: "URL", comment: "URL field placeholder in the Add Favorite sheet")
+    public static let newTabPageFavoriteSaveFailed = NotLocalizedString("new-tab-page.favorite.save-failed", value: "Couldn't save favorite.", comment: "Error shown when saving a favorite fails")
+
     public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
     public static let newTabPageCustomizationAlwaysShowKeyboard = NotLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
@@ -2588,10 +2592,10 @@ public struct UserText {
 
     // MARK: - Duck.ai Terms of Service (unified toggle input footer)
 
-    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By tapping 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By clicking 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
     public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
     public static let duckAIAskButtonTitle = NotLocalizedString("aichat.termsOfService.ask.button", value: "Ask", comment: "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
-    public static let duckAITermsOfServiceCreateDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer.create", value: "DuckDuckGo anonymizes your chats. By tapping 'Create' you agree to our %@.", comment: "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceCreateDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer.create", value: "DuckDuckGo anonymizes your chats. By clicking 'Create' you agree to our %@.", comment: "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
     public static let duckAICreateButtonTitle = NotLocalizedString("aichat.termsOfService.create.button", value: "Create", comment: "Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)

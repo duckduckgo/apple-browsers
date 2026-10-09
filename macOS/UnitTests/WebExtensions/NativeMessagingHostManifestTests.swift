@@ -54,26 +54,9 @@ final class NativeMessagingHostManifestTests: XCTestCase {
         XCTAssertEqual(manifest.path, "/Applications/Bitwarden.app/Contents/MacOS/desktop_proxy")
         XCTAssertEqual(manifest.type, .stdio)
         XCTAssertEqual(manifest.allowedOrigins, ["chrome-extension://nngceckbapebfimnlniiiahkandclblb/"])
-        XCTAssertNil(manifest.allowedExtensions)
     }
 
-    func testWhenManifestIsFirefoxStyleThenAllowedExtensionsAreDecoded() throws {
-        let json = """
-        {
-            "name": "com.8bit.bitwarden",
-            "path": "/Applications/Bitwarden.app/Contents/MacOS/desktop_proxy",
-            "type": "stdio",
-            "allowed_extensions": ["{446900e4-71c2-419f-a6a7-df9c091e268b}"]
-        }
-        """
-
-        let manifest = try JSONDecoder().decode(NativeMessagingHostManifest.self, from: Data(json.utf8))
-
-        XCTAssertEqual(manifest.allowedExtensions, ["{446900e4-71c2-419f-a6a7-df9c091e268b}"])
-        XCTAssertNil(manifest.allowedOrigins)
-    }
-
-    func testWhenManifestListsNeitherOriginsNorExtensionsThenBothAreNil() throws {
+    func testWhenManifestListsNoOriginsThenAllowedOriginsIsNil() throws {
         let json = """
         { "name": "com.example.host", "path": "host", "type": "stdio" }
         """
@@ -81,7 +64,6 @@ final class NativeMessagingHostManifestTests: XCTestCase {
         let manifest = try JSONDecoder().decode(NativeMessagingHostManifest.self, from: Data(json.utf8))
 
         XCTAssertNil(manifest.allowedOrigins)
-        XCTAssertNil(manifest.allowedExtensions)
     }
 
     func testWhenPathIsRelativeThenExecutableResolvesNextToTheManifest() throws {
@@ -186,15 +168,74 @@ final class NativeMessagingHostManifestTests: XCTestCase {
         XCTAssertEqual(located.executable.path, executable.path)
     }
 
+    func testWhenTheNameIsValidThenTheHostIsLocated() throws {
+        let executable = try makeExecutable(named: "host", in: directories[0])
+        try writeManifest(name: "com.8bit.bitwarden", executable: executable, in: directories[0])
+
+        let located = try NativeMessagingHostManifestLocator.locate(name: "com.8bit.bitwarden",
+                                                                   searchDirectories: directories)
+
+        XCTAssertEqual(located.executable.path, executable.path)
+    }
+
+    func testWhenTheNameTraversesOutOfTheDirectoryThenItIsRejected() throws {
+        let nested = directories[0].appendingPathComponent("nested")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let executable = try makeExecutable(named: "host", in: directories[0])
+        try writeManifest(name: "escaped", executable: executable, in: directories[0])
+
+        // The file exists at `nested/../escaped.json`, so only the name check stops it.
+        assertInvalidName("../escaped", searchDirectories: [nested])
+    }
+
+    func testWhenTheNameHasPathSeparatorsOrUppercaseThenItIsRejected() throws {
+        let executable = try makeExecutable(named: "host", in: directories[0])
+        try writeManifest(name: "com.example.host", executable: executable, in: directories[0])
+
+        for name in ["com/example/host", "Com.Example.Host", "com.example.host/", "com..example", ".com", "com.", "", "com example"] {
+            assertInvalidName(name, searchDirectories: directories)
+        }
+    }
+
+    func testWhenTheManifestNameDiffersFromTheRequestedNameThenItIsRejected() throws {
+        let executable = try makeExecutable(named: "host", in: directories[0])
+        let manifest: [String: Any] = [
+            "name": "com.example.other",
+            "path": executable.path,
+            "type": "stdio",
+            "allowed_origins": ["chrome-extension://abcdefghijklmnopabcdefghijklmnop/"]
+        ]
+        try JSONSerialization.data(withJSONObject: manifest)
+            .write(to: directories[0].appendingPathComponent("com.example.host.json"))
+
+        XCTAssertThrowsError(try NativeMessagingHostManifestLocator.locate(name: "com.example.host",
+                                                                          searchDirectories: directories)) { error in
+            guard case NativeMessagingHostManifestLocator.LocatorError.notFound = error else {
+                return XCTFail("Expected notFound, got \(error)")
+            }
+        }
+    }
+
     func testWhenSearchDirectoriesAreOmittedThenTheBrowserDirectoriesAreSearched() {
         let directories = NativeMessagingHostManifestLocator.searchDirectories
 
         XCTAssertEqual(directories.first?.lastPathComponent, "NativeMessagingHosts")
         XCTAssertTrue(directories.contains { $0.path.contains("Application Support/DuckDuckGo/NativeMessagingHosts") })
         XCTAssertTrue(directories.contains { $0.path.contains("Google/Chrome") })
+        XCTAssertFalse(directories.contains { $0.path.contains("Mozilla") })
     }
 
     // MARK: - Helpers
+
+    private func assertInvalidName(_ name: String, searchDirectories: [URL], file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertThrowsError(try NativeMessagingHostManifestLocator.locate(name: name,
+                                                                          searchDirectories: searchDirectories),
+                             "\(name) should be rejected", file: file, line: line) { error in
+            guard case NativeMessagingHostManifestLocator.LocatorError.invalidName = error else {
+                return XCTFail("Expected invalidName for \(name), got \(error)", file: file, line: line)
+            }
+        }
+    }
 
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory

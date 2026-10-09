@@ -28,8 +28,9 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
     /// Keeps the open popover on the app's theme while it changes.
     private var popupAppearanceObservation: NSKeyValueObservation?
-    /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab.
-    private var popupSelectedTabCancellable: AnyCancellable?
+    /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab,
+    /// or when another browser window becomes active, as Chrome does.
+    private var popupDismissalCancellable: AnyCancellable?
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -54,29 +55,56 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         using configuration: WKWebExtension.WindowConfiguration,
         for context: WKWebExtensionContext
     ) async throws -> (any WKWebExtensionWindow)? {
-        let tabs = configuration.tabURLs.map {
-            Tab(content: .contentFromURL($0, source: .ui), webViewConfiguration: context.webViewConfiguration)
-        }
+        // Like Chrome, a popup window holds one page: further pages open as tabs in the last active regular window.
+        let isPopup = configuration.windowType == .popup
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
+        // Only the extension's own pages load with its web view configuration; websites get a tab of the
+        // window's kind, so a private window's websites use its own data store.
+        let tabs = configuration.tabURLs.map { url in
+            let isExtensionPage = url.scheme == context.baseURL.scheme
+            return Tab(content: .contentFromURL(url, source: .ui),
+                       webViewConfiguration: isExtensionPage ? context.webViewConfiguration : nil,
+                       burnerMode: isExtensionPage ? .regular : burnerMode)
+        }
+        // Looked up before the popup opens, since the popup becomes the last active window.
+        let regularWindowTabs = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         let tabCollectionViewModel = TabCollectionViewModel(
-            tabCollection: TabCollection(tabs: tabs, isPopup: configuration.windowType == .popup),
+            tabCollection: TabCollection(tabs: isPopup ? Array(tabs.prefix(1)) : tabs, isPopup: isPopup),
             burnerMode: burnerMode,
             windowControllersManager: windowControllersManager
         )
 
+        // WebKit reports a position or size the extension didn't specify as NaN, which means "use the default".
+        let frame = configuration.frame
         let mainWindow = windowControllersManager.openNewWindow(
             with: tabCollectionViewModel,
             burnerMode: burnerMode,
-            droppingPoint: configuration.frame.origin,
-            contentSize: configuration.frame.size,
+            droppingPoint: frame.origin.x.isNaN || frame.origin.y.isNaN ? nil : frame.origin,
+            contentSize: frame.size.width.isNaN || frame.size.height.isNaN ? nil : frame.size,
             showWindow: configuration.shouldBeFocused,
-            popUp: configuration.windowType == .popup,
+            popUp: isPopup,
             isMiniaturized: configuration.windowState == .minimized,
             isMaximized: configuration.windowState == .maximized,
             isFullscreen: configuration.windowState == .fullscreen
         )
 
-        try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
+        if isPopup, tabs.count > 1 {
+            let extraTabs = Array(tabs.dropFirst())
+            // Each private window has its own data store, so a private popup's extra pages get a new window sharing its store.
+            if !burnerMode.isBurner, let regularWindowTabs, !regularWindowTabs.isPopup, !regularWindowTabs.burnerMode.isBurner {
+                extraTabs.forEach { regularWindowTabs.append(tab: $0) }
+            } else {
+                windowControllersManager.openNewWindow(with: TabCollectionViewModel(tabCollection: TabCollection(tabs: extraTabs),
+                                                                                    burnerMode: burnerMode),
+                                                       burnerMode: burnerMode,
+                                                       showWindow: true)
+            }
+        }
+
+        // Like Chrome, an existing tab only moves into a regular window or an empty popup.
+        if !isPopup || tabs.isEmpty {
+            try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
+        }
 
         // swiftlint:disable:next force_cast
         return mainWindow?.windowController as! MainWindowController
@@ -137,18 +165,28 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         // WebKit's popover doesn't follow the app's theme on its own, so it takes the app's, also when it changes.
         popupAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.initial, .new]) { [weak popupPopover, weak popupWebView] app, _ in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 popupPopover?.appearance = app.effectiveAppearance
                 popupWebView?.appearance = app.effectiveAppearance
             }
         }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
 
-        popupSelectedTabCancellable = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        let selectedTabChange = (windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
             .$selectedTabViewModel
             .map { $0?.tab }
             .removeDuplicates(by: ===)
             .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()) ?? Empty().eraseToAnyPublisher()
+        // Only browser windows count, so the Web Inspector can open on the popup without closing it.
+        let otherBrowserWindowActivation = NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .compactMap { $0.object as? NSWindow }
+            .filter { [weak buttonWindow = button.window] window in
+                (window is MainWindow || window is PopUpWindow) && window !== buttonWindow
+            }
+            .map { _ in () }
+        popupDismissalCancellable = selectedTabChange.merge(with: otherBrowserWindowActivation)
             .first()
             .sink { _ in
                 action.closePopup()

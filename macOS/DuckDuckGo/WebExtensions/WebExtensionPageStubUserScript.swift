@@ -21,17 +21,18 @@ import UserScript
 import WebExtensions
 import WebKit
 
-/// Installs `WebExtensionAPIStubScript` in tab web views, so it reaches extension pages that the
-/// tab's own web view configuration hosts.
+/// Installs the third-party extension scripts (`WebExtensionAPICompatibilityScript` and
+/// `WebExtensionAPIStubScript`) in tab web views, so they reach extension pages that the tab's own
+/// web view configuration hosts.
 ///
-/// `WebExtensionManager` installs the stub script on the extension controller's web view
+/// `WebExtensionLoader` installs these scripts on the extension controller's web view
 /// configuration, which covers the pages WebKit creates for an extension: its background page,
 /// action popup, options page and the iframes inside them. A tab built from that configuration
 /// (a popup that pops out into a window, for instance) goes through the app's standard
-/// configuration, which replaces the user content controller, so the controller's script never
-/// runs there. Without the stubs, Bitwarden's pop-out hangs on the first API WebKit lacks.
+/// configuration, which replaces the user content controller, so the controller's scripts never
+/// run there. Without the stubs, Bitwarden's pop-out hangs on the first API WebKit lacks.
 ///
-/// The script runs in every frame of every tab, but returns right away unless the frame is an
+/// The scripts run in every frame of every tab, but return right away unless the frame is an
 /// extension page (`webkit-extension:`), so ordinary web content is untouched.
 @available(macOS 15.4, *)
 final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessageHandlerWithReply {
@@ -42,8 +43,9 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
         isInternalUser ? WebExtensionPageStubUserScript() : nil
     }
 
+    /// The same scripts, in the same order, as `WebExtensionLoader` installs on the controller.
     var source: String {
-        WebExtensionAPIStubScript.source
+        WebExtensionLoader.thirdPartyScriptSources.joined(separator: "\n")
     }
 
     let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
@@ -54,9 +56,9 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     /// DuckDuckGo uses for its own scripts would not be seen by the extension.
     let requiresRunInPageContentWorld: Bool = true
 
-    /// The stub script reports the unsupported APIs an extension touches through the first handler
-    /// and asks for the `chrome.idle` state through the second, which answers.
-    let messageNames: [String] = [WebExtensionAPIStubScript.compatibilityMessageHandlerName,
+    /// The scripts report the unsupported APIs an extension touches through the first handler
+    /// and ask for the `chrome.idle` state through the second, which answers.
+    let messageNames: [String] = [WebExtensionAPICompatibilityScript.messageHandlerName,
                                   WebExtensionAPIStubScript.idleMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {

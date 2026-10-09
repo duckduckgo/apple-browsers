@@ -21,8 +21,7 @@ import WebKit
 /// Talks to a native messaging host on behalf of an extension.
 ///
 /// An extension reaches a companion app through `runtime.sendNativeMessage` for one message,
-/// or through `runtime.connectNative` for a port that stays open. Bitwarden needs the port:
-/// its biometric unlock waits for an answer from `com.8bit.bitwarden`.
+/// or through `runtime.connectNative` for a port that stays open.
 ///
 /// Only macOS implements this. A host is a separate executable, and iOS has no such process.
 @available(macOS 15.4, iOS 18.4, *)

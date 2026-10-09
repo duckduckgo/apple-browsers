@@ -94,9 +94,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage)
             && duckAiNativeStorageHandler != nil
             && duckAiNativeStorageHandler?.setupSucceeded != false
+        let homepageAiChatsProvider = HomepageAiChatsProvider(
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: sourceProvider.featureFlagger)
+        )
         let aiChatMessageHandler = AIChatMessageHandler(
             featureFlagger: sourceProvider.featureFlagger,
-            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
@@ -106,7 +110,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             statisticsLoader: StatisticsLoader.shared,
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
@@ -147,6 +152,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         } else {
             duckAiNativeStorageUserScript = nil
         }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig

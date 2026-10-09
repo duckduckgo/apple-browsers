@@ -109,12 +109,8 @@ public extension WKWebExtension {
         WebExtensionMetadata(manifest: manifest).type
     }
 
-    /// Whether the extension is a third-party one that needs the Chrome-compatibility shims
-    /// (API stubs, background page conversion, native messaging pass-through, toolbar button,
-    /// keyboard shortcuts).
-    ///
-    /// This is the single source of truth for those shims: they apply only when the extension is
-    /// not one of ours, so DuckDuckGo's own extensions behave as they did before the shims existed.
+    /// Whether the extension is a third-party one, which gets the Chrome-compatibility behavior
+    /// such as native messaging pass-through. Extensions that declare `browser_specific_settings.duckduckgo` are ours.
     var needsChromeCompatibility: Bool {
         !declaresDuckDuckGoSettings(inManifest: manifest)
     }

@@ -1,0 +1,24 @@
+{
+    "aichat_leftover-images_removed_macos": {
+        "description": "Fires after the one-time removal of Duck.ai chat images that WebKit left on disk after earlier clears. Runs on the first successful full Duck.ai clear; tells us how many leftover files users still have, and when the cleanup can be removed.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "files_removed",
+                "type": "string",
+                "description": "Number of leftover image files removed, bucketed.",
+                "enum": ["0", "1-10", "11-50", "51-200", "201+"]
+            }
+        ]
+    },
+    "aichat_leftover-images_removal_failed_macos": {
+        "description": "Fires when the one-time removal of leftover Duck.ai chat images could not remove some files. The clear itself still succeeded; the removal is retried on the next full Duck.ai clear.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    }
+}

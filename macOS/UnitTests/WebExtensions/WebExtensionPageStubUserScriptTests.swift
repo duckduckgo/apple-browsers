@@ -35,8 +35,10 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
         super.tearDown()
     }
 
-    func testThatSourceIsTheStubScript() {
-        XCTAssertEqual(script.source, WebExtensionAPIStubScript.source)
+    func testThatSourceIsTheThirdPartyScriptsInLoaderOrder() {
+        XCTAssertEqual(script.source, WebExtensionLoader.thirdPartyScriptSources.joined(separator: "\n"))
+        XCTAssertTrue(script.source.contains(WebExtensionAPICompatibilityScript.source))
+        XCTAssertTrue(script.source.contains(WebExtensionAPIStubScript.source))
     }
 
     func testThatScriptIsInjectedAtDocumentStart() {
@@ -51,8 +53,9 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
         XCTAssertTrue(script.requiresRunInPageContentWorld)
     }
 
-    func testThatScriptListensForCompatibilityReports() {
-        XCTAssertEqual(script.messageNames, [WebExtensionAPIStubScript.compatibilityMessageHandlerName])
+    func testThatScriptListensForCompatibilityReportsAndIdleRequests() {
+        XCTAssertEqual(script.messageNames, [WebExtensionAPICompatibilityScript.messageHandlerName,
+                                             WebExtensionAPIStubScript.idleMessageHandlerName])
     }
 
     func testThatScriptIsCreatedForInternalUsers() {

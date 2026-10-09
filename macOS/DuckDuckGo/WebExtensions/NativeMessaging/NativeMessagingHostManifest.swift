@@ -20,13 +20,13 @@ import Foundation
 import os.log
 import WebExtensions
 
-/// A native messaging host manifest, as Chrome and Firefox define it.
+/// A native messaging host manifest, as Chrome defines it.
 ///
-/// The companion app writes one file per browser. Bitwarden's reads:
 /// ```
-/// { "name": "com.8bit.bitwarden",
-///   "path": "/Applications/Bitwarden.app/Contents/MacOS/desktop_proxy",
-///   "type": "stdio", … }
+/// { "name": "com.example.host",
+///   "path": "/Applications/Example.app/Contents/MacOS/host",
+///   "type": "stdio",
+///   "allowed_origins": ["chrome-extension://<id>/"] }
 /// ```
 struct NativeMessagingHostManifest: Decodable {
 
@@ -38,18 +38,14 @@ struct NativeMessagingHostManifest: Decodable {
     let path: String
     let type: HostType
 
-    /// Chrome lists the extensions it trusts as `chrome-extension://<id>/` origins.
+    /// The extensions the host trusts, as `chrome-extension://<id>/` origins.
     let allowedOrigins: [String]?
-
-    /// Firefox lists them by extension identifier.
-    let allowedExtensions: [String]?
 
     enum CodingKeys: String, CodingKey {
         case name
         case path
         case type
         case allowedOrigins = "allowed_origins"
-        case allowedExtensions = "allowed_extensions"
     }
 
     /// The executable, which the manifest may name by a relative path.
@@ -64,16 +60,15 @@ struct NativeMessagingHostManifest: Decodable {
 enum NativeMessagingHostManifestLocator {
 
     enum LocatorError: Error {
+        case invalidName(name: String)
         case notFound(name: String)
         case executableMissing(path: String)
     }
 
     /// Directories that hold host manifests, in search order.
     ///
-    /// Our own directory comes first. The others follow because a companion app writes one
-    /// file per browser it knows, and no app writes a DuckDuckGo file yet. Bitwarden, for
-    /// example, writes a Chrome file and a Mozilla file. Without the fallbacks the user must
-    /// copy a file by hand.
+    /// Our own directory comes first. The other Chromium browsers' directories follow, because
+    /// a companion app writes one file per browser it knows and may not write one for us.
     static var searchDirectories: [URL] {
         let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
         guard let applicationSupport = library?.appendingPathComponent("Application Support") else {
@@ -87,7 +82,6 @@ enum NativeMessagingHostManifestLocator {
             "Microsoft Edge",
             "BraveSoftware/Brave-Browser",
             "Vivaldi",
-            "Mozilla",
         ]
 
         return relativePaths.map {
@@ -97,7 +91,13 @@ enum NativeMessagingHostManifestLocator {
         }
     }
 
+    /// Chrome's rule for host names: lowercase letters, digits and underscores in dot-separated components.
+    private static let validNamePattern = "^[a-z0-9_]+(\\.[a-z0-9_]+)*$"
+
     /// Returns the manifest of the named host, and the executable it points to.
+    ///
+    /// The name must follow Chrome's rule, so it cannot reach outside the search directories,
+    /// and the manifest found must carry the same name.
     ///
     /// - Parameters:
     ///   - name: The host name, which is also the manifest's file name without the extension.
@@ -105,6 +105,10 @@ enum NativeMessagingHostManifestLocator {
     ///     own manifest directories, and tests pass a directory of their own.
     static func locate(name: String,
                        searchDirectories: [URL] = Self.searchDirectories) throws -> (manifest: NativeMessagingHostManifest, executable: URL) {
+        guard name.range(of: validNamePattern, options: .regularExpression) != nil else {
+            throw LocatorError.invalidName(name: name)
+        }
+
         for directory in searchDirectories {
             let manifestURL = directory.appendingPathComponent("\(name).json")
             guard FileManager.default.fileExists(atPath: manifestURL.path) else { continue }
@@ -112,6 +116,9 @@ enum NativeMessagingHostManifestLocator {
             do {
                 let data = try Data(contentsOf: manifestURL)
                 let manifest = try JSONDecoder().decode(NativeMessagingHostManifest.self, from: data)
+                guard manifest.name == name else {
+                    throw LocatorError.invalidName(name: manifest.name)
+                }
                 let executable = manifest.executableURL(relativeTo: manifestURL)
 
                 guard FileManager.default.isExecutableFile(atPath: executable.path) else {

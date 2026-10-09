@@ -18,93 +18,26 @@
 
 import Foundation
 
-/// JavaScript injected at document start into every page an extension owns, ahead of the
-/// extension's own scripts (see the user script `WebExtensionManager` installs).
+/// JavaScript that defines placeholders for the `chrome.*` APIs WebKit doesn't implement, so an
+/// extension built for Chrome keeps running when it uses them instead of throwing.
 ///
-/// WebKit implements a subset of the `chrome.*` extension API. In a background page these
-/// namespaces are undefined even when the matching permission is declared *and* granted:
-/// `notifications`, `offscreen`, `downloads`, `idle`, `management`, `privacy`, `browsingData`,
-/// `topSites`, `sidePanel`. Sub-namespaces and events on namespaces that *do* exist can be
-/// missing too — `storage.managed` and `webNavigation.onCreatedNavigationTarget`, for instance.
+/// A placeholder accepts any call and does nothing: it answers `undefined`, or an empty value where
+/// callers read from the result, like `storage.managed.get()`. Only missing names are filled, so the
+/// APIs WebKit implements are left alone. The script does nothing in our own extensions, and it
+/// reports calls to placeholders to the API compatibility log.
 ///
-/// Chrome builds routinely touch those APIs at the top level of their background script — the
-/// Bitwarden extension calls `chrome.notifications.onClicked.addListener(...)` while wiring up its
-/// listeners — and a missing namespace makes that a `TypeError` on the very first statement, which
-/// aborts the whole startup: no listeners are registered and the extension never initializes.
+/// Some namespaces are implemented rather than placeholders:
+/// - `chrome.idle`, on macOS: the state (`locked`, `idle` or `active`) comes from the app through
+///   `idleMessageHandlerName`, and `onStateChanged` polls while it has listeners.
+/// - `chrome.offscreen`: `createDocument` loads the document in a hidden iframe, so the offscreen
+///   page's `runtime.onMessage` listeners run and messages from the background page reach them.
+/// - `chrome.privacy`: the `services` settings are shaped like Chrome's `ChromeSetting` and persisted
+///   in `storage.local` under one reserved key. Nothing in the app reads them.
 ///
-/// Defining inert stubs for the missing pieces lets that top-level code run to completion, so the
-/// listeners for the APIs WebKit *does* implement get registered and the extension comes up. The
-/// stubbed calls themselves do nothing; the feature behind them stays unavailable either way, the
-/// difference is whether the rest of the extension works. Most stubs are generic and resolve to
-/// `undefined`; where callers read straight off the result — `storage.managed.get()` — the stub is
-/// shaped to answer with the empty value Chrome would return.
-///
-/// `chrome.offscreen` goes one step further and actually works. Bitwarden copies to the clipboard by
-/// opening an offscreen document, messaging it and closing it again, so a no-op `createDocument`
-/// turns "copy password" into silence. An extension iframe inside the background page is itself an
-/// extension page with the full `chrome.*` API, so the offscreen page's `runtime.onMessage`
-/// listeners run and messages sent from the background page reach it — the stub therefore creates a
-/// hidden iframe pointing at the requested document. Whether a clipboard write from that hidden
-/// frame succeeds under WebKit is not measured yet; this turns a silent no-op into a real attempt,
-/// and the outcome shows up in the extension's own logs.
-///
-/// `chrome.permissions` is the mirror image of a missing namespace: WebKit defines it, but it
-/// validates permission names against the set it implements and *throws* for every other name —
-/// `permissions.contains({permissions: ["privacy"]})` fails with "'privacy' is not a valid
-/// permission" where Chrome simply answers `false`. Extensions probe their optional permissions at
-/// startup and do not wrap the probe in a try block: Bitwarden's popup calls
-/// `permissionsGranted(["privacy"])` during Angular bootstrap, and the throw takes the whole popup
-/// down. The script therefore wraps `contains`, `request` and `remove` so they answer the Chrome
-/// way — see makePermissionsMethod below — while leaving `getAll` and the events alone.
-///
-/// `chrome.privacy` is the one missing namespace that has to *answer*, not just exist. Bitwarden's
-/// "Make Bitwarden your default password manager" toggle turns off the browser's own password saving
-/// and autofill through `privacy.services.passwordSavingEnabled` and its two autofill siblings, and it
-/// guards every call with `permissions.contains({permissions: ["privacy"]})`, falling back to
-/// `permissions.request` from the click handler. `privacy` is an optional permission in its manifest;
-/// WebKit rejects a grant or request for a name it does not implement, so both
-/// calls answer `false` and the toggle fails with an error dialog. Since this script is what actually
-/// provides `privacy`, the permissions wrappers treat it as a *virtual* permission that is always
-/// granted: they strip it from the descriptor before asking the host and answer for the rest. The
-/// `privacy.services` settings are then shaped like Chrome's `ChromeSetting` — `get` answers
-/// `{value, levelOfControl}` and reports `controlled_by_this_extension` once the extension has set a
-/// value — and persisted in `storage.local` under one reserved key, because the popup is a fresh page on
-/// every open and re-reads them to draw its checkbox, and the background page reads them too. Nothing
-/// in the app reads these values; they record the extension's choice so it reads back consistently.
-///
-/// `chrome.idle` works too, on macOS. Bitwarden's "lock vault on idle / on system lock" timeouts
-/// register `idle.onStateChanged` and set `idle.setDetectionInterval`, and with inert stubs they never
-/// fire. The state itself — `locked`, `idle` or `active` — is only known to the app, so `queryState`
-/// asks it through a script message with a reply (`idleMessageHandlerName`); `onStateChanged` polls
-/// `queryState` while it has listeners and fires them when the answer changes. A page whose host has
-/// no such handler always hears `active`. `idle` is a *virtual* permission, like `privacy`, for the
-/// same reason: WebKit drops the grant. `getAutoLockDelay` answers `0`, which stands for "unknown".
-///
-/// Chrome also exposes enum-like constant objects on its namespaces — `scripting.ExecutionWorld`,
-/// `tabs.TAB_ID_NONE` and the `windows.WINDOW_ID_*` values — and extension code dereferences them
-/// right where it passes them, as call arguments. WebKit implements the calls but not the
-/// constants, so the dereference throws before the call is ever made: Bitwarden injects its autofill
-/// scripts with `world: chrome.scripting.ExecutionWorld.ISOLATED`, which WebKit would have accepted
-/// as the string `"ISOLATED"`, and instead of injecting anything the statement fails with a
-/// `TypeError`. Defining the missing constants with Chrome's documented values makes those call
-/// sites work as written. The list holds only the constants the supported extensions actually read,
-/// rather than everything Chrome documents.
-///
-/// One behavior of the host is worth calling out, established by measurement on macOS 26.6.2:
-/// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
-///   discards once JavaScript stops referencing them, taking any property we added with them: an
-///   event stub installed on `chrome.webNavigation` vanished within about half a second. The script
-///   therefore parks every object it decorates in a retention array on `globalThis`, which kept the
-///   stubs alive for the lifetime of the background page.
-///
-/// Note that stubs are only installed for names that are actually missing, so a future WebKit that
-/// implements one of them wins automatically.
-///
-/// The script also tells the browser which unsupported APIs an extension touches, for the API
-/// compatibility log (see `WebExtensionAPICompatibilityLog`): a call to one of its stubs, a permission
-/// the host does not implement, and the errors the page raises or logs (`error`, `unhandledrejection`,
-/// `console.error`, `console.warn`), whose text the browser only classifies and never keeps. The
-/// reports are plain strings posted to `compatibilityMessageHandlerName`.
+/// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
+/// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
+/// are defined where missing. `chrome.permissions` counts `privacy` and `idle` as granted, since the
+/// script provides them and WebKit rejects the names.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -114,10 +47,6 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `chrome.idle.queryState` asks for the idle state. It is
     /// optional: a page with no handler of this name hears `active`.
     public static let idleMessageHandlerName = "ddgWebExtensionIdle"
-
-    /// Name of the script message handler the page reports unsupported API use to. It is optional:
-    /// a page with no handler of this name reports nothing.
-    public static let compatibilityMessageHandlerName = "ddgWebExtensionAPICompatibility"
 
     public static let source = """
     // Generated by DuckDuckGo. Defines inert stubs for chrome.* APIs that WebKit does not
@@ -253,143 +182,30 @@ public enum WebExtensionAPIStubScript {
 
         retain(api);
 
-        // Reports unsupported API use to the browser, which logs the kind and the API path only.
-        // "stubbed" and "missing" carry the API path; "error" carries an error message that the
-        // browser classifies and discards. Everything here is best effort: it never throws, never
-        // prevents an event's default action and stays quiet when the host has no such handler.
-        var compatibilityHandlerName = "\(Self.compatibilityMessageHandlerName)";
-        var compatibilityReports = Object.create(null);
-        var apiReportCount = 0;
-        var errorReportCount = 0;
-        var maximumAPIReports = 200;
-        // Errors get a budget of their own, so a page that logs a lot of errors cannot use up the
-        // reports for stubbed and missing APIs.
-        var maximumErrorReports = 50;
-        var maximumErrorMessageLength = 300;
-        var isReporting = false;
-
-        // Only text shaped like an error about an API leaves the page; everything else stays here.
-        // The browser classifies these further (and is the one place that decides what is logged).
-        var reportableErrorFragments = ["is not an object (evaluating '", "is not a function. (In '", "Invalid call to ",
-            "Can't find variable: ", " is not defined."];
-
-        function isReportableErrorMessage(message) {
-            return reportableErrorFragments.some(function(fragment) {
-                return message.indexOf(fragment) !== -1;
-            });
-        }
-
-        function postCompatibilityReport(payload, dedupeKey) {
-            var isError = payload.kind === "error";
-            if (isReporting || compatibilityReports[dedupeKey]
-                || (isError ? errorReportCount >= maximumErrorReports : apiReportCount >= maximumAPIReports)) {
-                return;
-            }
-            isReporting = true;
+        // Reports a stub call through `WebExtensionAPICompatibilityScript`, which runs first in the same
+        // pages. Without it, nothing is reported.
+        function reportAPI(kind, path) {
             try {
-                var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
-                var handler = handlers && handlers[compatibilityHandlerName];
-                if (handler && typeof handler.postMessage === "function") {
-                    compatibilityReports[dedupeKey] = true;
-                    if (isError) {
-                        errorReportCount += 1;
-                    } else {
-                        apiReportCount += 1;
-                    }
-                    handler.postMessage(payload);
+                var report = globalThis["\(WebExtensionAPICompatibilityScript.reportFunctionName)"];
+                if (typeof path === "string" && typeof report === "function") {
+                    report(kind, path);
                 }
             } catch (error) {
                 // Reporting must never disturb the page.
-            } finally {
-                isReporting = false;
             }
         }
-
-        function reportAPI(kind, path) {
-            if (typeof path === "string") {
-                postCompatibilityReport({ kind: kind, api: path }, kind + " " + path);
-            }
-        }
-
-        function reportErrorMessage(message) {
-            if (typeof message === "string" && isReportableErrorMessage(message)) {
-                var trimmed = message.slice(0, maximumErrorMessageLength);
-                postCompatibilityReport({ kind: "error", message: trimmed }, "error " + trimmed);
-            }
-        }
-
-        function messageOf(value) {
-            try {
-                if (typeof value === "string") {
-                    return value;
-                }
-                if (value && typeof value.message === "string") {
-                    return value.message;
-                }
-            } catch (error) {
-                // A value that throws on access carries no usable message.
-            }
-            return undefined;
-        }
-
-        function installCompatibilityHooks() {
-            var installedMarker = "__ddgAPICompatibilityHooksInstalled";
-            try {
-                if (globalThis[installedMarker] === true || typeof globalThis.addEventListener !== "function") {
-                    return;
-                }
-                Object.defineProperty(globalThis, installedMarker, {
-                    value: true,
-                    writable: false,
-                    enumerable: false,
-                    configurable: true
-                });
-            } catch (error) {
-                return;
-            }
-
-            globalThis.addEventListener("error", function(event) {
-                reportErrorMessage(messageOf(event && event.error) || messageOf(event && event.message));
-            });
-            globalThis.addEventListener("unhandledrejection", function(event) {
-                reportErrorMessage(messageOf(event && event.reason));
-            });
-
-            // The wrapper is what Web Inspector shows as the top frame of a logged message, instead of
-            // the caller. That is accepted: wrapping is the only way to see what Angular's
-            // ErrorHandler prints, which is how Bitwarden surfaces caught errors.
-            ["error", "warn"].forEach(function(methodName) {
-                try {
-                    var original = globalThis.console && globalThis.console[methodName];
-                    if (typeof original !== "function") {
-                        return;
-                    }
-                    globalThis.console[methodName] = function() {
-                        try {
-                            for (var index = 0; index < Math.min(arguments.length, 5); index++) {
-                                reportErrorMessage(messageOf(arguments[index]));
-                            }
-                        } catch (error) {
-                            // Never let reporting stop the page from logging.
-                        }
-                        return original.apply(this, arguments);
-                    };
-                } catch (error) {
-                    // A frozen console is left as it is.
-                }
-            });
-        }
-
-        installCompatibilityHooks();
 
         // Hands a trailing Chrome-style callback its value once, out of band, so a throwing
-        // callback cannot take down the caller.
+        // callback cannot take down the caller. Its error is thrown again from a timer, where it
+        // surfaces as an uncaught error the page and the compatibility log can see.
         function invokeCallback(callback, value) {
             Promise.resolve().then(function() {
                 try {
                     callback(value);
                 } catch (error) {
-                    console.info("[DuckDuckGo] Stubbed API callback threw: " + error);
+                    setTimeout(function() {
+                        throw error;
+                    }, 0);
                 }
             });
         }
@@ -404,6 +220,17 @@ public enum WebExtensionAPIStubScript {
                 }
                 return Promise.resolve(value);
             };
+        }
+
+        // Hands a trailing callback the value the promise settles with, and returns the promise, the
+        // way Chrome's dual-style APIs behave. The callback stays silent if the promise rejects.
+        function answerBothStyles(promise, callback) {
+            if (typeof callback === "function") {
+                promise.then(function(value) {
+                    invokeCallback(callback, value);
+                }, function() {});
+            }
+            return promise;
         }
 
         // `path`, when given, names the API for the compatibility log: registering a listener counts
@@ -426,10 +253,11 @@ public enum WebExtensionAPIStubScript {
         // A callable, infinitely nestable placeholder: `chrome.privacy.services.passwordSavingEnabled.get()`
         // resolves through it without ever throwing, and any `onSomething` property is an event object.
         // `path` is the stub's API path, reported when it is called; reading a property is not a use.
-        function makeStub(path) {
+        // A namespace (`isNamespace`) is an object, like Chrome's, so only its members can be called.
+        function makeStub(path, isNamespace) {
             var children = Object.create(null);
 
-            return new Proxy(function() {}, {
+            return new Proxy(isNamespace ? {} : function() {}, {
                 get: function(target, property) {
                     if (property === "then") {
                         // Never look like a thenable: awaiting or resolving a namespace must not hang.
@@ -448,7 +276,7 @@ public enum WebExtensionAPIStubScript {
                     if (typeof property !== "string") {
                         return undefined;
                     }
-                    if (property === "call" || property === "apply" || property === "bind") {
+                    if (!isNamespace && (property === "call" || property === "apply" || property === "bind")) {
                         // `stub.call(...)` is a call of the stub itself: the function's own methods must
                         // not extend the API path, or `chrome.downloads.download.call(...)` would be
                         // reported as `chrome.downloads.download.call`.
@@ -461,7 +289,10 @@ public enum WebExtensionAPIStubScript {
                     return children[property];
                 },
                 apply: function(target, thisArgument, argumentsList) {
-                    reportAPI("stubbed", path);
+                    // `JSON.stringify` and `valueOf()` call these on any object; they are not API use.
+                    if (!/\\.(toJSON|valueOf)$/.test(path)) {
+                        reportAPI("stubbed", path);
+                    }
                     // Support both API styles: hand `undefined` to a trailing callback, and return a
                     // promise for callers that await instead.
                     var callback = argumentsList.length > 0 ? argumentsList[argumentsList.length - 1] : undefined;
@@ -702,17 +533,6 @@ public enum WebExtensionAPIStubScript {
             };
         }
 
-        // Hands a trailing callback the value the promise settles with, and returns the promise, the
-        // way Chrome's dual-style APIs behave. The callback stays silent if the promise rejects.
-        function answerBothStyles(promise, callback) {
-            if (typeof callback === "function") {
-                promise.then(function(value) {
-                    invokeCallback(callback, value);
-                }, function() {});
-            }
-            return promise;
-        }
-
         // One `ChromeSetting`. Nothing stored means the browser default: enabled, and the extension
         // could take control of it. Once the extension sets a value it controls the setting, which
         // is what Bitwarden checks for — `controlled_by_this_extension` with `value === false`.
@@ -931,11 +751,8 @@ public enum WebExtensionAPIStubScript {
             }
         }
 
-        // WebKit checks every name handed to `chrome.permissions` against the permissions it
-        // implements and rejects the whole call for one it does not recognize, where Chrome answers
-        // `false`. The wrappers below ask the host for the descriptor as given first — so a host that
-        // knows every name behaves exactly as before — and only translate when that call comes back
-        // with the validation error, which they recognize by message since no error code is exposed.
+        // `chrome.permissions` methods that answer like Chrome for permission names WebKit doesn't
+        // know, where WebKit rejects the whole call. Calls WebKit accepts are left as they are.
         var invalidPermissionPattern = /is not a valid permission|invalid.*permission/i;
         var reportedUnknownPermissions = Object.create(null);
         var wrappedMarkerName = "__ddgWrapped";
@@ -998,8 +815,7 @@ public enum WebExtensionAPIStubScript {
                 + "' permission; answering the way Chrome would instead of throwing");
         }
 
-        // Always hands back a promise, so a host that throws synchronously and one that rejects take
-        // the same path through the wrapper.
+        // A promise either way, whether the host throws or rejects.
         function callPermissionsMethod(method, owner, descriptor) {
             try {
                 return Promise.resolve(method.call(owner, descriptor));
@@ -1008,9 +824,7 @@ public enum WebExtensionAPIStubScript {
             }
         }
 
-        // Asks about a single descriptor, reporting whether the host recognized it rather than
-        // letting one unrecognized name take the surrounding query down. Errors that are not the
-        // validation error are real failures and travel on untouched.
+        // Asks the host about one descriptor, and whether it knew the names in it. Other errors pass through.
         function probePermissionsDescriptor(method, owner, descriptor, name) {
             return callPermissionsMethod(method, owner, descriptor).then(function(result) {
                 return { isKnown: true, isSatisfied: result === true };
@@ -1038,9 +852,7 @@ public enum WebExtensionAPIStubScript {
             return Promise.all(probes);
         }
 
-        // `contains` and `request` cannot honestly answer `true` for a name the host does not know —
-        // it can neither hold nor grant such a permission — so an unknown name makes the whole answer
-        // `false`. `remove` has nothing to remove for one, so it ignores it and reports on the rest.
+        // An unknown name makes `contains` and `request` answer `false`; `remove` ignores it.
         function combinePermissionOutcomes(outcomes, unknownNameFails) {
             var isSatisfied = true;
             for (var index = 0; index < outcomes.length; index++) {
@@ -1055,10 +867,10 @@ public enum WebExtensionAPIStubScript {
             return isSatisfied;
         }
 
-        // The wrapper binds its owner, so destructured calls — `const {contains} = chrome.permissions`
-        // — keep working, and it answers both API styles the way the method it replaces did.
-        // Virtual permissions are taken out first; whatever remains goes to the host, and the answer
-        // for the remainder is the answer for the whole descriptor.
+        // A method bound to its owner, so destructured calls keep working, answering through a promise
+        // and a trailing callback like the method it replaces. Virtual permissions are taken out
+        // first; whatever remains goes to the host, and the answer for the remainder is the answer
+        // for the whole descriptor.
         function makePermissionsMethod(owner, methodName, unknownNameFails, answerWithoutHost) {
             var original = owner[methodName];
             if (typeof original !== "function" || original[wrappedMarkerName] === true) {
@@ -1085,8 +897,7 @@ public enum WebExtensionAPIStubScript {
                     promise.then(function(value) {
                         invokeCallback(callback, value);
                     }, function() {
-                        // A real failure is reported through the returned promise; Chrome's callback
-                        // form stays silent for it, so there is nothing to hand the callback here.
+                        // A real failure only rejects the promise, as in Chrome.
                     });
                 }
                 return promise;
@@ -1105,6 +916,7 @@ public enum WebExtensionAPIStubScript {
             return wrapper;
         }
 
+
         var stubbedNamespaces = [];
         var stubbedMembers = [];
         var wrappedNamespaces = [];
@@ -1114,7 +926,7 @@ public enum WebExtensionAPIStubScript {
                 if (api[namespace.name] !== undefined) {
                     return;
                 }
-                if (define(api, namespace.name, makeMember(namespace, namespace.name))) {
+                if (define(api, namespace.name, namespace.kind ? makeMember(namespace, namespace.name) : makeStub(namespace.name, true))) {
                     stubbedNamespaces.push(namespace.name);
                 }
             } catch (error) {
@@ -1144,8 +956,7 @@ public enum WebExtensionAPIStubScript {
             }
         });
 
-        // `chrome.permissions` exists; only the three methods that validate names are replaced, so
-        // `getAll` and the `onAdded`/`onRemoved` events stay exactly as the host defined them.
+        // Only the methods that validate names are replaced; `getAll` and the events stay WebKit's.
         try {
             var permissions = api.permissions;
             if (permissions !== undefined && permissions !== null) {
@@ -1165,12 +976,10 @@ public enum WebExtensionAPIStubScript {
             console.info("[DuckDuckGo] Could not wrap chrome.permissions: " + error);
         }
 
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0
-            || wrappedNamespaces.length > 0) {
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], wrapped: ["
-                + wrappedNamespaces.join(", ") + "]");
+                + "], wrapped: [" + wrappedNamespaces.join(", ") + "]");
         }
     })();
 

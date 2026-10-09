@@ -137,8 +137,7 @@ extension WebExtensionManager {
                 return ["error": error.localizedDescription]
             }
 
-            // A message we cannot parse belongs to a third-party extension, not to us. Such an
-            // extension expects its own native host, so pass the message on unchanged.
+            // A message we cannot parse comes from a third-party extension that expects its own native host.
             Logger.webExtensions.debug("📬 Message is not ours, so it goes to the native host: \(error.localizedDescription)")
             return try await sendToNativeHost(message,
                                               applicationIdentifier: applicationIdentifier,
@@ -199,17 +198,11 @@ extension WebExtensionManager {
 
     /// Hands a new native messaging port to the handler.
     ///
-    /// This is the completion-handler form of the delegate method on purpose. An extension
-    /// usually posts its first message in the same JavaScript turn as `connectNative()`, and
-    /// WebKit drops a port message that arrives while the port has no message handler. The
-    /// `async` form of this method runs its body in a new task, so it returns to WebKit before
-    /// any handler is in place, and that first message is lost. A native host that waits for a
-    /// hello from the extension never answers anything that follows when the hello is lost.
-    ///
-    /// WebKit calls this form synchronously on the main thread, so a message handler installed
-    /// here is in place before WebKit processes the next message from the extension. Messages
-    /// that arrive while the host process is still starting are kept in order and replayed once
-    /// the handler has installed its own.
+    /// Uses the completion-handler form of the delegate method so a message handler is installed
+    /// synchronously, before WebKit processes the extension's next message. WebKit drops a port
+    /// message that arrives while the port has no handler, and an extension usually posts its first
+    /// message in the same turn as `connectNative()`. Messages that arrive while the host process
+    /// is starting are kept in order and replayed once the handler has installed its own.
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        connectUsing port: WKWebExtension.MessagePort,
                                        for extensionContext: WKWebExtensionContext,
@@ -242,8 +235,7 @@ extension WebExtensionManager {
                 try await nativeMessagingHandler.connect(port,
                                                          applicationIdentifier: port.applicationIdentifier,
                                                          for: extensionContext)
-                // The handler has installed its own message handler by now. Nothing can slip in
-                // between the two lines below, because both run in the same main actor turn.
+                // The handler has installed its own message handler, and nothing can slip in before the replay.
                 let replayed = pending.drain()
                 for (message, error) in replayed {
                     port.messageHandler?(message, error)

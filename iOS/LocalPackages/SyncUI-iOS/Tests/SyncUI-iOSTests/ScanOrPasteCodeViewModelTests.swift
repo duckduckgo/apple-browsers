@@ -27,8 +27,12 @@ final class ScanOrPasteCodeViewModelTests {
 
     private let delegate = MockScanOrPasteCodeViewModelDelegate()
 
-    private func makeSUT(source: CodeCollectionSource = .connect) -> ScanOrPasteCodeViewModel {
-        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: "code", qrCodeString: "qr", source: source)
+    private func makeSUT(source: CodeCollectionSource = .connect,
+                         requestsCameraPermissionOnAppear: Bool = false) -> ScanOrPasteCodeViewModel {
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: "code",
+                                           qrCodeString: "qr",
+                                           source: source,
+                                           requestsCameraPermissionOnAppear: requestsCameraPermissionOnAppear)
         sut.delegate = delegate
         return sut
     }
@@ -45,6 +49,91 @@ final class ScanOrPasteCodeViewModelTests {
         // THEN
         #expect(delegate.requestCameraPermissionModels.count == 1)
         #expect(delegate.requestCameraPermissionModels.first === sut)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Asking for camera permission up front: intro animation completed doesn't request it again", .timeLimit(.minutes(1)))
+    func introAnimationCompletedDoesNotRequestCameraPermissionWhenAskedUpFront() {
+        let sut = makeSUT(requestsCameraPermissionOnAppear: true)
+
+        sut.introAnimationCompleted()
+
+        #expect(delegate.requestCameraPermissionModels.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Asking for camera permission up front: scan tab appearing requests it", .timeLimit(.minutes(1)))
+    func scanTabAppearedRequestsCameraPermissionWhenAskedUpFront() {
+        let sut = makeSUT(requestsCameraPermissionOnAppear: true)
+
+        sut.scanTabAppeared()
+
+        #expect(delegate.requestCameraPermissionModels.count == 1)
+        #expect(delegate.requestCameraPermissionModels.first === sut)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Asking for camera permission up front: returning to the foreground checks it again", .timeLimit(.minutes(1)))
+    func appWillEnterForegroundRequestsCameraPermissionWhenAskedUpFront() {
+        let sut = makeSUT(requestsCameraPermissionOnAppear: true)
+
+        sut.appWillEnterForeground()
+
+        #expect(delegate.requestCameraPermissionModels.count == 1)
+        #expect(delegate.requestCameraPermissionModels.first === sut)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Asking for camera permission after the intro: appearing and returning to the foreground don't request it", .timeLimit(.minutes(1)))
+    func scanTabAppearedAndForegroundDoNotRequestCameraPermissionByDefault() {
+        let sut = makeSUT()
+
+        sut.scanTabAppeared()
+        sut.appWillEnterForeground()
+
+        #expect(delegate.requestCameraPermissionModels.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Intro animation plays only once camera access is granted when asking up front",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (false, ScanOrPasteCodeViewModel.VideoPermission.unknown, true),
+            (false, .denied, true),
+            (false, .authorised, true),
+            (true, .unknown, false),
+            (true, .denied, false),
+            (true, .authorised, true)
+          ])
+    func canPlayIntroAnimation(requestsUpFront: Bool,
+                               permission: ScanOrPasteCodeViewModel.VideoPermission,
+                               expected: Bool) {
+        let sut = makeSUT(requestsCameraPermissionOnAppear: requestsUpFront)
+
+        sut.videoPermission = permission
+
+        #expect(sut.canPlayIntroAnimation == expected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Scan instructions hide only when camera access is denied and asked up front",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (false, ScanOrPasteCodeViewModel.VideoPermission.unknown, true),
+            (false, .denied, true),
+            (false, .authorised, true),
+            (true, .unknown, true),
+            (true, .denied, false),
+            (true, .authorised, true)
+          ])
+    func showsScanInstructions(requestsUpFront: Bool,
+                               permission: ScanOrPasteCodeViewModel.VideoPermission,
+                               expected: Bool) {
+        let sut = makeSUT(requestsCameraPermissionOnAppear: requestsUpFront)
+
+        sut.videoPermission = permission
+
+        #expect(sut.showsScanInstructions == expected)
     }
 
     @available(iOS 16, macOS 13, *)

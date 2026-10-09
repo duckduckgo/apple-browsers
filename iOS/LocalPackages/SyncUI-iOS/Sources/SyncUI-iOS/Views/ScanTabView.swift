@@ -38,16 +38,18 @@ struct ScanTabView: View {
                 cameraContainer
             }
 
-            if showIntroAnimation {
+            if isIntroAnimationVisible {
                 introAnimation
             }
 
-            instructions
-                .background(
-                    GeometryReader { geometry in
-                        Color.clear.preference(key: InstructionsHeightKey.self, value: geometry.size.height)
-                    }
-                )
+            if model.showsScanInstructions {
+                instructions
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear.preference(key: InstructionsHeightKey.self, value: geometry.size.height)
+                        }
+                    )
+            }
         }
         .background(Color(designSystemColor: .surfaceSecondary))
         .clipShape(RoundedRectangle(cornerRadius: 34))
@@ -57,11 +59,19 @@ struct ScanTabView: View {
             model.resetScanningGate()
             model.prepareCameraForIntroIfAuthorized()
             model.delegate?.scanQRCodeScreenShown()
+            model.scanTabAppeared()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            model.appWillEnterForeground()
         }
     }
 
+    private var isIntroAnimationVisible: Bool {
+        showIntroAnimation && model.canPlayIntroAnimation
+    }
+
     private var shouldRenderCamera: Bool {
-        !showIntroAnimation || model.videoPermission == .authorised
+        !isIntroAnimationVisible || model.videoPermission == .authorised
     }
 
     private var introAnimation: some View {
@@ -125,7 +135,7 @@ struct ScanTabView: View {
             }
         }
         .overlay {
-            if isScanningActive && !showIntroAnimation {
+            if isScanningActive && !isIntroAnimationVisible {
                 QRScannerOverlay(topInset: instructionsHeight) {
                     model.scanningCanBegin()
                 }
@@ -156,23 +166,47 @@ struct ScanTabView: View {
 
 private struct CameraPermissionDeniedView: View {
 
+    private struct Content {
+        let imageName: String
+        let title: String
+        let message: String
+        let messageColor: DesignSystemColor
+        let buttonTitle: String
+
+        static let legacy = Content(imageName: "SyncCameraPermission",
+                                    title: UserText.cameraPermissionRequired,
+                                    message: UserText.cameraPermissionInstructions,
+                                    messageColor: .textPrimary,
+                                    buttonTitle: UserText.cameraGoToSettingsButton)
+
+        static let improved = Content(imageName: "SyncCameraUnavailable",
+                                      title: UserText.simplifiedCameraDeniedTitle,
+                                      message: UserText.simplifiedCameraDeniedMessage,
+                                      messageColor: .textSecondary,
+                                      buttonTitle: UserText.simplifiedCameraDeniedButton)
+    }
+
     @ObservedObject var model: ScanOrPasteCodeViewModel
+
+    private var content: Content {
+        model.requestsCameraPermissionOnAppear ? .improved : .legacy
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            Image(rebrandable: "SyncCameraPermission", bundle: .module)
+            Image(rebrandable: content.imageName, bundle: .module)
                 .padding(.bottom, 20)
 
-            Text(UserText.cameraPermissionRequired)
+            Text(content.title)
                 .daxTitle3()
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.bottom, 8)
 
-            Text(UserText.cameraPermissionInstructions)
+            Text(content.message)
                 .daxSubheadRegular()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .foregroundColor(Color(designSystemColor: content.messageColor))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -181,7 +215,7 @@ private struct CameraPermissionDeniedView: View {
             } label: {
                 HStack {
                     Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)
-                    Text(UserText.cameraGoToSettingsButton)
+                    Text(content.buttonTitle)
                 }
             }
             .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
@@ -311,10 +345,14 @@ private struct QRCornerBrackets: Shape {
 #if DEBUG
 private func scanTabPreviewModel(
     permission: ScanOrPasteCodeViewModel.VideoPermission,
-    showCamera: Bool
+    showCamera: Bool,
+    requestsCameraPermissionOnAppear: Bool = false
 ) -> ScanOrPasteCodeViewModel {
     let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
-    let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+    let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode,
+                                         qrCodeString: sampleCode,
+                                         source: .connect,
+                                         requestsCameraPermissionOnAppear: requestsCameraPermissionOnAppear)
     model.videoPermission = permission
     model.showCamera = showCamera
     return model
@@ -342,6 +380,12 @@ private struct ScanTabPreview: View {
 
 #Preview("Permission Denied") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false))
+        .environment(\.colorScheme, .dark)
+}
+
+#Preview("Permission Denied - Improved Pairing Flow") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false, requestsCameraPermissionOnAppear: true),
+                   showIntroAnimation: true)
         .environment(\.colorScheme, .dark)
 }
 

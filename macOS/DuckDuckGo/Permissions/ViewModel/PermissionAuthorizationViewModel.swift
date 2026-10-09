@@ -105,17 +105,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     func send(action: Action) {
         switch action {
         case .onAppear:
-            viewState.title = makeTitle()
-            if case .decision(var decision) = viewState.content {
-                decision.learnMore = permissionType.learnMoreURL.map {
-                    PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
-                }
-                viewState.content = .decision(decision)
-            }
-            if query?.opensOnSystemPermissionStep == true, pendingDecision == nil {
-                isResumingStoredDecision = true
-                allow(.alwaysAllow)
-            }
+            onAppear()
 
         case .allowThisVisit:
             allow(.allowThisVisit)
@@ -138,6 +128,22 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         case .learnMore:
             guard let url = viewState.decision?.learnMore?.url else { return }
             openURL(url)
+        }
+    }
+
+    // MARK: - Appearance
+
+    private func onAppear() {
+        viewState.title = makeTitle()
+        if case .decision(var decision) = viewState.content {
+            decision.learnMore = permissionType.learnMoreURL.map {
+                PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+            }
+            viewState.content = .decision(decision)
+        }
+        if query?.opensOnSystemPermissionStep == true, pendingDecision == nil {
+            isResumingStoredDecision = true
+            allow(.alwaysAllow)
         }
     }
 

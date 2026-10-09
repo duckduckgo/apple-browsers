@@ -339,7 +339,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: - RMF
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        isRemoteMessageSurfacePresented && !onboardingCoordinator.isPresentingDialog && hasAppearedRemoteMessage(withID: messageID)
+        isRemoteMessageSurfacePresented && !newTabPageViewModel.isOnboarding && hasAppearedRemoteMessage(withID: messageID)
     }
 
     func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
@@ -369,6 +369,7 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 }
 
 extension NewTabPageViewController: NewTabPageOnboardingHosting {
+    var isPresentingOnboardingDialog: Bool { onboardingCoordinator.isPresentingDialog }
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
         // The transparent Duck.ai completion dialog needs the legacy NTP background beneath it.
         if hidden && dialog == .contextual {

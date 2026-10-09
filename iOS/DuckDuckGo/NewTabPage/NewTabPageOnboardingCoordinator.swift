@@ -51,9 +51,14 @@ final class NewTabPageOnboardingCoordinator {
     private var didHideBarsForChatPathVisitSiteDialog = false
     private var hiddenContentDialog: NewTabPageOnboardingDialogKind?
     private var didHideLogo = false
-    private var didSuppressUnifiedInputContentOverlay = false
+    private var presentedSpec: DaxDialogs.HomeScreenSpec?
+    private var isCompletionPending = false
 
-    var isPresentingDialog: Bool { hostingController != nil }
+    var isPresentingDialog: Bool { hiddenContentDialog != nil }
+
+    var isAwaitingChatPathCompletion: Bool {
+        daxDialogsManager.chatPathPhase == .trackerToEOJ && daxDialogsManager.isAIChatEnabled && hostingController == nil
+    }
 
     private var chromeDelegate: BrowserChromeDelegate? { page?.chromeDelegate }
     private var parent: UIViewController? { page?.parent }
@@ -75,7 +80,7 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     func pageDidAppear() {
-        guard !isPresentingDialog else { return }
+        guard !isShowingDuckAICompletionDialog, !isCompletionPending else { return }
         showNextDaxDialog()
     }
 
@@ -90,7 +95,8 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     private func setLogoHidden(_ hidden: Bool) {
-        guard didHideLogo != hidden else { return }
+        // Only restore a logo this coordinator hid; repeated hide requests must reach the shared view.
+        guard hidden || didHideLogo else { return }
         didHideLogo = hidden
         page?.setLogoHidden(hidden)
     }
@@ -107,8 +113,6 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     private func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
-        guard didSuppressUnifiedInputContentOverlay != suppressed else { return }
-        didSuppressUnifiedInputContentOverlay = suppressed
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(suppressed)
     }
 
@@ -138,7 +142,11 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
+        dismissHostingController(didFinishNTPOnboarding: false)
+        isCompletionPending = true
+        hideOnboardingContent(for: .duckAICompletion)
         setLogoHidden(true)
+        setUnifiedInputContentOverlaySuppressed(true)
         chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
 
         let generation = presentationGeneration
@@ -146,13 +154,16 @@ final class NewTabPageOnboardingCoordinator {
             guard let self else { return }
             guard self.presentationGeneration == generation, self.page?.parent != nil else {
                 // A newer dialog owns visibility if it has already replaced this request.
-                if !self.isPresentingDialog {
+                if self.hostingController == nil && self.presentationGeneration == generation {
+                    self.isCompletionPending = false
+                    self.setUnifiedInputContentOverlaySuppressed(false)
                     self.restoreOnboardingContentIfNeeded()
                     self.setLogoHidden(false)
                     self.page?.view.alpha = 1
                 }
                 return
             }
+            self.isCompletionPending = false
             self.showDuckAIOnboardingCompletionDialog(message: message)
         }
     }
@@ -203,18 +214,18 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     private func presentSubscriptionPromotionIfPending() {
-        guard daxDialogsManager.subscriptionPromotionPending else { return }
+        guard daxDialogsManager.subscriptionPromotionPending else {
+            dismissHostingController(didFinishNTPOnboarding: true)
+            return
+        }
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
     private func showDuckAIOnboardingCompletionDialog(message: String) {
-        dismissHostingController(didFinishNTPOnboarding: false)
-        restoreOnboardingContentIfNeeded()
-
         guard let mainVC = parent as? MainViewController,
               let coordinator = mainVC.unifiedToggleInputCoordinator,
               coordinator.isOmnibarSession else {
-            isShowingDuckAICompletionDialog = false
+            dismissHostingController(didFinishNTPOnboarding: true)
             setLogoHidden(false)
             page?.view.alpha = 1
             return
@@ -229,7 +240,7 @@ final class NewTabPageOnboardingCoordinator {
     //     bar is active.  dismissHostingController re-enables the overlay on teardown.
     //   • A single copy in the page's superview (contentContainer's plain UIView) avoids the
     //     nested-UIHostingController warning from adding _UIHostingView into another hosting controller's view.
-    // viewWillDisappear ensures cleanup on any navigation or tab switch.
+    // pageWillDisappear clears the completion dialog; detach also removes ordinary dialogs.
     // The onDismiss closure mirrors the legacy path's subscription-promo check.
     private func showDuckAIOnboardingCompletionDialogInUTI(
         mainVC: MainViewController,
@@ -238,11 +249,8 @@ final class NewTabPageOnboardingCoordinator {
     ) {
         guard let page else { return }
         isShowingDuckAICompletionDialog = true
-        // The NTP view is about to become visible (page.view.alpha = 1 below) but
-        // finishOnboarding() has already set isOnboarding = false, so SwiftUI
-        // would render the Dax logo on the next frame.  Hide the NTP logo so it doesn't flash through
-        // the transparent completion dialog; the focused UTI logo is covered by the overlay suppression
-        // below (it lives inside the unifiedInputContentContainer).
+        // Hide the logo before restoring the page alpha. The completion background is
+        // transparent on the legacy page; redesigned modules were hidden before input activation.
         setLogoHidden(true)
         page.view.alpha = 1
         // Mirror showNextDaxDialogNew: suppress the UTI content overlay so the NTP
@@ -309,8 +317,8 @@ final class NewTabPageOnboardingCoordinator {
             }
         }
 
-        // NTP copy — overlays the NTP view, visible after the omnibar closes.
-        // Parented to mainVC (not self) because the legacy page is a UIHostingController<NewTabPageView>:
+        // Overlays the NTP view, visible after the omnibar closes.
+        // Parented to mainVC because the legacy page is a UIHostingController<NewTabPageView>:
         // adding one _UIHostingView as a subview of another UIHostingController.view is
         // unsupported and triggers a UIKit warning. the page's superview is the content
         // container's plain UIView, so it is safe to host into.
@@ -339,22 +347,19 @@ final class NewTabPageOnboardingCoordinator {
 
     private func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
         guard let page else { return }
-        dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
-
-        guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
-            // When the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
-            // is about to fire, it drives its own overlay state.  Un-suppressing here while the
-            // UTI is active from the premature beginEditing would cause a visual flash of the
-            // NTP Dax logo before the completion dialog appears.
-            let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ
-                && daxDialogsManager.isAIChatEnabled == true
-            if !chatPathCompletionPending {
-                restoreOnboardingContentIfNeeded()
-                setLogoHidden(false)
-                setUnifiedInputContentOverlaySuppressed(false)
-            }
+        let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+        if let nextSpec, nextSpec == presentedSpec, hostingController != nil {
+            setUnifiedInputContentOverlaySuppressed(true)
             return
         }
+        dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
+
+        guard let spec = nextSpec else {
+            restoreContentAfterDialogSequenceIfNeeded()
+            return
+        }
+        presentedSpec = spec
+        hideOnboardingContent(for: .contextual)
         setUnifiedInputContentOverlaySuppressed(true)
 
         // The EoJ ("High five!") dialog surfaces with an active address bar in UTI mode so the user
@@ -428,8 +433,14 @@ final class NewTabPageOnboardingCoordinator {
         ])
 
         hostingController.didMove(toParent: page)
+    }
 
-        hideOnboardingContent(for: .contextual)
+    private func restoreContentAfterDialogSequenceIfNeeded() {
+        // The chat-path completion owns visibility during the queued input handoff.
+        guard !isAwaitingChatPathCompletion else { return }
+        restoreOnboardingContentIfNeeded()
+        setLogoHidden(false)
+        setUnifiedInputContentOverlaySuppressed(false)
     }
 
     private func makeDialog(for spec: DaxDialogs.HomeScreenSpec,
@@ -553,9 +564,16 @@ final class NewTabPageOnboardingCoordinator {
                                           updateUnifiedInputContentOverlaySuppression: Bool = true,
                                           animateBars: Bool = true) {
         let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
-        if let hostingController {
-            // Idle lookups must not invalidate a completion queued for the next run loop.
+        if isCompletionPending {
+            page?.view.alpha = 1
+        }
+        if hostingController != nil || isCompletionPending {
+            // Cancel callbacks only when a hosted or queued presentation is actually removed.
             presentationGeneration += 1
+        }
+        isCompletionPending = false
+        presentedSpec = nil
+        if let hostingController {
             hostingController.willMove(toParent: nil)
             hostingController.view.removeFromSuperview()
             hostingController.removeFromParent()

@@ -52,6 +52,8 @@ protocol NewTabPageEscapeHatchPresenting {
 /// Contextual onboarding and Duck.ai completion dialogs hosted over the New Tab Page.
 protocol NewTabPageOnboardingPresenting {
 
+    var isPresentingOnboardingDialog: Bool { get }
+
     func showNextDaxDialog()
 
     /// Advances the dialog sequence at the end of linear onboarding.

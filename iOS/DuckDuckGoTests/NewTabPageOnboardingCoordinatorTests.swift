@@ -95,10 +95,46 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         dialogs.specToReturn = .initial
         page.showNextDaxDialog()
 
+        dialogs.nextHomeScreenMessageNewCalled = false
         coordinator.pageDidAppear()
 
+        XCTAssertTrue(dialogs.nextHomeScreenMessageNewCalled)
         XCTAssertEqual(factory.specs, [.initial])
         XCTAssertEqual(page.children.count, 1)
+    }
+
+    func testWhenPromotionIsNoLongerDueOnReappearanceThenItIsRemoved() {
+        for onboardingFlow: OnboardingFlowType in [.default, .duckAI] {
+            flow.currentOnboardingFlow = onboardingFlow
+            dialogs.subscriptionPromotionPending = true
+            dialogs.specToReturn = .subscriptionPromotion
+            page.showNextDaxDialog()
+            XCTAssertTrue(page.isPresentingOnboardingDialog)
+
+            // Purchasing in the modal makes the promotion ineligible on return.
+            dialogs.subscriptionPromotionPending = false
+            dialogs.specToReturn = nil
+            coordinator.pageDidAppear()
+
+            XCTAssertFalse(page.isPresentingOnboardingDialog)
+            XCTAssertTrue(page.children.isEmpty)
+            XCTAssertTrue(page.canAnimateSearchInput)
+        }
+    }
+
+    func testWhenNextDialogChangesOnReappearanceThenOldCallbacksCannotDismissItsReplacement() {
+        dialogs.specToReturn = .initial
+        page.showNextDaxDialog()
+        let oldCompletion = factory.onCompletion
+        dialogs.specToReturn = .subsequent
+
+        coordinator.pageDidAppear()
+        oldCompletion?(false)
+
+        XCTAssertEqual(factory.specs, [.initial, .subsequent])
+        XCTAssertEqual(page.children.count, 1)
+        XCTAssertTrue(page.isPresentingOnboardingDialog)
+        XCTAssertFalse(dialogs.dismissCalled)
     }
 
     func testWhenPageDetachesThenDialogIsRemovedAndCanBePresentedOnReturn() {
@@ -175,6 +211,43 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.isPresentingDialog)
     }
 
+    func testFinalDuckAIInputActivationCannotCaptureRestingPageContent() {
+        let input = MockOmniBar()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        chrome.omniBar = input
+        coordinator = NewTabPageOnboardingCoordinator(newTabDialogFactory: factory,
+                                                      daxDialogsManager: dialogs,
+                                                      onboardingFlowProvider: flow,
+                                                      floatingUIManager: FloatingUIManager(isFloatingUIFeatureEnabled: false),
+                                                      tutorialSettings: tutorial,
+                                                      unifiedToggleInputFeature: InputFeature(isAvailable: true))
+        page = RedesignedNewTabPageViewController(blocks: [], onboardingCoordinator: coordinator)
+        page.loadViewIfNeeded()
+        page.chromeDelegate = chrome
+        dialogs.specToReturn = .final
+        var didBeginEditing = false
+        input.onBeginEditing = { [unowned self] in
+            didBeginEditing = true
+            XCTAssertFalse(page.canAnimateSearchInput)
+            XCTAssertTrue(page.isPresentingOnboardingDialog)
+            XCTAssertTrue(chrome.isUnifiedInputContentOverlaySuppressed)
+        }
+
+        page.showNextDaxDialog()
+
+        XCTAssertTrue(didBeginEditing)
+    }
+
+    func testIdlePageClearsOverlaySuppressionLeftByAnotherOnboardingPresenter() {
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        chrome.isUnifiedInputContentOverlaySuppressed = true
+        page.chromeDelegate = chrome
+
+        coordinator.pageDidAppear()
+
+        XCTAssertFalse(chrome.isUnifiedInputContentOverlaySuppressed)
+    }
+
     func testWhenNoDialogIsDueThenExistingLogoVisibilityIsPreservedWithoutSurfaceNotifications() {
         let welcome = NewTabPageSwiftUIBlock(id: .welcome, rootView: Text("Welcome"))
         page = RedesignedNewTabPageViewController(blocks: [welcome], onboardingCoordinator: coordinator)
@@ -198,7 +271,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
     }
 
     private struct InputFeature: UnifiedToggleInputFeatureProviding {
-        var isAvailable: Bool { false }
+        var isAvailable: Bool = false
         var isToggleHiddenOnDuckAITab: Bool { false }
         var isAttachmentPasteEnabled: Bool { false }
     }

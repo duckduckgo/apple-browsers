@@ -42,7 +42,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     var hasInlineSearchInput: Bool { true }
 
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator?
-    private var isOnboardingContentHidden: Bool { contentContainerView.isHidden }
+    var isPresentingOnboardingDialog: Bool { onboardingCoordinator?.isPresentingDialog == true }
 
     private let blocks: [any NewTabPageBlock]
     private let favoritesModel: FavoritesViewModel?
@@ -191,9 +191,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         isRemoteMessageSurfacePresented = true
         notifyRemoteMessageSurfaceChanged()
 
-        // The page is attached with alpha 0 ahead of a contextual dialog so content cannot flash
-        // for a frame first, and is expected to restore it itself.
-        view.alpha = 1
+        // MainViewController pre-hides the chat-path handoff before its queued completion request.
+        // The coordinator restores alpha after hiding the modules and preparing the dialog.
+        if onboardingCoordinator?.isAwaitingChatPathCompletion != true {
+            view.alpha = 1
+        }
         guard isEntranceAnimationPending else { return }
         isEntranceAnimationPending = false
         let animator = UIViewPropertyAnimator(duration: Metrics.entranceDuration, curve: .easeOut) { [weak self] in
@@ -229,7 +231,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        isRemoteMessageSurfacePresented && !isOnboardingContentHidden && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
+        isRemoteMessageSurfacePresented && !isPresentingOnboardingDialog && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
     }
 
     private func notifyRemoteMessageSurfaceChanged() {
@@ -341,12 +343,12 @@ extension RedesignedNewTabPageViewController: HomeScreenTransitionSource {
     var rootContainerView: UIView { view }
 }
 
-/// The logo is not hosted on this page; favorites participate in the existing content handoff.
+/// The welcome block and favorites participate in the content handoff.
 extension RedesignedNewTabPageViewController: NewTabPageContentHandoff {
 
     var isShowingLogo: Bool { false }
 
-    var isShowingFavorites: Bool { restingContentIsFavorites && !areFavoritesHidden && !isOnboardingContentHidden }
+    var isShowingFavorites: Bool { restingContentIsFavorites && !areFavoritesHidden && !isPresentingOnboardingDialog }
 
     var restingContentIsLogo: Bool { false }
 
@@ -387,7 +389,8 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
         // Keep the scroll position and block sizes intact beneath the dialog.
         contentContainerView.isHidden = hidden
-        view.accessibilityElementsHidden = inputEditingLayout != nil && !hidden
+        view.accessibilityElementsHidden = inputEditingLayout != nil && !isPresentingOnboardingDialog
+        delegate?.newTabPageDidChangeOnboardingPresentation(self)
         notifyRemoteMessageSurfaceChanged()
     }
 
@@ -414,7 +417,7 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
 
 extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
-    var canAnimateSearchInput: Bool { !isOnboardingContentHidden }
+    var canAnimateSearchInput: Bool { !isPresentingOnboardingDialog }
 
     var searchInputView: UIView? {
         blocks.first { $0.id == .searchInput }?.viewController.view
@@ -451,7 +454,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
             restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
-        view.accessibilityElementsHidden = isEditing && !isOnboardingContentHidden
+        view.accessibilityElementsHidden = isEditing && !isPresentingOnboardingDialog
         searchInputView?.isUserInteractionEnabled = !isEditing
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1

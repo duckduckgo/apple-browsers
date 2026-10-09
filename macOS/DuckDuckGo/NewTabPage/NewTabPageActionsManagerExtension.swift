@@ -116,6 +116,7 @@ extension NewTabPageActionsManager {
             suggestionContainer: suggestionContainer,
             searchPreferences: NSApp.delegateTyped.searchPreferences
         )
+        let termsOfServiceStore = DuckAiTermsOfServiceStore()
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
@@ -125,7 +126,8 @@ extension NewTabPageActionsManager {
                 privacyConfig: contentBlocking.privacyConfigurationManager,
                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            ))
+            )),
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
         )
         let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
@@ -139,6 +141,7 @@ extension NewTabPageActionsManager {
                 NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
+            termsOfServiceStore: termsOfServiceStore,
             attachmentPrivacyDisclosureStore: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
             duckAiLauncherPromo: DuckAiLauncherPromo(
                 featureFlagger: featureFlagger,

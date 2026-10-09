@@ -1065,6 +1065,88 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(events, [false, true])
     }
 
+    // MARK: - Terms of Service
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFeatureOffThenFalse() throws {
+        let terms = makeTermsOfService(featureEnabled: false)
+
+        XCTAssertFalse(try makeProvider(terms).requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFeatureOnAndNotAcceptedThenTrue() throws {
+        let terms = makeTermsOfService(featureEnabled: true)
+
+        XCTAssertTrue(try makeProvider(terms).requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFeatureOnAndAcceptedThenFalse() throws {
+        let terms = makeTermsOfService(featureEnabled: true)
+        terms.store.recordWebReport()
+
+        XCTAssertFalse(try makeProvider(terms).requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsFalseOnceAccepted() throws {
+        let terms = makeTermsOfService(featureEnabled: true)
+        let provider = try makeProvider(terms)
+
+        let accepted = expectation(description: "requiresAiTermsAcceptance turns false")
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink {
+            events.append($0)
+            if !$0 { accepted.fulfill() }
+        }
+
+        terms.store.recordAcceptedInNativeInput()
+
+        wait(for: [accepted], timeout: 1)
+        cancellable.cancel()
+        XCTAssertEqual(events, [true, false])
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsOnFlaggerUpdate() throws {
+        let terms = makeTermsOfService(featureEnabled: false)
+        let provider = try makeProvider(terms)
+
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+
+        terms.featureFlagger.featuresStub = ["aiChatNativeTermsOfService": true]
+        terms.featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    private struct TermsOfServiceFixture {
+        let featureFlagger: MockFeatureFlagger
+        let store: DuckAiTermsOfServiceStore
+        let notificationCenter: NotificationCenter
+    }
+
+    private func makeTermsOfService(featureEnabled: Bool) -> TermsOfServiceFixture {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNativeTermsOfService": featureEnabled]
+        let notificationCenter = NotificationCenter()
+        let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: notificationCenter)
+        return TermsOfServiceFixture(featureFlagger: featureFlagger, store: store, notificationCenter: notificationCenter)
+    }
+
+    @MainActor
+    private func makeProvider(_ terms: TermsOfServiceFixture) throws -> NewTabPageOmnibarConfigProvider {
+        NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(),
+                                        aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+                                        featureFlagger: terms.featureFlagger,
+                                        searchPreferences: makeSearchPreferences(),
+                                        termsOfServiceStore: terms.store,
+                                        notificationCenter: terms.notificationCenter)
+    }
+
 }
 
 // MARK: - Mocks

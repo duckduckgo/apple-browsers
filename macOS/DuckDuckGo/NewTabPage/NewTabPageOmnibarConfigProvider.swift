@@ -99,6 +99,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let notificationCenter: NotificationCenter
     private let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring?
     private let duckAiLauncherPromo: DuckAiLauncherPromo?
     private let userTierProvider: () -> AIChatUserTier
@@ -121,6 +123,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+         notificationCenter: NotificationCenter = .default,
          attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring? = nil,
          duckAiLauncherPromo: DuckAiLauncherPromo? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
@@ -134,6 +138,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
+        self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.notificationCenter = notificationCenter
         self.attachmentPrivacyDisclosureStore = attachmentPrivacyDisclosureStore
         self.duckAiLauncherPromo = duckAiLauncherPromo
         self.userTierProvider = userTierProvider
@@ -624,6 +630,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }
             .prepend(isSearchSuggestionDeletionEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var requiresAiTermsAcceptance: Bool {
+        termsOfServiceDisclaimer.isRequired
+    }
+
+    /// The store posts on every acceptance, so open NTPs drop the disclaimer wherever the user accepted.
+    /// The chats observer records acceptance off the main thread, hence the hop.
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .merge(with: notificationCenter.publisher(for: .duckAiTermsOfServiceDidChange)
+                .receive(on: DispatchQueue.main)
+                .map { _ in () })
+            .compactMap { [weak self] in self?.requiresAiTermsAcceptance }
+            .prepend(requiresAiTermsAcceptance)
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

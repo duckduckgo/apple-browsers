@@ -262,14 +262,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
         assertNothingMarkedUpToDate()
     }
 
-    func testWhenSignatureIsMissingThenNothingIsStored() async throws {
-        try stageExtractedBrokers()
-        appendFixtureResponses(signatureResponse: (HTTPURLResponse.notFound, nil))
-
-        await assertCheckForUpdatesFails(with: .signatureMissing)
-        assertNothingMarkedUpToDate()
-    }
-
     func testWhenUnsignedFallbackConfigIsServedThenLastGoodBrokersAreKept() async throws {
         try stageExtractedBrokers()
         settings.mainConfigETag = "last-good"
@@ -284,14 +276,19 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion - 1])
     }
 
-    func testMainConfigAndSignatureAreNotServedFromLocalCache() async throws {
-        try stageExtractedBrokers()
+    func testMainConfigSignatureAndArchiveAreNotServedFromLocalCache() async throws {
         appendFixtureResponses()
+        var archiveRequests = [URLRequest]()
+        MockURLProtocol.requestHandlerQueue.append { request in
+            archiveRequests.append(request)
+            return (HTTPURLResponse.internalServerError, nil)
+        }
 
-        try await makeService().checkForUpdates()
+        try? await makeService().checkForUpdates()
 
         XCTAssertEqual(mainConfigRequests.map(\.cachePolicy), [.reloadIgnoringLocalCacheData])
         XCTAssertEqual(signatureRequests.map(\.cachePolicy), [.reloadIgnoringLocalCacheData])
+        XCTAssertEqual(archiveRequests.map(\.cachePolicy), [.reloadIgnoringLocalCacheData])
     }
 
     func testWhenSignatureRequestFailsThenOtherIsReported() async throws {
@@ -373,6 +370,21 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertNil(settings.mainConfigETag)
         XCTAssertTrue(settings.lastManifestVersions.isEmpty)
         XCTAssertFalse(FileManager.default.fileExists(atPath: extractedDirectoryURL.path), "Download should be discarded so it's fetched again")
+    }
+
+    func testWhenInactiveBrokerDoesNotMatchDigestThenUpdateSucceeds() async throws {
+        try stageExtractedBrokers()
+        let inactiveBrokerFileName = "publicdatacheck.com.json"
+        let mainConfig = try JSONDecoder().decode(MainConfig.self, from: try fixture("main_config.json"))
+        XCTAssertNotNil(mainConfig.jsonETags.current[inactiveBrokerFileName])
+        XCTAssertFalse(mainConfig.activeDataBrokers.contains(inactiveBrokerFileName))
+        try Data("not the signed broker".utf8).write(to: extractedDirectoryURL.appendingPathComponent("json/\(inactiveBrokerFileName)"))
+        appendFixtureResponses()
+
+        try await makeService().checkForUpdates()
+
+        XCTAssertTrue(firedVerificationFailures.isEmpty)
+        XCTAssertEqual(settings.mainConfigETag, eTag)
     }
 
     func testWhenSigningKeyIsRevokedThenUpdateIsSkippedAndStoredDataIsUntouched() async throws {

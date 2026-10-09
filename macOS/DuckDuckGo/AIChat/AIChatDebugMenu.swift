@@ -76,9 +76,6 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
 
-            NSMenuItem(title: "Reset Terms of Service Acceptance", action: #selector(resetTermsOfServiceAcceptance))
-                .targetting(self)
-
             NSMenuItem.separator()
 
             usageWarningsMenuItem
@@ -325,11 +322,6 @@ final class AIChatDebugMenu: NSMenu {
 
     @objc func resetToggleAnimation() {
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
-    }
-
-    /// Native only. Chats or duck.ai's own record count as acceptance too, so clear Duck.ai data as well.
-    @objc func resetTermsOfServiceAcceptance() {
-        DuckAiTermsOfServiceStore(keyValueStore: UserDefaults.standard).reset()
     }
 
     @objc func toggleStorageServer() {

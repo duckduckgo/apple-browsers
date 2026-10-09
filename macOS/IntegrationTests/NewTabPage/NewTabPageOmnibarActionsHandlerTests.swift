@@ -23,6 +23,7 @@ import AIChat
 import Common
 import FoundationExtensions
 import Combine
+import PrivacyConfig
 
 final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
@@ -33,7 +34,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     private var tab: Tab!
     private var window: NSWindow!
     private var termsUserDefaults: UserDefaults!
-    private var isNativeTermsOfServiceEnabled = true
+    private var featureFlagger: MockFeatureFlagger!
 
     private var firedPixels: [String] = []
 
@@ -41,7 +42,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     override func setUp() {
         autoreleasepool {
             firedPixels = []
-            isNativeTermsOfServiceEnabled = true
+            featureFlagger = MockFeatureFlagger(featuresStub: ["aiChatNativeTermsOfService": true])
             termsUserDefaults = UserDefaults(suiteName: String(describing: Self.self))
             termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
             promptHandler = AIChatPromptHandler.shared
@@ -58,8 +59,10 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                     nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler,
                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: Application.appDelegate.featureFlagger)
                 )),
-                termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults, notificationCenter: NotificationCenter()),
-                isNativeTermsOfServiceEnabled: { [weak self] in self?.isNativeTermsOfServiceEnabled ?? false },
+                termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+                    featureFlagger: featureFlagger,
+                    store: DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults, notificationCenter: NotificationCenter())
+                ),
                 isShiftPressed: { false },
                 isCommandPressed: { false },
                 firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
@@ -77,6 +80,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             tabsPreferences = nil
             termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
             termsUserDefaults = nil
+            featureFlagger = nil
             handler = nil
             tab = nil
             window?.close()
@@ -150,7 +154,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
                                                            autoSubmit: true,
                                                            modelId: "gpt-5.2",
-                                                           reasoningEffort: .low)
+                                                           reasoningEffort: .low).withTermsAccepted(false)
         XCTAssertEqual(prompt, expectedPrompt)
     }
 
@@ -197,22 +201,20 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSubmitAIChatWithoutAcceptingTerms_ThenPromptOmitsTermsAccepted() {
+    func testWhenSubmitAIChatWithoutAcceptingTerms_ThenPromptIsNotMarkedAsSentWithAsk() {
         submitChat(aiTermsAccepted: false)
 
-        let prompt = promptHandler.consumeData()
-        XCTAssertNotNil(prompt)
-        XCTAssertNil(prompt?.termsAccepted)
+        XCTAssertEqual(promptHandler.consumeData()?.termsAccepted, false)
         XCTAssertFalse(termsStore.hasAccepted)
     }
 
     @MainActor
+    /// The bridge drops the marker while the feature is off, so only the record matters here.
     func testWhenSubmitAIChatAcceptingTermsWithFeatureOff_ThenNothingIsAccepted() {
-        isNativeTermsOfServiceEnabled = false
+        featureFlagger.featuresStub = ["aiChatNativeTermsOfService": false]
 
         submitChat(aiTermsAccepted: true)
 
-        XCTAssertNil(promptHandler.consumeData()?.termsAccepted)
         XCTAssertFalse(termsStore.hasAccepted)
     }
 

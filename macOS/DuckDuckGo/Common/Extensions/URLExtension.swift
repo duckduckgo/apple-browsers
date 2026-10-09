@@ -692,10 +692,6 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
     }
 
-    static var duckAiPrivacyTerms: URL {
-        URL(string: "\(base)/duckai/privacy-terms")!
-    }
-
     static var hideAIGeneratedImagesLearnMore: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results")!
     }

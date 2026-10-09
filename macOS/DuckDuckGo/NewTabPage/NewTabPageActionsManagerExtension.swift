@@ -116,11 +116,7 @@ extension NewTabPageActionsManager {
             suggestionContainer: suggestionContainer,
             searchPreferences: NSApp.delegateTyped.searchPreferences
         )
-        // Acceptance is global, so fire windows read and write the regular store too.
-        let termsOfServiceStore = DuckAiTermsOfServiceStore(
-            keyValueStore: UserDefaults.standard,
-            nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler
-        )
+        let termsOfServiceStore = DuckAiTermsOfServiceStore()
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
@@ -131,8 +127,7 @@ extension NewTabPageActionsManager {
                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
             )),
-            termsOfServiceStore: termsOfServiceStore,
-            isNativeTermsOfServiceEnabled: { featureFlagger.isFeatureOn(.duckAINativeTermsOfService) }
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
         )
         let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(

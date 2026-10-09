@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import AIChat
 import AppKit
 import History
 @_spi(Testing) import Persistence
 import PixelKit
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -54,8 +54,10 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             historyCoordinator: historyCoordinator,
             aiChatDeleter: aiChatDeleter,
-            termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter()),
-            isNativeTermsOfServiceEnabled: { true },
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+                featureFlagger: MockFeatureFlagger(),
+                store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter())
+            ),
             fireDailyCountPixel: { [weak self] event in self?.firedPixels.append(event.name) },
             presentDeleteConfirmation: { _, _ in confirmResult }
         )

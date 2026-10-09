@@ -1094,11 +1094,16 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let terms = makeTermsOfService(featureEnabled: true)
         let provider = try makeProvider(terms)
 
+        let accepted = expectation(description: "requiresAiTermsAcceptance turns false")
         var events: [Bool] = []
-        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink {
+            events.append($0)
+            if !$0 { accepted.fulfill() }
+        }
 
         terms.store.recordAcceptedInNativeInput()
 
+        wait(for: [accepted], timeout: 1)
         cancellable.cancel()
         XCTAssertEqual(events, [true, false])
     }
@@ -1111,7 +1116,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         var events: [Bool] = []
         let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
 
-        terms.featureFlagger.featuresStub = ["duckAINativeTermsOfService": true]
+        terms.featureFlagger.featuresStub = ["aiChatNativeTermsOfService": true]
         terms.featureFlagger.triggerUpdate()
 
         cancellable.cancel()
@@ -1126,7 +1131,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     private func makeTermsOfService(featureEnabled: Bool) -> TermsOfServiceFixture {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = ["duckAINativeTermsOfService": featureEnabled]
+        featureFlagger.featuresStub = ["aiChatNativeTermsOfService": featureEnabled]
         let notificationCenter = NotificationCenter()
         let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: notificationCenter)
         return TermsOfServiceFixture(featureFlagger: featureFlagger, store: store, notificationCenter: notificationCenter)

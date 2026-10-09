@@ -33,8 +33,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let tabsPreferences: TabsPreferences
     private let historyCoordinator: HistoryCoordinating
     private let aiChatDeleter: AIChatDeleting
-    private let termsOfServiceStore: DuckAiTermsOfServiceStore
-    private let isNativeTermsOfServiceEnabled: () -> Bool
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKit.Event) -> Void
@@ -54,8 +53,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
          tabsPreferences: TabsPreferences,
          historyCoordinator: HistoryCoordinating,
          aiChatDeleter: AIChatDeleting,
-         termsOfServiceStore: DuckAiTermsOfServiceStore,
-         isNativeTermsOfServiceEnabled: @escaping () -> Bool,
+         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
@@ -66,8 +64,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         self.tabsPreferences = tabsPreferences
         self.historyCoordinator = historyCoordinator
         self.aiChatDeleter = aiChatDeleter
-        self.termsOfServiceStore = termsOfServiceStore
-        self.isNativeTermsOfServiceEnabled = isNativeTermsOfServiceEnabled
+        self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
@@ -157,10 +154,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     aiTermsAccepted: Bool) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
-        let termsAccepted = aiTermsAccepted && isNativeTermsOfServiceEnabled()
-        if termsAccepted {
-            termsOfServiceStore.recordAcceptedInNativeInput()
-        }
+        // The NTP sends `aiTermsAccepted` only for an Ask click with its disclaimer on screen.
+        termsOfServiceDisclaimer.acceptIfShown(aiTermsAccepted)
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -216,8 +211,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                                                           pageContext: pageContextPayload,
                                                           mode: mode,
                                                           reasoningEffort: nativeReasoningEffort)
-        // Duck.ai shows its own terms card for a prompt without the key, so it's never sent as `false`.
-        promptHandler.setData(nativePrompt.withTermsAccepted(termsAccepted ? true : nil))
+        // Marks an Ask click, like the address bar's input; the bridge turns it into the `termsAccepted` duck.ai reads.
+        promptHandler.setData(nativePrompt.withTermsAccepted(aiTermsAccepted))
     }
 
     /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
@@ -304,7 +299,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     @MainActor
     func openPrivacyTerms() {
-        windowControllersManager.show(url: .duckAiPrivacyTerms, source: .ui, newTab: true, selected: true)
+        windowControllersManager.show(url: .aiChatPrivacyTerms, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor

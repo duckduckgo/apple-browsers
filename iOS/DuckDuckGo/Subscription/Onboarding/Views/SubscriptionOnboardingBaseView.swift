@@ -21,7 +21,6 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
-import UIComponents
 
 /// The content insets `SubscriptionOnboardingBaseView` applies to every page
 enum SubscriptionOnboardingPageInsets {
@@ -113,26 +112,9 @@ private struct FooterBlockHeightKey: PreferenceKey {
     }
 }
 
-/// `SubscriptionOnboardingBaseView`'s plain, eagerly-built background — the common case.
-private struct FixedBackgroundModifier<Background: View>: ViewModifier {
-    let background: Background
-    func body(content: Content) -> some View {
-        content.background { background }
-    }
-}
-
-/// `SubscriptionOnboardingBaseView`'s background rebuilt directly from `Key`'s bubbled-up preference value.
-private struct PreferenceDrivenBackgroundModifier<Key: PreferenceKey, Background: View>: ViewModifier {
-    let key: Key.Type
-    let pageBackground: (Key.Value) -> Background
-    func body(content: Content) -> some View {
-        content.backgroundPreferenceValue(key, pageBackground)
-    }
-}
-
 /// A generic page for the post-subscription onboarding flow: an optional leading button and centered title,
 /// an optional header, a caller-supplied body, and an optional bottom-pinned footer.
-struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View {
+struct SubscriptionOnboardingBaseView<Content: View>: View {
 
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
@@ -141,7 +123,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
     private let scrollsContent: Bool
     private let declaresNavigationChrome: Bool
     private let footerBlur: Bool
-    private let backgroundModifier: AnyViewModifier
     private let content: Content
 
     @State private var footerBlockHeight: CGFloat = 0
@@ -153,7 +134,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
          scrollsContent: Bool = true,
          declaresNavigationChrome: Bool = true,
          footerBlur: Bool = false,
-         @ViewBuilder pageBackground: () -> PageBackground = { EmptyView() },
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
@@ -162,32 +142,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         self.scrollsContent = scrollsContent
         self.declaresNavigationChrome = declaresNavigationChrome
         self.footerBlur = footerBlur
-        self.backgroundModifier = AnyViewModifier(FixedBackgroundModifier(background: pageBackground()))
-        self.content = content()
-    }
-
-    /// Variant whose background is rebuilt directly from `Key`'s bubbled-up preference value, in place of
-    /// a pre-built `pageBackground`.
-    init<Key: PreferenceKey>(
-        title: String? = nil,
-        navigationButton: SubscriptionOnboardingNavigationButton? = nil,
-        header: SubscriptionOnboardingHeaderView? = nil,
-        footer: SubscriptionOnboardingFooter? = nil,
-        scrollsContent: Bool = true,
-        declaresNavigationChrome: Bool = true,
-        footerBlur: Bool = false,
-        backgroundPreference key: Key.Type,
-        @ViewBuilder pageBackground: @escaping (Key.Value) -> PageBackground,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.title = title
-        self.navigationButton = navigationButton
-        self.header = header
-        self.footer = footer
-        self.scrollsContent = scrollsContent
-        self.declaresNavigationChrome = declaresNavigationChrome
-        self.footerBlur = footerBlur
-        self.backgroundModifier = AnyViewModifier(PreferenceDrivenBackgroundModifier(key: key, pageBackground: pageBackground))
         self.content = content()
     }
 
@@ -216,7 +170,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
     private var pageWithFooter: some View {
         let page = pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .modifier(backgroundModifier)
             .background(pageBackgroundColor.ignoresSafeArea())
 
         if isFooterFloating {

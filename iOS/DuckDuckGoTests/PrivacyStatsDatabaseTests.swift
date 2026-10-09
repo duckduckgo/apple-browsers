@@ -41,7 +41,7 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
     func testWhenStoreLoadsThenPrivacyStatsIsUsableAndNoPixelIsFired() async throws {
         let privacyStats = PrivacyStatsDatabase.makePrivacyStats(location: location, pixelFiring: pixelKit)
 
-        XCTAssertTrue(privacyStats is PrivacyStats)
+        XCTAssertFalse(privacyStats is UnavailablePrivacyStats)
         try await assertStoreIsUsable(privacyStats)
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
@@ -52,7 +52,7 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         // Before the fix, creating PrivacyStats never returned here.
         let privacyStats = PrivacyStatsDatabase.makePrivacyStats(location: location, pixelFiring: pixelKit)
 
-        XCTAssertTrue(privacyStats is PrivacyStats)
+        XCTAssertFalse(privacyStats is UnavailablePrivacyStats)
         try await assertStoreIsUsable(privacyStats)
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixelKit.actualFireCalls.first)

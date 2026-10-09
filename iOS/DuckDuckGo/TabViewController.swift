@@ -2510,7 +2510,8 @@ class TabViewController: UIViewController {
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                                      cpmExtensionLoaded: cpmExtensionLoaded,
-                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks)
+                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks,
+                                                                     pageSignals: pageSignalsMonitor.pageSignals)
     }
 
     public func print() {

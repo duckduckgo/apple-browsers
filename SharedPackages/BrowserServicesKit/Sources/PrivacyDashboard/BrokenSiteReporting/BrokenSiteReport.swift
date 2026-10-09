@@ -103,6 +103,8 @@ public struct BrokenSiteReport {
     let networkSignals: NetworkSignals?
     let dnsResolution: DNSResolution?
     let memoryPressure: MemoryPressureLevel?
+    let pageSignals: PageSignals?
+    let pageSignalsEntryLimit: Int
     let jsPerformance: [Double]?
     let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
@@ -168,7 +170,9 @@ public struct BrokenSiteReport {
         adBlockingExtensionScriptletsVersion: String? = nil,
         networkSignals: NetworkSignals? = nil,
         dnsResolution: DNSResolution? = nil,
-        memoryPressure: MemoryPressureLevel? = nil
+        memoryPressure: MemoryPressureLevel? = nil,
+        pageSignals: PageSignals? = nil,
+        pageSignalsEntryLimit: Int = PageSignalsSettings.defaultMaxEntries
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -192,6 +196,8 @@ public struct BrokenSiteReport {
         self.networkSignals = networkSignals
         self.dnsResolution = dnsResolution
         self.memoryPressure = memoryPressure
+        self.pageSignals = pageSignals
+        self.pageSignalsEntryLimit = pageSignalsEntryLimit
         self.jsPerformance = jsPerformance
         self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
@@ -253,7 +259,9 @@ public struct BrokenSiteReport {
         adBlockingExtensionScriptletsVersion: String? = nil,
         networkSignals: NetworkSignals? = nil,
         dnsResolution: DNSResolution? = nil,
-        memoryPressure: MemoryPressureLevel? = nil
+        memoryPressure: MemoryPressureLevel? = nil,
+        pageSignals: PageSignals? = nil,
+        pageSignalsEntryLimit: Int = PageSignalsSettings.defaultMaxEntries
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -279,6 +287,8 @@ public struct BrokenSiteReport {
         self.networkSignals = networkSignals
         self.dnsResolution = dnsResolution
         self.memoryPressure = memoryPressure
+        self.pageSignals = pageSignals
+        self.pageSignalsEntryLimit = pageSignalsEntryLimit
         self.jsPerformance = jsPerformance
         self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
@@ -410,6 +420,20 @@ public struct BrokenSiteReport {
         if let loadedWebExtensions {
             result["loadedWebExtensions"] = loadedWebExtensions
             result["adBlockingExtensionScriptletsVersion"] = adBlockingExtensionScriptletsVersion ?? "nil"
+        }
+
+        result["isNetworkAvailable"] = networkSignals?.isNetworkAvailable.description
+        result["networkType"] = networkSignals?.networkType.rawValue
+        result["isLowDataModeEnabled"] = networkSignals?.isLowDataModeEnabled.description
+        result["hasVPNConnectivityIssues"] = networkSignals?.hasVPNConnectivityIssues.description
+        result["networkPingQuality"] = networkSignals?.pingQuality.rawValue
+        result["memoryPressure"] = memoryPressure?.rawValue
+        result["dnsResolution"] = dnsResolution?.rawValue
+
+        if let pageSignals {
+            result["resourceLoadErrors"] = pageSignals.formattedResourceLoadErrors(maxEntries: pageSignalsEntryLimit)
+            result["contentBlockedLoads"] = String(pageSignals.blockedLoads)
+            result["contentBlockedDomains"] = pageSignals.formattedContentBlockedDomains(maxEntries: pageSignalsEntryLimit)
         }
 
         return result

@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import DDGNavigation
 @testable import PrivacyDashboard
 @_spi(Testing) import Persistence
 
@@ -189,9 +190,63 @@ final class BrokenSiteReporterTests: XCTestCase {
         XCTAssertNil(report.requestParameters["isAfterTabTermination"])
     }
 
+    func testWhenSignalsArePresentThenTheyAreIncluded() {
+        let networkSignals = NetworkSignals(isNetworkAvailable: true, networkType: .wifi, isLowDataModeEnabled: true, hasVPNConnectivityIssues: false, pingQuality: .poor)
+        let pageSignals = PageSignals(resourceFailures: ["b.com": [.statusCode(500)], "a.com": [Self.dnsError, Self.certificateError]],
+                                      blockedDomains: ["x.com": 1, "z.com": 5, "y.com": 1],
+                                      blockedLoads: 7)
+
+        let parameters = makeReport(cookieConsentInfo: nil,
+                                    networkSignals: networkSignals,
+                                    dnsResolution: .blocked,
+                                    memoryPressure: .warning,
+                                    pageSignals: pageSignals).requestParameters
+
+        XCTAssertEqual(parameters["isNetworkAvailable"], "true")
+        XCTAssertEqual(parameters["networkType"], "wifi")
+        XCTAssertEqual(parameters["isLowDataModeEnabled"], "true")
+        XCTAssertEqual(parameters["hasVPNConnectivityIssues"], "false")
+        XCTAssertEqual(parameters["networkPingQuality"], "poor")
+        XCTAssertEqual(parameters["dnsResolution"], "blocked")
+        XCTAssertEqual(parameters["memoryPressure"], "warning")
+        XCTAssertEqual(parameters["resourceLoadErrors"], "a.com:(NSURLErrorDomain,-1003),a.com:(NSURLErrorDomain,-1202),b.com:(statusCode,500)")
+        XCTAssertEqual(parameters["contentBlockedLoads"], "7")
+        XCTAssertEqual(parameters["contentBlockedDomains"], "z.com:5,x.com:1,y.com:1")
+    }
+
+    func testWhenSignalsAreAbsentThenTheyAreNotIncluded() {
+        let parameters = makeReport(cookieConsentInfo: nil).requestParameters
+        let keys = ["isNetworkAvailable", "networkType", "isLowDataModeEnabled", "hasVPNConnectivityIssues", "networkPingQuality", "dnsResolution",
+                    "memoryPressure", "resourceLoadErrors", "contentBlockedLoads", "contentBlockedDomains"]
+
+        for key in keys {
+            XCTAssertNil(parameters[key], key)
+        }
+    }
+
+    func testWhenPageSignalsExceedMaxEntriesThenListsAreCapped() {
+        let pageSignals = PageSignals(resourceFailures: ["a.com": [Self.dnsError, .statusCode(500)], "b.com": [.statusCode(404)]],
+                                      blockedDomains: ["a.com": 1, "y.com": 2, "x.com": 3],
+                                      blockedLoads: 6)
+
+        let parameters = makeReport(cookieConsentInfo: nil, pageSignals: pageSignals, pageSignalsEntryLimit: 2).requestParameters
+
+        XCTAssertEqual(parameters["resourceLoadErrors"], "a.com:(NSURLErrorDomain,-1003),a.com:(statusCode,500)")
+        XCTAssertEqual(parameters["contentBlockedDomains"], "x.com:3,y.com:2")
+        XCTAssertEqual(parameters["contentBlockedLoads"], "6")
+    }
+
+    private static let dnsError = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost))
+    private static let certificateError = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted))
+
     private func makeReport(cookieConsentInfo: CookieConsentInfo?,
                             reportFlow: BrokenSiteReport.Source = .appMenu,
-                            isAfterTabTermination: Bool = false) -> BrokenSiteReport {
+                            isAfterTabTermination: Bool = false,
+                            networkSignals: NetworkSignals? = nil,
+                            dnsResolution: DNSResolution? = nil,
+                            memoryPressure: MemoryPressureLevel? = nil,
+                            pageSignals: PageSignals? = nil,
+                            pageSignalsEntryLimit: Int = PageSignalsSettings.defaultMaxEntries) -> BrokenSiteReport {
 #if os(iOS)
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -222,7 +277,12 @@ final class BrokenSiteReporterTests: XCTestCase {
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
                          isForceDarkModeEnabled: nil,
-                         isAfterTabTermination: isAfterTabTermination)
+                         isAfterTabTermination: isAfterTabTermination,
+                         networkSignals: networkSignals,
+                         dnsResolution: dnsResolution,
+                         memoryPressure: memoryPressure,
+                         pageSignals: pageSignals,
+                         pageSignalsEntryLimit: pageSignalsEntryLimit)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -252,7 +312,12 @@ final class BrokenSiteReporterTests: XCTestCase {
                          isForceDarkModeEnabled: nil,
                          isAfterTabTermination: isAfterTabTermination,
                          lastTabSuspension: nil,
-                         pageLoadTiming: nil)
+                         pageLoadTiming: nil,
+                         networkSignals: networkSignals,
+                         dnsResolution: dnsResolution,
+                         memoryPressure: memoryPressure,
+                         pageSignals: pageSignals,
+                         pageSignalsEntryLimit: pageSignalsEntryLimit)
 #endif
     }
 }

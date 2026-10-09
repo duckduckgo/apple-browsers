@@ -33,6 +33,8 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
     func controllerDismissPairingV2Confirmation() async
 
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus)
+
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
 
@@ -711,10 +713,16 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func pollPairingV2UntilFinished(_ coordinator: PairingV2Coordinator,
                                             onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
-        try await coordinator.pollUntilFinished(
+        var lastReportedJoinStatus: PairingV2JoinStatus?
+        return try await coordinator.pollUntilFinished(
             timeout: pairingV2PollingTimeout,
-            pollInterval: pairingV2PollIntervalNanoseconds,
-            onDidPoll: onDidPoll)
+            pollInterval: pairingV2PollIntervalNanoseconds) { state in
+            if let status = coordinator.joinStatus, status != lastReportedJoinStatus {
+                lastReportedJoinStatus = status
+                await self.delegate?.controllerDidUpdatePairingV2JoinStatus(status)
+            }
+            await onDidPoll?(state)
+        }
     }
 
     private func handlePairingV2Completion(_ completion: PairingV2State.Completion,
@@ -935,6 +943,9 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func makePairingV2Coordinator() -> PairingV2Coordinator {
         let canUseExchangeV2Point1 = dependencies.syncFeatureFlags.canUseExchangeV2Point1()
+        let joinStatusDeadline = PairingV2PollingDefaults.resolvedJoinStatusDeadline(
+            from: dependencies.privacyConfigurationManager.privacyConfig.settings(for: .sync)
+        )
         return PairingV2Coordinator(
             syncService: syncService,
             messageExchanger: dependencies.createPairingV2MessageExchanger(),
@@ -945,6 +956,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             canSendExchangeChannelSecret: dependencies.syncFeatureFlags.canSendExchangeChannelSecret(),
             advertisedVersion: canUseExchangeV2Point1 ? .v2Point1 : .v2,
             confirmationDelegate: self,
+            joinStatusDeadline: joinStatusDeadline,
             makeKeyPair: makePairingV2KeyPair
         )
     }
@@ -1068,6 +1080,9 @@ public extension SyncConnectionControllerDelegate {
     }
 
     func controllerDismissPairingV2Confirmation() async {
+    }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
     }
 
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {

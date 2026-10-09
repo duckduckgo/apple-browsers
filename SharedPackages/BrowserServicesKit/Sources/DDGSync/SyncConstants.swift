@@ -26,6 +26,11 @@ public enum SyncSetupCodeVersion: String {
     case v2
 }
 
+public enum PairingV2JoinStatus: Equatable {
+    case waiting
+    case unknown
+}
+
 public enum SyncSetupSource: String {
     case recovery
     case exchange

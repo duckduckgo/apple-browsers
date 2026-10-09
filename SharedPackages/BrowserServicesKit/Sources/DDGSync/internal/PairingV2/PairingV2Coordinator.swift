@@ -31,12 +31,21 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
 }
 
-/// Default timing for the polling loop in `pollUntilFinished`.
+/// Pairing V2 timing defaults and remote configuration bounds.
 enum PairingV2PollingDefaults {
     /// Give up on the pairing session after this many seconds (5 minutes).
     static let sessionTimeout: TimeInterval = 300
+    /// Show the unknown join outcome after this many seconds without a status report.
+    static let joinStatusDeadline: TimeInterval = 30
     /// Wait this long between relay polls (1 second, in nanoseconds).
     static let pollIntervalNanoseconds: UInt64 = 1_000_000_000
+
+    static func resolvedJoinStatusDeadline(from featureSettings: [String: Any]) -> TimeInterval {
+        guard let milliseconds = featureSettings["joinStatusDeadlineMs"] as? Int else {
+            return joinStatusDeadline
+        }
+        return TimeInterval(min(max(milliseconds, 5_000), 120_000)) / 1_000
+    }
 }
 
 final class PairingV2Coordinator {
@@ -52,6 +61,8 @@ final class PairingV2Coordinator {
     private let advertisedVersion: PairingV2ProtocolVersion
     private let makeKeyPair: () throws -> PairingV2KeyPair
     private let makeChannelSecret: () throws -> String
+    private let joinStatusDeadline: TimeInterval
+    private let now: () -> Date
     private weak var confirmationDelegate: PairingV2ConfirmationDelegate?
 
     private var stateMachine = PairingV2StateMachine()
@@ -66,6 +77,9 @@ final class PairingV2Coordinator {
     private var pendingConfirmation: PairingV2PendingConfirmation?
     private var pendingConfirmationTask: Task<Void, Never>?
     private var pendingRecoveryCode: PairingV2RecoveryCodeResponseMessage?
+    private var joinStatusDeadlineDate: Date?
+    private var recoveryCodeWaitDeadlineDate: Date?
+    private var hasRecoveryCodeWaitDeadlinePassed = false
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
     private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
@@ -80,6 +94,8 @@ final class PairingV2Coordinator {
          canSendExchangeChannelSecret: Bool,
          advertisedVersion: PairingV2ProtocolVersion,
          confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
+         joinStatusDeadline: TimeInterval = PairingV2PollingDefaults.joinStatusDeadline,
+         now: @escaping () -> Date = Date.init,
          makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
          makeChannelSecret: @escaping () throws -> String = { try PairingV2ChannelSecretFactory.makeSecret() }) {
         self.syncService = syncService
@@ -92,12 +108,28 @@ final class PairingV2Coordinator {
         self.shouldAuthenticateExchangeEndpoints = advertisedVersion >= .v2Point1 || canSendExchangeChannelSecret
         self.advertisedVersion = advertisedVersion
         self.confirmationDelegate = confirmationDelegate
+        self.joinStatusDeadline = joinStatusDeadline
+        self.now = now
         self.makeKeyPair = makeKeyPair
         self.makeChannelSecret = makeChannelSecret
     }
 
     var state: PairingV2State {
         stateMachine.state
+    }
+
+    /// Waiting-screen status for both the host awaiting the join result and the joiner awaiting the recovery code.
+    var joinStatus: PairingV2JoinStatus? {
+        switch state {
+        case .hostWaitingForJoinStatus, .joinerLoggingIn:
+            return .waiting
+        case .hostJoinOutcomeUnknown:
+            return .unknown
+        case .joinerWaitingForRecoveryCode:
+            return hasRecoveryCodeWaitDeadlinePassed ? .unknown : .waiting
+        default:
+            return nil
+        }
     }
 
     func startPresenting() async throws -> PairingV2QRCodePayload {
@@ -129,12 +161,13 @@ final class PairingV2Coordinator {
 
     /// Performs one poll of this device's channel and handles any new messages.
     /// Production polling goes through `pollUntilFinished`; this is internal for unit testing.
-    func pollOnce() async throws {
+    func pollOnce(onStateChange: ((PairingV2State) async -> Void)? = nil) async throws {
         guard let channelID = localKeyPair?.channelID else {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)
         }
 
-        try await handleConfirmationResult()
+        try await handleConfirmationResult(onStateChange: onStateChange)
+        await onStateChange?(state)
         guard !hasFinishedPairing else {
             return
         }
@@ -154,10 +187,15 @@ final class PairingV2Coordinator {
             }
             throw operationFailure
         }
-        try await processPolledMessages(messages)
+        try await processPolledMessages(messages, onStateChange: onStateChange)
+        try await handleJoinStatusDeadlineIfNeeded()
+        if case .joinerWaitingForRecoveryCode = state, let recoveryCodeWaitDeadlineDate {
+            hasRecoveryCodeWaitDeadlinePassed = now() >= recoveryCodeWaitDeadlineDate
+        }
     }
 
-    private func processPolledMessages(_ messages: [PairingV2SequencedMessage]) async throws {
+    private func processPolledMessages(_ messages: [PairingV2SequencedMessage],
+                                       onStateChange: ((PairingV2State) async -> Void)?) async throws {
         for message in messages.sorted(by: { $0.seq < $1.seq }) where message.seq > lastProcessedSequence {
             guard !hasFinishedPairing else {
                 return
@@ -172,7 +210,7 @@ final class PairingV2Coordinator {
                 // The peer may release its code before the local user confirms. Keep it while continuing to receive other messages.
                 pendingRecoveryCode = pendingRecoveryCode ?? response
             } else {
-                try await handle(applicationMessage)
+                try await handle(applicationMessage, onStateChange: onStateChange)
             }
             lastProcessedSequence = max(lastProcessedSequence, message.seq)
         }
@@ -181,18 +219,18 @@ final class PairingV2Coordinator {
     func pollUntilFinished(timeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
                            pollInterval: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds,
                            onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
-        let timeoutDate = Date().addingTimeInterval(timeout)
+        let timeoutDate = now().addingTimeInterval(timeout)
 
         while true {
             if let completion = try checkPairingCompletion() {
                 return completion
             }
 
-            if Date() > timeoutDate {
+            if now() > timeoutDate {
                 throw SyncError.pollingDidTimeOut
             }
 
-            try await pollOnce()
+            try await pollOnce(onStateChange: onDidPoll)
             await onDidPoll?(state)
             if let completion = try checkPairingCompletion() {
                 return completion
@@ -291,7 +329,8 @@ final class PairingV2Coordinator {
         return message
     }
 
-    private func handle(_ message: PairingV2ApplicationMessage) async throws {
+    private func handle(_ message: PairingV2ApplicationMessage,
+                        onStateChange: ((PairingV2State) async -> Void)?) async throws {
         let commands: [PairingV2Command]
         let stateBeforeMessage = stateMachine.state
         switch message {
@@ -321,6 +360,10 @@ final class PairingV2Coordinator {
 
         case .recoveryCodeResponse(let message):
             commands = stateMachine.handle(.receivedRecoveryCode(message.recoveryCode))
+            if case .joinerLoggingIn = state {
+                // The code has arrived; stop directing the user to the peer while local account work runs.
+                await onStateChange?(state)
+            }
 
         case .recoveryCodeDenied:
             commands = stateMachine.handle(.receivedRecoveryCodeDenied)
@@ -407,6 +450,9 @@ final class PairingV2Coordinator {
 
         case .sendRecoveryCodeUnavailable:
             try await send(.recoveryCodeUnavailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeUnavailable)), failureStage: relayFailureStage)
+
+        case .startJoinStatusDeadline:
+            joinStatusDeadlineDate = now().addingTimeInterval(joinStatusDeadline)
 
         case .requestHostConfirmation(let peerName, let peerKind):
             guard let confirmationDelegate else {
@@ -601,7 +647,7 @@ final class PairingV2Coordinator {
         }
     }
 
-    private func handleConfirmationResult() async throws {
+    private func handleConfirmationResult(onStateChange: ((PairingV2State) async -> Void)?) async throws {
         guard let confirmation = pendingConfirmation,
               let event = await confirmation.result,
               pendingConfirmation === confirmation else {
@@ -612,9 +658,25 @@ final class PairingV2Coordinator {
         let recoveryCode = pendingRecoveryCode
         pendingRecoveryCode = nil
         try await execute(stateMachine.handle(event))
-        if let recoveryCode, !hasFinishedPairing {
-            try await handle(.recoveryCodeResponse(recoveryCode))
+        if case .joinerWaitingForRecoveryCode = state {
+            recoveryCodeWaitDeadlineDate = now().addingTimeInterval(joinStatusDeadline)
         }
+        if let recoveryCode, !hasFinishedPairing {
+            try await handle(.recoveryCodeResponse(recoveryCode), onStateChange: onStateChange)
+        }
+    }
+
+    private func handleJoinStatusDeadlineIfNeeded() async throws {
+        guard case .hostWaitingForJoinStatus = state else {
+            joinStatusDeadlineDate = nil
+            return
+        }
+        guard let joinStatusDeadlineDate, now() >= joinStatusDeadlineDate else {
+            return
+        }
+
+        self.joinStatusDeadlineDate = nil
+        try await execute(stateMachine.handle(.joinStatusDeadlineReached))
     }
 
     private func dismissPendingConfirmation() async {
@@ -712,6 +774,9 @@ final class PairingV2Coordinator {
         pendingConfirmationTask?.cancel()
         pendingConfirmationTask = nil
         pendingRecoveryCode = nil
+        joinStatusDeadlineDate = nil
+        recoveryCodeWaitDeadlineDate = nil
+        hasRecoveryCodeWaitDeadlinePassed = false
     }
 
     private func negotiateProtocolVersion(with peerVersion: String) {
@@ -852,6 +917,7 @@ extension PairingV2Command {
         case .sendRecoveryCodeUnavailable:
             return entryRole.failureStage(presenter: .presenterSendRecoveryUnavailable, scanner: .scannerSendRecoveryUnavailable)
         case .stopPolling,
+                .startJoinStatusDeadline,
                 .requestHostConfirmation,
                 .requestJoinerConfirmation,
                 .prepareRecoveryCode,

@@ -32,7 +32,6 @@ protocol NewTabPageOnboardingHosting: NewTabPage {
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind)
 }
 
-/// Shares the contextual onboarding sequence between the legacy and redesigned pages.
 @MainActor
 final class NewTabPageOnboardingCoordinator {
     weak var page: (any NewTabPageOnboardingHosting)?
@@ -230,23 +229,6 @@ final class NewTabPageOnboardingCoordinator {
             page?.view.alpha = 1
             return
         }
-        showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
-    }
-
-    // Mirrors showDuckAIOnboardingCompletionDialog for UTI mode where no editing-state VC exists.
-    // Uses the same overlay-suppression mechanism as showNextDaxDialogNew:
-    //   • setUnifiedInputContentOverlaySuppressed(true) hides unifiedInputContentContainer so
-    //     the NTP (contentContainer) shows through, keeping the dialog visible while the address
-    //     bar is active.  dismissHostingController re-enables the overlay on teardown.
-    //   • A single copy in the page's superview (contentContainer's plain UIView) avoids the
-    //     nested-UIHostingController warning from adding _UIHostingView into another hosting controller's view.
-    // pageWillDisappear clears the completion dialog; detach also removes ordinary dialogs.
-    // The onDismiss closure mirrors the legacy path's subscription-promo check.
-    private func showDuckAIOnboardingCompletionDialogInUTI(
-        mainVC: MainViewController,
-        coordinator: UnifiedToggleInputCoordinator,
-        message: String
-    ) {
         guard let page else { return }
         isShowingDuckAICompletionDialog = true
         // Hide the logo before restoring the page alpha. The completion background is
@@ -327,7 +309,6 @@ final class NewTabPageOnboardingCoordinator {
         ntpHC.view.backgroundColor = .clear
         ntpHC.view.translatesAutoresizingMaskIntoConstraints = false
         self.hostingController = ntpHC
-        // The redesigned page hides its modules; the legacy page keeps its background content.
         hideOnboardingContent(for: .duckAICompletion)
         let ntpContainer: UIView = page.view.superview ?? mainVC.view
         mainVC.addChild(ntpHC)
@@ -482,7 +463,6 @@ final class NewTabPageOnboardingCoordinator {
         }
     }
 
-    /// Hides the logo, collapses the address bar, then presents the subscription promo.
     private func presentSubscriptionPromotionAfterAddressBarDismissal() {
         // Hide the NTP logo before the promo fades in so it doesn't blink through
         // the FadeInView's alpha-0→1 animation.  It will be restored once the UTI

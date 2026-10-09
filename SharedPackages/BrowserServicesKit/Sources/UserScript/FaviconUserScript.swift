@@ -19,6 +19,7 @@
 import Common
 import FoundationExtensions
 import Foundation
+import os.log
 import WebKit
 
 /// Delegate protocol for receiving favicon link updates from pages
@@ -84,7 +85,11 @@ public final class FaviconUserScript: NSObject, Subfeature {
 
     @MainActor
     private func faviconFound(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params) else { return nil }
+        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params) else {
+            Logger(subsystem: "Favicons", category: "").log("[FaviconDebug] failed to decode faviconFound payload: \(String(describing: params), privacy: .public)")
+            return nil
+        }
+        Logger(subsystem: "Favicons", category: "").log("[FaviconDebug] faviconFound received from frame \(original.frameInfo.request.url?.absoluteString ?? "nil", privacy: .public), webView URL: \(original.webView?.url?.absoluteString ?? "nil", privacy: .public), delegate set: \(self.delegate != nil, privacy: .public)")
 
         delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: faviconsPayload.documentUrl, in: original.webView)
         return nil

@@ -224,22 +224,33 @@ final class FaviconManager: FaviconManagement {
 
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         await awaitFaviconsLoaded()
-        guard !Task.isCancelled else { return nil }
+        guard !Task.isCancelled else {
+            Logger.favicons.log("[FaviconDebug] handleFaviconLinks cancelled before fetch for \(documentUrl.absoluteString, privacy: .public)")
+            return nil
+        }
 
         // If we have links from the page, try those first
         // Fetch favicons if needed
         var faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
+        Logger.favicons.log("[FaviconDebug] handleFaviconLinks for \(documentUrl.absoluteString, privacy: .public): \(faviconLinks.count, privacy: .public) links, \(faviconLinksToFetch.count, privacy: .public) to fetch: \(faviconLinksToFetch.map(\.href.absoluteString), privacy: .public)")
         var newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl, webView: webView)
+        Logger.favicons.log("[FaviconDebug] fetched \(newFavicons.count, privacy: .public) favicons: \(newFavicons.map { "\($0.url.absoluteString) \(Int($0.longestSide))px" }, privacy: .public)")
         if let favicon = await cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl) {
             return favicon
         }
-        guard !Task.isCancelled else { return nil }
+        guard !Task.isCancelled else {
+            Logger.favicons.log("[FaviconDebug] handleFaviconLinks cancelled before fallback for \(documentUrl.absoluteString, privacy: .public)")
+            return nil
+        }
 
         // If main links failed or were empty, try fallback
         let fallbackLinks = fallbackFaviconLinks(for: documentUrl)
         faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: fallbackLinks)
+        Logger.favicons.log("[FaviconDebug] no favicon selected from page links, trying fallback \(fallbackLinks.map(\.href.absoluteString), privacy: .public), \(faviconLinksToFetch.count, privacy: .public) to fetch")
         newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl, webView: webView)
-        return await cacheFavicons(newFavicons, faviconURLs: fallbackLinks.lazy.map(\.href), for: documentUrl)
+        let favicon = await cacheFavicons(newFavicons, faviconURLs: fallbackLinks.lazy.map(\.href), for: documentUrl)
+        Logger.favicons.log("[FaviconDebug] fallback result for \(documentUrl.absoluteString, privacy: .public): \(favicon?.url.absoluteString ?? "nil", privacy: .public)")
+        return favicon
     }
 
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]]) async {
@@ -281,13 +292,16 @@ final class FaviconManager: FaviconManagement {
             let sortedCachedFavicons = cachedFavicons.sorted(by: { $0.longestSide < $1.longestSide })
             let mediumFavicon = FaviconSelector.getMostSuitableFavicon(for: .medium, favicons: sortedCachedFavicons)
             let smallFavicon = FaviconSelector.getMostSuitableFavicon(for: .small, favicons: sortedCachedFavicons)
+            Logger.favicons.log("[FaviconDebug] picking favicon for \(documentURL.absoluteString, privacy: .public) (noneYet: \(noFaviconPickedYet, privacy: .public), new: \(newFaviconLoaded, privacy: .public), outdated: \(faviconsOutdated, privacy: .public)) from \(cachedFavicons.count, privacy: .public) cached: small \(smallFavicon?.url.absoluteString ?? "nil", privacy: .public), medium \(mediumFavicon?.url.absoluteString ?? "nil", privacy: .public)")
             referenceCache.insert(faviconUrls: (smallFavicon?.url, mediumFavicon?.url), documentUrl: documentURL)
             return smallFavicon
         } else {
             guard let currentSmallFaviconUrl = currentSmallFaviconUrl,
                   let cachedFavicon = imageCache.get(faviconUrl: currentSmallFaviconUrl) else {
+                      Logger.favicons.log("[FaviconDebug] no image cached for current reference \(currentSmallFaviconUrl?.absoluteString ?? "nil", privacy: .public) of \(documentURL.absoluteString, privacy: .public)")
                       return nil
                   }
+            Logger.favicons.log("[FaviconDebug] reusing cached reference \(currentSmallFaviconUrl.absoluteString, privacy: .public) for \(documentURL.absoluteString, privacy: .public), image: \(cachedFavicon.image == nil ? "nil" : "non-nil", privacy: .public)")
 
             return cachedFavicon
         }

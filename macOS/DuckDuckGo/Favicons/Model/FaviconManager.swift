@@ -451,15 +451,7 @@ final class FaviconManager: FaviconManagement {
 
                         try Task.checkCancellation()
 
-                        // Validate that we got actual image data
-                        guard !data.isEmpty else {
-                            throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: faviconUrl])
-                        }
-                        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: nil) else {
-                            throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: faviconUrl])
-                        }
-
-                        return FetchedFavicon(link: faviconLink, data: data, image: image)
+                        return try Self.decodeFavicon(from: data, link: faviconLink)
                     } catch {
                         Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
                         return nil
@@ -512,6 +504,26 @@ final class FaviconManager: FaviconManagement {
         }
     }
 
+    private static func decodeFavicon(from data: Data, link: FaviconUserScript.FaviconLink) throws -> FetchedFavicon {
+        // Validate that we got actual image data
+        guard !data.isEmpty else {
+            throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: link.href])
+        }
+        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: nil) else {
+            throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: link.href])
+        }
+
+        let fetchedFavicon = FetchedFavicon(link: link, data: data, image: image)
+
+        // Treat a transparent SVG as undecodable so that another favicon
+        // or the `/favicon.ico` fallback gets picked instead.
+        guard !fetchedFavicon.isTransparentSVG else {
+            throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: link.href])
+        }
+
+        return fetchedFavicon
+    }
+
     /// A favicon downloaded at full resolution, retained while we decide which favicons to keep.
     private struct FetchedFavicon: FaviconSizeRepresentable {
         let link: FaviconUserScript.FaviconLink
@@ -525,6 +537,13 @@ final class FaviconManager: FaviconManagement {
                 return true
             }
             return link.href.pathExtension.lowercased() == "svg"
+        }
+
+        /// AppKit's SVG renderer ignores CSS, so an SVG that colors its paths only through a `<style>` rule
+        /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
+        /// a fully transparent image.
+        var isTransparentSVG: Bool {
+            (isSVG || data.isSVGImageData) && !image.hasVisiblePixels()
         }
     }
 
@@ -687,6 +706,50 @@ extension NSImage {
 
         // Fallback: if rendering fails for some reason, fall back to the original CIImage-backed rep.
         return NSCIImageRep(ciImage: scaledImage)
+    }
+}
+
+extension NSImage {
+
+    /**
+     * Returns whether the image draws at least one non-transparent pixel when rendered at `renderSize`.
+     *
+     * Rendering uses its own bitmap context, so it's safe to call off the main thread.
+     * Returns `true` if the bitmap context can't be created, so that an image is never rejected
+     * only because the check itself failed.
+     */
+    func hasVisiblePixels(renderSize: Int = 32) -> Bool {
+        let bytesPerRow = renderSize * 4
+        var pixels = [UInt8](repeating: 0, count: bytesPerRow * renderSize)
+        let didDraw = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress,
+                                          width: renderSize,
+                                          height: renderSize,
+                                          bitsPerComponent: 8,
+                                          bytesPerRow: bytesPerRow,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                return false
+            }
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+            draw(in: NSRect(x: 0, y: 0, width: renderSize, height: renderSize))
+            NSGraphicsContext.restoreGraphicsState()
+            return true
+        }
+        guard didDraw else { return true }
+
+        // Every 4th byte, starting at index 3, is the alpha component.
+        return stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 }
+    }
+}
+
+extension Data {
+
+    /// Returns whether the data looks like an SVG document, based on its first bytes.
+    var isSVGImageData: Bool {
+        // Latin-1 decodes any byte sequence, and `<svg` is plain ASCII.
+        String(bytes: prefix(1024), encoding: .isoLatin1)?.lowercased().contains("<svg") ?? false
     }
 }
 

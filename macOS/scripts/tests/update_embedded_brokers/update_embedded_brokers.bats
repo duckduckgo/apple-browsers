@@ -12,6 +12,9 @@ setup() {
 
 	SIGNING_KEYS_SWIFT="$scripts_dir/$SIGNING_KEYS_RELATIVE_PATH"
 	SIGNING_FIXTURES="$scripts_dir/../../SharedPackages/DataBrokerProtectionCore/Tests/DataBrokerProtectionCoreTests/BundleResources/BrokerBundleSigning"
+
+	# dbp-api's test staging key, which signed the fixtures. The app never ships it.
+	TEST_STAGING_KEY="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqpP7ubErpgXf5cpp1OFghScG7tJbhUhrKyzkxFdXGErtklupZcJx078xfZRmdYoxLbnaIAt3NYs9XeOr1oJESA=="
 }
 
 generateKey() {
@@ -160,20 +163,27 @@ writeMainConfig() {
 	run signingKeys "$SIGNING_KEYS_SWIFT" production
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
+	[ "${lines[0]}" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==" ]
 	printf '%s' "${lines[0]}" | base64 -d | openssl pkey -pubin -inform DER -noout
 
 	run signingKeys "$SIGNING_KEYS_SWIFT" staging
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
+	[ "${lines[0]}" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==" ]
 	printf '%s' "${lines[0]}" | base64 -d | openssl pkey -pubin -inform DER -noout
 }
 
-@test "verifyMainConfigSignature: accepts the dbp-api fixture signed with the staging key" {
-	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(signingKeys "$SIGNING_KEYS_SWIFT" staging)"
+@test "verifyMainConfigSignature: accepts the dbp-api fixture signed with the test staging key" {
+	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$TEST_STAGING_KEY"
 	[ "$status" -eq 0 ]
+}
 
-	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(signingKeys "$SIGNING_KEYS_SWIFT" production)"
-	[ "$status" -ne 0 ]
+@test "verifyMainConfigSignature: rejects the test-signed dbp-api fixture with the app's built-in keys" {
+	for environment in production staging; do
+		[ -n "$(signingKeys "$SIGNING_KEYS_SWIFT" "$environment")" ]
+		run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(signingKeys "$SIGNING_KEYS_SWIFT" "$environment")"
+		[ "$status" -ne 0 ]
+	done
 }
 
 @test "verifyMainConfigSignature: accepts a signature from any of the keys" {

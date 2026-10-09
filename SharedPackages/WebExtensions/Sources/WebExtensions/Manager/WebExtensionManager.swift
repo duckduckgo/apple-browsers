@@ -134,6 +134,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
 
 #if os(macOS)
+    /// The keyboard shortcuts the user picked for extension commands.
+    public let commandShortcuts = WebExtensionCommandShortcutStore()
+#endif
+
+    /// Records the Chrome pages extensions try to open, which the browser doesn't have.
+    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+
+#if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
 #endif
@@ -874,12 +882,22 @@ public extension Notification.Name {
     /// this notification reaches every observer. Per-window UI needs that, because each
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
+
+    /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
+    /// from JavaScript. The object is the extension's `WKWebExtensionContext`.
+    static let webExtensionActionDidChange = Notification.Name("webExtensionActionDidChange")
 }
 
 // MARK: - WKWebExtensionControllerDelegate
 
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager: WKWebExtensionControllerDelegate {
+
+    public func webExtensionController(_ controller: WKWebExtensionController,
+                                       didUpdate action: WKWebExtension.Action,
+                                       forExtensionContext context: WKWebExtensionContext) {
+        NotificationCenter.default.post(name: .webExtensionActionDidChange, object: context)
+    }
 
     @objc(_webExtensionController:didCreateBackgroundWebView:forExtensionContext:)
     public func webExtensionController(_ controller: WKWebExtensionController,
@@ -910,7 +928,19 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
+        // A Chrome page such as `chrome://password-manager/settings` opens the browser's counterpart.
+        // Without one, it opens nothing and goes to the compatibility log instead.
+        if let url = configuration.url, url.scheme == "chrome" {
+            if windowTabProvider.openChromePage(url, for: extensionContext) {
+                return nil
+            }
+            compatibilityReporter.report(kind: .unsupportedURL,
+                                         api: "chrome://" + (url.host ?? "") + url.path,
+                                         extensionName: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.displayName),
+                                         version: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.version))
+            return nil
+        }
+        return try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,

@@ -799,7 +799,8 @@ final class NavigationBarViewController: NSViewController {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
                                                            themeManager: themeManager,
                                                            container: menuButtons,
-                                                           isPrivateWindow: tabCollectionViewModel.isBurner)
+                                                           isPrivateWindow: tabCollectionViewModel.isBurner,
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
         }
@@ -1508,11 +1509,13 @@ final class NavigationBarViewController: NSViewController {
             })
     }
 
-    /// Web extension buttons apply to a web page only, so tabs that show native content hide them.
+    /// Web extension buttons show on web pages and the New Tab page. Other tabs with native content hide them.
     private func updateWebExtensionButtonsVisibility(for content: TabContent) {
         guard #available(macOS 15.4, *),
               let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
-        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
+        let isNewTab = if case .newtab = content { true } else { false }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab
+        updater.refreshActions()
     }
 
     private func subscribeToDownloads() {

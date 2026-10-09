@@ -24,6 +24,7 @@ import Foundation
 import MaliciousSiteProtection
 import Persistence
 import PrivacyConfig
+import WebExtensions
 import WebKit
 
 final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
@@ -109,6 +110,10 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 fallthrough
             }
             faviconsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case .webExtensions where featureFlagger.internalUserDecider.isInternalUser:
+            guard #available(macOS 15.4, *) else { fallthrough }
+            WebExtensionsInspector(manager: NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)
+                .handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         default:
             handleNativeUIPages(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         }
@@ -557,6 +562,7 @@ private extension URL {
         case favicon
         case favicons
         case permissions
+        case webExtensions
         case customBackgroundImage
         case customBackgroundImageThumbnail
         case onboarding
@@ -588,6 +594,8 @@ private extension URL {
             return .favicons
         } else if self.isPermissions {
             return .permissions
+        } else if self.isWebExtensions {
+            return .webExtensions
         } else if self.isHistory {
             return .history
         } else {

@@ -59,6 +59,12 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
         registerHandlersForExtension(identifier: identifier, context: context)
+#if os(macOS)
+        // Saved shortcuts are in place before the extension runs.
+        MainActor.assumeMainThread {
+            commandShortcuts.apply(to: [context])
+        }
+#endif
         if context.webExtension.duckDuckGoWebExtensionType == .embedded {
             MainActor.assumeIsolated {
                 cpmDiagnosticsRecorder?.contextWillLoad(context)

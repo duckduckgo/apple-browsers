@@ -168,6 +168,8 @@ extension URL {
     static let favicons = URL(string: "duck://favicons")!
     /// Debug-only permissions inspector page (Debug ▸ Permissions ▸ Inspect). Served by `DuckURLSchemeHandler`.
     static let permissions = URL(string: "duck://permissions")!
+    /// Internal extensions page with their keyboard shortcuts. Served by `DuckURLSchemeHandler`.
+    static let webExtensions = URL(string: "duck://extensions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
     static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
@@ -206,6 +208,11 @@ extension URL {
     /// `duck://permissions` (and its sub-paths) — the debug-only permissions inspector page.
     var isPermissions: Bool {
         return navigationalScheme == .duck && host == URL.permissions.host
+    }
+
+    /// `duck://extensions` (and its sub-paths) — the internal extensions page.
+    var isWebExtensions: Bool {
+        return navigationalScheme == .duck && host == URL.webExtensions.host
     }
 
     enum Invalid {

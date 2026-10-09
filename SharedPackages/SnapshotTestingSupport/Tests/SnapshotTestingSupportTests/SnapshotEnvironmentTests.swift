@@ -36,13 +36,24 @@ struct SnapshotEnvironmentTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSWrongMajorVersionIsRejected() {
+    func macOS26IsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)
         )
 
-        #expect(message == "UI snapshots must run on macOS 27. Current OS is 26.6.0.")
+        #expect(message == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSWrongMajorVersionIsRejected() {
+        let message = SnapshotEnvironment.validationMessage(
+            platform: .macOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 25, minorVersion: 6, patchVersion: 0)
+        )
+
+        #expect(message == "UI snapshots must run on macOS 26 or 27. Current OS is 25.6.0.")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -117,6 +128,17 @@ struct SnapshotEnvironmentTests {
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .macOS,
                 operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 1)
+            ) == "macOS-27"
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOS26ReadsMacOS27References() {
+        #expect(
+            SnapshotEnvironment.referenceEnvironmentSuffix(
+                platform: .macOS,
+                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 2)
             ) == "macOS-27"
         )
     }

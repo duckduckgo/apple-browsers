@@ -140,7 +140,7 @@ Example: `iOS/DuckDuckGoTests/SyncUI/SyncSuccessViewTests.swift`.
 Snapshots are pixel-strict, so the test environment is validated before each assertion:
 
 - **iOS**: must run on **iOS 27.0** at **@3x** (simulator runtime).
-- **macOS**: must run on **macOS 27** — major version only; minor and patch are ignored.
+- **macOS**: must run on **macOS 26 or 27** — major version only; minor and patch are ignored. Both read the same `macOS-27` references.
 
 iOS renders in a pinnable simulator runtime, so it validates major.minor. macOS renders on the uncontrolled host and CI can't guarantee an exact point release, so the macOS guard only checks the major version — we accept the small flakiness risk from minor/patch rendering differences rather than fail every time CI rolls forward. A mismatch → the helper records a failure (`XCTFail` / `Issue.record`) with an explanatory message and skips the comparison — the same in CI and locally; a developer on a different OS opts out by not running the snapshot suite.
 
@@ -150,7 +150,7 @@ When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expe
 
 Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.
 
-Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-27-0` (major.minor), macOS uses `…_macOS-27` (major only, matching the guard granularity).
+Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-27-0` (major.minor), macOS uses `…_macOS-27` (major only, matching the guard granularity; macOS 26 reads and writes the same `macOS-27` references).
 
 ## Recording
 
@@ -164,7 +164,7 @@ After re-recording, inspect every diff and commit only the intentional ones.
 
 `SKIP_SNAPSHOT_TESTS=1` in the test scheme's env turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
 
-The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `1` because the CI runners are still on macOS 26, while macOS references are pinned to macOS 27. To pause or resume snapshots for a platform, change the value in that platform's schemes.
+The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `0` too. CI runs on macOS 26 while references are recorded on macOS 27; `SnapshotEnvironment.compatibleMacOSMajorVersions` accepts both because they render our snapshots within the comparison tolerance. To pause or resume snapshots for a platform, change the value in that platform's schemes.
 
 ## Conventions
 

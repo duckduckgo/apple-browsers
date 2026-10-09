@@ -22,6 +22,7 @@ import Combine
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
+import AIChat
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -116,8 +117,11 @@ final class RootViewV2Tests: XCTestCase {
     }
 
     func testPaidAIChatViewModel_OpenAIChat() throws {
-        let expectation = expectation(description: "Wait for showTab to be called")
+        let expectation = expectation(description: "Wait for Duck.ai to open")
         let mockRemoteAISettings = MockRemoteAISettings()
+        let aiChatTabOpener = MockAIChatTabOpener()
+        aiChatTabOpener.setOpenMethodCalledExpectation(expectation)
+        let sourceHandler = AIChatConversationSourceHandler()
         // Given
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
@@ -128,12 +132,11 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
-        ) { content in
-            self.showTabCalled = true
-            self.showTabContent = content
-            expectation.fulfill()
-        }
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in self.showTabCalled = true },
+            aiChatTabOpener: aiChatTabOpener,
+            aiChatConversationSourceHandler: sourceHandler
+        )
 
         let model = rootView.paidAIChatModel!
 
@@ -142,13 +145,10 @@ final class RootViewV2Tests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(showTabCalled, "Should call showTab")
-        if case .url(let url, _, let source) = showTabContent {
-            XCTAssertEqual(url.absoluteString, mockRemoteAISettings.aiChatURL.absoluteString)
-            XCTAssertEqual(source, .ui)
-        } else {
-            XCTFail("Expected URL tab content")
-        }
+        XCTAssertFalse(showTabCalled, "Duck.ai opens through the tab opener so its entry pixel reports it")
+        XCTAssertEqual(aiChatTabOpener.lastURL, mockRemoteAISettings.aiChatURL)
+        XCTAssertEqual(aiChatTabOpener.lastBehavior, .newTab(selected: true))
+        XCTAssertEqual(sourceHandler.consumeData(), .subscriptionPage)
     }
 
     func testPaidAIChatViewModel_OpenURL() throws {

@@ -23,8 +23,6 @@ import Foundation
 /// One frontend request and its response. Context collection remains owned by the submission task.
 @MainActor
 final class AIChatInitialPromptDelivery {
-    private static let frontendResponseTimeout: TimeInterval = 5
-
     private let frontendRequestGate = AIChatFrontendReadinessGate()
     private let frontendSubmissionGate = AIChatFrontendReadinessGate()
     private var pendingResponse: CheckedContinuation<AIChatNativePrompt?, Never>?
@@ -42,7 +40,7 @@ final class AIChatInitialPromptDelivery {
 
     func waitUntilRequested() async -> Bool {
         guard !isCancelled else { return false }
-        return await frontendRequestGate.waitUntilReady(timeout: Self.frontendResponseTimeout)
+        return await frontendRequestGate.waitUntilReady(timeout: nil)
     }
 
     func reply(with prompt: AIChatNativePrompt) -> Bool {
@@ -53,9 +51,9 @@ final class AIChatInitialPromptDelivery {
     }
 
     /// Keep subsequent prompts queued until the frontend has submitted this first one.
-    func waitUntilSubmitted() async -> Bool {
-        guard !isCancelled else { return false }
-        return await frontendSubmissionGate.waitUntilReady(timeout: Self.frontendResponseTimeout)
+    func waitUntilSubmitted() async {
+        guard !isCancelled else { return }
+        _ = await frontendSubmissionGate.waitUntilReady(timeout: nil)
     }
 
     // MARK: - Frontend callbacks

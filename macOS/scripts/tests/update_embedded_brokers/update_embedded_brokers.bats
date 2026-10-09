@@ -9,6 +9,37 @@ setup() {
 	TARGET_DIR="$BATS_TEST_TMPDIR/embedded"
 	MAIN_CONFIG="$BATS_TEST_TMPDIR/main_config.json"
 	mkdir -p "$SOURCE_DIR" "$TARGET_DIR"
+
+	SIGNING_KEYS="$scripts_dir/$SIGNING_KEYS_RELATIVE_PATH"
+	SIGNING_FIXTURES="$scripts_dir/../../SharedPackages/DataBrokerProtectionCore/Tests/DataBrokerProtectionCoreTests/BundleResources/BrokerBundleSigning"
+
+	# dbp-api's test staging key, which signed the fixtures. The app never ships it.
+	TEST_STAGING_KEY="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqpP7ubErpgXf5cpp1OFghScG7tJbhUhrKyzkxFdXGErtklupZcJx078xfZRmdYoxLbnaIAt3NYs9XeOr1oJESA=="
+}
+
+generateKey() {
+	local name=$1
+
+	openssl ecparam -name prime256v1 -genkey -noout -out "$BATS_TEST_TMPDIR/$name.pem"
+	openssl ec -in "$BATS_TEST_TMPDIR/$name.pem" -pubout -outform DER 2>/dev/null | base64 | tr -d '\n'
+}
+
+sign() {
+	local name=$1
+	local file=$2
+
+	openssl dgst -sha256 -sign "$BATS_TEST_TMPDIR/$name.pem" "$file" | base64 | tr -d '\n' > "$file.sig"
+}
+
+writeSignedMainConfig() {
+	jq -n '{active_data_brokers: ["a.com.json"], json_sha256: {}, manifest_version: 1790906518}' > "$MAIN_CONFIG"
+}
+
+writeDigestMainConfig() {
+	local digest=$1
+
+	jq -n --arg digest "$digest" \
+		'{active_data_brokers: ["active.com.json"], json_sha256: {"active.com.json": $digest}}' > "$MAIN_CONFIG"
 }
 
 writeBroker() {
@@ -126,4 +157,139 @@ writeMainConfig() {
 	run checkUniqueBrokerNames "$TARGET_DIR"
 	[ "$status" -ne 0 ]
 	[[ "$output" == *"Same Name"* ]]
+}
+
+@test "bundle-signing-keys.json: holds one production and one staging key" {
+	run jq -r '.production[]' "$SIGNING_KEYS"
+	[ "$status" -eq 0 ]
+	[ "$output" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==" ]
+
+	run jq -r '.staging[]' "$SIGNING_KEYS"
+	[ "$status" -eq 0 ]
+	[ "$output" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==" ]
+}
+
+@test "verifyMainConfigSignature: accepts the dbp-api fixture signed with the test staging key" {
+	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$TEST_STAGING_KEY"
+	[ "$status" -eq 0 ]
+}
+
+@test "verifyMainConfigSignature: rejects the test-signed dbp-api fixture with the app's keys" {
+	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(jq -r '.production[], .staging[]' "$SIGNING_KEYS")"
+	[ "$status" -ne 0 ]
+}
+
+@test "verifyMainConfigSignature: accepts a signature from any of the keys" {
+	local key other_key
+	key=$(generateKey signer)
+	other_key=$(generateKey other)
+	writeSignedMainConfig
+	sign signer "$MAIN_CONFIG"
+	printf '\n' >> "$MAIN_CONFIG.sig"
+
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" "$(printf '%s\n%s' "$other_key" "$key")"
+	[ "$status" -eq 0 ]
+}
+
+@test "verifyMainConfigSignature: rejects a tampered config" {
+	local key
+	key=$(generateKey signer)
+	writeSignedMainConfig
+	sign signer "$MAIN_CONFIG"
+	jq -c '.manifest_version = 9999999999' "$MAIN_CONFIG" > "$MAIN_CONFIG.tmp" && mv "$MAIN_CONFIG.tmp" "$MAIN_CONFIG"
+
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" "$key"
+	[ "$status" -ne 0 ]
+}
+
+@test "verifyMainConfigSignature: rejects a signature from another key" {
+	local other_key
+	generateKey signer >/dev/null
+	other_key=$(generateKey other)
+	writeSignedMainConfig
+	sign signer "$MAIN_CONFIG"
+
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" "$other_key"
+	[ "$status" -ne 0 ]
+}
+
+@test "verifyMainConfigSignature: rejects a missing, empty or malformed signature" {
+	local key
+	key=$(generateKey signer)
+	writeSignedMainConfig
+
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" "$key"
+	[ "$status" -ne 0 ]
+
+	: > "$MAIN_CONFIG.sig"
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" "$key"
+	[ "$status" -ne 0 ]
+
+	echo 'not a signature' > "$MAIN_CONFIG.sig"
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" "$key"
+	[ "$status" -ne 0 ]
+}
+
+@test "verifyMainConfigSignature: rejects everything when there are no keys" {
+	generateKey signer >/dev/null
+	writeSignedMainConfig
+	sign signer "$MAIN_CONFIG"
+
+	run verifyMainConfigSignature "$MAIN_CONFIG" "$MAIN_CONFIG.sig" ""
+	[ "$status" -ne 0 ]
+}
+
+@test "verifyBrokerDigests: passes when active brokers match json_sha256" {
+	writeBroker "$SOURCE_DIR/active.com.json" "Active" "0.2.0"
+	writeBroker "$SOURCE_DIR/inactive.com.json" "Inactive" "0.2.0"
+	writeDigestMainConfig "$(shasum -a 256 "$SOURCE_DIR/active.com.json" | cut -d ' ' -f 1)"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -eq 0 ]
+}
+
+@test "verifyBrokerDigests: fails when an active broker does not match json_sha256" {
+	writeBroker "$SOURCE_DIR/active.com.json" "Active" "0.2.0"
+	writeDigestMainConfig "$(shasum -a 256 "$SOURCE_DIR/active.com.json" | cut -d ' ' -f 1)"
+	writeBroker "$SOURCE_DIR/active.com.json" "Tampered" "0.2.0"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"active.com.json"* ]]
+}
+
+@test "verifyBrokerDigests: fails when another file with an active broker's name does not match json_sha256" {
+	writeBroker "$SOURCE_DIR/active.com.json" "Active" "0.2.0"
+	writeDigestMainConfig "$(shasum -a 256 "$SOURCE_DIR/active.com.json" | cut -d ' ' -f 1)"
+	mkdir -p "$SOURCE_DIR/nested"
+	writeBroker "$SOURCE_DIR/nested/active.com.json" "Tampered" "0.2.0"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"nested/active.com.json"* ]]
+}
+
+@test "verifyBrokerDigests: fails when an active broker has no json_sha256 entry" {
+	writeBroker "$SOURCE_DIR/active.com.json" "Active" "0.2.0"
+	writeMainConfig "active.com.json"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -ne 0 ]
+}
+
+@test "verifyBrokerDigests: fails when an active broker is missing from the archive" {
+	writeBroker "$SOURCE_DIR/other.com.json" "Other" "0.2.0"
+	writeDigestMainConfig "$(shasum -a 256 "$SOURCE_DIR/other.com.json" | cut -d ' ' -f 1)"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"active.com.json is missing"* ]]
+}
+
+@test "verifyBrokerDigests: passes for the dbp-api fixture brokers" {
+	cp "$SIGNING_FIXTURES"/*.com.json "$SOURCE_DIR"
+	jq '.active_data_brokers = ["anywho.com.json", "verecor.com.json"]' "$SIGNING_FIXTURES/main_config.json" > "$MAIN_CONFIG"
+
+	run verifyBrokerDigests "$SOURCE_DIR" "$MAIN_CONFIG"
+	[ "$status" -eq 0 ]
 }

@@ -144,15 +144,16 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
         XCTAssertEqual(outcomeParameters.last?["surface"], "duck_ai")
     }
 
-    func testWhenTheDuckAITabShowsAnExistingChatThenFollowUpsAreNotMeasured() {
+    func testWhenTheDuckAITabChatAlreadyHasAPromptThenFollowUpsAreNotMeasured() {
         sut = makeCoordinator(host: .omnibar, isDisclaimerEnabled: false)
-        sut.syncChipVisibility(hasExistingChat: true)
         sut.showExpanded(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .sendButton)
 
+        sut.showExpanded(inputMode: .aiChat)
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "and then?", mode: .aiChat, trigger: .sendButton)
         sut.hide()
 
-        XCTAssertEqual(outcomeParameters, [])
+        XCTAssertEqual(outcomeParameters.map { $0["outcome"] }, ["prompt_submitted"])
     }
 
     func testWhenTheContextualSheetIsPresentedAndDismissedThenItIsMeasuredWhileItIsOnScreen() {

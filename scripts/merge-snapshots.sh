@@ -31,6 +31,8 @@ if [ -z "$PR_NUMBER" ]; then
 	exit 1
 fi
 
+CURRENT_POINTER="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
+
 MERGED_AT="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json mergedAt --jq '.mergedAt // empty')"
 if [ -z "$MERGED_AT" ]; then
 	PR_STATE="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json state --jq '.state')"
@@ -39,13 +41,19 @@ if [ -z "$MERGED_AT" ]; then
 		exit 1
 	fi
 
+	PR_HEAD="$(gh pr view "$PR_NUMBER" -R "$SUBMODULE_REPO" --json headRefOid --jq '.headRefOid')"
+	PR_STATUS="$(gh api "repos/$SUBMODULE_REPO/compare/$PR_HEAD...$CURRENT_POINTER" --jq '.status' 2>/dev/null || true)"
+	if [ "$PR_STATUS" != "identical" ] && [ "$PR_STATUS" != "behind" ]; then
+		echo "❌ $SUBMODULE_PATH points at $CURRENT_POINTER, which is not in companion PR #$PR_NUMBER (status: '${PR_STATUS:-unknown}')."
+		echo "   Run ./scripts/open-snapshot-submodule-pr.sh on '$BRANCH' and push, then re-add the label."
+		exit 1
+	fi
+
 	echo "🔀 Merging $SUBMODULE_REPO PR #$PR_NUMBER..."
-	gh pr merge "$PR_NUMBER" -R "$SUBMODULE_REPO" --merge
+	gh pr merge "$PR_NUMBER" -R "$SUBMODULE_REPO" --merge --match-head-commit "$PR_HEAD"
 else
 	echo "ℹ️  Companion PR #$PR_NUMBER is already merged."
 fi
-
-CURRENT_POINTER="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
 
 STATUS=""
 for attempt in 1 2 3 4 5; do
@@ -60,7 +68,7 @@ for attempt in 1 2 3 4 5; do
 done
 if [ "$STATUS" != "identical" ] && [ "$STATUS" != "behind" ]; then
 	echo "❌ $SUBMODULE_PATH points at $CURRENT_POINTER, which is not reachable from $SUBMODULE_REPO@$BASE_BRANCH (status: '${STATUS:-unknown}')."
-	echo "   Run ./scripts/open-snapshot-submodule-pr.sh on '$BRANCH' and push, so the pointer matches the companion PR."
+	echo "   Point $SUBMODULE_PATH on '$BRANCH' at a commit on $SUBMODULE_REPO@$BASE_BRANCH and push, then re-add the label."
 	exit 1
 fi
 

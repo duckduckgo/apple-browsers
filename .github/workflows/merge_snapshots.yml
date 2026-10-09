@@ -7,7 +7,7 @@ on:
 jobs:
   merge-snapshots:
     if: github.event.label.name == 'Merge snapshots' && github.event.pull_request.head.repo.full_name == github.repository
-    name: Merge snapshots PR and update pointer
+    name: Merge snapshots PR and verify pointer
     runs-on: ubuntu-latest
     permissions:
       contents: read

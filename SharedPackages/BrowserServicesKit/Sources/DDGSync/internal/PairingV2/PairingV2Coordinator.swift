@@ -181,6 +181,16 @@ final class PairingV2Coordinator {
         await closeLocalChannel()
     }
 
+    func completeAccountSwitch(didSucceed: Bool) async throws {
+        if didSucceed {
+            await reportJoinStatus(.success)
+            try await execute(stateMachine.handle(.loginSucceeded))
+        } else {
+            await reportJoinStatus(.loginFailed)
+            try await execute(stateMachine.handle(.failed(.loginFailed)))
+        }
+    }
+
     private func closeLocalChannel() async {
         guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
             return
@@ -256,6 +266,9 @@ final class PairingV2Coordinator {
 
         case .recoveryCodeUnavailable:
             commands = stateMachine.handle(.receivedRecoveryCodeUnavailable)
+
+        case .recoveryCodeDone(let message):
+            commands = stateMachine.handle(.receivedRecoveryCodeDone(message.reason))
         }
 
         try await execute(commands)
@@ -374,7 +387,7 @@ final class PairingV2Coordinator {
                 try await execute(stateMachine.handle(.failed(.recoveryCodeSendFailed)))
                 throw PairingV2Error.recoveryCodeSendFailed
             }
-            try await execute(stateMachine.handle(.recoveryCodeSent))
+            try await execute(stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: supportsRecoveryCodeDone)))
 
         case .loginWithRecoveryCode(let recoveryCode):
             do {
@@ -382,15 +395,19 @@ final class PairingV2Coordinator {
             } catch SyncError.accountAlreadyExists {
                 throw SyncError.accountAlreadyExists
             } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.invalidCredentials)))
                 throw PairingV2Error.invalidCredentials
             } catch SyncError.failedToWriteSecureStore {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.localStorageFailed)))
                 throw PairingV2Error.localStorageFailed
             } catch {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.loginFailed)))
                 throw PairingV2Error.loginFailed
             }
+            await reportJoinStatus(.success)
             try await execute(stateMachine.handle(.loginSucceeded))
 
         case .upgradeThirdPartyAccountWithRecoveryCode(let recoveryCode):
@@ -398,15 +415,19 @@ final class PairingV2Coordinator {
                 try await upgradeThirdPartyAccount(with: recoveryCode)
             } catch let error as ThirdPartyAccountUpgradeError {
                 let pairingError = pairingV2AccountUpgradeError(for: error)
+                await reportJoinStatus(.scopeRejected)
                 try await execute(stateMachine.handle(.failed(pairingError)))
                 throw pairingError
             } catch let error as PairingV2Error {
+                await reportJoinStatus(.scopeRejected)
                 try await execute(stateMachine.handle(.failed(error)))
                 throw error
             } catch {
+                await reportJoinStatus(.scopeRejected)
                 try await execute(stateMachine.handle(.failed(.upgradeFailed)))
                 throw PairingV2Error.upgradeFailed
             }
+            await reportJoinStatus(.success)
             try await execute(stateMachine.handle(.loginSucceeded))
 
         case .stopPolling:
@@ -482,6 +503,17 @@ final class PairingV2Coordinator {
             .init(recoveryCode: recoveryCode)
         )
         try await send(response, failureStage: failureStage)
+    }
+
+    private func reportJoinStatus(_ reason: PairingV2RecoveryCodeDoneReason) async {
+        guard supportsRecoveryCodeDone else {
+            return
+        }
+        do {
+            try await send(.recoveryCodeDone(.init(reason: reason)), failureStage: nil)
+        } catch {
+            Logger.sync.debug("Pairing V2 could not report join status: \(String(reflecting: error))")
+        }
     }
 
     private func login(with recoveryCode: String) async throws {
@@ -641,6 +673,10 @@ final class PairingV2Coordinator {
         default:
             return false
         }
+    }
+
+    var supportsRecoveryCodeDone: Bool {
+        negotiatedVersion >= .v2Point1
     }
 }
 

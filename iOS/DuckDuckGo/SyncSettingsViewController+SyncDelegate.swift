@@ -269,7 +269,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         pixelFiring?.fire(Pixel.Event.syncAskUserToSwitchAccount)
     }
 
-    func switchAccounts(recoveryKey: SyncCode.RecoveryKey) async {
+    @discardableResult
+    func switchAccounts(recoveryKey: SyncCode.RecoveryKey) async -> Bool {
+        defer {
+            pixelFiring?.fire(Pixel.Event.syncUserSwitchedAccount)
+        }
+
         do {
             try await syncService.disconnect()
         } catch {
@@ -280,8 +285,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
         } catch {
             pixelFiring?.fire(Pixel.Event.syncUserSwitchedLoginError)
+            return false
         }
-        pixelFiring?.fire(Pixel.Event.syncUserSwitchedAccount)
+        return true
     }
 
     private func getErrorType(from errorString: String?) -> AsyncErrorType? {

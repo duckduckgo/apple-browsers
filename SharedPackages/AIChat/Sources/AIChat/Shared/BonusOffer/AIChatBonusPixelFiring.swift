@@ -28,7 +28,7 @@ public protocol AIChatBonusPixelFiring {
     func fire(_ event: AIChatBonusEvent)
 }
 
-// TODO: To remove as it will be injected by the client when implementing pixels
+// To remove as it will be injected by the client when implementing pixels
 public struct NullAIChatBonusPixelFiring: AIChatBonusPixelFiring {
     public init() {}
     public func fire(_ event: AIChatBonusEvent) {}

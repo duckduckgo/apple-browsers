@@ -489,6 +489,10 @@ class MainViewController: UIViewController {
 
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
+    /// Keyboard focus that waits for the tab switcher to close, because `enterSearch()` does nothing while it's up.
+    private var pendingTabSwitcherKeyboard: (tab: Tab, requestID: UUID)?
+    /// Set while Fire dismisses the tab switcher: the post-Fire keyboard rule decides for the page it lands on.
+    private var isDismissingTabSwitcherForFire = false
 
     // Duck.ai fire onboarding flow — see MainViewController+DuckAIFireOnboarding.swift
     var duckAIFireOnboardingFlow = DuckAIFireOnboardingFlowContext()
@@ -999,6 +1003,9 @@ class MainViewController: UIViewController {
         chromeManager.delegate = self
         chromeManager.onUserScrolled = { [weak self] in
             self?.postIdleSessionInstrumentation.pageEngaged()
+        }
+        chromeManager.onScrollStateChanged = { [weak self] in
+            self?.currentTab?.applyDeferredFloatingUIInsetsIfNeeded()
         }
         initTabButton()
         initBookmarksButton()
@@ -2377,8 +2384,8 @@ class MainViewController: UIViewController {
         daxDialogsManager.subscriptionPromotionPending || isChatPathCompletionPending
     }
 
-    /// Contextual onboarding owns the New Tab Page while it runs, so behind the flag no landing raises
-    /// the keyboard over its dialogs. The Add Favorite flow borrows those dialogs but isn't onboarding.
+    /// Behind the flag, contextual onboarding keeps the keyboard hidden over its dialogs.
+    /// The Add Favorite flow borrows those dialogs but isn't onboarding.
     private var isNewTabPageKeyboardHeldForOnboarding: Bool {
         daxDialogsManager.isStillOnboarding() && !daxDialogsManager.isAddFavoriteFlow
     }
@@ -2443,8 +2450,10 @@ class MainViewController: UIViewController {
 
         let chatPathCompletionPending = isChatPathCompletionPending
         // Resolved before the instrumentation call below, so the wide event records the mode
-        // the app decided on rather than racing the keyboard to observe it.
+        // the app decided on rather than racing the keyboard to observe it. Behind the flag a new tab
+        // also keeps the keyboard hidden during onboarding.
         let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2661,7 +2670,8 @@ class MainViewController: UIViewController {
         let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .quickFire)
         forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
-        if KeyboardSettings().onAppLaunch {
+        // On iPhone this focus outlives the burn, so behind the flag the post-Fire rule decides instead.
+        if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && KeyboardSettings().onAppLaunch {
             enterSearch()
         }
     }
@@ -2853,30 +2863,75 @@ class MainViewController: UIViewController {
     }
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
-    func showKeyboardOnAppOpenIfAllowed() -> Bool {
-        guard isAppOpenKeyboardWindowVisible, presentedViewController == nil else { return false }
+    func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
-        guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
-        if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return false }
-        // The page is already on screen, so this is its own dialog. The last onboarding dialog counts
-        // itself as seen as soon as it appears, so the onboarding check alone misses it.
-        if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return false }
-        enterSearchOnAppOpen()
-        let didShowKeyboard = viewCoordinator.omniBar.isTextFieldEditing
-        if didShowKeyboard {
-            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+        let requestID = appOpenKeyboardRequestID
+        let tabID = tabManager.currentTabsModel.currentTab?.uid
+        let isRequestValid = { [weak self] in
+            self?.isAppOpenKeyboardRequestValid(requestID, tabID: tabID, onNewTabPage: onNewTabPage) == true
         }
-        return didShowKeyboard
+        guard isRequestValid() else {
+            completion(false)
+            return
+        }
+        let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
+            guard let self, didFocus, isRequestValid() else {
+                completion(false)
+                return
+            }
+            if onNewTabPage, isNewTabPageVisible {
+                newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+            }
+            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            completion(true)
+        }
+        if onNewTabPage, let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
+            if unifiedToggleInputCoordinator?.isOmnibarSession != true {
+                showBars()
+            }
+            defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
+        } else {
+            enterSearchOnAppOpen()
+            focusCompleted(viewCoordinator.omniBar.isTextFieldEditing)
+        }
     }
 
-    /// The app-open keyboard. The New Tab Page visit started with the keyboard down, because the app
-    /// decides on it a moment later, so the visit is told the keyboard came up.
+    private func isAppOpenKeyboardRequestValid(_ requestID: UUID, tabID: String?, onNewTabPage: Bool) -> Bool {
+        guard appOpenKeyboardRequestID == requestID,
+              featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              isAppOpenKeyboardWindowVisible, presentedViewController == nil,
+              tabManager.currentTabsModel.currentTab?.uid == tabID,
+              (tabManager.currentTabsModel.currentTab?.isHomeTab == true) == onNewTabPage,
+              NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
+        // The last onboarding dialog marks itself seen on appearance, so also check whether it is visible.
+        return !onNewTabPage || (!isNewTabPageKeyboardHeldForOnboarding && !isNewTabPageKeyboardBlockedByDialog &&
+                                !daxDialogsManager.isShowingContextualOnboardingDialog)
+    }
+
+    /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because
+    /// focus is decided a moment later, so the visit is told the keyboard came up.
     func enterSearchOnAppOpen() {
         guard presentedViewController == nil else { return }
         if isNewTabPageVisible, isAppOpenKeyboardWindowVisible {
             newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
         }
         enterSearch()
+    }
+
+    /// Shows the keyboard on the current New Tab Page after Home, tab closing, or tab selection.
+    /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
+    func showKeyboardOnNewTabPageIfAllowed() {
+        // The tab switcher can close after the page's dialog appears. The final onboarding dialog marks
+        // itself as seen on appearance, so also check whether a dialog remains visible.
+        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              isAppOpenKeyboardWindowVisible,
+              isNewTabPageVisible,
+              tabManager.currentTabsModel.currentTab?.isHomeTab == true,
+              NewTabPageKeyboardPolicy().onNewTab,
+              !isNewTabPageKeyboardBlockedByDialog,
+              !isNewTabPageKeyboardHeldForOnboarding,
+              !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
+        enterSearchOnAppOpen()
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {
@@ -3986,9 +4041,8 @@ class MainViewController: UIViewController {
         if let tabSwitcherController, !tabSwitcherController.canDismissOnEmpty, tabSwitcherController.tabsModel.isEmpty {
             return
         }
-        let requestID = appOpenKeyboardRequestID
-        clearNavigationStack(forAppOpen: true) { [weak self] in
-            guard let self, appOpenKeyboardRequestID == requestID, isAppOpenKeyboardWindowVisible else { return }
+        dismissScreensForAppOpen { [weak self] in
+            guard let self else { return }
             // Foregrounding skipped this visit while another screen covered the page.
             if isNewTabPageVisible, presentedViewController == nil {
                 startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
@@ -3998,14 +4052,37 @@ class MainViewController: UIViewController {
     }
 
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
-    func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
+    func prepareForIdleReturnNTP(forAppOpen: Bool = false, completion: @escaping () -> Void) {
         // A child of this controller rather than a presented one, so it outlives the dismissal below.
         currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
+        if forAppOpen {
+            // App Lock hides this window until an unlock, and a launch prompt can be presented meanwhile. Close only
+            // the screen left open before then, so the prompt stays and the page is created beneath it.
+            let screenLeftOpen = presentedViewController
+            runWhenAppOpenKeyboardWindowVisible { [weak self] in
+                guard let self else { return }
+                if let presentedViewController, presentedViewController !== screenLeftOpen {
+                    completion()
+                } else {
+                    dismissScreensForAppOpen(completion: completion)
+                }
+            }
+            return
+        }
         guard let presented = presentedViewController, !presented.isBeingDismissed else {
             completion()
             return
         }
         presented.dismiss(animated: true, completion: completion)
+    }
+
+    private func dismissScreensForAppOpen(completion: @escaping () -> Void) {
+        guard isAppOpenKeyboardWindowVisible else { return }
+        let requestID = appOpenKeyboardRequestID
+        clearNavigationStack(forAppOpen: true) { [weak self] in
+            guard let self, appOpenKeyboardRequestID == requestID, isAppOpenKeyboardWindowVisible else { return }
+            completion()
+        }
     }
     
     func updateFindInPage() {
@@ -5483,7 +5560,7 @@ extension MainViewController: OmniBarDelegate {
         segueToEditBookmark(favorite)
     }
 
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?, controlValues: IPadDuckAIControlValues, termsAccepted: Bool) {
         // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
@@ -5495,7 +5572,8 @@ extension MainViewController: OmniBarDelegate {
                    modelId: controlValues.selectedModelId,
                    reasoningEffort: controlValues.selectedReasoningEffort,
                    images: controlValues.selectedImages,
-                   files: controlValues.selectedFiles)
+                   files: controlValues.selectedFiles,
+                   termsAccepted: termsAccepted)
     }
 
     func onChatHistorySelected(url: URL) {
@@ -5968,6 +6046,7 @@ extension MainViewController: OmniBarDelegate {
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
                 self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+                self?.showKeyboardOnNewTabPageIfAllowed()
             }
         ))
     }
@@ -6836,6 +6915,15 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
     }
 
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
+        let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
+        model.onSave = { [weak self] in
+            WidgetCenter.shared.reloadAllTimelines()
+            self?.syncService.scheduler.notifyDataChanged()
+        }
+        present(AddFavoriteViewController(model: model), animated: true)
+    }
+
     func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
     }
@@ -7609,6 +7697,13 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) {
         remoteMessageImpressionReporter.scheduleCheck()
+        let pendingKeyboard = pendingTabSwitcherKeyboard
+        pendingTabSwitcherKeyboard = nil
+        if let pendingKeyboard,
+           pendingKeyboard.requestID == appOpenKeyboardRequestID,
+           pendingKeyboard.tab === tabManager.currentTabsModel.currentTab {
+            showKeyboardOnNewTabPageIfAllowed()
+        }
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
@@ -7617,6 +7712,8 @@ extension MainViewController: TabSwitcherDelegate {
             applyWidth()
         }
         let previousTab = currentTab
+        // A New Tab Page often has no tab controller, so only the model tells Done apart from a pick.
+        let previousTabModel = tabManager.currentTabsModel.currentTab
         
         guard tab !== previousTab?.tabModel else {
             if daxDialogsManager.shouldShowFireButtonPulse {
@@ -7641,7 +7738,15 @@ extension MainViewController: TabSwitcherDelegate {
             assertionFailure("Couldn't create new tab")
             return
         }
+        let shouldFocusKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && newTab.tabModel.isHomeTab
+            && (newTab.tabModel !== previousTabModel
+                || (pendingTabSwitcherKeyboard?.tab === newTab.tabModel
+                    && pendingTabSwitcherKeyboard?.requestID == appOpenKeyboardRequestID))
+            && !isDismissingTabSwitcherForFire && !isClearingNavigationForAppOpen
         transitionTo(tab: newTab, from: previousTab)
+        // Transitioning invalidates the previous request; only this tab can receive focus after dismissal.
+        pendingTabSwitcherKeyboard = shouldFocusKeyboard ? (newTab.tabModel, appOpenKeyboardRequestID) : nil
     }
 
     private func animateLogoAppearance() {
@@ -7684,8 +7789,18 @@ extension MainViewController: TabSwitcherDelegate {
     }
     
     func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        // Closing every tab leaves the switcher's own unseen new tab, which it then dismisses onto.
+        // `updateCurrentTab()` makes that tab current first, so the dismissal reports no new selection.
+        let tab = tabManager.currentTabsModel.currentTab
+        let shouldFocusKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && tab?.isHomeTab == true && tab?.viewed == false
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         updateCurrentTab()
+        if shouldFocusKeyboard, let tab {
+            pendingTabSwitcherKeyboard = (tab, appOpenKeyboardRequestID)
+        } else {
+            pendingTabSwitcherKeyboard = nil
+        }
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
@@ -7767,8 +7882,11 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
-        self.forgetAllWithAnimation(request: fireRequest) {
+        self.forgetAllWithAnimation(request: fireRequest) { [weak self] in
+            self?.pendingTabSwitcherKeyboard = nil
+            self?.isDismissingTabSwitcherForFire = true
             tabSwitcher.dismissIfPossible(animated: false)
+            self?.isDismissingTabSwitcherForFire = false
         }
     }
 
@@ -7780,6 +7898,7 @@ extension MainViewController: TabSwitcherDelegate {
 
         endNewTabPageSessionWithDataClearing()
 
+        let foregroundEntryDate = lastForegroundEntryDate
         Task {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
@@ -7789,6 +7908,13 @@ extension MainViewController: TabSwitcherDelegate {
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
             }
             await fireExecutor.burn(request: request, applicationState: .unknown)
+            // In normal mode the switcher dismisses onto the new tab the burn leaves.
+            if case .normalMode = request.scope, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               lastForegroundEntryDate == foregroundEntryDate,
+               isAppOpenKeyboardWindowVisible, presentedViewController === tabSwitcher,
+               let tab = tabManager.currentTabsModel.currentTab, tab.isHomeTab {
+                pendingTabSwitcherKeyboard = (tab, appOpenKeyboardRequestID)
+            }
             tabSwitcher.dismissIfPossible()
         }
     }
@@ -7806,6 +7932,8 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     private func tabSwitcherNewTabWithAnimation() {
+        // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
+        pendingTabSwitcherKeyboard = nil
         newTab()
         if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
@@ -7866,6 +7994,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
         // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
         performCancel(animated: false)
+        // Keyboard focus left pending by an earlier switcher that never reported its dismissal is stale now.
+        pendingTabSwitcherKeyboard = nil
         showTabSwitcher()
     }
 
@@ -7946,6 +8076,13 @@ extension MainViewController {
                                 suppressPostFireKeyboard: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+        // Tab teardown resets the keyboard request ID; keep background/return cancellation valid across the whole burn.
+        let foregroundEntryDate = lastForegroundEntryDate
+        // Read before the burn: the page it lands on marks onboarding's last dialog as seen as soon as it
+        // appears, before the keyboard below is decided. Flag-gated, because the check can update
+        // onboarding state.
+        let isKeyboardHeldForOnboarding = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && isNewTabPageKeyboardHeldForOnboarding
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
@@ -7973,6 +8110,30 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
+            } else if self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
+                if request.options.contains(.tabs) && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
+                    // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
+                    // Tab changes, backgrounding and user dismissals invalidate the same keyboard request.
+                    let requestID = self.appOpenKeyboardRequestID
+                    let showKeyboardAfterFireButton = DispatchWorkItem { [weak self] in
+                        guard let self,
+                              self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                              self.lastForegroundEntryDate == foregroundEntryDate,
+                              self.appOpenKeyboardRequestID == requestID,
+                              self.isAppOpenKeyboardWindowVisible,
+                              self.isNewTabPageVisible,
+                              self.tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
+                        let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
+                            onDuckAITab: self.currentTab?.isAITab == true,
+                            stillOnboarding: isKeyboardHeldForOnboarding || self.isNewTabPageKeyboardHeldForOnboarding)
+                        guard showsKeyboard,
+                              !self.isNewTabPageKeyboardBlockedByDialog,
+                              !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
+                        self.enterSearch()
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
+                    self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
+                }
             } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
@@ -8281,6 +8442,9 @@ extension MainViewController: FireExecutorDelegate {
             return
         case .autoClearOnLaunch:
             autoClearInProgress = false
+            if fireRequest.options.contains(.tabs), hasLoadedInitialView, autoClearShouldRefreshUIAfterClear {
+                refreshUIAfterClear()
+            }
             autoClearShouldRefreshUIAfterClear = true
         case .autoClearOnForeground:
             autoClearInProgress = false
@@ -8905,6 +9069,7 @@ extension MainViewController {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
             self.closeTab(tab, behavior: .createEmptyTabAtSamePosition)
+            self.showKeyboardOnNewTabPageIfAllowed()
 
         case .newTab:
             self.newTab()
@@ -9018,6 +9183,7 @@ extension MainViewController {
         case .home:
             guard let tab = currentTab?.tabModel else { return }
             closeTab(tab, behavior: .createEmptyTabAtSamePosition)
+            showKeyboardOnNewTabPageIfAllowed()
 
         case .newTab:
             newTab()

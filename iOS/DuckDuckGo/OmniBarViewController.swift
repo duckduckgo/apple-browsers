@@ -844,7 +844,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             }
 
             if selectedTextEntryMode == .aiChat {
-                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues())
+                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues(), termsAccepted: false)
                 return
             }
 

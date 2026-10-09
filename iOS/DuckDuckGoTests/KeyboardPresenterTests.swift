@@ -46,6 +46,8 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
             windowVisibleHandler = handler
         }
     }
+    var completesFocusImmediately = true
+    var focusCompletion: ((Bool) -> Void)?
 
     func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void) {
         closeScreensCallCount += 1
@@ -53,9 +55,13 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
         dismissalCompletion = completion
     }
 
-    func showKeyboardOnAppOpenIfAllowed() -> Bool {
+    func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         allowedKeyboardCallCount += 1
-        return keyboardWasShown
+        if completesFocusImmediately {
+            completion(keyboardWasShown)
+        } else {
+            focusCompletion = completion
+        }
     }
 
     func enterSearchOnAppOpen() {
@@ -70,11 +76,22 @@ final class KeyboardPresenterTests {
     private let pixelFiring = PixelKitMock()
     private var onAppLaunch = false
     private var scheduledActions: [() -> Void] = []
+    private var afterPromptActions: [() -> Void] = []
+    private var promptPending = false
+    private var promptRequestIsValid: (@MainActor () -> Bool)?
+    private var promptCloseHandler: (@MainActor () -> Void)?
     private lazy var presenter = KeyboardPresenter(
         mainViewController: target,
         featureFlagger: featureFlagger,
+        runOnceModalPromptCloses: { [unowned self] isValid, handler in
+            guard promptPending else { return false }
+            promptRequestIsValid = isValid
+            promptCloseHandler = handler
+            return true
+        },
         pixelFiring: pixelFiring,
         onAppLaunch: { [unowned self] in onAppLaunch },
+        scheduleAfterPrompt: { [unowned self] in afterPromptActions.append($0) },
         schedule: { [unowned self] in scheduledActions.append($0) })
 
     @available(iOS 16, macOS 13, *)
@@ -110,8 +127,9 @@ final class KeyboardPresenterTests {
         onAppLaunch = true
         target.isNewTabPageVisible = false
 
-        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: false)
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: true)
 
+        #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == (secondsInBackground == 25 ? 1 : 0))
         #expect(pixelFiring.actualFireCalls.count == (!flagOn && secondsInBackground == 25 ? 1 : 0))
         scheduledActions.forEach { $0() }
@@ -120,7 +138,6 @@ final class KeyboardPresenterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("App Launch usage requires successful focus on another tab", .timeLimit(.minutes(1)), arguments: [
-        (false, true),
         (false, false),
         (true, true)
     ])
@@ -137,6 +154,47 @@ final class KeyboardPresenterTests {
 
         #expect(target.allowedKeyboardCallCount == 1)
         #expect(pixelFiring.actualFireCalls.count == (!onNewTabPage && keyboardWasShown ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("App Launch usage waits for the actual asynchronous focus result", .timeLimit(.minutes(1)), arguments: [false, true])
+    func appLaunchPixelWaitsForFocusCompletion(keyboardWasShown: Bool) throws {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        onAppLaunch = true
+        target.isNewTabPageVisible = false
+        target.completesFocusImmediately = false
+
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 1)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+        let completion = try #require(target.focusCompletion)
+        completion(keyboardWasShown)
+
+        #expect(pixelFiring.actualFireCalls.count == (keyboardWasShown ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A cancelled request or disabled flag cannot record delayed App Launch usage", .timeLimit(.minutes(1)), arguments: [false, true])
+    func invalidatedFocusCompletionDoesNotRecordUsage(disableFlag: Bool) throws {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        onAppLaunch = true
+        target.isNewTabPageVisible = false
+        target.completesFocusImmediately = false
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        let completion = try #require(target.focusCompletion)
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        completion(true)
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+        #expect(target.legacyKeyboardCallCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -160,7 +218,11 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A cancelled request or disabled flag cannot focus after dismissal or delay", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    @Test("A cancelled request or disabled flag cannot focus after dismissal or delay", .timeLimit(.minutes(1)), arguments: [
+        (true, false),
+        (false, false),
+        (false, true)
+    ])
     func invalidatedRequest(beforeDismissal: Bool, disableFlag: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         onAppLaunch = true
@@ -203,15 +265,89 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Idle-return cleanup only runs for a New Tab Page", .timeLimit(.minutes(1)))
-    func otherTabsDoNotDismissScreens() {
+    @Test("A pending prompt defers keyboard focus and usage recording", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func promptDefersKeyboard(onNewTabPage: Bool, keyboardWasShown: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        target.isNewTabPageVisible = false
+        promptPending = true
+        onAppLaunch = true
+        target.isNewTabPageVisible = onNewTabPage
+        target.keyboardWasShown = keyboardWasShown
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(promptRequestIsValid?() == true)
 
-        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+        promptCloseHandler?()
+        #expect(afterPromptActions.count == 1)
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
+        #expect(pixelFiring.actualFireCalls.count == (!onNewTabPage && keyboardWasShown ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Invalidating a request stops waiting and focus after a prompt", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func invalidatedPromptRequest(afterClose: Bool, disableFlag: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        promptPending = true
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        if afterClose {
+            promptCloseHandler?()
+            #expect(afterPromptActions.count == 1)
+        }
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        #expect(promptRequestIsValid?() == false)
+        if !afterClose {
+            promptCloseHandler?()
+            #expect(afterPromptActions.isEmpty)
+        }
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag-off launch never subscribes to prompt closure", .timeLimit(.minutes(1)))
+    func flagOffDoesNotWaitForPrompt() {
+        featureFlagger.enabledFeatureFlags = []
+        promptPending = true
+        onAppLaunch = true
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        #expect(promptCloseHandler == nil)
+        #expect(target.legacyKeyboardCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A newly created page waits for a prompt without using the App Launch setting", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func createdNewTabPageWaitsForPrompt(flagOn: Bool, launchSetting: Bool) {
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        onAppLaunch = launchSetting
+        promptPending = true
+
+        presenter.showKeyboardOnNewTabPageCreated()
 
         #expect(target.closeScreensCallCount == 0)
-        #expect(scheduledActions.count == 1)
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(scheduledActions.count == (flagOn ? 1 : 0))
+        scheduledActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(promptRequestIsValid?() == (flagOn ? true : nil))
+
+        promptCloseHandler?()
+        afterPromptActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == (flagOn ? 1 : 0))
+        #expect(target.legacyKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)

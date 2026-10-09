@@ -29,6 +29,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case widgetReporting
 
+    /// Remotely control daily Duo usage reporting with delayed sending and randomized timestamps.
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
+    case iPhoneDuoLaunchReporting
+
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
@@ -85,9 +89,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
-    case suppressShowBarsGestureRecogniserDelay
 
     /// https://app.asana.com/1/137249556945/project/414709148257752/task/1217605270508341
     case elementFullscreen

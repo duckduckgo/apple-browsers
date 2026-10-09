@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Попробовать";
+"action.title.vpn.free-trial-badge" = "Попробовать бесплатно";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Блокирует трекеры, следящие за вашей активностью, еще до их загрузки, фактически устраняя рекламу на основе отслеживания.";
@@ -316,6 +316,12 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Снять фото";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Файлы автоматически проверяются на наличие незаконного контента. Для отмеченных чатов действует ограниченный срок хранения данных. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Подробнее";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Это сообщение слишком длинное для отправки с вложениями.";
 
@@ -345,6 +351,15 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "Добавить вкладки";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ не может создавать изображения. Защита Zero Provider Visibility не будет действовать, пока вы не переключитесь обратно.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ не поддерживает создание изображений.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Сейчас используется %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "После редактирования текущий ответ будет заменен новым.";
@@ -1470,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Конфигурация";
 
 /* No comment provided by engineer. */
 "Confirm" = "Подтвердить";
@@ -2615,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Введите неотрицательное количество дней. Дата установки будет сдвинута назад на указанное количество дней.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3070,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Событие добавлено в Apple Calendar";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "Код: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Импорт паролей";
 
@@ -3191,9 +3197,6 @@
 "keyCommandZoomOut" = "Уменьшить масштаб";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Последняя обработка: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Загружаем доступные продукты...";
 
 /* No comment provided by engineer. */
@@ -3267,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Имя хоста политики сообщений";
-
-/* No comment provided by engineer. */
-"Messages" = "Сообщения";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3629,13 +3629,7 @@
 "No extensions installed" = "Расширения браузера не установлены";
 
 /* No comment provided by engineer. */
-"No Logs" = "Нет журналов";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Нет совпадений по запросу «%@»";
-
-/* No comment provided by engineer. */
-"No messages" = "Нет сообщений";
 
 /* No comment provided by engineer. */
 "No results found" = "Ничего не найдено";
@@ -4167,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo не удалось загрузить эту страницу.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Журналы недавней обработки";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Родственники: %@";
@@ -4954,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Что нового";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Отображает журналы за последнюю минуту, помогая диагностировать проблемы сразу после обновления.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Выберите наиболее точное описание проблемы, с которой вы столкнулись.";
 
@@ -5001,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Статус: недействительный";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
@@ -5492,9 +5477,6 @@
 "theme.name.light" = "Светлая";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "В этом списке содержатся уже показанные сообщения, а также максимум одно сообщение, показ которого запланирован. В конфигурации могут находиться и другие сообщения, которые будут показаны после обработки.";
-
-/* No comment provided by engineer. */
 "Title" = "Название";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5517,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Добавлен контакт";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Версия: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Поиск";
@@ -5917,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ не может создавать изображения. Защита Zero Provider Visibility не будет действовать, пока вы не переключитесь обратно.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ не поддерживает создание изображений.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Сейчас используется %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Все чаты";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Файлы автоматически проверяются на наличие незаконного контента. Для отмеченных чатов действует ограниченный срок хранения данных. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Подробнее";

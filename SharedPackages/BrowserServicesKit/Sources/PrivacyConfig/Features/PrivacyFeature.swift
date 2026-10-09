@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case webExtensions
     case chromeWebstorePatching
     case extensionManagement
+    case extensionsCatalog
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -508,6 +509,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
 
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats under its chat box.
+    case homepageChatSuggestions
+
     /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
     /// auto-grants per-site mic permission at launch, locks the Permission Center row,
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and
@@ -838,7 +842,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -932,6 +935,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
+
+    /// Kill switch for the "Sync your bookmarks" promo.
+    case syncSetupBookmarksPromo
+
+    /// Kill switch for the "Sync your autofill data" promo.
+    case syncSetupAutofillPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
@@ -986,5 +995,12 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
-    case curatedExtensions
+}
+
+public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionsCatalog }
+
+    case bitwarden
+    case onePassword
+    case lastPass
 }

@@ -401,7 +401,7 @@ class SwitchBarTextEntryView: UIView {
         guard let pastedText = UIPasteboard.general.string,
               !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         handler.updateCurrentText(pastedText)
-        handler.submitText(pastedText)
+        handler.submitText(pastedText, trigger: .pasteAndGo)
     }
 
     /// Appends "Paste & Go" to the long-press menu when the clipboard has text (iOS 16+).

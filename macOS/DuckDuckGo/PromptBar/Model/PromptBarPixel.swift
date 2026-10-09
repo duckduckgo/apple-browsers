@@ -133,6 +133,24 @@ enum PromptBarPixel: PixelKit.Event {
     /// The on/off pixels only cover users who touch a setting; this one sizes the enabled base.
     case state(shortcutEnabled: Bool, menuBarIconEnabled: Bool)
 
+    /// Event Trigger: The Prompt Bar is presented for the first time on this install.
+    /// `promoOutcome` attributes the activation to the launcher promo.
+    case firstUse(source: PromptBarPresentationSource, promoOutcome: DuckAiLauncherPromoOutcome?)
+
+    // MARK: - Launcher promo
+
+    /// Event Trigger: The launcher promo is revealed: once per New Tab Page load, once per address bar opening.
+    case promoShown(surface: DuckAiLauncherPromoSurface)
+
+    /// Event Trigger: User clicks Try Now on the launcher promo
+    case promoTryNow(surface: DuckAiLauncherPromoSurface)
+
+    /// Event Trigger: User closes the launcher promo (×)
+    case promoClosed(surface: DuckAiLauncherPromoSurface)
+
+    /// Event Trigger: User sends a prompt while the launcher promo is on screen
+    case promoIgnored(surface: DuckAiLauncherPromoSurface)
+
     // MARK: -
 
     var name: String {
@@ -203,6 +221,16 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_settings_shortcut_changed"
         case .state:
             return "aichat_promptbar_state"
+        case .firstUse:
+            return "aichat_promptbar_first_use_u"
+        case .promoShown:
+            return "aichat_promptbar_promo_shown"
+        case .promoTryNow:
+            return "aichat_promptbar_promo_try_now"
+        case .promoClosed:
+            return "aichat_promptbar_promo_closed"
+        case .promoIgnored:
+            return "aichat_promptbar_promo_ignored"
         }
     }
 
@@ -254,6 +282,10 @@ enum PromptBarPixel: PixelKit.Event {
                     "menu_bar_icon_enabled": String(menuBarIconEnabled)]
         case .modelPickerShown(let origin), .reasoningPickerShown(let origin):
             return ["origin": origin]
+        case .firstUse(let source, let promoOutcome):
+            return ["source": source.pixelValue, "promo_outcome": promoOutcome?.rawValue ?? "none"]
+        case .promoShown(let surface), .promoTryNow(let surface), .promoClosed(let surface), .promoIgnored(let surface):
+            return ["surface": surface.rawValue]
         }
     }
 

@@ -316,6 +316,12 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tag et billede";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Filer scannes automatisk for ulovligt indhold. Markerede chats har begrænset dataopbevaring. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Mere info";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Beskeden er for lang til at blive sendt med vedhæftede filer.";
 
@@ -345,6 +351,15 @@
 
 /* title of the tab attachment picker */
 "aichat.choose-tabs.title" = "Tilføj faner";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke oprette billeder. Nul udbydersynlighed gælder ikke, før du skifter tilbage.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ understøtter ikke oprettelse af billeder.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Bruger nu %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Redigering vil erstatte svaret med et nyt.";
@@ -1470,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfiguration";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bekræft";
@@ -2615,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Indtast et ikke-negativt antal dage. Installationsdatoen vil blive sat til det antal dage siden.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3070,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Begivenhed føjet til Apple Kalender";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importer adgangskoder";
 
@@ -3191,9 +3197,6 @@
 "keyCommandZoomOut" = "Zoom ud";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Sidst behandlet: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Indlæser tilgængelige produkter ...";
 
 /* No comment provided by engineer. */
@@ -3267,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Værtsnavn for meddelelsespolitik";
-
-/* No comment provided by engineer. */
-"Messages" = "Beskeder";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3629,13 +3629,7 @@
 "No extensions installed" = "Ingen udvidelser installeret";
 
 /* No comment provided by engineer. */
-"No Logs" = "Ingen logfiler";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ingen resultater for \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Ingen beskeder";
 
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater fundet";
@@ -4167,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo kan ikke indlæse denne side.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Seneste behandlingslogfiler";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Slægtninge: %@";
@@ -4954,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Nyheder";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Viser logfiler fra det seneste minut for at hjælpe med at diagnosticere problemer umiddelbart efter en opdatering.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vælg den mulighed, der bedst beskriver det problem, du oplevede.";
 
@@ -5001,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Status: Ugyldiggjort";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gemt værtsnavn: %@";
@@ -5492,9 +5477,6 @@
 "theme.name.light" = "Let";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Denne liste indeholder beskeder, der er blevet vist, plus højst én besked, der er planlagt til at blive vist. Der kan være flere beskeder i konfigurationen, som vil blive præsenteret, men de er ikke blevet behandlet endnu.";
-
-/* No comment provided by engineer. */
 "Title" = "Titel";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5517,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt tilføjet";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Version: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Søg";
@@ -5917,20 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke oprette billeder. Nul udbydersynlighed gælder ikke, før du skifter tilbage.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ understøtter ikke oprettelse af billeder.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Bruger nu %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Alle chats";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Filer scannes automatisk for ulovligt indhold. Markerede chats har begrænset dataopbevaring. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Mere info";

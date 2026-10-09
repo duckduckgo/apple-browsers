@@ -35,6 +35,7 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
         let call = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "iphone-duo-launched")
         XCTAssertEqual(call.frequency, .daily)
+        XCTAssertFalse(call.includeAppVersionParameter)
         XCTAssertEqual(call.pixel.namePrefix, .platformDefault)
         XCTAssertEqual(call.pixel.platformSuffixPolicy, .standard)
         XCTAssertEqual(call.pixel.parameters, ["petal": "randomize"])
@@ -70,7 +71,7 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
         reporter.reportLaunch()
         reporter.reportLaunch()
         XCTAssertEqual(names, ["iphone-duo-launched_daily_ios_phone"])
-        XCTAssertEqual(parameters.first?["petal"], "randomize")
+        XCTAssertEqual(parameters.first?.filter { $0.key != PixelKit.Parameters.test }, ["petal": "randomize"])
 
         let relaunchedReporter = try makeReporter()
         relaunchedReporter.reportLaunch()
@@ -85,7 +86,8 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
         date.addTimeInterval(24 * 60 * 60)
         relaunchedReporter.reportLaunch()
         XCTAssertEqual(names, ["iphone-duo-launched_daily_ios_phone", "iphone-duo-launched_daily_ios_phone"])
-        XCTAssertEqual(parameters.map { $0["petal"] }, ["randomize", "randomize"])
+        XCTAssertEqual(parameters.map { $0.filter { $0.key != PixelKit.Parameters.test } },
+                       [["petal": "randomize"], ["petal": "randomize"]])
     }
 
     func testPixelWaitsForRandomDelayBetweenOneAndThirtySeconds() throws {
@@ -182,11 +184,5 @@ final class DeviceLaunchPixelReporterTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.iPhoneDuoLaunchReporting]
         reporter.reportLaunch()
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 2)
-    }
-
-    func testHardwareMachineReturnsNonemptyValue() throws {
-        let identifier = try XCTUnwrap(DeviceLaunchPixelReporter.hardwareMachine())
-        XCTAssertFalse(identifier.isEmpty)
-        XCTAssertFalse(identifier.contains("\0"))
     }
 }

@@ -67,9 +67,9 @@ struct DebugScreensView: View {
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 Section(header: Text(verbatim: "Device")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(verbatim: "Hardware machine (hw.machine)")
+                        Text(verbatim: "Hardware model")
                         // Check device matching locally without uploading the raw model value.
-                        Text(verbatim: DeviceLaunchPixelReporter.hardwareMachine() ?? "Unavailable")
+                        Text(verbatim: HardwareModel.model ?? "Unavailable")
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                     }

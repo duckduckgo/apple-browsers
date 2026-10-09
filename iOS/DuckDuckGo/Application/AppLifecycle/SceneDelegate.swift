@@ -68,7 +68,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     /// See: `Foreground.swift` -> `onTransition()`
     func sceneDidBecomeActive(_ scene: UIScene) {
         appStateMachine.handle(.didBecomeActive)
-        lifecycleInstrumentation.sceneDidBecomeActive(windows: (scene as? UIWindowScene)?.windows ?? [])
+        lifecycleInstrumentation.sceneDidBecomeActive(windows: (scene as? UIWindowScene)?.windows ?? [], in: appStateMachine.currentState)
     }
 
     /// See: `Foreground.swift` -> `willLeave()`
@@ -159,7 +159,12 @@ struct SceneLifecycleInstrumentation {
     }
 
     /// The scene became active but none of its visible windows shows app UI, so the user sees a black screen.
-    func sceneDidBecomeActive(windows: [UIWindow]) {
+    /// Skipped while terminating (the critical alert has its own root) and in the test host, where the main UI is not expected.
+    func sceneDidBecomeActive(windows: [UIWindow], in state: AppState) {
+        switch state {
+        case .terminating, .simulated: return
+        case .initializing, .launching, .connected, .foreground, .background: break
+        }
         guard !windows.contains(where: { !$0.isHidden && isAppUI($0.rootViewController) }) else { return }
         pixelFiring?.fire(SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)
     }

@@ -459,12 +459,13 @@ final class SceneLifecycleInstrumentationTests {
 
     let pixelKit = PixelKitMock()
     lazy var instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit, isAppUI: { $0 is StubAppUIViewController })
+    let foregroundState = AppState.foreground(MockForeground(actionToHandle: nil))
 
     @available(iOS 16, macOS 13, *)
     @Test("Becoming active with no app UI in any window fires the pixel", .timeLimit(.minutes(1)))
     func activeWithoutAppUIFires() {
         // A reconnected scene only has the new window that nothing has attached the UI to.
-        instrumentation.sceneDidBecomeActive(windows: [UIWindow()])
+        instrumentation.sceneDidBecomeActive(windows: [UIWindow()], in: foregroundState)
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)])
     }
@@ -476,7 +477,7 @@ final class SceneLifecycleInstrumentationTests {
         hiddenWindow.rootViewController = StubAppUIViewController()
         hiddenWindow.isHidden = true
 
-        instrumentation.sceneDidBecomeActive(windows: [hiddenWindow, UIWindow()])
+        instrumentation.sceneDidBecomeActive(windows: [hiddenWindow, UIWindow()], in: foregroundState)
 
         #expect(pixelKit.actualFireCalls.count == 1)
     }
@@ -492,7 +493,7 @@ final class SceneLifecycleInstrumentationTests {
         overlayWindow.rootViewController = StubAppUIViewController()
         overlayWindow.isHidden = false
 
-        instrumentation.sceneDidBecomeActive(windows: [hiddenMainWindow, overlayWindow, UIWindow()])
+        instrumentation.sceneDidBecomeActive(windows: [hiddenMainWindow, overlayWindow, UIWindow()], in: foregroundState)
 
         #expect(pixelKit.actualFireCalls.isEmpty)
     }
@@ -506,9 +507,29 @@ final class SceneLifecycleInstrumentationTests {
         window.rootViewController = AuthenticationViewController()
         window.isHidden = false
 
-        instrumentation.sceneDidBecomeActive(windows: [window])
+        instrumentation.sceneDidBecomeActive(windows: [window], in: foregroundState)
 
         #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active while showing the critical alert does not fire the pixel", .timeLimit(.minutes(1)))
+    func activeWhileTerminatingDoesNotFire() {
+        let window = UIWindow()
+        window.rootViewController = UIViewController()
+        window.isHidden = false
+
+        instrumentation.sceneDidBecomeActive(windows: [window], in: .terminating(MockTerminating(error: TerminationError.historyDatabase(NSError(domain: "test", code: 1)))))
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active before launch attached the UI fires the pixel", .timeLimit(.minutes(1)))
+    func activeWhileLaunchingFires() {
+        instrumentation.sceneDidBecomeActive(windows: [UIWindow()], in: .launching(MockLaunching()))
+
+        #expect(pixelKit.actualFireCalls.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)

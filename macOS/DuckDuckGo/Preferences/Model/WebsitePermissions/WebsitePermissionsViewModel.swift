@@ -28,6 +28,21 @@ final class WebsitePermissionsViewModel: ObservableObject {
         static let maximumRecentRows = 3
     }
 
+    private struct PermissionKey: Hashable {
+        let domain: String
+        let permissionType: PermissionType
+
+        init(_ entry: WebsitePermissionEntry) {
+            domain = entry.domain
+            permissionType = entry.permissionType
+        }
+
+        init(_ row: WebsitePermissionsViewState.RecentRow) {
+            domain = row.domain
+            permissionType = row.permissionType
+        }
+    }
+
     @Published
     private(set) var viewState = WebsitePermissionsViewState()
 
@@ -37,6 +52,8 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
+    /// Recents changed on this page keep sorting by their previous date until the page closes.
+    private var heldRecentDates = [PermissionKey: Date]()
 
     private var nativeVoiceFlowEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
@@ -61,9 +78,13 @@ final class WebsitePermissionsViewModel: ObservableObject {
         case .onAppear:
             setupObserver()
 
+        case .onDisappear:
+            releaseHeldRecents()
+
         case .changeRecentDecision(let row, let decision):
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled),
                   decision != row.decision else { return }
+            holdRecentInPlace(row)
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
             pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: row.permissionType, to: decision), frequency: .dailyAndCount)
 
@@ -98,15 +119,34 @@ final class WebsitePermissionsViewModel: ObservableObject {
             .sink { [weak self] entries, _ in
                 guard let self else { return }
                 latestEntries = entries
-                let editableEntries = entries.filter {
-                    $0.permissionType.isUserEditable(forDomain: $0.domain, nativeVoiceFlowEnabled: self.nativeVoiceFlowEnabled)
-                }
-                viewState = WebsitePermissionsViewState(
-                    recents: makeRecentRows(from: editableEntries),
-                    rows: makeRows(from: editableEntries),
-                    detailModel: viewState.detailModel
-                )
+                let persistedKeys = Set(entries.map(PermissionKey.init))
+                heldRecentDates = heldRecentDates.filter { persistedKeys.contains($0.key) }
+                updateViewState()
             }
+    }
+
+    private func updateViewState() {
+        let editableEntries = latestEntries.filter {
+            $0.permissionType.isUserEditable(forDomain: $0.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled)
+        }
+        viewState = WebsitePermissionsViewState(
+            recents: makeRecentRows(from: editableEntries),
+            rows: makeRows(from: editableEntries),
+            detailModel: viewState.detailModel
+        )
+    }
+
+    private func holdRecentInPlace(_ row: WebsitePermissionsViewState.RecentRow) {
+        let key = PermissionKey(row)
+        guard heldRecentDates[key] == nil,
+              let lastModified = latestEntries.first(where: { PermissionKey($0) == key })?.lastModified else { return }
+        heldRecentDates[key] = lastModified
+    }
+
+    private func releaseHeldRecents() {
+        guard !heldRecentDates.isEmpty else { return }
+        heldRecentDates = [:]
+        updateViewState()
     }
 
     private func makeRecentRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.RecentRow] {
@@ -129,13 +169,19 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private func isOrderedBefore(_ first: WebsitePermissionEntry, _ second: WebsitePermissionEntry) -> Bool {
-        if first.lastModified != second.lastModified {
-            return (first.lastModified ?? .distantPast) > (second.lastModified ?? .distantPast)
+        let firstDate = sortDate(of: first)
+        let secondDate = sortDate(of: second)
+        if firstDate != secondDate {
+            return (firstDate ?? .distantPast) > (secondDate ?? .distantPast)
         } else if first.domain != second.domain {
             return first.domain < second.domain
         } else {
             return first.permissionType.rawValue < second.permissionType.rawValue
         }
+    }
+
+    private func sortDate(of entry: WebsitePermissionEntry) -> Date? {
+        heldRecentDates[PermissionKey(entry)] ?? entry.lastModified
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {
@@ -170,6 +216,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
 extension WebsitePermissionsViewModel {
     enum Action {
         case onAppear
+        case onDisappear
         case changeRecentDecision(WebsitePermissionsViewState.RecentRow, PersistedPermissionDecision)
         case removeRecent(WebsitePermissionsViewState.RecentRow)
         case openDetail(WebsitePermissionCategory)

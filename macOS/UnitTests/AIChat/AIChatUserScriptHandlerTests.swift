@@ -1999,6 +1999,19 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("supportsCanonicalChatFormat is true regardless of fire window", .timeLimit(.minutes(1)))
+    func testSupportsCanonicalChatFormatIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsCanonicalChatFormat == true)
+        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsCanonicalChatFormat == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("When aiChatNativeStorage is enabled and bridge is available, supportsNativeStorage is true", .timeLimit(.minutes(1)))
     func testWhenAIChatNativeStorageEnabledAndBridgeAvailableThenSupportsNativeStorageIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)

@@ -645,12 +645,8 @@ private struct AnyCodableValue: Encodable {
         switch value {
         case is NSNull:
             try container.encodeNil()
-        case let boolValue as Bool:
-            try container.encode(boolValue)
-        case let intValue as Int:
-            try container.encode(intValue)
-        case let doubleValue as Double:
-            try container.encode(doubleValue)
+        case let number as NSNumber:
+            try Self.encode(number, into: &container)
         case let stringValue as String:
             try container.encode(stringValue)
         case let arrayValue as [Any]:
@@ -659,6 +655,20 @@ private struct AnyCodableValue: Encodable {
             try container.encode(dictValue.mapValues { AnyCodableValue($0) })
         default:
             try container.encodeNil()
+        }
+    }
+
+    /// `JSONSerialization` returns both numbers and booleans as `NSNumber`, and `as? Bool` also matches
+    /// the numbers 0 and 1, so only a `CFBoolean` is a boolean.
+    private static func encode(_ number: NSNumber, into container: inout SingleValueEncodingContainer) throws {
+        if CFGetTypeID(number) == CFBooleanGetTypeID() {
+            try container.encode(number.boolValue)
+        } else if CFNumberIsFloatType(number) {
+            try container.encode(number.doubleValue)
+        } else if String(cString: number.objCType) == "Q" {
+            try container.encode(number.uint64Value)
+        } else {
+            try container.encode(number.int64Value)
         }
     }
 }

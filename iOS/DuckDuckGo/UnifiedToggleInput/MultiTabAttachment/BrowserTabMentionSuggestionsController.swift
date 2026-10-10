@@ -57,14 +57,19 @@ final class BrowserTabMentionSuggestionsController {
         let card = coordinator.viewController.inputCardFrame(in: parentView)
         let safeFrame = parentView.safeAreaLayoutGuide.layoutFrame
         let keyboardTop = parentView.keyboardLayoutGuide.layoutFrame.minY
-        let availableBottom = min(safeFrame.maxY, keyboardTop)
         let gap: CGFloat = 8
-        let aboveBottom = min(card.minY - gap, availableBottom)
-        let belowTop = max(card.maxY + gap, safeFrame.minY)
-        let aboveHeight = max(0, aboveBottom - safeFrame.minY)
-        let belowHeight = max(0, availableBottom - belowTop)
-        let showsAbove = aboveHeight > belowHeight
-        let availableHeight = showsAbove ? aboveHeight : belowHeight
+        let availableBottom = min(safeFrame.maxY, keyboardTop - gap)
+        let showsAbove = coordinator.viewController.cardPosition == .bottom
+        let topBoundary: CGFloat
+        let bottomBoundary: CGFloat
+        if showsAbove {
+            topBoundary = safeFrame.minY
+            bottomBoundary = min(card.minY - gap, availableBottom)
+        } else {
+            topBoundary = max(card.maxY + gap, safeFrame.minY)
+            bottomBoundary = availableBottom
+        }
+        let availableHeight = max(0, bottomBoundary - topBoundary)
         let width = min(card.width, safeFrame.width)
         let hasRoomForSuggestion = width > 0 && availableHeight >= panel.minimumVisibleHeight
         panel.isHidden = !hasRoomForSuggestion
@@ -73,7 +78,7 @@ final class BrowserTabMentionSuggestionsController {
 
         let height = min(panel.preferredContentHeight, availableHeight)
         let frame = CGRect(x: max(safeFrame.minX, min(card.minX, safeFrame.maxX - width)),
-                           y: showsAbove ? aboveBottom - height : belowTop,
+                           y: showsAbove ? bottomBoundary - height : topBoundary,
                            width: width, height: height)
         if panel.frame != frame {
             panel.frame = frame

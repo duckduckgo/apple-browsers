@@ -136,14 +136,10 @@ final class FloatingDomainCapsuleController {
         label.isAccessibilityElement = false
         return label
     }()
-    private var centerYConstraint: NSLayoutConstraint?
     private var hasAppliedGlassStyleAtValidSize = false
-    private var widthConstraint: NSLayoutConstraint?
-    private var heightConstraint: NSLayoutConstraint?
 
     lazy var button: UIButton = {
         let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
         button.alpha = 0
         button.backgroundColor = .clear
@@ -187,20 +183,6 @@ final class FloatingDomainCapsuleController {
 
         applyGlassStyle()
         view.addSubview(button)
-
-        let widthConstraint = button.widthAnchor.constraint(equalToConstant: 0)
-        let heightConstraint = button.heightAnchor.constraint(equalToConstant: 0)
-        let centerYConstraint = button.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 0)
-        self.widthConstraint = widthConstraint
-        self.heightConstraint = heightConstraint
-        self.centerYConstraint = centerYConstraint
-
-        NSLayoutConstraint.activate([
-            button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            widthConstraint,
-            heightConstraint,
-            centerYConstraint
-        ])
     }
 
     func update(addressBarPosition: AddressBarPosition,
@@ -287,9 +269,15 @@ final class FloatingDomainCapsuleController {
         let height = capsuleHeight + (expandedFrame.height - capsuleHeight) * morphP
         let centerY = restCenterY + (expandedFrame.midY - restCenterY) * morphP
 
-        widthConstraint?.constant = width
-        heightConstraint?.constant = height
-        centerYConstraint?.constant = centerY
+        let autoresizingMask: UIView.AutoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin,
+                                                        addressBarPosition == .top ? .flexibleBottomMargin : .flexibleTopMargin]
+        if button.autoresizingMask != autoresizingMask {
+            button.autoresizingMask = autoresizingMask
+        }
+        let frame = CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height)
+        if button.frame != frame {
+            button.frame = frame
+        }
 
         button.layer.cornerRadius = height / 2
         backgroundView.layer.cornerRadius = height / 2

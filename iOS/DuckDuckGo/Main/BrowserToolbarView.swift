@@ -529,7 +529,10 @@ final class BrowserToolbarView: UIView {
             contentStackBottomConstraint.constant = -currentBottomContentPadding
         }
         let collapse = usesEmbeddedBottomChromeMetrics ? buttonRowCollapseProgress.clamped(to: 0...1) : 0
-        contentStack.spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
+        let spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
+        if contentStack.spacing != spacing {
+            contentStack.spacing = spacing
+        }
         if usesEmbeddedBottomChromeMetrics {
             buttonRowHeightConstraint.constant = Self.floatingEmbeddedButtonsHeight * (1 - collapse)
             buttonRowHeightConstraint.isActive = true
@@ -552,7 +555,10 @@ final class BrowserToolbarView: UIView {
         contentStackLeadingConstraint.constant = currentContentStackHorizontalInset
         contentStackTrailingConstraint.constant = -currentContentStackHorizontalInset
         let buttonRowPadding = currentButtonRowHorizontalPadding
-        buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
+        let margins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
+        if buttonStack.layoutMargins != margins {
+            buttonStack.layoutMargins = margins
+        }
     }
 
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
@@ -1002,8 +1008,11 @@ final class BrowserToolbarView: UIView {
         applyMaterialBackgroundTransform()
     }
 
+    private var appliedRestStateCorners: Bool?
+
     private func updateCornerStyle() {
         guard isFloatingStyleEnabled else {
+            appliedRestStateCorners = nil
             materialBackgroundView.contentView.layer.cornerRadius = 0
             chromeContentHost.layer.cornerRadius = 0
             return
@@ -1012,6 +1021,8 @@ final class BrowserToolbarView: UIView {
         let usesRestStateCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
 
         if #available(iOS 26, *) {
+            guard appliedRestStateCorners != usesRestStateCorners else { return }
+            appliedRestStateCorners = usesRestStateCorners
             if usesRestStateCorners {
                 let configuration = UICornerConfiguration.corners(
                     radius: .containerConcentric(minimum: Self.floatingUICornerRadius))

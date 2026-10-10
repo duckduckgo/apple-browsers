@@ -1428,6 +1428,18 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertLessThan(button?.bounds.width ?? .greatestFiniteMagnitude, expandedFrame.width / 2)
     }
 
+    func testWhenContainerResizesThenBottomCapsuleRemainsCenteredAndAboveTheBottomEdge() throws {
+        let button = try XCTUnwrap(update(barsVisibilityPercent: 0, addressBarPosition: .bottom))
+        containerView.frame = CGRect(x: 0, y: 0, width: 844, height: 390)
+        containerView.layoutIfNeeded()
+
+        let bottomPadding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(
+            safeAreaBottom: containerView.safeAreaInsets.bottom)
+        XCTAssertEqual(button.frame.midX, containerView.bounds.midX, accuracy: 1 / window.screen.scale)
+        XCTAssertEqual(button.frame.maxY, containerView.bounds.maxY - bottomPadding, accuracy: 1 / window.screen.scale)
+        XCTAssertLessThanOrEqual(button.bounds.width, containerView.bounds.width - 32)
+    }
+
     func testWhenTopBarsHiddenThenPillKeepsTheBarsTopEdge() {
         let button = update(barsVisibilityPercent: 0)
 

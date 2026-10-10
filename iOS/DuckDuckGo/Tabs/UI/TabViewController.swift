@@ -360,6 +360,11 @@ class TabViewController: UIViewController {
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
                                    unifiedToggleInputFeature: unifiedToggleInputFeature)
+    private lazy var aiChatContextualAttachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(
+        featureFlagger: featureFlagger,
+        aiChatSettings: aiChatSettings,
+        devicePlatform: devicePlatform
+    )
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -2878,7 +2883,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        if webView === self.webView {
+        if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if awaitsInitialAIChatTabAttachmentNavigation {
                 awaitsInitialAIChatTabAttachmentNavigation = false
             } else {

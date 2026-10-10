@@ -53,6 +53,10 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     /// Submitting it earlier would let macOS show its prompt before the user asks for it.
     private var pendingDecision: PermissionPromptDecision?
     private var currentSystemPermission: PermissionType?
+    /// What one click on Request Permission asks macOS for: each alert shows right after the previous one is granted.
+    private var systemPermissionsToRequest: [PermissionType] = []
+    /// A timeout changes the button, but the same click can still authorize the remaining devices.
+    private var isRequestingSystemPermissions = false
 
     private var systemPermissions: [PermissionType] {
         permissions.filter(\.requiresSystemPermission)
@@ -216,16 +220,31 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         let blockedPermission = systemPermissions.first {
             states[$0] == .denied || states[$0] == .restricted || states[$0] == .systemDisabled
         }
-        guard let permission = blockedPermission ?? systemPermissions.first(where: { states[$0] != .authorized }) else {
+        let permissionsToRequest = systemPermissions.filter { states[$0] != .authorized }
+        guard let permission = blockedPermission ?? permissionsToRequest.first else {
             submitPendingDecision()
             return
         }
-        let wasWaiting = currentSystemPermission == permission && viewState.systemPermissionStep?.phase == .waiting
+        let isWaiting = viewState.systemPermissionStep?.phase == .waiting
+        if isRequestingSystemPermissions, blockedPermission == nil, let currentSystemPermission, states[currentSystemPermission] == .authorized {
+            // The same click asks for the next device: the microphone alert follows the camera one.
+            if !isWaiting {
+                showSystemPermissionPhase(.waiting)
+            }
+            requestSystemAuthorization(for: permission)
+            return
+        }
+        let wasWaiting = currentSystemPermission == permission && isWaiting
         currentSystemPermission = permission
         if blockedPermission != nil {
+            isRequestingSystemPermissions = false
             saveAlwaysAllowWhileSystemPermissionIsBlocked()
             showSystemPermissionPhase(.openSettings)
         } else if !wasWaiting || requestCompleted {
+            if requestCompleted {
+                isRequestingSystemPermissions = false
+            }
+            systemPermissionsToRequest = permissionsToRequest
             showSystemPermissionPhase(.request)
         }
     }
@@ -263,14 +282,23 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission request outside the request phase")
             return
         }
+        isRequestingSystemPermissions = true
         showSystemPermissionPhase(.waiting)
+        requestSystemAuthorization(for: currentSystemPermission)
+    }
+
+    /// Shows the macOS alert for `permission` while the prompt says "Waiting for request…".
+    private func requestSystemAuthorization(for permission: PermissionType) {
+        // Status snapshots read before this request no longer describe the step.
+        systemPermissionRefreshGeneration += 1
+        currentSystemPermission = permission
         systemPermissionRequestCount += 1
         let requestCount = systemPermissionRequestCount
 
-        systemAuthorizationCancellable = systemPermissionManager.requestAuthorization(for: currentSystemPermission) { [weak self] state in
+        systemAuthorizationCancellable = systemPermissionManager.requestAuthorization(for: permission) { [weak self] state in
             Task { @MainActor in
                 guard let self, self.systemPermissionRequestCount == requestCount,
-                      self.currentSystemPermission == currentSystemPermission else {
+                      self.currentSystemPermission == permission else {
                     Logger.general.debug("PermissionAuthorizationViewModel: Ignoring completion from an earlier system permission request")
                     return
                 }
@@ -341,6 +369,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         systemPermissionRefreshGeneration += 1
         pendingDecision = nil
         currentSystemPermission = nil
+        isRequestingSystemPermissions = false
         systemAuthorizationCancellable = nil
         appDidBecomeActiveCancellable = nil
     }
@@ -348,7 +377,10 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     // MARK: - Copy
 
     private var systemPermissionRequiredMessage: String {
-        switch currentSystemPermission {
+        if Set(systemPermissionsToRequest) == [.camera, .microphone] {
+            return UserText.websitePermissionsPromptSystemCameraAndMicrophoneRequired
+        }
+        switch systemPermissionsToRequest.first {
         case .camera:
             return UserText.websitePermissionsPromptSystemCameraRequired
         case .microphone:

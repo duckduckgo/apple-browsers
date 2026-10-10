@@ -40,7 +40,7 @@ final class TabsBarView: UIView {
     }
 
     override init(frame: CGRect) {
-        let layout = UICollectionViewFlowLayout()
+        let layout = TabsBarCollectionViewLayout()
         layout.scrollDirection = .horizontal
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
@@ -96,5 +96,81 @@ final class TabsBarView: UIView {
             buttonsStack.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
             buttonsStack.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+}
+
+/// Overlaps tabs at the strip's edges, keeping the selected tab above the stack.
+final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
+
+    var currentIndex: (() -> Int?)?
+
+    override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        true
+    }
+
+    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        // The outgoing tab remains exposed until its neighbor finishes folding over it.
+        let expandedRect = rect.insetBy(dx: -itemSize.width / 2, dy: 0)
+        guard let originalAttributes = super.layoutAttributesForElements(in: expandedRect) else { return nil }
+        let attributes = originalAttributes.compactMap { layoutAttributesForItem(at: $0.indexPath) }
+        guard let collectionView,
+              let index = currentIndex?(),
+              index < collectionView.numberOfItems(inSection: 0),
+              !attributes.contains(where: { $0.indexPath.item == index }),
+              let current = layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else {
+            return attributes
+        }
+        // Include the selected tab even when its original position is outside the visible rect.
+        return attributes + [current]
+    }
+
+    override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes,
+              let collectionView else {
+            return super.layoutAttributesForItem(at: indexPath)
+        }
+        let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
+        let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
+        let isCurrent = indexPath.item == currentIndex?()
+        // Tabs nearer the middle cover the edge tabs. The flare (1) and selected tab (2) stay above them.
+        let middle = (leading + trailing + attributes.frame.width) / 2
+        attributes.zIndex = isCurrent ? 2 : -Int(abs(attributes.center.x - middle))
+        let foldRange = min(attributes.frame.width / 2, (trailing - leading) / 2)
+        var origin = attributes.frame.minX
+        if !isCurrent, foldRange > 0 {
+            if indexPath.item > 0, origin < leading + foldRange {
+                origin = leading + foldedDistance(origin - leading, range: foldRange)
+            } else if indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1, origin > trailing - foldRange {
+                origin = trailing - foldedDistance(trailing - origin, range: foldRange)
+            }
+        }
+        attributes.frame.origin.x = min(max(origin, leading), trailing)
+        return attributes
+    }
+
+    private func foldedDistance(_ distance: CGFloat, range: CGFloat) -> CGFloat {
+        // Start easing the next tab when the outer tab is halfway covered.
+        let remaining = max(0, distance + range)
+        return remaining * remaining / (4 * range)
+    }
+
+    func unpinnedFrameForItem(at indexPath: IndexPath) -> CGRect? {
+        super.layoutAttributesForItem(at: indexPath)?.frame
+    }
+
+    func frameForRevealingItem(at indexPath: IndexPath) -> CGRect? {
+        guard let collectionView, let frame = unpinnedFrameForItem(at: indexPath) else { return nil }
+        let visibleWidth = collectionView.bounds.width - collectionView.adjustedContentInset.left - collectionView.adjustedContentInset.right
+        let current = currentIndex?()
+        let pinnedWidth = current != nil && current != indexPath.item ? min(frame.width, max(0, visibleWidth - frame.width)) : 0
+        // Leave a glimpse of neighboring tabs without squeezing the selected tab on narrow strips.
+        let peek = min(frame.width / 2, max(0, (visibleWidth - frame.width - pinnedWidth) / 2))
+        var revealFrame = frame.insetBy(dx: -peek, dy: 0)
+        // A pinned current tab covers the neighbor hint unless its width is also reserved.
+        if let current, current < indexPath.item {
+            revealFrame.origin.x -= pinnedWidth
+        }
+        revealFrame.size.width += pinnedWidth
+        return revealFrame.intersection(CGRect(origin: .zero, size: collectionView.contentSize))
     }
 }

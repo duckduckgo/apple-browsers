@@ -57,6 +57,20 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         )
     }
 
+    // MARK: - submitSearch
+
+    func testThatDuckAITypedInTheSearchBoxLoadsOverHTTPS() {
+        let url = NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai")
+
+        XCTAssertEqual(url?.scheme, "https")
+        XCTAssertEqual(url?.host, "duck.ai")
+    }
+
+    func testThatOtherURLsTypedInTheSearchBoxKeepTheirScheme() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "wikipedia.org")?.absoluteString, "http://wikipedia.org")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duckduckgo")?.absoluteString, "https://duckduckgo.com/?q=duckduckgo")
+    }
+
     // MARK: - viewAllAiChats
 
     func testViewAllAiChatsOpensDuckAIWithSidebarVisible() {

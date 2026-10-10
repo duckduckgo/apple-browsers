@@ -55,9 +55,9 @@ final class AIChatTabExtension {
     private var latestContentSource: TabContent.URLSource?
     /// The URL of an address-bar suggestion the user just picked, so its navigation isn't counted as typed.
     private var addressBarSuggestionURL: URL?
-    /// How a direct navigation started when it landed on another page first, such as a link wrapper
-    /// like google.com/url, so that page's client redirect to Duck.ai still counts.
-    private var viaForClientRedirect: AIChatDirectNavigationVia?
+    /// How a navigation started when it landed on another page first, such as a link wrapper like
+    /// google.com/url, so that page's client redirect to Duck.ai still counts.
+    private var originForClientRedirect: DuckAINavigationOrigin?
     /// Set when a page opened this tab for a user's link click (⌘-click, `target=_blank`): WebKit's
     /// first load in a new tab carries neither the click nor the page it came from.
     private var linkOpener: LinkOpener?
@@ -397,80 +397,114 @@ extension AIChatTabExtension: NavigationResponder {
 
         let suggestionURL = addressBarSuggestionURL
         addressBarSuggestionURL = nil
-        let inheritedVia = viaForClientRedirect
-        viaForClientRedirect = nil
+        let inheritedOrigin = originForClientRedirect
+        originForClientRedirect = nil
         let linkOpener = self.linkOpener
         self.linkOpener = nil
 
         if case .redirect(.client) = navigation.navigationAction.navigationType {
-            navigation.duckAIDirectNavigationVia = inheritedVia
+            navigation.duckAIOrigin = inheritedOrigin
         } else if let linkOpener {
-            navigation.duckAIDirectNavigationVia = Self.isDuckDuckGo(linkOpener.sourceURL) ? nil : .link
+            navigation.duckAIOrigin = Self.linkOrigin(from: linkOpener.sourceURL)
         } else {
-            navigation.duckAIDirectNavigationVia = directNavigationVia(for: navigation.navigationAction, suggestionURL: suggestionURL)
+            navigation.duckAIOrigin = origin(of: navigation.navigationAction, suggestionURL: suggestionURL)
         }
     }
 
     func didCommit(_ navigation: Navigation) {
         aiChatUserScript?.handler.resetConversationSourceForNewDocument()
 
-        guard navigation.isCurrent, let via = navigation.duckAIDirectNavigationVia else { return }
+        guard navigation.isCurrent, let origin = navigation.duckAIOrigin else { return }
         guard navigation.url.isDuckAIURL else {
-            viaForClientRedirect = via
+            originForClientRedirect = origin
             return
         }
         guard !navigation.url.isDuckAIOpenedFromHomepage else { return }
 
-        let isDuckAIEnabled = preferencesStorage.isAIFeaturesEnabled
-        pixelFiring?.fire(AIChatPixel.aiChatDuckAIDirectNavigation(via: via,
-                                                                   duckAIEnabled: isDuckAIEnabled,
-                                                                   toggleEnabled: isDuckAIEnabled && preferencesStorage.showSearchAndDuckAIToggle),
-                          frequency: .dailyAndCount)
-        setDirectNavigationFallback(via.conversationSource)
+        if case .direct(let via) = origin {
+            let isDuckAIEnabled = preferencesStorage.isAIFeaturesEnabled
+            pixelFiring?.fire(AIChatPixel.aiChatDuckAIDirectNavigation(via: via,
+                                                                       duckAIEnabled: isDuckAIEnabled,
+                                                                       toggleEnabled: isDuckAIEnabled && preferencesStorage.showSearchAndDuckAIToggle),
+                              frequency: .dailyAndCount)
+        }
+        setDirectNavigationFallback(origin.conversationSource)
     }
 
     /// Only navigations the user started toward a URL count; loads the browser starts itself (its own
     /// Duck.ai buttons, restoration, reloads) don't. A client redirect only carries on the navigation
     /// that led to its page.
-    private func directNavigationVia(for action: NavigationAction, suggestionURL: URL?) -> AIChatDirectNavigationVia? {
+    private func origin(of action: NavigationAction, suggestionURL: URL?) -> DuckAINavigationOrigin? {
         switch action.navigationType {
         case .custom(.userEnteredUrl):
             guard case .userEntered = latestContentSource else { return nil }
-            return action.url == suggestionURL ? .suggestion : .typed
+            return .direct(action.url == suggestionURL ? .suggestion : .typed)
         case .custom(.bookmark):
-            guard case .bookmark(isFavorite: true) = latestContentSource else { return .bookmark }
-            return .favorite
+            guard case .bookmark(isFavorite: true) = latestContentSource else { return .direct(.bookmark) }
+            return .direct(.favorite)
         case .custom(.historyEntry):
-            return .history
+            return .direct(.history)
         case .custom(.appOpenUrl):
-            return .external
+            return .direct(.external)
+        case .custom(.ui):
+            // Every native surface loads as `.custom(.ui)`; only content that names its origin counts.
+            guard case .attributedUI(let source) = latestContentSource else { return nil }
+            return Self.origin(attributedTo: source)
         case .custom(.link), .linkActivated:
-            return Self.isDuckDuckGo(action.sourceFrame.url) ? nil : .link
+            return Self.linkOrigin(from: action.sourceFrame.url)
         case .other where action.isUserInitiated:
-            return Self.isDuckDuckGo(action.sourceFrame.url) ? nil : .link
+            return Self.linkOrigin(from: action.sourceFrame.url)
         default:
             return nil
         }
     }
 
-    /// Duck.ai and duckduckgo.com link to Duck.ai themselves, which isn't a direct navigation.
-    private static func isDuckDuckGo(_ sourceURL: URL?) -> Bool {
-        guard let sourceURL else { return false }
-        return sourceURL.isDuckAIURL || sourceURL.isDuckDuckGo
+    /// A source that stands for a direct navigation, such as the New Tab Page search box, is reported as one.
+    private static func origin(attributedTo source: AIChatConversationSource) -> DuckAINavigationOrigin {
+        guard let via = AIChatDirectNavigationVia.allCases.first(where: { $0.conversationSource == source }) else {
+            return .attributed(source)
+        }
+        return .direct(via)
+    }
+
+    /// Duck.ai and duckduckgo.com link to Duck.ai themselves, which isn't a direct navigation. Duck.ai
+    /// goes first because duckduckgo.com/?ia=chat is both.
+    private static func linkOrigin(from sourceURL: URL?) -> DuckAINavigationOrigin {
+        if sourceURL?.isDuckAIURL == true {
+            return .attributed(.duckAILink)
+        }
+        if sourceURL?.isDuckDuckGo == true {
+            return .attributed(.duckDuckGoLink)
+        }
+        return .direct(.link)
+    }
+}
+
+/// How a navigation to Duck.ai started, when that names the chat's source.
+private enum DuckAINavigationOrigin {
+    /// Straight to Duck.ai, reported by the direct-navigation pixel.
+    case direct(AIChatDirectNavigationVia)
+    /// From a surface or page that names the chat's source but has no pixel of its own.
+    case attributed(AIChatConversationSource)
+
+    var conversationSource: AIChatConversationSource {
+        switch self {
+        case .direct(let via): via.conversationSource
+        case .attributed(let source): source
+        }
     }
 }
 
 private extension Navigation {
-    private static var duckAIDirectNavigationViaKey: UInt8 = 0
+    private static var duckAIOriginKey: UInt8 = 0
 
     /// How the navigation started, classified when it starts and read when it commits.
-    var duckAIDirectNavigationVia: AIChatDirectNavigationVia? {
+    var duckAIOrigin: DuckAINavigationOrigin? {
         get {
-            (objc_getAssociatedObject(self, UnsafeRawPointer(&Self.duckAIDirectNavigationViaKey)) as? String)
-                .flatMap(AIChatDirectNavigationVia.init(rawValue:))
+            objc_getAssociatedObject(self, UnsafeRawPointer(&Self.duckAIOriginKey)) as? DuckAINavigationOrigin
         }
         set {
-            objc_setAssociatedObject(self, UnsafeRawPointer(&Self.duckAIDirectNavigationViaKey), newValue?.rawValue, .OBJC_ASSOCIATION_RETAIN)
+            objc_setAssociatedObject(self, UnsafeRawPointer(&Self.duckAIOriginKey), newValue, .OBJC_ASSOCIATION_RETAIN)
         }
     }
 }

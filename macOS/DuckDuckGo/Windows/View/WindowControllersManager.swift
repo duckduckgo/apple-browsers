@@ -330,7 +330,7 @@ extension WindowControllersManager {
     /// - Parameters:
     ///   - url: The URL to open. If `nil`, New Tab page will be open (`.newtab`).
     ///   - tabId: An optional identifier for an existing tab to switch to.
-    ///            If provided along with the `source` matching `.appOpenUrl` or `.switchToOpenTab`,
+    ///            If provided along with a `source` that `switchesToOpenTab`,
     ///            the function will attempt to activate the tab with this ID.
     ///   - source: The origin of the URL being opened, which can indicate whether it is from a bookmark, history record, external link, etc.
     ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
@@ -354,7 +354,7 @@ extension WindowControllersManager {
             let selectionIndex = tabCollectionViewModel.selectionIndex
 
             // Switch to already open tab if present
-            if [.appOpenUrl, .switchToOpenTab].contains(source),
+            if source.switchesToOpenTab,
                let url, switchToOpenTab(withId: tabId, url: url, preferring: windowController) == true {
 
                 if let selectedTabViewModel, let selectionIndex,

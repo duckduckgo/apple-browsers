@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKitTestsUtils
 import Common
 import FoundationExtensions
@@ -38,6 +39,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var subscriptionManager: SubscriptionManagerMock!
     private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling!
     private var mockUIHandler: SubscriptionUIHandlerMock!
+    private var mockAIChatTabOpener: MockAIChatTabOpener!
+    private var aiChatSourceHandler: AIChatConversationSourceHandler!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
@@ -79,6 +82,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             subscriptionEventReporter: mockEventReporter,
             pendingTransactionHandler: MockPendingTransactionHandler()
         )
+        mockAIChatTabOpener = MockAIChatTabOpener()
+        aiChatSourceHandler = AIChatConversationSourceHandler()
         sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                       subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
                                                       stripePurchaseFlow: mockStripePurchaseFlowV2,
@@ -88,6 +93,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                       notificationCenter: mockNotificationCenter,
                                                       dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                       aiChatURL: URL.duckDuckGo,
+                                                      aiChatTabOpener: mockAIChatTabOpener,
+                                                      aiChatConversationSourceHandler: aiChatSourceHandler,
                                                       wideEvent: mockWideEvent,
                                                       subscriptionEventReporter: mockEventReporter,
                                                       pendingTransactionHandler: MockPendingTransactionHandler(),
@@ -103,6 +110,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockStorePurchaseManager = nil
         mockSubscriptionFeatureAvailability = nil
         mockUIHandler = nil
+        mockAIChatTabOpener = nil
+        aiChatSourceHandler = nil
         mockWideEvent = nil
         mockEventReporter = nil
         mockRequestValidator = nil
@@ -314,24 +323,18 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testFeatureSelected_PaidAIChat_ShowsCorrectTab() async throws {
+    func testFeatureSelected_PaidAIChat_OpensDuckAIFromTheSubscriptionPage() async throws {
         // Given
         let params = ["productFeature": "Duck.ai"]
-        let uiHandlerExpectation = expectation(description: "UI handler show tab called")
-
-        mockUIHandler.setDidPerformActionCallback { action in
-            if case .didShowTab(.aiChat(let url, _)) = action {
-                XCTAssertNotNil(url)
-                uiHandlerExpectation.fulfill()
-            }
-        }
 
         // When
         let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
 
         // Then
         XCTAssertNil(result)
-        await fulfillment(of: [uiHandlerExpectation], timeout: 1.0)
+        XCTAssertEqual(mockAIChatTabOpener.lastURL, URL.duckDuckGo)
+        XCTAssertEqual(mockAIChatTabOpener.lastBehavior, .newTab(selected: true))
+        XCTAssertEqual(aiChatSourceHandler.consumeData(), .subscriptionPage)
     }
 
     @MainActor

@@ -83,18 +83,31 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             return
         }
 
-        guard let url = URL.makeURL(from: term) else {
+        guard let url = Self.searchBoxURL(for: term) else {
             Logger.newTabPageOmnibar.error("Failed to create URL from term: \(term)")
             return
         }
 
         NewTabPageLinkOpener.open(
             url,
-            source: .ui,
+            source: Self.searchBoxSource(for: url),
             sender: .userScript,
             target: target.linkOpenTarget,
             sourceWindow: mainWindowController.window
         )
+    }
+
+    /// Duck.ai only serves HTTPS. Loaded as http, the in-app HTTPS upgrade redirects it, and the tab replaces
+    /// its content with the redirected URL's, dropping the source it was opened with.
+    static func searchBoxURL(for term: String) -> URL? {
+        guard let url = URL.makeURL(from: term) else { return nil }
+        guard url.isDuckAIURL, url.isHttp else { return url }
+        return url.toHttps() ?? url
+    }
+
+    /// Duck.ai reached from the search box is a direct navigation; the box's Duck.ai mode is a separate path.
+    private static func searchBoxSource(for url: URL) -> TabContent.URLSource {
+        url.isDuckAIURL ? .attributedUI(.directNewTabPage) : .ui
     }
 
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
@@ -130,7 +143,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                 }
                 NewTabPageLinkOpener.open(
                     suggestionUrl,
-                    source: .ui,
+                    source: Self.searchBoxSource(for: suggestionUrl),
                     sender: .userScript,
                     target: target.linkOpenTarget,
                     sourceWindow: mainWindowController.window

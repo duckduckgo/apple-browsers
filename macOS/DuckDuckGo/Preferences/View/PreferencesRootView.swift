@@ -73,6 +73,8 @@ enum Preferences {
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
+        let aiChatTabOpener: AIChatTabOpening
+        let aiChatConversationSourceHandler: AIChatConversationSourceHandler
         let wideEvent: WideEventManaging
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
@@ -106,6 +108,8 @@ enum Preferences {
             websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
+            aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
+            aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
             blackFridayCampaignProvider: BlackFridayCampaignProviding = NSApp.delegateTyped.blackFridayCampaignProvider,
             pixelHandler: @escaping (SubscriptionPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
@@ -117,6 +121,8 @@ enum Preferences {
             self.featureFlagger = featureFlagger
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
+            self.aiChatTabOpener = aiChatTabOpener
+            self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
             self.wideEvent = wideEvent
             self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
                                                                                                  featureFlagger: featureFlagger,
@@ -342,7 +348,8 @@ enum Preferences {
                      case .openAIC:
                          pixelHandler(.subscriptionPaidAIChatSettings, .standard)
                          let aiChatURL = self.aiChatURLSettings.aiChatURL
-                         showTab(.url(aiChatURL, source: .ui))
+                         self.aiChatConversationSourceHandler.setData(.subscriptionPage)
+                         self.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:

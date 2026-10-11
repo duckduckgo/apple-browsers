@@ -1,5 +1,3 @@
-// Live pixel validation splits suffixes on "_", so multi-word values such as
-// camera_and_microphone and allow_once are defined as one suffix per word.
 {
     "permission_dialog_impression": {
         "description": "Fires when the on-site permission dialog is shown.",

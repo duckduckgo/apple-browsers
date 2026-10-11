@@ -107,6 +107,10 @@ class ActionMessageView: UIView, ActionMessagePresenting {
             buttonToTrailing.constant = 16
         }
         applySystemFonts()
+
+        accessibilityIdentifier = "Browser.ActionMessage"
+        message.accessibilityIdentifier = "Browser.ActionMessage.Message"
+        actionButton.accessibilityIdentifier = "Browser.ActionMessage.Action"
     }
 
     private func applySystemFonts() {

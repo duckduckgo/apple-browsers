@@ -37,6 +37,9 @@ final class BackgroundingUITests: UITestCase {
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
             app.backgroundAndActivate()
 
+            XCTAssertTrue(
+                app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+                "Browser did not become available after restoring the loaded page.")
             app.assertPageContains("Privacy Test Pages")
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
 
@@ -54,7 +57,7 @@ final class BackgroundingUITests: UITestCase {
             app.backgroundAndActivate()
 
             XCTAssertTrue(
-                app.searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
+                app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
                 "New tab did not become interactive after backgrounding.")
             app.dismissAddressBarEditing()
 

@@ -72,7 +72,7 @@ final class AutoClearUITests: UITestCase {
             app.backgroundAndActivate(minimumBackgroundDuration: 6)
 
             XCTAssertTrue(
-                app.searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.fireAnimation),
+                app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.fireAnimation),
                 "Browser did not become available after Auto Clear.")
             XCTAssertFalse(app.webViews.staticTexts["Privacy Test Pages"].exists, "Cleared page is still visible.")
 

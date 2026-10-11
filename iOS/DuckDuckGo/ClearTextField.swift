@@ -29,6 +29,7 @@ struct ClearTextField: View {
     var keyboardType: UIKeyboardType = .default
     var secure = false
     var characterLimit: Int?
+    var accessibilityIdentifier: String?
 
     @FocusState private var isFieldFocused: Bool
     @State private var shouldBeMonospaced: Bool = false
@@ -52,6 +53,7 @@ struct ClearTextField: View {
                         text = String(text.prefix(limit))
                     }
                 }
+                .accessibilityIdentifier(ifPresent: accessibilityIdentifier)
 
             Spacer()
             Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)

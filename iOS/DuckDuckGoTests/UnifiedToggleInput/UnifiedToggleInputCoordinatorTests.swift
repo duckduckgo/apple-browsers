@@ -307,8 +307,10 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name.hasPrefix("aichat_unified_input_tab_picker_") })
     }
 
-    func testWhenMentionsAreConfiguredOutsideContextualThenSearchAndDuckAIStayInactive() async throws {
+    func testWhenMentionsAreConfiguredOutsideContextualThenSearchStaysInactive() async throws {
         sut = makeMentionCoordinator(host: .omnibar)
+        sut.displayState = .omnibar(.active)
+        sut.syncInputModeFromExternalSource(.search)
         let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
         var candidateReadCount = 0
         let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: {
@@ -323,27 +325,59 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         defer { window.subviews.forEach { $0.removeFromSuperview() } }
         textView.text = "@wiki"
         textView.selectedRange = NSRange(location: 5, length: 0)
-        let states: [(UnifiedToggleInputDisplayState, TextEntryMode)] = [
-            (.omnibar(.active), .search),
-            (.omnibar(.active), .aiChat),
-            (.aiTab(.expanded), .aiChat)
-        ]
+        let presented = expectation(description: "No mention suggestions in search mode")
+        presented.isInverted = true
+        sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
 
-        for (state, mode) in states {
-            sut.displayState = state
-            sut.syncInputModeFromExternalSource(mode)
-            let presented = expectation(description: "No mention suggestions in \(state), \(mode)")
-            presented.isInverted = true
-            sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
+        handler.textDidChange(in: textView)
+        handler.selectionDidChange(in: textView)
 
-            handler.textDidChange(in: textView)
-            handler.selectionDidChange(in: textView)
-
-            await fulfillment(of: [presented], timeout: 0.1)
-        }
+        await fulfillment(of: [presented], timeout: 0.1)
+        XCTAssertEqual(sut.inputMode, .search)
         XCTAssertEqual(candidateReadCount, 0)
         XCTAssertEqual(textView.text, "@wiki")
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testWhenMentionsAreConfiguredOutsideContextualThenDuckAISurfacesShowSuggestions() async throws {
+        let states: [UnifiedToggleInputDisplayState] = [.omnibar(.active), .aiTab(.expanded)]
+        for state in states {
+            sut = makeMentionCoordinator(host: .omnibar)
+            sut.displayState = state
+            sut.syncInputModeFromExternalSource(.aiChat)
+            let feature = MentionAttachmentFeature()
+            let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
+            let source = MultiTabAttachmentSource(currentTabID: "source", mode: .normal, tabsProvider: { [tab] })
+            sut.configureTabAttachments(source: source, feature: feature)
+            let handler = try XCTUnwrap(sut.viewController.mentionHandler)
+            let textView = MentionTestTextView()
+            let window = UIWindow()
+            window.addSubview(textView)
+            defer { window.subviews.forEach { $0.removeFromSuperview() } }
+            textView.text = "@wiki"
+            textView.selectedRange = NSRange(location: 5, length: 0)
+            let presented = expectation(description: "Duck.ai mention suggestions in \(state)")
+            var suggestions: [MultiTabMentionController.Suggestion]?
+            sut.onTabMentionSuggestionsChanged = {
+                suggestions = $0
+                if $0 != nil { presented.fulfill() }
+            }
+
+            handler.textDidChange(in: textView)
+            handler.selectionDidChange(in: textView)
+            await fulfillment(of: [presented], timeout: 1)
+
+            XCTAssertEqual(sut.inputMode, .aiChat)
+            XCTAssertEqual(suggestions?.map { $0.candidate.tabId }, ["wiki"])
+            XCTAssertEqual(suggestions?.first?.isEnabled, true)
+            let candidate = try XCTUnwrap(suggestions?.first?.candidate)
+            feature.state = .unavailable
+            sut.selectTabMention(candidate)
+
+            XCTAssertNil(suggestions)
+            XCTAssertEqual(textView.text, "@wiki")
+            XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        }
     }
 
     private func makeMentionCoordinator(host: UnifiedToggleInputHost, pixelFiring: UTIPixelFiring = .live) -> UnifiedToggleInputCoordinator {

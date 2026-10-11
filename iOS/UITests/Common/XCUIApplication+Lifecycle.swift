@@ -44,6 +44,15 @@ extension XCUIApplication {
             Thread.sleep(forTimeInterval: minimumBackgroundDuration)
         }
 
+        let stateBeforeActivation = state
+        let isRunningInBackground = stateBeforeActivation == .runningBackground || stateBeforeActivation == .runningBackgroundSuspended
+        XCTAssertTrue(
+            isRunningInBackground,
+            "App stopped or left the background before activation (state: \(stateBeforeActivation)).",
+            file: file,
+            line: line)
+        guard isRunningInBackground else { return }
+
         activate()
 
         XCTAssertTrue(

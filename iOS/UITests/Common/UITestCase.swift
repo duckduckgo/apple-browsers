@@ -57,10 +57,15 @@ class UITestCase: XCTestCase {
 
     /// Relaunches without resetting defaults so tests can exercise multi-launch flows.
     /// Internal-user mode and subclass launch arguments/environment are applied on every launch.
-    func relaunchAppPreservingState() throws {
+    func relaunchAppPreservingState(file: StaticString = #filePath, line: UInt = #line) throws {
         app.terminate()
         try configureAppLaunch(clearingState: false)
         app.launch()
+        XCTAssertTrue(
+            app.wait(for: .runningForeground, timeout: 30),
+            "App did not return to the foreground after relaunch.",
+            file: file,
+            line: line)
     }
 
     private func configureAppLaunch(clearingState: Bool) throws {
@@ -72,7 +77,8 @@ class UITestCase: XCTestCase {
             "isRunningUITests",
             "-isOnboardingCompleted", "true",
             // Match the toolbar variant used by Maestro during migration.
-            "-ff.floatingUIAugust2026", "false",
+            "-ff.floatingUIiOS26", "false",
+            "-ff.floatingUIiOS27", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
         ]

@@ -66,7 +66,11 @@ extension XCUIApplication {
     }
 
     func openBrowsingMenu(revealing identifier: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
-        buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(file: file, line: line)
+        // The browser menu lives in the toolbar on iPhone and the omnibar on full-width iPad.
+        buttons.matching(NSPredicate(format: "identifier IN %@", [
+            "Browser.Toolbar.Button.Menu",
+            "Browser.OmniBar.Button.BrowsingMenu",
+        ])).firstMatch.tapWhenHittable(file: file, line: line)
         let menu = descendants(matching: .any)["Browser.Menu.List"]
         let item = descendants(matching: .any)[identifier]
         let deadline = Date().addingTimeInterval(UITestTimeouts.navigation)

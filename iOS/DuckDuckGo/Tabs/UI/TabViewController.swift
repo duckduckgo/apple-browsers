@@ -2603,23 +2603,43 @@ class TabViewController: UIViewController {
         cleanUpBeforeClosing()
     }
 
-    private var initialAIChatTabAttachmentPrompt: (prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest)?
+    private var initialAIChatTabAttachmentPrompt: (id: UUID, prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest)?
+    private weak var initialAIChatTabAttachmentUserScript: AIChatUserScript?
     private var awaitsInitialAIChatTabAttachmentNavigation = false
     private var aiChatTabAttachmentNavigation: WKNavigation?
 
     func setInitialAIChatTabAttachmentPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest) {
         cancelPendingAIChatTabAttachmentPrompt()
         awaitsInitialAIChatTabAttachmentNavigation = true
+        initialAIChatTabAttachmentPrompt = (UUID(), prompt, request)
         if let userScript = userScripts?.aiChatUserScript {
-            userScript.setInitialTabAttachmentPrompt(prompt, request: request)
-        } else {
-            initialAIChatTabAttachmentPrompt = (prompt, request)
+            configureInitialAIChatTabAttachmentPrompt(with: userScript)
         }
+    }
+
+    private func configureInitialAIChatTabAttachmentPrompt(with userScript: AIChatUserScript) {
+        guard let initial = initialAIChatTabAttachmentPrompt else { return }
+        let id = initial.id
+        let request = initial.request
+        var ownedRequest = request
+        ownedRequest.cancel = { [weak self] in
+            request.cancel()
+            guard self?.initialAIChatTabAttachmentPrompt?.id == id else { return }
+            self?.initialAIChatTabAttachmentPrompt = nil
+            self?.initialAIChatTabAttachmentUserScript = nil
+        }
+        initialAIChatTabAttachmentUserScript = userScript
+        userScript.setInitialTabAttachmentPrompt(initial.prompt, request: ownedRequest, onRequested: { [weak self] in
+            guard self?.initialAIChatTabAttachmentPrompt?.id == id else { return }
+            self?.initialAIChatTabAttachmentPrompt = nil
+            self?.initialAIChatTabAttachmentUserScript = nil
+        })
     }
 
     func cancelPendingAIChatTabAttachmentPrompt() {
         initialAIChatTabAttachmentPrompt?.request.cancel()
         initialAIChatTabAttachmentPrompt = nil
+        initialAIChatTabAttachmentUserScript = nil
         awaitsInitialAIChatTabAttachmentNavigation = false
         userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
     }
@@ -5016,11 +5036,14 @@ extension TabViewController: UserContentControllerDelegate {
             return .resolve(isFireMode: self.tabModel.fireTab,
                             handler: self.duckAiFireModeStorageHandler)
         }
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
-        if let initial = initialAIChatTabAttachmentPrompt {
+        if let previousScript = initialAIChatTabAttachmentUserScript,
+           !previousScript.preserveInitialTabAttachmentPromptForUserScriptReplacement() {
+            initialAIChatTabAttachmentPrompt?.request.cancel()
             initialAIChatTabAttachmentPrompt = nil
-            userScripts.aiChatUserScript.setInitialTabAttachmentPrompt(initial.prompt, request: initial.request)
+            initialAIChatTabAttachmentUserScript = nil
         }
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
+        configureInitialAIChatTabAttachmentPrompt(with: userScripts.aiChatUserScript)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages

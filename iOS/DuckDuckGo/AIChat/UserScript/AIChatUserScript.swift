@@ -396,15 +396,30 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// The recipient answers the frontend's native-prompt request, so delivery does not depend on push listeners.
     @MainActor
-    func setInitialTabAttachmentPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest) {
+    func setInitialTabAttachmentPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                       onRequested: (() -> Void)? = nil) {
         cancelPendingTabContextSubmission()
         usesRecipientBoundInitialPrompt = true
-        let delivery = AIChatInitialPromptDelivery()
+        let delivery = AIChatInitialPromptDelivery(onRequested: onRequested)
         initialPromptDelivery = delivery
-        submitWithTabContexts(currentPageContext: nil, request: request, initialDelivery: delivery) { context in
+        var ownedRequest = request
+        ownedRequest.cancel = {
+            // Old-task cleanup must not cancel preparations handed to the replacement script.
+            guard !delivery.preservesRequestOnReplacement else { return }
+            request.cancel()
+        }
+        submitWithTabContexts(currentPageContext: nil, request: ownedRequest, initialDelivery: delivery) { context in
             AIChatNativePrompt(platform: prompt.platform, tool: prompt.tool, pageContext: context,
                                selections: prompt.selections, termsAccepted: prompt.termsAccepted)
         }
+    }
+
+    @MainActor
+    func preserveInitialTabAttachmentPromptForUserScriptReplacement() -> Bool {
+        guard let submission = pendingTabContextSubmission, !submission.isCancelled,
+              initialPromptDelivery?.preserveRequestForReplacement() == true else { return false }
+        cancelPendingTabContextSubmission()
+        return true
     }
 
     @MainActor

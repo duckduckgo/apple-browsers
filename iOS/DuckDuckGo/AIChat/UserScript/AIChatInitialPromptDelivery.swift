@@ -28,9 +28,16 @@ final class AIChatInitialPromptDelivery {
     private var pendingResponse: CheckedContinuation<AIChatNativePrompt?, Never>?
     private var hasReceivedRequest = false
     private var isCancelled = false
+    private var onRequested: (() -> Void)?
+
+    private(set) var preservesRequestOnReplacement = false
 
     var hasPendingResponse: Bool { pendingResponse != nil }
     var canAcceptRequest: Bool { !hasReceivedRequest && !isCancelled }
+
+    init(onRequested: (() -> Void)? = nil) {
+        self.onRequested = onRequested
+    }
 
     deinit {
         pendingResponse?.resume(returning: nil)
@@ -58,9 +65,18 @@ final class AIChatInitialPromptDelivery {
 
     // MARK: - Frontend callbacks
 
+    func preserveRequestForReplacement() -> Bool {
+        guard canAcceptRequest else { return false }
+        preservesRequestOnReplacement = true
+        cancel()
+        return true
+    }
+
     func waitForPrompt() async -> AIChatNativePrompt? {
         guard canAcceptRequest, !Task.isCancelled else { return nil }
         hasReceivedRequest = true
+        onRequested?()
+        onRequested = nil
         return await withCheckedContinuation { response in
             pendingResponse = response
             frontendRequestGate.markReady()
@@ -75,6 +91,7 @@ final class AIChatInitialPromptDelivery {
     func cancel() {
         guard !isCancelled else { return }
         isCancelled = true
+        onRequested = nil
         let response = pendingResponse
         pendingResponse = nil
         response?.resume(returning: nil)

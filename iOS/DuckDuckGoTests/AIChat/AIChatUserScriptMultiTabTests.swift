@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKitTestsUtils
 import Combine
 import FeatureFlags_iOS
 import JavaScriptCore
@@ -385,6 +386,101 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
             script.inputBoxHandler = input
             input.didPressFireButton.send()
         }
+    }
+
+    func testInitialPromptSurvivesRepeatedUserScriptReplacementBeforeFrontendRequest() async throws {
+        let prompt = AIChatNativePrompt.queryPrompt("captured", autoSubmit: true, modelId: "model")
+        let attached = context(tabId: "submitted")
+        let cancelledBeforeConsumption = expectation(description: "Replacement preserves preparations")
+        cancelledBeforeConsumption.isInverted = true
+        var consumed = false
+        var requestedCount = 0
+        let request = MultiTabAttachmentRequest(contexts: { [attached] }, didConsume: { consumed = true }, cancel: {
+            if !consumed { cancelledBeforeConsumption.fulfill() }
+        })
+        let original = makeScript()
+        original.setInitialTabAttachmentPrompt(prompt, request: request)
+        XCTAssertTrue(original.preserveInitialTabAttachmentPromptForUserScriptReplacement())
+        original.cancelPendingTabContextSubmission()
+
+        let intermediate = makeScript()
+        intermediate.setInitialTabAttachmentPrompt(prompt, request: request)
+        await Task.yield()
+        XCTAssertTrue(intermediate.preserveInitialTabAttachmentPromptForUserScriptReplacement())
+        intermediate.cancelPendingTabContextSubmission()
+        await fulfillment(of: [cancelledBeforeConsumption], timeout: 0.1)
+
+        let replacement = makeScript()
+        defer { replacement.cancelPendingTabContextSubmission() }
+        replacement.setInitialTabAttachmentPrompt(prompt, request: request, onRequested: { requestedCount += 1 })
+        let handler = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let result = try await handler([:], .mock()) as? AIChatNativePrompt
+        let duplicate = try await handler([:], .mock())
+
+        XCTAssertEqual(result, .queryPrompt("captured", autoSubmit: true, modelId: "model", pageContext: .multiple([attached])))
+        XCTAssertNil(duplicate)
+        XCTAssertTrue(consumed)
+        XCTAssertEqual(requestedCount, 1)
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
+    func testReplacementAfterFrontendRequestCancelsInitialPromptInsteadOfPreservingIt() async throws {
+        let script = makeScript()
+        let gate = ContextGate(started: expectation(description: "Frontend request starts collection"))
+        let released = expectation(description: "Cancellation releases preparations")
+        released.assertForOverFulfill = false
+        var requested = false
+        script.setInitialTabAttachmentPrompt(.queryPrompt("captured", autoSubmit: true), request: .init(
+            contexts: { await gate.wait() }, didConsume: { XCTFail("Cancelled prompt must not consume") },
+            cancel: { released.fulfill() }), onRequested: { requested = true })
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let response = Task { try await handler([:], .mock()) }
+        await fulfillment(of: [gate.started], timeout: 1)
+
+        XCTAssertTrue(requested)
+        XCTAssertFalse(script.preserveInitialTabAttachmentPromptForUserScriptReplacement())
+        script.cancelPendingTabContextSubmission()
+        await fulfillment(of: [released], timeout: 1)
+        gate.resume([context(tabId: "submitted")])
+        let result = try await response.value
+
+        XCTAssertNil(result)
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
+    func testStopBeforeFrontendRequestReleasesInitialPromptAndPreventsPreservation() async {
+        let script = makeScript()
+        let input = MultiTabInputBox()
+        script.inputBoxHandler = input
+        let released = expectation(description: "Stop releases preparations before frontend request")
+        released.assertForOverFulfill = false
+        script.setInitialTabAttachmentPrompt(.queryPrompt("captured", autoSubmit: true), request: .init(
+            contexts: { XCTFail("Stopped prompt must not collect contexts"); return [] },
+            didConsume: { XCTFail("Stopped prompt must not consume") }, cancel: { released.fulfill() }),
+                                            onRequested: { XCTFail("Stopped prompt must not accept a frontend request") })
+
+        input.didPressStopGeneratingButton.send()
+        XCTAssertFalse(script.preserveInitialTabAttachmentPromptForUserScriptReplacement())
+        await fulfillment(of: [released], timeout: 1)
+
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
+    func testOrdinaryContextSubmissionCannotBePreservedDuringUserScriptReplacement() async {
+        let script = makeScript()
+        let gate = ContextGate(started: expectation(description: "Ordinary context collection started"))
+        let released = expectation(description: "Ordinary submission releases preparations")
+        released.assertForOverFulfill = false
+        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { await gate.wait() }, didConsume: {}, cancel: { released.fulfill() }))
+        await fulfillment(of: [gate.started], timeout: 1)
+
+        XCTAssertFalse(script.preserveInitialTabAttachmentPromptForUserScriptReplacement())
+        script.cancelPendingTabContextSubmission()
+        await fulfillment(of: [released], timeout: 1)
+        gate.resume([context(tabId: "submitted")])
+
+        XCTAssertTrue(webView.prompts.isEmpty)
     }
 
     func testExplicitRequestDoesNotReadLaterDraftProvider() async {

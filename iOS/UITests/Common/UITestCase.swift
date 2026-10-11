@@ -77,7 +77,8 @@ class UITestCase: XCTestCase {
             "isRunningUITests",
             "-isOnboardingCompleted", "true",
             // Match the toolbar variant used by Maestro during migration.
-            "-ff.floatingUIAugust2026", "false",
+            "-ff.floatingUIiOS26", "false",
+            "-ff.floatingUIiOS27", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
         ]

@@ -153,6 +153,23 @@ extension XCUIApplication {
 
 extension XCUIElement {
 
+    func waitForHittableInAppWindow(in application: XCUIApplication, timeout: TimeInterval) -> Bool {
+        wait(for: NSPredicate { [self] _, _ in
+            guard exists else { return false }
+            let frame = self.frame
+            guard frame.origin.x.isFinite, frame.origin.y.isFinite,
+                  frame.width.isFinite, frame.height.isFinite,
+                  frame.width > 0, frame.height > 0 else { return false }
+
+            let window = application.windows.firstMatch
+            guard window.exists else { return false }
+            let windowFrame = window.frame
+            guard windowFrame.width > 0, windowFrame.height > 0,
+                  windowFrame.intersects(frame) else { return false }
+            return isHittable
+        }, timeout: timeout)
+    }
+
     func tapWhenHittable(file: StaticString = #filePath, line: UInt = #line) {
         let predicate = NSPredicate(format: "isHittable == true AND isEnabled == true")
         let timeout = UITestTimeouts.elementExistence

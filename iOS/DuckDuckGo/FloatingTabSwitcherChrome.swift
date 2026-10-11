@@ -97,6 +97,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         let label = UILabel()
         label.font = UIFont.daxHeadline()
         label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.isAccessibilityElement = true
+        label.accessibilityIdentifier = "TabSwitcher.Title"
         return label
     }()
 
@@ -195,7 +197,15 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         duckChatItem.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         duckChatItem.accessibilityLabel = UserText.duckAiFeatureName
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle
+        tabsStyleItem.accessibilityIdentifier = "TabSwitcher.Button.ViewStyle"
         editMenuItem.accessibilityLabel = UserText.actionGenericEdit
+        editMenuItem.accessibilityIdentifier = "TabSwitcher.Button.Edit"
+        editMenuButton.accessibilityIdentifier = "TabSwitcher.Button.Edit"
+        selectAllItem.accessibilityIdentifier = "TabSwitcher.Button.SelectAll"
+        deselectAllItem.accessibilityIdentifier = "TabSwitcher.Button.DeselectAll"
+        multiSelectMenuItem.accessibilityLabel = "More Menu"
+        multiSelectMenuItem.accessibilityIdentifier = "TabSwitcher.Button.More"
+        closeTabsItem.accessibilityIdentifier = "TabSwitcher.Button.CloseSelected"
 
         attachTopScrollViewInteraction()
     }

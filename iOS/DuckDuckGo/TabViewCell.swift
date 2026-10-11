@@ -505,6 +505,9 @@ class TabViewCell: UICollectionViewCell {
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
         self.isFireModeEnabled = isFireModeEnabled
+        accessibilityIdentifier = "TabSwitcher.Tab.\(tab.uid)"
+        title.accessibilityIdentifier = "TabSwitcher.Tab.Open"
+        removeButton.accessibilityIdentifier = "TabSwitcher.Tab.Close"
 
         if !isDeleting {
             isHidden = false

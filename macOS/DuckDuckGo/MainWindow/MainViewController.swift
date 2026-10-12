@@ -359,7 +359,8 @@ final class MainViewController: NSViewController {
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            burnerMode: tabCollectionViewModel.burnerMode
+            burnerMode: tabCollectionViewModel.burnerMode,
+            launcherPromo: NSApp.delegateTyped.duckAiLauncherPromo
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
@@ -582,6 +583,8 @@ final class MainViewController: NSViewController {
 
         aiChatOmnibarContainerViewController.setShadowVisible(false)
         aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+        // Esc, a click outside and a switch to another Duck.ai tab close the input without `cleanup()`.
+        aiChatOmnibarContainerViewController.omnibarController.inputOutcomeMeasurement.inputClosed()
         mainView.updateAIChatOmnibarContainerHeight(0, animated: true)
         mainView.isAIChatOmnibarContainerShown = false
         aiChatOmnibarTextContainerViewController.stopEventMonitoring()

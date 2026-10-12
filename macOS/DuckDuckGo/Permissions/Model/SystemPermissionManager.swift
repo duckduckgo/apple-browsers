@@ -83,8 +83,10 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .notification:
             return await notificationService.authorizationStatus.asSystemPermissionState
         case .microphone:
-            return microphoneAuthorizationState
-        case .camera, .popups, .externalScheme, .autoplayPolicy:
+            return mediaAuthorizationState(for: .audio)
+        case .camera:
+            return mediaAuthorizationState(for: .video)
+        case .popups, .externalScheme, .autoplayPolicy:
             return .authorized
         }
     }
@@ -97,8 +99,10 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .notification:
             return notificationService.cachedAuthorizationStatus.asSystemPermissionState
         case .microphone:
-            return microphoneAuthorizationState
-        case .camera, .popups, .externalScheme, .autoplayPolicy:
+            return mediaAuthorizationState(for: .audio)
+        case .camera:
+            return mediaAuthorizationState(for: .video)
+        case .popups, .externalScheme, .autoplayPolicy:
             return .authorized
         }
     }
@@ -110,8 +114,12 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return isGeolocationAuthorizationRequired
         case .notification:
             return isNotificationAuthorizationRequired
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
-            return false // These don't require system permission through our two-step flow
+        case .camera:
+            return mediaAuthorizationState(for: .video) != .authorized
+        case .microphone:
+            return mediaAuthorizationState(for: .audio) != .authorized
+        case .popups, .externalScheme, .autoplayPolicy:
+            return false
         }
     }
 
@@ -136,8 +144,18 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
                 }
             }
             return nil
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
-            // These don't require system permission through our two-step flow
+        case .camera, .microphone:
+            let mediaType: AVMediaType = permissionType == .camera ? .video : .audio
+            let state = mediaAuthorizationState(for: mediaType)
+            guard state == .notDetermined else {
+                completion(state)
+                return nil
+            }
+            AVCaptureDevice.requestAccess(for: mediaType) { granted in
+                completion(granted ? .authorized : .denied)
+            }
+            return nil
+        case .popups, .externalScheme, .autoplayPolicy:
             completion(.authorized)
             return nil
         }
@@ -164,10 +182,10 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         }
     }
 
-    // MARK: - Private Microphone Implementation
+    // MARK: - Private Media Implementation
 
-    private var microphoneAuthorizationState: SystemPermissionAuthorizationState {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+    private func mediaAuthorizationState(for mediaType: AVMediaType) -> SystemPermissionAuthorizationState {
+        switch AVCaptureDevice.authorizationStatus(for: mediaType) {
         case .notDetermined:
             return .notDetermined
         case .authorized:

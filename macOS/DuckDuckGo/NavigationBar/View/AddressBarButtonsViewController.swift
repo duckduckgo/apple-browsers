@@ -94,16 +94,19 @@ final class AddressBarButtonsViewController: NSViewController {
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let permissionManager: PermissionManagerProtocol
+    private let notificationCenter: NotificationCenterProtocol
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
+    private weak var quitWarningWindow: NSWindow?
+    private weak var permissionQueryHiddenForQuitWarning: PermissionAuthorizationQuery?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
         return permissionAuthorizationPopover ?? {
             let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
-            NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
-            NotificationCenter.default.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
+            notificationCenter.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
+            notificationCenter.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
             self.permissionAuthorizationPopover = popover
             popover.setAccessibilityIdentifier("AddressBarButtonsViewController.permissionAuthorizationPopover")
             return popover
@@ -589,7 +592,8 @@ final class AddressBarButtonsViewController: NSViewController {
          aiChatSettings: AIChatPreferencesStorage,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          featureFlagger: FeatureFlagger,
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         notificationCenter: NotificationCenterProtocol = NotificationCenter.default) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
@@ -606,6 +610,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.adBlockingAvailability = adBlockingAvailability
         self.privacyConfigurationManager = privacyConfigurationManager
         self.permissionManager = permissionManager
+        self.notificationCenter = notificationCenter
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -630,6 +635,7 @@ final class AddressBarButtonsViewController: NSViewController {
         setupAnimationViews()
         setupNotificationAnimationView()
         setupSearchModeToggleControl()
+        subscribeToQuitWarning()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkList()
         subscribeToAdBlockingStateChanges()
@@ -902,7 +908,7 @@ final class AddressBarButtonsViewController: NSViewController {
     /// tabs. `DuckAiVoiceChatFailureHandler` only posts this notification when the OS has
     /// already denied mic access, so we route straight to the OS-disabled remediation surface.
     private func subscribeToAIChatVoiceChatPermissionRequests() {
-        NotificationCenter.default.addObserver(
+        notificationCenter.addObserver(
             self,
             selector: #selector(handleAIChatVoiceChatPermissionRequested(_:)),
             name: .aiChatVoiceChatPermissionCenterRequested,
@@ -932,7 +938,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.isShown = true
         view.layoutSubtreeIfNeeded()
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: url).droppingWwwPrefix()
         let source = (notification.userInfo?[NotificationCenterPermissionCenterPresenter.sourceUserInfoKey] as? DuckAiMicPermissionSource) ?? .voiceChat
         lastSystemDisabledMicPromptSource = source
         showSystemDisabledInfoPopover(for: domain, permissionType: .microphone, micPromptSource: source)
@@ -950,11 +956,12 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         urlCancellable = tabViewModel.tab.$content
             .combineLatest(tabViewModel.tab.$error)
-            .sink { [weak self] _ in
+            .sink { [weak self] (content, _) in
                 guard let self else { return }
 
                 // Cancel all animations and reset state on navigation
                 stopAnimations()
+                closePermissionAuthorizationPopoverIfNeeded(for: content)
                 lastNotificationType = nil
                 hasShieldAnimationCompleted = false
                 updateTrackerAnimationDomainState(for: self.urlForTrackerAnimation(), tabID: self.tabViewModel?.tab.uuid)
@@ -966,6 +973,17 @@ final class AddressBarButtonsViewController: NSViewController {
                 subscribeToYouTubeAdBlockAnimationTrigger()
                 scheduleYouTubeAdBlockUnavailableNoticeIfNeeded()
             }
+    }
+
+    private func closePermissionAuthorizationPopoverIfNeeded(for content: TabContent) {
+        guard content == .newtab, featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+              let popover = permissionAuthorizationPopover, popover.isShown else { return }
+
+        // Dismiss before the New Tab Page moves the popover's address bar anchor.
+        let animates = popover.animates
+        popover.animates = false
+        popover.close()
+        popover.animates = animates
     }
 
     private func subscribeToTrackerAnimationTrigger() {
@@ -1052,15 +1070,15 @@ final class AddressBarButtonsViewController: NSViewController {
     /// harmless: the promo shows at most once, and it re-checks that it can present.
     private func postAutoplayPromoTriggerIfNeeded(_ detectedVideoAutoplay: Bool) {
         guard detectedVideoAutoplay else { return }
-        NotificationCenter.default.post(name: .autoplayPolicyDisplayed, object: nil)
+        notificationCenter.post(name: .autoplayPolicyDisplayed, object: nil)
     }
 
     /// Refresh the address-bar button's icon + tint whenever the ad-blocking state changes from
     /// any surface (Settings toggle, popover dropdown, debug menu remote-disable override) — even
     /// without a navigation that would otherwise trigger `updateButtons()`.
     private func subscribeToAdBlockingStateChanges() {
-        NotificationCenter.default
-            .publisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
+        notificationCenter
+            .notificationPublisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateYouTubeAdBlockButtonAppearance()
@@ -1120,6 +1138,51 @@ final class AddressBarButtonsViewController: NSViewController {
 
     // MARK: - Permission Center
 
+    private func subscribeToQuitWarning() {
+        notificationCenter.notificationPublisher(for: WarnBeforeQuitOverlayPresenter.willShowNotification)
+            .sink { [weak self] notification in
+                self?.handleQuitWarningWillShow(notification)
+            }
+            .store(in: &cancellables)
+
+        notificationCenter.notificationPublisher(for: WarnBeforeQuitOverlayPresenter.didHideNotification)
+            .sink { [weak self] notification in
+                self?.handleQuitWarningDidHide(notification)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleQuitWarningWillShow(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+              view.window === window, quitWarningWindow == nil else { return }
+
+        quitWarningWindow = window
+        if let popover = permissionAuthorizationPopover, popover.isShown {
+            permissionQueryHiddenForQuitWarning = popover.viewController.query
+            popover.close()
+        }
+    }
+
+    private func handleQuitWarningDidHide(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              quitWarningWindow === window else { return }
+
+        let query = permissionQueryHiddenForQuitWarning
+        permissionQueryHiddenForQuitWarning = nil
+        // Keep pending presentation callbacks suppressed while the app proceeds with quitting.
+        guard notification.userInfo?[WarnBeforeQuitOverlayPresenter.UserInfoKeys.shouldProceed] as? Bool == false else {
+            return
+        }
+        quitWarningWindow = nil
+
+        guard featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+              view.window === window, window.isVisible,
+              let query, !query.isComplete,
+              tabViewModel?.tab.permissions.authorizationQueries.contains(where: { $0 === query }) == true else { return }
+        openPermissionAuthorizationPopover(for: query)
+    }
+
     private func updatePermissionCenterButton() {
         // Prevent crash if Combine subscriptions outlive view lifecycle
         guard isViewLoaded else { return }
@@ -1136,10 +1199,15 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         // Check if there are any persisted permissions for the current domain
-        let domain = tabViewModel.tab.content.urlForWebView?.host ?? ""
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: (tabViewModel.tab.content.urlForWebView ?? .empty).securityOrigin)
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
+        // A pending permission authorization query — e.g. getUserMedia with no prior decision, or
+        // a duck.ai mic request waiting on the macOS System Settings step — needs the shield as an
+        // anchor for its popover, so it overrides the suppressions below for the duration of the
+        // request. The query clears on user decision/dismiss and the suppression resumes.
+        let hasPendingAuthorizationQuery = tabViewModel.permissionAuthorizationQuery != nil
 
         if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) && !isAIChatPanelActive {
             // While the OS denies mic access on duck.ai under the voice-chat flag, keep the
@@ -1149,19 +1217,15 @@ final class AddressBarButtonsViewController: NSViewController {
             // The voice-chat failure handler still surfaces the remediation popover (force-showing
             // the shield transiently) when mic use is actually attempted and fails.
             permissionCenterButton.isShown = true
-        } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
+        } else if !hasPendingAuthorizationQuery && shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             // On duck.ai, the mic permission is auto-granted by migration and the voice chat
             // FE owns the in-page UI for active mic usage — so we don't need the shield to
-            // appear for mic alone. It surfaces only via the OS-denied branch above.
+            // appear for mic alone. It surfaces only via the OS-denied branch above, or while
+            // a mic request is waiting on the authorization popover.
             permissionCenterButton.isShown = false
         } else {
             // `isAIChatPanelActive` normally suppresses the shield (clean omnibar on duck.ai
-            // and when the AI chat sidebar is active). A pending permission authorization
-            // query — e.g. getUserMedia with no prior decision, as happens when the duck.ai
-            // native voice flow feature flag is off — needs the shield as an anchor for its
-            // allow/deny popover, so we override the suppression for the duration of the
-            // request. The query clears on user decision/dismiss and the suppression resumes.
-            let hasPendingAuthorizationQuery = tabViewModel.permissionAuthorizationQuery != nil
+            // and when the AI chat sidebar is active), except while a query is pending.
             permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
                 isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
                 isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
@@ -1211,18 +1275,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func showOrHidePermissionCenterPopoverIfNeeded() {
-        guard let tabViewModel else { return }
+        guard quitWarningWindow == nil, let tabViewModel else { return }
 
-        // Collect all requested permissions
-        var requestedQueries: [(PermissionType, PermissionAuthorizationQuery)] = []
-        for permission in tabViewModel.usedPermissions.keys {
-            if case .requested(let query) = tabViewModel.usedPermissions[permission] {
-                requestedQueries.append((permission, query))
-            }
-        }
-
-        // If no requested permissions, close popover if shown
-        guard let (_, query) = requestedQueries.first else {
+        // If no pending prompt, close popover if shown.
+        guard let query = tabViewModel.tab.permissions.authorizationQueryForPresentation else {
             if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
                 // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
                 guard !permissionAuthorizationPopover.viewController.isAuthorizationInProgress else { return }
@@ -2094,7 +2150,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func openPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
-        guard let button = permissionCenterButton else { return }
+        guard quitWarningWindow == nil, !query.isComplete, let button = permissionCenterButton else { return }
 
         lazy var popover: NSPopover = {
             let popover = self.permissionAuthorizationPopoverCreatingIfNeeded()
@@ -2116,13 +2172,17 @@ final class AddressBarButtonsViewController: NSViewController {
 
         button.backgroundColor = NSColor(resource: .buttonMouseDown)
         button.mouseOverColor = NSColor(resource: .buttonMouseDown)
-        (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
+        if let viewController = popover.contentViewController as? PermissionAuthorizationViewController,
+           viewController.query !== query || !featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            viewController.query = query
+        }
         (popover.contentViewController as? PopupBlockedViewController)?.query = query
         query.wasShownOnce = true
 
         // Wait for the button appearance animation to complete before showing popover
         DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) { [weak self] in
             guard let self, let tabViewModel,
+                  self.quitWarningWindow == nil, !query.isComplete,
                   tabViewModel.tab.permissions.authorizationQueries.contains(where: { $0 === query }),
                   button.isVisible else {
                 // Tab is no longer selected or button became hidden - reset button state
@@ -2321,7 +2381,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
+        let domain = tabViewModel.tab.permissions.permissionDomain(for: url).droppingWwwPrefix()
 
         // On duck.ai with OS mic denied AND no other permission in play, the shield only
         // exists as an anchor for the system-disabled remediation surface — route the click
@@ -2402,7 +2462,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.mouseOverColor = NSColor(resource: .buttonMouseDown)
 
         // Register for close notification to reset button state
-        NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
+        notificationCenter.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
 
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
 
@@ -3123,7 +3183,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         switch popover {
         case popovers.bookmarkPopover:
             if popovers.bookmarkPopover?.isNew == true {
-                NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
+                notificationCenter.post(name: .bookmarkAdded, object: nil)
             }
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:
@@ -3135,9 +3195,10 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
-            // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
-            // treat this as a denial of the website permission to prevent the popover from re-appearing
-            if !authPopover.viewController.isAuthorizationInProgress,
+            // Legacy prompt: if the popover was closed while authorization was no longer in progress (e.g., system
+            // permission denied), treat this as a denial of the website permission to prevent the popover from re-appearing
+            if !featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+               !authPopover.viewController.isAuthorizationInProgress,
                let query = authPopover.viewController.query,
                !query.isComplete {
                 query.handleDecision(grant: false, remember: nil)

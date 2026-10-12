@@ -115,7 +115,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
     
     func detach() {
-        if attachedScrollView?.delegate === self {
+        if delegate?.isFloatingChromeEnabled == true, attachedScrollView?.delegate === self {
             attachedScrollView?.delegate = nil
         }
         attachedScrollView = nil
@@ -126,7 +126,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
     
     private func scrollViewDidResizeContent(_ scrollView: UIScrollView) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         guard delegate?.isChromeScrollInteractionDisabled != true else { return }
         if !canHideBars(for: scrollView) && animator.barsState != .revealed {
             animator.revealBars(animated: false)
@@ -134,7 +134,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
         
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         if delegate?.isFloatingChromeEnabled == true {
             onScrollStateChanged?()
         }
@@ -162,7 +162,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
     
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         guard scrollView.isTracking else { return }
         guard !scrollView.isZoomBouncing else { return }
         guard delegate?.isChromeScrollInteractionDisabled != true else { return }
@@ -175,18 +175,18 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
     
     func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         startZoomScale = scrollView.zoomScale
         delegate?.setRefreshControlEnabled(false)
     }
 
     func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         delegate?.setRefreshControlEnabled(true)
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         guard !scrollView.isZooming else { return }
 
         pendingFloatingScrollEndVelocity = 0
@@ -195,7 +195,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
     
     func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         guard !scrollView.isZooming else { return }
         guard delegate?.isChromeScrollInteractionDisabled != true else { return }
         guard canHideBars(for: scrollView) else { return }
@@ -208,7 +208,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         if !decelerate {
             isFloatingUserScrollActive = false
         }
@@ -217,21 +217,26 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         // UIKit can still report dragging/tracking inside didEndDragging. Retry after it clears them.
         DispatchQueue.main.async { [weak self, weak scrollView] in
             guard let self, let scrollView, scrollView === self.attachedScrollView,
+                  self.delegate?.isFloatingChromeEnabled == true,
                   !self.isFloatingUserScrollActive else { return }
             self.onScrollStateChanged?()
         }
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        guard scrollView === attachedScrollView else { return }
+        guard shouldHandleScrollView(scrollView) else { return }
         isFloatingUserScrollActive = false
         guard delegate?.isFloatingChromeEnabled == true else { return }
         onScrollStateChanged?()
         finishFloatingScrolling(in: scrollView)
     }
 
+    private func shouldHandleScrollView(_ scrollView: UIScrollView) -> Bool {
+        delegate?.isFloatingChromeEnabled != true || scrollView === attachedScrollView
+    }
+
     private func finishFloatingScrolling(in scrollView: UIScrollView) {
-        guard scrollView === attachedScrollView else { return }
+        guard delegate?.isFloatingChromeEnabled == true, scrollView === attachedScrollView else { return }
         defer {
             pendingFloatingScrollEndVelocity = 0
         }
@@ -243,7 +248,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
-        guard scrollView === attachedScrollView else { return true }
+        guard shouldHandleScrollView(scrollView) else { return true }
         defer {
             scrollToTop = true
         }

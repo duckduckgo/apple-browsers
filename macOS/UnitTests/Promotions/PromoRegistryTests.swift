@@ -100,7 +100,9 @@ final class PromoRegistryTests: XCTestCase {
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),
-            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState())
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
+            syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill)
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

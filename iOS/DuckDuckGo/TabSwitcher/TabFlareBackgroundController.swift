@@ -56,6 +56,11 @@ final class TabFlareBackgroundController {
     private var reorderTrackingDisplayLink: CADisplayLink?
     private var lastContentOffset: CGPoint?
     private var onReorderTick: ((TimeInterval) -> Void)?
+    private var lastPinnedIndex: Int?
+    private var lastPinnedEdge: CGFloat = 0
+    private var lastViewportWidth: CGFloat = 0
+    private var lastItemWidth: CGFloat = 0
+    private weak var bouncingCell: UICollectionViewCell?
 
     init(collectionView: UICollectionView,
          topCornerRadius: CGFloat,
@@ -78,12 +83,13 @@ final class TabFlareBackgroundController {
     }
 
     /// Positions the flare over the current tab.
-    func update(animated: Bool = false) {
+    func update(animated: Bool = false, bounceAtEdges: Bool = false) {
         // The display link owns the frame during a reorder.
         guard !isReordering else { return }
         guard let collectionView,
               let index = currentIndex(),
               let attributes = collectionView.layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else {
+            stopEdgeBounce()
             view.isHidden = true
             return
         }
@@ -92,10 +98,59 @@ final class TabFlareBackgroundController {
         view.isHidden = false
         applyAlpha()
         collectionView.sendSubviewToBack(view)
+        updateEdgeBounce(index: index, frame: attributes.frame, enabled: bounceAtEdges)
+    }
+
+    func beginScrolling() {
+        stopEdgeBounce()
+        lastPinnedEdge = 0
+    }
+
+    private func updateEdgeBounce(index: Int, frame: CGRect, enabled: Bool) {
+        guard let collectionView,
+              let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+              let original = layout.unpinnedFrameForItem(at: IndexPath(item: index, section: 0)) else { return }
+        let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
+        let edge: CGFloat = original.minX < frame.minX ? 1 : (original.minX > frame.minX ? -1 : 0)
+        let sameTabAndWidth = lastPinnedIndex == index && lastViewportWidth == viewportWidth && lastItemWidth == frame.width
+        let enteredEdge = edge != 0 && edge != lastPinnedEdge
+        if !sameTabAndWidth || edge != lastPinnedEdge || UIAccessibility.isReduceMotionEnabled
+            || bouncingCell?.layer.animation(forKey: "edgeBounce") == nil {
+            stopEdgeBounce()
+        }
+        lastPinnedIndex = index
+        lastPinnedEdge = edge
+        lastViewportWidth = viewportWidth
+        lastItemWidth = frame.width
+        // Bounce inward only, leaving both half-tab hints available even during deceleration.
+        let distance = min(8, max(0, viewportWidth - 2 * frame.width))
+        let hasOuterNeighbor = edge > 0 ? index > 0 : index < collectionView.numberOfItems(inSection: 0) - 1
+        guard enabled, sameTabAndWidth, enteredEdge, hasOuterNeighbor, distance > 0, !UIAccessibility.isReduceMotionEnabled,
+              let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
+        bouncingCell = cell
+        let offset = edge * distance
+        let animation = CAKeyframeAnimation(keyPath: "position.x")
+        animation.isAdditive = true
+        animation.values = [0, offset, offset * 0.2, offset * 0.35, 0]
+        animation.keyTimes = [0, 0.25, 0.55, 0.75, 1]
+        animation.timingFunctions = Array(repeating: CAMediaTimingFunction(name: .easeInEaseOut), count: 4)
+        animation.duration = 0.35
+        let start = CACurrentMediaTime()
+        for layer in [cell.layer, view.layer] {
+            animation.beginTime = layer.convertTime(start, from: nil)
+            layer.add(animation, forKey: "edgeBounce")
+        }
+    }
+
+    private func stopEdgeBounce() {
+        bouncingCell?.layer.removeAnimation(forKey: "edgeBounce")
+        bouncingCell = nil
+        view.layer.removeAnimation(forKey: "edgeBounce")
     }
 
     /// Fades the flare out while the current tab is lifted for its preview.
     func beginPreview(forRow row: Int?, animator: UIContextMenuInteractionAnimating?) {
+        stopEdgeBounce()
         guard row == currentIndex() else { return }
         previewedTabIndex = currentIndex()
         animator?.addAnimations { self.view.alpha = 0 }
@@ -109,6 +164,7 @@ final class TabFlareBackgroundController {
     }
 
     func beginReorder(onTick: ((TimeInterval) -> Void)? = nil) {
+        stopEdgeBounce()
         // A long-press preview can convert into a drag without firing its dismiss callback.
         previewedTabIndex = nil
         isReordering = true

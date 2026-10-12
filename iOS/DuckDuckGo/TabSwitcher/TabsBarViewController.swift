@@ -91,7 +91,6 @@ class TabsBarViewController: UIViewController {
     private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
-    private var tabSettleAnimator: UIViewPropertyAnimator?
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -737,51 +736,16 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        showSelectedTabNeighbors(false, animated: false)
-    }
-
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if !decelerate { showSelectedTabNeighbors(true, animated: true) }
-    }
-
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        showSelectedTabNeighbors(true, animated: true)
-    }
-
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        showSelectedTabNeighbors(true, animated: true)
-    }
-
-    private func showSelectedTabNeighbors(_ show: Bool, animated: Bool) {
-        if tabSettleAnimator?.state == .active { tabSettleAnimator?.stopAnimation(true) }
-        tabSettleAnimator = nil
-        guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
-              layout.showsSelectedTabNeighbors != show else { return }
-        collectionView.layoutIfNeeded()
-        layout.showsSelectedTabNeighbors = show
-        let updates = { [weak self] in
-            guard let self else { return }
-            layout.invalidateLayout()
-            self.collectionView.layoutIfNeeded()
-            self.flareBackground.update()
-        }
-        if animated && !UIAccessibility.isReduceMotionEnabled {
-            let animator = UIViewPropertyAnimator(duration: 0.35, dampingRatio: 0.8, animations: updates)
-            tabSettleAnimator = animator
-            animator.startAnimation()
-        } else {
-            UIView.performWithoutAnimation(updates)
-        }
+        flareBackground.beginScrolling()
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         // Apply the pinned cell frames before positioning the selection background.
         collectionView.layoutIfNeeded()
-        flareBackground.update()
+        flareBackground.update(bounceAtEdges: scrollView.isDragging || scrollView.isDecelerating)
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        showSelectedTabNeighbors(true, animated: false)
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
@@ -879,7 +843,6 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
-        showSelectedTabNeighbors(true, animated: false)
         collectionView.collectionViewLayout.invalidateLayout()
         flareBackground.beginReorder { [weak self] elapsedTime in
             self?.scrollDuringReorder(elapsedTime: elapsedTime)

@@ -143,26 +143,28 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
-    func testSettlingExposesTheSelectedTabsOuterNeighborWithoutChangingScrollPosition() throws {
-        for (current, neighbor, offset, width) in [(5, 4, CGFloat(2400), CGFloat(600)), (90, 91, 1000, 600),
-                                                  (5, 4, 2400, 240), (90, 91, 1000, 240), (5, 4, 590, 600)] {
-            let (collectionView, layout) = makeCollectionView(currentIndex: { current }, contentOffset: offset, width: width)
-            layout.showsSelectedTabNeighbors = false
-            layout.invalidateLayout()
-            collectionView.layoutIfNeeded()
-            let originalOffset = collectionView.contentOffset
+    func testScrollingKeepsTheSelectedTabsOuterNeighborExposedWithoutChangingScrollPosition() throws {
+        let scenarios: [(current: Int, neighbor: Int, offsets: [CGFloat])] = [
+            (5, 4, [590, 720, 1200, 2400, 1200, 720, 590]),
+            (90, 91, [10400, 10000, 2400, 1000, 2400, 10000, 10400])
+        ]
+        for (current, neighbor, offsets) in scenarios {
+            for width in [CGFloat(600), 240] {
+                let (collectionView, _) = makeCollectionView(currentIndex: { current }, contentOffset: offsets[0], width: width)
+                for offset in offsets {
+                    collectionView.contentOffset.x = offset
+                    let originalOffset = collectionView.contentOffset
+                    collectionView.layoutIfNeeded()
 
-            layout.showsSelectedTabNeighbors = true
-            layout.invalidateLayout()
-            collectionView.layoutIfNeeded()
-
-            let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: current, section: 0)))
-            let adjacent = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighbor, section: 0)) as? TabsBarCell)
-            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
-            let expectedPeek = min(selected.bounds.width / 2, (viewport.width - selected.bounds.width) / 2)
-            XCTAssertEqual(collectionView.contentOffset, originalOffset)
-            XCTAssertTrue(viewport.contains(selected.frame))
-            XCTAssertEqual(adjacent.visiblePointerRect(in: adjacent.contentView).width, expectedPeek, accuracy: 0.001)
+                    let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: current, section: 0)))
+                    let adjacent = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighbor, section: 0)) as? TabsBarCell)
+                    let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+                    let expectedPeek = min(selected.bounds.width / 2, (viewport.width - selected.bounds.width) / 2)
+                    XCTAssertEqual(collectionView.contentOffset, originalOffset)
+                    XCTAssertTrue(viewport.contains(selected.frame))
+                    XCTAssertEqual(adjacent.visiblePointerRect(in: adjacent.contentView).width, expectedPeek, accuracy: 0.001)
+                }
+            }
         }
     }
 

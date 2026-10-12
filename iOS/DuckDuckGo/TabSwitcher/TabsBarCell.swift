@@ -84,6 +84,7 @@ class TabsBarCell: UICollectionViewCell {
         super.prepareForReuse()
         isPointerHovering = false
         isCurrent = false
+        layer.removeAnimation(forKey: "edgeBounce")
         setDragPlaceholderHidden(false, animated: false)
         leadingSeparatorView.isHidden = true
         leadingSeparatorView.alpha = 1

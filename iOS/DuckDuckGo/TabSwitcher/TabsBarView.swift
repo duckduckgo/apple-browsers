@@ -103,7 +103,6 @@ final class TabsBarView: UIView {
 final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
 
     var currentIndex: (() -> Int?)?
-    var showsSelectedTabNeighbors = true
 
     override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         true
@@ -143,7 +142,7 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         let middle = (leading + trailing + attributes.frame.width) / 2
         attributes.zIndex = isCurrent ? 2 : -Int(abs(attributes.center.x - middle))
         let foldRange = min(attributes.frame.width / 2, (trailing - leading) / 2)
-        let peek = showsSelectedTabNeighbors ? foldRange : 0
+        let peek = foldRange
         var origin = attributes.frame.minX
         if isCurrent {
             let minimum = leading + (indexPath.item > 0 ? peek : 0)
@@ -186,7 +185,7 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         let hasOuterNeighbor = current.map {
             $0 < indexPath.item ? $0 > 0 : $0 < collectionView.numberOfItems(inSection: indexPath.section) - 1
         } ?? false
-        let pinnedPeek = showsSelectedTabNeighbors && hasOuterNeighbor ? min(frame.width / 2, max(0, (visibleWidth - frame.width) / 2)) : 0
+        let pinnedPeek = hasOuterNeighbor ? min(frame.width / 2, max(0, (visibleWidth - frame.width) / 2)) : 0
         let pinnedWidth = current != nil && current != indexPath.item ? min(frame.width + pinnedPeek, max(0, visibleWidth - frame.width)) : 0
         // Leave a glimpse of neighboring tabs without squeezing the selected tab on narrow strips.
         let peek = min(frame.width / 2, max(0, (visibleWidth - frame.width - pinnedWidth) / 2))

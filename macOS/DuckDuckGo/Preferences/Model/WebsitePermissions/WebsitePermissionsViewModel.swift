@@ -52,8 +52,8 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
-    /// Recents changed on this page keep sorting by their previous date until the page closes.
-    private var heldRecentDates = [PermissionKey: Date]()
+    /// Recents changed on this page stay pinned to their previous date until the page closes.
+    private var pinnedRecentSortDates = [PermissionKey: Date]()
 
     private var nativeVoiceFlowEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
@@ -79,12 +79,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
             setupObserver()
 
         case .onDisappear:
-            releaseHeldRecents()
+            unpinRecents()
 
         case .changeRecentDecision(let row, let decision):
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled),
                   decision != row.decision else { return }
-            holdRecentInPlace(row)
+            pinRecent(row)
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
             pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: row.permissionType, to: decision), frequency: .dailyAndCount)
 
@@ -120,7 +120,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
                 guard let self else { return }
                 latestEntries = entries
                 let persistedKeys = Set(entries.map(PermissionKey.init))
-                heldRecentDates = heldRecentDates.filter { persistedKeys.contains($0.key) }
+                pinnedRecentSortDates = pinnedRecentSortDates.filter { persistedKeys.contains($0.key) }
                 updateViewState()
             }
     }
@@ -136,16 +136,16 @@ final class WebsitePermissionsViewModel: ObservableObject {
         )
     }
 
-    private func holdRecentInPlace(_ row: WebsitePermissionsViewState.RecentRow) {
+    private func pinRecent(_ row: WebsitePermissionsViewState.RecentRow) {
         let key = PermissionKey(row)
-        guard heldRecentDates[key] == nil,
+        guard pinnedRecentSortDates[key] == nil,
               let lastModified = latestEntries.first(where: { PermissionKey($0) == key })?.lastModified else { return }
-        heldRecentDates[key] = lastModified
+        pinnedRecentSortDates[key] = lastModified
     }
 
-    private func releaseHeldRecents() {
-        guard !heldRecentDates.isEmpty else { return }
-        heldRecentDates = [:]
+    private func unpinRecents() {
+        guard !pinnedRecentSortDates.isEmpty else { return }
+        pinnedRecentSortDates = [:]
         updateViewState()
     }
 
@@ -181,7 +181,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private func sortDate(of entry: WebsitePermissionEntry) -> Date? {
-        heldRecentDates[PermissionKey(entry)] ?? entry.lastModified
+        pinnedRecentSortDates[PermissionKey(entry)] ?? entry.lastModified
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {

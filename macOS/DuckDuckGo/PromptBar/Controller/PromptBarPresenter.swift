@@ -96,6 +96,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
     private var moveCancellable: AnyCancellable?
+    private var isResizing = false
     private var dimWindow: NSWindow?
 
     var isVisible: Bool {
@@ -248,6 +249,8 @@ final class PromptBarPresenter: PromptBarPresenting {
     private func subscribeToMoves(of window: PromptBarWindow) {
         moveCancellable = NotificationCenter.default
             .publisher(for: NSWindow.didMoveNotification, object: window)
+            .filter { [weak self] _ in self?.isResizing == false }
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
             .sink { [weak self, weak window] _ in
                 guard let self, let window, let visibleFrame = window.screen?.visibleFrame else { return }
                 self.saveRelativePosition(PromptBarPlacement.relativePosition(of: window.frame, in: visibleFrame))
@@ -313,9 +316,15 @@ final class PromptBarPresenter: PromptBarPresenting {
         guard let window else { return }
 
         var frame = window.frame
-        let top = frame.maxY
+        var top = frame.maxY
         frame.size.height = size.height
-        frame.origin.y = top - size.height
+        if let visibleFrame = window.screen?.visibleFrame {
+            frame.size.height = min(size.height, visibleFrame.height)
+            top = min(max(top, visibleFrame.minY + frame.height), visibleFrame.maxY)
+        }
+        frame.origin.y = top - frame.height
+        isResizing = true
         window.setFrame(frame, display: true, animate: false)
+        isResizing = false
     }
 }

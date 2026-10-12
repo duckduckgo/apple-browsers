@@ -33,13 +33,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        if let windowScene = scene as? UIWindowScene {
-            let window = UIWindow(windowScene: windowScene)
-            self.window = window
-            window.layer.speed = AppUserDefaults().slowAnimationsEnabled ? AppUserDefaults.slowAnimationsLayerSpeed : 1.0
-            appStateMachine.handle(.willConnectToWindow(window: window))
-        }
-
+        // Buffered before connecting, so `Connected` knows the launch action when it builds the first screen.
         if let shortcutItem = connectionOptions.shortcutItem {
             appStateMachine.handle(.handleShortcutItem(shortcutItem))
         } else if let urlContext = connectionOptions.urlContexts.first {
@@ -47,6 +41,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             appStateMachine.handle(.openURL(urlContext.url))
         } else if let userActivity = connectionOptions.userActivities.first {
             appStateMachine.handle(.handleUserActivity(userActivity))
+        }
+
+        if let windowScene = scene as? UIWindowScene {
+            let window = UIWindow(windowScene: windowScene)
+            self.window = window
+            window.layer.speed = AppUserDefaults().slowAnimationsEnabled ? AppUserDefaults.slowAnimationsLayerSpeed : 1.0
+            appStateMachine.handle(.willConnectToWindow(window: window))
         }
     }
 

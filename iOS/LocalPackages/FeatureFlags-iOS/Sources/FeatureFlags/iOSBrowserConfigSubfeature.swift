@@ -151,4 +151,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
+
+    /// TODO: Feature Flags Registry task
+    case idleReturnNewTabPageAtLaunch
 }

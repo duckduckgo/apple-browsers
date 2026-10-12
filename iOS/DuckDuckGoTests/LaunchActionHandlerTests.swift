@@ -104,6 +104,8 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var completesNewTabPageImmediately = true
     var newTabPageCompletion: ((IdleReturnNewTabPageResult) -> Void)?
     var markLastUsedTabAsResumedAfterIdleCalled = false
+    var recordNewTabPageDrawnAtLaunchCalled = false
+    var recordNewTabPageDrawnAtLaunchResult: IdleReturnNewTabPageResult = .openedNewTab
     var recordOrdinaryReturnCalled = false
     var lastTimeAwayMs: Int?
 
@@ -120,6 +122,12 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
         } else {
             newTabPageCompletion = completion
         }
+    }
+
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        recordNewTabPageDrawnAtLaunchCalled = true
+        lastTimeAwayMs = timeAwayMs
+        completion(recordNewTabPageDrawnAtLaunchResult)
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
@@ -140,6 +148,7 @@ final class LaunchActionHandlerTests {
     let idleReturnDelegate = MockIdleReturnLaunchDelegate()
     let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     let pixelKitMock = PixelKitMock()
+    var idleReturnLaunchLanding = IdleReturnLaunchLanding(drewNewTabPage: false)
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
@@ -147,6 +156,7 @@ final class LaunchActionHandlerTests {
         keyboardPresenter: keyboardPresenter,
         launchSourceService: launchSourceManager,
         idleReturnEvaluator: idleReturnEvaluator,
+        idleReturnLaunchLanding: idleReturnLaunchLanding,
         featureFlagger: featureFlagger,
         idleReturnDelegate: idleReturnDelegate,
         pixelFiring: pixelKitMock
@@ -543,6 +553,59 @@ final class LaunchActionHandlerTests {
 
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("A New Tab Page drawn at launch records its arrival, even when the return now evaluates as ordinary", .timeLimit(.minutes(1)))
+    func drawnNewTabPageRecordsItsArrival() {
+        idleReturnLaunchLanding = IdleReturnLaunchLanding(drewNewTabPage: true)
+        idleReturnEvaluator.outcome = .ordinary(timeAwayMs: 42_000)
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: true))
+
+        #expect(idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
+        #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.recordOrdinaryReturnCalled)
+        #expect(idleReturnDelegate.lastTimeAwayMs == 42_000)
+    }
+
+    @available(iOS 16, *)
+    @Test("The keyboard follows a drawn New Tab Page like one opened after idle", .timeLimit(.minutes(1)))
+    func drawnNewTabPageRaisesTheKeyboard() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        idleReturnLaunchLanding = IdleReturnLaunchLanding(drewNewTabPage: true)
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: true))
+
+        #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 1)
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+    }
+
+    @available(iOS 16, *)
+    @Test("A drawn New Tab Page is recorded once, then returns are evaluated again", .timeLimit(.minutes(1)))
+    func drawnNewTabPageIsRecordedOnce() {
+        idleReturnLaunchLanding = IdleReturnLaunchLanding(drewNewTabPage: true)
+        idleReturnEvaluator.outcome = .ordinary(timeAwayMs: nil)
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: true))
+        idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false))
+
+        #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
+        #expect(idleReturnDelegate.recordOrdinaryReturnCalled)
+    }
+
+    @available(iOS 16, *)
+    @Test("A link handled first leaves no drawn New Tab Page for a later return", .timeLimit(.minutes(1)))
+    func linkDiscardsTheDrawnNewTabPage() {
+        idleReturnLaunchLanding = IdleReturnLaunchLanding(drewNewTabPage: true)
+        idleReturnEvaluator.outcome = .ordinary(timeAwayMs: nil)
+
+        launchActionHandler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false))
+
+        #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
+        #expect(idleReturnDelegate.recordOrdinaryReturnCalled)
     }
 
 }

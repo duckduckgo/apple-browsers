@@ -306,6 +306,8 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    /// Read once by `loadInitialView`, which `viewDidLoad` runs without arguments.
+    private var drawsIdleReturnNewTabPageAtLaunch = false
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
@@ -2285,6 +2287,11 @@ class MainViewController: UIViewController {
             return
         }
 
+        if drawsIdleReturnNewTabPageAtLaunch {
+            attachNewTabPageForIdleReturnAtLaunch()
+            return
+        }
+
         if tabManager.currentTabsModel.currentTab?.link != nil {
             guard let tab = tabManager.current(createIfNeeded: true) else {
                 fatalError("Unable to create tab")
@@ -2293,6 +2300,21 @@ class MainViewController: UIViewController {
         } else {
             attachHomeScreen()
         }
+    }
+
+    /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
+    private func attachNewTabPageForIdleReturnAtLaunch() {
+        if let existingHomeTab = tabManager.firstHomeTab() {
+            tabManager.select(existingHomeTab, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab()
+        }
+        attachHomeScreen(isNewTab: true, openedAfterIdle: true, recordsArrival: false)
+    }
+
+    /// Call before the view loads; a cold start after idle can land on the New Tab Page directly.
+    func prepareInitialScreen(drawsIdleReturnNewTabPage: Bool) {
+        drawsIdleReturnNewTabPageAtLaunch = drawsIdleReturnNewTabPage
     }
 
     private func loadInitialViewIfNeeded() {
@@ -2394,7 +2416,8 @@ class MainViewController: UIViewController {
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
                                       openedAfterIdle: Bool = false,
-                                      startsNewTabPageSessionVisit: Bool = true) {
+                                      startsNewTabPageSessionVisit: Bool = true,
+                                      recordsArrival: Bool = true) {
         reportDuckAISessionCurrentTab()
         guard !autoClearInProgress else { return }
 
@@ -2452,8 +2475,7 @@ class MainViewController: UIViewController {
         // Resolved before the instrumentation call below, so the wide event records the mode
         // the app decided on rather than racing the keyboard to observe it. Behind the flag a new tab
         // also keeps the keyboard hidden during onboarding.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
-            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+        let willBeginEditing = isNewTab && willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2501,7 +2523,7 @@ class MainViewController: UIViewController {
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
-        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+        if recordsArrival, presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             // Consumed here rather than before the guard, so an attach that happens behind a
             // presented controller and records nothing cannot swallow the burn's trigger. Moving on
             // to an existing tab clears it instead, in `attachTab`.
@@ -2521,6 +2543,24 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func willBeginEditingOnNewTab(allowingKeyboard: Bool) -> Bool {
+        allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+    }
+
+    /// Records the arrival on the New Tab Page the launch drew, as `attachHomeScreen` would have.
+    func recordNewTabPageArrivalForIdleReturnAtLaunch(allowingKeyboard: Bool) {
+        let willBeginEditing = willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: true, hatch: currentNTPEscapeHatch, focused: willBeginEditing)
+            startNewTabPageSessionInstrumentation(isNewTab: true, willBeginEditing: willBeginEditing, isAfterFire: false)
+        }
+        if willBeginEditing {
+            omniBar.beginEditing(animated: true)
+        }
     }
 
     private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {

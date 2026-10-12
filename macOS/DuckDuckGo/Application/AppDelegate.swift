@@ -478,7 +478,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         BookmarkAddedSyncPromoDelegate(
             featureFlagger: featureFlagger,
             syncService: syncService,
-            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            storage: KeyedStorage(storage: UserDefaults.standard),
             recordResult: { [weak self] in
                 self?.promoService?.dismiss(promoId: $0, result: $1)
             }

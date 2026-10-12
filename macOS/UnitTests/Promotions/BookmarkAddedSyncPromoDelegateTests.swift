@@ -30,7 +30,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
     private var featureFlagger: MockFeatureFlagger!
     private var syncService: MockDDGSyncing!
-    private var legacyStorage: KeyedStorage<BookmarkAddedSyncPromoLegacySettings>!
+    private var storage: KeyedStorage<BookmarkAddedSyncPromoSettings>!
     private var recordedResults: [(promoID: String, result: PromoResult)] = []
 
     override func setUp() {
@@ -38,13 +38,13 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.promoQueueBookmarkAddedSyncPromo, .newSyncEntryPoints, .syncFeatureLevel3]
         syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
-        legacyStorage = KeyedStorage(storage: InMemoryKeyValueStore())
+        storage = KeyedStorage(storage: InMemoryKeyValueStore())
         recordedResults = []
     }
 
     override func tearDown() {
         recordedResults = []
-        legacyStorage = nil
+        storage = nil
         syncService = nil
         featureFlagger = nil
         super.tearDown()
@@ -55,7 +55,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let sut = BookmarkAddedSyncPromoDelegate(
             featureFlagger: featureFlagger,
             syncService: hasSyncService ? syncService : nil,
-            legacyStorage: legacyStorage,
+            storage: storage,
             recordResult: { [unowned self] in recordedResults.append(($0, $1)) }
         )
         sut.refreshEligibility()
@@ -108,7 +108,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let sut = BookmarkAddedSyncPromoDelegate(
             featureFlagger: featureFlagger,
             syncService: syncService,
-            legacyStorage: legacyStorage,
+            storage: storage,
             recordResult: { _, _ in }
         )
 
@@ -157,8 +157,8 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyButtonWasDismissedThenPromoIsStillEligible() {
-        legacyStorage.didDismissLegacyButton = true
-        legacyStorage.presentedCount = 5
+        storage.didDismissLegacyButton = true
+        storage.presentedCount = 5
 
         XCTAssertTrue(makeSUT().isEligible, "Legacy state retires the promo in show(), not through eligibility")
     }
@@ -195,13 +195,13 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
         XCTAssertFalse(sut.isPromoActive)
-        XCTAssertNil(legacyStorage.presentedCount)
+        XCTAssertNil(storage.presentedCount)
     }
 
     // MARK: - Legacy migration
 
     func testWhenLegacyButtonWasDismissedThenShowRetiresThePromo() async {
-        legacyStorage.didDismissLegacyButton = true
+        storage.didDismissLegacyButton = true
         let sut = makeSUT()
 
         let result = await show(sut)
@@ -211,7 +211,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyButtonWasDismissedThenForceShowBypassesRetirement() async {
-        legacyStorage.didDismissLegacyButton = true
+        storage.didDismissLegacyButton = true
         let sut = makeSUT()
 
         let showTask = await startShowing(sut, force: true)
@@ -224,7 +224,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
     func testWhenLegacyButtonWasSeenTheMaximumNumberOfTimesThenShowRetiresThePromo() async {
         for presentedCount in [5, 7] {
-            legacyStorage.presentedCount = presentedCount
+            storage.presentedCount = presentedCount
             let sut = makeSUT()
 
             let result = await show(sut)
@@ -235,7 +235,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyButtonWasSeenTheMaximumNumberOfTimesThenForceShowBypassesRetirement() async {
-        legacyStorage.presentedCount = 5
+        storage.presentedCount = 5
         let sut = makeSUT()
 
         let showTask = await startShowing(sut, force: true)
@@ -247,16 +247,16 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyButtonWasSeenThreeTimesThenThePromoRetiresAfterTwoMoreViews() async {
-        legacyStorage.presentedCount = 3
+        storage.presentedCount = 3
         let sut = makeSUT()
 
         let fourthViewResult = await showAndCloseSurface(sut)
         XCTAssertEqual(fourthViewResult, .noChange)
-        XCTAssertEqual(legacyStorage.presentedCount, 4)
+        XCTAssertEqual(storage.presentedCount, 4)
 
         let fifthViewResult = await showAndCloseSurface(sut)
         XCTAssertEqual(fifthViewResult, .ignored())
-        XCTAssertEqual(legacyStorage.presentedCount, 5)
+        XCTAssertEqual(storage.presentedCount, 5)
 
         let nextShowResult = await show(sut)
         XCTAssertEqual(nextShowResult, .retired)
@@ -282,8 +282,8 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         sut.syncButtonDismissed()
         _ = await showTask.value
 
-        XCTAssertNil(legacyStorage.didDismissLegacyButton)
-        XCTAssertNil(legacyStorage.presentedCount)
+        XCTAssertNil(storage.didDismissLegacyButton)
+        XCTAssertNil(storage.presentedCount)
     }
 
     func testWhenSyncButtonIsDismissedAndItsSurfaceClosesThenTheViewIsNotCounted() async {
@@ -295,7 +295,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         let result = await showTask.value
         XCTAssertEqual(result, .ignored())
-        XCTAssertNil(legacyStorage.presentedCount)
+        XCTAssertNil(storage.presentedCount)
     }
 
     // MARK: - Surface closed
@@ -307,7 +307,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
             let result = await showAndCloseSurface(sut)
 
             XCTAssertEqual(result, .noChange, "View \(view)")
-            XCTAssertEqual(legacyStorage.presentedCount, view)
+            XCTAssertEqual(storage.presentedCount, view)
             XCTAssertFalse(sut.isPromoActive)
         }
     }
@@ -321,17 +321,17 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let result = await showAndCloseSurface(sut)
 
         XCTAssertEqual(result, .ignored())
-        XCTAssertEqual(legacyStorage.presentedCount, 5)
+        XCTAssertEqual(storage.presentedCount, 5)
     }
 
     func testWhenSurfaceClosesDuringAForcedShowingThenNoChangeAndTheViewIsNotCounted() async {
-        legacyStorage.presentedCount = 4
+        storage.presentedCount = 4
         let sut = makeSUT()
 
         let result = await showAndCloseSurface(sut, force: true)
 
         XCTAssertEqual(result, .noChange)
-        XCTAssertEqual(legacyStorage.presentedCount, 4)
+        XCTAssertEqual(storage.presentedCount, 4)
     }
 
     func testWhenSurfaceClosesAfterAForcedShowingThenTheNextViewIsCounted() async {
@@ -341,7 +341,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let result = await showAndCloseSurface(sut)
 
         XCTAssertEqual(result, .noChange)
-        XCTAssertEqual(legacyStorage.presentedCount, 1)
+        XCTAssertEqual(storage.presentedCount, 1)
     }
 
     func testWhenShownWithoutASurfaceClosingThenTheViewIsNotCounted() async {
@@ -349,19 +349,19 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let showTask = await startShowing(sut)
 
         XCTAssertTrue(sut.isPromoActive)
-        XCTAssertNil(legacyStorage.presentedCount)
+        XCTAssertNil(storage.presentedCount)
 
         sut.hide()
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
-        XCTAssertNil(legacyStorage.presentedCount)
+        XCTAssertNil(storage.presentedCount)
     }
 
     func testWhenSurfaceClosesWithNoShowingPendingThenNothingIsCounted() async {
         let sut = makeSUT()
 
         sut.syncButtonSurfaceClosed()
-        XCTAssertNil(legacyStorage.presentedCount)
+        XCTAssertNil(storage.presentedCount)
 
         let showTask = await startShowing(sut)
         XCTAssertTrue(sut.isPromoActive, "A showing that starts after the surface closed stays pending for the next surface")
@@ -369,7 +369,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         sut.syncButtonSurfaceClosed()
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
-        XCTAssertEqual(legacyStorage.presentedCount, 1)
+        XCTAssertEqual(storage.presentedCount, 1)
     }
 
     func testWhenSurfaceClosesTwiceThenTheViewIsCountedOnce() async {
@@ -381,7 +381,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
-        XCTAssertEqual(legacyStorage.presentedCount, 1)
+        XCTAssertEqual(storage.presentedCount, 1)
     }
 
     // MARK: - hide()

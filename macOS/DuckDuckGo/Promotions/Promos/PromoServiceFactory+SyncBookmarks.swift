@@ -38,7 +38,7 @@ extension PromoServiceFactory {
 
     static let bookmarkAddedSyncPromoID = "bookmark-added-sync"
 
-    /// The "Sync Bookmarks Across Devices" button in the ★ popover and the Add/Edit Bookmark dialog.
+    /// The "Sync Bookmarks Across Devices" button in the bookmark popover and the Add/Edit Bookmark dialog.
     @MainActor
     static func bookmarkAddedSync(dependencies: PromoDependencies) -> Promo {
         InternalPromo(

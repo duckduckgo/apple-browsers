@@ -24,8 +24,7 @@ import Foundation
 import Persistence
 import PrivacyConfig
 
-/// State written by `DismissableSyncDeviceButtonModel` for the bookmark-added button before it moved to the promo queue.
-struct BookmarkAddedSyncPromoLegacySettings: StoringKeys {
+struct BookmarkAddedSyncPromoSettings: StoringKeys {
     let didDismissLegacyButton = StorageKey<Bool>(UserDefaultsKeys.bookmarkAddedSyncPromoDismissed, assertionHandler: { _ in })
     let presentedCount = StorageKey<Int>(UserDefaultsKeys.bookmarkAddedSyncPromoPresentedCount, assertionHandler: { _ in })
 }
@@ -37,7 +36,7 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing?
-    private let legacyStorage: KeyedStorage<BookmarkAddedSyncPromoLegacySettings>
+    private let storage: KeyedStorage<BookmarkAddedSyncPromoSettings>
     private let recordResult: @MainActor (_ promoID: String, PromoResult) -> Void
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
@@ -50,11 +49,11 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
     /// - Parameter recordResult: Records a result with the promo queue, including after the promo has been hidden.
     init(featureFlagger: FeatureFlagger,
          syncService: DDGSyncing?,
-         legacyStorage: KeyedStorage<BookmarkAddedSyncPromoLegacySettings>,
+         storage: KeyedStorage<BookmarkAddedSyncPromoSettings>,
          recordResult: @escaping @MainActor (_ promoID: String, PromoResult) -> Void) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
-        self.legacyStorage = legacyStorage
+        self.storage = storage
         self.recordResult = recordResult
 
         subscribeToEligibilityChanges()
@@ -124,8 +123,8 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        // Users who dismissed the legacy button, or saw it the legacy maximum number of times, never see it again.
-        if !force, legacyStorage.didDismissLegacyButton == true || (legacyStorage.presentedCount ?? 0) >= Self.maxPresentationCount {
+        // Users who dismissed the legacy button or saw it the maximum number of times never see it again.
+        if !force, storage.didDismissLegacyButton == true || (storage.presentedCount ?? 0) >= Self.maxPresentationCount {
             return .retired
         }
 
@@ -170,15 +169,13 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
 
     @MainActor
     func syncButtonSurfaceClosed() {
-        // A showing can be pending with no surface open (restored at launch, or the surface closed before `show()` arrived);
-        // it ends, and counts as a view, only when a surface that displayed it closes.
         guard resultContinuation != nil else { return }
         guard !isForcedSession else {
             resolve(with: .noChange)
             return
         }
-        let presentedCount = (legacyStorage.presentedCount ?? 0) + 1
-        legacyStorage.presentedCount = presentedCount
+        let presentedCount = (storage.presentedCount ?? 0) + 1
+        storage.presentedCount = presentedCount
         resolve(with: presentedCount >= Self.maxPresentationCount ? .ignored() : .noChange)
     }
 

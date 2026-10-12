@@ -76,8 +76,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             .assign(to: &$shouldShowSyncButton)
     }
 
-    func panelDidOpen() {
-        // The bookmarks bar fires its own display pixel when its button appears; panels fire it here, once the panel is open.
+    func bookmarkPanelDidAppear() {
         $shouldShowSyncButton
             .first { $0 }
             .sink { [weak self] _ in
@@ -87,7 +86,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         notificationCenter.post(name: .bookmarkPanelShown, object: nil)
     }
 
-    func syncButtonSurfaceClosed() {
+    func viewDidDisappear() {
         promo.syncButtonSurfaceClosed()
     }
 

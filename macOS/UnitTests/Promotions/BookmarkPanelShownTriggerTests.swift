@@ -61,25 +61,25 @@ final class BookmarkPanelShownTriggerTests: XCTestCase {
         cancellable.cancel()
     }
 
-    func testWhenPanelOpensThenTriggerIsPosted() {
+    func testWhenPanelAppearsThenTriggerIsPosted() {
         // Given
         let model = makeModel()
 
         // When
-        model.panelDidOpen()
+        model.bookmarkPanelDidAppear()
 
         // Then
         XCTAssertEqual(postCount, 1)
     }
 
-    func testWhenPanelOpensWhilePromoIsAlreadyActiveThenTriggerIsStillPosted() {
+    func testWhenPanelAppearsWhilePromoIsAlreadyActiveThenTriggerIsStillPosted() {
         // Given
         let promo = MockSyncDeviceButtonPromo()
         promo.isPromoActiveSubject.send(true)
         let model = makeModel(promo: promo)
 
         // When
-        model.panelDidOpen()
+        model.bookmarkPanelDidAppear()
 
         // Then
         XCTAssertEqual(postCount, 1)

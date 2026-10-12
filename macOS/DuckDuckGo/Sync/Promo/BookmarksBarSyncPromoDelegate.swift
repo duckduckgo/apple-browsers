@@ -35,7 +35,6 @@ protocol SyncDeviceButtonPromoPresenting: AnyObject {
     var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
     @MainActor func syncSetupStarted()
     @MainActor func syncButtonDismissed()
-    /// The delegate decides whether this ends the current showing.
     @MainActor func syncButtonSurfaceClosed()
 }
 

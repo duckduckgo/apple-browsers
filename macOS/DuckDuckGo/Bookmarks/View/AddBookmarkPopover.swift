@@ -75,7 +75,7 @@ final class AddBookmarkPopover: NSPopover {
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
         let syncButtonModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded)
         self.syncButtonModel = syncButtonModel
-        syncButtonModel.panelDidOpen()
+        syncButtonModel.bookmarkPanelDidAppear()
         let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonModel))
         // It's important to set the frame at least once here. If we don't, the popover
         // can miscalculate position, especially in macOS 26 (Sequoia)
@@ -97,7 +97,7 @@ final class AddBookmarkPopover: NSPopover {
     }
 
     func popoverWillClose() {
-        syncButtonModel?.syncButtonSurfaceClosed()
+        syncButtonModel?.viewDidDisappear()
         syncButtonModel = nil
         contentViewController = nil
         bookmark = nil

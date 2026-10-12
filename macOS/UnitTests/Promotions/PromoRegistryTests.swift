@@ -114,7 +114,7 @@ final class PromoRegistryTests: XCTestCase {
             bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
                 syncService: nil,
-                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
                 recordResult: { _, _ in }
             )
         )

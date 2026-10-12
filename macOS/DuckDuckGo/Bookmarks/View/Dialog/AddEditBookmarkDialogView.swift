@@ -38,10 +38,10 @@ struct AddEditBookmarkDialogView: ModalView {
             }
         }
         .onAppear {
-            syncButtonModel.panelDidOpen()
+            syncButtonModel.bookmarkPanelDidAppear()
         }
         .onDisappear {
-            syncButtonModel.syncButtonSurfaceClosed()
+            syncButtonModel.viewDidDisappear()
         }
         .background(Color(designSystemColor: .surfaceSecondary))
         .font(.system(size: 13))

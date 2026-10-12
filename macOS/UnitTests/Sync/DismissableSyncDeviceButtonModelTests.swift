@@ -106,25 +106,25 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarksBar"])
     }
 
-    func testWhenPanelOpensWhilePromoIsActiveThenDisplayedPixelFires() {
+    func testWhenPanelAppearsWhilePromoIsActiveThenDisplayedPixelFires() {
         // Given
         promo.isPromoActiveSubject.send(true)
         let model = makeModel()
 
         // When
-        model.panelDidOpen()
+        model.bookmarkPanelDidAppear()
 
         // Then
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
         XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarkAdded"])
     }
 
-    func testWhenPanelOpensWhilePromoIsInactiveThenDisplayedPixelWaitsUntilPromoBecomesActive() {
+    func testWhenPanelAppearsWhilePromoIsInactiveThenDisplayedPixelWaitsUntilPromoBecomesActive() {
         // Given
         let model = makeModel()
 
         // When
-        model.panelDidOpen()
+        model.bookmarkPanelDidAppear()
 
         // Then
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
@@ -140,7 +140,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
     func testWhenButtonIsShownAgainInTheSamePanelThenDisplayedPixelFiresOnce() {
         // Given
         let model = makeModel()
-        model.panelDidOpen()
+        model.bookmarkPanelDidAppear()
 
         // When
         promo.isPromoActiveSubject.send(true)
@@ -151,14 +151,14 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
     }
 
-    func testWhenPanelOpenIsReportedTwiceThenDisplayedPixelFiresOnce() {
+    func testWhenPanelDidAppearIsReportedTwiceThenDisplayedPixelFiresOnce() {
         // Given
         promo.isPromoActiveSubject.send(true)
         let model = makeModel()
 
         // When
-        model.panelDidOpen()
-        model.panelDidOpen()
+        model.bookmarkPanelDidAppear()
+        model.bookmarkPanelDidAppear()
 
         // Then
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
@@ -166,12 +166,12 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
 
     // MARK: - Forwarding to the promo
 
-    func testWhenSurfaceClosesThenPromoIsTold() {
+    func testWhenViewDisappearsThenPromoIsTold() {
         // Given
         let model = makeModel()
 
         // When
-        model.syncButtonSurfaceClosed()
+        model.viewDidDisappear()
 
         // Then
         XCTAssertEqual(promo.syncButtonSurfaceClosedCount, 1)

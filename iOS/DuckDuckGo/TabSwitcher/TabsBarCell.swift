@@ -42,7 +42,6 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     private let label = FadeOutLabel()
-    var displayTitle: String? { label.text }
     let removeButton = BrowserChromeButton(.tabSwitcher)
     private let faviconImage = UIImageView()
     private let separatorView = UIView()

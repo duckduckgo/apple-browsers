@@ -340,6 +340,69 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
+    func testPointerClickSelectsHalfCoveredTabImmediatelyAndLeavesTouchOnTheRevealPath() throws {
+        for width in [CGFloat(1024), 300] {
+            let (controller, model) = makeOverflowingController()
+            controller.view.frame.size.width = width
+            controller.view.layoutIfNeeded()
+            controller.refresh(tabsModel: model)
+            let collectionView = controller.collectionView
+            let installedClick = try XCTUnwrap(collectionView.gestureRecognizers?.first { $0.delegate === controller })
+            let event = TabsBarClickEvent()
+            for mask: UIEvent.ButtonMask in [[], .secondary, [.primary, .secondary], .primary] {
+                event.pressedButtons = mask
+                XCTAssertEqual(controller.gestureRecognizer(installedClick, shouldReceive: event), mask == .primary)
+            }
+
+            let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
+            let current = IndexPath(item: 8, section: 0)
+            let target = IndexPath(item: 7, section: 0)
+            let selectedTab = try XCTUnwrap(model.currentTab)
+            let frame = try XCTUnwrap(layout.unpinnedFrameForItem(at: current))
+            let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
+            let peek = min(frame.width / 2, (viewportWidth - frame.width) / 2)
+            let offset = frame.minX - collectionView.adjustedContentInset.left - peek + frame.width * 2
+            collectionView.contentOffset.x = offset
+            collectionView.layoutIfNeeded()
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: target) as? TabsBarCell)
+            let exposed = cell.visiblePointerRect(in: collectionView)
+            XCTAssertGreaterThan(exposed.width, 0)
+            XCTAssertLessThanOrEqual(exposed.width, cell.bounds.width / 2)
+            let click = TabsBarClickGestureRecognizer()
+            click.point = CGPoint(x: exposed.midX, y: exposed.midY)
+            XCTAssertTrue(controller.gestureRecognizerShouldBegin(click))
+            let delegate = TabsBarSelectionDelegate()
+            defer { withExtendedLifetime(delegate) {} }
+            var selectedIndices = [Int]()
+            delegate.onSelect = { controller, index in
+                selectedIndices.append(index)
+                XCTAssertEqual(UIView.inheritedAnimationDuration, 0, "Page switching must stay outside the strip animation")
+                if let tab = model.get(tabAt: index) { model.select(tab: tab) }
+                controller.refreshStyleInPlace(tabsModel: model, scrollToSelected: true)
+            }
+            controller.delegate = delegate
+
+            controller.selectTabWithPointer(click)
+
+            XCTAssertEqual(selectedIndices, [target.item])
+            XCTAssertIdentical(model.currentTab, model.get(tabAt: target.item))
+            XCTAssertEqual(cell.visiblePointerRect(in: cell).width, cell.bounds.width, accuracy: 0.001)
+            let revealed = cell.visiblePointerRect(in: collectionView)
+            click.point = CGPoint(x: revealed.midX, y: revealed.midY)
+            XCTAssertFalse(controller.gestureRecognizerShouldBegin(click))
+
+            model.select(tab: selectedTab)
+            controller.refreshStyleInPlace(tabsModel: model)
+            collectionView.contentOffset.x = offset
+            collectionView.layoutIfNeeded()
+            let hovered = cell.visiblePointerRect(in: cell.contentView)
+            cell.updatePointerHover(at: CGPoint(x: hovered.midX, y: hovered.midY))
+            XCTAssertFalse(controller.collectionView(collectionView, shouldSelectItemAt: target))
+            XCTAssertIdentical(model.currentTab, selectedTab)
+        }
+    }
+
+    @MainActor
     func testForegroundRestoresSelectionWithoutChangingTheCurrentTabOrScrollPosition() throws {
         let (controller, model) = makeOverflowingController()
         let selectedTab = model.currentTab
@@ -368,68 +431,6 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
-    func testHoverPreviewShowsTabMetadataAndInactiveThumbnailAndCancelsOnScroll() async throws {
-        let (controller, model) = makeOverflowingController()
-        let source = DefaultTabPreviewsSource(storeDir: nil, legacyDir: nil)
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 20, height: 20)).image { context in
-            UIColor.red.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: 20, height: 20))
-        }
-        controller.previewsSource = source
-        let host = UIViewController()
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
-        window.rootViewController = host
-        window.isHidden = false
-        window.layoutIfNeeded()
-        controller.view.frame.origin.y = host.view.safeAreaInsets.top + 8
-        host.addChild(controller)
-        host.view.addSubview(controller.view)
-        controller.didMove(toParent: host)
-        defer {
-            controller.updateTabHoverPreview(at: nil)
-            window.isHidden = true
-            window.rootViewController = nil
-            withExtendedLifetime((model, source)) {}
-        }
-        func descendants(of view: UIView) -> [UIView] {
-            view.subviews.flatMap { [$0] + descendants(of: $0) }
-        }
-        for index in [8, 7] {
-            let tab = try XCTUnwrap(model.get(tabAt: index))
-            tab.link = Link(title: "Page \(index)", url: try XCTUnwrap(URL(string: "https://www.example.com/\(index)")))
-            source.update(preview: image, forTab: tab)
-            controller.refresh(tabsModel: model)
-            let collectionView = controller.collectionView
-            collectionView.contentOffset.x = 400
-            collectionView.layoutIfNeeded()
-            let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? TabsBarCell)
-            let exposed = cell.visiblePointerRect(in: collectionView)
-            XCTAssertFalse(exposed.isEmpty)
-            let point = CGPoint(x: exposed.midX, y: exposed.midY)
-            controller.updateTabHoverPreview(at: point)
-            XCTAssertFalse(host.view.subviews.contains { $0 is TabsBarHoverPreview })
-            let shown = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                host.view.subviews.contains { $0 is TabsBarHoverPreview }
-            }, object: nil)
-            await fulfillment(of: [shown], timeout: 2)
-            let preview = try XCTUnwrap(host.view.subviews.first { $0 is TabsBarHoverPreview })
-            let contents = descendants(of: preview)
-            let labels = contents.compactMap { ($0 as? UILabel)?.text }
-            XCTAssertTrue(labels.contains("Page \(index)"))
-            XCTAssertTrue(labels.contains("example.com"))
-            XCTAssertEqual(contents.compactMap { ($0 as? UIImageView)?.image }, index == 8 ? [] : [image])
-
-            controller.scrollViewDidScroll(collectionView)
-            XCTAssertNil(preview.superview)
-            controller.updateTabHoverPreview(at: point)
-            controller.scrollViewWillBeginDragging(collectionView)
-            let cancelled = XCTNSPredicateExpectation(predicate: shown.predicate, object: nil)
-            cancelled.isInverted = true
-            await fulfillment(of: [cancelled], timeout: 1.1)
-        }
-    }
-
-    @MainActor
     private func makeOverflowingController() -> (TabsBarViewController, TabsModel) {
         let controller = TabsBarViewController.create()
         controller.loadViewIfNeeded()
@@ -440,6 +441,20 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         controller.refresh(tabsModel: model)
         controller.collectionView.layoutIfNeeded()
         return (controller, model)
+    }
+}
+
+private final class TabsBarClickEvent: UIEvent {
+    var pressedButtons: UIEvent.ButtonMask = []
+    override var buttonMask: UIEvent.ButtonMask { pressedButtons }
+}
+
+private final class TabsBarClickGestureRecognizer: UITapGestureRecognizer {
+    var point = CGPoint.zero
+    override func location(in view: UIView?) -> CGPoint { point }
+    override var state: UIGestureRecognizer.State {
+        get { .ended }
+        set { }
     }
 }
 

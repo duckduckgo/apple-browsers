@@ -1451,7 +1451,6 @@ class MainViewController: UIViewController {
         controller.featureFlagger = featureFlagger
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
-        controller.previewsSource = previewsSource
         controller.daxDialogsManager = daxDialogsManager
         controller.fireModeCapability = fireModeCapability
         controller.view.translatesAutoresizingMaskIntoConstraints = false

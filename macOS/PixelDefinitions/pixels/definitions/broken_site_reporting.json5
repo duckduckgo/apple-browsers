@@ -423,6 +423,60 @@
                 "type": "string",
                 "description": "Cached scriptlets version for the ad-blocking web extension"
             },
+            {
+                "key": "isNetworkAvailable",
+                "type": "boolean",
+                "description": "Whether the network path is satisfied. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "networkType",
+                "type": "string",
+                "description": "Active network interface. Only sent when Page Signals are enabled.",
+                "enum": ["wifi", "cellular", "wired", "unknown"]
+            },
+            {
+                "key": "isLowDataModeEnabled",
+                "type": "boolean",
+                "description": "Whether Low Data Mode is enabled. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "hasVPNConnectivityIssues",
+                "type": "boolean",
+                "description": "Whether VPN connectivity issues were detected. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "networkPingQuality",
+                "type": "string",
+                "description": "Ping quality bucket. Only sent when Page Signals are enabled.",
+                "enum": ["excellent", "good", "moderate", "poor", "terrible", "unknown"]
+            },
+            {
+                "key": "memoryPressure",
+                "type": "string",
+                "description": "System memory pressure level. Only sent when Page Signals are enabled.",
+                "enum": ["unknown", "normal", "warning", "critical"]
+            },
+            {
+                "key": "dnsResolution",
+                "type": "string",
+                "description": "DNS resolution outcome for the site host. Only sent when Page Signals are enabled.",
+                "enum": ["resolved", "blocked", "privateIP", "invalid", "unresolved"]
+            },
+            {
+                "key": "resourceLoadErrors",
+                "type": "string",
+                "description": "Comma-separated eTLD+1:(errorDomain,code) or eTLD+1:(statusCode,code) pairs for failed resource loads (non-2xx responses only), sorted alphabetically. Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "contentBlockedLoads",
+                "type": "integer",
+                "description": "Number of resource loads blocked by content blocking. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "contentBlockedDomains",
+                "type": "string",
+                "description": "Comma-separated eTLD+1:count pairs of blocked resources, sorted by count. Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
+            },
             "channel"
         ]
     },
@@ -808,6 +862,60 @@
                 "key": "adBlockingExtensionScriptletsVersion",
                 "type": "string",
                 "description": "Cached scriptlets version for the ad-blocking web extension"
+            },
+            {
+                "key": "isNetworkAvailable",
+                "type": "boolean",
+                "description": "Whether the network path is satisfied. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "networkType",
+                "type": "string",
+                "description": "Active network interface. Only sent when Page Signals are enabled.",
+                "enum": ["wifi", "cellular", "wired", "unknown"]
+            },
+            {
+                "key": "isLowDataModeEnabled",
+                "type": "boolean",
+                "description": "Whether Low Data Mode is enabled. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "hasVPNConnectivityIssues",
+                "type": "boolean",
+                "description": "Whether VPN connectivity issues were detected. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "networkPingQuality",
+                "type": "string",
+                "description": "Ping quality bucket. Only sent when Page Signals are enabled.",
+                "enum": ["excellent", "good", "moderate", "poor", "terrible", "unknown"]
+            },
+            {
+                "key": "memoryPressure",
+                "type": "string",
+                "description": "System memory pressure level. Only sent when Page Signals are enabled.",
+                "enum": ["unknown", "normal", "warning", "critical"]
+            },
+            {
+                "key": "dnsResolution",
+                "type": "string",
+                "description": "DNS resolution outcome for the site host. Only sent when Page Signals are enabled.",
+                "enum": ["resolved", "blocked", "privateIP", "invalid", "unresolved"]
+            },
+            {
+                "key": "resourceLoadErrors",
+                "type": "string",
+                "description": "Comma-separated eTLD+1:(errorDomain,code) or eTLD+1:(statusCode,code) pairs for failed resource loads (non-2xx responses only), sorted alphabetically. Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "contentBlockedLoads",
+                "type": "integer",
+                "description": "Number of resource loads blocked by content blocking. Only sent when Page Signals are enabled."
+            },
+            {
+                "key": "contentBlockedDomains",
+                "type": "string",
+                "description": "Comma-separated eTLD+1:count pairs of blocked resources, sorted by count. Capped, defaults to 20 entries. Only sent when Page Signals are enabled."
             },
             "channel"
         ]

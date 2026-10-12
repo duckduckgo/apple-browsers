@@ -105,10 +105,10 @@ public class LinkCleaner {
             return url
         }
 
-        let trackingParams = Set(TrackingLinkSettings(fromConfig: privacyConfig).trackingParameters)
+        let trackingParams = TrackingLinkSettings(fromConfig: privacyConfig).trackingParameters
 
         let preservedParams: [URLQueryItem] = queryParams.filter { param in
-            if trackingParams.contains(param.name) {
+            if trackingParams.contains(where: { $0 == param.name }) {
                 urlParametersRemoved = true
                 return false
             }

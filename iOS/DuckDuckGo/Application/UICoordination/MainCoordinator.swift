@@ -112,6 +112,7 @@ final class MainCoordinator {
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -269,12 +270,6 @@ final class MainCoordinator {
             syncService: syncService.sync
         )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager

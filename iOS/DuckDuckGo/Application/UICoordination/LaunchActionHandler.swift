@@ -130,30 +130,28 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
-            let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
-            let isAfterIdleReturn = idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate)
-            if isAfterIdleReturn {
-                switch idleReturnEvaluator.treatmentForIdleReturn() {
-                case .ntp:
-                    let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) { [self] result in
-                        guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
-                        switch result {
-                        case .keptCurrent:
-                            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
-                                                                   hasCompletedAuthentication: hasCompletedAuthentication,
-                                                                   isAfterIdleReturn: true)
-                        case .openedNewTab:
-                            keyboardPresenter.showKeyboardOnNewTabPageCreated()
-                        case .suppressed:
-                            break
-                        }
+            let outcome = idleReturnEvaluator.evaluateReturn()
+            let isAfterIdleReturn = outcome.isAfterIdle
+            switch outcome {
+            case .afterIdle(.ntp, let timeAwayMs):
+                let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) { [self] result in
+                    guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
+                    switch result {
+                    case .keptCurrent:
+                        keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                               hasCompletedAuthentication: hasCompletedAuthentication,
+                                                               isAfterIdleReturn: true)
+                    case .openedNewTab:
+                        keyboardPresenter.showKeyboardOnNewTabPageCreated()
+                    case .suppressed:
+                        break
                     }
-                    return
-                case .lut:
-                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
                 }
-            } else {
+                return
+            case .afterIdle(.lut, let timeAwayMs):
+                idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
+            case .ordinary(let timeAwayMs):
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,

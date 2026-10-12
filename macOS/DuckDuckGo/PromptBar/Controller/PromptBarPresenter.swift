@@ -95,8 +95,6 @@ final class PromptBarPresenter: PromptBarPresenting {
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
-    private var moveCancellable: AnyCancellable?
-    private var isResizing = false
     private var dimWindow: NSWindow?
 
     var isVisible: Bool {
@@ -232,9 +230,6 @@ final class PromptBarPresenter: PromptBarPresenting {
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.
         subscribeToResignKey(of: window)
-        if isDraggable {
-            subscribeToMoves(of: window)
-        }
     }
 
     private func presentationFrame(isDraggable: Bool) -> NSRect {
@@ -246,17 +241,6 @@ final class PromptBarPresenter: PromptBarPresenting {
         return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame, relativePosition: relativePosition)
     }
 
-    private func subscribeToMoves(of window: PromptBarWindow) {
-        moveCancellable = NotificationCenter.default
-            .publisher(for: NSWindow.didMoveNotification, object: window)
-            .filter { [weak self] _ in self?.isResizing == false }
-            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
-            .sink { [weak self, weak window] _ in
-                guard let self, let window, let visibleFrame = window.screen?.visibleFrame else { return }
-                self.saveRelativePosition(PromptBarPlacement.relativePosition(of: window.frame, in: visibleFrame))
-            }
-    }
-
     func dismiss(reason: PromptBarDismissReason) {
         // Visibility, not just existence: submitting reports through two delegate callbacks and so
         // asks to dismiss twice, and `resetAfterDismissal` must not run against a torn-down bar.
@@ -264,7 +248,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         // Read before `resetAfterDismissal()` clears the draft.
         let hadText = content.hasPromptText
         resignKeyCancellable = nil
-        moveCancellable = nil
+        if window.isMovableByWindowBackground, let visibleFrame = window.screen?.visibleFrame {
+            saveRelativePosition(PromptBarPlacement.relativePosition(of: window.frame, in: visibleFrame))
+        }
         window.orderOut(nil)
         if let dimWindow {
             self.dimWindow = nil
@@ -323,8 +309,6 @@ final class PromptBarPresenter: PromptBarPresenting {
             top = min(max(top, visibleFrame.minY + frame.height), visibleFrame.maxY)
         }
         frame.origin.y = top - frame.height
-        isResizing = true
         window.setFrame(frame, display: true, animate: false)
-        isResizing = false
     }
 }

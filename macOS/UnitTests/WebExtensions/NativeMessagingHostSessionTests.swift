@@ -215,6 +215,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
 
     // MARK: - One-shot exchange
 
+    @available(macOS 15.4, *)
     func testWhenHostNeverAnswersThenExchangeTimesOutAndStopsTheHost() async throws {
         let executable = try makeHost(named: "silent-host", script: Self.silentHostScript)
         let session = makeSession(executable: executable)
@@ -234,6 +235,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived the timeout")
     }
 
+    @available(macOS 15.4, *)
     func testWhenHostAnswersThenExchangeReturnsTheReplyAndStopsTheHost() async throws {
         let executable = try makeHost(named: "echo-host", script: Self.echoHostScript)
         let session = makeSession(executable: executable)

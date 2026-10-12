@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import Security
 import Testing
@@ -201,6 +202,141 @@ struct AIChatBonusServiceTests {
         #expect(store.writeCallCount == 0)
     }
 
+    // MARK: - Record publisher
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a claim publishes the claimed record", .timeLimit(.minutes(1)))
+    func claimPublishesTheRecord() async throws {
+        // GIVEN
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        let result = try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values == [result])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a claim on an already claimed record publishes nothing", .timeLimit(.minutes(1)))
+    func claimOnClaimedRecordPublishesNothing() async throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.pending
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        _ = try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a repeated change publishes only once", .timeLimit(.minutes(1)))
+    func repeatedChangePublishesOnlyOnce() async throws {
+        // GIVEN
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        try sut.dismiss()
+        try sut.dismiss()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values == [AIChatBonusRecord(dismissed: true)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check ending an already ended boost publishes nothing", .timeLimit(.minutes(1)))
+    func endingAnEndedBoostPublishesNothing() async throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.ended
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        try sut.end()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check reading the record publishes nothing", .timeLimit(.minutes(1)))
+    func readingPublishesNothing() async throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        _ = try sut.record()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a failed write publishes nothing", .timeLimit(.minutes(1)))
+    func failedWritePublishesNothing() async {
+        // GIVEN
+        store.writeError = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        try? sut.dismiss()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check the next change publishes after a failed write", .timeLimit(.minutes(1)))
+    func nextChangePublishesAfterAFailedWrite() async throws {
+        // GIVEN
+        store.writeError = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
+        #expect(throws: AIChatBonusStoreError.writeFailed(errSecNotAvailable)) {
+            try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
+        }
+        store.writeError = nil
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        try sut.dismiss()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values == [AIChatBonusRecord(dismissed: true)])
+    }
+
+    // Must run off main: main has to stay free to deliver the record while this thread waits.
+    @Test("Check a subscriber that reads the record when notified doesn't deadlock")
+    func subscriberReadingTheRecordDoesNotDeadlock() {
+        // GIVEN
+        // Signalled once the subscriber has finished, even if that happens before the wait below.
+        let readFinished = DispatchSemaphore(value: 0)
+        var recordReadBySubscriber: AIChatBonusRecord?
+        // Subscribed before the write: the publisher doesn't replay. Calling back into the service is the case that could deadlock.
+        let cancellable = sut.recordPublisher.sink { [sut] _ in
+            recordReadBySubscriber = try? sut.record()
+            readFinished.signal()
+        }
+
+        // WHEN
+        // Write on another thread so a regressed subscriber can't run, and deadlock, on the test thread: the wait below fails instead of hanging.
+        DispatchQueue.global().async { [sut] in
+            try? sut.dismiss()
+        }
+
+        // THEN
+        #expect(readFinished.wait(timeout: .now() + 5) == .success)
+        #expect(recordReadBySubscriber == AIChatBonusRecord(dismissed: true))
+        cancellable.cancel()
+    }
+
     // MARK: - Failures
 
     @Test("Check a failed read stops a claim before any write")
@@ -300,5 +436,12 @@ extension AIChatBonusServiceTests {
             defer { lock.unlock() }
             storage.append(value)
         }
+    }
+}
+
+/// Waits until the main queue has run everything queued before this call, e.g. values delivered with `.receive(on: DispatchQueue.main)`.
+func drainMainQueue() async {
+    await withCheckedContinuation { continuation in
+        DispatchQueue.main.async { continuation.resume() }
     }
 }

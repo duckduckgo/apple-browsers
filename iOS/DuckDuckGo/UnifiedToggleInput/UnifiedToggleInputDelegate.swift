@@ -25,6 +25,8 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     /// `termsAccepted` is `true` only for a prompt sent with Ask.
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool)
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?)
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void)
     /// Nothing to deliver, only the moment — reported before the keyboard takes the surface with it.
     func unifiedToggleInputDidSubmitPromptToBoundChat()
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?)
@@ -54,6 +56,11 @@ extension UnifiedToggleInputDelegate {
         tabAttachmentRequest?.cancel()
         unifiedToggleInputDidSubmitPrompt(prompt, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort,
                                          images: images, files: files, termsAccepted: termsAccepted)
+    }
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        request.cancel()
+        completion(false)
     }
     func unifiedToggleInputDidSubmitPromptToBoundChat() {}
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {}

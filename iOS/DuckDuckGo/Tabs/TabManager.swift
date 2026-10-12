@@ -814,7 +814,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
             let evictionCandidates = tabControllerCache.filter {
-                $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+                $0 !== currentController && !$0.hasPendingInitialAIChatPromptPreparation
+                    && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
             }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)

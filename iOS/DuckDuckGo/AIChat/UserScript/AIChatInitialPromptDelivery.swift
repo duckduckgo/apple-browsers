@@ -20,82 +20,87 @@
 import AIChat
 import Foundation
 
-/// One frontend request and its response. Context collection remains owned by the submission task.
+/// A prepared, recipient-owned prompt. Script replacement shares the same single-use value.
 @MainActor
 final class AIChatInitialPromptDelivery {
-    private let frontendRequestGate = AIChatFrontendReadinessGate()
-    private let frontendSubmissionGate = AIChatFrontendReadinessGate()
-    private var pendingResponse: CheckedContinuation<AIChatNativePrompt?, Never>?
-    private var hasReceivedRequest = false
+    private var prompt: AIChatNativePrompt?
+    private var onConsumed: (() -> Void)?
+    private let consumptionGate = AIChatFrontendReadinessGate()
     private var isCancelled = false
-    private var onRequested: (() -> Void)?
 
-    private(set) var preservesRequestOnReplacement = false
-
-    var hasPendingResponse: Bool { pendingResponse != nil }
-    var canAcceptRequest: Bool { !hasReceivedRequest && !isCancelled }
-
-    init(onRequested: (() -> Void)? = nil) {
-        self.onRequested = onRequested
+    init(prompt: AIChatNativePrompt, onConsumed: @escaping () -> Void) {
+        self.prompt = prompt
+        self.onConsumed = onConsumed
     }
 
-    deinit {
-        pendingResponse?.resume(returning: nil)
+    func consume() -> AIChatNativePrompt? {
+        guard let prompt else { return nil }
+        self.prompt = nil
+        let onConsumed = onConsumed
+        self.onConsumed = nil
+        consumptionGate.markReady()
+        onConsumed?()
+        return prompt
     }
 
-    // MARK: - Submission task
-
-    func waitUntilRequested() async -> Bool {
+    /// Only subsequent pushes wait for the initial pull; the pull itself never waits.
+    func waitUntilConsumed() async -> Bool {
         guard !isCancelled else { return false }
-        return await frontendRequestGate.waitUntilReady(timeout: nil)
-    }
-
-    func reply(with prompt: AIChatNativePrompt) -> Bool {
-        guard !isCancelled, let response = pendingResponse else { return false }
-        pendingResponse = nil
-        response.resume(returning: prompt)
-        return true
-    }
-
-    /// Keep subsequent prompts queued until the frontend has submitted this first one.
-    func waitUntilSubmitted() async {
-        guard !isCancelled else { return }
-        _ = await frontendSubmissionGate.waitUntilReady(timeout: nil)
-    }
-
-    // MARK: - Frontend callbacks
-
-    func preserveRequestForReplacement() -> Bool {
-        guard canAcceptRequest else { return false }
-        preservesRequestOnReplacement = true
-        cancel()
-        return true
-    }
-
-    func waitForPrompt() async -> AIChatNativePrompt? {
-        guard canAcceptRequest, !Task.isCancelled else { return nil }
-        hasReceivedRequest = true
-        onRequested?()
-        onRequested = nil
-        return await withCheckedContinuation { response in
-            pendingResponse = response
-            frontendRequestGate.markReady()
-        }
-    }
-
-    func confirmSubmission() {
-        guard !isCancelled else { return }
-        frontendSubmissionGate.markReady()
+        guard prompt != nil else { return true }
+        return await consumptionGate.waitUntilReady(timeout: nil)
     }
 
     func cancel() {
-        guard !isCancelled else { return }
         isCancelled = true
-        onRequested = nil
-        let response = pendingResponse
-        pendingResponse = nil
-        response?.resume(returning: nil)
-        frontendRequestGate.reset()
-        frontendSubmissionGate.reset()
+        prompt = nil
+        onConsumed = nil
+        consumptionGate.reset()
+    }
+}
+
+/// Owned by the source input's tab until a complete prompt can be handed to its recipient.
+@MainActor
+final class AIChatInitialPromptPreparation {
+    private var task: Task<Void, Never>?
+    private let request: MultiTabAttachmentRequest
+    private var completion: ((AIChatInitialPromptDelivery?) -> Void)?
+
+    init(prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+         completion: @escaping (AIChatInitialPromptDelivery?) -> Void) {
+        self.request = request
+        self.completion = completion
+        task = Task { @MainActor [weak self] in
+            let contexts = await request.contexts()
+            guard !Task.isCancelled else { return }
+            let validated = request.validate(contexts)
+            let payload = AIChatNativePrompt(platform: prompt.platform, tool: prompt.tool,
+                                             pageContext: validated.isEmpty ? nil : .multiple(validated),
+                                             selections: prompt.selections, termsAccepted: prompt.termsAccepted)
+            let didDispatch = request.didDispatch
+            let result = MultiTabAttachmentRequest.SubmissionResult(
+                totalTabCount: validated.count, additionalTabCount: validated.filter { $0.tabId != nil }.count)
+            let delivery = AIChatInitialPromptDelivery(prompt: payload) { didDispatch(result) }
+            request.didConsume()
+            self?.finish(delivery)
+        }
+    }
+
+    deinit {
+        task?.cancel()
+        let request = request
+        Task { @MainActor in request.cancel() }
+    }
+
+    func cancel() {
+        task?.cancel()
+        finish(nil)
+    }
+
+    private func finish(_ delivery: AIChatInitialPromptDelivery?) {
+        guard let completion else { return }
+        self.completion = nil
+        task = nil
+        request.cancel()
+        completion(delivery)
     }
 }

@@ -2280,12 +2280,59 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let tabAttachmentRequest = isContextualChatState
             ? userScript?.attachedTabContextsProvider?()
             : takeTabAttachmentRequest()
+        if !isContextualChatState, userScript == nil, let tabAttachmentRequest {
+            let prompt = AIChatNativePrompt.queryPrompt(text, autoSubmit: true, toolChoice: tools?.map(\.rawValue),
+                                                       images: images, files: files, modelId: configuration.modelId,
+                                                       reasoningEffort: configuration.reasoningEffort)
+                .withTermsAccepted(termsAccepted)
+            prepareInitialPrompt(prompt, request: tabAttachmentRequest)
+            return
+        }
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools,
                             termsAccepted: termsAccepted, userScript: userScript, tabAttachmentRequest: tabAttachmentRequest)
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
+        featureDiscovery.markDuckAIPromptSubmitted()
+    }
+
+    private func prepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest) {
+        guard let uid = currentTabUID, let delegate else {
+            request.cancel()
+            return
+        }
+        let draft = snapshotCurrentState()
+        persistDraftToStore()
+        delegate.unifiedToggleInputPrepareInitialPrompt(prompt, request: request) { [weak self] didPreparePrompt in
+            guard let self else { return }
+            let isCurrentInput = self.currentTabUID == uid
+            if didPreparePrompt {
+                let currentDraft = isCurrentInput ? self.snapshotCurrentState() : self.stateStore.state(for: uid)
+                // Do not clear edits made while preparation was pending.
+                if currentDraft == draft {
+                    if isCurrentInput {
+                        self.resetToolsSelection()
+                        self.clearStoreEntryAfterSubmission()
+                        self.clearAttachments()
+                        if self.isOmnibarNewAIChatPrompt {
+                            self.viewController.prepareToolbarSubmitStyleForDismissal()
+                        }
+                        self.markActiveChatPromptSubmitted()
+                        if self.isOmnibarSession { self.deactivateToOmnibar() } else { self.showCollapsed() }
+                    } else {
+                        var cleared = currentDraft
+                        cleared.clearDraft()
+                        self.stateStore.update(cleared, for: uid)
+                    }
+                }
+            }
+            if isCurrentInput {
+                self.transferredTabAttachmentIDs.removeAll()
+                if didPreparePrompt { self.synchronizeTabAttachmentPreparations() }
+            }
+        }
+        recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
         featureDiscovery.markDuckAIPromptSubmitted()
     }
 

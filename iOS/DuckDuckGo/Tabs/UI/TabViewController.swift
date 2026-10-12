@@ -2583,8 +2583,8 @@ class TabViewController: UIViewController {
     }
 
     deinit {
-        if let request = initialAIChatTabAttachmentPrompt?.request {
-            Task { @MainActor in request.cancel() }
+        if let preparation = initialAIChatPromptPreparation {
+            Task { @MainActor in preparation.cancel() }
         }
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
@@ -2603,15 +2603,33 @@ class TabViewController: UIViewController {
         cleanUpBeforeClosing()
     }
 
-    private var initialAIChatTabAttachmentPrompt: (id: UUID, prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest)?
+    private var initialAIChatTabAttachmentPrompt: AIChatInitialPromptDelivery?
+    private var initialAIChatPromptPreparation: AIChatInitialPromptPreparation?
     private weak var initialAIChatTabAttachmentUserScript: AIChatUserScript?
     private var awaitsInitialAIChatTabAttachmentNavigation = false
     private var aiChatTabAttachmentNavigation: WKNavigation?
 
-    func setInitialAIChatTabAttachmentPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest) {
+    var hasPendingInitialAIChatPromptPreparation: Bool {
+        initialAIChatPromptPreparation != nil
+    }
+
+    func prepareInitialAIChatPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                    completion: @escaping (AIChatInitialPromptDelivery?) -> Void) {
+        guard initialAIChatPromptPreparation == nil else {
+            request.cancel()
+            completion(nil)
+            return
+        }
+        initialAIChatPromptPreparation = AIChatInitialPromptPreparation(prompt: prompt, request: request) { [weak self] delivery in
+            self?.initialAIChatPromptPreparation = nil
+            completion(delivery)
+        }
+    }
+
+    func setInitialAIChatTabAttachmentPrompt(_ delivery: AIChatInitialPromptDelivery) {
         cancelPendingAIChatTabAttachmentPrompt()
         awaitsInitialAIChatTabAttachmentNavigation = true
-        initialAIChatTabAttachmentPrompt = (UUID(), prompt, request)
+        initialAIChatTabAttachmentPrompt = delivery
         if let userScript = userScripts?.aiChatUserScript {
             configureInitialAIChatTabAttachmentPrompt(with: userScript)
         }
@@ -2619,25 +2637,14 @@ class TabViewController: UIViewController {
 
     private func configureInitialAIChatTabAttachmentPrompt(with userScript: AIChatUserScript) {
         guard let initial = initialAIChatTabAttachmentPrompt else { return }
-        let id = initial.id
-        let request = initial.request
-        var ownedRequest = request
-        ownedRequest.cancel = { [weak self] in
-            request.cancel()
-            guard self?.initialAIChatTabAttachmentPrompt?.id == id else { return }
-            self?.initialAIChatTabAttachmentPrompt = nil
-            self?.initialAIChatTabAttachmentUserScript = nil
-        }
         initialAIChatTabAttachmentUserScript = userScript
-        userScript.setInitialTabAttachmentPrompt(initial.prompt, request: ownedRequest, onRequested: { [weak self] in
-            guard self?.initialAIChatTabAttachmentPrompt?.id == id else { return }
-            self?.initialAIChatTabAttachmentPrompt = nil
-            self?.initialAIChatTabAttachmentUserScript = nil
-        })
+        userScript.setInitialTabAttachmentPrompt(initial)
     }
 
     func cancelPendingAIChatTabAttachmentPrompt() {
-        initialAIChatTabAttachmentPrompt?.request.cancel()
+        initialAIChatPromptPreparation?.cancel()
+        initialAIChatPromptPreparation = nil
+        initialAIChatTabAttachmentPrompt?.cancel()
         initialAIChatTabAttachmentPrompt = nil
         initialAIChatTabAttachmentUserScript = nil
         awaitsInitialAIChatTabAttachmentNavigation = false
@@ -5036,12 +5043,7 @@ extension TabViewController: UserContentControllerDelegate {
             return .resolve(isFireMode: self.tabModel.fireTab,
                             handler: self.duckAiFireModeStorageHandler)
         }
-        if let previousScript = initialAIChatTabAttachmentUserScript,
-           !previousScript.preserveInitialTabAttachmentPromptForUserScriptReplacement() {
-            initialAIChatTabAttachmentPrompt?.request.cancel()
-            initialAIChatTabAttachmentPrompt = nil
-            initialAIChatTabAttachmentUserScript = nil
-        }
+        initialAIChatTabAttachmentUserScript?.detachInitialTabAttachmentPromptForUserScriptReplacement()
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         configureInitialAIChatTabAttachmentPrompt(with: userScripts.aiChatUserScript)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()

@@ -5024,11 +5024,6 @@ class MainViewController: UIViewController {
         }
 
         let shouldOpenInNewTab = shouldOpenAIChatInNewTab(forcesNewTab: forcesNewTab, fromDeepLink: fromDeepLink)
-        // `reportsNewTab` only overrides what is reported: callers that created the tab themselves
-        // land here with a blank current tab, which would otherwise read as no new tab.
-        fireAIChatEntryPointPixel(source: source,
-                                  opensNewTab: reportsNewTab ?? shouldOpenInNewTab,
-                                  hasPrompt: query?.isEmpty == false)
         if let tabAttachmentRequest {
             openAIChatWithTabAttachments(query: query ?? "", autoSend: autoSend, payload: payload,
                                          flowType: flowType, tools: tools, modelId: modelId,
@@ -5037,6 +5032,11 @@ class MainViewController: UIViewController {
                                          opensNewTab: shouldOpenInNewTab, request: tabAttachmentRequest)
             return
         }
+        // `reportsNewTab` only overrides what is reported: callers that created the tab themselves
+        // land here with a blank current tab, which would otherwise read as no new tab.
+        fireAIChatEntryPointPixel(source: source,
+                                  opensNewTab: reportsNewTab ?? shouldOpenInNewTab,
+                                  hasPrompt: query?.isEmpty == false)
         if shouldOpenInNewTab, let currentTab {
             // Dismiss contextual onboarding before opening duck.ai via UTI.
             currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
@@ -5111,44 +5111,89 @@ class MainViewController: UIViewController {
                                               source: AIChatEntryPointSource,
                                               opensNewTab: Bool,
                                               request: MultiTabAttachmentRequest) {
-        guard !clearInProgress, let originatingTab = currentTab else {
-            request.cancel()
-            return
-        }
         let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend,
                                                     toolChoice: tools?.map(\.rawValue), images: images, files: files,
                                                     modelId: modelId, reasoningEffort: reasoningEffort)
             .withTermsAccepted(termsAccepted)
+        prepareAIChatWithTabAttachments(prompt, payload: payload, flowType: flowType, source: source,
+                                       opensNewTab: opensNewTab, request: request, completion: { _ in })
+    }
+
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        guard tabManager.current(createIfNeeded: true) != nil else {
+            request.cancel()
+            completion(false)
+            return
+        }
+        recordNewTabPageSessionAction { $0.hitSubmit() }
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadDuckaiResponse)
+        let opensNewTab = shouldOpenAIChatInNewTab(forcesNewTab: false, fromDeepLink: false)
+        prepareAIChatWithTabAttachments(prompt, payload: nil, flowType: .default, source: .addressBarPrompt,
+                                       opensNewTab: opensNewTab, request: request, completion: completion)
+    }
+
+    private func prepareAIChatWithTabAttachments(_ prompt: AIChatNativePrompt,
+                                                 payload: Any?, flowType: AIChatOnboardingFlowType,
+                                                 source: AIChatEntryPointSource, opensNewTab: Bool,
+                                                 request: MultiTabAttachmentRequest,
+                                                 completion: @escaping (Bool) -> Void) {
+        guard !clearInProgress, let originatingTab = currentTab else {
+            request.cancel()
+            completion(false)
+            return
+        }
+        let tabsModel = tabManager.tabsModel(for: originatingTab.tabModel.mode)
+        let selectedModelID = unifiedInputStateStore?.state(for: originatingTab.tabModel.uid).selectedModelID
+        let selectedReasoningMode = unifiedInputStateStore?.state(for: originatingTab.tabModel.uid).selectedReasoningMode
         let chatURL = originatingTab.aiChatContentHandler.buildQueryURL(query: nil, autoSend: false,
                                                                        flowType: flowType, tools: nil)
-        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
-        if opensNewTab {
-            originatingTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: originatingTab)
-            loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] tab in
-                guard let recipient = self?.tabManager.controller(for: tab) else {
-                    request.cancel()
-                    return
+        originatingTab.prepareInitialAIChatPrompt(prompt, request: request) { [weak self, weak originatingTab] delivery in
+            guard let self, let originatingTab, let delivery, !self.clearInProgress,
+                  tabsModel.tabs.contains(where: { $0 === originatingTab.tabModel }) else {
+                delivery?.cancel()
+                completion(false)
+                return
+            }
+            let shouldPresent = self.currentTab === originatingTab
+            completion(true)
+            self.fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: true)
+            if shouldPresent {
+                self.postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
+            }
+            let recipient: TabViewController
+            if opensNewTab {
+                originatingTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: originatingTab)
+                // A blank background tab is preferred for cache eviction before it can receive the prompt.
+                recipient = self.tabManager.add(url: chatURL, inBackground: true, inheritedAttribution: nil, in: tabsModel)
+                recipient.inferredOpenerContext = .external
+                if var state = self.unifiedInputStateStore?.state(for: recipient.tabModel.uid) {
+                    state.selectedModelID = selectedModelID
+                    state.selectedReasoningMode = selectedReasoningMode
+                    self.unifiedInputStateStore?.update(state, for: recipient.tabModel.uid)
                 }
-                tab.duckAIEntrySource = source
-                recipient.aiChatContentHandler.setPayload(payload: payload)
-                recipient.setInitialAIChatTabAttachmentPrompt(prompt, request: request)
-                if let modelId {
-                    self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+            } else {
+                recipient = originatingTab
+                if recipient.tabModel.link == nil {
+                    self.ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: recipient.tabModel.openedAfterIdle)
                 }
             }
-        } else {
-            originatingTab.tabModel.duckAIEntrySource = source
-            if originatingTab.tabModel.link == nil {
-                ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: originatingTab.tabModel.openedAfterIdle)
+            recipient.tabModel.duckAIEntrySource = source
+            recipient.isVoiceModeRequested = false
+            recipient.aiChatContentHandler.setPayload(payload: payload)
+            if !opensNewTab {
+                recipient.load(url: chatURL)
             }
-            prepareTabForRequest {
-                originatingTab.isVoiceModeRequested = false
-                originatingTab.aiChatContentHandler.setPayload(payload: payload)
-                originatingTab.load(url: chatURL)
-                originatingTab.setInitialAIChatTabAttachmentPrompt(prompt, request: request)
-            }
-            if let modelId {
-                unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+            recipient.setInitialAIChatTabAttachmentPrompt(delivery)
+            if shouldPresent {
+                if opensNewTab {
+                    self.selectTab(recipient.tabModel)
+                } else {
+                    self.prepareTabForRequest {}
+                }
+                if case .query(let query)? = prompt.tool, let modelId = query.modelId {
+                    self.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+                }
             }
         }
     }

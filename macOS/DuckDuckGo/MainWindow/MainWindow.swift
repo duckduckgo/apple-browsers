@@ -54,6 +54,9 @@ final class MainWindow: NSWindow {
     // To avoid beep sounds, this keyDown method catches events that go through the
     // responder chain when no other responders process it
     override func keyDown(with event: NSEvent) {
+        if performWebExtensionCommand(for: event) {
+            return
+        }
         if event.keyEquivalent == [.command, "f"] {
             // beep on Cmd+F when Find In Page is unavailable
             super.keyDown(with: event)
@@ -139,4 +142,16 @@ final class MainWindow: NSWindow {
         return children
     }
 
+}
+
+extension NSWindow {
+
+    /// Runs the extension command whose keyboard shortcut matches `event`, a key press that nothing in the app
+    /// handled: menus, web pages and text fields get it first, so the app's own shortcuts always win.
+    /// Extension shortcuts need a command, control or option modifier.
+    func performWebExtensionCommand(for event: NSEvent) -> Bool {
+        guard #available(macOS 15.4, *),
+              !event.modifierFlags.isDisjoint(with: [.command, .control, .option]) else { return false }
+        return NSApp.delegateTyped.webExtensionManager?.performCommand(for: event) == true
+    }
 }

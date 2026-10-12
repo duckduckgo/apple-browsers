@@ -234,9 +234,10 @@ struct SettingsRootView: View {
     /// Navigation Views for DeepLink and programmatic navigation
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
-        case .dbp:
+        case .dbp(let freeScanEntryPoint):
             if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
-                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider,
+                                                                 freeScanEntryPoint: freeScanEntryPoint)
                     .edgesIgnoringSafeArea(.bottom)
             } else {
                 SubscriptionPIRMoveToDesktopView()

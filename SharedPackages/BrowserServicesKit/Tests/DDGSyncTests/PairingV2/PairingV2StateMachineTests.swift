@@ -321,12 +321,17 @@ final class PairingV2StateMachineTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .failed(error))
     }
 
-    func testWhenHelloHasUnsupportedVersionThenFlowAborts() {
-        var stateMachine = PairingV2StateMachine()
-        let commands = stateMachine.handle(.receivedHello(.init(channelId: "peer-channel", publicKey: "public-key", version: "3.0")))
+    func testWhenHelloHasUnrecognizedCapabilityThenStateMachineContinuesToPeerStatus() {
+        for version in ["", "invalid", "1", "3.1", "2.invalid"] {
+            var stateMachine = PairingV2StateMachine()
+            let localClient = makeLocalClient(kind: .ddg, hasAccount: false, isPresenter: true)
+            _ = stateMachine.handle(.presentCodeRequested(localClient: localClient, flags: enabledFlags))
 
-        XCTAssertEqual(commands, [.abort(.unsupportedVersion("3.0"))])
-        XCTAssertEqual(stateMachine.state, .failed(.unsupportedVersion("3.0")))
+            let commands = stateMachine.handle(.receivedHello(.init(channelId: "peer-channel", publicKey: "public-key", version: version)))
+
+            XCTAssertEqual(commands, [.sendRecoveryCodeStatus(.recoveryCodeRequest(kind: .ddg))])
+            XCTAssertEqual(stateMachine.state, .waitingForPeerStatus(.init(localClient: localClient, peerChannelID: nil)))
+        }
     }
 
     func testWhenNativeHostReceivesThirdPartyAvailableThenItRequestsHostConfirmation() {
@@ -726,10 +731,184 @@ final class PairingV2StateMachineTests: XCTestCase {
         _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .thirdParty)))
         _ = stateMachine.handle(.hostConfirmationAccepted)
         _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
-        let commands = stateMachine.handle(.recoveryCodeSent)
+        let commands = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: false))
 
         XCTAssertEqual(commands, [.stopPolling])
         XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .thirdParty)))
+    }
+
+    func testWhenV21HostSendsRecoveryCodeThenWaitsForJoinStatus() {
+        var stateMachine = PairingV2StateMachine()
+        let localClient = makeLocalClient(kind: .ddg, hasAccount: true, isPresenter: false)
+
+        _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+        _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .thirdParty)))
+        _ = stateMachine.handle(.hostConfirmationAccepted)
+        _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
+        let commands = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: true))
+
+        XCTAssertEqual(commands, [.startJoinStatusDeadline])
+        XCTAssertEqual(
+            stateMachine.state,
+            .hostWaitingForJoinStatus(
+                .init(localClient: localClient,
+                      peerChannelID: "channel-1",
+                      localChannelID: "local-channel",
+                      peerStatus: .recoveryCodeRequest(kind: .thirdParty)),
+                credentialKind: .thirdParty
+            )
+        )
+    }
+
+    func testWhenV21HostReceivesAnyValidJoinStatusThenCompletes() {
+        for reason in [PairingV2RecoveryCodeDoneReason.success, .loginFailed, .scopeRejected, .unknown("future_reason")] {
+            var stateMachine = PairingV2StateMachine()
+            let localClient = makeLocalClient(kind: .ddg, hasAccount: true, isPresenter: false)
+
+            _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+            _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .ddg)))
+            _ = stateMachine.handle(.hostConfirmationAccepted)
+            _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
+            _ = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: true))
+            let commands = stateMachine.handle(.receivedRecoveryCodeDone(reason))
+
+            XCTAssertEqual(commands, [.stopPolling])
+            XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+            XCTAssertEqual(stateMachine.handle(.receivedRecoveryCodeDone(reason)), [])
+        }
+    }
+
+    func testWhenJoinStatusDeadlineIsReachedThenHostOutcomeBecomesUnknown() {
+        var stateMachine = makeHostWaitingForJoinStatus()
+
+        XCTAssertEqual(stateMachine.handle(.joinStatusDeadlineReached), [])
+        guard case .hostJoinOutcomeUnknown = stateMachine.state else {
+            XCTFail("Expected unknown host outcome, got \(stateMachine.state)")
+            return
+        }
+    }
+
+    func testWhenRecoveryCodeDoneArrivesAfterJoinStatusDeadlineThenHostCompletes() {
+        var stateMachine = makeHostWaitingForJoinStatus()
+        _ = stateMachine.handle(.joinStatusDeadlineReached)
+
+        XCTAssertEqual(stateMachine.handle(.receivedRecoveryCodeDone(.success)), [.stopPolling])
+        XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .thirdParty)))
+    }
+
+    func testWhenByeArrivesAfterJoinStatusDeadlineThenHostHandlesReason() {
+        var doneStateMachine = makeHostWaitingForJoinStatus()
+        _ = doneStateMachine.handle(.joinStatusDeadlineReached)
+        let unknownState = doneStateMachine.state
+        XCTAssertEqual(doneStateMachine.handle(.receivedBye(.done)), [])
+        XCTAssertEqual(doneStateMachine.state, unknownState)
+
+        let failureCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
+            (.cancelled, .peerCancelled),
+            (.error, .peerDisconnected),
+            (.unknown("future_reason"), .peerDisconnected)
+        ]
+
+        for testCase in failureCases {
+            var stateMachine = makeHostWaitingForJoinStatus()
+            _ = stateMachine.handle(.joinStatusDeadlineReached)
+
+            XCTAssertEqual(stateMachine.handle(.receivedBye(testCase.reason)), [.abort(testCase.error)])
+            XCTAssertEqual(stateMachine.state, .failed(testCase.error))
+        }
+    }
+
+    func testWhenV21HostAwaitingStatusReceivesByeDoneThenOutcomeBecomesUnknown() {
+        var stateMachine = makeHostWaitingForJoinStatus()
+
+        let commands = stateMachine.handle(.receivedBye(.done))
+
+        XCTAssertEqual(commands, [])
+        guard case .hostJoinOutcomeUnknown = stateMachine.state else {
+            XCTFail("Expected unknown host outcome, got \(stateMachine.state)")
+            return
+        }
+        XCTAssertEqual(stateMachine.handle(.receivedBye(.done)), [])
+        guard case .hostJoinOutcomeUnknown = stateMachine.state else {
+            XCTFail("A repeated bye(done) must keep the outcome unknown, got \(stateMachine.state)")
+            return
+        }
+    }
+
+    func testWhenV21HostAwaitingOrUnknownReceivesFailureByeThenFailsReasonAware() {
+        let testCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
+            (.cancelled, .peerCancelled),
+            (.error, .peerDisconnected),
+            (.unknown("future_reason"), .peerDisconnected)
+        ]
+
+        for testCase in testCases {
+            var awaitingStateMachine = makeHostWaitingForJoinStatus()
+            XCTAssertEqual(awaitingStateMachine.handle(.receivedBye(testCase.reason)), [.abort(testCase.error)])
+            XCTAssertEqual(awaitingStateMachine.state, .failed(testCase.error))
+
+            var unknownStateMachine = makeHostWaitingForJoinStatus()
+            _ = unknownStateMachine.handle(.receivedBye(.done))
+            XCTAssertEqual(unknownStateMachine.handle(.receivedBye(testCase.reason)), [.abort(testCase.error)])
+            XCTAssertEqual(unknownStateMachine.state, .failed(testCase.error))
+        }
+    }
+
+    func testWhenByeArrivesDuringConfirmationThenAborts() {
+        let testCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
+            (.done, .peerDisconnected),
+            (.cancelled, .peerCancelled),
+            (.error, .peerDisconnected),
+            (.unknown("future_reason"), .peerDisconnected)
+        ]
+
+        for testCase in testCases {
+            var stateMachine = PairingV2StateMachine()
+            let localClient = makeLocalClient(kind: .ddg, hasAccount: true, isPresenter: false)
+            _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+            _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .ddg)))
+
+            XCTAssertEqual(stateMachine.handle(.receivedBye(testCase.reason)), [.abort(testCase.error)])
+            XCTAssertEqual(stateMachine.state, .failed(testCase.error))
+        }
+    }
+
+    func testWhenJoinerIsLoggingInThenIgnoresByeAndContinues() {
+        for reason in [PairingV2ByeReason.done, .cancelled, .error, .unknown("future_reason")] {
+            var stateMachine = PairingV2StateMachine()
+            let localClient = makeLocalClient(kind: .ddg, hasAccount: false, isPresenter: false)
+            _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+            _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeAvailable(kind: .ddg)))
+            _ = stateMachine.handle(.joinerConfirmationAccepted)
+            _ = stateMachine.handle(.receivedRecoveryCode("recovery-code"))
+            let stateBeforeBye = stateMachine.state
+
+            XCTAssertEqual(stateMachine.handle(.receivedBye(reason)), [])
+            XCTAssertEqual(stateMachine.state, stateBeforeBye)
+        }
+    }
+
+    func testWhenTerminalStateReceivesByeThenItIsANoOp() {
+        var completedStateMachine = makeHostWaitingForJoinStatus()
+        _ = completedStateMachine.handle(.receivedRecoveryCodeDone(.success))
+        XCTAssertEqual(completedStateMachine.handle(.receivedBye(.error)), [])
+        XCTAssertEqual(completedStateMachine.state, .completed(.recoveryCodeSent(credentialKind: .thirdParty)))
+
+        var failedStateMachine = PairingV2StateMachine()
+        _ = failedStateMachine.handle(.failed(.loginFailed))
+        XCTAssertEqual(failedStateMachine.handle(.receivedBye(.done)), [])
+        XCTAssertEqual(failedStateMachine.state, .failed(.loginFailed))
+    }
+
+    private func makeHostWaitingForJoinStatus() -> PairingV2StateMachine {
+        var stateMachine = PairingV2StateMachine()
+        let localClient = makeLocalClient(kind: .ddg, hasAccount: true, isPresenter: false)
+        _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+        _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .thirdParty)))
+        _ = stateMachine.handle(.hostConfirmationAccepted)
+        _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
+        _ = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: true))
+        return stateMachine
     }
 
     func testWhenRecoveryCodeIsPreparedThenHostSendsConfirmedBeforeResponse() {

@@ -175,6 +175,9 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Favorileri Cihazlar Arasında Paylaş";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Diğer cihazı kontrol edin.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup tüm cihazlarınızda uçtan uca şifrelenmiştir.";
 
@@ -275,7 +278,7 @@
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo Uygulaması";
 
 /* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Bağlanıyor...";
+"sync.simplified.scan-or-view-code.connecting.status" = "Bağlanıyor…";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kodu yapıştırdıktan sonra bu cihaza geri dönün.";
@@ -357,4 +360,3 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Senkronizasyon Geliştirme ortamını kullanıyorsunuz";
-

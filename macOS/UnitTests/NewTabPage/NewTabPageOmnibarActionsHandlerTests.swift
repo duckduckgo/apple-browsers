@@ -59,11 +59,10 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     // MARK: - submitSearch
 
-    func testThatDuckAITypedInTheSearchBoxLoadsOverHTTPS() {
-        let url = NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai")
-
-        XCTAssertEqual(url?.scheme, "https")
-        XCTAssertEqual(url?.host, "duck.ai")
+    func testThatDuckAITypedInTheSearchBoxLoadsAsTheWebViewReportsIt() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "Duck.AI")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai/chat?q=hi")?.absoluteString, "https://duck.ai/chat?q=hi")
     }
 
     func testThatOtherURLsTypedInTheSearchBoxKeepTheirScheme() {

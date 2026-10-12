@@ -97,12 +97,20 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         )
     }
 
-    /// Duck.ai only serves HTTPS. Loaded as http, the in-app HTTPS upgrade redirects it, and the tab replaces
-    /// its content with the redirected URL's, dropping the source it was opened with.
+    /// A Duck.ai URL is built as the web view will report it: HTTPS (Duck.ai serves nothing else), a lowercase
+    /// host and a root path. When the tab's URL differs from the web view's, the tab replaces its content with
+    /// the web view's URL and drops the source the chat was opened with.
     static func searchBoxURL(for term: String) -> URL? {
         guard let url = URL.makeURL(from: term) else { return nil }
-        guard url.isDuckAIURL, url.isHttp else { return url }
-        return url.toHttps() ?? url
+        guard url.isDuckAIURL, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        if url.isHttp, url.port == nil {
+            components.scheme = URL.NavigationalScheme.https.rawValue
+        }
+        components.host = components.host?.lowercased()
+        if components.path.isEmpty {
+            components.path = "/"
+        }
+        return components.url ?? url
     }
 
     /// Duck.ai reached from the search box is a direct navigation; the box's Duck.ai mode is a separate path.

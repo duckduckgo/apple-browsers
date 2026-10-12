@@ -342,7 +342,8 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
-                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
+                                                                  eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?

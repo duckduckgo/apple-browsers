@@ -217,7 +217,13 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     @objc private func onRemovePressed() {
+        guard isFullyExposed else { return }
         onRemove?()
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        updateCloseButtonVisibility()
+        return super.hitTest(point, with: event)
     }
 
     @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
@@ -232,6 +238,7 @@ class TabsBarCell: UICollectionViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateSeparators()
+        updateCloseButtonVisibility()
         
         if isPressed {
             layer.masksToBounds = false
@@ -323,9 +330,13 @@ class TabsBarCell: UICollectionViewCell {
         return fraction * fraction * (3 - 2 * fraction)
     }
 
-    /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.
+    private var isFullyExposed: Bool {
+        contentView.bounds.width > 0 && visiblePointerRect(in: contentView).width >= contentView.bounds.width - 0.001
+    }
+
+    /// Partly covered tabs remain selection targets, including beneath a stationary pointer.
     private func updateCloseButtonVisibility() {
-        let showsCloseButton = !hidesCloseButtonUntilHover || isPointerHovering
+        let showsCloseButton = model != nil && isFullyExposed && (!hidesCloseButtonUntilHover || isPointerHovering)
         removeButton.isHidden = !showsCloseButton
         labelRemoveButtonConstraint?.isActive = showsCloseButton
     }

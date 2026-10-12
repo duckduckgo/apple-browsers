@@ -267,6 +267,34 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
+    func testForegroundRestoresSelectionWithoutChangingTheCurrentTabOrScrollPosition() throws {
+        let (controller, model) = makeOverflowingController()
+        let selectedTab = model.currentTab
+        let collectionView = controller.collectionView
+        collectionView.contentOffset.x = 400
+        collectionView.layoutIfNeeded()
+        let offset = collectionView.contentOffset
+        let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 8, section: 0)) as? TabsBarCell)
+        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+        controller.setCurrentTabSelectionAlpha(0.5)
+
+        // Simulate stale presentation; this checks recovery, not UIKit's background snapshot cycle.
+        cell.applyCurrentStyle(isCurrent: false, isNextCurrent: false, hidesInactiveCloseButton: true,
+                               withTheme: ThemeManager.shared.currentTheme)
+        background.isHidden = true
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        XCTAssertIdentical(model.currentTab, selectedTab)
+        XCTAssertEqual(collectionView.contentOffset, offset)
+        XCTAssertEqual(cell.backgroundColor, .clear)
+        XCTAssertGreaterThan(cell.layer.zPosition, background.layer.zPosition)
+        XCTAssertFalse(background.isHidden)
+        XCTAssertEqual(background.alpha, 0.5)
+        let ramp = TabsBarViewController.Constants.tabRampSize.width
+        XCTAssertEqual(background.frame, cell.frame.insetBy(dx: -ramp, dy: 0))
+    }
+
+    @MainActor
     func testHoverPreviewShowsTabMetadataAndInactiveThumbnailAndCancelsOnScroll() async throws {
         let (controller, model) = makeOverflowingController()
         let source = DefaultTabPreviewsSource(storeDir: nil, legacyDir: nil)

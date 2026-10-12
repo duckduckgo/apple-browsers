@@ -168,6 +168,45 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
+    func testInnerAccordionFoldsBesidePinnedSelectionAtBothEdges() throws {
+        let scenarios: [(current: Int, inner: Int, offsets: [CGFloat], farOffset: CGFloat)] = [
+            (5, 6, [640, 660, 680], 2400),
+            (90, 89, [10330, 10310, 10290], 1000)
+        ]
+        for scenario in scenarios {
+            let (collectionView, layout) = makeCollectionView(currentIndex: { scenario.current }, contentOffset: scenario.offsets[0])
+            var previousExposure = CGFloat.greatestFiniteMagnitude
+            for offset in scenario.offsets {
+                collectionView.contentOffset.x = offset
+                collectionView.layoutIfNeeded()
+                let selected = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: scenario.current, section: 0)))
+                let inner = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: scenario.inner, section: 0)) as? TabsBarCell)
+                let next = try XCTUnwrap(layout.layoutAttributesForItem(at: IndexPath(item: scenario.inner + (scenario.inner - scenario.current), section: 0)))
+                if scenario.inner > scenario.current {
+                    XCTAssertEqual(inner.frame.minX, selected.frame.maxX, accuracy: 0.001)
+                } else {
+                    XCTAssertEqual(inner.frame.maxX, selected.frame.minX, accuracy: 0.001)
+                }
+                let exposure = inner.visiblePointerRect(in: inner.contentView).width
+                XCTAssertGreaterThan(exposure, 0)
+                XCTAssertLessThan(exposure, previousExposure)
+                XCTAssertGreaterThan(CGFloat(next.zIndex), inner.layer.zPosition)
+                previousExposure = exposure
+            }
+            collectionView.contentOffset.x = scenario.farOffset
+            collectionView.layoutIfNeeded()
+            let innerIndex = IndexPath(item: scenario.inner, section: 0)
+            XCTAssertFalse(try XCTUnwrap(layout.unpinnedFrameForItem(at: innerIndex)).intersects(collectionView.bounds))
+            XCTAssertTrue(try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds)).contains { $0.indexPath == innerIndex })
+
+            collectionView.bounds.size.width = 240
+            collectionView.layoutIfNeeded()
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            let attributes = try XCTUnwrap(layout.layoutAttributesForElements(in: collectionView.bounds))
+            XCTAssertTrue(attributes.allSatisfy { viewport.contains($0.frame) }, "Narrow strips must keep overlapping tabs inside the viewport")
+        }
+    }
+
     func testOutgoingAccordionTabRemainsMaterializedWhileStillExposed() throws {
         let (collectionView, layout) = makeCollectionView(currentIndex: { 4 }, contentOffset: 380)
         let indexPath = IndexPath(item: 2, section: 0)
@@ -189,7 +228,8 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
                                                      currentIndex: { 5 },
                                                      fillColor: { .white })
             flare.update()
-            flare.beginScrolling()
+            let start = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)))
+            flare.beginScrolling(at: start.center)
             for distance in [CGFloat(0), 40] {
                 let previousDisplacement = abs(layout.currentTabDragOffset)
                 collectionView.contentOffset.x = edgeOffset + direction * distance
@@ -208,58 +248,84 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
             let dragOffset = layout.currentTabDragOffset
             XCTAssertTrue(collectionView.bounds.inset(by: collectionView.adjustedContentInset).contains(draggedFrame))
             XCTAssertNil(cell.layer.animation(forKey: "edgeBounce"))
-            flare.endScrolling(velocity: 0)
+            let inner = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: direction > 0 ? 6 : 4, section: 0)))
+            let innerOrigin = inner.frame.minX
+            flare.endScrolling()
             XCTAssertEqual(layout.currentTabDragOffset, 0)
             XCTAssertEqual(cell.frame.minX + dragOffset, draggedFrame.minX, accuracy: 0.001)
             for layer in [cell.layer, background.layer] {
-                let animation = try XCTUnwrap(layer.animation(forKey: "edgeBounce") as? CAKeyframeAnimation)
-                XCTAssertEqual(animation.values as? [CGFloat], [dragOffset, 0])
+                let animation = try XCTUnwrap(layer.animation(forKey: "edgeBounce") as? CABasicAnimation)
+                XCTAssertEqual(animation.fromValue as? CGFloat, dragOffset)
+                XCTAssertEqual(animation.toValue as? CGFloat, 0)
                 XCTAssertTrue(animation.isAdditive)
                 XCTAssertLessThanOrEqual(animation.duration, 0.25)
+            }
+            let innerReturn = try XCTUnwrap(inner.layer.animation(forKey: "edgeBounce") as? CABasicAnimation)
+            XCTAssertEqual(inner.frame.minX + (try XCTUnwrap(innerReturn.fromValue as? CGFloat)), innerOrigin, accuracy: 0.001)
+        }
+    }
+
+    func testOtherSwipeOriginsAndMomentumDoNotDisplaceTheSelectedTab() throws {
+        for (edgeOffset, direction) in [(CGFloat(550), CGFloat(1)), (220, -1)] {
+            for origin in [nil, CGPoint(x: 410, y: 20), CGPoint(x: 660, y: -1), CGPoint(x: 660, y: 20)] {
+                let (collectionView, layout) = makeCollectionView(currentIndex: { 5 }, contentOffset: 400)
+                let flare = TabFlareBackgroundController(collectionView: collectionView,
+                                                         topCornerRadius: 12, rampSize: CGSize(width: 8, height: 8),
+                                                         currentIndex: { 5 }, fillColor: { .white })
+                flare.update()
+                flare.beginScrolling(at: origin)
+                // A swipe from the current tab may reach the edge only after release.
+                if origin == CGPoint(x: 660, y: 20) { flare.endScrolling() }
+                for offset in [edgeOffset, edgeOffset + direction * 400] {
+                    collectionView.contentOffset.x = offset
+                    collectionView.layoutIfNeeded()
+                    flare.update()
+                    XCTAssertEqual(layout.currentTabDragOffset, 0)
+                    let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)))
+                    XCTAssertNil(cell.layer.animation(forKey: "edgeBounce"))
+                }
+                flare.endScrolling()
+                XCTAssertTrue(collectionView.visibleCells.allSatisfy { $0.layer.animation(forKey: "edgeBounce") == nil })
             }
         }
     }
 
-    func testReleaseAndMomentumCollisionScaleWithVelocityAndDoNotRepeatWhilePinned() throws {
-        try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Edge bounce is disabled with Reduce Motion")
-        for (edgeOffset, direction) in [(CGFloat(550), CGFloat(1)), (220, -1)] {
-            for releasesAtEdge in [false, true] {
-                var previousPeak: CGFloat = 0
-                for speed in [CGFloat(-1000), 250, 300, 1000] {
-                    let (collectionView, _) = makeCollectionView(currentIndex: { 5 }, contentOffset: releasesAtEdge ? edgeOffset : 400)
-                    let flare = TabFlareBackgroundController(collectionView: collectionView,
-                                                             topCornerRadius: 12,
-                                                             rampSize: CGSize(width: 8, height: 8),
-                                                             currentIndex: { 5 },
-                                                             fillColor: { .white })
-                    flare.update()
-                    flare.beginScrolling()
-                    flare.endScrolling(velocity: direction * speed)
-                    collectionView.contentOffset.x = edgeOffset
-                    collectionView.layoutIfNeeded()
-                    flare.update()
-                    flare.update(scrollVelocity: direction * speed)
-                    let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)))
-                    guard speed > 250 else {
-                        XCTAssertNil(cell.layer.animation(forKey: "edgeBounce"))
-                        continue
-                    }
-                    let animation = try XCTUnwrap(cell.layer.animation(forKey: "edgeBounce") as? CAKeyframeAnimation)
-                    let values = try XCTUnwrap(animation.values as? [CGFloat])
-                    let peak = try XCTUnwrap(values.map { -direction * $0 }.max())
-                    XCTAssertEqual(values.first, 0)
-                    XCTAssertEqual(values.last, 0)
-                    XCTAssertGreaterThan(peak, previousPeak)
-                    let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
-                    let clearance = direction > 0 ? cell.frame.minX - viewport.minX : viewport.maxX - cell.frame.maxX
-                    XCTAssertLessThanOrEqual(peak, clearance)
-                    XCTAssertLessThanOrEqual(animation.duration, 0.25)
-                    previousPeak = peak
-                    flare.update(scrollVelocity: direction * 1000)
-                    XCTAssertEqual(cell.layer.animation(forKey: "edgeBounce")?.beginTime, animation.beginTime)
-                }
-            }
-        }
+    func testPartlyCoveredTabHidesCloseButtonAndRejectsStaleCloseActions() throws {
+        let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 200)
+        let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)) as? TabsBarCell)
+        let tab = Tab()
+        defer { withExtendedLifetime(tab) {} }
+        cell.update(model: tab, isCurrent: false, isNextCurrent: false, hidesInactiveCloseButton: false,
+                    isFireModeEnabled: false, withTheme: ThemeManager.shared.currentTheme)
+        var closeCount = 0
+        cell.onRemove = { closeCount += 1 }
+        cell.layoutIfNeeded()
+        XCTAssertFalse(cell.removeButton.isHidden)
+        cell.removeButton.sendActions(for: .touchUpInside)
+        XCTAssertEqual(closeCount, 1)
+
+        collectionView.contentOffset.x = 0
+        collectionView.layoutIfNeeded()
+        XCTAssertTrue(cell.removeButton.isHidden)
+        // A press can begin before another tab folds over this one.
+        cell.removeButton.isHidden = false
+        cell.removeButton.sendActions(for: .touchUpInside)
+        XCTAssertEqual(closeCount, 1)
+        let point = cell.contentView.convert(cell.removeButton.center, to: cell)
+        XCTAssertTrue(cell.visiblePointerRect(in: cell).contains(point))
+        let hit = try XCTUnwrap(cell.hitTest(point, with: nil))
+        XCTAssertFalse(hit.isDescendant(of: cell.removeButton))
+        XCTAssertTrue(cell.removeButton.isHidden)
+
+        collectionView.contentOffset.x = 200
+        collectionView.layoutIfNeeded()
+        XCTAssertFalse(cell.removeButton.isHidden)
+        cell.removeButton.sendActions(for: .touchUpInside)
+        XCTAssertEqual(closeCount, 2)
+        cell.configurePlaceholder(withTheme: ThemeManager.shared.currentTheme)
+        cell.setNeedsLayout()
+        cell.layoutIfNeeded()
+        XCTAssertTrue(cell.removeButton.isHidden)
     }
 
     func testPointerPreviewClipsCoveredTabsAndExcludesTabContent() throws {

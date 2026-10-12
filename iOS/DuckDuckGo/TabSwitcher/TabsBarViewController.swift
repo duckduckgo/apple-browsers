@@ -91,7 +91,6 @@ class TabsBarViewController: UIViewController {
     private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
-    private var lastScrollSample: (offset: CGFloat, time: CFTimeInterval)?
     private weak var hoveredTabCell: TabsBarCell?
     private var hoveredTabFrame = CGRect.zero
     private var hoverPreviewTask: Task<Void, Never>?
@@ -216,6 +215,9 @@ class TabsBarViewController: UIViewController {
         NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
             .merge(with: NotificationCenter.default.publisher(for: .browserChromeVisibilityChanged))
             .sink { [weak self] _ in self?.dismissTabHoverPreview() }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in self?.refreshVisibleCellStyles() }
             .store(in: &cancellables)
     }
 
@@ -575,6 +577,7 @@ class TabsBarViewController: UIViewController {
         dismissTabHoverPreview()
         collectionView.reloadData()
         refreshTabSwitcherButton()
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 
@@ -830,26 +833,22 @@ extension TabsBarViewController: UICollectionViewDelegate {
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         dismissTabHoverPreview()
-        lastScrollSample = (scrollView.contentOffset.x, CACurrentMediaTime())
-        flareBackground.beginScrolling()
+        let pan = scrollView.panGestureRecognizer
+        let location = pan.location(in: view)
+        let translation = pan.translation(in: view)
+        let start = CGPoint(x: location.x - translation.x, y: location.y - translation.y)
+        flareBackground.beginScrolling(at: pan.numberOfTouches > 0 ? collectionView.convert(start, from: view) : nil)
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        flareBackground.endScrolling(velocity: -scrollView.panGestureRecognizer.velocity(in: scrollView).x)
+        flareBackground.endScrolling()
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         dismissTabHoverPreview()
-        let time = CACurrentMediaTime()
-        var velocity: CGFloat = 0
-        if scrollView.isDecelerating, let sample = lastScrollSample {
-            // UIKit's pan velocity stops updating after release; measure the remaining momentum.
-            velocity = (scrollView.contentOffset.x - sample.offset) / CGFloat(max(time - sample.time, 1.0 / 120))
-        }
-        lastScrollSample = (scrollView.contentOffset.x, time)
         // Apply the pinned cell frames before positioning the selection background.
         collectionView.layoutIfNeeded()
-        flareBackground.update(scrollVelocity: velocity)
+        flareBackground.update()
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -1176,6 +1175,7 @@ extension TabsBarViewController {
         addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor
 
         collectionView.reloadData()
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 

@@ -84,7 +84,7 @@ final class TabFlareBackgroundController {
     }
 
     /// Positions the flare over the current tab.
-    func update(animated: Bool = false, scrollVelocity: CGFloat? = nil) {
+    func update(animated: Bool = false) {
         // The display link owns the frame during a reorder.
         guard !isReordering else { return }
         guard let collectionView,
@@ -95,7 +95,7 @@ final class TabFlareBackgroundController {
             view.isHidden = true
             return
         }
-        updateEdgeBounce(index: index, frame: restingFrame, velocity: scrollVelocity)
+        updateDragOffset(index: index, frame: restingFrame)
         guard let attributes = layout.layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else { return }
         updateFrame(attributes.frame, animated: animated)
         view.fillColor = fillColor()
@@ -104,29 +104,40 @@ final class TabFlareBackgroundController {
         collectionView.sendSubviewToBack(view)
     }
 
-    func beginScrolling() {
+    func beginScrolling(at point: CGPoint?) {
         guard let collectionView, let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout else { return }
+        let cell = currentIndex().flatMap { collectionView.cellForItem(at: IndexPath(item: $0, section: 0)) }
+        let visibleFrame = (cell?.layer.presentation()?.frame ?? cell?.frame ?? .zero)
+            .intersection(collectionView.bounds.inset(by: collectionView.adjustedContentInset))
+        let grabbedCurrentTab = !visibleFrame.isEmpty && (point.map { visibleFrame.contains($0) } ?? false)
         // Catch an in-flight return at its visible position when the user grabs the strip again.
-        let offset = bouncingCell.map { ($0.layer.presentation()?.position.x ?? $0.layer.position.x) - $0.layer.position.x } ?? 0
+        let offset = grabbedCurrentTab
+            ? bouncingCell.map { ($0.layer.presentation()?.position.x ?? $0.layer.position.x) - $0.layer.position.x } ?? 0 : 0
         stopEdgeBounce()
         layout.currentTabDragOffset = offset
-        dragContentOffset = collectionView.contentOffset.x
+        dragContentOffset = grabbedCurrentTab ? collectionView.contentOffset.x : nil
         collectionView.layoutIfNeeded()
         update()
     }
 
-    func endScrolling(velocity: CGFloat) {
+    func endScrolling() {
         dragContentOffset = nil
         guard let collectionView, let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
-              let index = currentIndex(), let frame = layout.frameForCurrentTabAtRest() else { return }
+              layout.currentTabDragOffset != 0, let index = currentIndex(), let frame = layout.frameForCurrentTabAtRest() else { return }
         let offset = (layout.layoutAttributesForItem(at: IndexPath(item: index, section: 0))?.frame.minX ?? frame.minX) - frame.minX
+        let positions = collectionView.visibleCells.map { ($0, collectionView.indexPath(for: $0), $0.frame.minX) }
         layout.currentTabDragOffset = 0
         collectionView.layoutIfNeeded()
-        update(scrollVelocity: 0)
-        animateEdgeBounce(index: index, frame: frame, edge: lastPinnedEdge, velocity: velocity, from: offset)
+        update()
+        bouncingCell = collectionView.cellForItem(at: IndexPath(item: index, section: 0))
+        // Return the inner accordion with the selected tab so resetting the layout cannot leave a gap.
+        for (cell, indexPath, position) in positions where collectionView.indexPath(for: cell) == indexPath {
+            animateDragReturn(layer: cell.layer, from: position - cell.frame.minX)
+        }
+        animateDragReturn(layer: view.layer, from: offset)
     }
 
-    private func updateEdgeBounce(index: Int, frame: CGRect, velocity: CGFloat?) {
+    private func updateDragOffset(index: Int, frame: CGRect) {
         guard let collectionView,
               let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
               let original = layout.unpinnedFrameForItem(at: IndexPath(item: index, section: 0)) else { return }
@@ -134,14 +145,12 @@ final class TabFlareBackgroundController {
         let viewportWidth = viewport.width
         let edge: CGFloat = original.minX < frame.minX ? 1 : (original.minX > frame.minX ? -1 : 0)
         let sameTabAndWidth = lastPinnedIndex == index && lastViewportWidth == viewportWidth && lastItemWidth == frame.width
-        let enteredEdge = edge != 0 && edge != lastPinnedEdge
         if !sameTabAndWidth || edge != lastPinnedEdge || UIAccessibility.isReduceMotionEnabled {
             stopEdgeBounce()
             layout.currentTabDragOffset = 0
         }
         lastPinnedIndex = index
-        // Layout refreshes must not consume a collision before its momentum sample arrives.
-        if velocity != nil || dragContentOffset != nil || !sameTabAndWidth || edge == 0 { lastPinnedEdge = edge }
+        lastPinnedEdge = edge
         lastViewportWidth = viewportWidth
         lastItemWidth = frame.width
         let distance = max(0, edge > 0 ? frame.minX - viewport.minX : viewport.maxX - frame.maxX)
@@ -156,43 +165,24 @@ final class TabFlareBackgroundController {
                 layout.currentTabDragOffset = -edge * displacement
             }
             collectionView.layoutIfNeeded()
-            return
-        }
-        if sameTabAndWidth, enteredEdge, let velocity {
-            animateEdgeBounce(index: index, frame: frame, edge: edge, velocity: velocity, from: 0)
         }
     }
 
-    private func animateEdgeBounce(index: Int, frame: CGRect, edge: CGFloat, velocity: CGFloat, from offset: CGFloat) {
-        guard let collectionView, edge != 0, !UIAccessibility.isReduceMotionEnabled else { return }
-        let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
-        let distance = max(0, edge > 0 ? frame.minX - viewport.minX : viewport.maxX - frame.maxX)
-        let impactSpeed = velocity * edge
-        // No momentum kick below 250 points/second; a fast flick can cover the whole neighboring hint.
-        let momentum = distance * min(1, max(0, (impactSpeed - 250) / 750))
-        let peak = min(distance, abs(offset) + momentum)
-        guard peak > 0,
-              let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
-        bouncingCell = cell
-        let addsMomentum = peak > abs(offset)
-        let animation = CAKeyframeAnimation(keyPath: "position.x")
+    private func animateDragReturn(layer: CALayer, from offset: CGFloat) {
+        guard offset != 0, !UIAccessibility.isReduceMotionEnabled else { return }
+        let animation = CABasicAnimation(keyPath: "position.x")
         animation.isAdditive = true
-        animation.values = addsMomentum ? [offset, -edge * peak, 0] : [offset, 0]
-        animation.keyTimes = addsMomentum ? [0, 0.25, 1] : [0, 1]
-        animation.timingFunctions = addsMomentum
-            ? [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(name: .easeInEaseOut)]
-            : [CAMediaTimingFunction(name: .easeOut)]
-        animation.duration = addsMomentum ? 0.24 : 0.2
-        let start = CACurrentMediaTime()
-        for layer in [cell.layer, view.layer] {
-            animation.beginTime = layer.convertTime(start, from: nil)
-            layer.add(animation, forKey: "edgeBounce")
-        }
+        animation.fromValue = offset
+        animation.toValue = 0
+        animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        animation.duration = 0.2
+        layer.add(animation, forKey: "edgeBounce")
     }
 
     private func stopEdgeBounce() {
         bouncingCell?.layer.removeAnimation(forKey: "edgeBounce")
         bouncingCell = nil
+        collectionView?.visibleCells.forEach { $0.layer.removeAnimation(forKey: "edgeBounce") }
         view.layer.removeAnimation(forKey: "edgeBounce")
     }
 

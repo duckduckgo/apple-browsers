@@ -99,7 +99,7 @@ final class TabsBarView: UIView {
     }
 }
 
-/// Overlaps tabs at the strip's edges, keeping the selected tab above the stack.
+/// Folds tabs at the strip's edges and beside the pinned selection.
 final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
 
     var currentIndex: (() -> Int?)?
@@ -127,8 +127,7 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         for item in max(0, index - 1)...min(collectionView.numberOfItems(inSection: 0) - 1, index + 1) {
             let indexPath = IndexPath(item: item, section: 0)
             guard !attributes.contains(where: { $0.indexPath == indexPath }),
-                  let pinned = layoutAttributesForItem(at: indexPath),
-                  item == index || pinned.zIndex == 0 else { continue }
+                  let pinned = layoutAttributesForItem(at: indexPath) else { continue }
             attributes.append(pinned)
         }
         return attributes
@@ -152,35 +151,49 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
         let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
         let current = currentIndex?()
-        let isCurrent = indexPath.item == current
-        // Tabs nearer the middle cover the edge tabs. The flare (1) and selected tab (2) stay above them.
-        let middle = (leading + trailing + attributes.frame.width) / 2
-        attributes.zIndex = isCurrent ? 2 : -Int(abs(attributes.center.x - middle))
-        let foldRange = min(attributes.frame.width / 2, (trailing - leading) / 2)
-        let peek = foldRange
+        let lastItem = collectionView.numberOfItems(inSection: indexPath.section) - 1
+        let peek = min(attributes.frame.width / 2, (trailing - leading) / 2)
         var origin = attributes.frame.minX
-        if isCurrent {
+        if indexPath.item == current {
             let minimum = leading + (indexPath.item > 0 ? peek : 0)
-            let maximum = trailing - (indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1 ? peek : 0)
+            let maximum = trailing - (indexPath.item < lastItem ? peek : 0)
             let restingOrigin = min(max(origin, minimum), maximum)
             attributes.frame.origin.x = min(max(restingOrigin + dragOffset, leading), trailing)
+            attributes.zIndex = 2
             return attributes
         }
-        if peek > 0, let current,
-           let currentFrame = unpinnedFrameForItem(at: IndexPath(item: current, section: indexPath.section)),
-           (indexPath.item == current - 1 && currentFrame.minX < leading + peek)
-            || (indexPath.item == current + 1 && currentFrame.minX > trailing - peek) {
-            // Keep the hint above unrelated tabs that have scrolled past the selected tab.
-            attributes.zIndex = 0
-        }
-        if foldRange > 0 {
-            if indexPath.item > 0, origin < leading + foldRange {
-                origin = leading + foldedDistance(origin - leading, range: foldRange)
-            } else if indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1, origin > trailing - foldRange {
-                origin = trailing - foldedDistance(trailing - origin, range: foldRange)
+        var foldLeading = leading
+        var foldTrailing = trailing
+        var firstFoldingItem = 0
+        var lastFoldingItem = lastItem
+        var isOuterHint = false
+        if let current,
+           let original = unpinnedFrameForItem(at: IndexPath(item: current, section: indexPath.section)),
+           let selected = attributesForItem(at: IndexPath(item: current, section: indexPath.section), dragOffset: dragOffset) {
+            let pinnedLeading = original.minX < leading + (current > 0 ? peek : 0)
+            let pinnedTrailing = original.minX > trailing - (current < lastItem ? peek : 0)
+            isOuterHint = (indexPath.item == current - 1 && pinnedLeading) || (indexPath.item == current + 1 && pinnedTrailing)
+            // The selected tab becomes the inner edge of the remaining scrollable strip.
+            if pinnedLeading, indexPath.item > current {
+                foldLeading = min(trailing, selected.frame.maxX)
+                firstFoldingItem = current + 1
+            } else if pinnedTrailing, indexPath.item < current {
+                foldTrailing = max(leading, selected.frame.minX - attributes.frame.width)
+                lastFoldingItem = current - 1
             }
         }
-        attributes.frame.origin.x = min(max(origin, leading), trailing)
+        // Tabs nearer the middle cover the folded stack; outer hints stay directly below the flare.
+        let middle = (foldLeading + foldTrailing + attributes.frame.width) / 2
+        attributes.zIndex = isOuterHint ? 0 : -Int(abs(attributes.center.x - middle))
+        let foldRange = min(attributes.frame.width / 2, (foldTrailing - foldLeading) / 2)
+        if foldRange > 0 {
+            if indexPath.item > firstFoldingItem, origin < foldLeading + foldRange {
+                origin = foldLeading + foldedDistance(origin - foldLeading, range: foldRange)
+            } else if indexPath.item < lastFoldingItem, origin > foldTrailing - foldRange {
+                origin = foldTrailing - foldedDistance(foldTrailing - origin, range: foldRange)
+            }
+        }
+        attributes.frame.origin.x = min(max(origin, foldLeading), foldTrailing)
         return attributes
     }
 

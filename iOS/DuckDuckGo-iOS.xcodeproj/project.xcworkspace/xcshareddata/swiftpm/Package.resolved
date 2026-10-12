@@ -34,7 +34,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
         "branch" : "pr-releases/tom/ntp-mention-tab-accept",
-        "revision" : "b7ecf50f2b5ebbde03fd99c4c31d8a061761fffb"
+        "revision" : "592aac1357dfefcf0e00b8f84ad1d1523548baf8"
       }
     },
     {

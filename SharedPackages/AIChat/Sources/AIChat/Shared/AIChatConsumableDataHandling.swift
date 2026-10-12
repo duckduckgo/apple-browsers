@@ -113,8 +113,7 @@ public enum AIChatConversationSource: String, CaseIterable {
     case sidebarHandoff = "sidebar-handoff"
 
     case settings = "settings"
-    /// The subscription's own Duck.ai links: More Options, the Settings subscription pane and the
-    /// subscription welcome page. The same value Windows reports.
+    /// The Duck.ai link on the subscription welcome page. The same value Windows reports.
     case subscriptionPage = "subscription-page"
 
     /// Duck.ai reached by navigating to it directly rather than from a Duck.ai surface: typed in the

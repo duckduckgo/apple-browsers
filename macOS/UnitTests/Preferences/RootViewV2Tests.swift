@@ -148,7 +148,7 @@ final class RootViewV2Tests: XCTestCase {
         XCTAssertFalse(showTabCalled, "Duck.ai opens through the tab opener so its entry pixel reports it")
         XCTAssertEqual(aiChatTabOpener.lastURL, mockRemoteAISettings.aiChatURL)
         XCTAssertEqual(aiChatTabOpener.lastBehavior, .newTab(selected: true))
-        XCTAssertEqual(sourceHandler.consumeData(), .subscriptionPage)
+        XCTAssertEqual(sourceHandler.consumeData(), .settings)
     }
 
     func testPaidAIChatViewModel_OpenURL() throws {

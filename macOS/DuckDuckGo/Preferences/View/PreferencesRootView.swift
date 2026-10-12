@@ -348,7 +348,7 @@ enum Preferences {
                      case .openAIC:
                          pixelHandler(.subscriptionPaidAIChatSettings, .standard)
                          let aiChatURL = self.aiChatURLSettings.aiChatURL
-                         self.aiChatConversationSourceHandler.setData(.subscriptionPage)
+                         self.aiChatConversationSourceHandler.setData(.settings)
                          self.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)

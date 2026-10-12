@@ -2530,7 +2530,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
         let aiChatURL = AIChatRemoteSettings().aiChatURL
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.subscriptionPage)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.moreOptionsMenuOpenDuckAI)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
     }
 

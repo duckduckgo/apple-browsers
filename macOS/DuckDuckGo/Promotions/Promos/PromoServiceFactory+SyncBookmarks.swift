@@ -45,7 +45,7 @@ extension PromoServiceFactory {
             id: bookmarkAddedSyncPromoID,
             triggers: [.bookmarkPanelShown],
             initiated: .user,
-            promoType: PromoType(.nudgeButton),
+            promoType: PromoType(.nudgeButton, customTimeoutResult: .ignored(cooldown: 0)),
             context: .global,
             delegate: dependencies.bookmarkAddedSyncPromoDelegate
         )

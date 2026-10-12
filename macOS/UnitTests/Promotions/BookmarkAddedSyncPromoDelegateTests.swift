@@ -251,7 +251,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         let sut = makeSUT()
 
         let fourthViewResult = await showAndCloseSurface(sut)
-        XCTAssertEqual(fourthViewResult, .noChange)
+        XCTAssertEqual(fourthViewResult, .ignored(cooldown: 0))
         XCTAssertEqual(storage.presentedCount, 4)
 
         let fifthViewResult = await showAndCloseSurface(sut)
@@ -300,13 +300,13 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
     // MARK: - Surface closed
 
-    func testWhenSurfaceClosesForTheFirstFourViewsThenEachViewIsCountedWithNoChange() async {
+    func testWhenSurfaceClosesForTheFirstFourViewsThenEachViewIsCountedAndIgnoredWithNoCooldown() async {
         let sut = makeSUT()
 
         for view in 1...4 {
             let result = await showAndCloseSurface(sut)
 
-            XCTAssertEqual(result, .noChange, "View \(view)")
+            XCTAssertEqual(result, .ignored(cooldown: 0), "View \(view)")
             XCTAssertEqual(storage.presentedCount, view)
             XCTAssertFalse(sut.isPromoActive)
         }
@@ -340,7 +340,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         let result = await showAndCloseSurface(sut)
 
-        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(result, .ignored(cooldown: 0))
         XCTAssertEqual(storage.presentedCount, 1)
     }
 
@@ -368,7 +368,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         sut.syncButtonSurfaceClosed()
         let result = await showTask.value
-        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(result, .ignored(cooldown: 0))
         XCTAssertEqual(storage.presentedCount, 1)
     }
 
@@ -380,7 +380,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         sut.syncButtonSurfaceClosed()
 
         let result = await showTask.value
-        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(result, .ignored(cooldown: 0))
         XCTAssertEqual(storage.presentedCount, 1)
     }
 
@@ -480,7 +480,9 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         sut.syncButtonSurfaceClosed()
         let result = await showTask.value
-        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(result, .ignored(cooldown: 0))
+        // The promo queue hides the promo after every showing resolves.
+        sut.hide()
 
         syncService.authState = .active
 
@@ -496,7 +498,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         sut.syncButtonSurfaceClosed()
 
         let result = await showTask.value
-        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(result, .ignored(cooldown: 0))
         XCTAssertTrue(recordedResults.isEmpty)
     }
 

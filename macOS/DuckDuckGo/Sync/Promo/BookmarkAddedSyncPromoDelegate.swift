@@ -139,8 +139,8 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
 
     @MainActor
     func hide() {
-        // Hidden because sync turned on: `recordActionedIfSyncTurnedOn` can still record `.actioned`.
-        if syncService?.authState == .inactive {
+        // Hidden because sync is being turned on: `recordActionedIfSyncTurnedOn` can still record `.actioned`.
+        if resultContinuation != nil, syncService?.authState == .inactive {
             didStartSetupFromPromo = false
         }
         resolve(with: .noChange)
@@ -176,7 +176,7 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
         }
         let presentedCount = (storage.presentedCount ?? 0) + 1
         storage.presentedCount = presentedCount
-        resolve(with: presentedCount >= Self.maxPresentationCount ? .ignored() : .noChange)
+        resolve(with: presentedCount >= Self.maxPresentationCount ? .ignored() : .ignored(cooldown: 0))
     }
 
     @MainActor

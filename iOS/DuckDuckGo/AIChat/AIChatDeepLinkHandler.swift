@@ -43,11 +43,11 @@ protocol AIChatDeepLinkPresenting: UIViewController {
 
 extension AIChatDeepLinkPresenting {
 
-    func openAIChat(fromDeepLink: Bool, source: AIChatEntryPointSource = .deepLinkOther) {
+    func openAIChat(fromDeepLink: Bool, source: AIChatEntryPointSource = .deepLinkOther, query: String? = nil) {
         openAIChat(
             source: source,
-            nil,
-            autoSend: false,
+            query,
+            autoSend: query != nil,
             payload: nil,
             flowType: .default,
             tools: nil,
@@ -65,6 +65,8 @@ extension AIChatDeepLinkPresenting {
 
 struct AIChatDeepLinkHandler {
 
+    static let promptParameterName = "prompt"
+
     /// Handles AI Chat deep links (text and voice), dismissing any presented modal first.
     func handleDeepLink(_ url: URL, on mainViewController: AIChatDeepLinkPresenting, voiceMode: Bool = false) {
         if voiceMode {
@@ -76,11 +78,13 @@ struct AIChatDeepLinkHandler {
         // Widget, Control Center and lock-screen entries carry their own source, so they land on
         // `m_aichat_entry_point` as themselves rather than collapsing into `deep_link_other`.
         let source = AIChatEntryPointSource.forDeepLink(url)
+        let prompt = url.getParameter(named: Self.promptParameterName)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = prompt?.isEmpty == false ? prompt : nil
         mainViewController.dismiss(animated: true) {
             if voiceMode {
                 mainViewController.openAIVoiceChatFromDeepLink(source: source)
             } else {
-                mainViewController.openAIChat(fromDeepLink: true, source: source)
+                mainViewController.openAIChat(fromDeepLink: true, source: source, query: query)
             }
         }
     }

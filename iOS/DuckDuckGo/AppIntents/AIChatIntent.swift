@@ -30,14 +30,25 @@ struct AIChatIntent: AppIntent {
     static let isDiscoverable: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
+    @Parameter(title: "Question", requestValueDialog: "What would you like to ask Duck.ai?")
+    var prompt: String?
+
     public static var parameterSummary: some ParameterSummary {
-        Summary("Open a private chat with Duck.ai")
+        Summary("Open a private chat with Duck.ai") {
+            \.$prompt
+        }
+    }
+
+    var deepLinkURL: URL {
+        let url = AppDeepLinkSchemes.openAIChat.url
+        guard let prompt else { return url }
+        return url.appendingParameter(name: AIChatDeepLinkHandler.promptParameterName, value: prompt)
     }
     
     @MainActor
     public func perform() async throws -> some IntentResult & OpensIntent {
         PixelKit.fire(Pixel.Event.appIntentPerformed, options: .parameters(["type": "duckai"]))
-        await UIApplication.shared.open(AppDeepLinkSchemes.openAIChat.url)
+        await UIApplication.shared.open(deepLinkURL)
         return .result()
     }
 }

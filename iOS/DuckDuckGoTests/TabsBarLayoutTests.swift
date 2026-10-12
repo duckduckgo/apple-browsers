@@ -179,6 +179,46 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertGreaterThan(outgoing.visiblePointerRect(in: outgoing.contentView).width, 0)
     }
 
+    func testEdgeBounceRequiresAFastCollisionAndDoesNotRepeatWhilePinned() throws {
+        try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Edge bounce is disabled with Reduce Motion")
+        for (edgeOffset, direction) in [(CGFloat(600), CGFloat(1)), (100, -1)] {
+            for (speed, shouldBounce) in [(CGFloat(200), false), (-1000, false), (1000, true)] {
+                let (collectionView, _) = makeCollectionView(currentIndex: { 5 }, contentOffset: 400)
+                let flare = TabFlareBackgroundController(collectionView: collectionView,
+                                                         topCornerRadius: 12,
+                                                         rampSize: CGSize(width: 8, height: 8),
+                                                         currentIndex: { 5 },
+                                                         fillColor: { .white })
+                flare.update()
+                flare.beginScrolling()
+                collectionView.contentOffset.x = edgeOffset
+                collectionView.layoutIfNeeded()
+                flare.update(scrollVelocity: direction * speed)
+
+                let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)))
+                let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+                for layer in [cell.layer, background.layer] {
+                    let animation = layer.animation(forKey: "edgeBounce") as? CAKeyframeAnimation
+                    XCTAssertEqual(animation != nil, shouldBounce)
+                    if shouldBounce {
+                        let values = try XCTUnwrap(animation?.values as? [CGFloat])
+                        XCTAssertEqual(values.count, 3, "A collision should make one inward bounce")
+                        XCTAssertEqual(values.first, 0)
+                        XCTAssertEqual(values.last, 0)
+                        XCTAssertGreaterThan(values[1] * direction, 0)
+                    }
+                }
+
+                flare.beginScrolling()
+                for velocity in [direction * 1000, -direction * 1000] {
+                    flare.update(scrollVelocity: velocity)
+                    XCTAssertNil(cell.layer.animation(forKey: "edgeBounce"))
+                    XCTAssertNil(background.layer.animation(forKey: "edgeBounce"))
+                }
+            }
+        }
+    }
+
     func testPointerPreviewClipsCoveredTabsAndExcludesTabContent() throws {
         let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 0)
         let window = UIWindow(frame: collectionView.frame)

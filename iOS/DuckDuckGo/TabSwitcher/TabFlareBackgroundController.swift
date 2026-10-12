@@ -83,7 +83,7 @@ final class TabFlareBackgroundController {
     }
 
     /// Positions the flare over the current tab.
-    func update(animated: Bool = false, bounceAtEdges: Bool = false) {
+    func update(animated: Bool = false, scrollVelocity: CGFloat = 0) {
         // The display link owns the frame during a reorder.
         guard !isReordering else { return }
         guard let collectionView,
@@ -98,15 +98,14 @@ final class TabFlareBackgroundController {
         view.isHidden = false
         applyAlpha()
         collectionView.sendSubviewToBack(view)
-        updateEdgeBounce(index: index, frame: attributes.frame, enabled: bounceAtEdges)
+        updateEdgeBounce(index: index, frame: attributes.frame, velocity: scrollVelocity)
     }
 
     func beginScrolling() {
         stopEdgeBounce()
-        lastPinnedEdge = 0
     }
 
-    private func updateEdgeBounce(index: Int, frame: CGRect, enabled: Bool) {
+    private func updateEdgeBounce(index: Int, frame: CGRect, velocity: CGFloat) {
         guard let collectionView,
               let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
               let original = layout.unpinnedFrameForItem(at: IndexPath(item: index, section: 0)) else { return }
@@ -122,19 +121,21 @@ final class TabFlareBackgroundController {
         lastPinnedEdge = edge
         lastViewportWidth = viewportWidth
         lastItemWidth = frame.width
-        // Bounce inward only, leaving both half-tab hints available even during deceleration.
-        let distance = min(8, max(0, viewportWidth - 2 * frame.width))
+        let impactSpeed = velocity * edge
+        // Scale the recoil with momentum, keeping it inside the space between both half-tab hints.
+        let distance = min(min(32, impactSpeed / 40), max(0, viewportWidth - 2 * frame.width))
         let hasOuterNeighbor = edge > 0 ? index > 0 : index < collectionView.numberOfItems(inSection: 0) - 1
-        guard enabled, sameTabAndWidth, enteredEdge, hasOuterNeighbor, distance > 0, !UIAccessibility.isReduceMotionEnabled,
+        // Gentle arrivals (under 400 points/second) and movement away from an edge have no impact.
+        guard impactSpeed > 400, sameTabAndWidth, enteredEdge, hasOuterNeighbor, distance > 0, !UIAccessibility.isReduceMotionEnabled,
               let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
         bouncingCell = cell
         let offset = edge * distance
         let animation = CAKeyframeAnimation(keyPath: "position.x")
         animation.isAdditive = true
-        animation.values = [0, offset, offset * 0.2, offset * 0.35, 0]
-        animation.keyTimes = [0, 0.25, 0.55, 0.75, 1]
-        animation.timingFunctions = Array(repeating: CAMediaTimingFunction(name: .easeInEaseOut), count: 4)
-        animation.duration = 0.35
+        animation.values = [0, offset, 0]
+        animation.keyTimes = [0, 0.25, 1]
+        animation.timingFunctions = [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(name: .easeInEaseOut)]
+        animation.duration = 0.4
         let start = CACurrentMediaTime()
         for layer in [cell.layer, view.layer] {
             animation.beginTime = layer.convertTime(start, from: nil)

@@ -91,6 +91,7 @@ class TabsBarViewController: UIViewController {
     private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
+    private var lastScrollSample: (offset: CGFloat, time: CFTimeInterval)?
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -736,13 +737,23 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        lastScrollSample = (scrollView.contentOffset.x, CACurrentMediaTime())
         flareBackground.beginScrolling()
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let time = CACurrentMediaTime()
+        var velocity: CGFloat = 0
+        if scrollView.isDragging {
+            velocity = -scrollView.panGestureRecognizer.velocity(in: scrollView).x
+        } else if scrollView.isDecelerating, let sample = lastScrollSample {
+            // UIKit's pan velocity stops updating after release; measure the remaining momentum.
+            velocity = (scrollView.contentOffset.x - sample.offset) / CGFloat(max(time - sample.time, 1.0 / 120))
+        }
+        lastScrollSample = (scrollView.contentOffset.x, time)
         // Apply the pinned cell frames before positioning the selection background.
         collectionView.layoutIfNeeded()
-        flareBackground.update(bounceAtEdges: scrollView.isDragging || scrollView.isDecelerating)
+        flareBackground.update(scrollVelocity: velocity)
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {

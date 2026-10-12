@@ -7803,6 +7803,7 @@ extension MainViewController: TabDelegate {
 
     func selectTab(_ tab: Tab) {
         if tab.uid != tabManager.currentTabsModel.currentTab?.uid {
+            newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
             recordDuckAISessionPendingExit(.tabSwitched)
         }
         viewCoordinator.navigationBarContainer.alpha = 1

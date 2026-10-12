@@ -389,19 +389,26 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(completion.0.firstInteractionInterval.end == firstStamp)
     }
 
-    @available(iOS 16, *)
-    @Test("visitEnded clears the active visit", .timeLimit(.minutes(1)))
-    func visitEndedClearsActiveVisit() {
+    @available(iOS 16, macOS 13, *)
+    @Test("An ended visit ignores another page's focus, actions, and terminal", .timeLimit(.minutes(1)),
+          arguments: [NewTabPageSessionWideEventData.TerminalAction.loadDuckai, .selectOtherTab, .swipeToOtherTab, .lastTabLoaded])
+    func visitEndedClearsActiveVisit(terminal: NewTabPageSessionWideEventData.TerminalAction) {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
-        sut.visitEnded(terminalAction: .loadDuckai)
-
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
         sut.tapInputBar()
+        sut.visitEnded(terminalAction: terminal)
+
+        sut.keyboardRaisedOnArrival()
+        sut.typeInInput()
         sut.visitEnded(terminalAction: .loadSerp)
         sut.visitBackgrounded()
 
+        #expect(wideEvent.started.count == 1)
         #expect(wideEvent.completions.count == 1)
-        #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadDuckai)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == terminal)
+        #expect(lastCompletion(wideEvent)?.0.launchKeyboardMode == .down)
+        #expect(lastCompletion(wideEvent)?.0.actionCount == 1)
+        #expect(lastCompletion(wideEvent)?.0.typeInInput == false)
     }
 
     @available(iOS 16, *)

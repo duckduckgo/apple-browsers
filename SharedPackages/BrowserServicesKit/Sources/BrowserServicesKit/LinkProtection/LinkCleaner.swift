@@ -137,15 +137,15 @@ public class LinkCleaner {
 /// Removes tracking parameters by scanning the URL's UTF-8 bytes in place.
 ///
 /// `URLComponents` copies the whole query into separate strings, which takes seconds and hundreds of megabytes
-/// on multi-megabyte URLs. This filter reads WebKit's URL string without copying it and allocates only the
-/// cleaned URL. Results match the `URLComponents` path: items split on every `&`, a name ends at the first `=`,
-/// and the rest of the URL is kept byte for byte.
+/// on multi-megabyte URLs. This filter reads WebKit's URL string without copying it, and when it removes a
+/// parameter, allocates the cleaned URL at its exact size. Results match the `URLComponents` path: items split on
+/// every `&`, a name ends at the first `=`, and the rest of the URL is kept byte for byte.
 private struct TrackingParameterFilter {
 
     enum Result {
         case unchanged
-        case cleaned(URL?)
-        /// `URLComponents` would change more of this URL than its query, so only that path gives the same result.
+        case cleaned(URL)
+        /// Only the `URLComponents` path gives the same result for this URL.
         case needsFoundation
     }
 
@@ -164,17 +164,23 @@ private struct TrackingParameterFilter {
             let questionMark = Self.firstIndex(of: "?", in: bytes, from: 0, to: fragmentStart)
             guard questionMark < fragmentStart else { return .unchanged }
 
-            var removedItemStarts: [Int] = []
+            var removesItems = false
+            var keptItemsLength = 0
             forEachItem(in: bytes, from: questionMark + 1, to: fragmentStart) { item in
-                let nameEnd = Self.firstIndex(of: "=", in: bytes, from: item.lowerBound, to: item.upperBound)
-                if isTrackingParameter(UnsafeBufferPointer(rebasing: bytes[item.lowerBound..<nameEnd])) {
-                    removedItemStarts.append(item.lowerBound)
+                if isTrackingItem(item, in: bytes) {
+                    removesItems = true
+                } else {
+                    keptItemsLength += 1 + item.count // The item and the `?` or `&` before it.
                 }
             }
-            guard !removedItemStarts.isEmpty else { return .unchanged }
-            guard !Self.hasEmptyPort(bytes, before: questionMark) else { return .needsFoundation }
+            guard removesItems else { return .unchanged }
 
-            let cleaned = String(unsafeUninitializedCapacity: bytes.count) { output in
+            let cleanedLength = questionMark + keptItemsLength + (bytes.count - fragmentStart)
+            guard cleanedLength > 0, Self.isKeptByURLComponents(UnsafeBufferPointer(rebasing: bytes[..<questionMark])) else {
+                return .needsFoundation
+            }
+
+            let cleaned = String(unsafeUninitializedCapacity: cleanedLength) { output in
                 var written = 0
                 func append(_ range: Range<Int>) {
                     UnsafeMutableRawPointer(output.baseAddress! + written)
@@ -183,30 +189,29 @@ private struct TrackingParameterFilter {
                 }
 
                 append(0..<questionMark)
-                var hasPreservedItems = false
-                var nextRemoved = 0
+                var hasKeptItems = false
                 forEachItem(in: bytes, from: questionMark + 1, to: fragmentStart) { item in
-                    // Both passes visit items in the same order, so the removed ones come up in sequence.
-                    if nextRemoved < removedItemStarts.count, removedItemStarts[nextRemoved] == item.lowerBound {
-                        nextRemoved += 1
-                        return
-                    }
-                    output[written] = hasPreservedItems ? UInt8(ascii: "&") : UInt8(ascii: "?")
+                    guard !isTrackingItem(item, in: bytes) else { return }
+                    output[written] = hasKeptItems ? UInt8(ascii: "&") : UInt8(ascii: "?")
                     written += 1
                     append(item)
-                    hasPreservedItems = true
+                    hasKeptItems = true
                 }
                 append(fragmentStart..<bytes.count)
                 return written
             }
-            guard !cleaned.isEmpty else { return .needsFoundation }
-            return .cleaned(URL(string: cleaned))
+            guard let cleanedURL = URL(string: cleaned) else { return .needsFoundation }
+            return .cleaned(cleanedURL)
         }
     }
 
-    private func isTrackingParameter(_ name: UnsafeBufferPointer<UInt8>) -> Bool {
+    private func isTrackingItem(_ item: Range<Int>, in bytes: UnsafeBufferPointer<UInt8>) -> Bool {
+        let nameEnd = Self.firstIndex(of: "=", in: bytes, from: item.lowerBound, to: item.upperBound)
         // Most names can't match on length alone, so skip creating a String for them.
-        guard nameLengths.contains(name.count), let name = String(bytes: name, encoding: .utf8) else { return false }
+        guard nameLengths.contains(nameEnd - item.lowerBound),
+              let name = String(bytes: UnsafeBufferPointer(rebasing: bytes[item.lowerBound..<nameEnd]), encoding: .utf8) else {
+            return false
+        }
         return trackingParameters.contains(name)
     }
 
@@ -220,15 +225,13 @@ private struct TrackingParameterFilter {
         }
     }
 
-    /// `URLComponents` drops an empty port (`https://example.com:/`) when it rebuilds the URL.
-    private static func hasEmptyPort(_ bytes: UnsafeBufferPointer<UInt8>, before end: Int) -> Bool {
-        let schemeEnd = firstIndex(of: ":", in: bytes, from: 0, to: end)
-        guard schemeEnd + 2 < end, bytes[schemeEnd + 1] == UInt8(ascii: "/"), bytes[schemeEnd + 2] == UInt8(ascii: "/") else {
-            return false
-        }
-        let authorityStart = schemeEnd + 3
-        let authorityEnd = firstIndex(of: "/", in: bytes, from: authorityStart, to: end)
-        return authorityEnd > authorityStart && bytes[authorityEnd - 1] == UInt8(ascii: ":")
+    /// `URLComponents` normalizes some URLs when it rebuilds them after a change: `https://example.com:00080/`
+    /// becomes `https://example.com:80/`, and an empty port disappears. Splicing gives the same result only when
+    /// that rebuild keeps everything before the query as is.
+    private static func isKeptByURLComponents(_ prefix: UnsafeBufferPointer<UInt8>) -> Bool {
+        guard let prefix = String(bytes: prefix, encoding: .utf8), var components = URLComponents(string: prefix) else { return false }
+        components.percentEncodedQueryItems = nil // The same change the `URLComponents` path makes, so it rebuilds the same way.
+        return components.string == prefix
     }
 
     /// `memchr` scans much faster than a Swift loop, which matters for multi-megabyte URLs.

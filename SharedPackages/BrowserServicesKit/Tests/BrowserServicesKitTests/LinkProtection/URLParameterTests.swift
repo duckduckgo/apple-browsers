@@ -100,9 +100,6 @@ final class URLParameterTests: XCTestCase {
     }
 
     func testFastFilterMatchesURLComponentsFilter() {
-        let foundationCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { false })
-        let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
-
         let prefixes = ["https://www.example.com/", "https://www.example.com:8080/a/b;c", "https://www.example.com:/x",
                         "https://user:pass@www.example.com/", "https://[::1]/p", "HTTPS://WWW.EXAMPLE.COM/P"]
         let items = ["", "a=1", "utm_source=1", "utm_source", "utm_medium=b=c", "utm_sourcex=1", "UTM_SOURCE=1", "utm%5Fsource=%7C", "=x"]
@@ -114,23 +111,28 @@ final class URLParameterTests: XCTestCase {
             queries += itemLists.map { "?" + $0.joined(separator: "&") }
         }
 
-        var mismatches: [String] = []
+        var urls: [URL] = []
         for prefix in prefixes {
             for query in queries {
                 for fragment in fragments {
                     let string = prefix + query + fragment
-                    for url in [URL(string: string), Self.webKitStyleURL(string)].compactMap({ $0 }) {
-                        let expected = foundationCleaner.cleanTrackingParameters(initiator: nil, url: url)
-                        let actual = fastCleaner.cleanTrackingParameters(initiator: nil, url: url)
-                        if actual?.absoluteString != expected?.absoluteString
-                            || fastCleaner.urlParametersRemoved != foundationCleaner.urlParametersRemoved {
-                            mismatches.append("\(string): \(actual?.absoluteString ?? "nil") != \(expected?.absoluteString ?? "nil")")
-                        }
-                    }
+                    urls += [URL(string: string), Self.webKitStyleURL(string)].compactMap { $0 }
                 }
             }
         }
+        let mismatches = filterMismatches(in: urls)
         XCTAssertEqual(mismatches.count, 0, mismatches.prefix(5).joined(separator: "\n"))
+    }
+
+    func testFastFilterMatchesURLComponentsFilterWhenFoundationNormalizesTheURL() throws {
+        let base = try XCTUnwrap(URL(string: "https://base.example/a/b"))
+        let strings = ["https://www.example.com:00080/?utm_source=x&a=1", "https://www.example.com:foo/?utm_source=x",
+                       "https://www.example.com:/?utm_source=x", "//www.example.com:/?utm_source=x", "//www.example.com:00080/p?a=1&utm_source=x",
+                       "https://bücher.example/ü?utm_source=x&ü=1", "?utm_source=x&a=1", "?utm_source=x", "/p?utm_source=x#f", "p?a=1&utm_medium=y"]
+        let urls = strings.flatMap { [URL(string: $0), URL(string: $0, relativeTo: base), Self.webKitStyleURL($0)] }.compactMap { $0 }
+
+        let mismatches = filterMismatches(in: urls)
+        XCTAssertEqual(mismatches.count, 0, mismatches.joined(separator: "\n"))
     }
 
     func testFastFilterMatchesURLComponentsFilterOnLargeURLs() throws {
@@ -158,6 +160,21 @@ final class URLParameterTests: XCTestCase {
             XCTAssertEqual(linkCleaner.cleanTrackingParameters(initiator: nil, url: url)?.absoluteString, "https://www.example.com/?q=1")
         }
         XCTAssertEqual(flagReads, 2)
+    }
+
+    /// Returns a description of each URL that the fast filter cleans differently from the `URLComponents` path.
+    private func filterMismatches(in urls: [URL]) -> [String] {
+        let foundationCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { false })
+        let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
+
+        return urls.compactMap { url in
+            let expected = foundationCleaner.cleanTrackingParameters(initiator: nil, url: url)
+            let actual = fastCleaner.cleanTrackingParameters(initiator: nil, url: url)
+            guard actual?.absoluteString != expected?.absoluteString
+                    || fastCleaner.urlParametersRemoved != foundationCleaner.urlParametersRemoved else { return nil }
+            return "\(url.absoluteString): \(actual?.absoluteString ?? "nil") (removed: \(fastCleaner.urlParametersRemoved))"
+                + " != \(expected?.absoluteString ?? "nil") (removed: \(foundationCleaner.urlParametersRemoved))"
+        }
     }
 
     /// WebKit creates request URLs this way, and their strings are read without copying.

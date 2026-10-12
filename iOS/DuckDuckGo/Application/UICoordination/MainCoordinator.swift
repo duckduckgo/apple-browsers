@@ -357,6 +357,10 @@ final class MainCoordinator {
 
     }
 
+    func prepareInitialScreen(drawsIdleReturnNewTabPage: Bool) {
+        controller.prepareInitialScreen(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+    }
+
     func start() {
         controller.loadViewIfNeeded()
     }

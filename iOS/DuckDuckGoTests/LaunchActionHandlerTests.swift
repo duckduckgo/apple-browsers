@@ -107,6 +107,7 @@ final class MockIdleReturnEvaluator: IdleReturnEvaluating {
 @MainActor
 final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var showNewTabPageAfterIdleReturnCalled = false
+    var lastIsFirstForeground: Bool?
     var showNewTabPageAfterIdleReturnResult: IdleReturnNewTabPageResult = .suppressed
     var completesNewTabPageImmediately = true
     var newTabPageCompletion: ((IdleReturnNewTabPageResult) -> Void)?
@@ -117,8 +118,9 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
         recordOrdinaryReturnCalled = true
     }
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         showNewTabPageAfterIdleReturnCalled = true
+        lastIsFirstForeground = isFirstForeground
         if completesNewTabPageImmediately {
             completion(showNewTabPageAfterIdleReturnResult)
         } else {
@@ -419,6 +421,7 @@ final class LaunchActionHandlerTests {
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+        #expect(idleReturnDelegate.lastIsFirstForeground == false)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -439,6 +442,7 @@ final class LaunchActionHandlerTests {
                                                                hasCompletedAuthentication: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(idleReturnDelegate.lastIsFirstForeground == isFirstForeground)
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
@@ -484,6 +488,7 @@ final class LaunchActionHandlerTests {
         idleReturnDelegate.completesNewTabPageImmediately = false
 
         launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: nil, isFirstForeground: true))
+        #expect(idleReturnDelegate.lastIsFirstForeground == true)
         featureFlagger.enabledFeatureFlags = flagInitiallyOn ? [] : [.alwaysShowKeyboardOnNewTabPage]
         let completion = try #require(idleReturnDelegate.newTabPageCompletion)
         completion(result)

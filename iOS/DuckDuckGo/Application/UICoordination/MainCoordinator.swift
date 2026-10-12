@@ -951,14 +951,14 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             completion(.suppressed)
             return
         }
 
-        // Already on the NTP — preserve its existing or consumed hatch state and input focus.
+        // Restore a cold-start NTP's hatch; warm returns preserve its existing or consumed state and input focus.
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
@@ -970,7 +970,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             }
             controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
                 guard let self else { return }
-                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                    startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+                }
                 completion(.keptCurrent)
             }
             return

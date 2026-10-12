@@ -2412,6 +2412,34 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
+    func restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: Bool, timeAwayMs: Int?) -> Bool {
+        guard presentedViewController == nil || presentedViewController?.isBeingDismissed == true,
+              let page = newTabPageViewController,
+              let currentTab = tabManager.currentTabsModel.currentTab,
+              let hatch = escapeHatchModelBuilder.makeAfterIdleHatchForKeptNewTabPage(isFirstForeground: isFirstForeground, router: self) else {
+            return false
+        }
+        noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        currentTab.openedAfterIdle = true
+        if homePageConfiguration.mode == .coordinated {
+            homePageConfiguration.prepareForNTP(openedAfterIdle: true)
+        }
+        page.setEscapeHatch(hatch)
+        currentNTPEscapeHatch = hatch
+        configureUnifiedInputEscapeHatch(hatch)
+        isAfterIdlePresentationPending = true
+        // Replacing the initial shown callback must retain its pixels if App Lock still hides the page.
+        let recordsNewTabPixels = !newTabPagePresentation.hasPresentedPage
+        newTabPagePresentation.schedule(for: page, shown: { [weak self, weak currentTab] in
+            guard let self, currentTab === tabManager.currentTabsModel.currentTab else { return }
+            if recordsNewTabPixels {
+                fireNewTabPixels()
+            }
+            fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: isInputFocused)
+        })
+        return true
+    }
+
     func noteNewTabPageReturn(timeAwayMs: Int?) {
         newTabPageReturnTimeAwayMs = timeAwayMs
         hasNotedNewTabPageReturn = true

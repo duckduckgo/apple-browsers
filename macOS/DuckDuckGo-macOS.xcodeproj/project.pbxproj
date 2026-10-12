@@ -4210,6 +4210,7 @@
 		CC199E982F4E183000964713 /* DebugSimulatedDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E972F4E183000964712 /* DebugSimulatedDateStore.swift */; };
 		CC199E992F4E183000964714 /* DebugSimulatedDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E972F4E183000964712 /* DebugSimulatedDateStore.swift */; };
 		CC199EA12F4E199900964702 /* PromoQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199EA02F4E199900964701 /* PromoQueueUITests.swift */; };
+		D1A9C0022F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A9C0012F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift */; };
 		CC199EA32F4E182C00964720 /* PromoDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E9B2F4E182C00964716 /* PromoDependencies.swift */; };
 		CC199EA42F4E182C00964721 /* PromoServiceFactory+RemoteMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E9C2F4E182C00964717 /* PromoServiceFactory+RemoteMessage.swift */; };
 		CC199EA52F4E182C00964722 /* PromoServiceFactory+Test.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E9D2F4E182C00964718 /* PromoServiceFactory+Test.swift */; };
@@ -7237,6 +7238,7 @@
 		CC199E9C2F4E182C00964717 /* PromoServiceFactory+RemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+RemoteMessage.swift"; sourceTree = "<group>"; };
 		CC199E9D2F4E182C00964718 /* PromoServiceFactory+Test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+Test.swift"; sourceTree = "<group>"; };
 		CC199EA02F4E199900964701 /* PromoQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueUITests.swift; sourceTree = "<group>"; };
+		D1A9C0012F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCredentialsPopoverUITests.swift; sourceTree = "<group>"; };
 		CC199EB92F4E182C00964739 /* SessionRestorePromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromoDelegate.swift; sourceTree = "<group>"; };
 		CC199EBA2F4E182C0096473A /* PromoServiceFactory+SessionRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+SessionRestore.swift"; sourceTree = "<group>"; };
 		CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryCleaner.swift; sourceTree = "<group>"; };
@@ -10277,6 +10279,7 @@
 				844905522E55C9CD0054F4FD /* ErrorPageUITests.swift */,
 				CCD89A3C2ECF5AC5008E738B /* DefaultBrowserAndDockPromptsUITests.swift */,
 				CC199EA02F4E199900964701 /* PromoQueueUITests.swift */,
+				D1A9C0012F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift */,
 				CCD89A402ECF5AC6008E738B /* NextStepsListUITests.swift */,
 				BB0346F42CEB80B400D23E05 /* DownloadsUITests.swift */,
 				5A684B180D40B1C434FAF833 /* AppStoreSandboxUITests.swift */,
@@ -18049,6 +18052,7 @@
 				843A52F62EA8F9170094C215 /* FireDialogUITestsBase.swift in Sources */,
 				CCD89A3D2ECF5AC5008E738B /* DefaultBrowserAndDockPromptsUITests.swift in Sources */,
 				CC199EA12F4E199900964702 /* PromoQueueUITests.swift in Sources */,
+				D1A9C0022F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift in Sources */,
 				CCD89A3E2ECF5AC6008E738B /* NextStepsListUITests.swift in Sources */,
 				843A52F72EA8F9170094C215 /* FireDialogTabScopeUITests.swift in Sources */,
 				843A52F82EA8F9170094C215 /* FireDialogGeneralUITests.swift in Sources */,

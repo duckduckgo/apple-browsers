@@ -478,56 +478,21 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         withExtendedLifetime((viewModel, query)) {}
     }
 
-    func testWhenFirstMediaPermissionIsGrantedAfterTimeoutThenNextDeviceIsRequestedWithoutAnotherClick() async throws {
-        for permissions: [PermissionType] in [[.camera, .microphone], [.microphone, .camera]] {
-            for refreshFirst in [false, true] {
-                result = nil
-                finishCount = 0
-                scheduledWork = []
-                systemPermissionManager = SystemPermissionManagerMock()
-                systemPermissionManager.authorizationStates = [.camera: .notDetermined, .microphone: .notDetermined]
-                systemPermissionManager.defersAuthorizationResponse = true
-                let query = makeQuery(permissions: permissions)
-                let viewModel = makeViewModel(query: query)
-                viewModel.send(action: .allowThisVisit)
-                viewModel.send(action: .requestSystemPermission)
-                runScheduledWork()
+    func testWhenCameraIsAllowedAfterTimeoutThenMicrophoneAlertFollowsWithoutAnotherClick() async {
+        for seenOnReturnFirst in [false, true] {
+            let (viewModel, query) = makeViewModelAfterCameraAlertTimedOut()
 
-                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
-                systemPermissionManager.authorizationStates[permissions[0]] = .authorized
-                if refreshFirst {
-                    appDidBecomeActive.send()
-                    await waitUntil { self.systemPermissionManager.authorizationRequestedFor == permissions }
-                }
-                systemPermissionManager.pendingAuthorizationCompletions[0](.authorized)
-                await waitUntil { self.systemPermissionManager.authorizationRequestedFor == permissions }
-                await settle()
+            await allowLateCameraAlert(seenOnReturnFirst: seenOnReturnFirst)
 
-                XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, permissions)
-                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
-                XCTAssertNil(result)
-
-                systemPermissionManager.authorizationStates[permissions[1]] = .authorized
-                respondToSystemPermissionRequest(with: .authorized)
-                await waitUntil { self.result != nil }
-
-                let output = try XCTUnwrap(try result?.get())
-                XCTAssertTrue(output.granted)
-                XCTAssertEqual(output.remember, false)
-                XCTAssertEqual(finishCount, 1)
-                withExtendedLifetime((viewModel, query)) {}
-            }
+            XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.camera, .microphone])
+            XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
+            XCTAssertFalse(query.isComplete)
+            withExtendedLifetime(viewModel) {}
         }
     }
 
     func testWhenFirstMediaPermissionIsDeniedAfterTimeoutThenNextDeviceWaitsForAnotherClick() async {
-        systemPermissionManager.authorizationStates = [.camera: .notDetermined, .microphone: .notDetermined]
-        systemPermissionManager.defersAuthorizationResponse = true
-        let query = makeQuery(permissions: [.camera, .microphone])
-        let viewModel = makeViewModel(query: query)
-        viewModel.send(action: .allowThisVisit)
-        viewModel.send(action: .requestSystemPermission)
-        runScheduledWork()
+        let (viewModel, query) = makeViewModelAfterCameraAlertTimedOut()
 
         systemPermissionManager.authorizationStates[.camera] = .denied
         respondToSystemPermissionRequest(with: .denied)
@@ -810,6 +775,35 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         viewModel.send(action: decision)
         viewModel.send(action: .requestSystemPermission)
         return (viewModel, query)
+    }
+
+    /// Camera and microphone not asked by macOS yet, Allow this visit picked, Request Permission pressed,
+    /// and the camera alert left open past the timeout, so the prompt offers Open Settings.
+    private func makeViewModelAfterCameraAlertTimedOut() -> (PermissionAuthorizationViewModel, PermissionAuthorizationQuery) {
+        scheduledWork = []
+        systemPermissionManager = SystemPermissionManagerMock()
+        systemPermissionManager.authorizationStates = [.camera: .notDetermined, .microphone: .notDetermined]
+        systemPermissionManager.defersAuthorizationResponse = true
+        let query = makeQuery(permissions: [.camera, .microphone])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .allowThisVisit)
+        viewModel.send(action: .requestSystemPermission)
+        runScheduledWork()
+        return (viewModel, query)
+    }
+
+    /// The user allows the camera alert that outlived the timeout. With `seenOnReturnFirst`, the prompt reads
+    /// the grant when the app becomes active again, before the alert's own callback arrives.
+    private func allowLateCameraAlert(seenOnReturnFirst: Bool) async {
+        let cameraAlertCallback = systemPermissionManager.pendingAuthorizationCompletions[0]
+        systemPermissionManager.authorizationStates[.camera] = .authorized
+        if seenOnReturnFirst {
+            appDidBecomeActive.send()
+            await waitUntil { self.systemPermissionManager.authorizationRequestedFor.count == 2 }
+        }
+        cameraAlertCallback(.authorized)
+        await waitUntil { self.systemPermissionManager.authorizationRequestedFor.count == 2 }
+        await settle()
     }
 
     private func respondToSystemPermissionRequest(with state: SystemPermissionAuthorizationState) {

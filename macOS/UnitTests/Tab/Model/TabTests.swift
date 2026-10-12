@@ -83,7 +83,7 @@ final class TabTests: XCTestCase {
         let tabs: [Tab.Content] = [
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),
-            .dataBrokerProtection,
+            .dataBrokerProtection(.subscribed),
             .anyHistoryPane,
             .settings(pane: .general),
             .newtab,

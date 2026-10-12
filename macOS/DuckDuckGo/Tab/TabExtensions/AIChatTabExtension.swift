@@ -64,6 +64,9 @@ final class AIChatTabExtension {
     private struct LinkOpener {
         let sourceURL: URL?
     }
+    /// Set when the browser re-creates this tab from an earlier one (restore, reopen, duplicate):
+    /// its first load looks the same as a lazy load, a suspension wake or a native open.
+    private var pendingRecreationSource: AIChatConversationSource?
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -279,6 +282,10 @@ final class AIChatTabExtension {
         linkOpener = LinkOpener(sourceURL: sourceURL)
     }
 
+    func noteRecreated(as source: AIChatConversationSource) {
+        pendingRecreationSource = source
+    }
+
     /// Many surfaces open duck.ai as plain `.url` content, so both carry the navigation's source.
     private static func navigationSource(of content: TabContent) -> TabContent.URLSource? {
         switch content {
@@ -414,7 +421,17 @@ extension AIChatTabExtension: NavigationResponder {
     func didCommit(_ navigation: Navigation) {
         aiChatUserScript?.handler.resetConversationSourceForNewDocument()
 
-        guard navigation.isCurrent, let via = navigation.duckAIDirectNavigationVia else { return }
+        // Only the first commit may use it, so a later chat in this tab isn't labelled as re-created.
+        let recreationSource = pendingRecreationSource
+        pendingRecreationSource = nil
+
+        guard navigation.isCurrent else { return }
+        guard let via = navigation.duckAIDirectNavigationVia else {
+            if let recreationSource, navigation.url.isDuckAIURL, !navigation.url.isDuckAIOpenedFromHomepage {
+                setDirectNavigationFallback(recreationSource)
+            }
+            return
+        }
         guard navigation.url.isDuckAIURL else {
             viaForClientRedirect = via
             return
@@ -529,6 +546,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func requestOpenSettings()
     func noteAddressBarSuggestionNavigation(to url: URL)
     func noteOpenedForLink(from sourceURL: URL?)
+    func noteRecreated(as source: AIChatConversationSource)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }

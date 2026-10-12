@@ -678,6 +678,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
     case canUseExchangeV2Point1
+    case canSendExchangeChannelSecret
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
@@ -941,6 +942,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the "Sync your autofill data" promo.
     case syncSetupAutofillPromo
+
+    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
+    case bookmarksBarSyncPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

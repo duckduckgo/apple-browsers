@@ -63,6 +63,7 @@ class TabsBarCell: UICollectionViewCell {
     private weak var model: Tab?
     private var isCurrent = false
     private var isFireModeEnabled = false
+    private var isDragPlaceholderHidden = false
 
     private var hidesCloseButtonUntilHover = false
     private var isPointerHovering = false
@@ -83,10 +84,31 @@ class TabsBarCell: UICollectionViewCell {
         super.prepareForReuse()
         isPointerHovering = false
         isCurrent = false
-        contentView.isHidden = false
+        setDragPlaceholderHidden(false, animated: false)
         leadingSeparatorView.isHidden = true
         leadingSeparatorView.alpha = 1
         separatorView.alpha = 1
+    }
+
+    func setDragPlaceholderHidden(_ hidden: Bool, animated: Bool) {
+        guard !animated || isDragPlaceholderHidden != hidden else { return }
+        isDragPlaceholderHidden = hidden
+        guard animated, !UIAccessibility.isReduceMotionEnabled else {
+            titleStackView.layer.removeAllAnimations()
+            titleStackView.alpha = hidden ? 0 : 1
+            contentView.isHidden = hidden
+            return
+        }
+
+        contentView.isHidden = false
+        // Keep UIKit's faded drag-placeholder alpha and the separators out of the animation.
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.titleStackView.alpha = hidden ? 0 : 1
+        } completion: { finished in
+            if finished, self.isDragPlaceholderHidden == hidden {
+                self.contentView.isHidden = hidden
+            }
+        }
     }
 
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {

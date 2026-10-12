@@ -144,9 +144,11 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
             controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
             XCTAssertEqual(collectionView.contentOffset, exitOffset)
             controller.collectionView(collectionView, dropSessionDidEnter: session)
-            XCTAssertTrue(cell.contentView.isHidden)
+            let title = try XCTUnwrap(cell.contentView.subviews.compactMap { $0 as? UIStackView }.first)
+            XCTAssertEqual(title.alpha, 0)
             controller.collectionView(collectionView, dragSessionDidEnd: session)
             XCTAssertFalse(cell.contentView.isHidden)
+            XCTAssertEqual(title.alpha, 1)
             let endOffset = collectionView.contentOffset
             controller.scrollDuringReorder(elapsedTime: 1.0 / 60)
             XCTAssertEqual(collectionView.contentOffset, endOffset)

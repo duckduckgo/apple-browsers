@@ -103,6 +103,7 @@ final class TabsBarView: UIView {
 final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
 
     var currentIndex: (() -> Int?)?
+    var showsSelectedTabNeighbors = true
 
     override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         true
@@ -112,16 +113,21 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         // The outgoing tab remains exposed until its neighbor finishes folding over it.
         let expandedRect = rect.insetBy(dx: -itemSize.width / 2, dy: 0)
         guard let originalAttributes = super.layoutAttributesForElements(in: expandedRect) else { return nil }
-        let attributes = originalAttributes.compactMap { layoutAttributesForItem(at: $0.indexPath) }
+        var attributes = originalAttributes.compactMap { layoutAttributesForItem(at: $0.indexPath) }
         guard let collectionView,
               let index = currentIndex?(),
-              index < collectionView.numberOfItems(inSection: 0),
-              !attributes.contains(where: { $0.indexPath.item == index }),
-              let current = layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else {
+              index < collectionView.numberOfItems(inSection: 0) else {
             return attributes
         }
-        // Include the selected tab even when its original position is outside the visible rect.
-        return attributes + [current]
+        // The selected tab and its edge hints can be far outside their original positions.
+        for item in max(0, index - 1)...min(collectionView.numberOfItems(inSection: 0) - 1, index + 1) {
+            let indexPath = IndexPath(item: item, section: 0)
+            guard !attributes.contains(where: { $0.indexPath == indexPath }),
+                  let pinned = layoutAttributesForItem(at: indexPath),
+                  item == index || pinned.zIndex == 0 else { continue }
+            attributes.append(pinned)
+        }
+        return attributes
     }
 
     override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
@@ -131,13 +137,28 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         }
         let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
         let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
-        let isCurrent = indexPath.item == currentIndex?()
+        let current = currentIndex?()
+        let isCurrent = indexPath.item == current
         // Tabs nearer the middle cover the edge tabs. The flare (1) and selected tab (2) stay above them.
         let middle = (leading + trailing + attributes.frame.width) / 2
         attributes.zIndex = isCurrent ? 2 : -Int(abs(attributes.center.x - middle))
         let foldRange = min(attributes.frame.width / 2, (trailing - leading) / 2)
+        let peek = showsSelectedTabNeighbors ? foldRange : 0
         var origin = attributes.frame.minX
-        if !isCurrent, foldRange > 0 {
+        if isCurrent {
+            let minimum = leading + (indexPath.item > 0 ? peek : 0)
+            let maximum = trailing - (indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1 ? peek : 0)
+            attributes.frame.origin.x = min(max(origin, minimum), maximum)
+            return attributes
+        }
+        if peek > 0, let current,
+           let currentFrame = unpinnedFrameForItem(at: IndexPath(item: current, section: indexPath.section)),
+           (indexPath.item == current - 1 && currentFrame.minX < leading + peek)
+            || (indexPath.item == current + 1 && currentFrame.minX > trailing - peek) {
+            // Keep the hint above unrelated tabs that have scrolled past the selected tab.
+            attributes.zIndex = 0
+        }
+        if foldRange > 0 {
             if indexPath.item > 0, origin < leading + foldRange {
                 origin = leading + foldedDistance(origin - leading, range: foldRange)
             } else if indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1, origin > trailing - foldRange {
@@ -162,7 +183,11 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         guard let collectionView, let frame = unpinnedFrameForItem(at: indexPath) else { return nil }
         let visibleWidth = collectionView.bounds.width - collectionView.adjustedContentInset.left - collectionView.adjustedContentInset.right
         let current = currentIndex?()
-        let pinnedWidth = current != nil && current != indexPath.item ? min(frame.width, max(0, visibleWidth - frame.width)) : 0
+        let hasOuterNeighbor = current.map {
+            $0 < indexPath.item ? $0 > 0 : $0 < collectionView.numberOfItems(inSection: indexPath.section) - 1
+        } ?? false
+        let pinnedPeek = showsSelectedTabNeighbors && hasOuterNeighbor ? min(frame.width / 2, max(0, (visibleWidth - frame.width) / 2)) : 0
+        let pinnedWidth = current != nil && current != indexPath.item ? min(frame.width + pinnedPeek, max(0, visibleWidth - frame.width)) : 0
         // Leave a glimpse of neighboring tabs without squeezing the selected tab on narrow strips.
         let peek = min(frame.width / 2, max(0, (visibleWidth - frame.width - pinnedWidth) / 2))
         var revealFrame = frame.insetBy(dx: -peek, dy: 0)

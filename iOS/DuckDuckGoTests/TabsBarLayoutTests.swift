@@ -143,6 +143,29 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
+    func testSettlingExposesTheSelectedTabsOuterNeighborWithoutChangingScrollPosition() throws {
+        for (current, neighbor, offset, width) in [(5, 4, CGFloat(2400), CGFloat(600)), (90, 91, 1000, 600),
+                                                  (5, 4, 2400, 240), (90, 91, 1000, 240), (5, 4, 590, 600)] {
+            let (collectionView, layout) = makeCollectionView(currentIndex: { current }, contentOffset: offset, width: width)
+            layout.showsSelectedTabNeighbors = false
+            layout.invalidateLayout()
+            collectionView.layoutIfNeeded()
+            let originalOffset = collectionView.contentOffset
+
+            layout.showsSelectedTabNeighbors = true
+            layout.invalidateLayout()
+            collectionView.layoutIfNeeded()
+
+            let selected = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: current, section: 0)))
+            let adjacent = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: neighbor, section: 0)) as? TabsBarCell)
+            let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+            let expectedPeek = min(selected.bounds.width / 2, (viewport.width - selected.bounds.width) / 2)
+            XCTAssertEqual(collectionView.contentOffset, originalOffset)
+            XCTAssertTrue(viewport.contains(selected.frame))
+            XCTAssertEqual(adjacent.visiblePointerRect(in: adjacent.contentView).width, expectedPeek, accuracy: 0.001)
+        }
+    }
+
     func testOutgoingAccordionTabRemainsMaterializedWhileStillExposed() throws {
         let (collectionView, layout) = makeCollectionView(currentIndex: { 4 }, contentOffset: 380)
         let indexPath = IndexPath(item: 2, section: 0)
@@ -179,7 +202,8 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
 
     func testRevealingEdgeTabExposesItAndANeighborWithOrWithoutPinnedSelection() throws {
         for (current, target, neighbor, offset) in [(2, 2, 1, CGFloat(300)), (7, 7, 8, 330),
-                                                   (0, 20, 19, 2600), (99, 20, 21, 2000)] {
+                                                   (0, 20, 19, 2600), (99, 20, 21, 2000),
+                                                   (5, 20, 19, 2600), (90, 20, 21, 2000)] {
             let (collectionView, layout) = makeCollectionView(currentIndex: { current }, contentOffset: offset)
             let indexPath = IndexPath(item: target, section: 0)
             let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: indexPath))
@@ -194,7 +218,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         }
     }
 
-    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat)
+    private func makeCollectionView(currentIndex: @escaping () -> Int?, contentOffset: CGFloat, width: CGFloat = 600)
         -> (UICollectionView, TabsBarCollectionViewLayout) {
         selectedIndex = currentIndex
         let layout = TabsBarCollectionViewLayout()
@@ -203,7 +227,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
         layout.currentIndex = currentIndex
-        let collectionView = UICollectionView(frame: CGRect(x: 0, y: 0, width: 600, height: 40), collectionViewLayout: layout)
+        let collectionView = UICollectionView(frame: CGRect(x: 0, y: 0, width: width, height: 40), collectionViewLayout: layout)
         collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.contentInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 60)
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)

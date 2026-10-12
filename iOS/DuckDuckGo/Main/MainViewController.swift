@@ -2472,8 +2472,7 @@ class MainViewController: UIViewController {
         // Resolved before the instrumentation call below, so the wide event records the mode
         // the app decided on rather than racing the keyboard to observe it. Behind the flag a new tab
         // also keeps the keyboard hidden during onboarding.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
-            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+        let willBeginEditing = isNewTab && willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2541,6 +2540,24 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func willBeginEditingOnNewTab(allowingKeyboard: Bool) -> Bool {
+        allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+    }
+
+    /// Records the arrival on the New Tab Page the launch drew, as `attachHomeScreen` would have.
+    func recordNewTabPageArrivalForIdleReturnAtLaunch(allowingKeyboard: Bool) {
+        let willBeginEditing = willBeginEditingOnNewTab(allowingKeyboard: allowingKeyboard)
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: true, hatch: currentNTPEscapeHatch, focused: willBeginEditing)
+            startNewTabPageSessionInstrumentation(isNewTab: true, willBeginEditing: willBeginEditing, isAfterFire: false)
+        }
+        if willBeginEditing {
+            omniBar.beginEditing(animated: true)
+        }
     }
 
     private func configureUnifiedInputEscapeHatch(_ hatch: EscapeHatchModel?) {

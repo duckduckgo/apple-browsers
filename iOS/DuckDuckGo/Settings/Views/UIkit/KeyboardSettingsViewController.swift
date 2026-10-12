@@ -18,6 +18,8 @@
 //
 
 import UIKit
+import SwiftUI
+import DesignResourcesKit
 import Core
 
 class KeyboardSettingsViewController: UITableViewController {
@@ -69,5 +71,23 @@ extension KeyboardSettingsViewController {
         tableView.separatorColor = theme.tableCellSeparatorColor
         
         tableView.reloadData()
+    }
+}
+
+struct KeyboardSettingsView: View {
+    @State private var settings = KeyboardSettings()
+
+    var body: some View {
+        List {
+            Section(header: Text(UserText.settingsKeyboardShowOn)) {
+                SettingsCellView(label: UserText.settingsKeyboardNewTab,
+                                 accessory: .toggle(isOn: $settings.onNewTab))
+                SettingsCellView(label: UserText.settingsKeyboardAppLaunch,
+                                 accessory: .toggle(isOn: $settings.onAppLaunch))
+            }
+        }
+        .applyInsetGroupedListStyle()
+        .navigationBarTitle(UserText.settingsKeyboard, displayMode: .inline)
+        .accentColor(Color(designSystemColor: .textPrimary))
     }
 }

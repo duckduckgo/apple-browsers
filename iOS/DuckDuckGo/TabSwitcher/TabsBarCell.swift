@@ -22,7 +22,6 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
-import os.log
 
 class TabsBarCell: UICollectionViewCell {
 
@@ -296,8 +295,6 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
-        let becomingCurrent = isCurrent && !self.isCurrent
-        if becomingCurrent { logSelectionPresentation("before") }
         self.isCurrent = isCurrent
         updateZPosition(isCurrent ? 2 : min(layer.zPosition, 0))
         // Edge tabs overlap; an opaque inactive tab keeps the covered title from showing through.
@@ -309,28 +306,6 @@ class TabsBarCell: UICollectionViewCell {
 
         hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
         updateCloseButtonVisibility()
-        if becomingCurrent {
-            logSelectionPresentation("after")
-            let selectedModel = model
-            for delay in [0.05, 0.2] {
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak selectedModel] in
-                    guard let self, self.model === selectedModel, self.isCurrent else { return }
-                    self.logSelectionPresentation("after \(delay)s")
-                }
-            }
-        }
-    }
-
-    // Temporary on-device diagnostics for the pointer-selection blink; no browsing content is logged.
-    private func logSelectionPresentation(_ phase: String) {
-        let layers: [(String, UIView)] = [("cell", self), ("content", contentView), ("title", titleStackView), ("favicon", faviconImage)]
-        let state = layers.map { name, view in
-            let layer = view.layer
-            let presentation = layer.presentation() ?? layer
-            return "\(name):z=\(layer.zPosition)/\(presentation.zPosition) opacity=\(layer.opacity)/\(presentation.opacity)"
-                + " hidden=\(view.isHidden) animations=\(layer.animationKeys() ?? [])"
-        }.joined(separator: "; ")
-        Logger.interaction.debug("[TabStripSelection] cell=\(String(describing: ObjectIdentifier(self)), privacy: .public) phase=\(phase, privacy: .public) selected=\(self.isCurrent) hover=\(self.isPointerHovering) placeholder=\(self.isDragPlaceholderHidden) \(state, privacy: .public)")
     }
 
     private func updateSeparators() {

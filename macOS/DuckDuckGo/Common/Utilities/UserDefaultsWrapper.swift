@@ -225,8 +225,6 @@ extension UserDefaults {
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
         case syncCurrentCreditCardsPausedError = "sync.current-credit-cards-paused-error"
         case syncCurrentIdentitiesPausedError = "sync.current-identities-paused-error"
-        case syncPromoBookmarksDismissed = "sync.promotion-bookmarks-dismissed"
-        case syncPromoPasswordsDismissed = "sync.promotion-passwords-dismissed"
 
         // Subscription
 

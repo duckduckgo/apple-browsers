@@ -136,9 +136,18 @@ struct ManageDeviceView: View {
                     .accessibility(identifier: "SyncThisDeviceToggle")
             }
         } footer: {
-            Text(UserText.simplifiedManageDeviceTurnOffFooter)
+            Text(turnOffFooter)
         }
         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .removeDeviceConfirmationAlert(isPresented: $model.isThisDeviceTurnOffConfirmationVisible,
+                                       deviceName: editModel.name,
+                                       isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
+            model.thisDeviceDetailsTurnOffSyncConfirmed()
+        }
+    }
+
+    private var turnOffFooter: String {
+        model.isImprovedPairingFlowEnabled ? UserText.simplifiedManageDeviceTurnOffFooter(editModel.name) : UserText.simplifiedManageDeviceTurnOffFooter
     }
 
     private var syncToggleBinding: Binding<Bool> {
@@ -172,18 +181,61 @@ struct ManageDeviceView: View {
             }
             .accessibility(identifier: "removeDevice")
         } footer: {
-            Text(UserText.simplifiedManageDeviceRemoveFooter)
+            Text(removeFooter)
         }
         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
-        .alert(UserText.removeDeviceTitle, isPresented: $isShowingRemoveConfirmation) {
-            Button(UserText.cancelButton, role: .cancel) {}
-            Button(UserText.removeDeviceButton, role: .destructive) {
-                model.createRemoveDeviceModel(device).remove()
-                dismiss()
-            }
-        } message: {
-            Text(UserText.removeDeviceMessage(device.name))
+        .removeDeviceConfirmationAlert(isPresented: $isShowingRemoveConfirmation,
+                                       deviceName: device.name,
+                                       isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
+            model.createRemoveDeviceModel(device).remove()
+            dismiss()
         }
+    }
+
+    private var removeFooter: String {
+        model.isImprovedPairingFlowEnabled ? UserText.simplifiedManageDeviceRemoveFooter(device.name) : UserText.simplifiedManageDeviceRemoveFooter
+    }
+}
+
+private struct RemoveDeviceConfirmationAlert: ViewModifier {
+
+    @Binding var isPresented: Bool
+    let deviceName: String
+    let isImprovedPairingFlowEnabled: Bool
+    let onConfirm: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(title, isPresented: $isPresented) {
+            Button(UserText.cancelButton, role: .cancel) {}
+            Button(confirmButtonTitle, role: .destructive, action: onConfirm)
+        } message: {
+            Text(message)
+        }
+    }
+
+    private var title: String {
+        isImprovedPairingFlowEnabled ? UserText.simplifiedRemoveDeviceConfirmTitle(deviceName) : UserText.removeDeviceTitle
+    }
+
+    private var message: String {
+        isImprovedPairingFlowEnabled ? UserText.simplifiedRemoveDeviceConfirmMessage(deviceName) : UserText.removeDeviceMessage(deviceName)
+    }
+
+    private var confirmButtonTitle: String {
+        isImprovedPairingFlowEnabled ? UserText.simplifiedRemoveDeviceConfirmAction : UserText.removeDeviceButton
+    }
+}
+
+private extension View {
+
+    func removeDeviceConfirmationAlert(isPresented: Binding<Bool>,
+                                       deviceName: String,
+                                       isImprovedPairingFlowEnabled: Bool,
+                                       onConfirm: @escaping () -> Void) -> some View {
+        modifier(RemoveDeviceConfirmationAlert(isPresented: isPresented,
+                                               deviceName: deviceName,
+                                               isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled,
+                                               onConfirm: onConfirm))
     }
 }
 
@@ -201,7 +253,8 @@ private extension SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
-            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled,
+            isImprovedPairingFlowEnabled: true
         )
         model.isSyncEnabled = isSyncEnabled
         return model

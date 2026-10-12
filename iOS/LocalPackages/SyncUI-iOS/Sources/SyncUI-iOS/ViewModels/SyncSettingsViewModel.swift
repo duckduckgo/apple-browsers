@@ -50,6 +50,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     // Simplified sync setup experiment
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
+    func disableSync() async -> Bool
     func simplifiedCopyRecoveryCode()
 
     var syncBookmarksPausedTitle: String? { get }
@@ -194,6 +195,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum ConnectingSheetPhase: Equatable, Identifiable {
         case connecting(isRecovery: Bool, isFinishing: Bool = false)
         case syncAnotherDevice(isConnecting: Bool)
+        case waitingForOtherDevice
         case success(isRecovery: Bool)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
@@ -213,6 +215,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
+    @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false
@@ -231,7 +234,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private var postConnectingSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
-    private let isImprovedPairingFlowEnabled: Bool
+    let isImprovedPairingFlowEnabled: Bool
 
     public init(
         isOnDevEnvironment: @escaping () -> Bool,
@@ -418,7 +421,22 @@ public class SyncSettingsViewModel: ObservableObject {
     func thisDeviceDetailsTurnOffSyncTapped() {
         guard !isBusy else { return }
         delegate?.fireDeviceDetailsPixel(event: .thisDeviceTurnOffSyncTapped)
-        disableSyncToggleTapped()
+        if isImprovedPairingFlowEnabled {
+            isThisDeviceTurnOffConfirmationVisible = true
+        } else {
+            disableSyncToggleTapped()
+        }
+    }
+
+    func thisDeviceDetailsTurnOffSyncConfirmed() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            if await delegate?.disableSync() == true {
+                isSyncEnabled = false
+            }
+        }
     }
 
     func otherDeviceDetailsRemoveDeviceTapped() {
@@ -498,9 +516,10 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func showSuccess(recoveryCode: String, isRecovery: Bool) {
         self.recoveryCode = recoveryCode
-        if case .connecting = connectingSheetPhase {
+        switch connectingSheetPhase {
+        case .connecting, .waitingForOtherDevice:
             connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
-        } else {
+        default:
             connectingSheetPhase = .success(isRecovery: isRecovery)
         }
     }

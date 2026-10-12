@@ -77,6 +77,7 @@ final class UnifiedSuggestionsHost {
 
     func start<P: Publisher>(in containerView: UIView,
                              parentViewController: UIViewController,
+                             isFloatingUIEnabled: Bool = false,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
 
@@ -100,6 +101,7 @@ final class UnifiedSuggestionsHost {
             showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
             escapeHatch: escapeHatch)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
+        hosting.isFloatingUIEnabled = isFloatingUIEnabled
         if #available(iOS 16.4, *) {
             // UIKit already bounds this host with the keyboard guide. Keep only container insets.
             hosting.safeAreaRegions = [.container]
@@ -255,6 +257,7 @@ final class UnifiedSuggestionsHost {
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         hostingController = nil
+        viewModel.logoViewportFrame = nil
     }
 
     // MARK: - Private
@@ -275,6 +278,20 @@ final class UnifiedSuggestionsHost {
 /// The redesigned modules use the favorites controller's models without mounting that controller.
 /// Report visibility from their actual host, so hierarchy and modal checks still apply.
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
+
+    var isFloatingUIEnabled = false
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
+        // These are the native anchors used to constrain the host. The logo ignores the top
+        // container safe area, but still reserves the bottom input-bar inset.
+        var viewport = containerView.convert(containerView.bounds, to: nil)
+        let keyboardTop = containerView.convert(containerView.keyboardLayoutGuide.layoutFrame, to: nil).minY
+        viewport.size.height = max(0, keyboardTop - viewport.minY - view.safeAreaInsets.bottom)
+        guard rootView.viewModel.logoViewportFrame != viewport else { return }
+        rootView.viewModel.logoViewportFrame = viewport
+    }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
         rootView.usesRedesignedNewTabPageLayout &&

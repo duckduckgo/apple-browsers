@@ -133,8 +133,8 @@ enum UserText {
     static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up.")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
     static let preparingToSyncDialogTitleV2 = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-title", bundle: Bundle.module, value: "Sync & Backup is end-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up (V2)")
-    static let preparingToSyncCheckOtherDeviceTitleV2 = NSLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", bundle: Bundle.module, value: "Check your other device...", comment: "Title shown while the joining device waits for the other device during sync set up (V2)")
-    static let preparingToSyncDialogActionV2 = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-action", bundle: Bundle.module, value: "Connecting...", comment: "Status text while preparing to sync (V2)")
+    static let preparingToSyncCheckOtherDeviceTitleV2 = NSLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", bundle: Bundle.module, value: "Check your other device.", comment: "Title shown when Sync setup is still waiting for the other device to finish (V2)")
+    static let preparingToSyncDialogActionV2 = NSLocalizedString("preferences.preparing-to-sync-v2.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Status text while preparing to sync (V2)")
 
     // Sync success dialog (V2 — simplifiedSyncSetupV2).
     static let syncSuccessFallbackDeviceNameV2 = NSLocalizedString("preferences.sync.success-v2.fallback-device-name", bundle: Bundle.module, value: "This device", comment: "Fallback device name in the Sync success dialog when the current device name is unavailable (V2)")

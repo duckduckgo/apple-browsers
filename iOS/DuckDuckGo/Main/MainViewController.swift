@@ -1004,6 +1004,9 @@ class MainViewController: UIViewController {
         chromeManager.onUserScrolled = { [weak self] in
             self?.postIdleSessionInstrumentation.pageEngaged()
         }
+        chromeManager.onScrollStateChanged = { [weak self] in
+            self?.currentTab?.applyDeferredFloatingUIInsetsIfNeeded()
+        }
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
@@ -6910,6 +6913,15 @@ extension MainViewController: NewTabPageControllerDelegate {
             case .dismiss: instrumentation.clickMessageDismiss()
             }
         }
+    }
+
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
+        let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
+        model.onSave = { [weak self] in
+            WidgetCenter.shared.reloadAllTimelines()
+            self?.syncService.scheduler.notifyDataChanged()
+        }
+        present(AddFavoriteViewController(model: model), animated: true)
     }
 
     func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {

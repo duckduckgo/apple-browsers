@@ -140,18 +140,30 @@ struct UnifiedSuggestionsView: View {
             //    safe-area inset, so it tracks the bar in the same pass.
             // With room on both sides the pushes clamp to 0 and the logo stays at the NTP anchor.
             let frame = proxy.frame(in: .global)
+            let nativeViewport = viewModel.logoViewportFrame
+            let viewport = nativeViewport ?? frame
             let targetCenterY = Self.logoCenterY(
                 restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
-                topChromeBottom: frame.minY + viewModel.chromeInsetTop,
-                barTop: frame.maxY)
-            FocusedDaxLogoView(progress: viewModel.logoModel.progress,
-                               morph: viewModel.logoModel.morphs,
-                               animationSpeed: viewModel.logoModel.morphSpeed)
+                topChromeBottom: viewport.minY + viewModel.chromeInsetTop,
+                barTop: viewport.maxY)
+            let offsetY = targetCenterY - frame.midY
+            let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
+                                         morph: viewModel.logoModel.morphs,
+                                         animationSpeed: viewModel.logoModel.morphSpeed)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .offset(y: targetCenterY - frame.midY)
-                // Match the bar's toggle animation, but keep inactive keyboard restoration instantaneous.
-                .animation(UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil,
-                           value: targetCenterY)
+            let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
+            Group {
+                if nativeViewport != nil {
+                    // Animate real clearance changes; compensate transient host movement immediately.
+                    logo.offset(y: targetCenterY)
+                        .animation(animation, value: targetCenterY)
+                        .offset(y: -frame.midY)
+                        .animation(nil, value: frame.midY)
+                } else {
+                    logo.offset(y: offsetY)
+                        .animation(animation, value: targetCenterY)
+                }
+            }
                 // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches

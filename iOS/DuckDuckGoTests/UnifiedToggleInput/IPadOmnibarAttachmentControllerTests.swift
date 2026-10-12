@@ -530,6 +530,22 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         XCTAssertNil(footer.layer.animation(forKey: "opacity"))
     }
 
+    func testAttachmentLandingDuringExpansionAnimationStaysVisibleWhenItFinishes() throws {
+        let (sut, window) = makeCollapsedOmnibarInWindow()
+        defer { window.isHidden = true }
+        sut.setSearchAreaExpanded(true, animated: true)
+
+        sut.attachmentsStripView.addAttachment(.file(AIChatFileAttachment(data: Data([1]), fileName: "late.pdf", mimeType: "application/pdf")))
+        sut.updateAttachmentsLayout(animated: true)
+        let expansionFinished = expectation(description: "expansion animation finished")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { expansionFinished.fulfill() }
+        wait(for: [expansionFinished], timeout: 2)
+
+        XCTAssertTrue(sut.isSearchAreaExpanded)
+        XCTAssertFalse(sut.attachmentsStripView.isHidden)
+        XCTAssertEqual(sut.attachmentsStripView.alpha, 1)
+    }
+
     private func makeCollapsedOmnibarInWindow() -> (DefaultOmniBarView, UIWindow) {
         let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
         sut.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)

@@ -158,6 +158,8 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         case .authorized, .provisional:
             return true
         case .notDetermined:
+            // The new prompt requests system access only from its explicit Request Permission button.
+            guard !featureFlagger.isFeatureOn(.websitePermissionsPrompts) else { return false }
             do {
                 PixelKit.fire(WebNotificationPixel.systemAuthorizationRequested, frequency: .dailyAndCount)
                 let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
@@ -337,7 +339,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        // Ensure system authorization (requests if not determined, checks if already granted/denied)
+        // The new prompt handles system authorization; only the legacy flow may request it here.
         guard await ensureSystemAuthorization() else {
             Logger.general.debug("WebNotificationsHandler: System authorization not granted")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)

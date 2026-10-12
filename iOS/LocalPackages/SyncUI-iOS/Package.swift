@@ -62,6 +62,7 @@ let package = Package(
             resources: [
                 .process("Resources/SyncMedia.xcassets"),
                 .copy("Resources/SyncScanQRCode.lottie"),
+                .copy("Resources/SyncScanQRCodeCard.lottie"),
                 .copy("Resources/SyncLock.lottie")
             ],
             swiftSettings: [

@@ -536,6 +536,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.submitProgrammatic(text: prompt)
     }
 
+    func submitSuggestedPrompt(_ prompt: String) {
+        coordinator.submitProgrammatic(text: prompt, trigger: .suggestedPrompt)
+    }
+
     func discardTabAttachments() {
         coordinator.discardTabAttachments()
         contextualChatViewController?.cancelPendingTabAttachmentPrompt()

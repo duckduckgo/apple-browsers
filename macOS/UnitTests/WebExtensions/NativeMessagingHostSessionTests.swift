@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -35,6 +36,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("NativeMessagingHostSessionTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try XCTSkipIf(NSApp.isSandboxed, "A sandboxed host can't launch native messaging hosts")
     }
 
     override func tearDownWithError() throws {

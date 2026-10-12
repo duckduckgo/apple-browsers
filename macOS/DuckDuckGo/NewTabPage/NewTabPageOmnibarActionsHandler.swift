@@ -33,6 +33,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let tabsPreferences: TabsPreferences
     private let historyCoordinator: HistoryCoordinating
     private let aiChatDeleter: AIChatDeleting
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKit.Event) -> Void
@@ -52,6 +53,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
          tabsPreferences: TabsPreferences,
          historyCoordinator: HistoryCoordinating,
          aiChatDeleter: AIChatDeleting,
+         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
@@ -62,6 +64,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         self.tabsPreferences = tabsPreferences
         self.historyCoordinator = historyCoordinator
         self.aiChatDeleter = aiChatDeleter
+        self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
@@ -72,7 +75,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
             return
         }
 
@@ -147,8 +150,12 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     toolChoice: [String]?,
                     reasoningEffort: String?,
                     pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
-                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
+                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool) {
         firePixel(NewTabPagePixel.promptSubmitted)
+
+        // The NTP sends `aiTermsAccepted` only for an Ask click with its disclaimer on screen.
+        termsOfServiceDisclaimer.acceptIfShown(aiTermsAccepted)
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -204,7 +211,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                                                           pageContext: pageContextPayload,
                                                           mode: mode,
                                                           reasoningEffort: nativeReasoningEffort)
-        promptHandler.setData(nativePrompt)
+        // Marks an Ask click, like the address bar's input; the bridge turns it into the `termsAccepted` duck.ai reads.
+        promptHandler.setData(nativePrompt.withTermsAccepted(aiTermsAccepted))
     }
 
     /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
@@ -287,6 +295,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
         customizeResponsesModal = modal
         modal.present(over: window)
+    }
+
+    @MainActor
+    func openPrivacyTerms() {
+        windowControllersManager.show(url: .aiChatPrivacyTerms, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor

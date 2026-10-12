@@ -97,4 +97,16 @@ final class URLParameterTests: XCTestCase {
         }
     }
 
+    func testURLParamStrippingSkipsURLsAtMaxLength() throws {
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+        let prefix = "https://www.example.com/test.html?utm_source=test&q="
+        let underLimit = try XCTUnwrap(URL(string: prefix + String(repeating: "a", count: LinkCleaner.maxURLLength - prefix.count - 1)))
+        let atLimit = try XCTUnwrap(URL(string: prefix + String(repeating: "a", count: LinkCleaner.maxURLLength - prefix.count)))
+
+        let cleaned = try XCTUnwrap(linkCleaner.cleanTrackingParameters(initiator: nil, url: underLimit))
+        XCTAssertFalse(cleaned.absoluteString.contains("utm_source"))
+        XCTAssertEqual(linkCleaner.cleanTrackingParameters(initiator: nil, url: atLimit), atLimit)
+        XCTAssertFalse(linkCleaner.urlParametersRemoved)
+    }
+
 }

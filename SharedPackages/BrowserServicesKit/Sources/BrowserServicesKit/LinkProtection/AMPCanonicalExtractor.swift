@@ -51,7 +51,6 @@ public final class AMPCanonicalExtractor: NSObject {
         static let sendCanonical = "sendCanonical"
         static let canonicalKey = "canonical"
         static let ruleListIdentifier = "blockImageRules"
-        static let maxURLLength = 80_000
     }
 
     private let completionHandler = CompletionHandler()
@@ -130,7 +129,7 @@ public final class AMPCanonicalExtractor: NSObject {
         guard settings.deepExtractionEnabled else { return false }
         guard let url = url, !linkCleaner.isURLExcluded(url: url) else { return false }
         let urlStr = url.absoluteString
-        guard urlStr.count < Constants.maxURLLength else { return false }
+        guard urlStr.utf16.count < LinkCleaner.maxURLLength else { return false }
 
         let ampKeywords = settings.ampKeywords
 

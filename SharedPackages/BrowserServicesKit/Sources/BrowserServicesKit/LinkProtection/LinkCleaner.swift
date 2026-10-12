@@ -21,6 +21,10 @@ import PrivacyConfig
 
 public class LinkCleaner {
 
+    /// Longer strings are not likely real links, and parsing them on the main thread hangs or runs out of memory.
+    /// Compare against `utf16.count`: it is O(1) for the Cocoa-backed strings WebKit provides, unlike `count`.
+    static let maxURLLength = 80_000
+
     public var lastAMPURLString: String?
     public var urlParametersRemoved: Bool = false
 
@@ -92,6 +96,7 @@ public class LinkCleaner {
         if let initiator = initiator, isURLExcluded(url: initiator, feature: .trackingParameters) {
             return url
         }
+        guard url.absoluteString.utf16.count < Self.maxURLLength else { return url }
 
         guard var urlsComps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return url

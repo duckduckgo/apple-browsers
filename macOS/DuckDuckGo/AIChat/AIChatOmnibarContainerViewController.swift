@@ -46,6 +46,16 @@ private final class HitTestableContainerView: NSView {
 
         return self
     }
+
+    /// `MouseBlockingBackgroundView`'s event monitor consumes clicks before `NSWindow` can honor
+    /// `isMovableByWindowBackground`, so the empty background starts the drag itself.
+    override func mouseDown(with event: NSEvent) {
+        guard let window, window.isMovableByWindowBackground else {
+            super.mouseDown(with: event)
+            return
+        }
+        window.performDrag(with: event)
+    }
 }
 
 /// Strokes the bottom edge and its two corner arcs, and nothing else.

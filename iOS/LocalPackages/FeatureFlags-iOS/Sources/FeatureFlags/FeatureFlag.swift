@@ -592,7 +592,7 @@ public enum FeatureFlag: String {
     case alwaysShowKeyboardOnNewTabPage
 
     /// Removes tracking parameters without `URLComponents`, which hangs or runs out of memory on very large URLs.
-    /// https://app.asana.com/1/137249556945/project/1214294661819890/task/1219200127050776
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
     case fastTrackingParameterFilter
 }
 
@@ -1017,7 +1017,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .alwaysShowKeyboardOnNewTabPage:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
         case .fastTrackingParameterFilter:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         }
     }
 

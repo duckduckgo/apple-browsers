@@ -1671,7 +1671,7 @@ extension Tab {
     /// no web content process is spawned. The old Tab (and its WKWebView) is released
     /// when replaceTab assigns the new one, letting the OS reclaim the process memory.
     func makeSuspendedTab() -> UnloadedTab {
-        let unloadedTab = UnloadedTab(from: self.makeRestorationData())
+        let unloadedTab = UnloadedTab(from: self.makeRestorationData(), isFromSessionRestore: false)
         unloadedTab.isSuspended = true
 
         if let snapshotsExtension = self.tabSnapshots {

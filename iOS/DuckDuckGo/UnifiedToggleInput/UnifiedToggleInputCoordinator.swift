@@ -760,7 +760,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         currentTabUID = uid
         lastActivatedTabUID = uid
-        if let sourceProvider = browserTabAttachmentSourceProvider, let feature = tabAttachmentFeature {
+        if isTabAttachmentFeatureAvailable,
+           let sourceProvider = browserTabAttachmentSourceProvider, let feature = tabAttachmentFeature {
             configureTabAttachments(source: sourceProvider(uid), feature: feature, synchronizesDraft: false)
         }
         applyState(stateStore.state(for: uid))
@@ -1903,6 +1904,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Hosts that embed the UTI inside another presented stack (e.g. the contextual chat half-sheet)
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
+
+    var isTabAttachmentFeatureAvailable: Bool {
+        guard case .available = tabAttachmentFeature?.state else { return false }
+        return true
+    }
+
     private var maximumTabAttachmentCount: Int? {
         guard tabAttachmentSource != nil,
               case .available(let count) = tabAttachmentFeature?.state else { return nil }
@@ -2574,7 +2581,9 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.submitsAIChatOnKeyboardReturn = submitsAIChatPromptOnKeyboardReturn
         viewController.handler.usesReturnKeySubmitButtonStyle = usesReturnKeySubmitButtonStyle
         syncTermsOfServiceSendButtonToHandler()
-        attachmentController?.updateAttachButtonPresentation()
+        if isTabAttachmentFeatureAvailable {
+            attachmentController?.updateAttachButtonPresentation()
+        }
         tabMentionController?.refresh()
     }
 

@@ -1369,7 +1369,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
               currentTab?.isAITab != true else {
             return .allowDefault
         }
-        if let tab = tabManager.currentTabsModel.currentTab {
+        if coordinator.isTabAttachmentFeatureAvailable, let tab = tabManager.currentTabsModel.currentTab {
             activateUnifiedToggleInput(for: tab)
         }
         // Reveal before unified input measures the bar for its transition.

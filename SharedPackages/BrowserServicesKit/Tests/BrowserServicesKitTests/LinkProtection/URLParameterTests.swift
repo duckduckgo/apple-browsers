@@ -100,7 +100,7 @@ final class URLParameterTests: XCTestCase {
     }
 
     func testFastFilterMatchesURLComponentsFilter() {
-        let prefixes = ["https://www.example.com/", "https://www.example.com:8080/a/b;c", "https://www.example.com:/x",
+        let prefixes = ["https://www.example.com/", "https://www.example.com:8080/a/b;c", "https://www.example.com:443/x",
                         "https://user:pass@www.example.com/", "https://[::1]/p", "HTTPS://WWW.EXAMPLE.COM/P"]
         let items = ["", "a=1", "utm_source=1", "utm_source", "utm_medium=b=c", "utm_sourcex=1", "UTM_SOURCE=1", "utm%5Fsource=%7C", "=x"]
         let fragments = ["", "#", "#f?utm_source=1&a", "#f#g"]
@@ -124,15 +124,29 @@ final class URLParameterTests: XCTestCase {
         XCTAssertEqual(mismatches.count, 0, mismatches.prefix(5).joined(separator: "\n"))
     }
 
-    func testFastFilterMatchesURLComponentsFilterWhenFoundationNormalizesTheURL() throws {
+    func testFastFilterMatchesURLComponentsFilterOnRelativeAndUnusualURLs() throws {
         let base = try XCTUnwrap(URL(string: "https://base.example/a/b"))
-        let strings = ["https://www.example.com:00080/?utm_source=x&a=1", "https://www.example.com:foo/?utm_source=x",
-                       "https://www.example.com:/?utm_source=x", "//www.example.com:/?utm_source=x", "//www.example.com:00080/p?a=1&utm_source=x",
-                       "https://bücher.example/ü?utm_source=x&ü=1", "?utm_source=x&a=1", "?utm_source=x", "/p?utm_source=x#f", "p?a=1&utm_medium=y"]
+        let strings = ["https://www.example.com:foo/?utm_source=x", "https://bücher.example/ü?utm_source=x&ü=1",
+                       "?utm_source=x&a=1", "?utm_source=x", "/p?utm_source=x#f", "p?a=1&utm_medium=y", "//www.example.com/p?a=1&utm_source=x"]
         let urls = strings.flatMap { [URL(string: $0), URL(string: $0, relativeTo: base), Self.webKitStyleURL($0)] }.compactMap { $0 }
 
         let mismatches = filterMismatches(in: urls)
         XCTAssertEqual(mismatches.count, 0, mismatches.joined(separator: "\n"))
+    }
+
+    func testFastFilterKeepsPortsAsWritten() throws {
+        // `URLComponents` rewrites these ports (`:00080` to `:80`, and drops an empty `:`). WebKit's URLs never contain them.
+        let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
+        let base = try XCTUnwrap(URL(string: "https://base.example/a/b"))
+        let cases = [(URL(string: "https://www.example.com:00080/?utm_source=x&a=1"), "https://www.example.com:00080/?a=1"),
+                     (Self.webKitStyleURL("https://www.example.com:00080/?utm_source=x&a=1"), "https://www.example.com:00080/?a=1"),
+                     (URL(string: "https://www.example.com:/?utm_source=x"), "https://www.example.com:/"),
+                     (URL(string: "//www.example.com:/?utm_source=x", relativeTo: base), "//www.example.com:/")]
+
+        for (url, expected) in cases {
+            XCTAssertEqual(fastCleaner.cleanTrackingParameters(initiator: nil, url: try XCTUnwrap(url))?.absoluteString, expected)
+            XCTAssertTrue(fastCleaner.urlParametersRemoved)
+        }
     }
 
     func testFastFilterMatchesURLComponentsFilterOnLargeURLs() throws {

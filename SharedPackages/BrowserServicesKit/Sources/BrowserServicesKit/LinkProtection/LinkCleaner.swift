@@ -99,15 +99,11 @@ public class LinkCleaner {
         let trackingParams = Set(TrackingLinkSettings(fromConfig: privacyConfig).trackingParameters)
 
         if isFastTrackingParameterFilterEnabled() {
-            switch TrackingParameterFilter(trackingParameters: trackingParams).filter(url) {
-            case .unchanged:
+            guard let cleanURL = TrackingParameterFilter(trackingParameters: trackingParams).removingTrackingParameters(from: url) else {
                 return url
-            case .cleaned(let cleanURL):
-                urlParametersRemoved = true
-                return cleanURL
-            case .needsFoundation:
-                break
             }
+            urlParametersRemoved = true
+            return cleanURL
         }
 
         guard var urlsComps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
@@ -138,16 +134,10 @@ public class LinkCleaner {
 ///
 /// `URLComponents` copies the whole query into separate strings, which takes seconds and hundreds of megabytes
 /// on multi-megabyte URLs. This filter reads WebKit's URL string without copying it, and when it removes a
-/// parameter, allocates the cleaned URL at its exact size. Results match the `URLComponents` path: items split on
-/// every `&`, a name ends at the first `=`, and the rest of the URL is kept byte for byte.
+/// parameter, allocates the cleaned URL at its exact size. It removes the same items as the `URLComponents` path
+/// (items split on every `&`, a name ends at the first `=`) and keeps the rest of the URL byte for byte. Unlike
+/// `URLComponents`, it doesn't rewrite ports such as `:00080` or an empty `:`; WebKit's URLs never contain them.
 private struct TrackingParameterFilter {
-
-    enum Result {
-        case unchanged
-        case cleaned(URL)
-        /// Only the `URLComponents` path gives the same result for this URL.
-        case needsFoundation
-    }
 
     private let trackingParameters: Set<String>
     private let nameLengths: Set<Int>
@@ -157,12 +147,13 @@ private struct TrackingParameterFilter {
         nameLengths = Set(trackingParameters.map(\.utf8.count))
     }
 
-    func filter(_ url: URL) -> Result {
+    /// Returns `url` without its tracking parameters, or `nil` when it has none or the cleaned URL isn't valid.
+    func removingTrackingParameters(from url: URL) -> URL? {
         var string = url.relativeString
         return string.withUTF8 { bytes in
             let fragmentStart = Self.firstIndex(of: "#", in: bytes, from: 0, to: bytes.count)
             let questionMark = Self.firstIndex(of: "?", in: bytes, from: 0, to: fragmentStart)
-            guard questionMark < fragmentStart else { return .unchanged }
+            guard questionMark < fragmentStart else { return nil }
 
             var removesItems = false
             var keptItemsLength = 0
@@ -173,12 +164,12 @@ private struct TrackingParameterFilter {
                     keptItemsLength += 1 + item.count // The item and the `?` or `&` before it.
                 }
             }
-            guard removesItems else { return .unchanged }
+            guard removesItems else { return nil }
 
             let cleanedLength = questionMark + keptItemsLength + (bytes.count - fragmentStart)
-            guard cleanedLength > 0, Self.isKeptByURLComponents(UnsafeBufferPointer(rebasing: bytes[..<questionMark])) else {
-                return .needsFoundation
-            }
+            // Only a relative URL made entirely of tracking parameters cleans to nothing. Like `URLComponents`,
+            // return an empty URL.
+            guard cleanedLength > 0 else { return URLComponents().url }
 
             let cleaned = String(unsafeUninitializedCapacity: cleanedLength) { output in
                 var written = 0
@@ -200,8 +191,9 @@ private struct TrackingParameterFilter {
                 append(fragmentStart..<bytes.count)
                 return written
             }
-            guard let cleanedURL = URL(string: cleaned) else { return .needsFoundation }
-            return .cleaned(cleanedURL)
+            // `URL(string:)` rejects a few strings that CFURL accepts, such as a non-numeric port. `URLComponents`
+            // can't parse those URLs either and leaves them unchanged, so `nil` keeps the same result.
+            return URL(string: cleaned)
         }
     }
 
@@ -223,15 +215,6 @@ private struct TrackingParameterFilter {
             guard itemEnd < end else { return }
             itemStart = itemEnd + 1
         }
-    }
-
-    /// `URLComponents` normalizes some URLs when it rebuilds them after a change: `https://example.com:00080/`
-    /// becomes `https://example.com:80/`, and an empty port disappears. Splicing gives the same result only when
-    /// that rebuild keeps everything before the query as is.
-    private static func isKeptByURLComponents(_ prefix: UnsafeBufferPointer<UInt8>) -> Bool {
-        guard let prefix = String(bytes: prefix, encoding: .utf8), var components = URLComponents(string: prefix) else { return false }
-        components.percentEncodedQueryItems = nil // The same change the `URLComponents` path makes, so it rebuilds the same way.
-        return components.string == prefix
     }
 
     /// `memchr` scans much faster than a Swift loop, which matters for multi-megabyte URLs.

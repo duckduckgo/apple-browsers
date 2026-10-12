@@ -64,7 +64,6 @@ struct PromptBarPreferencesUserDefaultsPersistor: PromptBarPreferencesPersistor 
         set { try? keyValueStore.set(newValue, forKey: Key.menuBarIconIsVisible.rawValue) }
     }
 
-    /// See `PromptBarPlacement.relativePosition(of:in:)`.
     var relativePosition: CGPoint? {
         get {
             guard let values = (try? keyValueStore.object(forKey: Key.relativePosition.rawValue)) as? [Double],

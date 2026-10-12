@@ -245,7 +245,6 @@ final class PromptBarPresenter: PromptBarPresenting {
         return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame, relativePosition: relativePosition)
     }
 
-    /// Subscribed after placement, so only the user's drags (and height changes, which keep the top edge) are saved.
     private func subscribeToMoves(of window: PromptBarWindow) {
         moveCancellable = NotificationCenter.default
             .publisher(for: NSWindow.didMoveNotification, object: window)

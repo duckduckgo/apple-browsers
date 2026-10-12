@@ -585,6 +585,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatNativeTermsOfService
 
     /// Lets the user drag the prompt bar and remembers where it was left.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
     case aiChatDragPromptBar
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.

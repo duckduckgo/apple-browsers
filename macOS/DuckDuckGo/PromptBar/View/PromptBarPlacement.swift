@@ -38,8 +38,6 @@ enum PromptBarPlacement {
         return NSRect(x: originX, y: top - height, width: width, height: height)
     }
 
-    /// `relativePosition` is the top-left corner as a fraction of `visibleFrame`, so it carries across screens.
-    /// The result is clamped to stay on screen.
     static func frame(forContentHeight contentHeight: CGFloat, in visibleFrame: NSRect, relativePosition: CGPoint) -> NSRect {
         var frame = frame(forContentHeight: contentHeight, in: visibleFrame)
         let left = visibleFrame.minX + (relativePosition.x * visibleFrame.width).rounded()

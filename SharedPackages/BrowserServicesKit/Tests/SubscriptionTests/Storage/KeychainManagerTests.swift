@@ -452,6 +452,25 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
     }
 
+    func testEveryFailedStoreIsCountedAsAddedToBacklogEvenForAnAlreadyQueuedKey() throws {
+        // Given: the keychain is unavailable.
+        let testKey = "test-key"
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: recordingPixelHandler)
+        makeKeychainNotAvailable()
+
+        // When: two separate writes for the same key both fail.
+        try manager.store(data: "first".data(using: .utf8)!, forKey: testKey)
+        try manager.store(data: "second".data(using: .utf8)!, forKey: testKey)
+
+        // Then: both failed writes are counted, and the backlog holds the latest data.
+        XCTAssertEqual(recordingPixelHandler.keychainPixels.filter { $0 == .dataAddedToTheBacklog }.count, 2)
+        XCTAssertEqual(try manager.retrieveData(forKey: testKey), "second".data(using: .utf8)!)
+    }
+
     // MARK: - Edge Cases Tests
 
     func testMultipleOperationsConcurrently() throws {

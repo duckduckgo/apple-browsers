@@ -216,11 +216,11 @@ public final class KeychainManager: KeychainManaging {
         return status == errSecItemNotFound
     }
 
-    private func addToWritingBacklog(_ data: Data, forKey key: String) {
-        // A key already in the backlog is being re-queued after a failed drain attempt, not added for the first time - only count genuinely new entries.
-        let isNewEntry = writingBacklog[key] == nil
+    /// - Parameter isBacklogRetry: `true` when a backlog drain re-queues an entry that is still unwritable. That is not a new
+    ///   failed write, so it is not counted. A new `store` that fails is always counted, even if its key is already queued.
+    private func addToWritingBacklog(_ data: Data, forKey key: String, isBacklogRetry: Bool) {
         writingBacklog[key] = data
-        if isNewEntry {
+        if !isBacklogRetry {
             pixelHandler.handle(pixel: .dataAddedToTheBacklog)
         }
     }
@@ -236,7 +236,7 @@ public final class KeychainManager: KeychainManaging {
     }
 
     @discardableResult
-    private func internalStore(data: Data, forKey key: String) throws -> StoreOutcome {
+    private func internalStore(data: Data, forKey key: String, isBacklogRetry: Bool = false) throws -> StoreOutcome {
         var query = attributes
         query[kSecAttrService] = key
         query[kSecAttrAccessible] = Constants.keychainAccessibilityLevel
@@ -251,11 +251,11 @@ public final class KeychainManager: KeychainManaging {
             return .written
         case errSecDuplicateItem:
             Logger.keychainManager.log("Keychain item exists, updating for \(key, privacy: .public)")
-            return try updateData(data, forKey: key)
+            return try updateData(data, forKey: key, isBacklogRetry: isBacklogRetry)
         case errSecNotAvailable,
         errSecInteractionNotAllowed:
             Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription, privacy: .public), adding data to writing queue")
-            addToWritingBacklog(data, forKey: key)
+            addToWritingBacklog(data, forKey: key, isBacklogRetry: isBacklogRetry)
             return .requeued
         default:
             removeFromWritingBacklog(forKey: key)
@@ -269,9 +269,10 @@ public final class KeychainManager: KeychainManaging {
     /// - Parameters:
     ///   - data: The new data to store
     ///   - key: The unique identifier for the keychain item
+    ///   - isBacklogRetry: Whether this write is a backlog drain retry rather than a new write
     /// - Returns: Whether the update actually landed or was queued for retry
     @discardableResult
-    private func updateData(_ data: Data, forKey key: String) throws -> StoreOutcome {
+    private func updateData(_ data: Data, forKey key: String, isBacklogRetry: Bool) throws -> StoreOutcome {
         var query = attributes
         query[kSecAttrService] = key
 
@@ -290,7 +291,7 @@ public final class KeychainManager: KeychainManaging {
         case errSecNotAvailable,
         errSecInteractionNotAllowed:
             Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription, privacy: .public), adding data to writing queue")
-            addToWritingBacklog(data, forKey: key)
+            addToWritingBacklog(data, forKey: key, isBacklogRetry: isBacklogRetry)
             return .requeued
         default:
             removeFromWritingBacklog(forKey: key)
@@ -356,7 +357,7 @@ public final class KeychainManager: KeychainManaging {
 
         for (key, data) in backlogCopy {
             do {
-                switch try internalStore(data: data, forKey: key) {
+                switch try internalStore(data: data, forKey: key, isBacklogRetry: true) {
                 case .written:
                     processedSuccessfully += 1
                     Logger.keychainManager.log("Successfully processed backlog item for key: \(key, privacy: .public)")

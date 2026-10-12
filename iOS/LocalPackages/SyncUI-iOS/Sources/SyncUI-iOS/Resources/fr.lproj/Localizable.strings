@@ -175,6 +175,9 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Partager les favoris sur tous les appareils";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Vérifiez votre autre appareil.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup est crypté de bout en bout sur tous vos appareils.";
 
@@ -275,7 +278,7 @@
 "sync.simplified.scan-or-view-code.app.name" = "l'application DuckDuckGo";
 
 /* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Connexion en cours…";
+"sync.simplified.scan-or-view-code.connecting.status" = "Connexion…";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Revenez sur cet appareil après avoir collé le code.";
@@ -357,4 +360,3 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Vous utilisez l'environnement Sync Development";
-

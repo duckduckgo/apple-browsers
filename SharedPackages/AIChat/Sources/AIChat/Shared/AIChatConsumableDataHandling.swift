@@ -138,8 +138,15 @@ public enum AIChatConversationSource: String, CaseIterable {
     case duckAILink = "duck-ai-link"
     case duckDuckGoLink = "duckduckgo-link"
 
-    /// Named for the attribution gap it measures: a chat no surface stamped and no direct navigation
-    /// explains, such as a session restored at startup or an entry point nobody has instrumented yet.
+    /// A chat continued in a tab the browser re-created from an earlier one: restored with the
+    /// previous session, reopened after it was closed, or duplicated. Like the `direct-*` values,
+    /// only used when no surface stamped the chat.
+    case sessionRestore = "session-restore"
+    case reopenedTab = "reopened-tab"
+    case tabCopy = "tab-copy"
+
+    /// Named for the attribution gap it measures: a chat no surface stamped and nothing else
+    /// explains, such as an entry point nobody has instrumented yet.
     case unattributed = "unattributed"
 
     /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept

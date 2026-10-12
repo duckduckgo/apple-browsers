@@ -203,7 +203,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
-    private let statisticsLoader: StatisticsLoader?
+    private let statisticsLoader: DuckAIPromptAtbRefreshing?
     private let syncServiceProvider: () -> DDGSyncing?
     private let syncErrorHandler: SyncErrorHandling
     private let featureFlagger: FeatureFlagger
@@ -254,7 +254,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
-        statisticsLoader: StatisticsLoader?,
+        statisticsLoader: DuckAIPromptAtbRefreshing?,
         syncServiceProvider: @escaping () -> DDGSyncing?,
         syncErrorHandler: SyncErrorHandling,
         featureFlagger: FeatureFlagger,

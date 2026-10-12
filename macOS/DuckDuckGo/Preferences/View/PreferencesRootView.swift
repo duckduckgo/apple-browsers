@@ -328,7 +328,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         pixelHandler(.subscriptionPersonalInformationRemovalSettings, .standard)
-                        showTab(.dataBrokerProtection)
+                        showTab(.dataBrokerProtection(.subscribed))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:

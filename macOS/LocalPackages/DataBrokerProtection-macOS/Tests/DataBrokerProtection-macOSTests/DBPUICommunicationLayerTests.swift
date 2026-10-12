@@ -26,12 +26,69 @@ import PrivacyConfig
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 
+    @MainActor
+    func testWhenTwoViewsChangeToSameEntryPoint_thenBothReloadAndUseTheirOwnHandshake() async throws {
+        let dataManager = DataBrokerProtectionDataManager(database: MockDatabase())
+        let modelA = makeViewModel(dataManager: dataManager)
+        let modelB = makeViewModel(dataManager: dataManager)
+        let webViewA = ReloadRecordingWebView()
+        let webViewB = ReloadRecordingWebView()
+        let layerA = try communicationLayer(for: modelA)
+        let layerB = try communicationLayer(for: modelB)
+
+        modelA.setFreeScanEntryPoint("banner", in: nil)
+        modelB.setFreeScanEntryPoint("banner", in: nil)
+        let initialA = try await handshake(layerA)
+        let initialB = try await handshake(layerB)
+        XCTAssertEqual(initialA.userdata.freeScanEntryPoint, "banner")
+        XCTAssertEqual(initialB.userdata.freeScanEntryPoint, "banner")
+
+        modelA.setFreeScanEntryPoint("app_menu", in: webViewA)
+        let updatedA = try await handshake(layerA)
+        modelB.setFreeScanEntryPoint("app_menu", in: webViewB)
+        let updatedB = try await handshake(layerB)
+
+        XCTAssertEqual(webViewA.reloadCount, 1)
+        XCTAssertEqual(webViewB.reloadCount, 1)
+        XCTAssertEqual(updatedA.userdata.freeScanEntryPoint, "app_menu")
+        XCTAssertEqual(updatedB.userdata.freeScanEntryPoint, "app_menu")
+
+        modelB.setFreeScanEntryPoint("app_menu", in: webViewB)
+        XCTAssertEqual(webViewB.reloadCount, 1)
+    }
+
+    @MainActor
+    func testWhenOtherViewChangesEntryPoint_thenLaterHandshakeRetainsThisViewsEntryPoint() async throws {
+        let dataManager = DataBrokerProtectionDataManager(database: MockDatabase())
+        let modelA = makeViewModel(dataManager: dataManager)
+        let modelB = makeViewModel(dataManager: dataManager)
+        let webViewA = ReloadRecordingWebView()
+        let webViewB = ReloadRecordingWebView()
+        let layerA = try communicationLayer(for: modelA)
+        let layerB = try communicationLayer(for: modelB)
+
+        modelA.setFreeScanEntryPoint("banner", in: nil)
+        modelB.setFreeScanEntryPoint("app_menu", in: nil)
+        _ = try await handshake(layerA)
+        _ = try await handshake(layerB)
+
+        modelB.setFreeScanEntryPoint("view_results", in: webViewB)
+        let updatedB = try await handshake(layerB)
+        let reloadedA = try await handshake(layerA)
+        modelA.setFreeScanEntryPoint("banner", in: webViewA)
+
+        XCTAssertEqual(updatedB.userdata.freeScanEntryPoint, "view_results")
+        XCTAssertEqual(reloadedA.userdata.freeScanEntryPoint, "banner")
+        XCTAssertEqual(webViewA.reloadCount, 0)
+        XCTAssertEqual(webViewB.reloadCount, 1)
+    }
+
     func testWhenHandshakeCalled_andDelegateAuthenticatedUserTrue_thenHandshakeUserDataTrue() async throws {
         // Given
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true, isUserEligibleForFreeTrial: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: mockDelegate, privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = WKScriptMessage.mock()
@@ -56,7 +113,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false, isUserEligibleForFreeTrial: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: mockDelegate, privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = WKScriptMessage.mock()
@@ -81,7 +138,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true, isUserEligibleForFreeTrial: true)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: mockDelegate, privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = WKScriptMessage.mock()
@@ -106,7 +163,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false, isUserEligibleForFreeTrial: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: mockDelegate, privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = WKScriptMessage.mock()
@@ -126,9 +183,10 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(resultUserData.userdata.isUserEligibleForFreeTrial, false)
     }
 
-    func testWhenHandshakeCalled_andDelegateIsNil_thenHandshakeUserDataIsDefaultTrue() async throws {
+    func testWhenHandshakeCalled_andHandshakeDelegateReturnsNil_thenHandshakeUserDataIsDefaultTrue() async throws {
         // Given
-        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        let mockDelegate = MockDelegate()
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: mockDelegate, privacyConfig: PrivacyConfigurationManagingMock())
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = WKScriptMessage.mock()
 
@@ -159,7 +217,9 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         }
         mockVPNBypassService.isSupported = true
 
+        let mockDelegate = MockDelegate()
         let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(),
+                                          handshakeDelegate: mockDelegate,
                                           vpnBypassService: mockVPNBypassService,
                                           privacyConfig: mockPrivacyConfig)
         let scriptMessage = WKScriptMessage.mock()
@@ -177,11 +237,58 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(featureConfig.useUnifiedFeedback, true)
         XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
+
+    @MainActor
+    private func makeViewModel(dataManager: DataBrokerProtectionDataManaging) -> DBPUIViewModel {
+        DBPUIViewModel(dataManager: dataManager,
+                       agentInterface: HandshakeAgentInterface(),
+                       webUISettings: MockWebSettings(),
+                       pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                       privacyConfig: PrivacyConfigurationManagingMock(),
+                       prefs: .mock)
+    }
+
+    @MainActor
+    private func communicationLayer(for model: DBPUIViewModel) throws -> DBPUICommunicationLayer {
+        let configuration = try XCTUnwrap(model.setupCommunicationLayer())
+        let controller = try XCTUnwrap(configuration.userContentController as? DBPUIUserContentController)
+        return controller.dbpUIUserScripts.dbpUICommunicationLayer
+    }
+
+    private func handshake(_ layer: DBPUICommunicationLayer) async throws -> DBPUIHandshakeResponse {
+        let handler = try XCTUnwrap(layer.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue))
+        let result = try await handler(["version": 12], WKScriptMessage.mock())
+        return try XCTUnwrap(result as? DBPUIHandshakeResponse)
+    }
 }
 
 // MARK: - Mock Classes
 
-private final class MockDelegate: DBPUICommunicationDelegate {
+private final class ReloadRecordingWebView: WKWebView {
+    private(set) var reloadCount = 0
+    override var url: URL? { URL(string: "https://duckduckgo.com") }
+
+    override func reload() -> WKNavigation? {
+        reloadCount += 1
+        return nil
+    }
+}
+
+private final class HandshakeAgentInterface: DataBrokerProtectionAppToAgentInterface {
+    func profileSaved() async {}
+    func appLaunched() async {}
+    func openBrowser(domain: String) {}
+    func startImmediateOperations(showWebView: Bool) {}
+    func startScheduledOperations(showWebView: Bool) {}
+    func runAllOptOuts(showWebView: Bool) {}
+    func checkForEmailConfirmationData() async {}
+    func runEmailConfirmationOperations(showWebView: Bool) async {}
+    func getDebugMetadata() async -> DBPBackgroundAgentMetadata? { nil }
+    func startDebugServer() async -> Bool { false }
+    func stopDebugServer() {}
+}
+
+private final class MockDelegate: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     var handshakeUserDataCalled = false
     var handshakeUserDataToReturn: DBPUIHandshakeUserData?
 

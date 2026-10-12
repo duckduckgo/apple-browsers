@@ -808,6 +808,9 @@ private extension UnifiedToggleInputToolbarView {
         // return-key styles have no disabled state of their own.
         if isInputBlockedByUsageLimit || (labelTitle != nil && !isActive) {
             submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+        } else if labelTitle != nil {
+            // An enabled "Ask" is the disclaimer's call to action, so it keeps the primary fill in every style.
+            submitButton.applyPrimaryButtonStyle()
         } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {

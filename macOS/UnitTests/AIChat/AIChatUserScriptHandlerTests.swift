@@ -87,6 +87,15 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
     }
 }
 
+final class MockDuckAIPromptAtbRefresher: DuckAIPromptAtbRefreshing {
+    private(set) var refreshCallCount = 0
+
+    func refreshRetentionAtbOnDuckAiPromptSubmition(completion: @escaping () -> Void) {
+        refreshCallCount += 1
+        completion()
+    }
+}
+
 // swiftlint:disable inclusive_language
 struct AIChatUserScriptHandlerTests {
     private var storage = MockAIChatPreferencesStorage()
@@ -97,7 +106,7 @@ struct AIChatUserScriptHandlerTests {
     private var userScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
     private var syncErrorHandler = SyncErrorHandler(alertPresenter: CapturingAlertPresenter())
     private var handler: AIChatUserScriptHandler
-    private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
+    private var statisticsLoader = MockDuckAIPromptAtbRefresher()
     private var mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
     /// An install that has prompted before, so only the tests about the first prompt see the flag.
     private var featureDiscovery = MockFeatureDiscovery()
@@ -573,8 +582,7 @@ struct AIChatUserScriptHandlerTests {
         ]
 
         for metric in promptMetrics {
-            let statisticsStore = MockStatisticsStore()
-            let loader = StatisticsLoader(statisticsStore: statisticsStore)
+            let loader = MockDuckAIPromptAtbRefresher()
             let testHandler = AIChatUserScriptHandler(
                 storage: storage,
                 messageHandling: messageHandler,
@@ -589,9 +597,9 @@ struct AIChatUserScriptHandlerTests {
             )
 
             await withCheckedContinuation { continuation in
-                testHandler.didReportMetric(.init(metricName: metric)) {
-                    #expect(statisticsStore.searchRetentionRefreshed)
-                    #expect(statisticsStore.duckAIRetentionRefreshed)
+                testHandler.didReportMetric(.init(metricName: metric))
+                DispatchQueue.main.async {
+                    #expect(loader.refreshCallCount == 1)
                     continuation.resume()
                 }
             }
@@ -605,8 +613,7 @@ struct AIChatUserScriptHandlerTests {
         ]
 
         for metric in otherMetrics {
-            let statisticsStore = MockStatisticsStore()
-            let loader = StatisticsLoader(statisticsStore: statisticsStore)
+            let loader = MockDuckAIPromptAtbRefresher()
             let testHandler = AIChatUserScriptHandler(
                 storage: storage,
                 messageHandling: messageHandler,
@@ -621,9 +628,9 @@ struct AIChatUserScriptHandlerTests {
             )
 
             await withCheckedContinuation { continuation in
-                testHandler.didReportMetric(.init(metricName: metric)) {
-                    #expect(!statisticsStore.searchRetentionRefreshed)
-                    #expect(!statisticsStore.duckAIRetentionRefreshed)
+                testHandler.didReportMetric(.init(metricName: metric))
+                DispatchQueue.main.async {
+                    #expect(loader.refreshCallCount == 0)
                     continuation.resume()
                 }
             }
@@ -2308,6 +2315,9 @@ struct AIChatConversationSourcePixelTests {
         "duckduckgo-homepage",
         "duck-ai-link",
         "duckduckgo-link",
+        "session-restore",
+        "reopened-tab",
+        "tab-copy",
         "unattributed"
     ]
 

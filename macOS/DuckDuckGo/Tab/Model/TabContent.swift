@@ -23,6 +23,16 @@ import HistoryView
 import DDGNavigation
 import Subscription
 
+enum DataBrokerProtectionTabContext: Equatable {
+    case subscribed
+    case freemium(FreemiumDBPEntryPoint)
+
+    var freemiumEntryPoint: FreemiumDBPEntryPoint? {
+        guard case let .freemium(entryPoint) = self else { return nil }
+        return entryPoint
+    }
+}
+
 extension Tab {
 
     enum Content: Equatable {
@@ -33,7 +43,7 @@ extension Tab {
         case history(pane: HistoryPaneIdentifier?)
         case onboarding
         case none
-        case dataBrokerProtection
+        case dataBrokerProtection(DataBrokerProtectionTabContext)
         case subscription(URL)
         case identityTheftRestoration(URL)
         case releaseNotes
@@ -172,7 +182,7 @@ extension TabContent {
         case URL.bookmarks, URL.Invalid.aboutBookmarks:
             return .bookmarks
         case URL.dataBrokerProtection:
-            return .dataBrokerProtection
+            return .dataBrokerProtection(.subscribed)
         case URL.releaseNotes:
             return .releaseNotes
         case URL.Invalid.aboutHome:
@@ -393,6 +403,10 @@ extension TabContent {
 
     var isHistory: Bool {
         if case .history = self { true } else { false }
+    }
+
+    var isDataBrokerProtection: Bool {
+        if case .dataBrokerProtection = self { true } else { false }
     }
 
     var isUserRequestedPageDownload: Bool {

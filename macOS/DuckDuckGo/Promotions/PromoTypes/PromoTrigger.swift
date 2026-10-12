@@ -37,6 +37,10 @@ enum PromoTrigger {
     case updateAvailable
     case browserUpdated
     case vpnUpsellBecameEligible
+    case bookmarksPanelOpened
+    case bookmarksManagerOpened
+    case passwordsPanelOpened
+    case autofillSettingsOpened
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -53,7 +57,11 @@ enum PromoTrigger {
                 publisher(for: NSApplication.didBecomeActiveNotification, trigger: .appBecameActive),
                 publisher(for: .updateAvailable, trigger: .updateAvailable),
                 publisher(for: .browserUpdated, trigger: .browserUpdated),
-                publisher(for: .vpnUpsellBecameEligible, trigger: .vpnUpsellBecameEligible)
+                publisher(for: .vpnUpsellBecameEligible, trigger: .vpnUpsellBecameEligible),
+                publisher(for: .bookmarksPanelOpened, trigger: .bookmarksPanelOpened),
+                publisher(for: .bookmarksManagerOpened, trigger: .bookmarksManagerOpened),
+                publisher(for: .passwordsPanelOpened, trigger: .passwordsPanelOpened),
+                publisher(for: .autofillSettingsOpened, trigger: .autofillSettingsOpened)
             ]
 
             if PromoServiceFactory.includeTestPromos {
@@ -82,4 +90,8 @@ extension Notification.Name {
     static let updateAvailable = Notification.Name("com.duckduckgo.app.updateAvailable")
     static let browserUpdated = Notification.Name("com.duckduckgo.app.browserUpdated")
     static let vpnUpsellBecameEligible = Notification.Name("com.duckduckgo.app.vpnUpsellBecameEligible")
+    static let bookmarksPanelOpened = Notification.Name("com.duckduckgo.app.bookmarksPanelOpened")
+    static let bookmarksManagerOpened = Notification.Name("com.duckduckgo.app.bookmarksManagerOpened")
+    static let passwordsPanelOpened = Notification.Name("com.duckduckgo.app.passwordsPanelOpened")
+    static let autofillSettingsOpened = Notification.Name("com.duckduckgo.app.autofillSettingsOpened")
 }

@@ -937,8 +937,8 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
-        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately outside the browser",
-                                                             secondaryText: " • Add Duck.ai to your menu bar",
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately from anywhere",
+                                                             secondaryText: " • Show Duck.ai in the menu bar",
                                                              ctaLabel: "Try Now", dismissible: true)
         configProvider.launcherPromoResult = promo
 

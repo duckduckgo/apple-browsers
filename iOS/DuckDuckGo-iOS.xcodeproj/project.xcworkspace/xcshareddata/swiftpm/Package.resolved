@@ -1,5 +1,5 @@
 {
-  "originHash" : "1b68338ca99cbe85c5ae22479d3e8f9f1bf77e2758687791e9bdce9e3809b796",
+  "originHash" : "39adae593f603cb91ae79541d11d9d39b80a83e17bb20dcfc798b2fc2cdd1f09",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers.git",
       "state" : {
-        "version" : "1.2.2",
-        "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56"
+        "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56",
+        "version" : "1.2.2"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "2c2c7e5d5b6902f989cb418d74b0c4a1540ec601",
-        "version" : "17.20.0"
+        "revision" : "d991a49f92a5f1f20fde55bde5b72f8aaa58e892",
+        "version" : "17.22.0"
       }
     },
     {
@@ -159,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
       "state" : {
-        "version" : "1.1.1",
-        "revision" : "82440fa0a8b1c381a6d1e8e0fc7bbba53ec63204"
+        "revision" : "82440fa0a8b1c381a6d1e8e0fc7bbba53ec63204",
+        "version" : "1.1.1"
       }
     },
     {
@@ -186,8 +186,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
       "state" : {
-        "version" : "1.7.3",
-        "revision" : "4fb9e7cbb4b8f5a7354005db39447f570d6b3e19"
+        "revision" : "4fb9e7cbb4b8f5a7354005db39447f570d6b3e19",
+        "version" : "1.7.3"
       }
     },
     {

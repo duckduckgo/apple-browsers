@@ -37,10 +37,13 @@ extension TextEntryMode {
 /// disclaimer shows, accepts those terms.
 enum TextSubmissionTrigger: String {
     case sendButton
-    /// Return or Paste & Go.
+    /// Return.
     case textEntry
+    case pasteAndGo
     /// A prompt the app sends on the user's behalf, such as a quick action chip.
     case programmatic
+    /// A suggested prompt tapped in the contextual sheet.
+    case suggestedPrompt
 }
 
 // MARK: - SwitchBarHandling Protocol
@@ -90,6 +93,7 @@ protocol SwitchBarHandling: AnyObject {
     // MARK: - Methods
     func updateCurrentText(_ text: String)
     func submitText(_ text: String)
+    func submitText(_ text: String, trigger: TextSubmissionTrigger)
     func setToggleState(_ state: TextEntryMode)
     func saveToggleState()
     func clearText()
@@ -101,6 +105,7 @@ protocol SwitchBarHandling: AnyObject {
 }
 
 extension SwitchBarHandling {
+    func submitText(_ text: String, trigger: TextSubmissionTrigger) { submitText(text) }
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
     var isImageGenerationSelected: Bool { false }

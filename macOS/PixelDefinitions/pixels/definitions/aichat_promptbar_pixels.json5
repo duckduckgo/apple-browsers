@@ -318,5 +318,95 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_promptbar_promo_shown": {
+        "description": "Fired when the Duck.ai launcher promo is revealed: once per New Tab Page load, or once per address bar Duck.ai input opening when no other message holds the card",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Where the launcher promo was shown",
+                "type": "string",
+                "enum": ["new_tab", "address_bar"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_promo_try_now": {
+        "description": "Fired when the user clicks Try Now on the Duck.ai launcher promo, which turns on the Prompt Bar keyboard shortcut and menu bar icon, then opens the Prompt Bar with a message introducing the shortcut (its Settings link opens Duck.ai Settings). Matches the stored tried_now outcome",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Where the launcher promo was shown",
+                "type": "string",
+                "enum": ["new_tab", "address_bar"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_promo_closed": {
+        "description": "Fired when the user closes the Duck.ai launcher promo (×), which then never shows again. Matches the stored closed outcome",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Where the launcher promo was shown",
+                "type": "string",
+                "enum": ["new_tab", "address_bar"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_promo_ignored": {
+        "description": "Fired when the user sends a Duck.ai prompt while the launcher promo is on screen, which then never shows again. Matches the stored ignored outcome",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Where the launcher promo was shown",
+                "type": "string",
+                "enum": ["new_tab", "address_bar"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_first_use_u": {
+        "description": "Fired once per install, the first time the Prompt Bar is presented. Measures launcher activation and attributes it to the launcher promo",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The entry point that presented the Prompt Bar",
+                "type": "string",
+                "enum": ["shortcut", "menu_bar_icon"]
+            },
+            {
+                "key": "promo_outcome",
+                "description": "How the user settled the launcher promo before this first use; none when it was never settled",
+                "type": "string",
+                "enum": ["none", "tried_now", "closed", "ignored"]
+            }
+        ]
     }
 }

@@ -31,6 +31,7 @@ enum PromoTestHelpers {
         coexistingPromoIDs: Set<String> = [],
         respectsGlobalCooldown: Bool = true,
         setsGlobalCooldown: Bool = true,
+        canShowDuringOnboarding: Bool = false,
         delegate: InternalPromoDelegate? = nil
     ) -> Promo {
         InternalPromo(
@@ -42,6 +43,7 @@ enum PromoTestHelpers {
             coexistingPromoIDs: coexistingPromoIDs,
             respectsGlobalCooldown: respectsGlobalCooldown,
             setsGlobalCooldown: setsGlobalCooldown,
+            canShowDuringOnboarding: canShowDuringOnboarding,
             delegate: delegate
         )
     }

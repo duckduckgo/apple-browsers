@@ -32,6 +32,8 @@ public extension Notification.Name {
 }
 
 final class DBPHomeViewController: NSViewController {
+    private(set) var freemiumEntryPoint: FreemiumDBPEntryPoint?
+
     private var presentedWindowController: NSWindowController?
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
     private let vpnBypassService: VPNBypassFeatureProvider
@@ -46,6 +48,7 @@ final class DBPHomeViewController: NSViewController {
         )
     }
     private var currentChildViewController: NSViewController?
+    private var isDBPUIDisplayed = false
     private var observer: NSObjectProtocol?
     private var freemiumDBPFeature: FreemiumDBPFeature
 
@@ -183,6 +186,8 @@ final class DBPHomeViewController: NSViewController {
     }
 
     private func displayDBPUI() {
+        isDBPUIDisplayed = true
+        dataBrokerProtectionViewController.updateFreeScanEntryPoint(freemiumEntryPoint?.rawValue)
         replaceChildController(dataBrokerProtectionViewController)
     }
 
@@ -214,6 +219,14 @@ final class DBPHomeViewController: NSViewController {
         presentedWindowController?.window?.close()
         presentedWindowController = nil
         NotificationCenter.default.post(name: .dbpDidClose, object: nil)
+    }
+
+    func setFreemiumEntryPointIfKnown(_ entryPoint: FreemiumDBPEntryPoint?) {
+        guard let entryPoint else { return }
+        freemiumEntryPoint = entryPoint
+
+        guard isDBPUIDisplayed else { return }
+        dataBrokerProtectionViewController.updateFreeScanEntryPoint(entryPoint.rawValue)
     }
 }
 

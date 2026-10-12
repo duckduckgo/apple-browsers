@@ -176,6 +176,8 @@ public enum SharedDesignSystemColor {
     case surfaceTertiary
 
     // Status
+    case statusWarningContentPrimary
+    case statusWarningFillPrimary
     case statusYellowPrimary
     case statusYellowSecondary
     case statusYellowTertiary

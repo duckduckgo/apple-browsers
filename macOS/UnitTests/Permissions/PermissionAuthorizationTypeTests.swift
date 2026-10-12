@@ -141,9 +141,10 @@ final class PermissionAuthorizationTypeTests: XCTestCase {
         XCTAssertEqual(url?.absoluteString, "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
     }
 
-    func testSystemSettingsURL_NonGeolocation_ReturnsNil() {
-        XCTAssertNil(PermissionAuthorizationType.camera.systemSettingsURL)
-        XCTAssertNil(PermissionAuthorizationType.cameraAndMicrophone.systemSettingsURL)
+    func testSystemSettingsURL_OnlySystemPermissionsHaveURLs() {
+        XCTAssertEqual(PermissionAuthorizationType.camera.systemSettingsURL?.absoluteString,
+                       "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")
+        XCTAssertEqual(PermissionAuthorizationType.cameraAndMicrophone.systemSettingsURL, PermissionAuthorizationType.camera.systemSettingsURL)
         XCTAssertNil(PermissionAuthorizationType.popups.systemSettingsURL)
         XCTAssertNil(PermissionAuthorizationType.externalScheme(scheme: "zoom").systemSettingsURL)
     }

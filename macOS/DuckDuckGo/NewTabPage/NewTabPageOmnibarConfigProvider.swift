@@ -516,21 +516,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     @MainActor
-    func launcherPromoShown() {}
+    func launcherPromoShown() {
+        duckAiLauncherPromo?.shown(on: .newTab)
+    }
 
     @MainActor
     func selectLauncherPromoCta() {
-        duckAiLauncherPromo?.tryNow()
+        duckAiLauncherPromo?.tryNow(on: .newTab)
     }
 
     @MainActor
     func dismissLauncherPromo() {
-        duckAiLauncherPromo?.dismiss()
+        duckAiLauncherPromo?.dismiss(on: .newTab)
     }
 
     @MainActor
     func launcherPromoIgnored() {
-        duckAiLauncherPromo?.ignore()
+        duckAiLauncherPromo?.ignore(on: .newTab)
     }
 
     var launcherPromoPublisher: AnyPublisher<Void, Never> {

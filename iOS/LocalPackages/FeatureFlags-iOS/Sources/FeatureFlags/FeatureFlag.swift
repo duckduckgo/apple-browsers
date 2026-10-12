@@ -200,6 +200,10 @@ public enum FeatureFlag: String {
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
 
+    /// Control daily Duo counts for app improvements, with randomized timestamps for privacy.
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
+    case iPhoneDuoLaunchReporting
+
     /// Local inactivity provisional notifications delivered to Notification Center.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471590692
     case inactivityNotification
@@ -544,6 +548,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115676?focus=true
     case syncCanUseExchangeV2Point1
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115688?focus=true
+    case syncCanSendExchangeChannelSecret
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
     case syncCanWriteUnifiedDeviceList
 
@@ -760,6 +767,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
         case .widgetReporting:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
+        case .iPhoneDuoLaunchReporting:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.iPhoneDuoLaunchReporting))
         case .inactivityNotification:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -980,6 +989,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .syncCanUseExchangeV2Point1:
             Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1))
+        case .syncCanSendExchangeChannelSecret:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret))
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
         case .syncCanUsePatchEndpointForLegacyDeviceRename:

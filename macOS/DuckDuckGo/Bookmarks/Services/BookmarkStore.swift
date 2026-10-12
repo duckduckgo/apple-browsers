@@ -59,6 +59,8 @@ protocol BookmarkStore {
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void)
     func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int?) -> BookmarksImportSummary
     func handleFavoritesAfterDisablingSync()
+    /// Reads the persistent store synchronously, so it's correct before the bookmark list has loaded and safe to call off the main thread.
+    func bookmarksCount() -> Int
 }
 extension BookmarkStore {
 

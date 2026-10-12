@@ -19,10 +19,18 @@
 import Foundation
 import Freemium
 
+enum FreemiumDBPEntryPoint: String, Equatable {
+    case freeScanBanner = "freescanbanner"
+    case viewResultsBanner = "viewresultsbanner"
+    case appMenuPreScan = "appmenuprescan"
+    case appMenuPostScan = "appmenupostscan"
+}
+
 /// Conforming types provide functionality to show Freemium DBP
 protocol FreemiumDBPPresenter {
     @MainActor
-    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol?)
+    func showFreemiumDBPAndSetActivated(entryPoint: FreemiumDBPEntryPoint,
+                                        windowControllersManager: WindowControllersManagerProtocol?)
 }
 
 /// Default implementation of `FreemiumDBPPresenter`
@@ -36,10 +44,11 @@ final class DefaultFreemiumDBPPresenter: FreemiumDBPPresenter {
 
     @MainActor
     /// Displays Freemium DBP
-    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(entryPoint: FreemiumDBPEntryPoint,
+                                        windowControllersManager: WindowControllersManagerProtocol? = nil) {
 
         let windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         freemiumDBPStateManager.didActivate = true
-        windowControllersManager.showTab(with: .dataBrokerProtection)
+        windowControllersManager.showTab(with: .dataBrokerProtection(.freemium(entryPoint)))
     }
 }

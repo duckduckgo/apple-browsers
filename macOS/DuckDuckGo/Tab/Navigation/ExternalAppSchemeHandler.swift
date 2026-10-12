@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import DDGNavigation
 import WebKit
@@ -24,6 +25,7 @@ import WebKit
 protocol PermissionModelProtocol {
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL?, decisionHandler: @escaping (Bool) -> Void)
     func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool
+    func permissionDomain(for origin: SecurityOrigin) -> String
 }
 extension PermissionModel: PermissionModelProtocol {}
 
@@ -115,9 +117,7 @@ extension ExternalAppSchemeHandler: NavigationResponder {
         }
 
         let permissionType = PermissionType.externalScheme(scheme: scheme)
-        // Check for cross-origin redirects first, then use domain from the url for user-entered app schemes, then use current website domain
-        let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host
-        let domain = redirectDomain ?? (navigationAction.isUserEnteredUrl ? navigationAction.url.host ?? "" : navigationAction.sourceFrame.securityOrigin.host)
+        let domain = permissionDomain(for: navigationAction)
         permissionModel.permissions([permissionType], requestedForDomain: domain, url: externalUrl) { [workspace] isGranted in
             if isGranted {
                 workspace.open(externalUrl)
@@ -128,6 +128,22 @@ extension ExternalAppSchemeHandler: NavigationResponder {
             }
         }
         return .cancel
+    }
+
+    /// The website the app link's permission is saved for.
+    private func permissionDomain(for navigationAction: NavigationAction) -> String {
+        let redirectDomain = navigationAction.redirectHistory?.reversed().first(where: { $0.url.host != navigationAction.url.host })?.url.host
+
+        return if let redirectDomain {
+            // Cross-origin redirect: the website that redirected to the app
+            redirectDomain
+        } else if navigationAction.isUserEnteredUrl {
+            // Typed in the address bar: the app link's own host, if any
+            navigationAction.url.host ?? ""
+        } else {
+            // Link on a page: the website it was clicked on
+            permissionModel.permissionDomain(for: navigationAction.sourceFrame.securityOrigin)
+        }
     }
 
     func navigationDidFinish(_ navigation: Navigation) {

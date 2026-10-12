@@ -608,7 +608,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case .dataBrokerProtection:
             PixelKit.fire(SubscriptionPixel.subscriptionWelcomePersonalInformationRemoval, frequency: .uniqueByName)
             notificationCenter.post(name: .openPersonalInformationRemoval, object: self, userInfo: nil)
-            await uiHandler.showTab(with: .dataBrokerProtection)
+            await uiHandler.showTab(with: .dataBrokerProtection(.subscribed))
         case .identityTheftRestoration, .identityTheftRestorationGlobal:
             PixelKit.fire(SubscriptionPixel.subscriptionWelcomeIdentityRestoration, frequency: .uniqueByName)
             let url = subscriptionManager.url(for: .identityTheftRestoration)

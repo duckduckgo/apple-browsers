@@ -172,6 +172,7 @@ extension TabViewController {
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()
+        configuration.websiteDataStore = webView.configuration.websiteDataStore
         tabController.attachWebView(configuration: configuration, andLoadRequest: URLRequest.userInitiated(url), consumeCookies: false)
         tabController.loadViewIfNeeded()
         return tabController

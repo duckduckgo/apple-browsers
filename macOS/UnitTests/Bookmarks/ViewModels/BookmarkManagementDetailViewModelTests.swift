@@ -655,6 +655,69 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         )
     }
 
+    // MARK: - Sync promo trigger
+
+    func testWhenViewAppearsBeforeBookmarksLoadThenTriggerIsPostedOnceTheyLoad() {
+        let bookmarkManager = MockBookmarkManager()
+        let viewController = makeViewController(bookmarkManager: bookmarkManager)
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        XCTAssertEqual(triggerCounter.count, 0)
+
+        bookmarkManager.list = BookmarkList(entities: [], topLevelEntities: [], favorites: [])
+        bookmarkManager.list = BookmarkList(entities: [], topLevelEntities: [], favorites: [])
+        XCTAssertEqual(triggerCounter.count, 1)
+    }
+
+    func testWhenViewAppearsInAFolderThenTriggerIsPostedOnReturningToTheTopLevel() {
+        let folder = BookmarkFolder(id: "1", title: "Folder")
+        let bookmarkManager = createBookmarkManager(with: [folder])
+        let viewController = makeViewController(bookmarkManager: bookmarkManager)
+        viewController.update(selectionState: .folder(folder))
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        XCTAssertEqual(triggerCounter.count, 0)
+
+        viewController.update(selectionState: .empty)
+        viewController.update(selectionState: .folder(folder))
+        viewController.update(selectionState: .empty)
+        XCTAssertEqual(triggerCounter.count, 1)
+    }
+
+    func testWhenViewDisappearsBeforeBookmarksLoadThenTriggerIsNotPosted() {
+        let bookmarkManager = MockBookmarkManager()
+        let viewController = makeViewController(bookmarkManager: bookmarkManager)
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        viewController.viewWillDisappear()
+        bookmarkManager.list = BookmarkList(entities: [], topLevelEntities: [], favorites: [])
+
+        XCTAssertEqual(triggerCounter.count, 0)
+    }
+
+    func testWhenViewAppearsAgainThenTriggerIsPostedAgain() {
+        let viewController = makeViewController(bookmarkManager: createBookmarkManager(with: []))
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        viewController.viewWillDisappear()
+        viewController.viewDidAppear()
+
+        XCTAssertEqual(triggerCounter.count, 2)
+    }
+
+    private func makeViewController(bookmarkManager: MockBookmarkManager) -> BookmarkManagementDetailViewController {
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager,
+                                                                    dragDropManager: BookmarkDragDropManager(bookmarkManager: bookmarkManager),
+                                                                    pinningManager: MockPinningManager(),
+                                                                    syncPromoManager: SyncPromoManager.makeForTesting(content: .bookmarks))
+        _ = viewController.view
+        return viewController
+    }
+
     private func createBookmarkManager(with bookmarks: [BaseBookmarkEntity], favorites: [BaseBookmarkEntity] = []) -> MockBookmarkManager {
         let bookmarkManager = MockBookmarkManager()
         bookmarkManager.list = BookmarkList(entities: bookmarks, topLevelEntities: bookmarks, favorites: favorites)
@@ -739,5 +802,20 @@ private extension BookmarkManagementDetailViewModel {
             featureFlagger: MockFeatureFlagger(),
             mode: mode
         )
+    }
+}
+
+private final class SyncPromoTriggerCounter {
+    private(set) var count = 0
+    private var observer: NSObjectProtocol?
+
+    init() {
+        observer = NotificationCenter.default.addObserver(forName: .bookmarksManagerOpened, object: nil, queue: nil) { [weak self] _ in
+            self?.count += 1
+        }
+    }
+
+    deinit {
+        observer.map(NotificationCenter.default.removeObserver)
     }
 }

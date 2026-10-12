@@ -29,6 +29,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case widgetReporting
 
+    /// Remotely control daily Duo usage reporting with delayed sending and randomized timestamps.
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
+    case iPhoneDuoLaunchReporting
+
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification

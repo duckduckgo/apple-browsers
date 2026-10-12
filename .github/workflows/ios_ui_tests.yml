@@ -361,6 +361,17 @@ jobs:
           exit 1
         fi
 
+    - name: Report every failed test attempt
+      if: always()
+      working-directory: ${{ github.workspace }}
+      env:
+        MATRIX: ${{ needs.setup-tests.outputs.include }}
+        RUN_PRODUCTION: ${{ needs.setup-tests.outputs.run-production }}
+        RUN_INTERNAL: ${{ needs.setup-tests.outputs.run-internal }}
+        RUN_ID: ${{ github.run_id }}
+      run: |
+        python3 scripts/render-ios-ui-test-attempts.py
+
     - name: Publish tests report
       uses: mikepenz/action-junit-report@v6
       if: always()

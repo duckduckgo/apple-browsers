@@ -151,12 +151,18 @@ jobs:
 
     - name: Prepare test report
       if: always() && steps.checkout.outcome == 'success'
+      env:
+        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
       run: |
         file="${TEST_CLASS}-${DEVICE}-${USER_MODE}.xml"
         invalid="reports/${file%.xml}.invalid"
-        test_id="$TEST_CLASS ($DEVICE_NAME, iOS $IOS_VERSION, $USER_MODE)"
+        selected_ios_version="${DESTINATION##*,OS=}"
+        test_id="$TEST_CLASS ($DEVICE_NAME, iOS $selected_ios_version, $USER_MODE)"
         mkdir -p reports
         touch "$invalid"
+        jq -n --argjson workflow_attempt "$GITHUB_RUN_ATTEMPT" \
+          '{workflow_attempt: $workflow_attempt}' \
+          > "reports/${file%.xml}.meta.json"
 
         if [[ ! -s ui-tests.log ]]; then
           echo "::error::UI test log is missing or empty."
@@ -187,7 +193,7 @@ jobs:
         name: "ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}"
         path: "iOS/reports/*"
         if-no-files-found: error
-        retention-days: 1
+        retention-days: 3
 
     - name: Upload test logs
       if: always()

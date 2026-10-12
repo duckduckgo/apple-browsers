@@ -281,7 +281,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
-    func testFoldedTabRevealsBeforeSelectionAndRequiresSecondTapWhenHalfCovered() async throws {
+    func testFoldedTabSelectsImmediatelyWhileRevealingAndRequiresSecondTapWhenHalfCovered() async throws {
         for width in [CGFloat(1024), 300] {
             let (controller, model) = makeOverflowingController()
             controller.view.frame.size.width = width
@@ -291,7 +291,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
             let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
             let current = IndexPath(item: 8, section: 0)
             let target = IndexPath(item: 7, section: 0)
-            let selectedTab = model.currentTab
+            let selectedTab = try XCTUnwrap(model.currentTab)
             let originalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: current))
             let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
             let peek = min(originalFrame.width / 2, (viewportWidth - originalFrame.width) / 2)
@@ -302,18 +302,20 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
                 collectionView.layoutIfNeeded()
                 let cell = try XCTUnwrap(collectionView.cellForItem(at: target) as? TabsBarCell)
                 XCTAssertGreaterThan(cell.visiblePointerRect(in: cell.contentView).width, cell.bounds.width / 2)
-                let selectsImmediately = controller.collectionView(collectionView, shouldSelectItemAt: target)
-                if UIAccessibility.isReduceMotionEnabled {
-                    XCTAssertTrue(selectsImmediately)
-                } else {
-                    XCTAssertFalse(selectsImmediately)
-                    let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                        collectionView.indexPathsForSelectedItems?.contains(target) == true
-                    }, object: nil)
-                    await fulfillment(of: [selected], timeout: 1)
+                let delegate = TabsBarSelectionDelegate()
+                defer { withExtendedLifetime(delegate) {} }
+                delegate.onSelect = { controller, index in
+                    XCTAssertEqual(UIView.inheritedAnimationDuration, 0, "Page switching must stay outside the strip animation")
+                    if let tab = model.get(tabAt: index) { model.select(tab: tab) }
+                    controller.refreshStyleInPlace(tabsModel: model, scrollToSelected: true)
                 }
+                controller.delegate = delegate
+                XCTAssertTrue(controller.collectionView(collectionView, shouldSelectItemAt: target))
+                controller.collectionView(collectionView, didSelectItemAt: target)
+                XCTAssertIdentical(model.currentTab, model.get(tabAt: target.item), "Selection must not wait for the reveal to finish")
                 XCTAssertEqual(cell.visiblePointerRect(in: cell).width, cell.bounds.width, accuracy: 0.001)
-                collectionView.deselectItem(at: target, animated: false)
+                model.select(tab: selectedTab)
+                controller.refreshStyleInPlace(tabsModel: model)
             } else {
                 XCTAssertLessThan(viewportWidth, originalFrame.width * 2)
             }
@@ -439,6 +441,25 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         controller.collectionView.layoutIfNeeded()
         return (controller, model)
     }
+}
+
+@MainActor
+private final class TabsBarSelectionDelegate: NSObject, TabsBarDelegate {
+    var onSelect: ((TabsBarViewController, Int) -> Void)?
+    func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int) { onSelect?(controller, index) }
+    func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {}
+    func tabsBar(_ controller: TabsBarViewController, didRequestCloseOtherTabsForTabAtIndex index: Int) {}
+    func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest) {}
+    func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController) {}
+    func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) { completion() }
 }
 
 @MainActor

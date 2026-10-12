@@ -91,10 +91,8 @@ class TabsBarViewController: UIViewController {
     private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
-    private var tabSelectionRequestID = UUID()
-    private weak var tabAwaitingSelection: Tab? {
-        didSet { tabSelectionRequestID = UUID() }
-    }
+    private weak var tabAwaitingSelection: Tab?
+    private var animatesSelectionReveal = false
     private weak var hoveredTabCell: TabsBarCell?
     private var hoveredTabFrame = CGRect.zero
     private var hoverPreviewTask: Task<Void, Never>?
@@ -444,9 +442,19 @@ class TabsBarViewController: UIViewController {
             return
         }
         self.tabsModel = tabsModel
-        refreshVisibleCellStyles()
+        if animatesSelectionReveal, let currentIndex {
+            // The page has already switched; animate only the strip's new selection and reveal.
+            UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.18,
+                           delay: 0, options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction]) {
+                self.refreshVisibleCellStyles()
+                if scrollToSelected { self.scrollToTab(at: IndexPath(item: currentIndex, section: 0), animated: false) }
+                self.collectionView.layoutIfNeeded()
+            }
+        } else {
+            refreshVisibleCellStyles()
+            if scrollToSelected { scrollToSelectedTab() }
+        }
         refreshTabSwitcherButton()
-        if scrollToSelected { scrollToSelectedTab() }
     }
 
     /// Deletes one cell instead of reloading, so surviving cells keep their pointer state. Must run
@@ -861,6 +869,11 @@ extension TabsBarViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         tabAwaitingSelection = nil
         dismissTabHoverPreview()
+        if indexPath.item != currentIndex, let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell {
+            let exposedWidth = cell.visiblePointerRect(in: cell).width
+            animatesSelectionReveal = exposedWidth > cell.bounds.width / 2 + 0.001 && exposedWidth < cell.bounds.width - 0.001
+        }
+        defer { animatesSelectionReveal = false }
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
@@ -872,31 +885,12 @@ extension TabsBarViewController: UICollectionViewDelegate {
         guard tab != tabsModel?.currentTab, !wasRevealed,
               let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell,
               cell.bounds.width > 0,
-              cell.visiblePointerRect(in: cell).width < cell.bounds.width - 0.001 else { return true }
+              cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001 else { return true }
 
+        // A second tap can select even when a narrow window cannot expose the entire tab.
         tabAwaitingSelection = tab
         dismissTabHoverPreview()
-        if cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001 {
-            // A second tap can select even when a narrow window cannot expose the entire tab.
-            scrollToTab(at: indexPath)
-        } else if UIAccessibility.isReduceMotionEnabled {
-            scrollToTab(at: indexPath, animated: false)
-            tabAwaitingSelection = nil
-            return true
-        } else {
-            // Unfold before changing the pinned tab, so selection cannot jump its frame.
-            let requestID = tabSelectionRequestID
-            UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction]) {
-                self.scrollToTab(at: indexPath, animated: false)
-                collectionView.layoutIfNeeded()
-            } completion: { [weak self] finished in
-                guard finished, let self, self.tabSelectionRequestID == requestID, self.tabAwaitingSelection === tab,
-                      let index = self.tabsModel?.indexOf(tab: tab) else { return }
-                let revealed = IndexPath(item: index, section: 0)
-                collectionView.selectItem(at: revealed, animated: false, scrollPosition: [])
-                self.collectionView(collectionView, didSelectItemAt: revealed)
-            }
-        }
+        scrollToTab(at: indexPath)
         return false
     }
 

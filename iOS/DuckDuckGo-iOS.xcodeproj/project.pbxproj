@@ -300,6 +300,7 @@
 		78BBBA6B2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78BBBA6A2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift */; };
 		7A0308260000000000000004 /* TabTerminationTelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */; };
 		7A0308270000000000000004 /* TabTerminationErrorPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */; };
+		D2C56BB9A2AB0D300751349B /* PageSignalsEventMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB46F27AC92CF8DCDFF66EC /* PageSignalsEventMapperTests.swift */; };
 		7A11B0C0D0E0F00102030407 /* IPadOmnibarToolPickerControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11B0C0D0E0F00102030408 /* IPadOmnibarToolPickerControllerTests.swift */; };
 		7A1B2C3D2E0000000000F001 /* TabsBarViewControllerSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D2E0000000000F002 /* TabsBarViewControllerSizingTests.swift */; };
 		7B020B9A2D11F99D00876178 /* FavoritesDisplayMode+UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373608912ABB430D00629E7F /* FavoritesDisplayMode+UserDefaults.swift */; };
@@ -1951,6 +1952,7 @@
 		79F38CB257BE94EF3752259B /* SyncSuccessViewTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSuccessViewTests.swift; sourceTree = "<group>"; };
 		7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationTelemetryTests.swift; sourceTree = "<group>"; };
 		7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationErrorPageTests.swift; sourceTree = "<group>"; };
+		9FB46F27AC92CF8DCDFF66EC /* PageSignalsEventMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSignalsEventMapperTests.swift; sourceTree = "<group>"; };
 		7A11B0C0D0E0F00102030408 /* IPadOmnibarToolPickerControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarToolPickerControllerTests.swift; sourceTree = "<group>"; };
 		7A1B2C3D2E0000000000F002 /* TabsBarViewControllerSizingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsBarViewControllerSizingTests.swift; sourceTree = "<group>"; };
 		7B10FF232D11A56300F36BF2 /* ControlWidgetVPNIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlWidgetVPNIntents.swift; sourceTree = "<group>"; };
@@ -6534,6 +6536,7 @@
 				8581F4D22D8AE04700D93DA6 /* TabManagerTests.swift */,
 				C84EFBF9259C5F5039CDEFD1 /* TabNavigationDecisionTests.swift */,
 				7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */,
+				9FB46F27AC92CF8DCDFF66EC /* PageSignalsEventMapperTests.swift */,
 				7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */,
 				6F1422832D314DC900B6D3DE /* TabInteractionStateDiskSourceTests.swift */,
 				6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */,
@@ -8413,6 +8416,7 @@
 				8581F4D32D8AE04B00D93DA6 /* TabManagerTests.swift in Sources */,
 				5A73728465C83D08A704739C /* TabNavigationDecisionTests.swift in Sources */,
 				7A0308270000000000000004 /* TabTerminationErrorPageTests.swift in Sources */,
+				D2C56BB9A2AB0D300751349B /* PageSignalsEventMapperTests.swift in Sources */,
 				7A0308260000000000000004 /* TabTerminationTelemetryTests.swift in Sources */,
 				987130C4294AAB9F00AB05E0 /* FavoriteListViewModelTests.swift in Sources */,
 				CB3B4D542D648C44006DAD63 /* AuthenticationServiceTests.swift in Sources */,

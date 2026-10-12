@@ -53,6 +53,7 @@ final class TabFlareBackgroundController {
     }
 
     private var isReordering = false
+    private weak var reorderingCurrentCell: UICollectionViewCell?
     private var reorderTrackingDisplayLink: CADisplayLink?
     private var lastContentOffset: CGPoint?
     private var onReorderTick: ((TimeInterval) -> Void)?
@@ -88,13 +89,14 @@ final class TabFlareBackgroundController {
         // The display link owns the frame during a reorder.
         guard !isReordering else { return }
         guard let collectionView,
-              let index = currentIndex(),
-              let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
-              let restingFrame = layout.frameForCurrentTabAtRest() else {
+              let index = currentIndex() else {
             stopEdgeBounce()
             view.isHidden = true
             return
         }
+        // Reordering can temporarily remove layout attributes without removing the selected tab.
+        guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+              let restingFrame = layout.frameForCurrentTabAtRest() else { return }
         updateDragOffset(index: index, frame: restingFrame)
         guard let attributes = layout.layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else { return }
         updateFrame(attributes.frame, animated: animated)
@@ -211,6 +213,7 @@ final class TabFlareBackgroundController {
 
     func beginReorder(onTick: ((TimeInterval) -> Void)? = nil) {
         cancelScrolling()
+        reorderingCurrentCell = currentIndex().flatMap { collectionView?.cellForItem(at: IndexPath(item: $0, section: 0)) }
         // A long-press preview can convert into a drag without firing its dismiss callback.
         previewedTabIndex = nil
         isReordering = true
@@ -223,6 +226,8 @@ final class TabFlareBackgroundController {
         stopReorderTracking()
         onReorderTick = nil
         isReordering = false
+        reorderingCurrentCell = nil
+        collectionView?.layoutIfNeeded()
         update(animated: true)
     }
 
@@ -259,8 +264,8 @@ final class TabFlareBackgroundController {
             return
         }
         onReorderTick?(elapsedTime)
-        guard let index = currentIndex(),
-              let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
+        // Model indices change before UIKit finishes moving the cells.
+        guard let cell = reorderingCurrentCell else { return }
         updateFrame(cell.frame, animated: true)
     }
 

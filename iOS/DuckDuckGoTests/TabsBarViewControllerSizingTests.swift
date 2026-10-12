@@ -213,28 +213,42 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
-    func testDroppingInactiveTabRevealsItWithoutChangingSelection() async throws {
+    func testDroppingInactiveTabRevealsItAndKeepsTheSelectionVisible() async throws {
         let (controller, model) = makeOverflowingController()
         let collectionView = controller.collectionView
         collectionView.contentOffset.x = 400
         collectionView.layoutIfNeeded()
         let source = IndexPath(item: 4, section: 0)
-        let destination = IndexPath(item: 2, section: 0)
+        let destination = IndexPath(item: 10, section: 0)
         let movedTab = try XCTUnwrap(model.get(tabAt: source.item))
         let selectedTab = model.currentTab
         let session = TabsDragDropSession(locationView: collectionView, point: CGPoint(x: 500, y: 20))
         let drop = TabsDrop(source: source, destination: destination, session: session)
+        let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
         let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
         let revealFrame = try XCTUnwrap(layout.frameForRevealingItem(at: destination))
         let revealed = keyValueObservingExpectation(for: collectionView, keyPath: "contentOffset") { _, _ in
             collectionView.bounds.inset(by: collectionView.adjustedContentInset).contains(revealFrame)
         }
 
+        session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
+        XCTAssertEqual(session.items.count, 1)
+        controller.collectionView(collectionView, dragSessionWillBegin: session)
+        XCTAssertFalse(background.isHidden)
+        XCTAssertEqual(background.alpha, 1)
         controller.collectionView(collectionView, performDropWith: drop)
+        controller.collectionView(collectionView, dragSessionDidEnd: session)
+        XCTAssertFalse(background.isHidden)
+        XCTAssertEqual(background.alpha, 1)
+        let currentIndex = try XCTUnwrap(model.currentIndex)
+        let current = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: currentIndex, section: 0)))
+        XCTAssertEqual(background.frame, current.frame.insetBy(dx: -TabsBarViewController.Constants.tabRampSize.width, dy: 0))
 
         await fulfillment(of: [revealed], timeout: 2)
         XCTAssertIdentical(model.currentTab, selectedTab)
         XCTAssertIdentical(model.get(tabAt: destination.item), movedTab)
+        XCTAssertFalse(background.isHidden)
+        XCTAssertEqual(background.alpha, 1)
     }
 
     @MainActor

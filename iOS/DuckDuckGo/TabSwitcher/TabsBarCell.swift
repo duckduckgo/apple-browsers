@@ -84,6 +84,8 @@ class TabsBarCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         isPointerHovering = false
+        pointerHighlightView.layer.removeAllAnimations()
+        pointerHighlightView.alpha = 0
         isCurrent = false
         layer.removeAnimation(forKey: "edgeBounce")
         setDragPlaceholderHidden(false, animated: false)
@@ -130,6 +132,8 @@ class TabsBarCell: UICollectionViewCell {
         contentView.layer.cornerCurve = .circular
         pointerHighlightView.translatesAutoresizingMaskIntoConstraints = false
         pointerHighlightView.isUserInteractionEnabled = false
+        pointerHighlightView.backgroundColor = .tertiarySystemFill
+        pointerHighlightView.alpha = 0
 
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -227,12 +231,19 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
-        let hovering = (recognizer.state == .began || recognizer.state == .changed)
-            && visiblePointerRect(in: contentView).contains(recognizer.location(in: contentView))
+        let isHovering = recognizer.state == .began || recognizer.state == .changed
+        updatePointerHover(at: isHovering ? recognizer.location(in: contentView) : nil)
+    }
+
+    func updatePointerHover(at point: CGPoint?) {
+        let hovering = point.map { visiblePointerRect(in: contentView).contains($0) } ?? false
         guard hovering != isPointerHovering else { return }
         isPointerHovering = hovering
         updateCloseButtonVisibility()
-        UIView.animate(withDuration: 0.15) { self.contentView.layoutIfNeeded() }
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.pointerHighlightView.alpha = hovering ? 1 : 0
+            self.contentView.layoutIfNeeded()
+        }
     }
     
     override func layoutSubviews() {
@@ -427,17 +438,17 @@ extension TabsBarCell: UIPointerInteractionDelegate {
     }
 
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
-        guard let view = interaction.view else { return nil }
-        return pointerStyle(for: view)
+        // Render the highlight in the cell so UIKit never lifts a stale snapshot over its content.
+        return .system()
     }
 
     private func pointerStyle(for view: UIView) -> UIPointerStyle? {
         let rect = visiblePointerRect(in: view)
         guard !rect.isEmpty else { return nil }
         let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
         parameters.visiblePath = UIBezierPath(roundedRect: rect, cornerRadius: Self.cornerRadius)
-        // UIKit can reposition the hover preview during reveal scrolling; keep tab content out of it.
-        let preview = UITargetedPreview(view: view === contentView ? pointerHighlightView : view, parameters: parameters)
+        let preview = UITargetedPreview(view: view, parameters: parameters)
         return .init(effect: .hover(preview, prefersScaledContent: false))
     }
 

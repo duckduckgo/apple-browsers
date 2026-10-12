@@ -328,7 +328,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertTrue(cell.removeButton.isHidden)
     }
 
-    func testPointerPreviewClipsCoveredTabsAndExcludesTabContent() throws {
+    func testHoverHighlightExpandsWithRevealedTabWithoutLiftingContent() throws {
         let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 0)
         let window = UIWindow(frame: collectionView.frame)
         window.addSubview(collectionView)
@@ -338,17 +338,27 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
             let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? TabsBarCell)
             cell.layoutIfNeeded()
             XCTAssertEqual(cell.visiblePointerRect(in: cell.contentView), exposedRect)
+            let highlight = try XCTUnwrap(cell.contentView.subviews.first)
+            cell.updatePointerHover(at: CGPoint(x: exposedRect.midX, y: exposedRect.midY))
+            XCTAssertEqual(highlight.alpha, exposedRect.isEmpty ? 0 : 1)
+            XCTAssertEqual(highlight.frame, cell.contentView.bounds)
+            XCTAssertTrue(highlight.subviews.isEmpty, "Hover stays behind the title and favicon")
             let pointer = try XCTUnwrap(cell.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
             let style = cell.pointerInteraction(pointer, styleFor: UIPointerRegion(rect: cell.contentView.bounds))
-            if exposedRect.isEmpty {
-                XCTAssertNil(style)
-            } else if #available(iOS 17, *) {
-                let effect = try XCTUnwrap(style?.__effect as? __UIPointerHoverEffect)
-                XCTAssertEqual(effect.preview.parameters.visiblePath?.bounds, exposedRect)
-                XCTAssertIdentical(effect.preview.view.superview, cell.contentView)
-                XCTAssertTrue(effect.preview.view.subviews.isEmpty, "Hover must not independently render the title or favicon")
+            if #available(iOS 17, *) {
+                XCTAssertNil(style?.__effect, "A lifted hover snapshot can blank the live tab during selection or dragging")
             }
         }
+
+        let revealed = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)) as? TabsBarCell)
+        let highlight = try XCTUnwrap(revealed.contentView.subviews.first)
+        collectionView.contentOffset.x = 200
+        collectionView.layoutIfNeeded()
+        XCTAssertEqual(revealed.visiblePointerRect(in: revealed.contentView), revealed.contentView.bounds)
+        XCTAssertEqual(highlight.frame, revealed.contentView.bounds)
+        XCTAssertEqual(highlight.alpha, 1, "Revealing under a stationary pointer keeps the whole exposed tab highlighted")
+        revealed.updatePointerHover(at: nil)
+        XCTAssertEqual(highlight.alpha, 0)
     }
 
     func testRevealingEdgeTabExposesItAndANeighborWithOrWithoutPinnedSelection() throws {

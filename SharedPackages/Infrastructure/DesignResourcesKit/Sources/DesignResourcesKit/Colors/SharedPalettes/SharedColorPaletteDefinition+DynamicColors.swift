@@ -286,6 +286,10 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Status
+        case .statusWarningContentPrimary:
+            return statusWarningContentPrimary
+        case .statusWarningFillPrimary:
+            return statusWarningFillPrimary
         case .statusYellowPrimary:
             return statusYellowPrimary
         case .statusYellowSecondary:

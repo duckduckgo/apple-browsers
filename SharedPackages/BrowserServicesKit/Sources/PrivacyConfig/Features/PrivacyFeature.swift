@@ -678,6 +678,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
     case canUseExchangeV2Point1
+    case canSendExchangeChannelSecret
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
@@ -842,7 +843,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

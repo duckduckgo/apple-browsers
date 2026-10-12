@@ -65,6 +65,17 @@ struct DebugScreensView: View {
                     .foregroundStyle(.secondary)
                 }
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                Section(header: Text(verbatim: "Device")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(verbatim: "Hardware model")
+                        // Check device matching locally without uploading the raw model value.
+                        Text(verbatim: HardwareModel.model ?? "Unavailable")
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+
                 DebugTogglesView(model: model)
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 

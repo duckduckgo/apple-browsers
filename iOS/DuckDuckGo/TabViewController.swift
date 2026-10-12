@@ -124,12 +124,18 @@ enum WebViewScrollViewInsetUpdater {
             && scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
     }
 
-    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, animated: Bool = false) {
+    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, isFloatingUIEnabled: Bool = false, animated: Bool = false) {
         if scrollView.contentInset != insets {
-            let isPinnedToTop = scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+            let isPinnedToTop = isFloatingUIEnabled
+                ? scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
+                : scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
             scrollView.contentInset = insets
             if isPinnedToTop {
-                scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
+                if isFloatingUIEnabled {
+                    scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
+                } else {
+                    scrollView.contentOffset.y = -insets.top
+                }
             }
         }
 
@@ -823,6 +829,7 @@ class TabViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
+    private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -1204,7 +1211,7 @@ class TabViewController: UIViewController {
     }
 
     func applyDeferredFloatingUIInsetsIfNeeded() {
-        guard hasDeferredFloatingUIInsets, let webView,
+        guard floatingUIManager.isFloatingUIEnabled, hasDeferredFloatingUIInsets, let webView,
               !WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) else { return }
         applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent)
     }
@@ -1330,7 +1337,8 @@ class TabViewController: UIViewController {
         // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
         hasDeferredFloatingUIInsets = false
         if shouldUpdateScrollInsets {
-            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets, animated: animateTopAlignment)
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
+                                               isFloatingUIEnabled: true, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
             // Keep WebKit's viewport stable too. Changing it on every display-link tick can
             // relayout page-fixed content while the glass is morphing over a full-bleed web view.
@@ -2503,7 +2511,8 @@ class TabViewController: UIViewController {
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                                      cpmExtensionLoaded: cpmExtensionLoaded,
-                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks)
+                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks,
+                                                                     pageSignals: pageSignalsMonitor.pageSignals)
     }
 
     public func print() {
@@ -2889,6 +2898,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
@@ -3373,6 +3383,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        terminationReloadMonitor.didFail(with: error)
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3427,6 +3438,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        terminationReloadMonitor.didFail(with: error)
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -4669,6 +4681,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        // Before the delegate call below, which can start the next termination reload.
+        terminationReloadMonitor.didTerminate()
+
         if webView === self.webView {
             cancelWebExtensionNavigationWait()
         }
@@ -4702,6 +4717,18 @@ extension TabViewController: WKUIDelegate {
         }
 
         delegate?.tabContentProcessDidTerminate(tab: self)
+    }
+
+    /// Call right before reloading after a web content process termination, to report how that reload ends.
+    func beginTerminationReload(_ recovery: TerminationReloadMonitor.Recovery) {
+        terminationReloadMonitor.begin(recovery)
+    }
+
+    // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
+    @objc(_webViewWebProcessDidBecomeUnresponsive:)
+    func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
+        let appState = UIApplication.shared.applicationState == .background ? "background" : "foreground"
+        pixelFiring?.fire(WebContentHealthPixel.unresponsive(appState: appState), frequency: .dailyAndCount)
     }
     
     func webView(_ webView: WKWebView,

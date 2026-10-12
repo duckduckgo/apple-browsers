@@ -305,6 +305,29 @@ final class WebNotificationsHandlerTests: XCTestCase {
         XCTAssertEqual(response.permission, "denied")
     }
 
+    func testWhenNewPromptsEnabledThenHandlerChecksSystemPermissionWithoutRequestingIt() async throws {
+        mockFeatureFlagger.enableFeatures([.webNotifications, .websitePermissionsPrompts])
+        let states: [(UNAuthorizationStatus, String)] = [
+            (.notDetermined, "denied"),
+            (.denied, "denied"),
+            (.authorized, "granted"),
+            (.provisional, "granted"),
+        ]
+        for (state, expectedPermission) in states {
+            mockNotificationService.authorizationStatusToReturn = state
+            let params: [String: Any] = [:]
+            let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
+            let handlerFunc = try XCTUnwrap(handler.handler(forMethodNamed: "requestPermission"))
+
+            let result = try await handlerFunc(params, mockMessage)
+
+            let response = try XCTUnwrap(result as? WebNotificationsHandler.RequestPermissionResponse)
+            XCTAssertEqual(response.permission, expectedPermission, "\(state)")
+            XCTAssertTrue(mockPermissionModel.requestCalled)
+            XCTAssertFalse(mockNotificationService.requestAuthorizationCalled)
+        }
+    }
+
     func testWhenInFireWindowWithSystemAuthThenRequestPermissionReturnsGranted() async throws {
         // Fire Windows use PermissionManager like normal windows; permissions cleared on burn
         mockNotificationService.authorizationStatusToReturn = .authorized

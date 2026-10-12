@@ -245,9 +245,9 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         let action = context.action(for: nil)
 
         // A second click on the button of the open popup closes it.
-        if let popupPresenter, popupPresenter.isShown(for: context) {
+        if let action, action.popupPopover?.isShown == true {
             Logger.webExtensions.debug("🧩 Click closes the open popup of \(identifier, privacy: .public)")
-            popupPresenter.close()
+            action.closePopup()
             return
         }
 
@@ -284,12 +284,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         let item = NSMenuItem(title: "JavaScript API Compatibility…", action: #selector(showAPICompatibilityLog))
         item.target = self
         menu.addItem(item)
-    }
-
-    /// The presenter that hosts extension popups, owned by the manager's window/tab provider.
-    private var popupPresenter: WebExtensionPopupPresenter? {
-        guard let manager = webExtensionManagerProvider() as? WebExtensionManager else { return nil }
-        return (manager.windowTabProvider as? WebExtensionWindowTabProvider)?.popupPresenter
     }
 }
 

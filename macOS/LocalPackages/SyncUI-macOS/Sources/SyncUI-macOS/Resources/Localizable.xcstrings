@@ -3180,61 +3180,61 @@
       }
     },
     "preferences.preparing-to-sync-v2.check-other-device-title" : {
-      "comment" : "Title shown while the joining device waits for the other device during sync set up (V2)",
+      "comment" : "Title shown when Sync setup is still waiting for the other device to finish (V2)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Überprüfe dein anderes Gerät ..."
+            "value" : "Überprüfe dein anderes Gerät."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Check your other device..."
+            "value" : "Check your other device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comprueba tu otro dispositivo..."
+            "value" : "Comprueba tu otro dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vérifier votre autre appareil..."
+            "value" : "Vérifiez votre autre appareil."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controlla l'altro dispositivo..."
+            "value" : "Controlla l'altro dispositivo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controleer je andere apparaat ..."
+            "value" : "Controleer je andere apparaat."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sprawdź drugie urządzenie..."
+            "value" : "Sprawdź drugie urządzenie."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verifica o teu outro dispositivo..."
+            "value" : "Verifica o teu outro dispositivo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Проверьте другое устройство..."
+            "value" : "Проверьте другое устройство."
           }
         }
       }
@@ -3252,7 +3252,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Connecting..."
+            "value" : "Connecting…"
           }
         },
         "es" : {
@@ -3264,13 +3264,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connexion en cours…"
+            "value" : "Connexion…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connessione in corso..."
+            "value" : "Connessione…"
           }
         },
         "nl" : {
@@ -3288,13 +3288,13 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A ligar..."
+            "value" : "A ligar…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выполняется подключение..."
+            "value" : "Выполняется подключение…"
           }
         }
       }

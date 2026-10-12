@@ -98,7 +98,7 @@ extension Tab.TabContent {
             guard let videoID = videoID else { return nil }
             self = .url(.duckPlayer(videoID, timestamp: timestamp), source: .pendingStateRestoration)
         case .dataBrokerProtection:
-            self = .dataBrokerProtection
+            self = .dataBrokerProtection(.subscribed)
         case .subscription:
             guard let url = url else { return nil }
             self = .subscription(url)

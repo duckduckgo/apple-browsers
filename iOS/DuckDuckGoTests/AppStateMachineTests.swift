@@ -20,6 +20,7 @@
 import UIKit
 import Testing
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @MainActor
 final class MockInitializing: InitializingHandling {
@@ -166,11 +167,22 @@ final class MockTerminatingStateFactory: TerminatingStateFactory {
 
 }
 
+extension LaunchBreadcrumb {
+
+    /// Keeps state machine tests out of the test host's `UserDefaults.standard` and away from real pixels.
+    static var testing: LaunchBreadcrumb {
+        LaunchBreadcrumb(store: UserDefaults(suiteName: "AppStateMachineTests")!, pixelFiring: { nil })
+    }
+
+}
+
 @MainActor
 @Suite("AppStateMachine launching origin transition tests", .serialized)
 final class LaunchingTests {
 
-    let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()), terminatingStateFactory: MockTerminatingStateFactory())
+    let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()),
+                                       terminatingStateFactory: MockTerminatingStateFactory(),
+                                       launchBreadcrumb: .testing)
 
     @Test("didFinishLaunching should transition from Initializing to Launching")
     func transitionFromInitializingToLaunching() {
@@ -248,7 +260,7 @@ final class LaunchingTests {
 @Suite("AppStateMachine connected origin transition tests", .serialized)
 final class ConnectedTests {
 
-    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())))
+    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
 
     @Test("didBecomeActive should transition from Connected to Foreground and call onTransition and didReturn")
     func transitionFromConnectedToForeground() {
@@ -306,7 +318,7 @@ final class ConnectedTests {
 @Suite("AppStateMachine foreground origin transition tests", .serialized)
 final class ForegroundTests {
 
-    let stateMachine = AppStateMachine(initialState: .foreground(MockForeground(actionToHandle: nil)))
+    let stateMachine = AppStateMachine(initialState: .foreground(MockForeground(actionToHandle: nil)), launchBreadcrumb: .testing)
 
     @Test("didEnterBackground should transition from Foreground to Background and call onTransition and didReturn")
     func transitionFromForegroundToBackground() {
@@ -372,7 +384,7 @@ final class ForegroundTests {
 @Suite("AppStateMachine background origin transition tests", .serialized)
 final class BackgroundTests {
 
-    let stateMachine = AppStateMachine(initialState: .background(MockBackground()))
+    let stateMachine = AppStateMachine(initialState: .background(MockBackground()), launchBreadcrumb: .testing)
 
     @Test("didBecomeActive should transition from Background to Foreground and call onTransition and didReturn")
     func transitionFromBackgroundToForeground() {
@@ -435,6 +447,268 @@ final class BackgroundTests {
 
         stateMachine.handle(.willResignActive)
         #expect(stateMachine.currentState.name == "background")
+    }
+
+}
+
+@MainActor
+@Suite("Scene lifecycle pixels")
+final class SceneLifecycleInstrumentationTests {
+
+    private final class StubAppUIViewController: UIViewController {}
+
+    let pixelKit = PixelKitMock()
+    lazy var instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit, isAppUI: { $0 is StubAppUIViewController })
+    let foregroundState = AppState.foreground(MockForeground(actionToHandle: nil))
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active with no app UI in any window fires the pixel", .timeLimit(.minutes(1)))
+    func activeWithoutAppUIFires() {
+        // A reconnected scene only has the new window that nothing has attached the UI to.
+        instrumentation.sceneDidBecomeActive(windows: [UIWindow()], in: foregroundState)
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SceneLifecyclePixel.activeWithoutMainUI, frequency: .daily)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active with app UI only in a hidden window fires the pixel", .timeLimit(.minutes(1)))
+    func activeWithAppUIOnlyInHiddenWindowFires() {
+        let hiddenWindow = UIWindow()
+        hiddenWindow.rootViewController = StubAppUIViewController()
+        hiddenWindow.isHidden = true
+
+        instrumentation.sceneDidBecomeActive(windows: [hiddenWindow, UIWindow()], in: foregroundState)
+
+        #expect(pixelKit.actualFireCalls.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active with app UI in a visible window does not fire the pixel", .timeLimit(.minutes(1)))
+    func activeWithAppUIDoesNotFire() {
+        // e.g. the authentication overlay is visible while it hides the main window.
+        let hiddenMainWindow = UIWindow()
+        hiddenMainWindow.rootViewController = UIViewController()
+        hiddenMainWindow.isHidden = true
+        let overlayWindow = UIWindow()
+        overlayWindow.rootViewController = StubAppUIViewController()
+        overlayWindow.isHidden = false
+
+        instrumentation.sceneDidBecomeActive(windows: [hiddenMainWindow, overlayWindow, UIWindow()], in: foregroundState)
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Main UI and its overlays count as app UI by default", .timeLimit(.minutes(1)))
+    func defaultAppUIIncludesOverlays() {
+        let pixelKit = PixelKitMock()
+        let instrumentation = SceneLifecycleInstrumentation(pixelFiring: pixelKit)
+        let window = UIWindow()
+        window.rootViewController = AuthenticationViewController()
+        window.isHidden = false
+
+        instrumentation.sceneDidBecomeActive(windows: [window], in: foregroundState)
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active while showing the critical alert does not fire the pixel", .timeLimit(.minutes(1)))
+    func activeWhileTerminatingDoesNotFire() {
+        let window = UIWindow()
+        window.rootViewController = UIViewController()
+        window.isHidden = false
+
+        instrumentation.sceneDidBecomeActive(windows: [window], in: .terminating(MockTerminating(error: TerminationError.historyDatabase(NSError(domain: "test", code: 1)))))
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Becoming active before launch attached the UI fires the pixel", .timeLimit(.minutes(1)))
+    func activeWhileLaunchingFires() {
+        instrumentation.sceneDidBecomeActive(windows: [UIWindow()], in: .launching(MockLaunching()))
+
+        #expect(pixelKit.actualFireCalls.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Scene disconnect fires with the current app state", .timeLimit(.minutes(1)))
+    func sceneDidDisconnectFiresWithState() {
+        let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
+        instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
+        stateMachine.handle(.didBecomeActive)
+        instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
+        stateMachine.handle(.didEnterBackground)
+        instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
+
+        #expect(pixelKit.actualFireCalls == ["connected", "foreground", "background"].map {
+            ExpectedFireCall(pixel: SceneLifecyclePixel.sceneDidDisconnect(appState: $0), frequency: .dailyAndCount)
+        })
+    }
+
+}
+
+@MainActor
+@Suite("Launch breadcrumb", .serialized)
+final class LaunchBreadcrumbTests {
+
+    let suiteName = "LaunchBreadcrumbTests-\(UUID().uuidString)"
+    let pixelKit = PixelKitMock()
+    let initializing = MockInitializing()
+    lazy var store = UserDefaults(suiteName: suiteName)!
+    lazy var launchBreadcrumb = LaunchBreadcrumb(store: store, pixelFiring: { [pixelKit] in pixelKit })
+    lazy var stateMachine = AppStateMachine(initialState: .initializing(initializing),
+                                            terminatingStateFactory: MockTerminatingStateFactory(),
+                                            launchBreadcrumb: launchBreadcrumb)
+
+    deinit {
+        UserDefaults().removePersistentDomain(forName: suiteName)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch that reaches Foreground leaves no breadcrumb and fires nothing", .timeLimit(.minutes(1)))
+    func completedLaunchClearsBreadcrumb() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        #expect(launchBreadcrumb.current == ["step": "launched"])
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        #expect(launchBreadcrumb.current == ["step": "ui-attached"])
+        stateMachine.handle(.didBecomeActive)
+
+        #expect(launchBreadcrumb.current == nil)
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch that reaches Background leaves no breadcrumb", .timeLimit(.minutes(1)))
+    func backgroundLaunchClearsBreadcrumb() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.didEnterBackground)
+
+        #expect(launchBreadcrumb.current == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Starting a launch keeps the previous launch's breadcrumb for reporting", .timeLimit(.minutes(1)))
+    func startingLaunchKeepsPreviousBreadcrumb() {
+        let previous = ["step": "persistent-stores"]
+        store.set(previous, forKey: LaunchBreadcrumb.key)
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect(launchBreadcrumb.pendingReport == previous)
+        #expect(launchBreadcrumb.current?["step"] == "launched")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch that terminates is marked as terminating and keeps the previous breadcrumb", .timeLimit(.minutes(1)))
+    func terminatingLaunch() {
+        let previous = ["step": "main-coordinator"]
+        store.set(previous, forKey: LaunchBreadcrumb.key)
+        initializing.shouldThrowOnLaunching = true
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect(launchBreadcrumb.pendingReport == previous)
+        #expect(launchBreadcrumb.current?["step"] == "terminating")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Every launch in a crash loop reports the launch before it", .timeLimit(.minutes(1)))
+    func crashLoopReportsEachLaunch() {
+        // Each iteration is a launch that reports, then crashes while loading the persistent stores.
+        for _ in 0..<3 {
+            launchBreadcrumb.startLaunch()
+            launchBreadcrumb.reportIncompleteLaunch()
+            launchBreadcrumb.mark(.persistentStores)
+        }
+
+        let crashed = ["step": "persistent-stores"]
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [crashed, crashed])
+        #expect(pixelKit.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
+        #expect(launchBreadcrumb.pendingReport == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A background launch that never connects a scene is not reported", .timeLimit(.minutes(1)))
+    func backgroundLaunchWithoutSceneIsNotReported() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        #expect(launchBreadcrumb.current?["step"] == "launched")
+
+        // iOS kills the suspended app; the next launch starts.
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.reportIncompleteLaunch()
+
+        #expect(launchBreadcrumb.pendingReport == nil)
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch whose window was never attached is reported", .timeLimit(.minutes(1)))
+    func launchWithSceneButNoUIIsReported() {
+        // The window arrives while Launching is still being made, is dropped, and launch ends at `launched`.
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.markSceneConnected()
+        launchBreadcrumb.mark(.launched)
+
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.reportIncompleteLaunch()
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["step": "launched"]])
+        #expect(launchBreadcrumb.sceneConnected == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A window dropped before launch finishes still counts as a connected scene", .timeLimit(.minutes(1)))
+    func droppedWindowMarksSceneConnected() {
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+
+        #expect(stateMachine.currentState.name == "initializing")
+        #expect(launchBreadcrumb.sceneConnected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Nothing is reported after a launch that finished", .timeLimit(.minutes(1)))
+    func nothingReportedAfterCompletedLaunch() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.didBecomeActive)
+
+        launchBreadcrumb.startLaunch()
+        launchBreadcrumb.reportIncompleteLaunch()
+
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+}
+
+@MainActor
+@Suite("Critical alert pixel")
+final class CriticalAlertPixelTests {
+
+    let pixelKit = PixelKitMock()
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Showing the alert for a full disk fires the pixel with the disk space reason", .timeLimit(.minutes(1)))
+    func diskFullAlertFiresPixel() {
+        let diskFull = NSError(domain: NSCocoaErrorDomain, code: 1,
+                               userInfo: [NSUnderlyingErrorKey: NSError(domain: "NSSQLiteErrorDomain", code: 13)])
+
+        Terminating(error: TerminationError.historyDatabase(diskFull), pixelFiring: pixelKit).alertAndTerminate(window: UIWindow())
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: CriticalAlertPixel.shown(reason: .insufficientDiskSpace),
+                                                              frequency: .dailyAndCount)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Showing the alert for other errors fires the pixel with the unrecoverable state reason", .timeLimit(.minutes(1)))
+    func unrecoverableStateAlertFiresPixel() {
+        let error = NSError(domain: NSCocoaErrorDomain, code: 1)
+
+        Terminating(error: TerminationError.historyDatabase(error), pixelFiring: pixelKit).alertAndTerminate(window: UIWindow())
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["reason": "unrecoverable-state"]])
     }
 
 }

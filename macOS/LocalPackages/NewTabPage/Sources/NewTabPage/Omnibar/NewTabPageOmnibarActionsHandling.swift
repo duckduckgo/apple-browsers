@@ -35,7 +35,8 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
                     toolChoice: [String]?,
                     reasoningEffort: String?,
                     pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
-                    files: [NewTabPageDataModel.OmnibarPromptFile]?)
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool)
 
     @MainActor
     func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)
@@ -59,6 +60,10 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     /// Persists whether the stored response customization is applied (from the row's toggle).
     @MainActor
     func setCustomizeResponsesActive(_ active: Bool)
+
+    /// Opens Duck.ai's Privacy Policy and Terms of Service, linked from the terms disclaimer.
+    @MainActor
+    func openPrivacyTerms()
 
     /// Opens the attachment privacy help page in a new tab, leaving the staged attachment alone.
     @MainActor

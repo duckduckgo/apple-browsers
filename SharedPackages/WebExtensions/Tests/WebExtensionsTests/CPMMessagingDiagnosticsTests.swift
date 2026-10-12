@@ -414,6 +414,58 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         XCTAssertEqual(recorder.snapshot().leakedBackgroundWebViewCount, 0)
     }
 
+    // WebKit vends `context.errors` as `WKNSError` proxies; bridging them with `as NSError` crashes on x86_64 only,
+    // so on arm64 these pass with or without the fix. To see them catch the crash, replace `NSError(copying: $0)`
+    // with `$0 as NSError` in CPMMessagingDiagnosticsRecorder and run them under Rosetta:
+    //   swift build --build-tests --arch x86_64 --scratch-path .build/x86_64
+    //   arch -x86_64 xcrun xctest -XCTest WebExtensionsTests.CPMMessagingDiagnosticsRecorderTests \
+    //     .build/x86_64/out/Products/Debug/WebExtensionsTests.xctest
+
+    func testWhenContextHasWebKitErrorsThenSnapshotIncludesTheirCodes() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContextWithManifestErrors()
+
+        recorder.contextWillLoad(context)
+
+        XCTAssertEqual(recorder.snapshot().extensionContextErrors, [Self.contentScriptWithoutMatchesError])
+    }
+
+    func testWhenContextErrorsDidUpdateThenRecorderRecordsTheirCodes() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContextWithManifestErrors()
+        recorder.contextWillLoad(context)
+
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // Without a context, the snapshot only reports errors the notification observer recorded.
+        recorder.contextDidUnload(identifier: context.uniqueIdentifier)
+
+        XCTAssertEqual(recorder.snapshot().extensionContextErrors, [Self.contentScriptWithoutMatchesError])
+    }
+
+    /// `WKWebExtension.Error.Code.invalidManifestEntry`, reported for a content script without `matches`.
+    private static let contentScriptWithoutMatchesError = "\(WKWebExtension.errorDomain):\(WKWebExtension.Error.Code.invalidManifestEntry.rawValue)"
+
+    private func makeContextWithManifestErrors() async throws -> WKWebExtensionContext {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("CPMDiagnosticsTestExtension-\(UUID().uuidString)")
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "CPM Diagnostics Test Extension",
+            "description": "Test",
+            "version": "1.0.0",
+            "content_scripts": [ { "js": ["content.js"] } ]
+        }
+        """
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try manifest.write(to: dir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        try "// test".write(to: dir.appendingPathComponent("content.js"), atomically: true, encoding: .utf8)
+        createdTestExtensionDirs.append(dir)
+
+        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: dir))
+        context.uniqueIdentifier = "cpm-diagnostics-test"
+        return context
+    }
+
     private func makeContext() async throws -> WKWebExtensionContext {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("CPMDiagnosticsTestExtension-\(UUID().uuidString)")
         let manifest = """

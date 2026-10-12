@@ -1,0 +1,11 @@
+custom_rules:
+  as_nserror:
+    name: "Error bridged to NSError"
+    included: ".*\\.swift"
+    regex: "\\bas[?!]?\\s+NSError\\b(?!\\.Type)"
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "WebKit vends Web Extension errors as WKNSError proxies that crash on x86_64 when bridged with `as NSError`. Use `NSError(copying:)` instead."
+    severity: error

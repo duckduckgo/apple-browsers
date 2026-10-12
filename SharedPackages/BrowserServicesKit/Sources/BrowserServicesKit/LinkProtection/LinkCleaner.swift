@@ -26,9 +26,12 @@ public class LinkCleaner {
 
     private let privacyManager: PrivacyConfigurationManaging
     private var privacyConfig: PrivacyConfiguration { privacyManager.privacyConfig }
+    private let isFastTrackingParameterFilterEnabled: () -> Bool
 
-    public init(privacyManager: PrivacyConfigurationManaging) {
+    public init(privacyManager: PrivacyConfigurationManaging,
+                isFastTrackingParameterFilterEnabled: @escaping () -> Bool = { false }) {
         self.privacyManager = privacyManager
+        self.isFastTrackingParameterFilterEnabled = isFastTrackingParameterFilterEnabled
     }
 
     public func ampFormat(matching url: URL) -> String? {
@@ -93,6 +96,20 @@ public class LinkCleaner {
             return url
         }
 
+        let trackingParams = Set(TrackingLinkSettings(fromConfig: privacyConfig).trackingParameters)
+
+        if isFastTrackingParameterFilterEnabled() {
+            switch TrackingParameterFilter(trackingParameters: trackingParams).filter(url) {
+            case .unchanged:
+                return url
+            case .cleaned(let cleanURL):
+                urlParametersRemoved = true
+                return cleanURL
+            case .needsFoundation:
+                break
+            }
+        }
+
         guard var urlsComps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return url
         }
@@ -100,10 +117,8 @@ public class LinkCleaner {
             return url
         }
 
-        let trackingParams = TrackingLinkSettings(fromConfig: privacyConfig).trackingParameters
-
         let preservedParams: [URLQueryItem] = queryParams.filter { param in
-            if trackingParams.contains(where: { $0 == param.name }) {
+            if trackingParams.contains(param.name) {
                 urlParametersRemoved = true
                 return false
             }
@@ -116,5 +131,110 @@ public class LinkCleaner {
             return urlsComps.url
         }
         return url
+    }
+}
+
+/// Removes tracking parameters by scanning the URL's UTF-8 bytes in place.
+///
+/// `URLComponents` copies the whole query into separate strings, which takes seconds and hundreds of megabytes
+/// on multi-megabyte URLs. This filter reads WebKit's URL string without copying it and allocates only the
+/// cleaned URL. Results match the `URLComponents` path: items split on every `&`, a name ends at the first `=`,
+/// and the rest of the URL is kept byte for byte.
+private struct TrackingParameterFilter {
+
+    enum Result {
+        case unchanged
+        case cleaned(URL?)
+        /// `URLComponents` would change more of this URL than its query, so only that path gives the same result.
+        case needsFoundation
+    }
+
+    private let trackingParameters: Set<String>
+    private let nameLengths: Set<Int>
+
+    init(trackingParameters: Set<String>) {
+        self.trackingParameters = trackingParameters
+        nameLengths = Set(trackingParameters.map(\.utf8.count))
+    }
+
+    func filter(_ url: URL) -> Result {
+        var string = url.relativeString
+        return string.withUTF8 { bytes in
+            let fragmentStart = Self.firstIndex(of: "#", in: bytes, from: 0, to: bytes.count)
+            let questionMark = Self.firstIndex(of: "?", in: bytes, from: 0, to: fragmentStart)
+            guard questionMark < fragmentStart else { return .unchanged }
+
+            var removedItemStarts: [Int] = []
+            forEachItem(in: bytes, from: questionMark + 1, to: fragmentStart) { item in
+                let nameEnd = Self.firstIndex(of: "=", in: bytes, from: item.lowerBound, to: item.upperBound)
+                if isTrackingParameter(UnsafeBufferPointer(rebasing: bytes[item.lowerBound..<nameEnd])) {
+                    removedItemStarts.append(item.lowerBound)
+                }
+            }
+            guard !removedItemStarts.isEmpty else { return .unchanged }
+            guard !Self.hasEmptyPort(bytes, before: questionMark) else { return .needsFoundation }
+
+            let cleaned = String(unsafeUninitializedCapacity: bytes.count) { output in
+                var written = 0
+                func append(_ range: Range<Int>) {
+                    UnsafeMutableRawPointer(output.baseAddress! + written)
+                        .copyMemory(from: bytes.baseAddress! + range.lowerBound, byteCount: range.count)
+                    written += range.count
+                }
+
+                append(0..<questionMark)
+                var hasPreservedItems = false
+                var nextRemoved = 0
+                forEachItem(in: bytes, from: questionMark + 1, to: fragmentStart) { item in
+                    // Both passes visit items in the same order, so the removed ones come up in sequence.
+                    if nextRemoved < removedItemStarts.count, removedItemStarts[nextRemoved] == item.lowerBound {
+                        nextRemoved += 1
+                        return
+                    }
+                    output[written] = hasPreservedItems ? UInt8(ascii: "&") : UInt8(ascii: "?")
+                    written += 1
+                    append(item)
+                    hasPreservedItems = true
+                }
+                append(fragmentStart..<bytes.count)
+                return written
+            }
+            guard !cleaned.isEmpty else { return .needsFoundation }
+            return .cleaned(URL(string: cleaned))
+        }
+    }
+
+    private func isTrackingParameter(_ name: UnsafeBufferPointer<UInt8>) -> Bool {
+        // Most names can't match on length alone, so skip creating a String for them.
+        guard nameLengths.contains(name.count), let name = String(bytes: name, encoding: .utf8) else { return false }
+        return trackingParameters.contains(name)
+    }
+
+    private func forEachItem(in bytes: UnsafeBufferPointer<UInt8>, from start: Int, to end: Int, _ body: (Range<Int>) -> Void) {
+        var itemStart = start
+        while true {
+            let itemEnd = Self.firstIndex(of: "&", in: bytes, from: itemStart, to: end)
+            body(itemStart..<itemEnd)
+            guard itemEnd < end else { return }
+            itemStart = itemEnd + 1
+        }
+    }
+
+    /// `URLComponents` drops an empty port (`https://example.com:/`) when it rebuilds the URL.
+    private static func hasEmptyPort(_ bytes: UnsafeBufferPointer<UInt8>, before end: Int) -> Bool {
+        let schemeEnd = firstIndex(of: ":", in: bytes, from: 0, to: end)
+        guard schemeEnd + 2 < end, bytes[schemeEnd + 1] == UInt8(ascii: "/"), bytes[schemeEnd + 2] == UInt8(ascii: "/") else {
+            return false
+        }
+        let authorityStart = schemeEnd + 3
+        let authorityEnd = firstIndex(of: "/", in: bytes, from: authorityStart, to: end)
+        return authorityEnd > authorityStart && bytes[authorityEnd - 1] == UInt8(ascii: ":")
+    }
+
+    /// `memchr` scans much faster than a Swift loop, which matters for multi-megabyte URLs.
+    private static func firstIndex(of character: Unicode.Scalar, in bytes: UnsafeBufferPointer<UInt8>, from start: Int, to end: Int) -> Int {
+        guard start < end, let base = bytes.baseAddress,
+              let match = memchr(base + start, Int32(character.value), end - start) else { return end }
+        return base.distance(to: match.assumingMemoryBound(to: UInt8.self))
     }
 }

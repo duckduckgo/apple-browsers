@@ -965,6 +965,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         }
     }
 
+    /// The arrival on the New Tab Page the launch drew is held until the return is noted.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        controller.recordPendingNewTabPagePresentationIfVisible()
+        completion(.openedNewTab)
+    }
+
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)

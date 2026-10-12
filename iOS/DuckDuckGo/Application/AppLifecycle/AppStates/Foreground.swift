@@ -101,6 +101,7 @@ struct Foreground: ForegroundHandling {
             keyboardPresenter: keyboardPresenter,
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnOutcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
+            idleReturnLaunchLanding: sceneDependencies.idleReturnLaunchLanding,
             featureFlagger: appDependencies.featureFlagger,
             idleReturnDelegate: appDependencies.mainCoordinator
         )

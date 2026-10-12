@@ -66,6 +66,8 @@ protocol OnboardingPresenting: AnyObject {
 protocol IdleReturnLaunchDelegate: AnyObject {
     /// Completes after any screen dismissal and New Tab Page creation finish.
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
+    /// Completes like `showNewTabPageAfterIdleReturn`, for the New Tab Page the launch already drew.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
@@ -95,6 +97,7 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let launchSourceManager: LaunchSourceManaging
     /// Decided when the app comes to the foreground, so a background during the auth wait can't change it.
     private let idleReturnOutcome: IdleReturnOutcome
+    private let idleReturnLaunchLanding: IdleReturnLaunchLanding
     private let featureFlagger: FeatureFlagger
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
@@ -104,6 +107,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
          idleReturnOutcome: IdleReturnOutcome,
+         idleReturnLaunchLanding: IdleReturnLaunchLanding,
          featureFlagger: FeatureFlagger,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
@@ -113,12 +117,15 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
         self.idleReturnOutcome = idleReturnOutcome
+        self.idleReturnLaunchLanding = idleReturnLaunchLanding
         self.featureFlagger = featureFlagger
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
 
     func handleLaunchAction(_ action: LaunchAction) {
+        // Taken by whichever action comes first, so a link can't leave it behind for a later return.
+        let drewNewTabPage = idleReturnLaunchLanding.takeDrawnNewTabPage()
         switch action {
         case .openURL(let url):
             launchSourceManager.setSource(.URL)
@@ -131,11 +138,13 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
-            let isAfterIdleReturn = idleReturnOutcome.isAfterIdle
-            switch idleReturnOutcome {
+            // A New Tab Page the launch drew stands; the rest is the outcome decided on foreground.
+            let outcome: IdleReturnOutcome = drewNewTabPage ? .afterIdle(treatment: .ntp, timeAwayMs: idleReturnOutcome.timeAwayMs) : idleReturnOutcome
+            let isAfterIdleReturn = outcome.isAfterIdle
+            switch outcome {
             case .afterIdle(.ntp, let timeAwayMs):
                 let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, isFirstForeground: isFirstForeground) { [self] result in
+                let showKeyboard: (IdleReturnNewTabPageResult) -> Void = { [self] result in
                     guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
                     switch result {
                     case .keptCurrent:
@@ -148,6 +157,11 @@ final class LaunchActionHandler: LaunchActionHandling {
                     case .suppressed:
                         break
                     }
+                }
+                if drewNewTabPage {
+                    idleReturnDelegate?.recordNewTabPageDrawnAtLaunch(timeAwayMs: timeAwayMs, completion: showKeyboard)
+                } else {
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, isFirstForeground: isFirstForeground, completion: showKeyboard)
                 }
                 return
             case .afterIdle(.lut, let timeAwayMs):

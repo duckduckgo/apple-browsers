@@ -458,7 +458,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func onDBPFeatureDisabled(_ notification: Notification) {
         Task { @MainActor in
-            tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
+            tabCollectionViewModel.removeAll(matching: { $0.isDataBrokerProtection })
         }
     }
 
@@ -511,7 +511,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func onSubscriptionUpgradeFromFreemium(_ notification: Notification) {
         Task { @MainActor in
-            tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
+            tabCollectionViewModel.removeAll(matching: { $0.isDataBrokerProtection })
         }
     }
 
@@ -631,7 +631,7 @@ final class BrowserTabViewController: NSViewController {
 
     private func removeDataBrokerViewIfNecessary(for tabs: [AnyTab]) {
         if let dataBrokerProtectionHomeViewController,
-           !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
+           !tabs.contains(where: { $0.content.isDataBrokerProtection }) {
             dataBrokerProtectionHomeViewController.removeCompletely()
             self.dataBrokerProtectionHomeViewController = nil
         }
@@ -1374,11 +1374,8 @@ final class BrowserTabViewController: NSViewController {
         case .history:
             updateTabIfNeeded(tabViewModel: tabViewModel)
 
-        case .dataBrokerProtection:
-            removeAllTabContent()
-            let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
-            self.previouslySelectedTab = tabCollectionViewModel.selectedTab
-            addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
+        case let .dataBrokerProtection(context):
+            showDataBrokerProtection(freemiumEntryPoint: context.freemiumEntryPoint)
 
         case .webExtensionUrl:
             updateTabIfNeeded(tabViewModel: tabViewModel)
@@ -1416,6 +1413,14 @@ final class BrowserTabViewController: NSViewController {
             visibleTabID,
             message: activeRemoteMessageModel.newTabPageRemoteMessage
         )
+    }
+
+    private func showDataBrokerProtection(freemiumEntryPoint: FreemiumDBPEntryPoint?) {
+        removeAllTabContent()
+        let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
+        dataBrokerProtectionViewController.setFreemiumEntryPointIfKnown(freemiumEntryPoint)
+        self.previouslySelectedTab = tabCollectionViewModel.selectedTab
+        addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
     }
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {

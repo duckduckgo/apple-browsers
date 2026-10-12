@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Persistence
+import FeatureFlags_iOS
 
 /// Represents the state where the scene has been connected and is ready for initial setup.
 /// - Usage:
@@ -73,9 +74,12 @@ struct Connected: ConnectedHandling {
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
+        let drawsIdleReturnNewTabPage = Self.drawsIdleReturnNewTabPage(actionToHandle: actionToHandle, appDependencies: appDependencies)
+        mainCoordinator.controller.drawsIdleReturnNewTabPageAtLaunch = drawsIdleReturnNewTabPage
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
-                                              autoClearService: autoClearService)
+                                              autoClearService: autoClearService,
+                                              idleReturnLaunchLanding: IdleReturnLaunchLanding(drewNewTabPage: drawsIdleReturnNewTabPage))
 
         configure(window, with: mainCoordinator)
     }
@@ -107,7 +111,8 @@ struct Connected: ConnectedHandling {
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
-                                              autoClearService: autoClearService)
+                                              autoClearService: autoClearService,
+                                              idleReturnLaunchLanding: IdleReturnLaunchLanding(drewNewTabPage: false))
         configure(window, with: mainCoordinator)
     }
 
@@ -138,8 +143,19 @@ struct Connected: ConnectedHandling {
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
-                                              autoClearService: autoClearService)
+                                              autoClearService: autoClearService,
+                                              idleReturnLaunchLanding: IdleReturnLaunchLanding(drewNewTabPage: false))
         configure(window, with: mainCoordinator)
+    }
+
+    /// Cold start only: the first screen is the after-idle New Tab Page, unless a launch action decides where the user lands.
+    private static func drawsIdleReturnNewTabPage(actionToHandle: AppAction?, appDependencies: AppDependencies) -> Bool {
+        guard actionToHandle == nil,
+              appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageAtLaunch) else { return false }
+        let currentTab = appDependencies.mainCoordinator.tabManager.currentTabsModel.currentTab
+        return appDependencies.idleReturnEvaluator.evaluateReturn()
+            .drawsNewTabPageAtLaunch(isAppLockEnabled: PrivacyUserDefaults().authenticationEnabled,
+                                     hasPageToReplace: currentTab?.link != nil)
     }
 
     private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {

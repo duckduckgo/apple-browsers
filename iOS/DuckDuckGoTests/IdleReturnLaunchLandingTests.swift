@@ -46,4 +46,19 @@ struct IdleReturnLaunchLandingTests {
         #expect(!outcome.drawsNewTabPageAtLaunch(isAppLockEnabled: false, hasPageToReplace: true))
     }
 
+    @MainActor
+    @Test("A drawn New Tab Page is taken once", .timeLimit(.minutes(1)))
+    func drawnNewTabPageIsTakenOnce() {
+        let landing = IdleReturnLaunchLanding(drewNewTabPage: true)
+        #expect(landing.takeDrawnNewTabPage())
+        #expect(!landing.takeDrawnNewTabPage())
+    }
+
+    @MainActor
+    @Test("Nothing is taken when the launch didn't draw the New Tab Page", .timeLimit(.minutes(1)))
+    func nothingIsTakenWhenNotDrawn() {
+        let landing = IdleReturnLaunchLanding(drewNewTabPage: false)
+        #expect(!landing.takeDrawnNewTabPage())
+    }
+
 }

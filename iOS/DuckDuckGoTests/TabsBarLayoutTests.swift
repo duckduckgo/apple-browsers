@@ -179,10 +179,11 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertGreaterThan(outgoing.visiblePointerRect(in: outgoing.contentView).width, 0)
     }
 
-    func testEdgeBounceRequiresAFastCollisionAndDoesNotRepeatWhilePinned() throws {
+    func testEdgeBounceRequiresMomentumAndReturnsFromTheOuterEdge() throws {
         try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Edge bounce is disabled with Reduce Motion")
         for (edgeOffset, direction) in [(CGFloat(600), CGFloat(1)), (100, -1)] {
-            for (speed, shouldBounce) in [(CGFloat(200), false), (-1000, false), (1000, true)] {
+            for (speed, shouldBounce, pinsBeforeRelease) in [(CGFloat(200), false, true), (-1000, false, true),
+                                                            (300, true, true), (1000, true, false)] {
                 let (collectionView, _) = makeCollectionView(currentIndex: { 5 }, contentOffset: 400)
                 let flare = TabFlareBackgroundController(collectionView: collectionView,
                                                          topCornerRadius: 12,
@@ -191,21 +192,32 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
                                                          fillColor: { .white })
                 flare.update()
                 flare.beginScrolling()
+                if pinsBeforeRelease {
+                    collectionView.contentOffset.x = edgeOffset
+                    collectionView.layoutIfNeeded()
+                    flare.update()
+                }
+                let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)))
+                XCTAssertNil(cell.layer.animation(forKey: "edgeBounce"), "Dragging must not trigger a bounce")
+                flare.beginDecelerating()
+                flare.update()
+                if !pinsBeforeRelease { flare.update(scrollVelocity: direction * speed) }
                 collectionView.contentOffset.x = edgeOffset
                 collectionView.layoutIfNeeded()
                 flare.update(scrollVelocity: direction * speed)
 
-                let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 5, section: 0)))
                 let background = try XCTUnwrap(collectionView.subviews.compactMap { $0 as? TabFlaredBackgroundView }.first)
+                let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+                let clearance = direction > 0 ? cell.frame.minX - viewport.minX : viewport.maxX - cell.frame.maxX
                 for layer in [cell.layer, background.layer] {
                     let animation = layer.animation(forKey: "edgeBounce") as? CAKeyframeAnimation
                     XCTAssertEqual(animation != nil, shouldBounce)
                     if shouldBounce {
                         let values = try XCTUnwrap(animation?.values as? [CGFloat])
-                        XCTAssertEqual(values.count, 3, "A collision should make one inward bounce")
+                        XCTAssertEqual(values.count, 3, "A collision should make one outward bounce")
                         XCTAssertEqual(values.first, 0)
                         XCTAssertEqual(values.last, 0)
-                        XCTAssertGreaterThan(values[1] * direction, 0)
+                        XCTAssertEqual(values[1], -direction * clearance, accuracy: 0.001)
                     }
                 }
 

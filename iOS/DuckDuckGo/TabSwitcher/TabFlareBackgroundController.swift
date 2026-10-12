@@ -58,6 +58,7 @@ final class TabFlareBackgroundController {
     private var onReorderTick: ((TimeInterval) -> Void)?
     private var lastPinnedIndex: Int?
     private var lastPinnedEdge: CGFloat = 0
+    private var isStartingDeceleration = false
     private var lastViewportWidth: CGFloat = 0
     private var lastItemWidth: CGFloat = 0
     private weak var bouncingCell: UICollectionViewCell?
@@ -103,16 +104,24 @@ final class TabFlareBackgroundController {
 
     func beginScrolling() {
         stopEdgeBounce()
+        isStartingDeceleration = false
+    }
+
+    func beginDecelerating() {
+        isStartingDeceleration = true
     }
 
     private func updateEdgeBounce(index: Int, frame: CGRect, velocity: CGFloat) {
         guard let collectionView,
               let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
               let original = layout.unpinnedFrameForItem(at: IndexPath(item: index, section: 0)) else { return }
-        let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
+        let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+        let viewportWidth = viewport.width
         let edge: CGFloat = original.minX < frame.minX ? 1 : (original.minX > frame.minX ? -1 : 0)
         let sameTabAndWidth = lastPinnedIndex == index && lastViewportWidth == viewportWidth && lastItemWidth == frame.width
-        let enteredEdge = edge != 0 && edge != lastPinnedEdge
+        let enteredEdge = edge != 0 && (edge != lastPinnedEdge || isStartingDeceleration)
+        // A stationary layout refresh must not consume the first momentum sample after release.
+        if velocity != 0 || !sameTabAndWidth { isStartingDeceleration = false }
         if !sameTabAndWidth || edge != lastPinnedEdge || UIAccessibility.isReduceMotionEnabled
             || bouncingCell?.layer.animation(forKey: "edgeBounce") == nil {
             stopEdgeBounce()
@@ -122,14 +131,14 @@ final class TabFlareBackgroundController {
         lastViewportWidth = viewportWidth
         lastItemWidth = frame.width
         let impactSpeed = velocity * edge
-        // Scale the recoil with momentum, keeping it inside the space between both half-tab hints.
-        let distance = min(min(32, impactSpeed / 40), max(0, viewportWidth - 2 * frame.width))
+        // Briefly cover the outer hint, then return to its half-tab resting position.
+        let distance = max(0, edge > 0 ? frame.minX - viewport.minX : viewport.maxX - frame.maxX)
         let hasOuterNeighbor = edge > 0 ? index > 0 : index < collectionView.numberOfItems(inSection: 0) - 1
-        // Gentle arrivals (under 400 points/second) and movement away from an edge have no impact.
-        guard impactSpeed > 400, sameTabAndWidth, enteredEdge, hasOuterNeighbor, distance > 0, !UIAccessibility.isReduceMotionEnabled,
+        // Gentle arrivals (under 250 points/second) and movement away from an edge have no impact.
+        guard impactSpeed > 250, sameTabAndWidth, enteredEdge, hasOuterNeighbor, distance > 0, !UIAccessibility.isReduceMotionEnabled,
               let cell = collectionView.cellForItem(at: IndexPath(item: index, section: 0)) else { return }
         bouncingCell = cell
-        let offset = edge * distance
+        let offset = -edge * distance
         let animation = CAKeyframeAnimation(keyPath: "position.x")
         animation.isAdditive = true
         animation.values = [0, offset, 0]
@@ -152,6 +161,7 @@ final class TabFlareBackgroundController {
     /// Fades the flare out while the current tab is lifted for its preview.
     func beginPreview(forRow row: Int?, animator: UIContextMenuInteractionAnimating?) {
         stopEdgeBounce()
+        isStartingDeceleration = false
         guard row == currentIndex() else { return }
         previewedTabIndex = currentIndex()
         animator?.addAnimations { self.view.alpha = 0 }
@@ -166,6 +176,7 @@ final class TabFlareBackgroundController {
 
     func beginReorder(onTick: ((TimeInterval) -> Void)? = nil) {
         stopEdgeBounce()
+        isStartingDeceleration = false
         // A long-press preview can convert into a drag without firing its dismiss callback.
         previewedTabIndex = nil
         isReordering = true

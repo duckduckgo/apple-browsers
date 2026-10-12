@@ -19,6 +19,7 @@
 
 import XCTest
 import UIKit
+import Core
 
 @testable import DuckDuckGo
 
@@ -262,6 +263,68 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
             collectionView.contentOffset.x += isTrailingEdge ? -60 : 60
             controller.scrollViewDidScroll(collectionView)
             XCTAssertEqual(background.frame, cell.frame.insetBy(dx: -ramp, dy: 0))
+        }
+    }
+
+    @MainActor
+    func testHoverPreviewShowsTabMetadataAndInactiveThumbnailAndCancelsOnScroll() async throws {
+        let (controller, model) = makeOverflowingController()
+        let source = DefaultTabPreviewsSource(storeDir: nil, legacyDir: nil)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 20, height: 20)).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 20, height: 20))
+        }
+        controller.previewsSource = source
+        let host = UIViewController()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.rootViewController = host
+        window.isHidden = false
+        window.layoutIfNeeded()
+        controller.view.frame.origin.y = host.view.safeAreaInsets.top + 8
+        host.addChild(controller)
+        host.view.addSubview(controller.view)
+        controller.didMove(toParent: host)
+        defer {
+            controller.updateTabHoverPreview(at: nil)
+            window.isHidden = true
+            window.rootViewController = nil
+            withExtendedLifetime((model, source)) {}
+        }
+        func descendants(of view: UIView) -> [UIView] {
+            view.subviews.flatMap { [$0] + descendants(of: $0) }
+        }
+        for index in [8, 7] {
+            let tab = try XCTUnwrap(model.get(tabAt: index))
+            tab.link = Link(title: "Page \(index)", url: try XCTUnwrap(URL(string: "https://www.example.com/\(index)")))
+            source.update(preview: image, forTab: tab)
+            controller.refresh(tabsModel: model)
+            let collectionView = controller.collectionView
+            collectionView.contentOffset.x = 400
+            collectionView.layoutIfNeeded()
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? TabsBarCell)
+            let exposed = cell.visiblePointerRect(in: collectionView)
+            XCTAssertFalse(exposed.isEmpty)
+            let point = CGPoint(x: exposed.midX, y: exposed.midY)
+            controller.updateTabHoverPreview(at: point)
+            XCTAssertFalse(host.view.subviews.contains { $0 is TabsBarHoverPreview })
+            let shown = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                host.view.subviews.contains { $0 is TabsBarHoverPreview }
+            }, object: nil)
+            await fulfillment(of: [shown], timeout: 2)
+            let preview = try XCTUnwrap(host.view.subviews.first { $0 is TabsBarHoverPreview })
+            let contents = descendants(of: preview)
+            let labels = contents.compactMap { ($0 as? UILabel)?.text }
+            XCTAssertTrue(labels.contains("Page \(index)"))
+            XCTAssertTrue(labels.contains("example.com"))
+            XCTAssertEqual(contents.compactMap { ($0 as? UIImageView)?.image }, index == 8 ? [] : [image])
+
+            controller.scrollViewDidScroll(collectionView)
+            XCTAssertNil(preview.superview)
+            controller.updateTabHoverPreview(at: point)
+            controller.scrollViewWillBeginDragging(collectionView)
+            let cancelled = XCTNSPredicateExpectation(predicate: shown.predicate, object: nil)
+            cancelled.isInverted = true
+            await fulfillment(of: [cancelled], timeout: 1.1)
         }
     }
 

@@ -92,6 +92,10 @@ class TabsBarViewController: UIViewController {
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
     private var lastScrollSample: (offset: CGFloat, time: CFTimeInterval)?
+    private weak var hoveredTabCell: TabsBarCell?
+    private var hoveredTabFrame = CGRect.zero
+    private var hoverPreviewTask: Task<Void, Never>?
+    private var hoverPreview: TabsBarHoverPreview?
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -150,6 +154,7 @@ class TabsBarViewController: UIViewController {
 
     weak var delegate: TabsBarDelegate?
     var tabManager: TabManaging?
+    weak var previewsSource: TabPreviewsSource?
     var historyManager: HistoryManaging?
     var fireproofing: Fireproofing?
     var aiChatSettings: AIChatSettingsProvider?
@@ -208,6 +213,10 @@ class TabsBarViewController: UIViewController {
         decorate()
         enableInteractionsWithPointer()
         registerForAIChatSettingsChanges()
+        NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
+            .merge(with: NotificationCenter.default.publisher(for: .browserChromeVisibilityChanged))
+            .sink { [weak self] _ in self?.dismissTabHoverPreview() }
+            .store(in: &cancellables)
     }
 
     private func setUpSubviews() {
@@ -219,6 +228,7 @@ class TabsBarViewController: UIViewController {
         collectionView.dragDelegate = self
         collectionView.dropDelegate = self
         collectionView.dragInteractionEnabled = true
+        collectionView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleTabHover)))
         // Prefetching can drop a still-visible cell during a fast scroll and not re-display it
         // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
         collectionView.isPrefetchingEnabled = false
@@ -278,6 +288,11 @@ class TabsBarViewController: UIViewController {
         tabSwitcherButton.layoutSubviews()
         reloadData()
         updateAIChatButtonVisibility()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        dismissTabHoverPreview()
     }
 
     private func registerForAIChatSettingsChanges() {
@@ -557,6 +572,7 @@ class TabsBarViewController: UIViewController {
     }
 
     private func reloadData() {
+        dismissTabHoverPreview()
         collectionView.reloadData()
         refreshTabSwitcherButton()
         flareBackground.update()
@@ -571,6 +587,7 @@ class TabsBarViewController: UIViewController {
     }
 
     func reloadCell(for tab: Tab) {
+        dismissTabHoverPreview()
         guard let index = tabsModel?.indexOf(tab: tab) else { return }
         let indexPath = IndexPath(item: index, section: 0)
         guard collectionView.indexPathsForVisibleItems.contains(indexPath) else { return }
@@ -683,6 +700,11 @@ class TabsBarViewController: UIViewController {
         // Catches layout passes (e.g. the first one) that land before refresh()/backgroundTabAdded().
         recomputeItemSize()
         flareBackground.update()
+        if let cell = hoveredTabCell,
+           cell.visiblePointerRect(in: parent?.view ?? view) != hoveredTabFrame
+            || view.superview?.isHidden == true || view.superview?.alpha == 0 {
+            dismissTabHoverPreview()
+        }
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
     }
 
@@ -734,19 +756,93 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     }
 }
 
+extension TabsBarViewController {
+
+    @objc private func handleTabHover(_ recognizer: UIHoverGestureRecognizer) {
+        let isHovering = recognizer.state == .began || recognizer.state == .changed
+        updateTabHoverPreview(at: isHovering ? recognizer.location(in: collectionView) : nil)
+    }
+
+    func updateTabHoverPreview(at point: CGPoint?) {
+        guard let point, !collectionView.isDragging, !collectionView.isDecelerating, !collectionView.hasActiveDrag else {
+            dismissTabHoverPreview()
+            return
+        }
+        let cell = collectionView.visibleCells.compactMap { $0 as? TabsBarCell }.first {
+            $0.visiblePointerRect(in: collectionView).contains(point)
+        }
+        guard cell !== hoveredTabCell else { return }
+        dismissTabHoverPreview()
+        guard let cell, let indexPath = collectionView.indexPath(for: cell),
+              let tab = tabsModel?.get(tabAt: indexPath.item) else { return }
+        hoveredTabCell = cell
+        hoveredTabFrame = cell.visiblePointerRect(in: parent?.view ?? view)
+        hoverPreviewTask = Task { @MainActor [weak self, weak cell, weak tab] in
+            do {
+                try await Task.sleep(nanoseconds: 400_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled, let self, let cell, let tab, self.hoveredTabCell === cell,
+                  let indexPath = self.collectionView.indexPath(for: cell),
+                  self.tabsModel?.get(tabAt: indexPath.item) == tab else { return }
+            self.showTabHoverPreview(for: tab, in: cell)
+        }
+    }
+
+    private func showTabHoverPreview(for tab: Tab, in cell: TabsBarCell) {
+        guard let host = parent?.view, host.window != nil, parent?.presentedViewController == nil,
+              let container = view.superview, !container.isHidden, container.alpha > 0,
+              !view.isHidden, view.bounds.height > 0, let title = cell.displayTitle else { return }
+        let anchor = cell.visiblePointerRect(in: host)
+        guard !anchor.isEmpty, anchor == hoveredTabFrame else { return }
+        let available = host.bounds.inset(by: host.safeAreaInsets).insetBy(dx: 8, dy: 8)
+        guard available.intersects(anchor), available.width > 0 else { return }
+        let image = tab == tabsModel?.currentTab || tab.isHomeTab ? nil : previewsSource?.preview(for: tab)
+        let preview = TabsBarHoverPreview(title: title,
+                                         domain: tab.link?.url.host?.droppingWwwPrefix(),
+                                         image: image,
+                                         theme: ThemeManager.shared.currentTheme)
+        let width = min(300, available.width)
+        let size = preview.systemLayoutSizeFitting(CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                                                  withHorizontalFittingPriority: .required,
+                                                  verticalFittingPriority: .fittingSizeLevel)
+        guard size.height <= available.height else { return }
+        preview.frame = CGRect(x: min(max(anchor.midX - width / 2, available.minX), available.maxX - width),
+                               y: min(anchor.maxY + 8, available.maxY - size.height),
+                               width: width, height: size.height)
+        host.addSubview(preview)
+        hoverPreview = preview
+        preview.alpha = 0
+        UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.15) { preview.alpha = 1 }
+    }
+
+    private func dismissTabHoverPreview() {
+        hoverPreviewTask?.cancel()
+        hoverPreviewTask = nil
+        hoveredTabCell = nil
+        hoverPreview?.removeFromSuperview()
+        hoverPreview = nil
+    }
+}
+
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        dismissTabHoverPreview()
         lastScrollSample = (scrollView.contentOffset.x, CACurrentMediaTime())
         flareBackground.beginScrolling()
     }
 
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if decelerate { flareBackground.beginDecelerating() }
+    }
+
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        dismissTabHoverPreview()
         let time = CACurrentMediaTime()
         var velocity: CGFloat = 0
-        if scrollView.isDragging {
-            velocity = -scrollView.panGestureRecognizer.velocity(in: scrollView).x
-        } else if scrollView.isDecelerating, let sample = lastScrollSample {
+        if scrollView.isDecelerating, let sample = lastScrollSample {
             // UIKit's pan velocity stops updating after release; measure the remaining momentum.
             velocity = (scrollView.contentOffset.x - sample.offset) / CGFloat(max(time - sample.time, 1.0 / 120))
         }
@@ -757,6 +853,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        dismissTabHoverPreview()
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
@@ -768,6 +865,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
                         point: CGPoint) -> UIContextMenuConfiguration? {
+        dismissTabHoverPreview()
         guard tabsModel?.get(tabAt: indexPath.row) != nil else { return nil }
 
         return UIContextMenuConfiguration(identifier: NSNumber(value: indexPath.row), previewProvider: nil) { [weak self] _ in
@@ -834,6 +932,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
 extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        dismissTabHoverPreview()
         guard tabsModel?.get(tabAt: indexPath.row) != nil,
               let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { return [] }
         // Don't start a reorder drag from the close button.
@@ -964,6 +1063,7 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     }
 
     private func refreshVisibleCellStyles() {
+        dismissTabHoverPreview()
         collectionView.collectionViewLayout.invalidateLayout()
         let theme = ThemeManager.shared.currentTheme
         let current = currentIndex
@@ -1012,6 +1112,7 @@ extension TabsBarViewController {
     }
 
     private func closeTab(at index: Int) {
+        dismissTabHoverPreview()
         let tabState = index == currentIndex ? "active" : "inactive"
         PixelKit.fire(Pixel.Event.tabBarTabClosed, frequency: .dailyAndCount, options: .parameters([PixelParameters.tabState: tabState]))
         delegate?.tabsBar(self, didRemoveTabAtIndex: index)
@@ -1065,6 +1166,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
 extension TabsBarViewController {
 
     private func decorate() {
+        dismissTabHoverPreview()
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.tabsBarBackgroundColor
         view.tintColor = theme.barTintColor

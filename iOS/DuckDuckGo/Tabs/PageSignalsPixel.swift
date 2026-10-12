@@ -30,6 +30,10 @@ enum PageSignalsPixel: PixelKit.Event {
             return "page-signals_resource-load-delegate-already-set"
         }
     }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
 final class PageSignalsEventMapper: EventMapping<PageSignalsEvent> {

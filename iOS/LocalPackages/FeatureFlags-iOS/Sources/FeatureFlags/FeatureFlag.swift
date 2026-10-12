@@ -572,6 +572,12 @@ public enum FeatureFlag: String {
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
+    ///
+    /// Concluded and disabled so no new users are enrolled. The download-reason flow  is kept for the follow-up experiment:
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1219341928461688
+    /// To reuse it, rename this case, its subfeature and cohort enum, rename the experiment in
+    /// `native_experiments.json5`, and switch the source back to `.remoteReleasable`. Use a new subfeature name
+    /// so devices enrolled in this run are not carried over.
     case onboardingFlowByDownloadReasonExperiment
 
     /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
@@ -899,7 +905,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .searchTokenExperimentV4:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment), cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
             Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:

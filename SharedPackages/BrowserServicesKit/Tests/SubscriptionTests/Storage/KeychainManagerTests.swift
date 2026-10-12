@@ -407,21 +407,22 @@ final class KeychainManagerTests: XCTestCase {
 
         makeKeychainNotAvailable()
         try manager.store(data: testData, forKey: testKey)
-        recordingPixelHandler.keychainPixels.removeAll() // Only care about pixels from the retry below.
+        recordingPixelHandler.removeAllKeychainPixels() // Only care about pixels from the retry below.
 
         // When: a retry is attempted while the keychain is still unavailable.
         manager.retryPendingWrites()
-        let retried = expectation(description: "Retry attempted")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { retried.fulfill() }
-        wait(for: [retried], timeout: 1.0)
+        // `retrieveData` runs synchronously on the same serial queue as the retry, so once it returns the retry has
+        // completed. With the keychain still unavailable it reads from the backlog and does not drain it itself.
+        let retrievedData = try manager.retrieveData(forKey: testKey)
 
         // Then: re-queuing must not be reported as a successful drain, and the item must still be
         // recoverable from the backlog rather than lost or falsely marked written.
-        XCTAssertFalse(recordingPixelHandler.keychainPixels.contains(.dataWroteFromBacklog))
-        XCTAssertFalse(recordingPixelHandler.keychainPixels.contains(.failedToWriteDataFromBacklog))
-        XCTAssertFalse(recordingPixelHandler.keychainPixels.contains(.dataAddedToTheBacklog), "A re-queue is not a new addition")
+        let pixels = recordingPixelHandler.keychainPixels
+        XCTAssertFalse(pixels.contains(.dataWroteFromBacklog))
+        XCTAssertFalse(pixels.contains(.failedToWriteDataFromBacklog))
+        XCTAssertFalse(pixels.contains(.dataAddedToTheBacklog), "A re-queue is not a new addition")
         XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey))
-        XCTAssertEqual(try manager.retrieveData(forKey: testKey), testData)
+        XCTAssertEqual(retrievedData, testData)
     }
 
     func testWritingBacklogRetryBecomesAvailableFiresSuccessPixel() throws {
@@ -436,17 +437,18 @@ final class KeychainManagerTests: XCTestCase {
 
         makeKeychainNotAvailable()
         try manager.store(data: testData, forKey: testKey)
-        recordingPixelHandler.keychainPixels.removeAll()
+        recordingPixelHandler.removeAllKeychainPixels()
+        let wroteFromBacklog = expectation(description: "Backlog written")
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
+        }
 
         // When: the keychain becomes available and a retry is attempted.
         makeKeychainAvailable()
         manager.retryPendingWrites()
-        let retried = expectation(description: "Retry attempted")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { retried.fulfill() }
-        wait(for: [retried], timeout: 1.0)
 
         // Then: this time the write genuinely lands, and only then is success reported.
-        XCTAssertTrue(recordingPixelHandler.keychainPixels.contains(.dataWroteFromBacklog))
+        wait(for: [wroteFromBacklog], timeout: 1.0)
         XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
     }
 
@@ -536,12 +538,32 @@ final class KeychainManagerTests: XCTestCase {
 /// Records fired `KeychainManager.Pixel`s for assertions. `MockPixelHandler` is shared across
 /// several test targets and only logs, so this stays local to this file rather than widening that
 /// shared type's behavior for one test.
+/// `KeychainManager` fires pixels from its private background queue, so recorded pixels are lock-protected.
 private final class RecordingPixelHandler: SubscriptionPixelHandling {
-    var keychainPixels: [KeychainManager.Pixel] = []
+    private let lock = NSLock()
+    private var recordedKeychainPixels: [KeychainManager.Pixel] = []
+
+    /// Called on `KeychainManager`'s queue after each keychain pixel is recorded. Set it before triggering the work under test.
+    var onKeychainPixel: ((KeychainManager.Pixel) -> Void)?
+
+    var keychainPixels: [KeychainManager.Pixel] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedKeychainPixels
+    }
+
+    func removeAllKeychainPixels() {
+        lock.lock()
+        defer { lock.unlock() }
+        recordedKeychainPixels.removeAll()
+    }
 
     func handle(pixel: SubscriptionPixelType) {}
 
     func handle(pixel: KeychainManager.Pixel) {
-        keychainPixels.append(pixel)
+        lock.lock()
+        recordedKeychainPixels.append(pixel)
+        lock.unlock()
+        onKeychainPixel?(pixel)
     }
 }

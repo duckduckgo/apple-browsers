@@ -281,7 +281,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
-    func testHalfExposedTabRevealsBeforeSelectionAndSecondTapWorksInNarrowStrip() async throws {
+    func testFoldedTabRevealsBeforeSelectionAndRequiresSecondTapWhenHalfCovered() async throws {
         for width in [CGFloat(1024), 300] {
             let (controller, model) = makeOverflowingController()
             controller.view.frame.size.width = width
@@ -302,7 +302,18 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
                 collectionView.layoutIfNeeded()
                 let cell = try XCTUnwrap(collectionView.cellForItem(at: target) as? TabsBarCell)
                 XCTAssertGreaterThan(cell.visiblePointerRect(in: cell.contentView).width, cell.bounds.width / 2)
-                XCTAssertTrue(controller.collectionView(collectionView, shouldSelectItemAt: target))
+                let selectsImmediately = controller.collectionView(collectionView, shouldSelectItemAt: target)
+                if UIAccessibility.isReduceMotionEnabled {
+                    XCTAssertTrue(selectsImmediately)
+                } else {
+                    XCTAssertFalse(selectsImmediately)
+                    let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                        collectionView.indexPathsForSelectedItems?.contains(target) == true
+                    }, object: nil)
+                    await fulfillment(of: [selected], timeout: 1)
+                }
+                XCTAssertEqual(cell.visiblePointerRect(in: cell).width, cell.bounds.width, accuracy: 0.001)
+                collectionView.deselectItem(at: target, animated: false)
             } else {
                 XCTAssertLessThan(viewportWidth, originalFrame.width * 2)
             }

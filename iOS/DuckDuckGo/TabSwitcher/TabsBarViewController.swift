@@ -91,7 +91,10 @@ class TabsBarViewController: UIViewController {
     private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
-    private weak var tabAwaitingSelection: Tab?
+    private var tabSelectionRequestID = UUID()
+    private weak var tabAwaitingSelection: Tab? {
+        didSet { tabSelectionRequestID = UUID() }
+    }
     private weak var hoveredTabCell: TabsBarCell?
     private var hoveredTabFrame = CGRect.zero
     private var hoverPreviewTask: Task<Void, Never>?
@@ -295,6 +298,7 @@ class TabsBarViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
     }
 
@@ -479,11 +483,11 @@ class TabsBarViewController: UIViewController {
         }
     }
 
-    private func scrollToTab(at indexPath: IndexPath) {
+    private func scrollToTab(at indexPath: IndexPath, animated: Bool = true) {
         // Reveal the tab's original position with a glimpse of any neighbors beyond it.
         guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
               let frame = layout.frameForRevealingItem(at: indexPath) else { return }
-        collectionView.scrollRectToVisible(frame, animated: true)
+        collectionView.scrollRectToVisible(frame, animated: animated)
     }
 
     /// After a resize/rotation reflows the strip, nudge the current tab fully into view, but only if
@@ -868,18 +872,38 @@ extension TabsBarViewController: UICollectionViewDelegate {
         guard tab != tabsModel?.currentTab, !wasRevealed,
               let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell,
               cell.bounds.width > 0,
-              cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001 else { return true }
+              cell.visiblePointerRect(in: cell).width < cell.bounds.width - 0.001 else { return true }
 
-        // A second tap can select even when a narrow window cannot expose the entire tab.
         tabAwaitingSelection = tab
         dismissTabHoverPreview()
-        scrollToTab(at: indexPath)
+        if cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001 {
+            // A second tap can select even when a narrow window cannot expose the entire tab.
+            scrollToTab(at: indexPath)
+        } else if UIAccessibility.isReduceMotionEnabled {
+            scrollToTab(at: indexPath, animated: false)
+            tabAwaitingSelection = nil
+            return true
+        } else {
+            // Unfold before changing the pinned tab, so selection cannot jump its frame.
+            let requestID = tabSelectionRequestID
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction]) {
+                self.scrollToTab(at: indexPath, animated: false)
+                collectionView.layoutIfNeeded()
+            } completion: { [weak self] finished in
+                guard finished, let self, self.tabSelectionRequestID == requestID, self.tabAwaitingSelection === tab,
+                      let index = self.tabsModel?.indexOf(tab: tab) else { return }
+                let revealed = IndexPath(item: index, section: 0)
+                collectionView.selectItem(at: revealed, animated: false, scrollPosition: [])
+                self.collectionView(collectionView, didSelectItemAt: revealed)
+            }
+        }
         return false
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
                         point: CGPoint) -> UIContextMenuConfiguration? {
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
         guard tabsModel?.get(tabAt: indexPath.row) != nil else { return nil }
 
@@ -947,6 +971,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
 extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
         guard tabsModel?.get(tabAt: indexPath.row) != nil,
               let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { return [] }

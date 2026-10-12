@@ -28,6 +28,33 @@ final class TabsBarLayoutTests: XCTestCase {
     private let gap: CGFloat = 6
     private let minWidth: CGFloat = 120
 
+    @MainActor
+    func testSelectedCellMovesAboveFlareWithoutInterpolatingItsStackingOrder() {
+        let cell = TabsBarCell(frame: CGRect(x: 0, y: 0, width: 120, height: 40))
+        let attributes = UICollectionViewLayoutAttributes(forCellWith: IndexPath(item: 0, section: 0))
+        attributes.frame = cell.frame
+        attributes.zIndex = -200
+        cell.apply(attributes)
+        let stackingAnimation = CABasicAnimation(keyPath: "zPosition")
+        stackingAnimation.fromValue = -200
+        stackingAnimation.toValue = 2
+        stackingAnimation.duration = 0.3
+        cell.layer.add(CABasicAnimation(keyPath: "position"), forKey: "edgeBounce")
+
+        for applyStyle in [true, false] {
+            cell.layer.add(stackingAnimation, forKey: "zPosition")
+            if applyStyle {
+                cell.applyCurrentStyle(isCurrent: true, isNextCurrent: false, hidesInactiveCloseButton: true,
+                                       withTheme: ThemeManager.shared.currentTheme)
+            } else {
+                cell.apply(attributes)
+            }
+            XCTAssertEqual(cell.layer.zPosition, 2)
+            XCTAssertNil(cell.layer.animation(forKey: "zPosition"), "Selected content must stay above the flare throughout selection")
+            XCTAssertNotNil(cell.layer.animation(forKey: "edgeBounce"), "Position animations should be preserved")
+        }
+    }
+
     private func layout(stripWidth: CGFloat, tabsCount: Int, maxWidth: CGFloat) -> TabsBarLayout {
         TabsBarLayout(stripWidth: stripWidth, tabsCount: tabsCount, minItemWidth: minWidth, maxItemWidth: maxWidth,
                       buttonWidth: buttonWidth, buttonGap: gap)

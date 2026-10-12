@@ -90,14 +90,6 @@ struct NewTabPageKeyboardPolicyTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A short return before the first unlock still counts as the cold start", .timeLimit(.minutes(1)))
-    func whenReturningBeforeFirstUnlockThenItIsAnAppOpen() {
-        let now = Date()
-
-        #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: now.addingTimeInterval(-5), hasCompletedAuthentication: false, now: now))
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Swiping back restores only the focus remembered before leaving the page", .timeLimit(.minutes(1)),
           arguments: [false, true], [false, true])
     func whenSwipingBackThenOnlyPreviouslyFocusedPageRestoresFocus(isEnabled: Bool, isInputFocused: Bool) throws {

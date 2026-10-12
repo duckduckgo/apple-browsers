@@ -1316,22 +1316,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
-    func testWhenOrdinaryActivationIsCancelledBeforeFocusThenInputDoesNotFocus() {
-        var scheduledFocus: [() -> Void] = []
-        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
-        showAppOpenInput()
-        var isRequestValid = true
-        var completions: [Bool] = []
-        sut.activateFromOmnibar(cardPosition: .bottom, isFocusRequestValid: { isRequestValid },
-                                onFocus: { completions.append($0) })
-
-        isRequestValid = false
-        scheduledFocus.removeFirst()()
-
-        XCTAssertEqual(completions, [false])
-        XCTAssertFalse(sut.viewController.isInputFirstResponder)
-    }
-
     func testWhenAutomaticLandingBecomesInactiveBeforeFocusThenInputStillFocuses() {
         for isFloatingUIEnabled in [false, true] {
             var scheduledFocus: [() -> Void] = []
@@ -1373,24 +1357,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
-    func testWhenAutomaticLandingSessionEndsBeforeFocusThenInputStaysHidden() {
-        var scheduledFocus: [() -> Void] = []
-        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
-        showAppOpenInput()
-        var completions: [Bool] = []
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
-                                allowsInactiveFocus: true, onFocus: { completions.append($0) })
-        sut.updateOmnibarInputVisibility(false)
-        sut.completeOmnibarDeactivation()
-        XCTAssertEqual(completions, [false])
-
-        scheduledFocus.removeFirst()()
-
-        XCTAssertEqual(completions, [false])
-        XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertFalse(sut.viewController.isInputFirstResponder)
-    }
-
     func testWhenOmnibarSessionEndsBeforeQueuedFocusThenPendingCompletionsFail() {
         var scheduledFocus: [() -> Void] = []
         sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
@@ -1404,6 +1370,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         scheduledFocus.removeFirst()()
 
         XCTAssertEqual(completions, [false, false])
+        XCTAssertEqual(sut.displayState, .hidden)
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 

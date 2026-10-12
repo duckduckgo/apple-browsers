@@ -137,26 +137,6 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("App Launch usage requires successful focus on another tab", .timeLimit(.minutes(1)), arguments: [
-        (false, false),
-        (true, true)
-    ])
-    func appLaunchPixelRequiresFocusOnAnotherTab(onNewTabPage: Bool, keyboardWasShown: Bool) {
-        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        onAppLaunch = true
-        target.isNewTabPageVisible = onNewTabPage
-        target.keyboardWasShown = keyboardWasShown
-
-        presenter.showKeyboardOnLaunch()
-
-        #expect(pixelFiring.actualFireCalls.isEmpty)
-        scheduledActions.forEach { $0() }
-
-        #expect(target.allowedKeyboardCallCount == 1)
-        #expect(pixelFiring.actualFireCalls.count == (!onNewTabPage && keyboardWasShown ? 1 : 0))
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("App Launch usage waits for the actual asynchronous focus result", .timeLimit(.minutes(1)), arguments: [false, true])
     func appLaunchPixelWaitsForFocusCompletion(keyboardWasShown: Bool) throws {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]

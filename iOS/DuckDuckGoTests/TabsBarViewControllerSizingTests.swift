@@ -267,6 +267,52 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     @MainActor
+    func testHalfExposedTabRevealsBeforeSelectionAndSecondTapWorksInNarrowStrip() async throws {
+        for width in [CGFloat(1024), 300] {
+            let (controller, model) = makeOverflowingController()
+            controller.view.frame.size.width = width
+            controller.view.layoutIfNeeded()
+            controller.refresh(tabsModel: model)
+            let collectionView = controller.collectionView
+            let layout = try XCTUnwrap(collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)
+            let current = IndexPath(item: 8, section: 0)
+            let target = IndexPath(item: 7, section: 0)
+            let selectedTab = model.currentTab
+            let originalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: current))
+            let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
+            let peek = min(originalFrame.width / 2, (viewportWidth - originalFrame.width) / 2)
+            let pinOffset = originalFrame.minX - collectionView.adjustedContentInset.left - peek
+
+            if width == 1024 {
+                collectionView.contentOffset.x = pinOffset - 1
+                collectionView.layoutIfNeeded()
+                let cell = try XCTUnwrap(collectionView.cellForItem(at: target) as? TabsBarCell)
+                XCTAssertGreaterThan(cell.visiblePointerRect(in: cell.contentView).width, cell.bounds.width / 2)
+                XCTAssertTrue(controller.collectionView(collectionView, shouldSelectItemAt: target))
+            } else {
+                XCTAssertLessThan(viewportWidth, originalFrame.width * 2)
+            }
+
+            collectionView.contentOffset.x = pinOffset + originalFrame.width * 2
+            collectionView.layoutIfNeeded()
+            let cell = try XCTUnwrap(collectionView.cellForItem(at: target) as? TabsBarCell)
+            XCTAssertEqual(cell.visiblePointerRect(in: cell.contentView).width, peek, accuracy: 0.001)
+            XCTAssertLessThanOrEqual(peek, cell.bounds.width / 2)
+            XCTAssertTrue(controller.collectionView(collectionView, shouldSelectItemAt: current))
+            let offset = collectionView.contentOffset
+            let revealed = keyValueObservingExpectation(for: collectionView, keyPath: "contentOffset") { _, _ in
+                collectionView.contentOffset != offset
+            }
+
+            XCTAssertFalse(controller.collectionView(collectionView, shouldSelectItemAt: target))
+            XCTAssertIdentical(model.currentTab, selectedTab)
+            await fulfillment(of: [revealed], timeout: 2)
+            XCTAssertIdentical(model.currentTab, selectedTab)
+            XCTAssertTrue(controller.collectionView(collectionView, shouldSelectItemAt: target))
+        }
+    }
+
+    @MainActor
     func testForegroundRestoresSelectionWithoutChangingTheCurrentTabOrScrollPosition() throws {
         let (controller, model) = makeOverflowingController()
         let selectedTab = model.currentTab

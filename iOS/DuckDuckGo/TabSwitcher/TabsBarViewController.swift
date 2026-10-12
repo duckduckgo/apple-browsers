@@ -91,6 +91,7 @@ class TabsBarViewController: UIViewController {
     private var draggedTabGrabOffset: CGFloat = 0
     private weak var draggedTabCell: TabsBarCell?
     private weak var reorderDropSession: UIDropSession?
+    private weak var tabAwaitingSelection: Tab?
     private weak var hoveredTabCell: TabsBarCell?
     private var hoveredTabFrame = CGRect.zero
     private var hoverPreviewTask: Task<Void, Never>?
@@ -574,6 +575,7 @@ class TabsBarViewController: UIViewController {
     }
 
     private func reloadData() {
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
         collectionView.reloadData()
         refreshTabSwitcherButton()
@@ -832,6 +834,7 @@ extension TabsBarViewController {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
         let pan = scrollView.panGestureRecognizer
         let location = pan.location(in: view)
@@ -852,13 +855,26 @@ extension TabsBarViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        return true
+        guard let tab = tabsModel?.get(tabAt: indexPath.item) else { return false }
+        let wasRevealed = tab == tabAwaitingSelection
+        tabAwaitingSelection = nil
+        guard tab != tabsModel?.currentTab, !wasRevealed,
+              let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell,
+              cell.bounds.width > 0,
+              cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001 else { return true }
+
+        // A second tap can select even when a narrow window cannot expose the entire tab.
+        tabAwaitingSelection = tab
+        dismissTabHoverPreview()
+        scrollToTab(at: indexPath)
+        return false
     }
 
     func collectionView(_ collectionView: UICollectionView,
@@ -1062,6 +1078,7 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     }
 
     private func refreshVisibleCellStyles() {
+        tabAwaitingSelection = nil
         dismissTabHoverPreview()
         collectionView.collectionViewLayout.invalidateLayout()
         let theme = ThemeManager.shared.currentTheme

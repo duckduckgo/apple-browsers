@@ -75,13 +75,12 @@ struct Connected: ConnectedHandling {
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
         let drawsIdleReturnNewTabPage = Self.drawsIdleReturnNewTabPage(actionToHandle: actionToHandle, appDependencies: appDependencies)
-        mainCoordinator.controller.drawsIdleReturnNewTabPageAtLaunch = drawsIdleReturnNewTabPage
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService,
                                               idleReturnLaunchLanding: IdleReturnLaunchLanding(drewNewTabPage: drawsIdleReturnNewTabPage))
 
-        configure(window, with: mainCoordinator)
+        configure(window, with: mainCoordinator, drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -158,8 +157,10 @@ struct Connected: ConnectedHandling {
                                      hasPageToReplace: currentTab?.link != nil)
     }
 
-    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {
+    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator, drawsIdleReturnNewTabPage: Bool = false) {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
+        // Before the root is set: setting it loads the view, which draws the first screen.
+        mainCoordinator.prepareInitialScreen(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         window.rootViewController = mainCoordinator.controller
         window.makeKeyAndVisible()
         mainCoordinator.start()

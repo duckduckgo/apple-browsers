@@ -533,7 +533,10 @@ final class BrowserToolbarView: UIView {
             contentStackBottomConstraint.constant = -currentBottomContentPadding
         }
         let collapse = usesEmbeddedBottomChromeMetrics ? buttonRowCollapseProgress.clamped(to: 0...1) : 0
-        contentStack.spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
+        let spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
+        if contentStack.spacing != spacing {
+            contentStack.spacing = spacing
+        }
         if usesEmbeddedBottomChromeMetrics {
             buttonRowHeightConstraint.constant = Self.floatingEmbeddedButtonsHeight * (1 - collapse)
             buttonRowHeightConstraint.isActive = true

@@ -271,7 +271,15 @@ final class FloatingDomainCapsuleController {
 
         // This overlay does not participate in the browser's layout. Updating its frame avoids
         // invalidating the root constraint graph for every step of the morph.
-        button.frame = CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height)
+        let autoresizingMask: UIView.AutoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin,
+                                                        addressBarPosition == .top ? .flexibleBottomMargin : .flexibleTopMargin]
+        if button.autoresizingMask != autoresizingMask {
+            button.autoresizingMask = autoresizingMask
+        }
+        let frame = CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height)
+        if button.frame != frame {
+            button.frame = frame
+        }
         if #unavailable(iOS 26) {
             backgroundView.layer.cornerRadius = height / 2
         }

@@ -51,6 +51,9 @@ class UITestCase: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        if (testRun?.totalFailureCount ?? 0) > 0 {
+            attachFailureDiagnostics()
+        }
         app.terminate()
         try super.tearDownWithError()
     }
@@ -97,5 +100,25 @@ class UITestCase: XCTestCase {
         default:
             throw ConfigurationError.invalidInternalUserMode(value)
         }
+    }
+
+    private func attachFailureDiagnostics() {
+        let state = app.state
+        let stateAttachment = XCTAttachment(string: "App process state before teardown: \(state)")
+        stateAttachment.name = "App process state"
+        stateAttachment.lifetime = .keepAlways
+        add(stateAttachment)
+
+        let screenshotAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshotAttachment.name = "Screen before teardown"
+        screenshotAttachment.lifetime = .keepAlways
+        add(screenshotAttachment)
+
+        guard state == .runningForeground, app.windows.firstMatch.exists else { return }
+
+        let hierarchyAttachment = XCTAttachment(string: app.debugDescription)
+        hierarchyAttachment.name = "App accessibility hierarchy before teardown"
+        hierarchyAttachment.lifetime = .keepAlways
+        add(hierarchyAttachment)
     }
 }

@@ -230,6 +230,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// the chat already loaded, so a late value is still adopted.
     var directNavigationFallback: AIChatConversationSource? {
         didSet {
+            if directNavigationFallback != nil || oldValue != nil {
+                logDuckAIAttribution("handler fallback=\(directNavigationFallback?.rawValue ?? "nil") consumed=\(didConsumeConversationSource) source=\(conversationSource?.rawValue ?? "nil")")
+            }
             if didConsumeConversationSource, conversationSource == nil {
                 conversationSource = directNavigationFallback
             }
@@ -327,9 +330,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             // Only a chat may claim the stamp: duckduckgo.com's other pages fetch this config too, and
             // the mailbox is app-wide. A nil URL can't be told apart from a chat, so it consumes.
             if url == nil || url?.isDuckAIURL == true {
-                conversationSource = conversationSourceHandler.consumeData()
-                    ?? (url?.isDuckAIOpenedFromHomepage == true ? .duckduckgoHomepage : nil)
-                    ?? directNavigationFallback
+                let stamp = conversationSourceHandler.consumeData()
+                let homepage: AIChatConversationSource? = url?.isDuckAIOpenedFromHomepage == true ? .duckduckgoHomepage : nil
+                conversationSource = stamp ?? homepage ?? directNavigationFallback
+                logDuckAIAttribution("handler consume url=\(url?.absoluteString ?? "nil") stamp=\(stamp?.rawValue ?? "nil") homepage=\(homepage?.rawValue ?? "nil") fallback=\(directNavigationFallback?.rawValue ?? "nil") -> source=\(conversationSource?.rawValue ?? "nil")")
             }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
@@ -355,6 +359,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a
     /// second chat must not keep the first one's source.
     func resetConversationSourceForNewDocument() {
+        if conversationSource != nil || directNavigationFallback != nil {
+            logDuckAIAttribution("handler reset source=\(conversationSource?.rawValue ?? "nil") fallback=\(directNavigationFallback?.rawValue ?? "nil")")
+        }
         didConsumeConversationSource = false
         conversationSource = nil
         directNavigationFallback = nil

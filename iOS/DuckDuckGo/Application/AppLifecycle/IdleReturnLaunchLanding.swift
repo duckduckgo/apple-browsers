@@ -30,3 +30,22 @@ extension IdleReturnOutcome {
     }
 
 }
+
+/// What the cold start drew, for every launch. Only a drawn New Tab Page is kept: the outcome is
+/// re-evaluated when the user arrives, since a background launch can make it hours old.
+@MainActor
+final class IdleReturnLaunchLanding {
+
+    private var drewNewTabPage: Bool
+
+    init(drewNewTabPage: Bool) {
+        self.drewNewTabPage = drewNewTabPage
+    }
+
+    /// True for the first caller only, so the arrival is recorded once however many foregrounds try.
+    func takeDrawnNewTabPage() -> Bool {
+        defer { drewNewTabPage = false }
+        return drewNewTabPage
+    }
+
+}

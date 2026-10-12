@@ -316,6 +316,8 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    /// Set by `Connected` before the view loads: land a cold start after idle on the New Tab Page.
+    var drawsIdleReturnNewTabPageAtLaunch = false
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
@@ -2390,6 +2392,11 @@ class MainViewController: UIViewController {
             return
         }
 
+        if drawsIdleReturnNewTabPageAtLaunch {
+            attachNewTabPageForIdleReturnAtLaunch()
+            return
+        }
+
         if tabManager.currentTabsModel.currentTab?.link != nil {
             guard let tab = tabManager.current(createIfNeeded: true) else {
                 fatalError("Unable to create tab")
@@ -2398,6 +2405,16 @@ class MainViewController: UIViewController {
         } else {
             attachHomeScreen()
         }
+    }
+
+    /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
+    private func attachNewTabPageForIdleReturnAtLaunch() {
+        if let existingHomeTab = tabManager.firstHomeTab() {
+            tabManager.select(existingHomeTab, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab()
+        }
+        attachHomeScreen(isNewTab: true, openedAfterIdle: true)
     }
 
     private func loadInitialViewIfNeeded() {

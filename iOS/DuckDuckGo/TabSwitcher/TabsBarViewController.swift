@@ -835,7 +835,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if decelerate { flareBackground.beginDecelerating() }
+        flareBackground.endScrolling(velocity: -scrollView.panGestureRecognizer.velocity(in: scrollView).x)
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {

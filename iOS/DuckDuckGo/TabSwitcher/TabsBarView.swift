@@ -103,6 +103,11 @@ final class TabsBarView: UIView {
 final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
 
     var currentIndex: (() -> Int?)?
+    var currentTabDragOffset: CGFloat = 0 {
+        didSet {
+            if currentTabDragOffset != oldValue { invalidateLayout() }
+        }
+    }
 
     override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         true
@@ -130,6 +135,16 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
     }
 
     override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        attributesForItem(at: indexPath, dragOffset: currentTabDragOffset)
+    }
+
+    func frameForCurrentTabAtRest() -> CGRect? {
+        guard let index = currentIndex?(), let collectionView,
+              index >= 0, index < collectionView.numberOfItems(inSection: 0) else { return nil }
+        return attributesForItem(at: IndexPath(item: index, section: 0), dragOffset: 0)?.frame
+    }
+
+    private func attributesForItem(at indexPath: IndexPath, dragOffset: CGFloat) -> UICollectionViewLayoutAttributes? {
         guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes,
               let collectionView else {
             return super.layoutAttributesForItem(at: indexPath)
@@ -147,7 +162,8 @@ final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
         if isCurrent {
             let minimum = leading + (indexPath.item > 0 ? peek : 0)
             let maximum = trailing - (indexPath.item < collectionView.numberOfItems(inSection: indexPath.section) - 1 ? peek : 0)
-            attributes.frame.origin.x = min(max(origin, minimum), maximum)
+            let restingOrigin = min(max(origin, minimum), maximum)
+            attributes.frame.origin.x = min(max(restingOrigin + dragOffset, leading), trailing)
             return attributes
         }
         if peek > 0, let current,

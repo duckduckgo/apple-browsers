@@ -77,6 +77,8 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
         case .failedToWriteDataFromBacklog:
             pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
+        case .availabilityProbeMismatch(let probeStatus, let lookupResult):
+            pixelKit?.fire(SubscriptionKeychainPixel.availabilityProbeMismatch(source, probeStatus: probeStatus, lookupResult: lookupResult), frequency: .dailyAndCount)
         }
     }
 }

@@ -413,6 +413,29 @@ enum SubscriptionPixel: PixelKit.Event {
 
 }
 
+/// Subscription keychain diagnostics. A separate definition so it uses PixelKit's default naming.
+enum SubscriptionKeychainPixel: PixelKit.Event {
+    /// The keychain availability probe reported the keychain as unavailable, but the lookup that followed didn't fail.
+    case availabilityProbeMismatch(SubscriptionPixelHandler.Source, probeStatus: OSStatus, lookupResult: KeychainManager.LookupResult)
+
+    var name: String {
+        switch self {
+        case .availabilityProbeMismatch: return "subscription_keychain_availability-probe_mismatch"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .availabilityProbeMismatch(let source, let probeStatus, let lookupResult):
+            return ["source": source.description,
+                    "probe_status": String(probeStatus),
+                    "lookup_result": lookupResult.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
 enum SubscriptionErrorPixel: PixelKit.Event {
 
     case subscriptionKeychainAccessError(accessType: AccountKeychainAccessType,

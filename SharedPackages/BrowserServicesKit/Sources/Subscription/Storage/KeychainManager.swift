@@ -79,7 +79,16 @@ public final class KeychainManager: KeychainManaging {
         case dataAddedToTheBacklog
         case dataWroteFromBacklog
         case failedToWriteDataFromBacklog
+        /// The availability probe reported the keychain as unavailable, but the lookup that followed didn't fail.
+        /// Measures how often the probe disagrees with the real keychain, before the probe is trusted to skip lookups.
+        case availabilityProbeMismatch(probeStatus: OSStatus, lookupResult: LookupResult)
     }
+
+    public enum LookupResult: String {
+        case found
+        case notFound = "not_found"
+    }
+
     public typealias KeychainAttributes = [CFString: Any]
 
     // MARK: - Constants
@@ -87,6 +96,7 @@ public final class KeychainManager: KeychainManaging {
     private enum Constants {
         static let accessQueueLabel = "keychain.subscription.access"
         static let keychainAccessibilityLevel = kSecAttrAccessibleAfterFirstUnlock
+        static let availabilityProbeService = "non existent"
     }
 
     // MARK: - Properties
@@ -132,15 +142,13 @@ public final class KeychainManager: KeychainManaging {
     public func retrieveData(forKey key: String) throws -> Data? {
         return try accessQueue.sync {
 
-            if isKeychainAvailable {
+            let probeStatus = availabilityProbeStatus()
+            if probeStatus == errSecItemNotFound {
                 // Trigger backlog processing for that contexts that can't rely on notifications for detecting keychain availability
                 self.processWritingBacklog()
             } else if let dataFromBacklog = self.writingBacklog[key] {
                 Logger.keychainManager.log("Data for key \(key, privacy: .public) retrieved from writing backlog")
                 return dataFromBacklog
-            } else {
-                Logger.keychainManager.log("Keychain unavailable and no backlog data for key \(key, privacy: .public), deferring")
-                throw AccountKeychainAccessError.keychainLookupFailure(errSecNotAvailable)
             }
 
             var query = attributes
@@ -154,14 +162,16 @@ public final class KeychainManager: KeychainManaging {
             switch status {
             case errSecSuccess:
                 if let existingItem = item as? Data {
+                    reportAvailabilityProbeMismatchIfNeeded(probeStatus: probeStatus, lookupResult: .found)
                     return existingItem
                 } else {
                     throw AccountKeychainAccessError.failedToDecodeKeychainData
                 }
             case errSecItemNotFound:
+                reportAvailabilityProbeMismatchIfNeeded(probeStatus: probeStatus, lookupResult: .notFound)
                 return nil
             default:
-                throw AccountKeychainAccessError.keychainLookupFailure(status)
+                throw AccountKeychainAccessError.keychainLookupFailure(status, availabilityProbeStatus: probeStatus)
             }
         }
     }
@@ -195,15 +205,21 @@ public final class KeychainManager: KeychainManaging {
 
     // MARK: - Private Helpers
 
-    private var isKeychainAvailable: Bool {
+    /// Queries an item that never exists: `errSecItemNotFound` means the keychain accepted the query, so it is considered available.
+    private func availabilityProbeStatus() -> OSStatus {
         var query = attributes
-        query[kSecAttrService] = "non existent"
+        query[kSecAttrService] = Constants.availabilityProbeService
         query[kSecMatchLimit] = kSecMatchLimitOne
         query[kSecReturnData] = true
 
         var item: CFTypeRef?
-        let status = keychainOperations.copyMatching(query as CFDictionary, &item)
-        return status == errSecItemNotFound
+        return keychainOperations.copyMatching(query as CFDictionary, &item)
+    }
+
+    private func reportAvailabilityProbeMismatchIfNeeded(probeStatus: OSStatus, lookupResult: LookupResult) {
+        guard probeStatus != errSecItemNotFound else { return }
+        Logger.keychainManager.error("Keychain availability probe reported \(probeStatus.humanReadableDescription, privacy: .public) but the lookup returned \(lookupResult.rawValue, privacy: .public)")
+        pixelHandler.handle(pixel: .availabilityProbeMismatch(probeStatus: probeStatus, lookupResult: lookupResult))
     }
 
     private func addToWritingBacklog(_ data: Data, forKey key: String) {

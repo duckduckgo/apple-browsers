@@ -60,6 +60,32 @@
             }
         ]
     },
+    "m_mac_subscription_keychain_availability-probe_mismatch": {
+        "description": "Fired when the subscription keychain availability probe reports the keychain as unavailable, but the lookup that follows doesn't fail. Measures how often the probe disagrees with the real keychain, before the probe is trusted to skip lookups",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            },
+            {
+                "key": "probe_status",
+                "description": "The OSStatus returned by the availability probe, e.g. -25308 (errSecInteractionNotAllowed) or -25291 (errSecNotAvailable)",
+                "type": "string"
+            },
+            {
+                "key": "lookup_result",
+                "description": "What the real lookup returned: the item was found, or it doesn't exist",
+                "type": "string",
+                "enum": ["found", "not_found"]
+            }
+        ]
+    },
     // Pending Transaction Recovery - Direct Distribution
     "m_mac_direct_privacy-pro_purchase_success_after_pending_transaction": {
         "description": "Fired when a subscription purchase succeeds after previously being in a pending transaction state (e.g., Ask to Buy was approved) - direct distribution",

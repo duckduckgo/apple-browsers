@@ -28,7 +28,9 @@ public enum AccountKeychainAccessError: DDGError {
     case failedToEncodeKeychainData
     case keychainSaveFailure(OSStatus)
     case keychainDeleteFailure(OSStatus)
-    case keychainLookupFailure(OSStatus)
+    /// `availabilityProbeStatus` is the status of the keychain availability probe that ran right before the lookup
+    /// (`errSecItemNotFound` means the probe considered the keychain available), `nil` when no probe ran.
+    case keychainLookupFailure(OSStatus, availabilityProbeStatus: OSStatus? = nil)
     case expectedTokenNotFound
 
     public var description: String {
@@ -45,14 +47,18 @@ public enum AccountKeychainAccessError: DDGError {
             return "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
         case .keychainDeleteFailure(let status):
             return "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
-        case .keychainLookupFailure(let status):
-            return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainLookupFailure(let status, let availabilityProbeStatus):
+            guard let availabilityProbeStatus else {
+                return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
+            }
+            return "keychainLookupFailure(\(status) - \(status.humanReadableDescription), availabilityProbe: \(availabilityProbeStatus) - \(availabilityProbeStatus.humanReadableDescription))"
         case .expectedTokenNotFound:
             return "expectedTokenNotFound"
         }
     }
 
     public static var errorDomain: String { "com.duckduckgo.subscription.AccountKeychainAccessError" }
+    public static let availabilityProbeErrorDomain = "com.duckduckgo.subscription.KeychainAvailabilityProbe"
 
     public var errorCode: Int {
         switch self {
@@ -84,9 +90,15 @@ public enum AccountKeychainAccessError: DDGError {
                 .expectedTokenNotFound:
             return nil
         case .keychainSaveFailure(let oSStatus),
-                .keychainDeleteFailure(let oSStatus),
-                .keychainLookupFailure(let oSStatus):
+                .keychainDeleteFailure(let oSStatus):
             return NSError(domain: AccountKeychainAccessError.errorDomain, code: Int(oSStatus))
+        case .keychainLookupFailure(let oSStatus, let availabilityProbeStatus):
+            // The probe status is nested one level down so error reporting that walks the underlying chain
+            // (e.g. wide events' underlying_domain2/underlying_code2) records it next to the lookup status.
+            let userInfo: [String: Any] = availabilityProbeStatus.map {
+                [NSUnderlyingErrorKey: NSError(domain: Self.availabilityProbeErrorDomain, code: Int($0))]
+            } ?? [:]
+            return NSError(domain: AccountKeychainAccessError.errorDomain, code: Int(oSStatus), userInfo: userInfo)
         }
     }
 }

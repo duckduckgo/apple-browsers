@@ -47,12 +47,15 @@ final class KeychainManagerTests: XCTestCase {
 
     // MARK: - Helper Methods
 
-    private func createKeychainManager() -> KeychainManager {
+    /// The service name `KeychainManager` queries to probe availability.
+    private static let availabilityProbeService = "non existent"
+
+    private func createKeychainManager(pixelHandler: SubscriptionPixelHandling = MockPixelHandler()) -> KeychainManager {
         let attributes: KeychainManager.KeychainAttributes = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrSynchronizable: false
         ]
-        return KeychainManager(keychainOperations: mockKeychainOperations, attributes: attributes, pixelHandler: MockPixelHandler())
+        return KeychainManager(keychainOperations: mockKeychainOperations, attributes: attributes, pixelHandler: pixelHandler)
     }
 
     private func createTestData() -> Data {
@@ -130,20 +133,113 @@ final class KeychainManagerTests: XCTestCase {
     }
 
     func testRetrieveDataKeychainLookupFailure() {
-        // Given: the keychain is unavailable (every copyMatching call, including the availability
-        // probe, fails) and there's no backlog entry for this key, so retrieveData must defer
-        // rather than issue the doomed lookup anyway.
+        // Given: every copyMatching call fails, including the availability probe
         let testKey = "test-key"
         mockKeychainOperations.shouldFailCopyMatching = true
         mockKeychainOperations.copyMatchingFailureStatus = errSecInteractionNotAllowed
 
+        // When & Then: the real lookup still runs, and the error carries both statuses
+        XCTAssertThrowsError(try keychainManager.retrieveData(forKey: testKey)) { error in
+            guard case .keychainLookupFailure(let status, let availabilityProbeStatus) = error as? AccountKeychainAccessError else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+            XCTAssertEqual(status, errSecInteractionNotAllowed)
+            XCTAssertEqual(availabilityProbeStatus, errSecInteractionNotAllowed)
+        }
+    }
+
+    func testRetrieveDataLookupFailureWhileProbeReportsAvailable_RecordsProbeStatus() {
+        // Given: the probe finds the keychain available, but the lookup of the real item fails
+        let testKey = "test-key"
+        mockKeychainOperations.copyMatchingStatusOverrides = [testKey: errSecInteractionNotAllowed]
+
         // When & Then
         XCTAssertThrowsError(try keychainManager.retrieveData(forKey: testKey)) { error in
-            XCTAssertTrue(error is AccountKeychainAccessError)
-            if case .keychainLookupFailure(let status) = error as? AccountKeychainAccessError {
-                XCTAssertEqual(status, errSecNotAvailable)
+            guard case .keychainLookupFailure(let status, let availabilityProbeStatus) = error as? AccountKeychainAccessError else {
+                return XCTFail("Unexpected error: \(error)")
             }
+            XCTAssertEqual(status, errSecInteractionNotAllowed)
+            XCTAssertEqual(availabilityProbeStatus, errSecItemNotFound)
         }
+    }
+
+    func testKeychainLookupFailure_ExposesProbeStatusInDescriptionAndUnderlyingError() throws {
+        let error = AccountKeychainAccessError.keychainLookupFailure(errSecInteractionNotAllowed, availabilityProbeStatus: errSecItemNotFound)
+
+        XCTAssertTrue(error.description.contains("availabilityProbe: \(errSecItemNotFound)"))
+        let underlying = try XCTUnwrap(error.underlyingError as NSError?)
+        XCTAssertEqual(underlying.code, Int(errSecInteractionNotAllowed))
+        let probe = try XCTUnwrap(underlying.userInfo[NSUnderlyingErrorKey] as? NSError)
+        XCTAssertEqual(probe.domain, AccountKeychainAccessError.availabilityProbeErrorDomain)
+        XCTAssertEqual(probe.code, Int(errSecItemNotFound))
+    }
+
+    func testKeychainLookupFailure_WithoutProbeStatus_KeepsOriginalDescription() {
+        let error = AccountKeychainAccessError.keychainLookupFailure(errSecInteractionNotAllowed)
+
+        XCTAssertFalse(error.description.contains("availabilityProbe"))
+        XCTAssertNil((error.underlyingError as NSError?)?.userInfo[NSUnderlyingErrorKey])
+    }
+
+    // MARK: - Availability Probe Mismatch
+
+    func testRetrieveDataProbeUnavailableButItemFound_FiresMismatchPixel() throws {
+        // Given: the probe fails, but the real item is readable
+        let pixelHandler = RecordingPixelHandler()
+        keychainManager = createKeychainManager(pixelHandler: pixelHandler)
+        let testKey = "test-key"
+        mockKeychainOperations.setStoredData(createTestData(), for: testKey)
+        mockKeychainOperations.copyMatchingStatusOverrides = [Self.availabilityProbeService: errSecInteractionNotAllowed]
+
+        // When
+        let retrievedData = try keychainManager.retrieveData(forKey: testKey)
+
+        // Then: behaviour is unchanged, and the disagreement is reported
+        XCTAssertEqual(retrievedData, createTestData())
+        XCTAssertEqual(pixelHandler.probeMismatches.count, 1)
+        XCTAssertEqual(pixelHandler.probeMismatches.first?.probeStatus, errSecInteractionNotAllowed)
+        XCTAssertEqual(pixelHandler.probeMismatches.first?.lookupResult, .found)
+    }
+
+    func testRetrieveDataProbeUnavailableButItemNotFound_FiresMismatchPixel() throws {
+        let pixelHandler = RecordingPixelHandler()
+        keychainManager = createKeychainManager(pixelHandler: pixelHandler)
+        mockKeychainOperations.copyMatchingStatusOverrides = [Self.availabilityProbeService: errSecNotAvailable]
+
+        let retrievedData = try keychainManager.retrieveData(forKey: "missing-key")
+
+        XCTAssertNil(retrievedData)
+        XCTAssertEqual(pixelHandler.probeMismatches.count, 1)
+        XCTAssertEqual(pixelHandler.probeMismatches.first?.probeStatus, errSecNotAvailable)
+        XCTAssertEqual(pixelHandler.probeMismatches.first?.lookupResult, .notFound)
+    }
+
+    func testRetrieveDataProbeAvailable_DoesNotFireMismatchPixel() throws {
+        let pixelHandler = RecordingPixelHandler()
+        keychainManager = createKeychainManager(pixelHandler: pixelHandler)
+        let testKey = "test-key"
+        mockKeychainOperations.setStoredData(createTestData(), for: testKey)
+
+        _ = try keychainManager.retrieveData(forKey: testKey)
+        _ = try keychainManager.retrieveData(forKey: "missing-key")
+
+        XCTAssertTrue(pixelHandler.probeMismatches.isEmpty)
+    }
+
+    func testRetrieveDataProbeUnavailableServedFromBacklog_DoesNotFireMismatchPixel() throws {
+        // Given: a write queued while the keychain was unavailable
+        let pixelHandler = RecordingPixelHandler()
+        keychainManager = createKeychainManager(pixelHandler: pixelHandler)
+        let testKey = "test-key"
+        makeKeychainNotAvailable()
+        try keychainManager.store(data: createTestData(), forKey: testKey)
+
+        // When: the read is answered from the backlog, so no lookup runs to disagree with the probe
+        let retrievedData = try keychainManager.retrieveData(forKey: testKey)
+
+        // Then
+        XCTAssertEqual(retrievedData, createTestData())
+        XCTAssertTrue(pixelHandler.probeMismatches.isEmpty)
     }
 
     func testRetrieveDataFailedToDecodeKeychainData() {
@@ -477,5 +573,17 @@ final class KeychainManagerTests: XCTestCase {
 
         // Then - Manager should be deallocated
         XCTAssertNil(weakManager)
+    }
+}
+
+private final class RecordingPixelHandler: SubscriptionPixelHandling {
+    private(set) var probeMismatches: [(probeStatus: OSStatus, lookupResult: KeychainManager.LookupResult)] = []
+
+    func handle(pixel: SubscriptionPixelType) {}
+
+    func handle(pixel: KeychainManager.Pixel) {
+        if case .availabilityProbeMismatch(let probeStatus, let lookupResult) = pixel {
+            probeMismatches.append((probeStatus, lookupResult))
+        }
     }
 }

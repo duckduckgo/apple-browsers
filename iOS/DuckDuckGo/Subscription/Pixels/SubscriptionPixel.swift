@@ -185,6 +185,29 @@ enum SubscriptionPixel: PixelKit.Event {
     }
 }
 
+/// Subscription keychain diagnostics. A separate definition so it uses PixelKit's default naming (platform and form factor suffixes).
+enum SubscriptionKeychainPixel: PixelKit.Event {
+    /// The keychain availability probe reported the keychain as unavailable, but the lookup that followed didn't fail.
+    case availabilityProbeMismatch(SubscriptionPixelHandler.Source, probeStatus: OSStatus, lookupResult: KeychainManager.LookupResult)
+
+    var name: String {
+        switch self {
+        case .availabilityProbeMismatch: return "subscription_keychain_availability-probe_mismatch"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .availabilityProbeMismatch(let source, let probeStatus, let lookupResult):
+            return ["source": source.rawValue,
+                    "probe_status": String(probeStatus),
+                    "lookup_result": lookupResult.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
 // This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.
 enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.

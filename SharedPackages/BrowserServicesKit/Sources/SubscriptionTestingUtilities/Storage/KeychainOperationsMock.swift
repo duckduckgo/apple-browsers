@@ -33,6 +33,9 @@ public final class KeychainOperationsMock: KeychainOperationsProviding {
     public var copyMatchingFailureStatus: OSStatus = errSecItemNotFound
     public var updateFailureStatus: OSStatus = errSecItemNotFound
     public var deleteFailureStatus: OSStatus = errSecItemNotFound
+    /// Per-service `copyMatching` statuses, checked before any other behaviour. Lets a test make one query
+    /// (e.g. the availability probe) fail while another succeeds.
+    public var copyMatchingStatusOverrides: [String: OSStatus] = [:]
 
     public init(storage: [String: Data] = [:], shouldFailAdd: Bool = false, shouldFailCopyMatching: Bool = false, shouldFailUpdate: Bool = false, shouldFailDelete: Bool = false, addFailureStatus: OSStatus = errSecDuplicateItem, copyMatchingFailureStatus: OSStatus = errSecItemNotFound, updateFailureStatus: OSStatus = errSecItemNotFound, deleteFailureStatus: OSStatus = errSecItemNotFound) {
         self.storage = storage
@@ -78,10 +81,14 @@ public final class KeychainOperationsMock: KeychainOperationsProviding {
 
     public func copyMatching(_ query: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
         return queue.sync(flags: .barrier) {
+            let queryDict = query as NSDictionary
+            if let service = queryDict[kSecAttrService] as? String,
+               let overriddenStatus = copyMatchingStatusOverrides[service] {
+                return overriddenStatus
+            }
             guard !shouldFailCopyMatching else {
                 return copyMatchingFailureStatus
             }
-            let queryDict = query as NSDictionary
             guard let service = queryDict[kSecAttrService] as? String else {
                 return errSecParam
             }

@@ -89,9 +89,13 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let animatesPresentationEffects: Bool
     private let firePixel: (PromptBarPixel) -> Void
     private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
+    private let isDragEnabled: () -> Bool
+    private let loadRelativePosition: () -> CGPoint?
+    private let saveRelativePosition: (CGPoint) -> Void
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
+    private var moveCancellable: AnyCancellable?
     private var dimWindow: NSWindow?
 
     var isVisible: Bool {
@@ -106,6 +110,9 @@ final class PromptBarPresenter: PromptBarPresenting {
          presentationEffectsEnabled: @escaping () -> Bool = { false },
          animatesPresentationEffects: Bool = true,
          promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
+         isDragEnabled: @escaping () -> Bool = { false },
+         loadRelativePosition: @escaping () -> CGPoint? = { nil },
+         saveRelativePosition: @escaping (CGPoint) -> Void = { _ in },
          firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
             if case .firstUse = pixel {
                 PixelKit.fire(pixel, frequency: .uniqueByName, includeAppVersionParameter: true)
@@ -120,6 +127,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         self.presentationEffectsEnabled = presentationEffectsEnabled
         self.animatesPresentationEffects = animatesPresentationEffects
         self.promoOutcome = promoOutcome
+        self.isDragEnabled = isDragEnabled
+        self.loadRelativePosition = loadRelativePosition
+        self.saveRelativePosition = saveRelativePosition
         self.firePixel = firePixel
 
         self.content.onSubmit = { [weak self] in
@@ -204,9 +214,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         content.prepareForPresentation()
 
         let window = existingWindowOrNew()
-        window.setFrame(PromptBarPlacement.frame(forContentHeight: content.preferredWindowContentSize.height,
-                                                 in: screenProvider.targetVisibleFrame),
-                        display: false)
+        let isDraggable = isDragEnabled()
+        window.isMovableByWindowBackground = isDraggable
+        window.setFrame(presentationFrame(isDraggable: isDraggable), display: false)
 
         let showsEffects = presentationEffectsEnabled()
         window.alphaValue = showsEffects ? 0 : 1
@@ -221,6 +231,28 @@ final class PromptBarPresenter: PromptBarPresenting {
         content.focusPromptEditor()
         // Per presentation, not per window: `dismiss()` tears this down.
         subscribeToResignKey(of: window)
+        if isDraggable {
+            subscribeToMoves(of: window)
+        }
+    }
+
+    private func presentationFrame(isDraggable: Bool) -> NSRect {
+        let contentHeight = content.preferredWindowContentSize.height
+        let visibleFrame = screenProvider.targetVisibleFrame
+        guard isDraggable, let relativePosition = loadRelativePosition() else {
+            return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame)
+        }
+        return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame, relativePosition: relativePosition)
+    }
+
+    /// Subscribed after placement, so only the user's drags (and height changes, which keep the top edge) are saved.
+    private func subscribeToMoves(of window: PromptBarWindow) {
+        moveCancellable = NotificationCenter.default
+            .publisher(for: NSWindow.didMoveNotification, object: window)
+            .sink { [weak self, weak window] _ in
+                guard let self, let window, let visibleFrame = window.screen?.visibleFrame else { return }
+                self.saveRelativePosition(PromptBarPlacement.relativePosition(of: window.frame, in: visibleFrame))
+            }
     }
 
     func dismiss(reason: PromptBarDismissReason) {
@@ -230,6 +262,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         // Read before `resetAfterDismissal()` clears the draft.
         let hadText = content.hasPromptText
         resignKeyCancellable = nil
+        moveCancellable = nil
         window.orderOut(nil)
         if let dimWindow {
             self.dimWindow = nil

@@ -62,13 +62,6 @@ public protocol KeychainManaging {
     /// - Parameter key: The unique identifier for the keychain item to delete
     /// - Throws: `AccountKeychainAccessError` if deletion fails
     func deleteItem(forKey key: String) throws
-
-    /// Retries any writes that are queued in the writing backlog because the keychain was
-    /// unavailable when they were made. Call this from any lifecycle signal that plausibly means
-    /// the keychain has become available again (e.g. a Network Extension starting up or receiving
-    /// a message from its containing app), since such contexts cannot rely on the OS availability
-    /// notifications `KeychainManager` otherwise depends on.
-    func retryPendingWrites()
 }
 
 /// A thread-safe keychain manager that handles secure storage operations with automatic retry capabilities.
@@ -77,6 +70,8 @@ public protocol KeychainManaging {
 /// - Thread-safe access to keychain operations via dispatch queue
 /// - Automatic retry mechanism for operations that fail when keychain is unavailable
 /// - Cross-platform notification handling for keychain availability
+/// - A self-scheduled, backed-off retry that runs only while the backlog is non-empty, for processes such as app
+///   extensions that never receive the app lifecycle notifications
 public final class KeychainManager: KeychainManaging {
 
     // MARK: - Types
@@ -94,6 +89,7 @@ public final class KeychainManager: KeychainManaging {
     private enum Constants {
         static let accessQueueLabel = "keychain.subscription.access"
         static let keychainAccessibilityLevel = kSecAttrAccessibleAfterFirstUnlock
+        static let maxBacklogRetryDelay: TimeInterval = 300
     }
 
     // MARK: - Properties
@@ -104,6 +100,9 @@ public final class KeychainManager: KeychainManaging {
     private var cancellables = Set<AnyCancellable>()
     private let accessQueue = DispatchQueue(label: Constants.accessQueueLabel)
     private let pixelHandler: SubscriptionPixelHandling
+    private let initialBacklogRetryDelay: TimeInterval
+    private var backlogRetryDelay: TimeInterval
+    private var backlogRetryWorkItem: DispatchWorkItem?
 
     // MARK: - Initialization
 
@@ -112,12 +111,17 @@ public final class KeychainManager: KeychainManaging {
     /// - Parameters:
     ///   - keychainOperations: The keychain operations provider (defaults to system keychain)
     ///   - attributes: Base keychain query attributes for all operations
+    ///   - initialBacklogRetryDelay: Delay before the first scheduled backlog retry. It doubles after each retry that
+    ///     leaves items queued, up to 5 minutes, and resets once the backlog is empty.
     public init(keychainOperations: KeychainOperationsProviding = DefaultKeychainOperations(),
                 attributes: KeychainAttributes,
-                pixelHandler: SubscriptionPixelHandling) {
+                pixelHandler: SubscriptionPixelHandling,
+                initialBacklogRetryDelay: TimeInterval = 5) {
         self.keychainOperations = keychainOperations
         self.attributes = attributes
         self.pixelHandler = pixelHandler
+        self.initialBacklogRetryDelay = initialBacklogRetryDelay
+        self.backlogRetryDelay = initialBacklogRetryDelay
         self.setupKeychainAvailabilityNotifications()
     }
 
@@ -127,6 +131,7 @@ public final class KeychainManager: KeychainManaging {
     ///
     /// Cancels notification subscriptions and warns about any unprocessed backlog items.
     deinit {
+        backlogRetryWorkItem?.cancel()
         cancellables.removeAll()
         if !writingBacklog.isEmpty {
             self.pixelHandler.handle(pixel: .deallocatedWithBacklog)
@@ -197,12 +202,6 @@ public final class KeychainManager: KeychainManaging {
         }
     }
 
-    public func retryPendingWrites() {
-        accessQueue.async { [weak self] in
-            self?.processWritingBacklog()
-        }
-    }
-
     // MARK: - Private Helpers
 
     private var isKeychainAvailable: Bool {
@@ -223,10 +222,41 @@ public final class KeychainManager: KeychainManaging {
         if !isBacklogRetry {
             pixelHandler.handle(pixel: .dataAddedToTheBacklog)
         }
+        scheduleBacklogRetryIfNeeded()
     }
 
     private func removeFromWritingBacklog(forKey key: String) {
         writingBacklog[key] = nil
+        if writingBacklog.isEmpty {
+            cancelBacklogRetry()
+        }
+    }
+
+    // MARK: - Scheduled Backlog Retry
+
+    /// Schedules a single backlog retry on `accessQueue`, unless one is already pending. Must be called on `accessQueue`.
+    ///
+    /// Nothing is scheduled while the backlog is empty, so this costs nothing in the common case. A retry that leaves
+    /// items queued re-queues them, which schedules the next retry with the doubled delay.
+    private func scheduleBacklogRetryIfNeeded() {
+        guard !writingBacklog.isEmpty, backlogRetryWorkItem == nil else { return }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.backlogRetryWorkItem = nil
+            self.backlogRetryDelay = min(self.backlogRetryDelay * 2, Constants.maxBacklogRetryDelay)
+            self.processWritingBacklog()
+        }
+        backlogRetryWorkItem = workItem
+        Logger.keychainManager.log("Scheduling writing backlog retry in \(self.backlogRetryDelay, privacy: .public)s")
+        accessQueue.asyncAfter(deadline: .now() + backlogRetryDelay, execute: workItem)
+    }
+
+    /// Cancels any pending backlog retry and resets the back-off. Must be called on `accessQueue`.
+    private func cancelBacklogRetry() {
+        backlogRetryWorkItem?.cancel()
+        backlogRetryWorkItem = nil
+        backlogRetryDelay = initialBacklogRetryDelay
     }
 
     /// Whether a store attempt actually landed in the keychain or merely got (re-)queued because the keychain is still unavailable.
@@ -344,7 +374,8 @@ public final class KeychainManager: KeychainManaging {
     }
 
     /// Processes all items in the writing backlog by attempting to store them in the keychain.
-    /// This method is called when keychain availability notifications or, as best effort, when app foreground and background notifications are received.
+    /// This method is called when keychain availability notifications or, as best effort, when app foreground and background notifications are received,
+    /// when a read finds the keychain available, and by the scheduled backlog retry.
     private func processWritingBacklog() {
         guard !writingBacklog.isEmpty else { return }
 

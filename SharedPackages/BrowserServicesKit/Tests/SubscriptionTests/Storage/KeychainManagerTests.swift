@@ -55,6 +55,13 @@ final class KeychainManagerTests: XCTestCase {
         return KeychainManager(keychainOperations: mockKeychainOperations, attributes: attributes, pixelHandler: MockPixelHandler())
     }
 
+    private func makeManagerWithFastBacklogRetry(pixelHandler: SubscriptionPixelHandling) -> KeychainManager {
+        KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: pixelHandler, initialBacklogRetryDelay: 0.01)
+    }
+
     private func createTestData() -> Data {
         return "test-data".data(using: .utf8)!
     }
@@ -395,61 +402,64 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertNoThrow(try customManager.store(data: testData, forKey: "new-key"))
     }
 
-    func testWritingBacklogRetryStillUnavailableDoesNotFireSuccessPixel() throws {
-        // Given: a write is queued because the keychain is unavailable.
+    func testScheduledBacklogRetryKeepsItemQueuedSilentlyWhileUnavailableThenWritesIt() throws {
+        // Given: a write is queued because the keychain is unavailable, with no app lifecycle notifications posted
+        // (as in an app extension), so only the scheduled retry can drain it.
         let testKey = "test-key"
         let testData = createTestData()
         let recordingPixelHandler = RecordingPixelHandler()
-        let manager = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrSynchronizable: false
-        ], pixelHandler: recordingPixelHandler)
+        let manager = makeManagerWithFastBacklogRetry(pixelHandler: recordingPixelHandler)
 
+        let drainResult = expectation(description: "No drain result while the keychain is unavailable")
+        drainResult.isInverted = true
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if pixel == .dataWroteFromBacklog || pixel == .failedToWriteDataFromBacklog { drainResult.fulfill() }
+        }
         makeKeychainNotAvailable()
         try manager.store(data: testData, forKey: testKey)
-        recordingPixelHandler.removeAllKeychainPixels() // Only care about pixels from the retry below.
 
-        // When: a retry is attempted while the keychain is still unavailable.
-        manager.retryPendingWrites()
-        // `retrieveData` runs synchronously on the same serial queue as the retry, so once it returns the retry has
-        // completed. With the keychain still unavailable it reads from the backlog and does not drain it itself.
-        let retrievedData = try manager.retrieveData(forKey: testKey)
+        // When: several scheduled retries run while the keychain is still unavailable.
+        wait(for: [drainResult], timeout: 0.2)
 
-        // Then: re-queuing must not be reported as a successful drain, and the item must still be
-        // recoverable from the backlog rather than lost or falsely marked written.
-        let pixels = recordingPixelHandler.keychainPixels
-        XCTAssertFalse(pixels.contains(.dataWroteFromBacklog))
-        XCTAssertFalse(pixels.contains(.failedToWriteDataFromBacklog))
-        XCTAssertFalse(pixels.contains(.dataAddedToTheBacklog), "A re-queue is not a new addition")
+        // Then: re-queuing is neither a success, a failure, nor a new addition, and the item is still in the backlog.
+        XCTAssertEqual(recordingPixelHandler.keychainPixels, [.dataAddedToTheBacklog])
         XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey))
-        XCTAssertEqual(retrievedData, testData)
-    }
+        XCTAssertEqual(try manager.retrieveData(forKey: testKey), testData)
 
-    func testWritingBacklogRetryBecomesAvailableFiresSuccessPixel() throws {
-        // Given: a write is queued because the keychain is unavailable.
-        let testKey = "test-key"
-        let testData = createTestData()
-        let recordingPixelHandler = RecordingPixelHandler()
-        let manager = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrSynchronizable: false
-        ], pixelHandler: recordingPixelHandler)
-
-        makeKeychainNotAvailable()
-        try manager.store(data: testData, forKey: testKey)
-        recordingPixelHandler.removeAllKeychainPixels()
+        // When: the keychain becomes available.
         let wroteFromBacklog = expectation(description: "Backlog written")
         recordingPixelHandler.onKeychainPixel = { pixel in
             if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
         }
-
-        // When: the keychain becomes available and a retry is attempted.
         makeKeychainAvailable()
-        manager.retryPendingWrites()
 
-        // Then: this time the write genuinely lands, and only then is success reported.
+        // Then: a later scheduled retry writes it, and only then is success reported.
+        wait(for: [wroteFromBacklog], timeout: 2.0)
+        XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
+        withExtendedLifetime(manager) {}
+    }
+
+    func testScheduledBacklogRetryWritesItemOnceKeychainBecomesAvailable() throws {
+        // Given: a write is queued because the keychain is unavailable.
+        let testKey = "test-key"
+        let testData = createTestData()
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = makeManagerWithFastBacklogRetry(pixelHandler: recordingPixelHandler)
+
+        let wroteFromBacklog = expectation(description: "Backlog written")
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
+        }
+        makeKeychainNotAvailable()
+        try manager.store(data: testData, forKey: testKey)
+
+        // When: the keychain becomes available, with no notification or read to trigger a drain.
+        makeKeychainAvailable()
+
+        // Then: the scheduled retry writes it.
         wait(for: [wroteFromBacklog], timeout: 1.0)
         XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
+        withExtendedLifetime(manager) {}
     }
 
     func testEveryFailedStoreIsCountedAsAddedToBacklogEvenForAnAlreadyQueuedKey() throws {
@@ -562,8 +572,21 @@ private final class RecordingPixelHandler: SubscriptionPixelHandling {
     private let lock = NSLock()
     private var recordedKeychainPixels: [KeychainManager.Pixel] = []
 
-    /// Called on `KeychainManager`'s queue after each keychain pixel is recorded. Set it before triggering the work under test.
-    var onKeychainPixel: ((KeychainManager.Pixel) -> Void)?
+    private var keychainPixelCallback: ((KeychainManager.Pixel) -> Void)?
+
+    /// Called on `KeychainManager`'s queue after each keychain pixel is recorded.
+    var onKeychainPixel: ((KeychainManager.Pixel) -> Void)? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return keychainPixelCallback
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            keychainPixelCallback = newValue
+        }
+    }
 
     var keychainPixels: [KeychainManager.Pixel] {
         lock.lock()

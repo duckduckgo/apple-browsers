@@ -62,7 +62,7 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
 #if os(macOS)
         // Saved shortcuts are in place before the extension runs.
         MainActor.assumeMainThread {
-            commandShortcuts.apply(to: [context])
+            commandShortcuts?.apply(to: [context])
         }
 #endif
         if context.webExtension.duckDuckGoWebExtensionType == .embedded {

@@ -18,6 +18,7 @@
 
 import Foundation
 import os.log
+import Persistence
 import WebKit
 
 /// Manages web extensions including installation, loading, and lifecycle.
@@ -134,8 +135,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
 
 #if os(macOS)
-    /// The keyboard shortcuts the user picked for extension commands.
-    public let commandShortcuts = WebExtensionCommandShortcutStore()
+    /// The keyboard shortcuts the user picked for extension commands. `nil` without a key-value store.
+    public let commandShortcuts: WebExtensionCommandShortcutStore?
 #endif
 
     /// Records the Chrome pages extensions try to open, which the browser doesn't have.
@@ -186,6 +187,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
+                keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
@@ -222,6 +224,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
+#if os(macOS)
+        self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
+#endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
 
@@ -343,6 +348,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         do {
             if let oldIdentifier {
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
+#if os(macOS)
+                commandShortcuts?.copyShortcutsForUpdate(from: oldIdentifier, to: identifier)
+#endif
             }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
@@ -372,6 +380,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             } catch {
                 Logger.webExtensions.error("Failed to remove extension consent after installation failure: \(error.localizedDescription)")
             }
+#if os(macOS)
+            commandShortcuts?.removeShortcuts(for: identifier)
+#endif
             try? storageProvider.removeExtension(identifier: identifier)
 
             if let preparationError = error as? WebExtensionLoader.PermissionPreparationError,
@@ -418,6 +429,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             // Consent cleanup must not leave an unloaded extension installed.
             Logger.webExtensions.error("Could not remove extension permissions during uninstall: \(error.localizedDescription)")
         }
+#if os(macOS)
+        commandShortcuts?.removeShortcuts(for: identifier)
+#endif
         installationStore.remove(uniqueIdentifier: identifier)
         unloadedExtensionsCache.removeValue(forKey: identifier)
         dataClearingReloadIdentifiers.remove(identifier)

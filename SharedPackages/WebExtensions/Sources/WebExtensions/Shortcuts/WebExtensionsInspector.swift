@@ -67,7 +67,7 @@ public struct WebExtensionsInspector {
                            title: command.title,
                            key: command.activationKey,
                            modifiers: Self.modifierNames(command.modifierFlags),
-                           isCustomized: manager?.commandShortcuts.isCustomized(command, in: context) ?? false)
+                           isCustomized: manager?.commandShortcuts?.isCustomized(command, in: context) ?? false)
             })
         }
         return (try? JSONEncoder().encode(extensions)) ?? Data("[]".utf8)

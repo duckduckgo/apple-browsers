@@ -18,6 +18,8 @@
 
 #if os(macOS)
 import AppKit
+import os.log
+import Persistence
 import WebKit
 
 /// A keyboard shortcut for an extension command: a key, such as `y`, and its modifiers.
@@ -35,30 +37,31 @@ public struct WebExtensionCommandShortcut: Codable, Equatable {
 /// The keyboard shortcuts the user picked for extension commands.
 ///
 /// WebKit starts every command with the shortcut its manifest suggests, and leaves saving any change
-/// to the app. The store saves the user's shortcuts per extension and command, and applies them
-/// again each time an extension loads.
+/// to the app. The store saves the user's shortcuts per installation and command in the key-value store,
+/// and applies them again each time an extension loads. Like extension permissions, an update copies them
+/// to the replacement installation, and uninstalling removes them.
 @available(macOS 15.4, *)
 @MainActor
 public final class WebExtensionCommandShortcutStore {
 
-    private static let userDefaultsKey = "com.duckduckgo.web-extensions.command-shortcuts"
+    private static let keyPrefix = "web-extension-command-shortcuts"
 
-    private let userDefaults: UserDefaults
+    private let keyValueStore: any ThrowingKeyValueStoring
     /// The manifest shortcut of each command, by extension and command, captured before the first
     /// change, so a command can go back to it.
     private var defaults: [String: [String: WebExtensionCommandShortcut]] = [:]
 
-    nonisolated public init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
+    nonisolated public init(keyValueStore: any ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
     }
 
     /// Applies the saved shortcuts to the commands of `contexts`.
     public func apply(to contexts: Set<WKWebExtensionContext>) {
-        let saved = savedShortcuts()
         for context in contexts {
             captureDefaults(of: context)
+            let saved = savedShortcuts(for: context.uniqueIdentifier)
             for command in context.commands {
-                if let shortcut = saved[context.uniqueIdentifier]?[command.id] {
+                if let shortcut = saved[command.id] {
                     command.apply(shortcut)
                 }
             }
@@ -67,25 +70,42 @@ public final class WebExtensionCommandShortcutStore {
 
     /// Whether the user changed the shortcut of `command`.
     public func isCustomized(_ command: WKWebExtension.Command, in context: WKWebExtensionContext) -> Bool {
-        savedShortcuts()[context.uniqueIdentifier]?[command.id] != nil
+        savedShortcuts(for: context.uniqueIdentifier)[command.id] != nil
     }
 
     /// Sets and saves the shortcut of `command`.
     public func setShortcut(_ shortcut: WebExtensionCommandShortcut, for command: WKWebExtension.Command, in context: WKWebExtensionContext) {
         captureDefaults(of: context)
-        var saved = savedShortcuts()
-        saved[context.uniqueIdentifier, default: [:]][command.id] = shortcut
-        save(saved)
+        var saved = savedShortcuts(for: context.uniqueIdentifier)
+        saved[command.id] = shortcut
+        save(saved, for: context.uniqueIdentifier)
         command.apply(shortcut)
     }
 
     /// Puts back the manifest shortcut of `command`.
     public func resetShortcut(for command: WKWebExtension.Command, in context: WKWebExtensionContext) {
-        var saved = savedShortcuts()
-        saved[context.uniqueIdentifier]?[command.id] = nil
-        save(saved)
+        var saved = savedShortcuts(for: context.uniqueIdentifier)
+        saved[command.id] = nil
+        save(saved, for: context.uniqueIdentifier)
         if let shortcut = defaults[context.uniqueIdentifier]?[command.id] {
             command.apply(shortcut)
+        }
+    }
+
+    /// Copies the shortcuts of an installation to the installation that replaces it in an update.
+    public func copyShortcutsForUpdate(from oldIdentifier: String, to newIdentifier: String) {
+        let saved = savedShortcuts(for: oldIdentifier)
+        guard !saved.isEmpty else { return }
+        save(saved, for: newIdentifier)
+    }
+
+    /// Removes the shortcuts of an installation.
+    public func removeShortcuts(for identifier: String) {
+        defaults[identifier] = nil
+        do {
+            try keyValueStore.removeObject(forKey: key(for: identifier))
+        } catch {
+            Logger.webExtensions.error("Could not remove extension shortcuts: \(error.localizedDescription)")
         }
     }
 
@@ -98,13 +118,30 @@ public final class WebExtensionCommandShortcutStore {
         defaults[context.uniqueIdentifier] = shortcuts
     }
 
-    private func savedShortcuts() -> [String: [String: WebExtensionCommandShortcut]] {
-        guard let data = userDefaults.data(forKey: Self.userDefaultsKey) else { return [:] }
-        return (try? JSONDecoder().decode([String: [String: WebExtensionCommandShortcut]].self, from: data)) ?? [:]
+    private func savedShortcuts(for identifier: String) -> [String: WebExtensionCommandShortcut] {
+        do {
+            guard let data = try keyValueStore.object(forKey: key(for: identifier)) as? Data else { return [:] }
+            return try JSONDecoder().decode([String: WebExtensionCommandShortcut].self, from: data)
+        } catch {
+            Logger.webExtensions.error("Could not read extension shortcuts: \(error.localizedDescription)")
+            return [:]
+        }
     }
 
-    private func save(_ shortcuts: [String: [String: WebExtensionCommandShortcut]]) {
-        userDefaults.set(try? JSONEncoder().encode(shortcuts), forKey: Self.userDefaultsKey)
+    private func save(_ shortcuts: [String: WebExtensionCommandShortcut], for identifier: String) {
+        do {
+            if shortcuts.isEmpty {
+                try keyValueStore.removeObject(forKey: key(for: identifier))
+            } else {
+                try keyValueStore.set(JSONEncoder().encode(shortcuts), forKey: key(for: identifier))
+            }
+        } catch {
+            Logger.webExtensions.error("Could not save extension shortcuts: \(error.localizedDescription)")
+        }
+    }
+
+    private func key(for identifier: String) -> String {
+        "\(Self.keyPrefix).\(identifier)"
     }
 }
 

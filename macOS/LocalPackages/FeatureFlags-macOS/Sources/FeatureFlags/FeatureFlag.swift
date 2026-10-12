@@ -835,11 +835,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webNotifications:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.webNotifications), category: .webNotifications)
         case .websitePermissionsSettings:
-            Config(defaultValue: .disabled,
+            Config(defaultValue: .enabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
                    supportsLocalOverriding: true)
         case .websitePermissionsPrompts:
-            Config(defaultValue: .disabled,
+            Config(defaultValue: .enabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsPrompts),
                    supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:

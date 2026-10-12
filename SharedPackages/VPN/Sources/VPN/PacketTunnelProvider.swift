@@ -1071,6 +1071,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         cancelTunnelWithError(stopError)
     }
 
+    open override func cancelTunnelWithError(_ error: Error?) {
+        sessionHealth.tunnelCancelledWithError()
+        super.cancelTunnelWithError(error)
+    }
+
     // MARK: - Tunnel Stop: Support Methods
 
     /// Stops resources after `stopTunnel(with:)` or `cancelTunnel(with:)` records the session outcome.

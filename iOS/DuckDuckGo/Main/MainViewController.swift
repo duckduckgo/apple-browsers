@@ -245,7 +245,13 @@ class MainViewController: UIViewController {
     }
 
     private var isAppOpenKeyboardWindowVisible: Bool {
-        UIApplication.shared.applicationState == .active && viewIfLoaded?.window?.isHidden == false
+        guard UIApplication.shared.applicationState == .active,
+              let window = viewIfLoaded?.window, !window.isHidden, window.isKeyWindow else { return false }
+        // The blank snapshot covers a browser window that remains visible and key.
+        let sceneWindows = window.windowScene?.windows ?? UIApplication.shared.foregroundSceneWindows
+        return !sceneWindows.contains {
+            !$0.isHidden && ($0.rootViewController is AuthenticationViewController || $0.rootViewController is BlankSnapshotViewController)
+        }
     }
     private var appOpenKeyboardWindowCancellable: AnyCancellable?
 
@@ -259,6 +265,7 @@ class MainViewController: UIViewController {
         }
         let requestID = appOpenKeyboardRequestID
         appOpenKeyboardWindowCancellable = NotificationCenter.default.publisher(for: UIWindow.didBecomeKeyNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIWindow.didBecomeHiddenNotification))
             .merge(with: NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification))
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -1244,7 +1251,7 @@ class MainViewController: UIViewController {
                 selectTab(tab)
             }
             if shouldRestoreFocus {
-                showKeyboardOnNewTabPageIfAllowed()
+                showKeyboardIfAllowed(restoringInputFocus: true) { _ in }
             }
 
         } newTab: { [weak self] in
@@ -2405,36 +2412,6 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
-    /// Adds the after-idle treatment to an already-open New Tab page without rebuilding it or changing input focus.
-    func showEscapeHatchOnKeptNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
-        // Prepare behind App Lock, but do not replace a screen left over the New Tab Page.
-        guard presentedViewController == nil || presentedViewController?.isBeingDismissed == true,
-              let page = newTabPageViewController,
-              let currentTab = tabManager.currentTabsModel.currentTab else {
-            return false
-        }
-        noteNewTabPageReturn(timeAwayMs: timeAwayMs)
-        if isAfterIdlePresentationPending {
-            recordPendingNewTabPagePresentationIfVisible()
-            return true
-        }
-        guard let hatch = escapeHatchModelBuilder.makeAfterIdleHatchForKeptNewTabPage(router: self) else { return false }
-
-        currentTab.openedAfterIdle = true
-        if homePageConfiguration.mode == .coordinated {
-            homePageConfiguration.prepareForNTP(openedAfterIdle: true)
-        }
-        page.setEscapeHatch(hatch)
-        currentNTPEscapeHatch = hatch
-        configureUnifiedInputEscapeHatch(hatch)
-        isAfterIdlePresentationPending = true
-        newTabPagePresentation.schedule(for: page, shown: { [weak self, weak currentTab] in
-            guard let self, currentTab === tabManager.currentTabsModel.currentTab else { return }
-            fireNTPShownInstrumentation(openedAfterIdle: true, hatch: hatch, focused: isInputFocused)
-        })
-        return true
-    }
-
     func noteNewTabPageReturn(timeAwayMs: Int?) {
         newTabPageReturnTimeAwayMs = timeAwayMs
         hasNotedNewTabPageReturn = true
@@ -2603,6 +2580,7 @@ class MainViewController: UIViewController {
         let requestID = appOpenKeyboardRequestID
         let wasKeyboardFeatureEnabled = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         let recordsShown = presentedViewController == nil || presentedViewController !== tabSwitcherController
+            || presentedViewController?.isBeingDismissed == true
         isAfterIdlePresentationPending = recordsShown && openedAfterIdle
         newTabPagePresentation.schedule(for: controller, visit: startsVisit ? { [weak self] in
             guard let self else { return }
@@ -2638,9 +2616,6 @@ class MainViewController: UIViewController {
 
     private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?, focused: Bool) {
         isAfterIdlePresentationPending = false
-        if openedAfterIdle, hatch != nil {
-            tabManager.currentTabsModel.currentTab?.hasPresentedAfterIdleEscapeHatch = true
-        }
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
         // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
@@ -2974,13 +2949,14 @@ class MainViewController: UIViewController {
     }
 
     /// In-app landings call this directly: the post-idle session's `focused` value belongs to the app open.
-    private func showKeyboardIfAllowed(completion: @escaping (Bool) -> Void) {
+    private func showKeyboardIfAllowed(restoringInputFocus: Bool = false, completion: @escaping (Bool) -> Void) {
         recordPendingNewTabPagePresentationIfVisible()
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         let requestID = appOpenKeyboardRequestID
         let tabID = tabManager.currentTabsModel.currentTab?.uid
         let isRequestValid = { [weak self] in
-            self?.isAppOpenKeyboardRequestValid(requestID, tabID: tabID, onNewTabPage: onNewTabPage) == true
+            self?.isAppOpenKeyboardRequestValid(requestID, tabID: tabID, onNewTabPage: onNewTabPage,
+                                                restoringInputFocus: restoringInputFocus) == true
         }
         guard isRequestValid() else {
             completion(false)
@@ -3007,13 +2983,15 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func isAppOpenKeyboardRequestValid(_ requestID: UUID, tabID: String?, onNewTabPage: Bool) -> Bool {
+    private func isAppOpenKeyboardRequestValid(_ requestID: UUID, tabID: String?, onNewTabPage: Bool,
+                                               restoringInputFocus: Bool) -> Bool {
         guard appOpenKeyboardRequestID == requestID,
               featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
               isAppOpenKeyboardWindowVisible, presentedViewController == nil,
               tabManager.currentTabsModel.currentTab?.uid == tabID,
               (tabManager.currentTabsModel.currentTab?.isHomeTab == true) == onNewTabPage,
-              NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
+              (restoringInputFocus && onNewTabPage)
+                || NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
         // The last onboarding dialog marks itself seen on appearance, so also check whether it is visible.
         return !onNewTabPage || (!isNewTabPageKeyboardHeldForOnboarding && !isNewTabPageKeyboardBlockedByDialog &&
                                 !daxDialogsManager.isShowingContextualOnboardingDialog)
@@ -4215,7 +4193,7 @@ class MainViewController: UIViewController {
             return
         }
         let requestID = appOpenKeyboardRequestID
-        presented.dismiss(animated: true) { [weak self] in
+        presented.dismiss(animated: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)) { [weak self] in
             guard let self, appOpenKeyboardRequestID == requestID else { return }
             completion()
         }

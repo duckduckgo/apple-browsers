@@ -132,24 +132,14 @@ struct NewTabPageKeyboardPolicyTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Runtime flag changes are checked on swipe restoration", .timeLimit(.minutes(1)))
-    func whenFlagChangesThenSwipeRestorationUsesCurrentFlagState() {
-        let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
-        let tab = Tab(fireTab: false)
-        policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: false) == false)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The New Tab setting controls restoration; App Launch does not", .timeLimit(.minutes(1)),
+    @Test("Swiping back preserves input focus regardless of the keyboard settings", .timeLimit(.minutes(1)),
           arguments: [false, true], [false, true])
-    func whenSwipingBackThenKeyboardFollowsNewTabSetting(onNewTab: Bool, onAppLaunch: Bool) {
+    func whenSwipingBackThenInputFocusIsRestoredRegardlessOfKeyboardSettings(onNewTab: Bool, onAppLaunch: Bool) {
         let policy = NewTabPageKeyboardPolicy(onNewTab: onNewTab, onAppLaunch: onAppLaunch)
         let tab = Tab(fireTab: false)
         policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
 
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true) == onNewTab)
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
     }
 
     @available(iOS 16, macOS 13, *)

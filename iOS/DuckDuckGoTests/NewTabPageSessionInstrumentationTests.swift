@@ -880,7 +880,7 @@ struct NewTabPageSessionInstrumentationTests {
     @MainActor
     @available(iOS 16, macOS 13, *)
     @Test("Time behind App Lock is excluded from the visible visit", .timeLimit(.minutes(1)))
-    func visitWaitsForVisiblePage() {
+    func visitWaitsForVisiblePage() async {
         let (instrumentation, wideEvent, clock) = makeSUT()
         var visible = false
         let notifications = NotificationCenter()
@@ -900,17 +900,36 @@ struct NewTabPageSessionInstrumentationTests {
 
         clock.advance(by: 60)
         notifications.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
         #expect(wideEvent.started.isEmpty)
         #expect(callbacks.isEmpty)
         #expect(!coordinator.hasPresentedPage)
 
         visible = true
         notifications.post(name: UIWindow.didBecomeKeyNotification, object: nil)
+        // App Lock makes its window key before hiding the browser in the same main-loop turn.
+        visible = false
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.isEmpty)
+        #expect(callbacks.isEmpty)
+
+        visible = true
+        notifications.post(name: UIWindow.didBecomeHiddenNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
         #expect(wideEvent.started.count == 1)
         #expect(activeVisit(wideEvent)?.launchKeyboardMode == .up)
         #expect(coordinator.hasPresentedPage)
         notifications.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         notifications.post(name: UIWindow.didBecomeKeyNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
         #expect(wideEvent.started.count == 1)
         #expect(callbacks == ["visit", "shown", "focus"])
         coordinator.schedule(for: page, shown: { callbacks.append("visible") })

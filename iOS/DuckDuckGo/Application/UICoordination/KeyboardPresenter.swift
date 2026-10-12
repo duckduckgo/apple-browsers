@@ -72,7 +72,7 @@ struct NewTabPageKeyboardPolicy {
 
     /// A swipe preserves the page's previous focus without counting as a new keyboard landing.
     func shouldRestoreInputFocusOnTabSwipe(on tab: Tab, isEnabled: Bool) -> Bool {
-        isEnabled && onNewTab && tab.isHomeTab && tab.wasInputFocusedBeforeTabSwitch
+        isEnabled && tab.isHomeTab && tab.wasInputFocusedBeforeTabSwitch
     }
 
     /// After Fire, New Tab decides unless onboarding is still running. A burned Duck.ai chat reopens

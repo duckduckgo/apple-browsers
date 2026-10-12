@@ -254,9 +254,10 @@ final class NewTabPagePresentationCoordinator {
     init(notificationCenter: NotificationCenter = .default, isVisible: @escaping () -> Bool) {
         self.notificationCenter = notificationCenter
         self.isVisible = isVisible
-        for notification in [UIWindow.didBecomeKeyNotification, UIApplication.didBecomeActiveNotification] {
+        for notification in [UIWindow.didBecomeKeyNotification, UIWindow.didBecomeHiddenNotification, UIApplication.didBecomeActiveNotification] {
             observers.append(notificationCenter.addObserver(forName: notification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated {
+                // Authentication replaces its blank snapshot within the same main-loop turn.
+                DispatchQueue.main.async {
                     self?.recordIfVisible()
                 }
             })

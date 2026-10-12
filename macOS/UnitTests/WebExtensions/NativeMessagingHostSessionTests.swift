@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -35,6 +36,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("NativeMessagingHostSessionTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try XCTSkipIf(NSApp.isSandboxed, "A sandboxed host can't launch native messaging hosts")
     }
 
     override func tearDownWithError() throws {
@@ -215,6 +217,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
 
     // MARK: - One-shot exchange
 
+    @available(macOS 15.4, *)
     func testWhenHostNeverAnswersThenExchangeTimesOutAndStopsTheHost() async throws {
         let executable = try makeHost(named: "silent-host", script: Self.silentHostScript)
         let session = makeSession(executable: executable)
@@ -234,6 +237,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived the timeout")
     }
 
+    @available(macOS 15.4, *)
     func testWhenHostAnswersThenExchangeReturnsTheReplyAndStopsTheHost() async throws {
         let executable = try makeHost(named: "echo-host", script: Self.echoHostScript)
         let session = makeSession(executable: executable)

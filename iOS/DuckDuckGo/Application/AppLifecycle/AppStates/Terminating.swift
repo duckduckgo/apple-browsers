@@ -59,9 +59,15 @@ struct Terminating: TerminatingHandling {
 
     private let application: UIApplication = .shared
     private let mode: TerminationMode
+    private let pixelFiring: (any PixelKitFiring)?
 
     init(error: Error) {
+        self.init(error: error, pixelFiring: PixelKit.shared)
+    }
+
+    init(error: Error, pixelFiring: (any PixelKitFiring)?) {
         Logger.lifecycle.info("Terminating: \(#function)")
+        self.pixelFiring = pixelFiring
 
         let pixel: Pixel.Event
         var errorToReport: Error?
@@ -184,6 +190,7 @@ struct Terminating: TerminatingHandling {
         guard case .afterAlert(let reason) = mode else {
             return
         }
+        pixelFiring?.fire(CriticalAlertPixel.shown(reason: reason), frequency: .dailyAndCount)
         let alertController: UIAlertController
         switch reason {
         case .insufficientDiskSpace:
@@ -199,6 +206,24 @@ struct Terminating: TerminatingHandling {
 
         rootViewController.present(alertController, animated: true, completion: nil)
     }
+
+}
+
+enum CriticalAlertPixel: PixelKit.Event {
+
+    case shown(reason: TerminationReason)
+
+    var name: String { "app-lifecycle_critical-alert-shown" }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .shown(.insufficientDiskSpace): return ["reason": "insufficient-disk-space"]
+        case .shown(.unrecoverableState): return ["reason": "unrecoverable-state"]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 
 }
 

@@ -813,6 +813,19 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(firstTabViewModel?.tab.url, tabCollectionViewModel.tabViewModel(at: 1)?.tab.url)
     }
 
+    @MainActor
+    func testWhenTabIsDuplicatedThenItsCopyLabelsItsDuckAIChatAsACopy() {
+        let aiChatExtensions = AIChatTabExtensionMock.installForAllTabs()
+        defer { TestTabExtensionsBuilder.shared = .default }
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+
+        tabCollectionViewModel.duplicateTab(at: .unpinned(0))
+
+        let copy = tabCollectionViewModel.tabViewModel(at: 1)?.tab.aiChat as? AIChatTabExtensionMock
+        XCTAssertEqual(copy?.recreationSources, [.tabCopy])
+        XCTAssertEqual(aiChatExtensions.recreationSources, [.tabCopy], "The original tab must not be labelled")
+    }
+
     // MARK: - Move
 
     @MainActor

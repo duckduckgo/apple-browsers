@@ -117,7 +117,7 @@ public class DBPIOSInterface {
     }
 
     public protocol DataBrokerProtectionViewControllerProvider: AnyObject {
-        func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController
+        func dataBrokerProtectionViewController(freeScanEntryPoint: FreemiumDBPEntryPoint?) -> DataBrokerProtectionViewController
     }
 
     // MARK: - Private interface
@@ -153,6 +153,13 @@ public class DBPIOSInterface {
         func checkForEmailConfirmationData() async
     }
 
+}
+
+public enum FreemiumDBPEntryPoint: String, Equatable {
+    case freeScanBanner = "freescanbanner"
+    case viewResultsBanner = "viewresultsbanner"
+    case appMenuPreScan = "appmenuprescan"
+    case appMenuPostScan = "appmenupostscan"
 }
 
 extension BGTask: DBPIOSInterface.BGTaskHandling {}
@@ -988,7 +995,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionViewControllerProvider {
-    public func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController {
+    public func dataBrokerProtectionViewController(freeScanEntryPoint: FreemiumDBPEntryPoint?) -> DataBrokerProtectionViewController {
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,
                                                   userEventsDelegate: self,
@@ -997,7 +1004,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
                                                   feedbackViewCreator: feedbackViewCreator,
-                                                  isWebViewInspectable: isWebViewInspectable)
+                                                  isWebViewInspectable: isWebViewInspectable,
+                                                  freeScanEntryPoint: freeScanEntryPoint)
     }
 }
 

@@ -22,6 +22,7 @@ import Persistence
 import PixelKit
 import PrivacyConfig
 import UIKit
+import WebKit
 
 @MainActor
 protocol TabTerminationTelemetry {
@@ -349,4 +350,84 @@ enum TabTerminationTelemetryPixel: PixelKit.Event {
             }
         }
     }
+}
+
+enum WebContentHealthPixel: PixelKit.Event {
+
+    case terminationReloadResult(outcome: TerminationReloadMonitor.Outcome, recovery: TerminationReloadMonitor.Recovery)
+    case unresponsive(appState: String)
+
+    var name: String {
+        switch self {
+        case .terminationReloadResult: return "web-content_termination-reload-result"
+        case .unresponsive: return "web-content_unresponsive"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .terminationReloadResult(let outcome, let recovery):
+            return ["outcome": outcome.rawValue, "recovery": recovery.rawValue]
+        case .unresponsive(let appState):
+            return ["app_state": appState]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+
+}
+
+/// Reports how the reload after a web content process termination ended: the first navigation that finishes or
+/// fails after `begin`, or another termination before either.
+struct TerminationReloadMonitor {
+
+    enum Recovery: String {
+        /// Reloaded from the termination callback.
+        case immediate
+        /// Reloaded when the app became active, after a termination in the background.
+        case deferred
+    }
+
+    enum Outcome: String {
+        case finished
+        case failed
+        case terminated
+    }
+
+    private(set) var pendingRecovery: Recovery?
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)?) {
+        self.pixelFiring = pixelFiring
+    }
+
+    mutating func begin(_ recovery: Recovery) {
+        pendingRecovery = recovery
+    }
+
+    mutating func didFinish() {
+        end(.finished)
+    }
+
+    mutating func didFail(with error: Error) {
+        // A cancelled reload keeps the result pending, so if the user then navigates elsewhere, that navigation's
+        // result is reported for the reload. Tracking the reload's WKNavigation would fix this.
+        let error = error as NSError
+        let isCancellation = (error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled)
+            || (error.domain == WKError.WebKitErrorDomain && error.code == WKError.Code.frameLoadInterruptedByPolicyChange.rawValue)
+        guard !isCancellation else { return }
+        end(.failed)
+    }
+
+    mutating func didTerminate() {
+        end(.terminated)
+    }
+
+    private mutating func end(_ outcome: Outcome) {
+        guard let recovery = pendingRecovery else { return }
+        pendingRecovery = nil
+        pixelFiring?.fire(WebContentHealthPixel.terminationReloadResult(outcome: outcome, recovery: recovery), frequency: .dailyAndCount)
+    }
+
 }

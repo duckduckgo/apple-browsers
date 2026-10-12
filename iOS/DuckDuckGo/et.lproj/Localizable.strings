@@ -223,6 +223,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Proovi tasuta";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blokeerib invasiivsed jälgijad enne nende laadimist, kõrvaldades tõhusalt reklaamid, mis tuginevad jälgimisele.";
 
@@ -292,6 +295,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Saad korraga lisada ainult %d pilti.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Lisa vahekaarte";
+
+/* Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat */
+"aichat.attachment.option.ask.about.document" = "Küsi dokumendi kohta";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Küsi lehe kohta";
 
@@ -301,11 +310,23 @@
 /* Top-level attachment menu option to add an image to an AI chat message */
 "aichat.attachment.option.attach.photo" = "Lisa pilt";
 
+/* Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated */
+"aichat.attachment.option.continue.in.duckAI" = "Jätka Duck.ai-s";
+
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tee pilt";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Faile kontrollitakse automaatselt ebaseadusliku sisu suhtes. Märgistatud vestlustel on piiratud andmete säilitamise aeg. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Loe edasi";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "See sõnum on manustega saatmiseks liiga pikk.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Hiljutised vahekaardid";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Manused pole ajutiselt saadaval. Proovi hiljem uuesti.";
@@ -318,6 +339,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Seda failitüüpi ei toetata, palun lisa %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Ühtegi sobivat vahekaarti ei leitud";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Vali kuni %d vahekaarti";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d / %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Lisa vahekaarte";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ei saa pilte luua. Null teenusepakkuja nähtavus ei kehti enne, kui tagasi lülitud.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ei toeta piltide loomist.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Nüüd on kasutusel %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Muutmine asendab vastuse uuega.";
@@ -420,6 +462,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Proovi tasuta";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Uus · Sisesta „@” või puuduta vahekaardi lisamiseks ikooni {attachment}.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "manus";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analüütiliste ülesannete jaoks";
@@ -1437,9 +1485,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfiguratsioon";
 
 /* No comment provided by engineer. */
 "Confirm" = "Kinnita";
@@ -2582,9 +2627,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Sisesta mittenegatiivne päevade arv. Installikuupäevaks määratakse sama palju päevi tagasi.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3037,9 +3079,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Sündmus lisatud Apple Calendari";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Impordi paroolid";
 
@@ -3158,9 +3197,6 @@
 "keyCommandZoomOut" = "Vähenda";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Viimati töödeldud: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Saadaolevate toodete laadimine...";
 
 /* No comment provided by engineer. */
@@ -3234,9 +3270,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Sõnumipoliitika hostinimi";
-
-/* No comment provided by engineer. */
-"Messages" = "Sõnumid";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3596,13 +3629,7 @@
 "No extensions installed" = "Laiendusi pole paigaldatud";
 
 /* No comment provided by engineer. */
-"No Logs" = "Logisid pole";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "„%@“ kohta ei leitud vasteid";
-
-/* No comment provided by engineer. */
-"No messages" = "Sõnumeid pole";
 
 /* No comment provided by engineer. */
 "No results found" = "Ühtegi tulemust ei leitud";
@@ -4134,9 +4161,6 @@
 
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo ei saa seda lehte laadida.";
-
-/* No comment provided by engineer. */
-"Recent Processing Logs" = "Hiljutised töötlemislogid";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Sugulased: %@";
@@ -4699,6 +4723,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Määra aadressiriba asukoht";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Luba alati";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Küsi iga kord";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kaamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Asukoht";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Saitide haldamine";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Ära kunagi luba";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Eemalda kõik saidi load";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Eemalda õigused";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Kõikide saitide load on eemaldatud";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Saidi %@ load on eemaldatud";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Saidi %@ load";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Saad vaadata ja muuta DuckDuckGo süsteemilube saidil %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Süsteemi seaded.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktiveerimine";
 
@@ -4879,9 +4945,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Mida on uut";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näitab viimase minuti logisid, et aidata diagnoosida probleeme kohe pärast värskendamist.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vali suvand, mis kirjeldab sinu probleemi kõige paremini.";
 
@@ -4896,6 +4959,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Kas sait ei tööta? Anna DuckDuckGole teada.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Saidi load";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Saada aruanne";
@@ -4923,9 +4989,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Olek: kehtetu";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
@@ -5414,9 +5477,6 @@
 "theme.name.light" = "Hele";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "See loend sisaldab kuvatud sõnumeid ja maksimaalselt ühte sõnumit, mille kuvamine on planeeritud. Konfiguratsioonis võib olla veel kuvatavaid sõnumeid, kuid neid ei ole veel töödeldud.";
-
-/* No comment provided by engineer. */
 "Title" = "Pealkiri";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5439,9 +5499,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt lisatud";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versioon: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Otsi";
@@ -5839,14 +5896,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ei saa pilte luua. Null teenusepakkuja nähtavus ei kehti enne, kui tagasi lülitud.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ ei toeta piltide loomist.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Nüüd on kasutusel %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Kõik vestlused";

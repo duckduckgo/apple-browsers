@@ -43,6 +43,8 @@ public final class DBPUIViewModel {
     private var webView: WKWebView?
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    @MainActor private var freeScanEntryPoint: String?
+    @MainActor private var lastHandshakeFreeScanEntryPoint: String?
 
     public init(dataManager: DataBrokerProtectionDataManaging?,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
@@ -72,6 +74,7 @@ public final class DBPUIViewModel {
             try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                                       prefs: prefs,
                                                       delegate: dataManager.communicator,
+                                                      handshakeDelegate: self,
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: vpnBypassService)
         } catch {
@@ -89,6 +92,27 @@ public final class DBPUIViewModel {
         }
 
         return configuration
+    }
+
+    /// The handshake carries the value and runs once per document load, so an already-loaded UI
+    /// needs a reload to see a new entry point.
+    @MainActor func setFreeScanEntryPoint(_ entryPoint: String?, in webView: WKWebView?) {
+        guard freeScanEntryPoint != entryPoint else { return }
+        freeScanEntryPoint = entryPoint
+
+        guard lastHandshakeFreeScanEntryPoint != entryPoint, let webView, webView.url != nil else { return }
+        webView.reload()
+    }
+}
+
+extension DBPUIViewModel: DBPUIHandshakeDelegate {
+    @MainActor public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
+        let entryPoint = freeScanEntryPoint
+        lastHandshakeFreeScanEntryPoint = entryPoint
+        let userData = await dataManager?.communicator.getHandshakeUserData()
+        return DBPUIHandshakeUserData(isAuthenticatedUser: userData?.isAuthenticatedUser ?? true,
+                                      isUserEligibleForFreeTrial: userData?.isUserEligibleForFreeTrial ?? false,
+                                      freeScanEntryPoint: entryPoint)
     }
 }
 

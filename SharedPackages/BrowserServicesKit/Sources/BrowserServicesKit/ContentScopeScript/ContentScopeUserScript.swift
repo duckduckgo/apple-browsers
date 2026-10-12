@@ -64,6 +64,17 @@ public enum ContentScopeScriptContext: Equatable {
         }
     }
 
+    /// Duck.ai data scripts run in hidden web views to read or clear the user's own data, so turning
+    /// protections off for duck.ai must not disable them.
+    var appliesUserUnprotectedDomains: Bool {
+        switch self {
+        case .contentScope, .contentScopeIsolated:
+            return true
+        case .aiChatDataClearing, .aiChatHistory:
+            return false
+        }
+    }
+
     var fileName: String {
         switch self {
         case .contentScope:
@@ -276,6 +287,11 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         )
     }
 
+    private static func userUnprotectedDomains(from privacyConfigurationManager: PrivacyConfigurationManaging,
+                                               for scriptContext: ContentScopeScriptContext) -> [String] {
+        scriptContext.appliesUserUnprotectedDomains ? privacyConfigurationManager.privacyConfig.userUnprotectedDomains : []
+    }
+
     public static func generateSource(_ privacyConfigurationManager: PrivacyConfigurationManaging,
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
@@ -284,7 +300,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
-              let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
+              let userUnprotectedDomains = try? JSONEncoder().encode(userUnprotectedDomains(from: privacyConfigurationManager, for: scriptContext)),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
               let jsonPropertiesString = try? encodeProperties(properties, scriptContext: scriptContext),
               let jsonConfig = try? JSONEncoder().encode(config),

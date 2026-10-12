@@ -43,10 +43,14 @@ public final class ContentBlockingUpdating {
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
+        var sitePermissionsGeolocationUserScript: GeolocationUserScript?
+        var isSitePermissionsEnabled: Bool { sitePermissionsGeolocationUserScript != nil }
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript] sourceProvider in
+            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
                 UserScripts(with: sourceProvider,
+                            sitePermissionsEnabled: isSitePermissionsEnabled,
                             mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
+                            geolocationUserScript: sitePermissionsGeolocationUserScript,
                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             }
         }
@@ -54,6 +58,13 @@ public final class ContentBlockingUpdating {
         func includingSitePermissionsMediaCapture(_ userScript: MediaCaptureUserScript) -> Self {
             var content = self
             content.sitePermissionsMediaCaptureUserScript = userScript
+            return content
+        }
+
+        func includingSitePermissionsGeolocation(_ userScript: GeolocationUserScript,
+                                                 enabled: Bool) -> Self {
+            var content = self
+            content.sitePermissionsGeolocationUserScript = enabled ? userScript : nil
             return content
         }
     }
@@ -70,7 +81,8 @@ public final class ContentBlockingUpdating {
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
-                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                              sitePermissionsGeolocationUserScript: nil)
         }
 
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {

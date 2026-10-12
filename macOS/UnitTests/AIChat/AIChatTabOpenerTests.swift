@@ -17,11 +17,27 @@
 //
 
 import AIChat
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatTabOpenerTests: XCTestCase {
+
+    private var sourceHandler: AIChatConversationSourceHandler!
+    private var pixelFiring: PixelKitMock!
+
+    override func setUp() {
+        super.setUp()
+        sourceHandler = AIChatConversationSourceHandler()
+        pixelFiring = PixelKitMock()
+    }
+
+    override func tearDown() {
+        sourceHandler = nil
+        pixelFiring = nil
+        super.tearDown()
+    }
 
     @MainActor
     func testWhenChatHistoryTriggerThenOpensDuckAIWithSidebarVisible() {
@@ -64,5 +80,74 @@ final class AIChatTabOpenerTests: XCTestCase {
         opener.openAIChatTab(with: .openSettings, behavior: .currentTab)
 
         XCTAssertEqual(mockManager.insertAIChatTabRequestingOpenSettingsCalls.count, 1)
+    }
+
+    // MARK: - Entry point pixel
+
+    private func makeOpener(_ mockManager: WindowControllersManagerMock, pixelFiring: PixelKitMock? = nil) -> AIChatTabOpener {
+        AIChatTabOpener(promptHandler: AIChatPromptHandler.shared,
+                        aiChatTabManaging: mockManager,
+                        entryPointReporter: AIChatEntryPointReporter(sourceHandler: sourceHandler, pixelFiring: pixelFiring ?? self.pixelFiring))
+    }
+
+    @MainActor
+    func testWhenDuckAIOpensThenEntryPointReportsSourceAndTarget() {
+        let mockManager = WindowControllersManagerMock()
+        for target in AIChatEntryPointTarget.allCases {
+            let pixelFiring = PixelKitMock()
+            mockManager.aiChatEntryPointTargetToReturn = target
+            sourceHandler.setData(.mainMenuNewChat)
+
+            makeOpener(mockManager, pixelFiring: pixelFiring).openNewAIChat(in: .currentTab)
+
+            XCTAssertEqual(pixelFiring.actualFireCalls, [
+                .init(pixel: AIChatPixel.aiChatEntryPoint(source: .mainMenuNewChat, target: target), frequency: .dailyAndCount)
+            ], "target \(target)")
+        }
+    }
+
+    @MainActor
+    func testWhenOpeningInANewWindowAtAPointThenEntryPointReportsIt() {
+        let mockManager = WindowControllersManagerMock()
+        mockManager.aiChatEntryPointTargetToReturn = .newWindow
+        sourceHandler.setData(.promptBar)
+
+        makeOpener(mockManager).openAIChatTab(withQuery: "Hello", inNewWindowAt: .zero)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            .init(pixel: AIChatPixel.aiChatEntryPoint(source: .promptBar, target: .newWindow), frequency: .dailyAndCount)
+        ])
+    }
+
+    @MainActor
+    func testWhenNothingOpensThenNoEntryPointIsReportedAndNoneIsLeftPending() {
+        let mockManager = WindowControllersManagerMock()
+        mockManager.aiChatEntryPointTargetToReturn = nil
+        sourceHandler.setData(.omnibarRecentChat)
+
+        makeOpener(mockManager).openAIChatTab(with: .newChat, behavior: .currentTab)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [])
+        XCTAssertNil(sourceHandler.takeUnreportedEntry())
+    }
+
+    @MainActor
+    func testWhenVoiceFocusesAnExistingVoiceTabThenNothingIsReportedAndTheStampIsDropped() {
+        let mockManager = WindowControllersManagerMock()
+        mockManager.focusActiveVoiceSessionTabResult = true
+        sourceHandler.setData(.mainMenuVoice)
+
+        makeOpener(mockManager).openVoiceSession(inSourceCollection: nil, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [])
+        XCTAssertNil(sourceHandler.takeUnreportedEntry())
+        XCTAssertNil(sourceHandler.consumeData(), "A later chat must not inherit the voice menu's source")
+    }
+
+    @MainActor
+    func testWhenNoSurfaceStampedTheOpenThenNoEntryPointIsReported() {
+        makeOpener(WindowControllersManagerMock()).openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [])
     }
 }

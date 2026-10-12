@@ -17,8 +17,37 @@
 //
 
 import Combine
+import Foundation
 import NetworkProtectionUI
 @testable import DuckDuckGo_Privacy_Browser
+
+/// Suspends `canStartVPN()` calls until a test releases them, so tests control when a visibility update resumes.
+final class CanStartVPNGate: @unchecked Sendable {
+
+    let pendingCount = CurrentValueSubject<Int, Never>(0)
+
+    private let lock = NSLock()
+    private var continuations: [CheckedContinuation<Bool, Never>] = []
+
+    func suspend() async -> Bool {
+        await withCheckedContinuation { continuation in
+            lock.lock()
+            continuations.append(continuation)
+            let count = continuations.count
+            lock.unlock()
+            pendingCount.send(count)
+        }
+    }
+
+    func release(_ result: Bool) {
+        lock.lock()
+        let released = continuations
+        continuations = []
+        lock.unlock()
+        pendingCount.send(0)
+        released.forEach { $0.resume(returning: result) }
+    }
+}
 
 struct MockVPNFeatureGatekeeper: VPNFeatureGatekeeper {
 
@@ -27,12 +56,15 @@ struct MockVPNFeatureGatekeeper: VPNFeatureGatekeeper {
 
     private var canStartVPNOverride: Bool
     private var isVPNVisibleOverride: Bool
+    private var canStartVPNGate: CanStartVPNGate?
 
     init(canStartVPN: Bool,
          isInstalled: Bool,
          isVPNVisible: Bool,
-         onboardStatusPublisher: AnyPublisher<NetworkProtectionUI.OnboardingStatus, Never>) {
+         onboardStatusPublisher: AnyPublisher<NetworkProtectionUI.OnboardingStatus, Never>,
+         canStartVPNGate: CanStartVPNGate? = nil) {
 
+        self.canStartVPNGate = canStartVPNGate
         canStartVPNOverride = canStartVPN
         self.isInstalled = isInstalled
         isVPNVisibleOverride = isVPNVisible
@@ -40,7 +72,10 @@ struct MockVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     }
 
     func canStartVPN() async throws -> Bool {
-        canStartVPNOverride
+        if let canStartVPNGate {
+            return await canStartVPNGate.suspend()
+        }
+        return canStartVPNOverride
     }
 
     func isVPNVisible() -> Bool {

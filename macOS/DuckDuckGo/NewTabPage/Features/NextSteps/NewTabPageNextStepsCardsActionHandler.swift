@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Foundation
 import NewTabPage
 import os.log
+import PixelKit
 import PrivacyConfig
 import Subscription
 
@@ -45,6 +46,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
+    private let pixelFiring: (any PixelKitFiring)?
     private let onboardingExperiment: OnboardingNonBlockingExperiment
 
     var duckPlayerURL: String {
@@ -62,6 +64,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
          syncLauncher: SyncDeviceFlowLaunching? = nil,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -72,6 +75,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.pixelHandler = pixelHandler
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
+        self.pixelFiring = pixelFiring
         self.onboardingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     }
 
@@ -157,6 +161,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
         guard let syncLauncher = syncLauncher ?? DeviceSyncCoordinator() else {
             return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
         }
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.nextStepsCard.rawValue]))
         syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
     }
 

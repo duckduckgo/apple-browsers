@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import ContentBlocking
 import Foundation
-import Navigation
+import DDGNavigation
 import PrivacyDashboard
 import PrivacyConfig
 import TrackerRadarKit

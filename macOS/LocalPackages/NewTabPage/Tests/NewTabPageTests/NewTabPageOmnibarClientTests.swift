@@ -854,6 +854,163 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.createImageModelSwitch)
     }
 
+    // MARK: - attachment privacy disclaimer
+
+    @MainActor
+    func testTheProvidersAttachmentPrivacyAnswerIsIncludedInConfig() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, true)
+    }
+
+    @MainActor
+    func testWhenTheProviderRefusesThenConfigSaysSo() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyDisclaimerShownForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown(kind: .image)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown, parameters: action)
+
+        XCTAssertEqual(configProvider.attachmentPrivacyDisclaimerShownKinds, [.image])
+    }
+
+    @MainActor
+    func testWhenTheKindIsUnrecognisedThenNoDisplayIsSpent() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue(configProvider.attachmentPrivacyDisclaimerShownKinds.isEmpty)
+    }
+
+    @MainActor
+    func testOpenAttachmentPrivacyLearnMoreForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore(kind: .file)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds, [.file])
+    }
+
+    @MainActor
+    func testWhenTheLearnMoreKindIsUnrecognisedThenNothingIsForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds.isEmpty == true)
+    }
+
+    // MARK: - usage limits
+
+    @MainActor
+    func testUsageLimitsFromTheProviderAreIncludedInConfig() async throws {
+        let drawer = NewTabPageDataModel.OmnibarUsageLimits(
+            message: "75% of weekly limit",
+            secondaryText: " \u{00B7} Resets in 2d",
+            dismissible: true,
+            icon: .ring,
+            percent: 75,
+            severity: .warning,
+            cta: .init(label: "Switch to Haiku 4.5", leadingIcon: .convert, primaryModelId: "haiku", showMenu: false)
+        )
+        configProvider.usageLimitsResult = drawer
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.usageLimits, drawer)
+    }
+
+    @MainActor
+    func testWhenThereIsNoUsageMessageThenConfigOmitsTheDrawer() async throws {
+        configProvider.usageLimitsResult = nil
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.usageLimits)
+    }
+
+    @MainActor
+    func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately from anywhere",
+                                                             secondaryText: " • Show Duck.ai in the menu bar",
+                                                             ctaLabel: "Try Now", dismissible: true)
+        configProvider.launcherPromoResult = promo
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.launcherPromo, promo)
+    }
+
+    @MainActor
+    func testLauncherPromoMessagesAreForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo)
+
+        XCTAssertEqual(configProvider.launcherPromoShownCallCount, 1)
+        XCTAssertEqual(configProvider.selectLauncherPromoCtaCallCount, 1)
+        XCTAssertEqual(configProvider.dismissLauncherPromoCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionPastTheLauncherPromoIsForwarded() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.launcherPromoVisible = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionWithoutTheLauncherPromoLeavesItAlone() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
+    }
+
+    @MainActor
+    func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
+
+        XCTAssertEqual(configProvider.dismissUsageLimitsCallCount, 1)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaForwardsThePickedModel() async throws {
+        let action = NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction(modelId: "claude-haiku-4-5")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: action)
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, ["claude-haiku-4-5"])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaWithNoModelForwardsNil() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, [nil])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testWhenTheProviderAsksForAnUpsellThenTheDialogIsPresented() async throws {
+        configProvider.selectUsageLimitsCtaOutcome = .requiresSubscriptionUpsell
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .usageLimit)
+    }
+
     // MARK: - attach tabs (config)
 
     @MainActor

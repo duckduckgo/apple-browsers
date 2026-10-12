@@ -241,6 +241,67 @@ final class DataClearingWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.clear_tabs_status"] as? String, "SUCCESS")
     }
 
+    func testJSONParameters_listsActionsThatStartedButNeverFinished() {
+        // Given
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        let base = Date()
+        eventData.clearTabsDuration = WideEvent.MeasuredInterval(start: base, end: base.addingTimeInterval(0.1))
+        eventData.clearAIChatHistoryDuration = WideEvent.MeasuredInterval(start: base, end: nil)
+        eventData.clearAllHistoryDuration = WideEvent.MeasuredInterval(start: base, end: nil)
+
+        // When
+        let params = eventData.jsonParameters()
+
+        // Then
+        XCTAssertEqual(params["feature.data.ext.interrupted_actions"] as? [String], ["clear_all_history", "clear_aiChat_history"])
+        XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.interrupted_actions"], #"["clear_all_history","clear_aiChat_history"]"#)
+    }
+
+    func testJSONParameters_omitsInterruptedActionsWhenEveryStartedActionFinished() {
+        // Given
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        let base = Date()
+        eventData.clearTabsDuration = WideEvent.MeasuredInterval(start: base, end: base.addingTimeInterval(0.1))
+
+        // When
+        let params = eventData.jsonParameters()
+
+        // Then
+        XCTAssertNil(params["feature.data.ext.interrupted_actions"])
+    }
+
+    func testJSONParameters_includesAIChatRetryAndPhaseTimings() {
+        // Given
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        eventData.clearAIChatHistoryRetried = true
+        eventData.clearAIChatHistoryFirstAttemptError = WideEventErrorData(error: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2))
+        eventData.clearAIChatHistoryPageLoadMilliseconds = 1234
+        eventData.clearAIChatHistoryScriptReadyMilliseconds = 56
+        eventData.clearAIChatHistoryScriptReplyMilliseconds = 20000
+        eventData.clearAIChatHistoryWarmupWaitMilliseconds = 0
+
+        // When
+        let params = eventData.jsonParameters()
+
+        // Then
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_retried"] as? Bool, true)
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_first_attempt_error.domain"] as? String, "com.duckduckgo.aiChatDataClearing")
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_first_attempt_error.code"] as? Int, 2)
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_page_load_ms"] as? Int, 1230)
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_script_ready_ms"] as? Int, 60)
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_script_reply_ms"] as? Int, 10000)
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_warmup_wait_ms"] as? Int, 0)
+    }
+
     func testJSONParameters_includesActionError_topLevelOnly() {
         // Given
         let eventData = DataClearingWideEventData(
@@ -867,7 +928,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         #elseif os(macOS)
         XCTAssertEqual(DataClearingWideEventData.metadata.type, "macos-data-clearing")
         #endif
-        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.1")
+        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.3")
     }
 
     func testClearingTimeout_is15Minutes() {

@@ -263,6 +263,59 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertTrue(updatedRecord.actioned)
     }
 
+    func testWhenOnboardingIncomplete_ThenPromoThatCanShowDuringOnboardingIsShownAndOthersAreSuppressed() async {
+        // Given
+        let exemptDelegate = MockPromoDelegate(isEligible: true)
+        exemptDelegate.setShowResult(.actioned)
+        let gatedDelegate = MockPromoDelegate(isEligible: true)
+        gatedDelegate.setShowResult(.actioned)
+        let exemptPromo = PromoTestHelpers.makePromo(id: "onboarding-exempt",
+                                                     promoType: PromoType(.nudgeButton),
+                                                     canShowDuringOnboarding: true,
+                                                     delegate: exemptDelegate)
+        let gatedPromo = PromoTestHelpers.makePromo(id: "onboarding-gated",
+                                                    promoType: PromoType(.nudgeButton),
+                                                    delegate: gatedDelegate)
+        let promoService = makeService(
+            promos: [exemptPromo, gatedPromo],
+            isOnboardingCompletedProvider: { false }
+        )
+
+        let exemptResultExpectation = XCTestExpectation(description: "exempt promo result recorded")
+        promoService.historyPublisher(for: "onboarding-exempt")
+            .compactMap { $0 }
+            .sink { record in
+                if record.actioned {
+                    exemptResultExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        let gatedShownExpectation = XCTestExpectation(description: "gated promo shown")
+        gatedShownExpectation.isInverted = true
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "onboarding-gated" }) {
+                    gatedShownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [exemptResultExpectation], timeout: timeout)
+        await fulfillment(of: [gatedShownExpectation], timeout: 0.5)
+
+        // Then
+        XCTAssertTrue(historyStore.record(for: "onboarding-exempt").actioned)
+        XCTAssertFalse(historyStore.record(for: "onboarding-gated").actioned)
+    }
+
+    func testWhenInternalPromoCreatedWithDefaults_ThenItCannotShowDuringOnboarding() {
+        XCTAssertFalse(PromoTestHelpers.makePromo().canShowDuringOnboarding)
+    }
+
     func testWhenOnboardingIncomplete_ThenExternalPromoVisibilityStillObserved() async {
         // Given
         let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
@@ -358,8 +411,11 @@ final class PromoServiceTests: XCTestCase {
         triggerSubject.send(.appLaunched)
         triggerSubject.send(.newTabPageAppeared)
         await fulfillment(of: [bothShownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        delegate2.completeShow(with: .actioned)
+        // Serialize mock completion with show()'s main-actor continuation setup.
+        await MainActor.run {
+            delegate1.completeShow(with: .actioned)
+            delegate2.completeShow(with: .actioned)
+        }
         await fulfillment(of: [hideExpectation], timeout: timeout)
 
         // Then: Promo history records contain expected history
@@ -1643,6 +1699,87 @@ final class PromoServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(delegate.hideCallCount, 0)
+    }
+
+    func testWhenRestoredPromoTimeoutAlreadyElapsed_ThenTimeoutResultAppliedWithoutShowing() async {
+        // Given: promo was shown before the app quit, and its timeout window fully elapsed while closed
+        var record = PromoHistoryRecord(id: "already-timed-out")
+        record.lastShown = Date().addingTimeInterval(-3600)
+        historyStore = MockPromoHistoryStore(records: ["already-timed-out": record])
+        let delegate = MockPromoDelegate(isEligible: true)
+        let promo = PromoTestHelpers.makePromo(
+            id: "already-timed-out",
+            promoType: PromoType(.inlineMessage, customTimeoutInterval: 10, customTimeoutResult: .actioned),
+            delegate: delegate
+        )
+        let promoService = makeService(promos: [promo])
+
+        let notShownExpectation = XCTestExpectation(description: "already-timed-out promo not restored")
+        notShownExpectation.isInverted = true
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "already-timed-out" }) {
+                    notShownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        let resultExpectation = XCTestExpectation(description: "timeout result applied on restore")
+        promoService.historyPublisher(for: "already-timed-out")
+            .compactMap { $0 }
+            .sink { record in
+                if record.actioned {
+                    resultExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        await fulfillment(of: [resultExpectation], timeout: timeout)
+        await fulfillment(of: [notShownExpectation], timeout: 0.5)
+
+        // Then: resolved directly via the timeout result, never shown again
+        XCTAssertEqual(delegate.showCallCount, 0)
+        let updatedRecord = historyStore.record(for: "already-timed-out")
+        XCTAssertTrue(updatedRecord.actioned)
+        XCTAssertEqual(updatedRecord.timesDismissed, 1)
+        XCTAssertEqual(updatedRecord.nextEligibleDate, .distantFuture)
+    }
+
+    func testWhenRestoredPromoTimeoutNotYetElapsed_ThenTimerScheduledForRemainingTimeOnly() async {
+        // Given: promo was shown shortly before the app quit, most of its timeout window already elapsed
+        let fullInterval: TimeInterval = 0.4
+        let elapsedBeforeRestart: TimeInterval = 0.3
+        var record = PromoHistoryRecord(id: "partially-elapsed-timeout")
+        record.lastShown = Date().addingTimeInterval(-elapsedBeforeRestart)
+        historyStore = MockPromoHistoryStore(records: ["partially-elapsed-timeout": record])
+        let delegate = MockPromoDelegate(isEligible: true)
+        let promo = PromoTestHelpers.makePromo(
+            id: "partially-elapsed-timeout",
+            promoType: PromoType(.inlineMessage, customTimeoutInterval: fullInterval, customTimeoutResult: .actioned),
+            delegate: delegate
+        )
+        let promoService = makeService(promos: [promo])
+
+        let hiddenExpectation = XCTestExpectation(description: "restored promo times out using only the remaining interval")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.isEmpty {
+                    hiddenExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When: restored with ~0.1s remaining before its original deadline
+        promoService.applicationDidBecomeActive()
+
+        // Then: times out well before a fresh `fullInterval` would have elapsed from restore
+        await fulfillment(of: [hiddenExpectation], timeout: fullInterval - 0.15)
+
+        let updatedRecord = historyStore.record(for: "partially-elapsed-timeout")
+        XCTAssertTrue(updatedRecord.actioned)
     }
 
     func testWhenPerformShow_ThenLastShownIsStampedOnRecord() async {

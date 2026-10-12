@@ -240,7 +240,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
-    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished.
+    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished,
+    /// except those with `canShowDuringOnboarding`.
     private let isOnboardingCompletedProvider: () -> Bool
 
     /// Triggers to be evaluated after delegate registration and deferral window ends.
@@ -498,6 +499,12 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 || record.lastDismissed! < lastShown
             guard wasVisibleAtShutdown else { continue }
 
+            // Only apply the result (don't re-show) if promo's timeout elapsed while the app was closed
+            if let interval = promo.promoType.timeoutInterval, currentDate >= lastShown.addingTimeInterval(interval) {
+                applyResult(promo.promoType.timeoutResult, toRecordFor: promo.id)
+                continue
+            }
+
             delegate.refreshEligibility()
             guard delegate.isEligible else { continue }
 
@@ -509,9 +516,11 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// and showing any that are newly eligible. Triggers are evaluated in promo priority order.
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
-        guard isOnboardingCompletedProvider() else { return }
+        let isOnboardingCompleted = isOnboardingCompletedProvider()
 
-        let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
+        let matchingPromos = promos.filter {
+            $0.triggers.contains(where: triggers.contains) && (isOnboardingCompleted || $0.canShowDuringOnboarding)
+        }
         for promo in matchingPromos {
             (promo.delegate as? InternalPromoDelegate)?.refreshEligibility()
         }
@@ -601,8 +610,10 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         var timeoutDeadline: Date?
         if let interval = promo.promoType.timeoutInterval {
             let showStart = recordToUse.lastShown ?? currentDate
-            timeoutDeadline = showStart.addingTimeInterval(interval)
-            let flag = TimedFlag(queue: stateQueue, clearAfter: interval)
+            let deadline = showStart.addingTimeInterval(interval)
+            timeoutDeadline = deadline
+            let remaining = min(interval, max(0, deadline.timeIntervalSince(currentDate)))
+            let flag = TimedFlag(queue: stateQueue, clearAfter: remaining)
             flag.set { [weak self] in
                 self?.handleTimeout(promoId: promoId)
             }

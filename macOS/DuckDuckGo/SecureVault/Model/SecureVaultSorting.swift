@@ -63,13 +63,13 @@ struct SecureVaultSorting: Equatable {
 
             switch self {
             case .allItems:
-                return .secureVaultCategoryDefault
+                return NSColor(resource: .secureVaultCategoryDefault)
             case .logins:
-                return .logins
+                return NSColor(resource: .logins)
             case .identities:
-                return .identities
+                return NSColor(resource: .identities)
             case .cards:
-                return .cards
+                return NSColor(resource: .cards)
             }
         }
 

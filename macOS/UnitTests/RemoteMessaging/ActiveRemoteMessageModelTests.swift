@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import XCTest
 import NewTabPage
+@_spi(Testing) import PixelKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
@@ -99,8 +101,165 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         )
 
         XCTAssertFalse(store.hasShownRemoteMessage(withID: message.id))
-        await model.markRemoteMessageAsShown()
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
         XCTAssertTrue(store.hasShownRemoteMessage(withID: message.id))
+    }
+
+    func testWhenMetricsEnabledMessageIsShownThenShownAndShownUniquePixelsAreFired() async {
+        message = RemoteMessageModel(
+            id: "1",
+            surfaces: .newTabPage,
+            content: .small(titleText: "test", descriptionText: "desc"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: true
+        )
+        store.scheduledRemoteMessage = message
+        let pixelFiring = PixelKitMock()
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { },
+            pixelFiring: pixelFiring
+        )
+
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map { $0.pixel.name }, [
+            "m_mac_remote_message_shown",
+            "m_mac_remote_message_shown_unique"
+        ])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.additionalParameters), [
+            ["message": message.id],
+            ["message": message.id]
+        ])
+    }
+
+    func testWhenMetricsDisabledMessageIsShownThenNoPixelIsFired() async {
+        store.scheduledRemoteMessage = message
+        let pixelFiring = PixelKitMock()
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { },
+            pixelFiring: pixelFiring
+        )
+
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenMessageIsShownAgainThenEachImpressionIsRecorded() async {
+        store.scheduledRemoteMessage = message
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+
+        XCTAssertEqual(store.recordRemoteMessageImpressionCalls, 2)
+    }
+
+    @MainActor
+    func testWhenMessageImpressionIsNotRecordedThenMessageIsRefreshedOnMainThread() async {
+        store.scheduledRemoteMessage = message
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+        XCTAssertEqual(model.newTabPageRemoteMessage, message)
+
+        var clearedOnMainThread = false
+        let cancellable = model.$newTabPageRemoteMessage.sink { newMessage in
+            if newMessage == nil {
+                clearedOnMainThread = Thread.isMainThread
+            }
+        }
+        store.scheduledRemoteMessage = nil
+        store.recordRemoteMessageImpressionResult = .notRecorded
+
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+
+        XCTAssertNil(model.newTabPageRemoteMessage)
+        XCTAssertTrue(clearedOnMainThread)
+        XCTAssertEqual(store.recordRemoteMessageImpressionCalls, 1)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    func testWhenMessageIDOrSurfaceDoesNotMatchThenImpressionIsNotRecorded() async {
+        store.scheduledRemoteMessage = message
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(withID: "stale-message", on: .newTabPage)
+        await model.markRemoteMessageAsShown(withID: message.id, on: .tabBar)
+
+        XCTAssertEqual(store.recordRemoteMessageImpressionCalls, 0)
+    }
+
+    func testWhenLegacyPermanentSurveyIsShownOnTabBarThenImpressionIsRecorded() async {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+            surfaces: .newTabPage,
+            content: .small(titleText: "survey", descriptionText: "desc"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(withID: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId, on: .tabBar)
+
+        XCTAssertEqual(store.recordRemoteMessageImpressionCalls, 1)
+    }
+
+    func testNewTabPageImpressionReporterDeduplicatesContinuousShowingAndCountsReappearance() {
+        var reportedIDs: [String] = []
+        let reporter = NewTabPageRemoteMessageImpressionReporter { reportedIDs.append($0) }
+
+        reporter.updateVisibleTab("tab-1", message: nil)
+        XCTAssertTrue(reportedIDs.isEmpty)
+
+        reporter.updateMessage(message)
+        reporter.updateMessage(message)
+        XCTAssertEqual(reportedIDs, [message.id])
+
+        reporter.updateVisibleTab("tab-2", message: message)
+        XCTAssertEqual(reportedIDs, [message.id, message.id])
+
+        reporter.updateVisibleTab(nil, message: nil)
+        reporter.updateVisibleTab("tab-1", message: message)
+        XCTAssertEqual(reportedIDs, [message.id, message.id, message.id])
     }
 
     func testWhenMessageIsForTabBar_thenCorrectPublisherIsSet() {

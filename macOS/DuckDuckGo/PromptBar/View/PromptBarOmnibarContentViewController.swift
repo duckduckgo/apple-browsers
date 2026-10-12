@@ -217,6 +217,10 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
 
     var viewController: NSViewController { self }
 
+    func showLauncherIntroduction(shortcut: String) {
+        containerViewController.showLauncherIntroduction(shortcut: shortcut)
+    }
+
     var isPresentingAuxiliaryUI: Bool {
         isMenuTracking || view.window?.attachedSheet != nil || NSApp.modalWindow != nil
     }

@@ -34,25 +34,25 @@ extension View {
         .onPreferenceChange(SizePreferenceKey.self, perform: onChange)
     }
 
-    func systemLabel(color: Color = .textPrimary) -> some View {
+    func systemLabel(color: Color = Color(.textPrimary)) -> some View {
         self
             .font(.system(size: 13, weight: .regular))
             .foregroundColor(color)
     }
 
-    func systemTitle2(color: Color = .textPrimary) -> some View {
+    func systemTitle2(color: Color = Color(.textPrimary)) -> some View {
         self
             .font(.system(size: 17, weight: .bold))
             .foregroundColor(color)
     }
 
-    func caption2(color: Color = .textSecondary) -> some View {
+    func caption2(color: Color = Color(.textSecondary)) -> some View {
         self
             .font(.system(size: 10, weight: .regular))
             .foregroundColor(color)
     }
 
-    func body(color: Color = .textPrimary) -> some View {
+    func body(color: Color = Color(.textPrimary)) -> some View {
         self
             .font(.system(size: 13, weight: .semibold))
             .foregroundColor(color)

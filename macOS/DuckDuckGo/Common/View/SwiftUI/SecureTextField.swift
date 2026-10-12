@@ -28,12 +28,12 @@ struct SecureTextField: View {
     var body: some View {
         if isVisible {
 
-            TextField("", text: $textValue)
+            TextField("" as String, text: $textValue)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.bottom, bottomPadding)
         } else {
 
-            SecureField("", text: $textValue)
+            SecureField("" as String, text: $textValue)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.bottom, bottomPadding)
         }

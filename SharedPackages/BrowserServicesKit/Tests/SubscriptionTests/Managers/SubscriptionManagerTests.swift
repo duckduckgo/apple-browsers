@@ -686,7 +686,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2Error.invalidResponse)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
-            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
+            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, experimentAttribution: nil)
             XCTFail("Error expected")
         } catch {
             XCTAssertEqual(error as? APIRequestV2Error, APIRequestV2Error.invalidResponse)
@@ -717,7 +717,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .failure(APIServiceError.serverError(statusCode: 500, statusDescription: "Internal Server Error"))
 
         do {
-            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", additionalParams: nil)
+            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", experimentAttribution: nil)
             XCTFail("Error expected from tier-features failure")
         } catch {
             // The cache must hold the raw (unenriched) subscription — not be empty.
@@ -912,7 +912,46 @@ class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Tests for hasAppStoreProductsAvailablePublisher
 
+    @MainActor
+    func testWhenInitialProductFetchFinishesThenAvailabilityIsResolved() async {
+        for available in [false, true] {
+            let store = StorePurchaseManagerMock()
+            let defaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+            let manager = DefaultSubscriptionManager(
+                storePurchaseManager: store,
+                oAuthClient: mockOAuthClient,
+                userDefaults: defaults,
+                subscriptionEndpointService: mockSubscriptionEndpointService,
+                subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
+                pixelHandler: mockPixelHandler
+            )
+            store.onUpdateAvailableProducts = { [weak manager, weak store] in
+                XCTAssertEqual(manager?.hasResolvedAppStoreProducts, false)
+                store?.areProductsAvailable = available
+            }
+            XCTAssertFalse(manager.hasResolvedAppStoreProducts)
+            XCTAssertFalse(manager.hasAppStoreProductsAvailable)
+
+            let resolved = expectation(description: "initial product fetch resolved")
+            let cancellable = manager.hasAppStoreProductsAvailablePublisher
+                .sink { value in
+                    XCTAssertTrue(manager.hasResolvedAppStoreProducts)
+                    XCTAssertEqual(value, available)
+                    XCTAssertEqual(manager.hasAppStoreProductsAvailable, available)
+                    resolved.fulfill()
+                }
+            await fulfillment(of: [resolved], timeout: 1)
+
+            XCTAssertTrue(manager.hasResolvedAppStoreProducts)
+            XCTAssertEqual(manager.hasAppStoreProductsAvailable, available)
+            cancellable.cancel()
+        }
+    }
+
+    @MainActor
     func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
+        try await waitForInitialProductFetch()
+
         // Given
         let expectation = expectation(description: "Publisher should emit value")
         var receivedValue: Bool?
@@ -935,7 +974,10 @@ class SubscriptionManagerTests: XCTestCase {
         cancellable.cancel()
     }
 
+    @MainActor
     func testCanPurchasePublisherEmitsMultipleValues() async throws {
+        try await waitForInitialProductFetch()
+
         // Given
         let expectation1 = expectation(description: "Publisher should emit first value")
         let expectation2 = expectation(description: "Publisher should emit second value")
@@ -961,6 +1003,19 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(receivedValues, [true, false])
 
         // Clean up
+        cancellable.cancel()
+    }
+
+    @MainActor
+    private func waitForInitialProductFetch() async throws {
+        let manager = try XCTUnwrap(subscriptionManager)
+        guard !manager.hasResolvedAppStoreProducts else { return }
+
+        let resolved = expectation(description: "initial product fetch finished before forwarding test")
+        let cancellable = manager.hasAppStoreProductsAvailablePublisher
+            .first { _ in manager.hasResolvedAppStoreProducts }
+            .sink { _ in resolved.fulfill() }
+        await fulfillment(of: [resolved], timeout: 1)
         cancellable.cancel()
     }
 

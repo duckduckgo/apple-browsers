@@ -47,7 +47,7 @@ jobs:
 
     name: Create Release Branch
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 10
 
     outputs:

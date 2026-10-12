@@ -667,7 +667,7 @@ private extension NSAttributedString {
 
     private static let duckDuckGoWithChevronAttributedString = NSAttributedString {
         // logo
-        Component(image: .homeFavicon, rect: CGRect(x: 0, y: iconBaselineOffset, width: iconSize, height: iconSize))
+        Component(image: NSImage(resource: .homeFavicon), rect: CGRect(x: 0, y: iconBaselineOffset, width: iconSize, height: iconSize))
         // spacing
         Component(image: spacer, rect: CGRect(x: 0, y: 0, width: iconSpacing, height: 1))
         // DuckDuckGo
@@ -676,7 +676,7 @@ private extension NSAttributedString {
         // spacing (wide)
         Component(image: spacer, rect: CGRect(x: 0, y: 0, width: chevronSpacing, height: 1))
         // chevron
-        Component(image: .chevronRight12, rect: CGRect(x: 0, y: -1, width: chevronSize, height: chevronSize))
+        Component(image: NSImage(resource: .chevronRight12), rect: CGRect(x: 0, y: -1, width: chevronSize, height: chevronSize))
         // spacing (wide)
         Component(image: spacer, rect: CGRect(x: 0, y: 0, width: chevronSpacing, height: 1))
     }
@@ -707,23 +707,23 @@ private extension NSAttributedString {
 
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
-    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy,
+    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : NSImage(resource: .settingsMulticolor16Legacy),
                                                                            title: UserText.settings)
-    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder,
+    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : NSImage(resource: .bookmarksFolder),
                                                                             title: UserText.bookmarks)
-    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy,
+    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : NSImage(resource: .historyFaviconLegacy),
                                                                           title: UserText.mainMenuHistory)
-    static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: .personalInformationRemovalMulticolor16,
+    static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .personalInformationRemovalMulticolor16),
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.subscription : .privacyProLegacy,
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.subscription : NSImage(resource: .privacyProLegacy),
                                                                                title: UserText.subscriptionName)
-    static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: .identityTheftRestorationMulticolor16,
+    static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .identityTheftRestorationMulticolor16),
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
-    static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: .duckPlayerSettings,
+    static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .duckPlayerSettings),
                                                                              title: UserText.duckPlayer)
-    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : .emailProtectionIconLegacy,
+    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : NSImage(resource: .emailProtectionIconLegacy),
                                                                                   title: UserText.emailProtectionPreferences)
-    static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
+    static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .releaseNotesIndicator),
                                                                                title: UserText.releaseNotesTitle)
     static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
                                                                                    title: UserText.aiChatAddressBarTrustedIndicator)

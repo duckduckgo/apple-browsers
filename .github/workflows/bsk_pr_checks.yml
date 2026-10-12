@@ -48,11 +48,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-tahoe-27, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -101,13 +101,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-
-      - name: Setup Bitrise Build Cache
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests
@@ -214,11 +207,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-tahoe-27, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
@@ -267,7 +260,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "26.5"
+          preferred-versions: "27.0"
 
       - name: Resolve package dependencies
         run: |
@@ -301,13 +294,6 @@ jobs:
 
           echo "::error::Package resolution failed after $max_attempts attempts"
           exit 1
-
-      - name: Setup Bitrise Build Cache
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests-ios
@@ -427,7 +413,7 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-tahoe-27, general-purpose]
       timeout-minutes: 30
 
       defaults:
@@ -454,14 +440,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-
-      - name: Setup Bitrise Build Cache
-        if: runner.environment == 'self-hosted'
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests

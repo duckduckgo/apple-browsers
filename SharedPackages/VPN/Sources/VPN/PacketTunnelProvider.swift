@@ -436,6 +436,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public let loopDetector: ConnectionFailureLoopDetector
     private let heartbeatStore: TunnelHeartbeatStore?
     private let sessionHealth: VPNSessionHealthInstrumentation
+    private var sessionHealthStartAttemptID: UUID?
     private var heartbeatTask: Task<Never, Error>? {
         willSet { heartbeatTask?.cancel() }
     }
@@ -829,6 +830,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     private func startTunnelInternal(options: [String: NSObject]? = nil) async throws {
         Logger.networkProtection.log("🚀 Starting tunnel")
+
+        // Issued before any await: a stop arriving mid-start must invalidate this attempt.
+        sessionHealthStartAttemptID = sessionHealth.tunnelStartRequested()
 
         // It's important to have this as soon as possible since it helps setup PixelKit
         prepareToConnect(using: tunnelProviderProtocol)
@@ -1401,6 +1405,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
+#if os(iOS)
+        // Loading preferences from the extension on iOS 16 can raise an Objective-C exception.
+        guard #available(iOS 17.0, *) else {
+            throw DisableOnDemandError.notSupportedByOS
+        }
+#endif
+
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
 
@@ -1433,7 +1444,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("⚪️ Tunnel interface is \(self.adapter.interfaceName ?? "unknown", privacy: .public)")
 
-        sessionHealth.tunnelStarted(reason: startReason)
+        sessionHealth.tunnelStarted(reason: startReason, attemptID: sessionHealthStartAttemptID)
 
         // These cases only make sense in the context of a connection that had trouble
         // and is being fixed, so we want to test the connection immediately.

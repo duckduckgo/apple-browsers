@@ -36,6 +36,8 @@ private struct Constants {
     static let cornerRadius: CGFloat = 12
     static let shadowOpacity: CGFloat = 0.1
     static let shadowRadius: CGFloat = 3
+    static let floatingShadowOpacity: CGFloat = 0.16
+    static let floatingShadowRadius: CGFloat = 10
     static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
     static let primingImageName: String = "DuckPlayer-PrimingAnimation"
     static let imageWidth: CGFloat = 150
@@ -60,6 +62,7 @@ private struct Constants {
 /// The welcome pill view that appears when a user first encounters DuckPlayer
 struct DuckPlayerWelcomePillView: View {
     @ObservedObject var viewModel: DuckPlayerWelcomePillViewModel
+    var usesFloatingStyle = false
     @State private var isAnimating: Bool = true
     @Environment(\.colorScheme) private var colorScheme
 
@@ -155,14 +158,14 @@ struct DuckPlayerWelcomePillView: View {
                      : Constants.horizontalPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
-                Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary  : .backgroundSheets)
+                Color(designSystemColor: usesFloatingStyle || colorScheme == .light ? .backgroundSheets : .controlsFillPrimary)
             )
             .cornerRadius(AppRebrand.isAppRebranded() ?
                           ContainerMetrics.cornerRadius
                           : Constants.cornerRadius)
             .shadow(
-                color: Color.black.opacity(Constants.shadowOpacity),
-                radius: Constants.shadowRadius,
+                color: Color.black.opacity(usesFloatingStyle ? Constants.floatingShadowOpacity : Constants.shadowOpacity),
+                radius: usesFloatingStyle ? Constants.floatingShadowRadius : Constants.shadowRadius,
                 x: Constants.shadowOffset.width,
                 y: Constants.shadowOffset.height
             )

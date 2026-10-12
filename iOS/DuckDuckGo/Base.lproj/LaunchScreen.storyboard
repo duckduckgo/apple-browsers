@@ -5,7 +5,7 @@
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
-        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -18,18 +18,18 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Logo-Stacked" translatesAutoresizingMaskIntoConstraints="NO" id="EId-hf-6HL">
-                                <rect key="frame" x="127" y="320" width="160" height="128"/>
+                                <rect key="frame" x="127.5" y="319" width="161.5" height="129.5"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="160" id="Iq7-49-dwL"/>
+                                    <constraint firstAttribute="width" constant="161.37" id="Iq7-49-dwL"/>
                                     <constraint firstAttribute="width" secondItem="EId-hf-6HL" secondAttribute="height" multiplier="206:165" id="cA7-p8-Jv3"/>
                                 </constraints>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Uoe-RS-vTk"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" name="LaunchScreenBackground"/>
                         <constraints>
-                            <constraint firstItem="EId-hf-6HL" firstAttribute="centerX" secondItem="5uF-ws-lnA" secondAttribute="centerX" id="2In-4c-xKC"/>
-                            <constraint firstItem="EId-hf-6HL" firstAttribute="centerY" secondItem="5uF-ws-lnA" secondAttribute="centerY" constant="-55" id="x78-TH-9qh"/>
+                            <constraint firstItem="EId-hf-6HL" firstAttribute="centerX" secondItem="5uF-ws-lnA" secondAttribute="centerX" constant="0.80000000000000004" id="2In-4c-xKC"/>
+                            <constraint firstItem="EId-hf-6HL" firstAttribute="centerY" secondItem="5uF-ws-lnA" secondAttribute="centerY" constant="-55.375" id="x78-TH-9qh"/>
                         </constraints>
                     </view>
                     <simulatedStatusBarMetrics key="simulatedStatusBarMetrics" statusBarStyle="lightContent"/>
@@ -41,11 +41,8 @@
     </scenes>
     <resources>
         <image name="Logo-Stacked" width="206" height="165"/>
-        <systemColor name="labelColor">
-            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
+        <namedColor name="LaunchScreenBackground">
+            <color red="0.97254901960784312" green="0.97254901960784312" blue="0.97254901960784312" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
     </resources>
 </document>

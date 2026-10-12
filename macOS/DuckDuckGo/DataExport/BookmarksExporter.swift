@@ -73,7 +73,7 @@ extension BookmarksExporter {
 
         static func bookmark(level: Int, title: String, url: String, isFavorite: Bool = false) -> String {
             """
-            \(String.indent(by: level))<DT><A HREF="\(url)"\(isFavorite ? " duckduckgo:favorite=\"true\"" : "")>\(title)</A>
+            \(String.indent(by: level))<DT><A HREF="\(url.escapedHTMLAttribute())"\(isFavorite ? " duckduckgo:favorite=\"true\"" : "")>\(title)</A>
 
             """
         }
@@ -99,6 +99,14 @@ extension BookmarksExporter {
 }
 
 fileprivate extension String {
+
+    func escapedHTMLAttribute() -> String {
+        // Escape ampersands first so literal entity names in URLs survive import unchanged.
+        replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+    }
 
     static func indent(by level: Int) -> String {
         return String(repeating: "\t", count: level)

@@ -25,6 +25,7 @@ import PreferencesUI_macOS
 
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
@@ -303,8 +304,7 @@ struct SyncEnabledViewV2_Previews: PreviewProvider {
             .init(name: "Sync paused", state: .syncPaused)
         ],
         configure: { model in
-            DesignSystemRebrand.isAppRebranded = { true }
-            return ScrollView {
+            ScrollView {
                 PreferencePane {
                     StatusIndicatorView(status: .on, isLarge: true)
                     SyncEnabledViewV2<PreviewManagementViewModel>()
@@ -314,6 +314,7 @@ struct SyncEnabledViewV2_Previews: PreviewProvider {
             }
             .frame(width: 600, height: 900)
             .background(Color(nsColor: .windowBackgroundColor))
+            .applyRebranding()
         }
     )
 }

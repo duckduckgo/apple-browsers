@@ -37,6 +37,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openAIChatLink
     case responseReceived
 
+    /// FE→native, once per prompt composition, before the file-upload disclosure would show.
+    /// Native spends a display if any remain and answers whether to show it.
+    case attachmentPrivacyShouldDisplay
+
     case getAIChatPageContext
     case submitAIChatPageContext
     /// Pushed (native→FE) to append one user text selection to the duck.ai selection-context list.
@@ -53,6 +57,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case getMigrationDataByIndex
     case getMigrationInfo
     case clearMigrationData
+
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    case getAIChats
 
     case voiceSessionStarted
     case voiceSessionEnded
@@ -139,5 +146,17 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// MCP `tools/call` — invoke a registered browser tool.
     case toolsCall = "tools/call"
+
+    /// MCP `elicitation/create` — pushed (native→FE) to ask the user for tool permission mid-call.
+    case elicitationCreate = "elicitation/create"
+
+    /// MCP `elicitation/response` — the FE's answer to a pending `elicitationCreate`.
+    case elicitationResponse = "elicitation/response"
+
+    /// MCP `notifications/tools/list_changed` — pushed (native→FE) when the tool catalogue changes.
+    case toolsListChanged = "notifications/tools/list_changed"
+
+    /// Pushed (native→FE) when the chat's owner tab navigates, so the FE can refresh its view of the page.
+    case aiChatTabChanged
 }
 // swiftlint:enable inclusive_language

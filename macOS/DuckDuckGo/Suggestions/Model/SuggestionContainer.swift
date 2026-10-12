@@ -260,8 +260,9 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
             result.append(.init(title: UserText.mainMenuHistory, url: .history))
         }
         result += PreferencePaneIdentifier.allCases.compactMap { pane in
-            // Skip Duck AI if feature flag is off
-            if pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat) {
+            // Subscriber Offers opens a web page rather than a settings pane, so there is no pane to
+            // suggest navigating to. Skip Duck AI too when its feature flag is off.
+            if pane == .partnershipsHub || (pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat)) {
                 return nil
             }
             // preference panes URLs

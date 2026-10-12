@@ -26,8 +26,7 @@ struct RemoveDeviceView: View {
     let device: SyncDevice
 
     var removeImageName: String {
-        let base = device.kind == .mobile ? "SyncRemoveDeviceMobile" : "SyncRemoveDeviceDesktop"
-        return model.isAppRebranded ? base : (base + "-legacy")
+        device.kind == .mobile ? "SyncRemoveDeviceMobile" : "SyncRemoveDeviceDesktop"
     }
 
     var body: some View {

@@ -34,6 +34,8 @@ final class UTIModelSelector {
     /// The chip / reasoning-picker mutations the selector drives on the input bar.
     struct ViewSurface {
         let setModelName: (String) -> Void
+        /// The provider icon the chip shows alone when the toolbar is too narrow for the name.
+        let setModelIcon: (UIImage?) -> Void
         let setModelPickerMenu: (UIMenu?) -> Void
         let setModelChipHidden: (Bool) -> Void
         /// Hides the chip's chevron, turning it from a dropdown into a read-only label.
@@ -89,7 +91,7 @@ final class UTIModelSelector {
          isUpdatedModelPickerEnabled: Bool,
          isUpdatedCreateImageEnabled: Bool,
          reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
-         subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()) {
+         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil) {
         self.modelStore = modelStore
         self.toolsController = toolsController
         self.pixelReporter = pixelReporter
@@ -99,7 +101,7 @@ final class UTIModelSelector {
         self.modelMenuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningAccessResolver = reasoningAccessResolver
-        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: modelStore.upsellPolicy)
         self.isUpdatedCreateImageEnabled = isUpdatedCreateImageEnabled
     }
 
@@ -279,6 +281,7 @@ final class UTIModelSelector {
         let shortName = modelMenuFactory.selectedShortName(models: modelStore.models, selectedId: selectedId)
         if let shortName {
             view.setModelName(shortName)
+            view.setModelIcon(modelStore.models.first { $0.id == selectedId }?.updatedModelPickerMenuIcon)
         }
         applyModelPickerAffordance()
     }
@@ -300,6 +303,7 @@ final class UTIModelSelector {
             selectedId: selectedId,
             userTier: modelStore.subscriptionState.userTier,
             freeTrialEligibility: modelStore.freeTrialEligibility,
+            allowsSubscriptionUpsell: modelStore.allowsSubscriptionUpsell,
             onSelect: onSelect
         )
     }
@@ -313,7 +317,7 @@ final class UTIModelSelector {
             return
         }
         let selectedMode = resolvedSelectedReasoningMode
-        let shouldHide = !(modelStore.selectedModel?.supportsReasoningPicker ?? false)
+        let shouldHide = !modelStore.isReasoningPickerAvailable
         view.setSelectedReasoningMode(selectedMode)
         view.setReasoningButtonHidden(shouldHide)
         view.setReasoningPickerMenu(shouldHide ? nil : buildReasoningPickerMenu())
@@ -331,6 +335,7 @@ final class UTIModelSelector {
             selectedMode: resolvedSelectedReasoningMode,
             userTier: modelStore.subscriptionState.userTier,
             freeTrialEligibility: modelStore.freeTrialEligibility,
+            allowsSubscriptionUpsell: modelStore.allowsSubscriptionUpsell,
             onSelect: onSelect
         )
     }

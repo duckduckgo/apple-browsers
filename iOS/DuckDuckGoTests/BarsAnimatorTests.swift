@@ -24,6 +24,250 @@ import PrivacyDashboard
 
 class BarsAnimatorTests: XCTestCase {
 
+    func testChromeManagerDetachDisconnectsScrollView() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        manager.delegate = delegate
+        let scrollView = mockScrollView()
+        manager.attach(to: scrollView)
+        XCTAssertTrue(scrollView.delegate === manager)
+
+        manager.detach()
+
+        XCTAssertNil(scrollView.delegate)
+    }
+
+    func testChromeManagerDetachPreservesReplacementDelegate() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        manager.delegate = delegate
+        let replacement = BrowserChromeManager()
+        let scrollView = mockScrollView()
+        manager.attach(to: scrollView)
+        scrollView.delegate = replacement
+
+        manager.detach()
+
+        XCTAssertTrue(scrollView.delegate === replacement)
+    }
+
+    func testChromeManagerIgnoresScrollEndAfterDetach() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        delegate.canHideBars = true
+        manager.delegate = delegate
+        let scrollView = mockTallScrollView()
+        manager.attach(to: scrollView)
+        manager.detach()
+        var targetOffset = CGPoint.zero
+
+        manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: -1), targetContentOffset: &targetOffset)
+
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
+    }
+
+    func testChromeManagerIgnoresOldScrollViewAfterReattach() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        delegate.canHideBars = true
+        manager.delegate = delegate
+        let oldScrollView = mockTallScrollView()
+        let newScrollView = mockTallScrollView()
+        manager.attach(to: oldScrollView)
+        manager.attach(to: newScrollView)
+        var targetOffset = CGPoint.zero
+
+        manager.scrollViewWillEndDragging(oldScrollView, withVelocity: CGPoint(x: 0, y: -1), targetContentOffset: &targetOffset)
+
+        XCTAssertNil(oldScrollView.delegate)
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
+
+        manager.scrollViewWillEndDragging(newScrollView, withVelocity: CGPoint(x: 0, y: -1), targetContentOffset: &targetOffset)
+        manager.scrollViewDidEndDecelerating(newScrollView)
+
+        XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(1)])
+        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
+    }
+
+    func testChromeManagerIgnoresOldDecelerationAfterReattach() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.canHideBars = true
+        delegate.isFloatingChromeEnabled = true
+        manager.delegate = delegate
+        let oldScrollView = mockTallScrollView()
+        let newScrollView = mockTallScrollView()
+        manager.attach(to: oldScrollView)
+        manager.attach(to: newScrollView)
+        var targetOffset = CGPoint.zero
+        manager.scrollViewWillBeginDragging(newScrollView)
+        manager.scrollViewWillEndDragging(newScrollView, withVelocity: CGPoint(x: 0, y: -1), targetContentOffset: &targetOffset)
+
+        manager.scrollViewDidEndDecelerating(oldScrollView)
+
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
+
+        manager.scrollViewDidEndDecelerating(newScrollView)
+
+        XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(1)])
+    }
+
+    func testClassicChromeKeepsScrollDelegateAfterDetach() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = false
+        manager.delegate = delegate
+        let scrollView = mockScrollView()
+        manager.attach(to: scrollView)
+
+        manager.detach()
+
+        XCTAssertTrue(scrollView.delegate === manager)
+    }
+
+    func testClassicChromeHandlesScrollCallbacksAfterReattachmentAndDetach() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = false
+        delegate.canHideBars = true
+        manager.delegate = delegate
+        let scrollView = mockTallScrollView()
+        let replacement = mockTallScrollView()
+        manager.attach(to: scrollView)
+        manager.attach(to: replacement)
+        var targetOffset = CGPoint.zero
+
+        manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: -1), targetContentOffset: &targetOffset)
+        XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(1)])
+        XCTAssertTrue(scrollView.delegate === manager)
+
+        manager.detach()
+        manager.scrollViewWillEndDragging(replacement, withVelocity: CGPoint(x: 0, y: -1), targetContentOffset: &targetOffset)
+        XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(1), .setBarsVisibility(1)])
+    }
+
+    func testScheduledInsetRetryStopsWhenFloatingChromeIsDisabled() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        manager.delegate = delegate
+        let scrollView = mockTallScrollView()
+        manager.attach(to: scrollView)
+        var retries = 0
+        manager.onScrollStateChanged = { retries += 1 }
+
+        manager.scrollViewDidEndDragging(scrollView, willDecelerate: false)
+        delegate.isFloatingChromeEnabled = false
+        manager.scrollViewDidScroll(scrollView)
+        manager.scrollViewDidEndDecelerating(scrollView)
+        let queueDrained = expectation(description: "Scheduled retry processed")
+        DispatchQueue.main.async { queueDrained.fulfill() }
+        wait(for: [queueDrained], timeout: 1)
+
+        XCTAssertEqual(retries, 0)
+    }
+
+    func testFloatingScrollEndRetriesInsetsWhenChromeUpdatesAreBlocked() {
+        for (canHideBars, isDisabled) in [(false, false), (true, true)] {
+            let manager = BrowserChromeManager()
+            let delegate = BrowserChromeDelegateMock()
+            delegate.isFloatingChromeEnabled = true
+            delegate.canHideBars = canHideBars
+            delegate.isChromeScrollInteractionDisabled = isDisabled
+            manager.delegate = delegate
+            let scrollView = mockTallScrollView()
+            manager.attach(to: scrollView)
+            var retries = 0
+            manager.onScrollStateChanged = { retries += 1 }
+
+            manager.scrollViewDidEndDecelerating(scrollView)
+
+            XCTAssertEqual(retries, 1)
+            XCTAssertTrue(delegate.receivedMessages.isEmpty)
+        }
+    }
+
+    func testScrollStateCallbacksIgnoreOldScrollViewAndClassicUI() {
+        for isFloating in [false, true] {
+            let manager = BrowserChromeManager()
+            let delegate = BrowserChromeDelegateMock()
+            delegate.isFloatingChromeEnabled = isFloating
+            manager.delegate = delegate
+            let oldScrollView = mockTallScrollView()
+            let currentScrollView = mockTallScrollView()
+            manager.attach(to: oldScrollView)
+            manager.attach(to: currentScrollView)
+            var retries = 0
+            manager.onScrollStateChanged = { retries += 1 }
+
+            manager.scrollViewDidScroll(oldScrollView)
+            manager.scrollViewDidEndDragging(oldScrollView, willDecelerate: false)
+            manager.scrollViewDidEndDecelerating(oldScrollView)
+            XCTAssertEqual(retries, 0)
+
+            manager.scrollViewDidScroll(currentScrollView)
+            manager.scrollViewDidEndDecelerating(currentScrollView)
+            if !isFloating {
+                manager.scrollViewDidEndDragging(currentScrollView, willDecelerate: false)
+                let queueDrained = expectation(description: "Classic drag callback processed")
+                DispatchQueue.main.async { queueDrained.fulfill() }
+                wait(for: [queueDrained], timeout: 1)
+            }
+            XCTAssertEqual(retries, isFloating ? 2 : 0)
+        }
+    }
+
+    func testFloatingDragWithoutDecelerationRetriesInsetsAfterCallbackReturns() {
+        let manager = BrowserChromeManager()
+        let delegate = BrowserChromeDelegateMock()
+        delegate.isFloatingChromeEnabled = true
+        delegate.isChromeScrollInteractionDisabled = true
+        manager.delegate = delegate
+        let scrollView = mockTallScrollView()
+        manager.attach(to: scrollView)
+        let retried = expectation(description: "Insets retried after dragging state clears")
+        var callbackReturned = false
+        manager.onScrollStateChanged = {
+            XCTAssertTrue(callbackReturned)
+            retried.fulfill()
+        }
+
+        manager.scrollViewDidEndDragging(scrollView, willDecelerate: false)
+        callbackReturned = true
+
+        wait(for: [retried], timeout: 1)
+    }
+
+    func testScheduledInsetRetryIgnoresReattachmentAndNewDrag() {
+        for reattach in [false, true] {
+            let manager = BrowserChromeManager()
+            let delegate = BrowserChromeDelegateMock()
+            delegate.isFloatingChromeEnabled = true
+            manager.delegate = delegate
+            let scrollView = mockTallScrollView()
+            let replacement = mockTallScrollView()
+            manager.attach(to: scrollView)
+            var retries = 0
+            manager.onScrollStateChanged = { retries += 1 }
+
+            manager.scrollViewDidEndDragging(scrollView, willDecelerate: false)
+            if reattach {
+                manager.attach(to: replacement)
+            } else {
+                manager.scrollViewWillBeginDragging(scrollView)
+            }
+            let queueDrained = expectation(description: "Scheduled retry processed")
+            DispatchQueue.main.async { queueDrained.fulfill() }
+            wait(for: [queueDrained], timeout: 1)
+
+            XCTAssertEqual(retries, 0)
+        }
+    }
+
     func testDidStartScrollingUpdatesPositionCorrectly() {
         let (sut, delegate) = makeSUT()
         let scrollView = mockScrollView()
@@ -189,6 +433,24 @@ class BarsAnimatorTests: XCTestCase {
         XCTAssertEqual(sut.barsState, .revealed)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
     }
+
+    // The fast-step/catch-up animation logic added for floating chrome is gated on
+    // `isFloatingChromeEnabled`; legacy (non-floating) chrome must keep tracking scroll 1:1 with no
+    // animation regardless of how large a single jump is.
+    func testWhenLegacyChromeThenMidRangeJumpsAreNotAnimated() {
+        let (sut, delegate) = makeSUT()
+        let scrollView = mockScrollView()
+
+        scrollView.contentOffset.y = 100
+        sut.didStartScrolling(in: scrollView)
+        XCTAssertEqual(sut.barsState, .revealed)
+
+        scrollView.contentOffset.y = 100 + delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .transitioning)
+        XCTAssertFalse(delegate.lastVisibilityUpdateWasAnimated, "legacy chrome must not use the floating fast-step/catch-up logic")
+    }
 }
 
 class BarsAnimatorFloatingTests: XCTestCase {
@@ -293,7 +555,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertLessThan(percent, 0.1, "1pt of overscroll must not reveal a large slice of the chrome")
     }
 
-    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateQuicklyToHidden() {
+    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateToHidden() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
@@ -307,11 +569,52 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertEqual(sut.barsState, .hidden)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0))
         XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
-        XCTAssertEqual(delegate.lastAnimationDuration, BarsAnimator.Metrics.floatingFastStepAnimationDuration)
+        // No explicit duration override: the delegate scales the morph duration itself from how
+        // much of the transition this jump skipped, so a full-travel jump gets the full morph.
+        XCTAssertNil(delegate.lastAnimationDuration)
 
         let visibilityUpdateCount = delegate.receivedMessages.count
         sut.didScroll(in: scrollView)
         XCTAssertEqual(delegate.receivedMessages.count, visibilityUpdateCount)
+    }
+
+    // A jump that lands mid-travel (not settled at 0/1) but still skips a large slice of the
+    // transition must animate too — the old fast-step check only fired for jumps landing exactly
+    // on an extreme, so a fling that stopped mid-fade used to snap instead of morph.
+    func testWhenScrollJumpsToMidTravelInOneUpdateThenBarsAnimateToThatFraction() throws {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+
+        scrollView.contentOffset.y = travel * 0.6
+        clock.advance(by: 1.0 / 60.0)
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .transitioning)
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.4, accuracy: 0.001)
+        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
+        XCTAssertNil(delegate.lastAnimationDuration)
+    }
+
+    // The animator's speed limit decides pacing now, so every floating scroll update simply hands
+    // over a target. Nothing in the scroll path may reintroduce an unanimated fast path: that is
+    // what let a fast flick apply a large step in one frame and skip the morph entirely.
+    func testWhenFloatingChromeScrollsThenEveryUpdateIsHandedOverAsAnAnimatedTarget() {
+        let (sut, delegate, _) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+
+        // A tiny step, a mid-travel step and a full-travel jump must all take the same path.
+        for offset in [travel * 0.02, travel * 0.5, travel] {
+            scrollView.contentOffset.y = offset
+            sut.didScroll(in: scrollView)
+            XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated, "offset \(offset) must be animated")
+            XCTAssertNil(delegate.lastAnimationDuration, "the animator owns pacing, not the caller")
+        }
     }
 
     func testWhenNewDragInterruptsSettlingThenProgressStartsFromRenderedVisibility() throws {
@@ -661,6 +964,7 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
     var isInMinimalChromeLayout: Bool = false
 
     var isFloatingChromeEnabled: Bool = false
+
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 

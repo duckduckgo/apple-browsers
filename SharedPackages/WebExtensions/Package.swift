@@ -53,6 +53,7 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 "ZIPFoundation",
             ],
             resources: [
@@ -70,6 +71,7 @@ let package = Package(
             dependencies: [
                 "WebExtensions",
                 "WebExtensionsTestSupport",
+                "ZIPFoundation",
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]

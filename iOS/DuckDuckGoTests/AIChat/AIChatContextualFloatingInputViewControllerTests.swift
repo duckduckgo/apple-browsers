@@ -321,6 +321,42 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(spy.dismissRequestCount, 0)
     }
 
+    func testClearingPromptsHiddenByMentionsRemovesThemBeforeMentionsDismiss() {
+        let (subject, _, _, parent) = makeSubjectWithHostSpy()
+        let window = UIWindow(frame: parent.view.bounds)
+        window.rootViewController = parent
+        window.isHidden = false
+        defer { window.isHidden = true }
+
+        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
+        subject.showChipsIfNeeded()
+        subject.setTabMentionSuggestionsVisible(true)
+
+        subject.clearChipsFadingOut()
+
+        XCTAssertEqual(subject.chipsViewController.startActionCount, 0)
+        XCTAssertTrue(subject.chipsViewController.view.isHidden)
+        subject.setTabMentionSuggestionsVisible(false)
+        XCTAssertEqual(subject.chipsViewController.startActionCount, 0)
+
+        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
+        subject.showChipsIfNeeded()
+        XCTAssertEqual(subject.chipsViewController.startActionCount, 1)
+        XCTAssertFalse(subject.chipsViewController.view.isHidden)
+    }
+
+    func testDismissingMentionsKeepsPromptsWhenTheyAreStillApplicable() {
+        let (subject, _, _, _) = makeSubjectWithHostSpy()
+        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
+        subject.showChipsIfNeeded()
+
+        subject.setTabMentionSuggestionsVisible(true)
+        subject.setTabMentionSuggestionsVisible(false)
+
+        XCTAssertEqual(subject.chipsViewController.startActionCount, 1)
+        XCTAssertFalse(subject.chipsViewController.view.isHidden)
+    }
+
     // MARK: - Chips entrance
 
     /// An empty batch must not consume the entrance: page context attaches before suggestions

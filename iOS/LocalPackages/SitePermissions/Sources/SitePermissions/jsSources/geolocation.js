@@ -187,6 +187,7 @@
         let pendingState = null;
         const status = new NativeEventTarget();
         Object.defineProperties(status, {
+            name: { configurable: false, enumerable: true, value: "geolocation" },
             state: { configurable: false, enumerable: true, get: () => state },
             onchange: { configurable: true, enumerable: true, writable: true, value: null }
         });

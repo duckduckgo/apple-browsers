@@ -25,6 +25,7 @@ import PrivacyConfig
 /// The owning view controller passes itself as the `EscapeHatchActionRouter`.
 struct EscapeHatchModelBuilder {
 
+    let previewsSource: TabPreviewsSource
     let tabManager: TabManager
     let lastActiveTabStore: LastActiveTabStoring
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
@@ -104,6 +105,7 @@ struct EscapeHatchModelBuilder {
             tabType: tabType,
             domain: domain,
             targetTab: targetTab,
+            thumbnail: targetTab.fireTab ? nil : previewsSource.preview(for: targetTab),
             tabsSource: tabManager,
             router: router,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,

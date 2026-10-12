@@ -71,7 +71,7 @@ extension Preferences {
 
                         // Redesign: Duck.ai is an On/Off dropdown grouped with the pickers below.
                         Spacer()
-                        Picker("", selection: model.duckAIEnabledBinding) {
+                        Picker("" as String, selection: model.duckAIEnabledBinding) {
                             Text(UserText.aiChatEnabledOn).tag(true)
                             Text(UserText.aiChatEnabledOff).tag(false)
                         }
@@ -91,7 +91,7 @@ extension Preferences {
                             TextMenuItemCaption(UserText.searchAssistSettingsDescription)
                         }
                         Spacer()
-                        Picker("", selection: model.searchAssistFrequencyBinding) {
+                        Picker("" as String, selection: model.searchAssistFrequencyBinding) {
                             ForEach(SearchAssistFrequency.allCases, id: \.self) { frequency in
                                 Text(frequency.displayName).tag(frequency)
                             }
@@ -114,7 +114,7 @@ extension Preferences {
                             }
                         }
                         Spacer()
-                        Picker("", selection: model.hideAIImagesBinding) {
+                        Picker("" as String, selection: model.hideAIImagesBinding) {
                             ForEach(HideAIImagesOption.allCases, id: \.self) { option in
                                 Text(option.displayName).tag(option)
                             }

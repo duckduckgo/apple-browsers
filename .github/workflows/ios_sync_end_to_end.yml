@@ -62,6 +62,8 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: "26.6"
 
     - name: Select iOS Simulator
       id: select-simulator

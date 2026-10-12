@@ -7,6 +7,35 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    "fire_burn-dropped": {
+        "description": "Fires when the user triggers a burn while another burn is still in progress, so the request is dropped.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "trigger",
+                "description": "What asked for the dropped burn",
+                "type": "string",
+                "enum": ["manual_fire", "auto_clear_on_launch", "auto_clear_on_foreground", "fire_mode_auto_clear"]
+            },
+            {
+                "key": "scope",
+                "description": "What the dropped burn would have cleared",
+                "type": "string",
+                "enum": ["tab", "fire_mode", "normal_mode", "all"]
+            },
+            {
+                "key": "elapsed",
+                "description": "Bucketed seconds the in-progress burn had been running when this request was dropped",
+                "type": "string",
+                "enum": ["1", "5", "10", "30", "60", "120", "300", "more"]
+            }
+        ]
+    },
+
     "m_fire_user_action_before_completion": {
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],
@@ -61,6 +90,14 @@
         "triggers": ["other"],
         "suffixes": ["time_bucket", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+
+    "fire_warmup-navigation_timed-out": {
+        "description": "Fired when the hidden WebKit warm-up page loaded at the start of a data clearing operation does not report back before its deadline. The burn stops waiting and continues, rather than hanging indefinitely and blocking every later Fire button press until the app is relaunched",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     },
 
     "data-clearing_single-tab-time-": {

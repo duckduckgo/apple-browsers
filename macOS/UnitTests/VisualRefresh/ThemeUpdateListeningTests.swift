@@ -28,7 +28,7 @@ final class ThemeUpdateListeningTests: XCTestCase {
         let themeManager = MockThemeManager()
         let sample = SampleUpdateListener(themeManager: themeManager)
 
-        let nextTheme = ThemeStyle.buildThemeStyle(themeName: .green, featureFlagger: MockFeatureFlagger())
+        let nextTheme = ThemeStyle.buildThemeStyle(themeName: .green)
         let expectation = expectation(description: "Apply ThemeStyle Invocation")
 
         sample.onThemeUpdate = { theme in

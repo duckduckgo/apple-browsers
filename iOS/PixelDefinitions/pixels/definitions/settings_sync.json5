@@ -72,5 +72,47 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_settings_this_device_details_screen_shown": {
+        "description": "Fired when the device details screen is shown for the current device in Sync settings, after the user authenticates.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_settings_this_device_details_name_updated": {
+        "description": "Fired when the name of the current device is successfully updated from its device details screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_settings_this_device_details_turn_off_sync_tapped": {
+        "description": "Fired when the user switches off the Sync toggle on the details screen of the current device, opening the confirmation dialog.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_settings_other_device_details_screen_shown": {
+        "description": "Fired when the device details screen is shown for another synced device in Sync settings, after the user authenticates.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_settings_other_device_details_remove_device_tapped": {
+        "description": "Fired when the user taps 'Remove Device' on the details screen of another synced device, opening the confirmation dialog.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_settings_other_device_details_remove_device_confirmed": {
+        "description": "Fired when another synced device is successfully removed after the user confirms 'Remove Device' from its details screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

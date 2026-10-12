@@ -87,7 +87,7 @@ extension Preferences {
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(Color(.textSecondary))
                 }
 
                 if !NSApp.isSandboxed {
@@ -198,6 +198,9 @@ extension Preferences {
             }
             .onReceive(bitwardenStatusPublisher) { status in
                 bitwardenStatus = status
+            }
+            .onAppear {
+                model.viewDidAppear()
             }
         }
 
@@ -385,7 +388,7 @@ struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 HStack {
-                    Text("1.")
+                    Text(verbatim: "1.")
                     Button(UserText.bitwardenIncompatibleStep1, action: {
                         openNewTab(with: URL(string: "https://github.com/bitwarden/clients/releases/download/desktop-mac-v2025.4.2/Bitwarden-2025.4.2-universal.dmg")!)
                     }).foregroundColor(.accentColor)

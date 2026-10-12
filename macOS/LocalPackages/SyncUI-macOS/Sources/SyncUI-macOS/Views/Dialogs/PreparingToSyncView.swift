@@ -27,7 +27,7 @@ struct PreparingToSyncView: View {
     var body: some View {
         SyncDialog(spacing: 20.0, bottomText: UserText.preparingToSyncDialogAction) {
             VStack(alignment: .center, spacing: 20) {
-                Image(model.isAppRebranded ? .sync96 : .sync96Legacy)
+                Image(.sync96)
                 switch mode {
                 case .singleDeviceOrRecovery:
                     let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled
@@ -56,7 +56,7 @@ struct RecoverSyncedDataView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
-                Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
+                Image(.syncPair96)
                 SyncUIViews.TextHeader(text: UserText.reciverSyncedDataDialogTitle)
                 SyncUIViews.TextDetailMultiline(text: UserText.reciverSyncedDataDialogSubitle)
             }

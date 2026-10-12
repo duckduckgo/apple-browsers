@@ -171,10 +171,8 @@ final class DataImportViewController: UIViewController {
 
             self.present(summaryViewController, animated: true)
 
-            if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
-                try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
-                try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
-            }
+            try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+            try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
         }
     }
 

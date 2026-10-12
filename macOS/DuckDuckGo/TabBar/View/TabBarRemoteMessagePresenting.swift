@@ -40,6 +40,9 @@ protocol TabBarRemoteMessagePresenting: AnyObject {
     var tabBarRemoteMessagePopoverHoverTimer: Timer? { get set }
     var feedbackBarButtonHostingController: NSHostingController<TabBarRemoteMessageView>? { get set }
     var tabBarRemoteMessageCancellable: AnyCancellable? { get set }
+    var foregroundBrowserWindowObserver: ForegroundBrowserWindowObserver? { get set }
+    var foregroundBrowserWindowCancellable: AnyCancellable? { get set }
+    var tabBarRemoteMessageImpressionTracker: TabBarRemoteMessageImpressionTracker { get }
 }
 
 extension TabBarRemoteMessagePresenting {
@@ -53,15 +56,40 @@ extension TabBarRemoteMessagePresenting {
         tabBarRemoteMessageCancellable = tabBarRemoteMessageViewModel.$remoteMessage
             .sink(receiveValue: { tabBarRemoteMessage in
                 if let tabBarRemoteMessage = tabBarRemoteMessage {
-                    if self.feedbackBarButtonHostingController == nil {
+                    if self.feedbackBarButtonHostingController?.rootView.model.id != tabBarRemoteMessage.id {
+                        self.dismissTabBarRemoteMessagePopover()
+                        self.tabBarRemoteMessagePopover = nil
+                        self.removeFeedbackButton()
                         self.showTabBarRemoteMessage(tabBarRemoteMessage)
                     }
                 } else {
+                    self.tabBarRemoteMessageImpressionTracker.update(isEligible: false, messageID: nil)
+                    self.dismissTabBarRemoteMessagePopover()
+                    self.tabBarRemoteMessagePopover = nil
                     if self.feedbackBarButtonHostingController != nil {
                         self.removeFeedbackButton()
                     }
                 }
+                self.reconcileTabBarRemoteMessageImpression()
             })
+    }
+
+    func reconcileTabBarRemoteMessageImpression() {
+        tabBarRemoteMessageImpressionTracker.update(
+            isEligible: isTabBarRemoteMessageEligibleForImpression,
+            messageID: feedbackBarButtonHostingController?.rootView.model.id
+        )
+    }
+
+    var isTabBarRemoteMessageEligibleForImpression: Bool {
+        guard let hostingController = feedbackBarButtonHostingController,
+              let window = hostingController.view.window,
+              let foregroundBrowserWindowObserver,
+              window === rightSideStackView.window,
+              rightSideStackView.arrangedSubviews.contains(hostingController.view),
+              hostingController.view.superview != nil,
+              !hostingController.view.isHiddenOrHasHiddenAncestor else { return false }
+        return foregroundBrowserWindowObserver.isEligible
     }
 
     /// Displays the tab bar remote message in the UI.
@@ -98,10 +126,6 @@ extension TabBarRemoteMessagePresenting {
             onHoverEnd: { [weak self] in
                 guard let self = self else { return }
                 self.dismissTabBarRemoteMessagePopover()
-            },
-            onAppear: { [weak self] in
-                guard let self = self else { return }
-                self.tabBarRemoteMessageViewModel.markTabBarRemoteMessageAsShown()
             }
         )
         feedbackBarButtonHostingController = NSHostingController(rootView: feedbackButtonView)
@@ -126,6 +150,7 @@ extension TabBarRemoteMessagePresenting {
         NSLayoutConstraint.activate([
             feedbackBarButtonHostingController.view.centerYAnchor.constraint(equalTo: rightSideStackView.centerYAnchor)
         ])
+        reconcileTabBarRemoteMessageImpression()
     }
 
     /// Starts a timer to show the tab bar remote message popover after a delay.
@@ -196,6 +221,7 @@ extension TabBarRemoteMessagePresenting {
     private func removeFeedbackButton() {
         guard let hostingController = feedbackBarButtonHostingController else { return }
 
+        dismissTabBarRemoteMessagePopover()
         rightSideStackView.removeArrangedSubview(hostingController.view)
         hostingController.view.removeFromSuperview()
         hostingController.removeFromParent()

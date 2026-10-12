@@ -31,7 +31,7 @@ final class ConfigurationManagerTests: XCTestCase {
     private var operationLog: OperationLog!
     private var configManager: ConfigurationManager!
     private var mockFetcher: MockConfigurationFetcher!
-    private var mockStore: MockConfigurationStoring!
+    private var mockStore: RecordingConfigurationStore!
     private var mockTrackerDataManager: MockTrackerDataManager!
     private var mockPrivacyConfigManager: MockPrivacyConfigurationManagerWithLogs!
 
@@ -40,7 +40,7 @@ final class ConfigurationManagerTests: XCTestCase {
         let userDefaults = UserDefaults(suiteName: "ConfigurationManagerTests")!
         userDefaults.removePersistentDomain(forName: "ConfigurationManagerTests")
         mockFetcher = MockConfigurationFetcher(operationLog: operationLog)
-        mockStore = MockConfigurationStoring()
+        mockStore = RecordingConfigurationStore()
         mockPrivacyConfigManager = MockPrivacyConfigurationManagerWithLogs(operationLog: operationLog, fetchedETag: nil, fetchedData: nil, embeddedDataProvider: MockEmbeddedDataProvider(data: Data(), etag: "etag"), localProtection: MockDomainsProtectionStore(), internalUserDecider: MockInternalUserDecider())
         mockPrivacyConfigManager.operationLog = operationLog
         mockTrackerDataManager = MockTrackerDataManager(operationLog: operationLog, etag: nil, data: nil, embeddedDataProvider: MockEmbeddedDataProvider(data: Data(), etag: "etag"))
@@ -108,6 +108,23 @@ final class ConfigurationManagerTests: XCTestCase {
             XCTFail("Expected noData when every request returns not modified")
             return
         }
+    }
+
+    func test_WhenExcludedDomainsAreNotModified_ThenTheyAreNotReapplied() async {
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .notModified
+
+        let didUpdate = await configManager.fetchAndUpdateBloomFilterExcludedDomains()
+
+        XCTAssertFalse(didUpdate)
+        XCTAssertFalse(mockStore.loadedConfigurations.contains(.bloomFilterExcludedDomains))
+    }
+
+    func test_WhenExcludedDomainsAreUpdated_ThenApplicationIsAttempted() async {
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .updated
+
+        await configManager.fetchAndUpdateBloomFilterExcludedDomains()
+
+        XCTAssertEqual(mockStore.loadedConfigurations, [.bloomFilterExcludedDomains])
     }
 
 }
@@ -185,6 +202,15 @@ private class MockTrackerDataManager: TrackerDataManager {
     public override func reload(etag: String?, data: Data?) -> ReloadResult {
         operationLog.steps.append(.reloadTrackerDataSet)
         return .embedded
+    }
+}
+
+private final class RecordingConfigurationStore: MockConfigurationStoring {
+    private(set) var loadedConfigurations: [Configuration] = []
+
+    override func loadData(for configuration: Configuration) -> Data? {
+        loadedConfigurations.append(configuration)
+        return super.loadData(for: configuration)
     }
 }
 

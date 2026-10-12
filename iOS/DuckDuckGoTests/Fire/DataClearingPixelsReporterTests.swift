@@ -288,6 +288,78 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         wait(for: [fired], timeout: 1)
     }
 
+    // MARK: - fireDroppedBurnPixel Tests
+
+    @MainActor
+    func testWhenBurnIsDroppedThenPixelReportsTriggerScopeAndElapsedTime() {
+        // Given
+        sut.burnDidStart()
+
+        // When - the drop happens 12 seconds into the in-progress burn
+        currentTime += 12
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .manualFire,
+                                                      scope: .all,
+                                                      source: .browsing))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "manual_fire", scope: "all", elapsed: .lessThan30),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenBurnHasHungThenDroppedPixelReportsAHighElapsedBucket() {
+        // Given
+        sut.burnDidStart()
+
+        // When - a stuck `burnInProgress` keeps dropping presses long after the burn started
+        currentTime += 1_800
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .manualFire,
+                                                      scope: .all,
+                                                      source: .browsing))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "manual_fire", scope: "all", elapsed: .more),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenDroppedBurnIsAnAutoClearThenPixelReportsThatTrigger() {
+        // Given - auto-clear has no `burnInProgress` gate of its own, so it reaches the same drop path
+        sut.burnDidStart()
+
+        // When
+        currentTime += 3
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .autoClearOnForeground,
+                                                      scope: .all,
+                                                      source: .autoClear))
+
+        // Then - reported separately so auto-clear drops don't inflate the user-visible count
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "auto_clear_on_foreground", scope: "all", elapsed: .lessThan5),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testElapsedBucketBoundaries() {
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 0), .lessThan1)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 1), .lessThan1)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 1.1), .lessThan5)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 30), .lessThan30)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 31), .lessThan60)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 300), .lessThan300)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 301), .more)
+    }
+
     // MARK: - Nil PixelFiring Tests
     
     @MainActor
@@ -299,6 +371,8 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
         sut.fireUserActionBeforeCompletionPixel()
         sut.fireDataClearingCompletionPixel(.allDataCleared(duration: 0, tabCount: 0))
+        sut.burnDidStart()
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
 
         // Then - no crash occurred
     }

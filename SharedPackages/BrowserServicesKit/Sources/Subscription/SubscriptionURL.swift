@@ -42,6 +42,7 @@ public enum SubscriptionURL: Equatable {
     case upgradeToTier(String)
     case addEmail
     case addEmailSuccess
+    case partnershipsHub
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -94,6 +95,10 @@ public enum SubscriptionURL: Equatable {
                 baseURL.appendingPathComponent("add-email")
             case .addEmailSuccess:
                 baseURL.appendingPathComponent("add-email/success")
+            case .partnershipsHub:
+                // A top-level page, not a subscription page, so it replaces the base URL's path
+                // rather than extending it - the same shape as `.identityTheftRestoration`.
+                baseURL.replacing(path: "partner-benefits")
             }
         }()
 
@@ -247,6 +252,7 @@ extension URL {
                                 "origin",
                                 "using",
                                 "experiment_mobileannualtrials2_ios",
+                                "experiment_perfpaywall",
                                 SubscriptionURL.QueryParameter.trial,
                                 SubscriptionURL.QueryParameter.personalInformationRemoval]
             components.queryItems = queryItems.filter { !ignoredNames.contains($0.name) }

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Foundation
 import PixelKit
 import PrivacyConfig

@@ -123,7 +123,9 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         let menuActions = actions(in: menu)
         XCTAssertEqual(sections.map(\.title), ["", "Plus", "Pro"])
         XCTAssertEqual(menuActions.map(\.title), ["free-model", "plus-model", "pro-model"])
-        XCTAssertTrue(menuActions.allSatisfy { $0.subtitle == nil })
+        if #available(iOS 16.0, *) {
+            XCTAssertTrue(menuActions.allSatisfy { $0.subtitle == nil })
+        }
     }
 
     // MARK: - Updated Menu
@@ -153,8 +155,10 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
 
         let actions = availableActions(in: menu)
         XCTAssertEqual(actions.map(\.title), ["with-1", "unknown", "without-1", "without-2"])
-        XCTAssertEqual(actions.first?.subtitle, AIChatModelLabel.everydayUse.localizedText)
-        XCTAssertNil(actions[1].subtitle)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(actions.first?.subtitle, AIChatModelLabel.everydayUse.localizedText)
+            XCTAssertNil(actions[1].subtitle)
+        }
     }
 
     func testWhenUpdatedMenuGatedModelsHaveLabelsThenKeepsBackendOrderAndOmitsSubtitles() {
@@ -166,7 +170,9 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         let gatedActions = gatedSection(in: menu)?.children.compactMap { $0 as? UIAction } ?? []
         XCTAssertTrue(availableActions(in: menu).isEmpty)
         XCTAssertEqual(gatedActions.map(\.title), ["gated-without…", "gated-with…"])
-        XCTAssertTrue(gatedActions.allSatisfy { $0.subtitle == nil })
+        if #available(iOS 16.0, *) {
+            XCTAssertTrue(gatedActions.allSatisfy { $0.subtitle == nil })
+        }
     }
 
     func testWhenUpdatedMenuModelIsAccessibleThenDoesNotAddTierBadgeToTitle() {
@@ -250,6 +256,27 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
             availableActions(in: menu).first?.image?.pngData(),
             DesignSystemImages.Glyphs.Size16.aiModelOSS.pngData()
         )
+    }
+
+    func testUnavailablePurchaseOmitsGatedModelsAndHeadingsInBothMenuVariants() {
+        let models = [
+            makeFakeModel(id: "free", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false),
+            makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)
+        ]
+        for updated in [true, false] {
+            let factory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: updated)
+            let menu = factory.makeMenu(models: models, selectedId: "free", userTier: .free,
+                                        allowsSubscriptionUpsell: false, onSelect: { _ in })
+            let visibleActions = updated ? availableActions(in: menu) : actions(in: menu)
+            XCTAssertEqual(visibleActions.map(\.title), ["free"])
+            XCTAssertEqual(visibleActions.first?.state, .on)
+            XCTAssertTrue(menu.children.compactMap { $0 as? UIMenu }.allSatisfy { $0.title.isEmpty })
+
+            let restored = factory.makeMenu(models: models, selectedId: "free", userTier: .free, onSelect: { _ in })
+            let restoredActions = updated ? availableActions(in: restored) + actions(in: restored) : actions(in: restored)
+            XCTAssertEqual(restoredActions.count, 3)
+        }
     }
 
     // MARK: - Helpers

@@ -22,6 +22,7 @@ import BrowserServicesKit
 
 public protocol AutofillCredentialsImportPresentationDelegate: AnyObject {
     func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void)
+    func autofillDidPermanentlyDismissCredentialsImportPrompt()
 }
 
 public protocol AutofillLoginImportStateProvider {
@@ -72,6 +73,7 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     public func autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal() {
         loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
         PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked)
+        presentationDelegate?.autofillDidPermanentlyDismissCredentialsImportPrompt()
     }
 
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {

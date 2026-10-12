@@ -45,7 +45,7 @@ struct LogExporterView: View {
             Text(verbatim: "Time Interval:")
                 .font(.headline)
             HStack {
-                TextField("", text: $timeIntervalString)
+                TextField("" as String, text: $timeIntervalString)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 Text(verbatim: "Minutes")
                     .font(.body)

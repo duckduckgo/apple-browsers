@@ -192,18 +192,13 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.syncAppIconWithTheme)
     }
 
-    func testMaxNextStepsCardsDemonstrationDaysUpdatesWhenFeatureFlagIsUpdated() {
-        let featureFlagger = MockFeatureFlagger()
+    func testMaxNextStepsCardsDemonstrationDaysIs14() {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger,
+            featureFlagger: MockFeatureFlagger(),
             aiChatMenuConfig: MockAIChatConfig()
         )
-
-        XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 9)
-
-        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
 
         XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 14)
     }

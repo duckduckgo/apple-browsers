@@ -50,6 +50,7 @@ let package = Package(
             dependencies: [
                 .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),

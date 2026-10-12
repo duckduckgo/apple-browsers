@@ -67,6 +67,7 @@ enum DuckAiUsageWarningPixel: PixelKit.Event {
 
     case switchModelTapped(Context)
     case upsellTapped(Context)
+    case weeklyLimitTapped(Context)
 
     case highUsageModelNoticeShown(Context)
     case highUsageModelNoticeDismissed(Context)
@@ -87,6 +88,7 @@ enum DuckAiUsageWarningPixel: PixelKit.Event {
         case .limitReachedAbandoned: return "aichat_usage_warning_limit_reached_abandoned"
         case .switchModelTapped: return "aichat_usage_warning_switch_model_tapped"
         case .upsellTapped: return "aichat_usage_warning_upsell_tapped"
+        case .weeklyLimitTapped: return "aichat_usage_warning_weekly_limit_tapped"
         case .highUsageModelNoticeShown: return "aichat_high_usage_model_notice_shown"
         case .highUsageModelNoticeDismissed: return "aichat_high_usage_model_notice_dismissed"
         case .highUsageModelNoticePromptSubmitted: return "aichat_high_usage_model_notice_prompt_submitted"
@@ -124,6 +126,7 @@ enum DuckAiUsageWarningPixel: PixelKit.Event {
              .limitReachedAbandoned(let context),
              .switchModelTapped(let context),
              .upsellTapped(let context),
+             .weeklyLimitTapped(let context),
              .highUsageModelNoticeShown(let context),
              .highUsageModelNoticeDismissed(let context),
              .highUsageModelNoticePromptSubmitted(let context),
@@ -175,11 +178,13 @@ extension DuckAiUsageWarningPixel {
             case .limitReached: self = .limitReachedAbandoned(context)
             case .highUsageModelNotice: self = .highUsageModelNoticeAbandoned(context)
             }
-        // The CTA identifies itself, so these two are one series each across the states offering them.
+        // The CTA identifies itself, so each is one series across the states offering it.
         case .switchModelTapped(let exposure):
             self = .switchModelTapped(Context(exposure: exposure, surface: surface))
         case .upsellTapped(let exposure):
             self = .upsellTapped(Context(exposure: exposure, surface: surface))
+        case .weeklyLimitTapped(let exposure):
+            self = .weeklyLimitTapped(Context(exposure: exposure, surface: surface))
         }
     }
 }

@@ -25,6 +25,7 @@ import Subscription
 /// Routes the Duck.ai subscription purchase / upgrade flows triggered by tapping a gated
 /// model or reasoning level.
 protocol DuckAISubscriptionUpselling {
+    var isPurchaseEligible: Bool { get }
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool)
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool)
     /// For entry points that own their funnel origin outright rather than deriving it from a
@@ -42,16 +43,19 @@ extension DuckAISubscriptionUpselling {
         requiredTier: AIChatModelPublicAccessTier,
         userTier: AIChatUserTier,
         source: SubscriptionFlowSource,
-        isAITabState: Bool
+        isAITabState: Bool,
+        firing: UTIPixelFiring = .live
     ) -> Bool {
         switch userTier.upgradeFlow(for: requiredTier) {
         case .purchase:
+            guard isPurchaseEligible else { return false }
             UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
                 source: source,
                 currentTier: userTier,
                 requiredTier: requiredTier,
                 flowType: .purchase,
-                isAITabState: isAITabState
+                isAITabState: isAITabState,
+                firing: firing
             )
             presentPurchaseFlow(source: source, isAITabState: isAITabState)
             return true
@@ -61,7 +65,8 @@ extension DuckAISubscriptionUpselling {
                 currentTier: userTier,
                 requiredTier: requiredTier,
                 flowType: .upgrade,
-                isAITabState: isAITabState
+                isAITabState: isAITabState,
+                firing: firing
             )
             presentUpgradeFlow(source: source, isAITabState: isAITabState)
             return true
@@ -82,12 +87,17 @@ struct DuckAISubscriptionUpsellPresenter: DuckAISubscriptionUpselling {
     private static let subscriptionFeaturePage = "duckai"
 
     private let notificationCenter: NotificationCenter
+    private let policy: DuckAISubscriptionUpsellPolicy
 
-    init(notificationCenter: NotificationCenter = .default) {
+    var isPurchaseEligible: Bool { policy.isPurchaseEligible }
+
+    init(policy: DuckAISubscriptionUpsellPolicy, notificationCenter: NotificationCenter = .default) {
+        self.policy = policy
         self.notificationCenter = notificationCenter
     }
 
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
+        guard isPurchaseEligible else { return }
         notificationCenter.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
@@ -106,6 +116,7 @@ struct DuckAISubscriptionUpsellPresenter: DuckAISubscriptionUpselling {
     }
 
     func presentPurchaseFlow(origin: SubscriptionFunnelOrigin) {
+        guard isPurchaseEligible else { return }
         notificationCenter.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(

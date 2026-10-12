@@ -86,7 +86,7 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
 
             let popover = PopoverMessageViewController(
                 message: notificationText,
-                image: .successCheckmark,
+                image: NSImage(resource: .successCheckmark),
                 configuration: .updateNotification,
                 autoDismissDuration: nil,
                 shouldShowCloseButton: true,

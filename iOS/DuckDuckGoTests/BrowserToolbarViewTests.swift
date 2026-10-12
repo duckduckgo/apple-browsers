@@ -18,11 +18,146 @@
 //
 
 import XCTest
+import SitePermissions
 @testable import DuckDuckGo
 
 final class BrowserToolbarViewTests: XCTestCase {
 
     private let omnibarHeight: CGFloat = 60
+
+    private final class SuperviewTrackingView: UIView {
+        private(set) var superviewChangeCount = 0
+
+        override func didMoveToSuperview() {
+            super.didMoveToSuperview()
+            superviewChangeCount += 1
+        }
+    }
+
+    func testWhenToolbarButtonsAreUnchangedThenTheyStayAttached() throws {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let buttons = (0..<5).map { _ in SuperviewTrackingView() }
+        sut.setToolbarButtons(buttons)
+        let stack = try XCTUnwrap(buttons.first?.superview as? UIStackView)
+
+        for _ in 0..<10 {
+            sut.setToolbarButtons(buttons)
+        }
+
+        XCTAssertTrue(stack.arrangedSubviews.elementsEqual(buttons, by: { $0 === $1 }))
+        XCTAssertTrue(buttons.allSatisfy { $0.superviewChangeCount == 1 })
+    }
+
+    func testWhenOmnibarLayoutAndStyleChangeThenToolbarButtonsStayAttached() throws {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let buttons = (0..<5).map { _ in SuperviewTrackingView() }
+        let omnibar = UIView()
+        sut.setToolbarButtons(buttons)
+        let stack = try XCTUnwrap(buttons.first?.superview as? UIStackView)
+
+        sut.prepareForOmnibarAttachment(height: omnibarHeight)
+        sut.setOmnibarView(omnibar, height: omnibarHeight)
+        sut.prepareForOmnibarDetachment()
+        sut.applyOmnibarDetachmentPose()
+        sut.setOmnibarView(nil, height: 0)
+        sut.setFloatingStyleEnabled(false)
+        sut.setLegacyBackgroundTransparent(true)
+        sut.setFloatingStyleEnabled(true)
+
+        XCTAssertTrue(stack.arrangedSubviews.elementsEqual(buttons, by: { $0 === $1 }))
+        XCTAssertTrue(buttons.allSatisfy { $0.superviewChangeCount == 1 })
+        XCTAssertEqual(stack.distribution, .equalCentering)
+    }
+
+    func testWhenToolbarButtonsAreReplacedAndReorderedThenStackMatchesNewOrder() throws {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let original = (0..<5).map { _ in UIView() }
+        sut.setToolbarButtons(original)
+        let stack = try XCTUnwrap(original.first?.superview as? UIStackView)
+        let replacement = UIView()
+        let updated = [original[4], original[1], replacement, original[3], original[0]]
+
+        sut.setToolbarButtons(updated)
+
+        XCTAssertNil(original[2].superview)
+        XCTAssertTrue(stack.arrangedSubviews.elementsEqual(updated, by: { $0 === $1 }))
+        XCTAssertTrue(sut.arrangedToolbarButtonViews.elementsEqual(updated, by: { $0 === $1 }))
+
+        sut.setToolbarButtons([])
+
+        XCTAssertTrue(stack.arrangedSubviews.isEmpty)
+        XCTAssertTrue(sut.arrangedToolbarButtonViews.isEmpty)
+        XCTAssertTrue(updated.allSatisfy { $0.superview == nil })
+    }
+
+    func testWhenToolbarButtonWasMovedElsewhereThenItIsReattached() throws {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let button = UIView()
+        sut.setToolbarButtons([button])
+        let stack = try XCTUnwrap(button.superview as? UIStackView)
+        let otherContainer = UIView()
+        otherContainer.addSubview(button)
+
+        sut.setToolbarButtons([button])
+
+        XCTAssertTrue(button.superview === stack)
+        XCTAssertTrue(stack.arrangedSubviews.elementsEqual([button], by: { $0 === $1 }))
+    }
+
+    func testWhenSameOmnibarIsRefreshedThenAttachmentConstraintsAreReusedAndHeightUpdates() throws {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        window.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: window.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: window.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: window.bottomAnchor)
+        ])
+        let omnibar = SuperviewTrackingView()
+        sut.setOmnibarView(omnibar, height: omnibarHeight)
+        let container = try XCTUnwrap(omnibar.superview)
+        let attachmentConstraints = container.constraints.filter { $0.firstItem as? UIView === omnibar }
+        XCTAssertEqual(attachmentConstraints.count, 4)
+        sut.setButtonRowCollapseProgress(1, reduceMotion: false)
+        let updatedHeight = omnibarHeight + 10
+
+        for _ in 0..<10 {
+            sut.setOmnibarView(omnibar, height: updatedHeight)
+        }
+        window.layoutIfNeeded()
+
+        XCTAssertEqual(omnibar.superviewChangeCount, 1)
+        XCTAssertTrue(sut.isHostingOmnibarView(omnibar))
+        XCTAssertTrue(attachmentConstraints.allSatisfy { $0.isActive })
+        XCTAssertEqual(container.constraints.filter { $0.firstItem as? UIView === omnibar }.count, 4)
+        XCTAssertEqual(omnibar.bounds.height, updatedHeight, accuracy: 0.01)
+        let glass = try XCTUnwrap(firstVisualEffectView(in: sut))
+        XCTAssertEqual(glass.bounds.height,
+                       BrowserToolbarView.totalHeight(withOmnibarHeight: updatedHeight, isFloating: true), accuracy: 0.01)
+    }
+
+    func testWhenOmnibarIsReplacedAndDetachedThenOldViewAndConstraintsAreRemoved() throws {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let original = UIView()
+        sut.setOmnibarView(original, height: omnibarHeight)
+        let container = try XCTUnwrap(original.superview)
+        let originalConstraints = container.constraints.filter { $0.firstItem as? UIView === original }
+        let replacement = UIView()
+
+        sut.setOmnibarView(replacement, height: omnibarHeight)
+
+        XCTAssertNil(original.superview)
+        XCTAssertTrue(originalConstraints.allSatisfy { !$0.isActive })
+        XCTAssertTrue(sut.isHostingOmnibarView(replacement))
+        XCTAssertTrue(replacement.superview === container)
+
+        sut.setOmnibarView(nil, height: 0)
+
+        XCTAssertNil(replacement.superview)
+        XCTAssertFalse(sut.isHostingOmnibarView(replacement))
+        XCTAssertEqual(sut.setButtonRowCollapseProgress(0, reduceMotion: false), BrowserToolbarView.floatingButtonsHeight)
+    }
 
     private func makeSUT(floating: Bool = true, embeddedOmnibar: Bool = true) -> BrowserToolbarView {
         let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
@@ -99,7 +234,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(glass.transform.ty, 0, accuracy: 0.001)
     }
 
-    func testWhenStandaloneCollapseProgressIsAppliedThenIconsAreNotInsideGlassContentView() {
+    func testWhenStandaloneFloatingThenIconsAreInsideGlassContentView() {
         let sut = makeSUT(embeddedOmnibar: false)
         let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
         sut.setToolbarButtons([fire])
@@ -115,21 +250,33 @@ final class BrowserToolbarViewTests: XCTestCase {
             ancestor = view.superview
         }
 
-        XCTAssertFalse(isInsideGlassContentView)
+        XCTAssertTrue(isInsideGlassContentView)
     }
 
-    func testWhenStandaloneGlassUsesDarkAppearanceThenItHasAContrastTint() throws {
+    func testWhenStandaloneGlassChangesAppearanceThenItStaysUntinted() throws {
         guard #available(iOS 26.0, *) else { return }
         let sut = makeSUT(embeddedOmnibar: false)
 
         sut.refreshMaterialAppearance(interfaceStyle: .dark)
 
         let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
-        XCTAssertNotNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
 
         sut.refreshMaterialAppearance(interfaceStyle: .light)
 
         XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenStandaloneGlassUsesDarkInterfaceStyleThenItRemainsAdaptive() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
     func testWhenNotFloatingThenProgressIsANoOp() {
@@ -515,6 +662,56 @@ final class BrowserToolbarViewTests: XCTestCase {
             BrowserToolbarView.totalHeight(withOmnibarHeight: 60, isFloating: false),
             115,
             accuracy: 0.01)
+    }
+}
+
+@MainActor
+final class SitePermissionMenuAnimationTests: XCTestCase {
+
+    func testCancellationRestoresMenuAndAccessibility() throws {
+        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+        button.accessibilityLabel = "Menu"
+        button.setMenuAlertVisible(true, animated: false)
+        let originalImage = try XCTUnwrap(button.image(for: .normal))
+        let originalSubviews = button.subviews
+        let downloadIndicator = try XCTUnwrap(originalSubviews.first { $0 is UIImageView && $0 !== button.imageView })
+        button.animateSitePermissionGranted([.location], reduceMotion: false)
+
+        XCTAssertTrue(downloadIndicator.isHidden)
+        XCTAssertNotNil(button.imageView?.layer.mask)
+        let badge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
+        XCTAssertFalse(badge.isUserInteractionEnabled)
+        XCTAssertTrue(badge.accessibilityElementsHidden)
+
+        button.cancelSitePermissionAnimation()
+
+        XCTAssertFalse(downloadIndicator.isHidden)
+        XCTAssertNil(badge.superview)
+        XCTAssertNil(button.imageView?.layer.mask)
+        XCTAssertEqual(button.image(for: .normal), originalImage)
+        XCTAssertEqual(button.accessibilityLabel, "Menu")
+        XCTAssertEqual(button.subviews, originalSubviews)
+    }
+
+    func testReducedMotionDoesNotScaleBadgeOrAnimateBars() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+        window.addSubview(button)
+        window.isHidden = false
+        defer {
+            button.cancelSitePermissionAnimation()
+            window.isHidden = true
+        }
+        button.setMenuAlertVisible(false, animated: false)
+        let originalSubviews = button.subviews
+        button.animateSitePermissionGranted([.microphone], reduceMotion: true)
+        CATransaction.flush()
+
+        let badge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
+        XCTAssertEqual(badge.transform, .identity)
+        XCTAssertFalse(badge.layer.animationKeys()?.contains { $0.hasPrefix("transform") } ?? false)
+        let mask = try XCTUnwrap(button.imageView?.layer.mask)
+        XCTAssertTrue(mask.animationKeys()?.isEmpty ?? true)
     }
 }
 

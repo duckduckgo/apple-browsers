@@ -92,7 +92,7 @@ final class SSLErrorTests: UITestCase {
 
     private func navigateToExpiredSSLErrorPage() {
         navigateTo(URL(string: "https://expired.badssl.com/")!)
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "SSL warning page should appear")
     }
 
@@ -144,7 +144,7 @@ final class SSLErrorTests: UITestCase {
     }
 
     private func verifyOnSSLErrorPage(context: String = "") {
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "SSL warning page should appear \(context)")
     }
 

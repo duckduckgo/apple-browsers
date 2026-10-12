@@ -320,7 +320,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let uiHandlerExpectation = expectation(description: "UI handler show tab called")
 
         mockUIHandler.setDidPerformActionCallback { action in
-            if case .didShowTab(.aiChat(let url)) = action {
+            if case .didShowTab(.aiChat(let url, _)) = action {
                 XCTAssertNotNil(url)
                 uiHandlerExpectation.fulfill()
             }

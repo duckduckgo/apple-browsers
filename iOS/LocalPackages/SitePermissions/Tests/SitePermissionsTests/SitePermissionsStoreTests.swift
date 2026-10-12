@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 @_spi(Testing) import Persistence
 import XCTest
@@ -140,7 +141,8 @@ final class SitePermissionsStoreTests: XCTestCase {
 
     func testWhenPermissionIsRemovedAndUndoneThenExactRecordIsRestored() throws {
         let keyValueStore = MockKeyValueStore()
-        let original = ["example.com": ["camera": "allow", "future-permission": "future-decision"]]
+        let original = ["example.com": ["camera": "allow", "microphone": "deny", "geolocation": "ask",
+                                         "future-permission": "future-decision"]]
         keyValueStore.set(original, forKey: SitePermissionsStorageKeyNames.perSitePermissions.rawValue)
         let store = makeStore(keyValueStore: keyValueStore)
         let site = try makeSite("https://example.com")
@@ -214,6 +216,30 @@ final class SitePermissionsStoreTests: XCTestCase {
 
         XCTAssertEqual(keyValueStore.object(forKey: SitePermissionsStorageKeyNames.perSitePermissions.rawValue) as? [String: [String: String]],
                        ["example.com": ["future-permission": "future-decision", "camera": "allow"]])
+    }
+
+    func testChangesPublisherEmitsOnlyForDurableMutations() throws {
+        let store = makeStore(keyValueStore: MockKeyValueStore())
+        let site = try makeSite("https://example.com")
+        var changeCount = 0
+        let cancellable = store.changesPublisher.sink { changeCount += 1 }
+
+        XCTAssertEqual(changeCount, 0)
+
+        store.setPersistentDecision(.allow, for: .location, at: site)
+        XCTAssertEqual(changeCount, 1)
+        store.setPersistentDecision(.allow, for: .location, at: site)
+        XCTAssertEqual(changeCount, 1)
+
+        store.setGlobalDefault(.deny, for: .location)
+        XCTAssertEqual(changeCount, 2)
+        let snapshot = store.removePermissions(for: site)
+        XCTAssertEqual(changeCount, 3)
+        store.restore(snapshot)
+        XCTAssertEqual(changeCount, 4)
+        store.resetGlobalDefaults()
+        XCTAssertEqual(changeCount, 5)
+        withExtendedLifetime(cancellable) {}
     }
 
     private func makeStore(keyValueStore: KeyValueStoring) -> SitePermissionsStore {

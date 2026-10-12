@@ -165,7 +165,8 @@ struct JsonToRemoteMessageModelMapper {
             let validator = MappingValidator(root: conditions)
             let trigger = try validator.mapEnumIfPresent(\.trigger, to: MessageTrigger.self)
             let dismissAfterDaysShown = conditions.dismissAfterDaysShown.map { max($0, 1) }
-            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown)
+            let maxImpressions = conditions.maxImpressions.map { max($0, 1) }
+            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown, maxImpressions: maxImpressions)
         }
     }
 

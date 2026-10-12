@@ -67,8 +67,8 @@ struct NetworkProtectionUIElements {
                         Text(text)
                             .daxBodyRegular()
                             .foregroundColor(.init(designSystemColor: .textPrimary))
-                            .layoutPriority(1)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     toggle
                         .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))

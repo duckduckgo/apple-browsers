@@ -146,10 +146,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     /// Reads the customer's current subscription and reports whether onboarding should be presented for it.
-    /// Skips enrollment entirely on a fetch failure rather than defaulting to "not on trial".
+    /// Skips enrollment entirely on a fetch failure rather than defaulting to "not on trial". Also reports
+    /// the `ai_features_disabled` metric, but only when this call is the one that freshly enrolls the device.
     static func isOnboardingFeatureEnabled(subscriptionManager: any SubscriptionManager, featureFlagger: FeatureFlagger, locale: Locale = .current) async -> Bool {
         guard let subscription = try? await subscriptionManager.getSubscription() else { return false }
-        return SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: subscription.hasActiveTrialOffer, locale: locale) == .treatment
+        let isOnFreeTrial = subscription.hasActiveTrialOffer
+        let (cohort, isFreshlyEnrolled) = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: isOnFreeTrial, locale: locale)
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: isFreshlyEnrolled)
+        return cohort == .treatment
     }
 
     /// Called when the App Store purchase itself completes
@@ -172,14 +176,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
         didRequestOnboarding = true
     }
 
-    /// Called once the onboarding flow finishes, so this screen dismisses with it.
+    /// Whether this screen should also dismiss now — false if onboarding handed off to Duck.ai chat.
     @MainActor
-    func onboardingFinished() {
+    func onboardingFinished() -> Bool {
         guard !didHandOffToDuckAI else {
             didHandOffToDuckAI = false
-            return
+            return false
         }
-        state.shouldGoBackToSettings = true
+        return true
     }
 
     /// Returns the subscription URL type based on the current flow type

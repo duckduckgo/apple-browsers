@@ -28,7 +28,7 @@ struct DeleteAccountView: View {
     var body: some View {
         SyncDialog {
             VStack(spacing: 20.0) {
-                Image(model.isAppRebranded ? .syncRemoveDeviceDesktop : .syncRemoveDeviceDesktopLegacy)
+                Image(.syncRemoveDeviceDesktop)
                 SyncUIViews.TextHeader(text: UserText.deleteAccountTitle)
                 SyncUIViews.TextDetailMultiline(text: UserText.deleteAccountMessage)
             }

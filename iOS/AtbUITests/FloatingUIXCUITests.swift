@@ -20,7 +20,7 @@
 import Swifter
 import XCTest
 
-private extension XCUIElement {
+extension XCUIElement {
 
     func waitForHittable(timeout: TimeInterval) -> Bool {
         let predicate = NSPredicate(format: "exists == true AND isHittable == true")
@@ -561,7 +561,8 @@ class FloatingUIXCUITestCase: XCTestCase {
             "isRunningUITests",
             "-isOnboardingCompleted", "true",
             "-isInternalUser", "true",
-            "-ff.floatingUIAugust2026", "true",
+            "-ff.floatingUIiOS26", "true",
+            "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",

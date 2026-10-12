@@ -19,7 +19,7 @@
 import Common
 import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import BrowserServicesKit
 
 struct UserText {
@@ -32,6 +32,38 @@ struct UserText {
     static let cancel = NSLocalizedString("cancel", value: "Cancel", comment: "Cancel button")
     static let none = NSLocalizedString("none", value: "None", comment: "Generic 'None' label")
     static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
+
+    // MARK: - Web Extensions
+    static let chromeWebStoreDownloadTitle = NotLocalizedString("webExtensions.store.download.title", value: "Add Extension", comment: "Extension download window title")
+    static let chromeWebStoreDownloadMessage = NotLocalizedString("webExtensions.store.download.message", value: "Downloading and verifying extension…", comment: "Extension download progress message")
+    static let chromeWebStoreRemoveTitle = NotLocalizedString("webExtensions.store.remove.title", value: "Remove “%@”?", comment: "Remove extension title; placeholder is the name")
+    static let chromeWebStoreRemoveMessage = NotLocalizedString("webExtensions.store.remove.message", value: "The extension and its saved permissions will be removed.", comment: "Remove extension confirmation")
+    static let chromeWebStoreRemoveButton = NotLocalizedString("webExtensions.store.remove.button", value: "Remove Extension", comment: "Confirm removing an extension")
+    static let chromeWebStoreErrorTitle = NotLocalizedString("webExtensions.store.error.title", value: "Couldn’t Complete Extension Request", comment: "Extension operation error title")
+    static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
+    static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
+    static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
+    static let webExtensionInstallTitle = NotLocalizedString("webExtensions.install.title", value: "Add “%@”?", comment: "Extension installation title; placeholder is the extension name")
+    static let webExtensionPermissionTitle = NotLocalizedString("webExtensions.permissions.title", value: "Allow “%@” additional access?", comment: "Extension permissions title; placeholder is the extension name")
+    static let webExtensionUnnamedExtension = NotLocalizedString("webExtensions.unnamed", value: "Extension", comment: "Fallback for an unnamed web extension")
+    static let webExtensionPermissionExplanation = NotLocalizedString("webExtensions.permissions.explanation", value: "It can:", comment: "Introduction to extension permission list")
+    static let webExtensionNoPermissions = NotLocalizedString("webExtensions.permissions.none", value: "No additional permissions requested.", comment: "Extension requests no permissions")
+    static let webExtensionInstall = NotLocalizedString("webExtensions.install.button", value: "Add Extension", comment: "Approve extension installation")
+    static let webExtensionAllow = NotLocalizedString("webExtensions.permissions.allow", value: "Allow", comment: "Approve additional extension permissions")
+    static let webExtensionAllowFireWindows = NotLocalizedString("webExtensions.permissions.fireWindows", value: "Allow in Fire Windows", comment: "Opt in to extension access to private browsing")
+    static let webExtensionPrivateAccessExplanation = NotLocalizedString("webExtensions.permissions.fireWindowsExplanation", value: "The extension may save your browsing activity, including activity in Fire Windows.", comment: "Warning shown beside private browsing access option")
+    static let webExtensionWebsiteAccess = NotLocalizedString("webExtensions.permissions.website", value: "Read and change data on: %@", comment: "Extension website permission; placeholder is a URL or match pattern")
+    static let webExtensionOtherPermission = NotLocalizedString("webExtensions.permissions.other", value: "Use the “%@” permission", comment: "Fallback extension permission description; placeholder is the API permission name")
+    static let webExtensionTabsPermission = NotLocalizedString("webExtensions.permissions.tabs", value: "Read information about your open tabs", comment: "Extension tabs permission")
+    static let webExtensionActiveTabPermission = NotLocalizedString("webExtensions.permissions.activeTab", value: "Access the current tab when you activate the extension", comment: "Extension activeTab permission")
+    static let webExtensionClipboardReadPermission = NotLocalizedString("webExtensions.permissions.clipboardRead", value: "Read your clipboard", comment: "Extension clipboardRead permission")
+    static let webExtensionClipboardWritePermission = NotLocalizedString("webExtensions.permissions.clipboardWrite", value: "Change your clipboard", comment: "Extension clipboardWrite permission")
+    static let webExtensionCookiesPermission = NotLocalizedString("webExtensions.permissions.cookies", value: "Read and change cookies on permitted websites", comment: "Extension cookies permission")
+    static let webExtensionDownloadsPermission = NotLocalizedString("webExtensions.permissions.downloads", value: "Manage your downloads", comment: "Extension downloads permission")
+    static let webExtensionHistoryPermission = NotLocalizedString("webExtensions.permissions.history", value: "Read and change your browsing history", comment: "Extension history permission")
+    static let webExtensionNavigationPermission = NotLocalizedString("webExtensions.permissions.navigation", value: "Observe your browsing activity", comment: "Extension webNavigation permission")
+    static let webExtensionStoragePermission = NotLocalizedString("webExtensions.permissions.storage", value: "Store extension data on your device", comment: "Extension storage permission")
+    static let webExtensionNativeMessagingPermission = NotLocalizedString("webExtensions.permissions.nativeMessaging", value: "Communicate with native applications", comment: "Extension nativeMessaging permission")
 
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")
@@ -708,6 +740,12 @@ struct UserText {
         return String(format: localized, shortcut, ownerName)
     }
     static let promptBarShortcutSpaceKey = NSLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
+    static let duckAiLauncherPromoMessage = NSLocalizedString("duckai.launcher-promo.message", value: "Chat privately from anywhere", comment: "Emphasized title of the Duck.ai launcher promo (New Tab Page and address bar) inviting the user to turn on the Duck.ai launcher")
+    static let duckAiLauncherPromoAddToMenuBar = NSLocalizedString("duckai.launcher-promo.add-to-menu-bar", value: "Show Duck.ai in the menu bar", comment: "Text after the title of the Duck.ai launcher promo (New Tab Page and address bar), shown while the Duck.ai menu bar icon is off")
+    static let duckAiLauncherPromoAddKeyboardShortcut = NSLocalizedString("duckai.launcher-promo.add-keyboard-shortcut", value: "Add Duck.ai keyboard shortcut", comment: "Text after the title of the Duck.ai launcher promo (New Tab Page and address bar), shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off")
+    static let duckAiLauncherIntroductionFormat = NSLocalizedString("duckai.launcher-promo.introduction", value: "Now you can access Duck.ai by pressing %1$@. You can change the shortcut in %2$@.", comment: "Message in the Duck.ai floating prompt bar right after the launcher promo's Try Now opened it. %1$@ is the keyboard shortcut, e.g. ⌥Space; %2$@ is a link reading Settings")
+    static let duckAiLauncherIntroductionSettings = NSLocalizedString("duckai.launcher-promo.introduction.settings", value: "Settings", comment: "Link in the Duck.ai prompt bar launcher message that opens Duck.ai Settings")
+    static let duckAiLauncherPromoTryNow = NSLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the Duck.ai launcher promo (New Tab Page and address bar) that turns the launcher on")
 
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")
@@ -745,10 +783,10 @@ struct UserText {
     static let aiChatChromeShowSidebarButton = NSLocalizedString("aichat.chrome.show-sidebar-button", value: "Show Sidebar Button", comment: "Context menu item to show the Duck.ai sidebar toggle button in the tab bar")
     static let aiChatShowSidebar = NSLocalizedString("aichat.view.show-sidebar", value: "Show Duck.ai Sidebar", comment: "View menu item to open the Duck.ai sidebar")
     static let aiChatHideSidebar = NSLocalizedString("aichat.view.hide-sidebar", value: "Hide Duck.ai Sidebar", comment: "View menu item to close the Duck.ai sidebar")
-    static let aiChatChromeOpenAISettings = NSLocalizedString("aichat.chrome.open-ai-settings", value: "Open AI Settings", comment: "Context menu item to open AI Features settings pane")
+    static let aiChatChromeOpenAISettings = NSLocalizedString("aichat.chrome.open-ai-settings", value: "AI Settings", comment: "Context menu item to open AI Features settings pane")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
     static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")
-    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
@@ -976,6 +1014,14 @@ struct UserText {
         let message = NSLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
         return String(format: message, modelShortName)
     }
+    // Copy, keys and translations shared with iOS, which shipped this disclosure first.
+    static let aiChatAttachmentPrivacyDisclosureFormat = NSLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
+    static let aiChatAttachmentPrivacyLearnMore = NSLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
+    static let aiChatTermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By clicking 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; clicking the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    static let aiChatTermsOfServiceCreateDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer.create", value: "DuckDuckGo anonymizes your chats. By clicking 'Create' you agree to our %@.", comment: "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; clicking the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    static let aiChatTermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
+    static let aiChatAskButtonTitle = NotLocalizedString("aichat.termsOfService.ask.button", value: "Ask", comment: "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; clicking it sends the prompt and accepts the terms")
+    static let aiChatCreateButtonTitle = NotLocalizedString("aichat.termsOfService.create.button", value: "Create", comment: "Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; clicking it sends the prompt and accepts the terms")
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
         let message = NSLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)
@@ -1464,10 +1510,12 @@ struct UserText {
     static let permissionCenterAutoplayDisclaimerTitle = NSLocalizedString("permission.center.autoplay.disclaimer.title", value: "Video autoplay", comment: "Title of the informational card explaining autoplay blocking in the Permission Center")
     static let permissionCenterAutoplayDisclaimerMessage = NSLocalizedString("permission.center.autoplay.disclaimer.message", value: "DuckDuckGo stops videos with sound from autoplaying on most sites. You can change settings for this site here, and for all sites in", comment: "Explains the Autoplay behavior the Permission Center")
     static let permissionCenterAutoplayDisclaimerSettingsLink = NSLocalizedString("permission.center.autoplay.disclaimer.settings.link", value: "Settings → General → Permissions.", comment: "Clickable label in the autoplay disclaimer UI that opens the General settings pane")
+    static let permissionCenterAutoplayDisclaimerWebsitePermissionsLink = NotLocalizedString("permission.center.autoplay.disclaimer.website-permissions.link", value: "Settings → Website Permissions → Autoplay.", comment: "Clickable label in the autoplay disclaimer UI that opens the Website Permissions settings pane")
 
     static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
     static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Autoplay website media", comment: "Label for the autoplay blocking preference picker in General preferences")
     static let autoplayCaption = NSLocalizedString("preferences.autoplay.caption", value: "Doesn't apply to videos opened in Duck Player when 'Autoplay videos when opened in Duck Player' is on.", comment: "Caption for the autoplay blocking preference picker in General preferences")
+    static let autoplayMovedCaption = NotLocalizedString("preferences.autoplay.moved.caption", value: "Autoplay settings moved to %@.", comment: "Caption in General preferences telling the user where the autoplay setting now lives, %@ is the name of the Website Permissions settings pane and is a link to it")
     static let autoplayModeAllowAll = NSLocalizedString("preferences.autoplay.mode.allow-all", value: "Video and audio", comment: "Autoplay mode: allow all media to autoplay")
     static let autoplayModeBlockAudio = NSLocalizedString("preferences.autoplay.mode.block-audio", value: "Stop videos with sound", comment: "Autoplay mode: allow video but block audio autoplay (default)")
     static let autoplayModeBlockAll = NSLocalizedString("preferences.autoplay.mode.block-all", value: "Never", comment: "Autoplay mode: block all media autoplay")
@@ -1550,10 +1598,29 @@ struct UserText {
     static let websitePermissionsWebsites = NotLocalizedString("preferences.website-permissions.websites", value: "Websites", comment: "Header above saved website permissions")
     static let websitePermissionsSearchPlaceholder = NotLocalizedString("preferences.website-permissions.search.placeholder", value: "Search…", comment: "Placeholder in the Website Permissions search field")
     static let websitePermissionsClearSearch = NotLocalizedString("preferences.website-permissions.search.clear", value: "Clear search", comment: "Accessibility label for the button that clears Website Permissions search")
+    static let websitePermissionsLocalFile = NotLocalizedString("preferences.website-permissions.local-file", value: "Local file", comment: "Shown instead of a website name for permissions requested by local files")
     static let websitePermissionsEmpty = NotLocalizedString("preferences.website-permissions.empty", value: "No websites saved yet.", comment: "Empty state for a Website Permissions category")
     static let websitePermissionsNoResults = NotLocalizedString("preferences.website-permissions.no-results", value: "No matches. Try a different search term.", comment: "Search result when no website permission matches the search query")
     static let websitePermissionsDecisionAccessibilityLabel = NotLocalizedString("preferences.website-permissions.decision.accessibility", value: "Permission for %@", comment: "Accessibility label for a website permission decision menu, %@ is the domain")
     static let websitePermissionsRemovePermissionAccessibilityLabel = NotLocalizedString("preferences.website-permissions.remove.accessibility", value: "Remove permission for %@", comment: "Accessibility label for a button that removes a website permission, %@ is the domain")
+    static let websitePermissionsDefaultSection = NotLocalizedString("preferences.website-permissions.default", value: "Default", comment: "Header above the radio group choosing the default behavior for a website permission")
+    static let websitePermissionsAskEachTime = NotLocalizedString("preferences.website-permissions.decision.ask-each-time", value: "Ask each time", comment: "Website permission option that prompts on every request")
+    static let websitePermissionsDefaultAccessibilityLabel = NotLocalizedString("preferences.website-permissions.default.accessibility", value: "Default behavior for %@", comment: "Accessibility label for the default behavior radio group, %@ is the permission name")
+    static let websitePermissionsPromptAllowThisVisit = NotLocalizedString("permission.prompt.allow-this-visit", value: "Allow this visit", comment: "Permission prompt button that grants a website permission until the page is reloaded or closed")
+    static let websitePermissionsPromptLocationFormat = NotLocalizedString("permission.prompt.location.format", value: "“%@” wants to know your location", comment: "Permission prompt title, %@ is the domain asking for the user's location")
+    static let websitePermissionsPromptDeviceFormat = NotLocalizedString("permission.prompt.device.format", value: "“%1$@” wants to use your %2$@", comment: "Permission prompt title, %1$@ is the domain and %2$@ is camera, microphone, or camera and microphone")
+    static let websitePermissionsPromptNotificationsFormat = NotLocalizedString("permission.prompt.notifications.format", value: "“%@” wants to send you notifications", comment: "Permission prompt title, %@ is the domain asking to send notifications")
+    static let websitePermissionsPromptSystemCameraRequired = NotLocalizedString("permission.prompt.system.camera.required", value: "DuckDuckGo needs your system's permission to share your camera with sites.", comment: "Permission prompt message shown after allowing a site when macOS hasn't asked for camera access yet")
+    static let websitePermissionsPromptSystemMicrophoneRequired = NotLocalizedString("permission.prompt.system.microphone.required", value: "DuckDuckGo needs your system's permission to share your microphone with sites.", comment: "Permission prompt message shown after allowing a site when macOS hasn't asked for microphone access yet")
+    static let websitePermissionsPromptSystemCameraOff = NotLocalizedString("permission.prompt.system.camera.off", value: "Camera is turned off for DuckDuckGo in System Settings.", comment: "Permission prompt message shown after allowing a site when camera access is off in macOS System Settings")
+    static let websitePermissionsPromptSystemMicrophoneOff = NotLocalizedString("permission.prompt.system.microphone.off", value: "Microphone is turned off for DuckDuckGo in System Settings.", comment: "Permission prompt message shown after allowing a site when microphone access is off in macOS System Settings")
+    static let websitePermissionsPromptSystemLocationRequired = NotLocalizedString("permission.prompt.system.location.required", value: "DuckDuckGo needs your system's permission to share your location with sites.", comment: "Permission prompt message shown after allowing a site when macOS hasn't asked for location access yet")
+    static let websitePermissionsPromptSystemNotificationsRequired = NotLocalizedString("permission.prompt.system.notifications.required", value: "DuckDuckGo needs your system's permission to show notifications from sites.", comment: "Permission prompt message shown after allowing a site when macOS hasn't asked for notification access yet")
+    static let websitePermissionsPromptSystemLocationOff = NotLocalizedString("permission.prompt.system.location.off", value: "Location is turned off for DuckDuckGo in System Settings.", comment: "Permission prompt message shown after allowing a site when location access is off in macOS System Settings")
+    static let websitePermissionsPromptSystemNotificationsOff = NotLocalizedString("permission.prompt.system.notifications.off", value: "Notifications are turned off for DuckDuckGo in System Settings.", comment: "Permission prompt message shown after allowing a site when notifications are off in macOS System Settings")
+    static let websitePermissionsPromptRequestSystemPermission = NotLocalizedString("permission.prompt.system.request", value: "Request Permission", comment: "Permission prompt button that shows the macOS permission prompt")
+    static let websitePermissionsPromptWaitingForSystemPermission = NotLocalizedString("permission.prompt.system.waiting", value: "Waiting for request…", comment: "Disabled permission prompt button shown while the macOS permission prompt is open")
+    static let websitePermissionsPromptOpenSystemSettings = NotLocalizedString("permission.prompt.system.open-settings", value: "Open Settings", comment: "Permission prompt button that opens macOS System Settings")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")
@@ -1571,6 +1638,7 @@ struct UserText {
     static let paidAIChat = NSLocalizedString("preferences.paidAIChat", value: "Duck.ai", comment: "Title of the option to show the Duck.ai Pro preferences")
     static let identityTheftRestoration = NSLocalizedString("preferences.identityTheftRestoration", value: "Identity Theft Restoration", comment: "Title of the option to show the Identity Theft Restoration preferences")
     static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
+    static let subscriberOffers = NotLocalizedString("preferences.subscriberOffers", value: "Subscriber Offers", comment: "Title of a settings sidebar item in the DuckDuckGo Subscription section. Opens a web page listing exclusive offers from partner companies that are available to subscribers.")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")
     static let youTubeAdBlocking = NSLocalizedString("preferences.youtube-ad-blocking", value: "Ad Blocking", comment: "Title of the option to show the Ad Blocking preferences")
     static let adBlockingDescription = NSLocalizedString("preferences.ad-blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description of the Ad Blocking feature in preferences")
@@ -2341,7 +2409,7 @@ struct UserText {
     static let newTabPageContextMenuFavorites = NSLocalizedString("newtabpage.context.menu.favorites", value: "Favorites", comment: "Context menu item to manage Favorites section on the New Tab Page")
     static let newTabPageContextMenuProtectionsReport = NSLocalizedString("newtabpage.context.menu.protections.report", value: "Protections Report", comment: "Context menu item to manage Protections Report section on the New Tab Page")
     static let newTabPageContextMenuShowDuckAI = NSLocalizedString("newtabpage.context.menu.show.duckai", value: "Show Duck.ai in Search Box", comment: "Context menu item to manage Duck.ai on the New Tab Page")
-    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
+    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
 
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")

@@ -35,12 +35,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerTrailingOffset: CGFloat = 77.0
         static let dividerTopOffset: CGFloat = -10.0
         static let placeholderLeadingOffset: CGFloat = 10
-        static let placeholderLegacyLeadingOffset: CGFloat = 9
         static let textLeadingOffset: CGFloat = 10
         static let duckAILogoSize: CGFloat = 24
         static let duckAILogoToTextSpacing: CGFloat = 12
         static let duckAILogoLeadingOffset: CGFloat = 5
-        static let duckAILogoLegacyLeadingOffset: CGFloat = 3
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -209,8 +207,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
-        let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
-
         let showsDuckAILogo = omnibarController.surface.showsDuckAILogo
         if showsDuckAILogo {
             setUpDuckAILogo()
@@ -243,7 +239,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.dividerTopOffset),
             dividerView.heightAnchor.constraint(equalToConstant: 1),
 
-            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
+            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: Constants.placeholderLeadingOffset),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
     }
@@ -257,10 +253,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         duckAILogoView.setAccessibilityElement(false)
         containerView.addSubview(duckAILogoView)
 
-        let leadingConstant = themeManager.isAppRebranded ? Constants.duckAILogoLeadingOffset : Constants.duckAILogoLegacyLeadingOffset
-
         NSLayoutConstraint.activate([
-            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.duckAILogoLeadingOffset),
             duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
             duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)

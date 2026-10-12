@@ -29,6 +29,7 @@ enum NewTabPageMessageInteraction {
 
 protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity)
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage)
     func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity)
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage)
     func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab)
@@ -43,6 +44,7 @@ protocol NewTabPageControllerDelegate: AnyObject {
 }
 
 extension NewTabPageControllerDelegate {
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) { }
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
     func newTabPageDidScroll(_ controller: any NewTabPage) { }
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }

@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
@@ -86,12 +87,12 @@ struct SyncedDevicesViewV2_Previews: PreviewProvider {
             .init(name: "Loading devices", state: .enabledLoadingDevices)
         ],
         configure: { model in
-            DesignSystemRebrand.isAppRebranded = { true }
-            return SyncedDevicesViewV2<PreviewManagementViewModel>()
+            SyncedDevicesViewV2<PreviewManagementViewModel>()
                 .environmentObject(model)
                 .frame(width: 512)
                 .padding()
                 .background(Color(nsColor: .windowBackgroundColor))
+                .applyRebranding()
         }
     )
 }

@@ -46,8 +46,10 @@ struct UnifiedToggleInputModelMenuFactory {
         selectedId: String?,
         userTier: AIChatUserTier,
         freeTrialEligibility: FreeTrialEligibility = .unknown,
+        allowsSubscriptionUpsell: Bool = true,
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
+        let models = allowsSubscriptionUpsell ? models : models.filter(\.entityHasAccess)
         if isUpdatedModelPickerEnabled {
             return makeUpdatedMenu(
                 models: models,
@@ -152,7 +154,7 @@ struct UnifiedToggleInputModelMenuFactory {
     }
 }
 
-private extension AIChatModel {
+extension AIChatModel {
     var updatedModelPickerMenuIcon: UIImage? {
         switch provider {
         case .unknown:

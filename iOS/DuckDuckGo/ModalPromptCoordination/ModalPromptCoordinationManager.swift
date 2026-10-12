@@ -23,6 +23,13 @@ import UIKit
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
 
+    /// Runs `handler` once, after the modal prompt now pending has left the screen or failed to
+    /// appear. Returns `false`, keeping nothing, when no prompt is pending.
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool
+
+    /// Drops a handler that `runOnceModalPromptCloses(_:)` is still holding.
+    func cancelModalPromptCloseHandler()
+
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
@@ -104,9 +111,18 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let scheduler: ModalPromptScheduling
     private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
     private let rootAttachmentChecker: ModalPromptRootAttachmentChecking
+    private let closeCheckScheduler: ModalPromptScheduling
 
     private var attemptState = AttemptState.idle
     private var legacyActiveAttemptIDs = Set<UUID>()
+
+    /// The prompt last handed to UIKit, and whether a newer one is still on its way. Only read while
+    /// a close handler waits, so they change nothing else.
+    private weak var handedOffPromptRoot: UIViewController?
+    private var isPromptAwaitingHandOff = false
+    private var promptCloseCheckID = UUID()
+    private var shouldKeepWaitingForPrompt: (@MainActor () -> Bool)?
+    private var promptCloseHandler: (@MainActor () -> Void)?
 
     private(set) var didActuallyPresentModalPromptThisSession = false
 
@@ -117,7 +133,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// Whether a modal is on its way to the screen.
     ///
     /// A held deferred slot is excluded: it means a promo owns the slot, not that the user saw
-    /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt".
+    /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt",
+    /// and, while a prompt is still on its way, tells `runOnceModalPromptCloses(_:)` whether it will come.
     var hasActiveOrPendingModalAttempt: Bool {
         if case .deferred = attemptState {
             return !legacyActiveAttemptIDs.isEmpty
@@ -145,13 +162,15 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         cooldownManager: PromptCooldownManaging,
         onboardingStatusProvider: ContextualDaxDialogStatusProvider,
         modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler(),
-        rootAttachmentChecker: ModalPromptRootAttachmentChecking? = nil
+        rootAttachmentChecker: ModalPromptRootAttachmentChecking? = nil,
+        closeCheckScheduling: ModalPromptScheduling = ModalPromptScheduler()
     ) {
         self.providers = providers
         self.cooldownManager = cooldownManager
         self.onboardingStatusProvider = onboardingStatusProvider
         self.scheduler = modalPromptScheduling
         self.rootAttachmentChecker = rootAttachmentChecker ?? ModalPromptRootAttachmentChecker()
+        self.closeCheckScheduler = closeCheckScheduling
     }
 
     /// Attempts to present a modal prompt if one is eligible.
@@ -171,6 +190,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
         let scheduledAttemptID = UUID()
         legacyActiveAttemptIDs.insert(scheduledAttemptID)
+        isPromptAwaitingHandOff = true
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
         presentLegacyModalPrompt(
             modalPromptConfiguration: configuration,
@@ -215,6 +235,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
                 provider: provider
             )
             attemptState = .committed(committedAttempt)
+            isPromptAwaitingHandOff = true
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
             presentCoordinatedModal(committedAttempt, from: presenter)
         }
@@ -255,6 +276,26 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         lease.release()
         provider.didReleaseDeferredSlot()
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Released the unredeemed slot held by \(type(of: provider)).")
+    }
+
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        // Nothing to wait for when no prompt is on its way or on screen. That includes a held deferred
+        // slot, and an attempt UIKit refused, whose legacy ID never clears.
+        guard shouldWait(), !hasModalPromptLeftScreen else { return false }
+
+        let isAlreadyChecking = promptCloseHandler != nil
+        promptCloseHandler = handler
+        shouldKeepWaitingForPrompt = shouldWait
+        if !isAlreadyChecking {
+            scheduleModalPromptCloseCheck()
+        }
+        return true
+    }
+
+    func cancelModalPromptCloseHandler() {
+        promptCloseCheckID = UUID()
+        promptCloseHandler = nil
+        shouldKeepWaitingForPrompt = nil
     }
 }
 
@@ -348,7 +389,38 @@ private extension ModalPromptCoordinationManager {
         from presenter: ModalPromptPresenter,
         completion: @escaping (() -> Void)
     ) {
+        handedOffPromptRoot = modalPromptConfiguration.viewController
+        isPromptAwaitingHandOff = false
         presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
+    }
+
+    /// UIKit reports nothing when a presented root goes away, so its attachment is sampled while a
+    /// handler waits. Nothing is scheduled while none does.
+    func scheduleModalPromptCloseCheck() {
+        let checkID = promptCloseCheckID
+        closeCheckScheduler.schedule(after: 0.25) { [weak self] in
+            guard let self, self.promptCloseCheckID == checkID, let handler = self.promptCloseHandler else { return }
+            guard self.shouldKeepWaitingForPrompt?() == true else {
+                self.cancelModalPromptCloseHandler()
+                return
+            }
+            guard self.hasModalPromptLeftScreen else {
+                self.scheduleModalPromptCloseCheck()
+                return
+            }
+            self.cancelModalPromptCloseHandler()
+            handler()
+        }
+    }
+
+    /// A prompt still on its way hasn't left, unless the attempt bringing it has gone. One handed to
+    /// UIKit has left once its root is no longer attached, which also covers a refused presentation.
+    var hasModalPromptLeftScreen: Bool {
+        if isPromptAwaitingHandOff {
+            return !hasActiveOrPendingModalAttempt
+        }
+        guard let handedOffPromptRoot else { return true }
+        return !rootAttachmentChecker.isAttached(handedOffPromptRoot)
     }
 
     func releaseCoordinationAttempt() {

@@ -423,6 +423,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -450,6 +451,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -477,6 +479,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -504,6 +507,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -531,6 +535,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -558,6 +563,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -585,6 +591,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -612,6 +619,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]

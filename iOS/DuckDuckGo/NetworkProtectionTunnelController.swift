@@ -212,13 +212,19 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         await start(with: entryContext)
     }
 
-    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
+    /// Starts the VPN without the extension's notification-permission request for this start.
+    func start(suppressNotificationAuthorizationRequest: Bool) async {
+        await start(with: nil, suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
+    }
+
+    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?,
+                       suppressNotificationAuthorizationRequest: Bool = false) async {
         setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
         pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartAttempt, options: .withRetry)
 
         do {
-            try await startWithError()
+            try await startWithError(suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
             completeAndCleanupConnectionWideEvent()
 
             pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartSuccess, options: .withRetry)
@@ -324,16 +330,6 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
-    /// A fresh "is a VPN configuration installed?" check.
-    /// `isInstalled` can report a stale `true` after a config is removed from
-    /// system Settings, because `subscribeToConfigurationChanges` only clears the cache when the reload
-    /// throws or reports `.invalid`, which a Settings removal doesn't always surface.
-    var isConfigurationInstalled: Bool {
-        get async {
-            (try? await NETunnelProviderManager.loadAllFromPreferences())?.isEmpty == false
-        }
-    }
-
     /// Queries Network Protection to know if its VPN is connected.
     ///
     /// - Returns: `true` if the VPN is connected, connecting or reasserting, and `false` otherwise.
@@ -353,7 +349,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
-    private func startWithError() async throws {
+    private func startWithError(suppressNotificationAuthorizationRequest: Bool = false) async throws {
         let tunnelManager: NETunnelProviderManager
 
         do {
@@ -369,12 +365,12 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         case .invalid:
             clearInternalManager()
             resetControllerStartWideEventMeasurement()
-            try await startWithError()
+            try await startWithError(suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
         case .connected:
             Logger.networkProtection.error("Start requested while already connected - stopping VPN to allow recovery")
             await stop()
         default:
-            try await start(tunnelManager)
+            try await start(tunnelManager, suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
         }
     }
 
@@ -382,7 +378,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         internalManager = nil
     }
 
-    private func start(_ tunnelManager: NETunnelProviderManager) async throws {
+    private func start(_ tunnelManager: NETunnelProviderManager,
+                       suppressNotificationAuthorizationRequest: Bool = false) async throws {
         var options = [String: NSObject]()
 
         if Self.shouldSimulateFailure {
@@ -391,8 +388,10 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
+        if suppressNotificationAuthorizationRequest {
+            options[NetworkProtectionOptionKey.suppressNotificationAuthorizationRequest] = true as NSNumber
+        }
 
-        
         do {
             self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
             try await tokenHandler.getToken()

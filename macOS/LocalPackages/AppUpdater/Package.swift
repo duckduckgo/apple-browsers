@@ -14,7 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/WideEvent"),
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.9.6"),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.0"),
         .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Persistence"),
@@ -35,7 +35,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
-                .product(name: "Navigation", package: "BrowserServicesKit"),
+                .product(name: "DDGNavigation", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),

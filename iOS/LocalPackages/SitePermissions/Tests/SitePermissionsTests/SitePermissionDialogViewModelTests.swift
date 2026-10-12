@@ -49,20 +49,57 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
     }
 
+    func testLocationPromptUsesLocationCopyAndIcon() throws {
+        let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.location])))
+
+        XCTAssertEqual(viewModel.title, "“example.com” website wants to access your location")
+        XCTAssertNil(viewModel.body)
+        XCTAssertEqual(viewModel.icons, [.location])
+        XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
+    }
+
+    func testDuckDuckGoSERPLocationPromptUsesLiteralDomainBodyAndColorLogo() throws {
+        let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.location]), isDuckDuckGoSERP: true))
+
+        XCTAssertEqual(viewModel.title, "“duckduckgo.com” wants to access your location")
+        XCTAssertEqual(viewModel.body, "We’ll anonymize your location and use it to deliver better results, closer to you.")
+        XCTAssertEqual(viewModel.icons, [.duckDuckGo])
+        XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
+    }
+
     func testUnsupportedPromptVariantsAreRejected() {
         XCTAssertNil(SitePermissionDialogViewModel(prompt: prompt(for: [])))
-        XCTAssertNil(SitePermissionDialogViewModel(prompt: prompt(for: [.location])))
+        XCTAssertNil(SitePermissionDialogViewModel(prompt: prompt(for: [.camera, .location])))
     }
 
     func testWhenDialogActionsAreSelectedThenDecisionsAndPixelSelectionsMatch() {
-        let actions: [SitePermissionDialogAction] = [.allowOnce, .allowWhileUsingSite, .neverAllow]
+        let actions: [SitePermissionDialogAction] = [.allowOnce, .allowWhileUsingSite, .neverAllow, .dismissed]
 
-        XCTAssertEqual(actions.map(\.promptDecision), [.allowOnce, .allowWhileUsingSite, .neverAllow])
-        XCTAssertEqual(actions.map(\.pixelDialogSelection), [.allowOnce, .allowAlways, .never])
+        XCTAssertEqual(actions.map(\.promptDecision), [.allowOnce, .allowWhileUsingSite, .neverAllow, .denyOnce])
+        XCTAssertEqual(actions.map(\.pixelDialogSelection), [.allowOnce, .allowAlways, .never, .dismissed])
     }
 
-    private func prompt(for permissionTypes: Set<SitePermissionType>) -> SitePermissionPrompt {
+    func testOrdinaryAndFirePromptsOfferExactActionsForEveryPermissionType() throws {
+        let permissionSets: [Set<SitePermissionType>] = [
+            [.camera], [.microphone], [.camera, .microphone], [.location]
+        ]
+
+        for permissionTypes in permissionSets {
+            for isFireMode in [false, true] {
+                let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: permissionTypes, isFireMode: isFireMode)))
+                XCTAssertEqual(viewModel.actions.map(\.action),
+                               isFireMode ? [.allowOnce, .neverAllow] : [.allowOnce, .allowWhileUsingSite, .neverAllow])
+                XCTAssertEqual(viewModel.actions.map(\.title),
+                               isFireMode ? ["Allow Once", "Deny"] : ["Allow Once", "Allow While Using Site", "Never Allow"])
+                XCTAssertEqual(viewModel.actions.map(\.action.promptDecision),
+                               isFireMode ? [.allowOnce, .neverAllow] : [.allowOnce, .allowWhileUsingSite, .neverAllow])
+            }
+        }
+    }
+
+    private func prompt(for permissionTypes: Set<SitePermissionType>, isFireMode: Bool = false) -> SitePermissionPrompt {
         SitePermissionPrompt(site: SitePermissionKey(committedURL: URL(string: "https://example.com")!)!,
-                             permissionTypes: permissionTypes)
+                             permissionTypes: permissionTypes,
+                             isFireMode: isFireMode)
     }
 }

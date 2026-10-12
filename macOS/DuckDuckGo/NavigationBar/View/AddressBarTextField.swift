@@ -17,19 +17,19 @@
 //
 
 import AddressBarPerformance
+import AIChat
 import AppKit
 import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
-import FoundationExtensions
-import PixelKit
-import Suggestions
-import Subscription
-import os.log
-import UIComponents
-import AIChat
 import DesignResourcesKit
+import FoundationExtensions
+import os.log
+import PixelKit
+import Subscription
+import Suggestions
+import UIComponents
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -37,6 +37,15 @@ protocol AddressBarTextFieldFocusDelegate: AnyObject {
 }
 
 final class AddressBarTextField: NSTextField {
+
+    override class var cellClass: AnyClass? {
+        get {
+            AddressBarTextFieldCell.self
+        }
+        set {
+            // NO-OP
+        }
+    }
 
     weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
@@ -101,9 +110,23 @@ final class AddressBarTextField: NSTextField {
 
     // MARK: - Lifecycle
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpEditingAndDragging()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpEditingAndDragging()
+    }
+
+    private func setUpEditingAndDragging() {
         allowsEditingTextAttributes = true
         super.delegate = self
 
@@ -503,6 +526,14 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
+    /// The suggestions that open a URL rather than search, as `navigate(suggestion:)` counts them.
+    private static func isURLSuggestion(_ suggestion: Suggestion?) -> Bool {
+        switch suggestion {
+        case .bookmark, .historyEntry, .website: true
+        default: false
+        }
+    }
+
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
         case .bookmark,
@@ -637,6 +668,9 @@ final class AddressBarTextField: NSTextField {
         }
 
         self.window?.makeFirstResponder(nil)
+        if Self.isURLSuggestion(suggestion) {
+            selectedTabViewModel.tab.aiChat?.noteAddressBarSuggestionNavigation(to: providedUrl)
+        }
         selectedTabViewModel.tab.setUrl(providedUrl, source: .userEntered(userEnteredValue, downloadRequested: downloadRequested))
         if downloadRequested {
             updateValue(selectedTabViewModel: nil, addressBarString: nil)
@@ -672,6 +706,9 @@ final class AddressBarTextField: NSTextField {
             let tab = Tab(content: .url(url, source: .userEntered(userEnteredValue)),
                           shouldLoadInBackground: true,
                           burnerMode: tabCollectionViewModel.burnerMode)
+            if Self.isURLSuggestion(suggestion) {
+                tab.aiChat?.noteAddressBarSuggestionNavigation(to: url)
+            }
 
             if isUpgraded {
                 updateTab(tab, upgradedTo: url)
@@ -747,30 +784,25 @@ final class AddressBarTextField: NSTextField {
         private enum Metrics {
             static let shadowOffset: CGFloat = -2
             static let windowOffset = CGPoint(x: -20, y: -3)
-            static let legacyShadowOffset: CGFloat = 5
-            static let legacyWindowOffset = CGPoint(x: -20, y: 5)
         }
 
-        static func shadowOffset(isAppRebranded: Bool) -> CGFloat {
-            isAppRebranded ? Metrics.shadowOffset : Metrics.legacyShadowOffset
+        static var shadowOffset: CGFloat {
+            Metrics.shadowOffset
         }
 
-        static func windowOffset(isAppRebranded: Bool) -> CGPoint {
-            isAppRebranded ? Metrics.windowOffset : Metrics.legacyWindowOffset
+        static var windowOffset: CGPoint {
+            Metrics.windowOffset
         }
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
     private(set) lazy var suggestionViewController: SuggestionViewController = {
-        NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
-            let suggestionViewController = SuggestionViewController(coder: coder,
-                                                                    suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    themeManager: self.themeManager,
-                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
-                                                                    featureFlagger: Application.appDelegate.featureFlagger)
-            suggestionViewController?.delegate = self
-            return suggestionViewController
-        }
+        let suggestionViewController = SuggestionViewController(suggestionContainerViewModel: self.suggestionContainerViewModel!,
+                                                                themeManager: self.themeManager,
+                                                                aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
+                                                                featureFlagger: Application.appDelegate.featureFlagger)
+        suggestionViewController.delegate = self
+        return suggestionViewController
     }()
 
     var isSuggestionWindowVisiblePublisher: AnyPublisher<Bool, Never> {
@@ -784,10 +816,18 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func initSuggestionWindow() {
-        let windowController = NSStoryboard.suggestion
-            .instantiateController(withIdentifier: "SuggestionWindowController") as? NSWindowController
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 218),
+                              styleMask: [.fullSizeContentView],
+                              backing: .buffered,
+                              defer: true)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.autorecalculatesKeyViewLoop = false
+        window.isRestorable = false
+        window.hasShadow = false
 
-        windowController?.contentViewController = suggestionViewController
+        let windowController = NSWindowController(window: window)
+        windowController.contentViewController = suggestionViewController
         self.suggestionWindowController = windowController
     }
 
@@ -852,7 +892,7 @@ final class AddressBarTextField: NSTextField {
         }
 
         /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
-        let padding = SuggestionWindowSizes.windowOffset(isAppRebranded: themeManager.isAppRebranded)
+        let padding = SuggestionWindowSizes.windowOffset
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
@@ -1587,10 +1627,7 @@ enum SuggestionInputMethod {
     case mouse
 }
 
-fileprivate extension NSStoryboard {
-    static let suggestion = NSStoryboard(name: "Suggestion", bundle: .main)
-}
-
+// MARK: - URL+makeUrl, upgradeToHttps
 extension URL {
 
     static func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -1637,7 +1674,6 @@ extension URL {
             }
         }
     }
-
 }
 
 // MARK: - SharingMenuDelegate

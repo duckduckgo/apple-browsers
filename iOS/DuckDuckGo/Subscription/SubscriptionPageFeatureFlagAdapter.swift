@@ -64,3 +64,28 @@ extension DefaultPerformanceOptimizedPaywallsProvider {
         )
     }
 }
+
+private struct PartnershipsHubFeatureFlagger: PartnershipsHubFeatureFlagging {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isPartnershipsHubEnabled: Bool {
+        featureFlagger.isFeatureOn(.partnershipsHub)
+    }
+}
+
+extension DefaultPartnershipsHubProvider {
+
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         featureFlagger: FeatureFlagger,
+         fallbackURL: @escaping () -> URL) {
+        self.init(
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: PartnershipsHubFeatureFlagger(featureFlagger: featureFlagger),
+            fallbackURL: fallbackURL
+        )
+    }
+}

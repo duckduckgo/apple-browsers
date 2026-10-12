@@ -114,6 +114,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
     }
 
     func testWhenUpdatedModelPickerIsEnabledForFreeUserThenMakeMenuBuildsUpdatedMenu() throws {
+        subscriptionManager.isEligibleForFreeTrialResult = true
         sut = makeSUTWithUpdatedModelPickerEnabled(userTier: .free)
         sut.modelStore.models = [
             makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
@@ -278,6 +279,33 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(preferences.selectedModelId, "gpt-5")
     }
 
+    func testUnavailablePurchaseFiltersIPadMenuAndRefreshesWhenAvailabilityReturns() async throws {
+        sut.modelStore.models = [makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
+                                 makeModel(id: "paid", shortName: "Paid", entityHasAccess: false, accessTier: ["plus"])]
+        for available in [false, true] {
+            let refreshed = expectation(description: "iPad menu refreshed")
+            sut.onModelsUpdated = { refreshed.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [refreshed], timeout: 1)
+            let menu = try XCTUnwrap(sut.makeMenu { _ in })
+            XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.flatMap(\.children).count, available ? 2 : 1)
+            XCTAssertEqual(sut.modelStore.models.count, 2)
+        }
+    }
+
+    func testRejectedStaleModelSelectionDoesNotBecomePending() {
+        upsellPresenter.isPurchaseEligible = false
+        sut.modelStore.models = [makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
+                                 makeModel(id: "paid", shortName: "Paid", entityHasAccess: false, accessTier: ["plus"])]
+        sut.handleModelSelection("free")
+        sut.handleModelSelection("paid")
+        sut.modelStore.models = [makeModel(id: "free", shortName: "Free"), makeModel(id: "paid", shortName: "Paid")]
+        sut.handleModelsUpdated()
+
+        XCTAssertEqual(sut.currentModelId, "free")
+        XCTAssertTrue(upsellPresenter.presentedPurchaseFlows.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeSUTWithUpdatedModelPickerEnabled(userTier: AIChatUserTier) -> IPadOmnibarModelPickerController {
@@ -337,6 +365,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
 }
 
 private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
+    var isPurchaseEligible = true
     var presentedPurchaseFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
     var presentedUpgradeFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
     var presentedOrigins: [SubscriptionFunnelOrigin] = []

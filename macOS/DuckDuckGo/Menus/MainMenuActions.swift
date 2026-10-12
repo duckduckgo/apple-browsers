@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
@@ -29,6 +31,7 @@ import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
@@ -556,12 +559,7 @@ extension AppDelegate {
 
     @objc func navigateToPrivateEmail(_ sender: Any?) {
         DispatchQueue.main.async {
-            guard let window = NSApplication.shared.keyWindow,
-                  let windowController = window.windowController as? MainWindowController else {
-                assertionFailure("No reference to main window controller")
-                return
-            }
-            windowController.mainViewController.browserTabViewController.openNewTab(with: .url(URL.duckDuckGoEmailLogin, source: .ui))
+            Application.appDelegate.windowControllersManager.show(url: .duckDuckGoEmailLogin, source: .ui, newTab: true)
         }
     }
 
@@ -865,7 +863,11 @@ extension AppDelegate {
 
     @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
-        SyncPromoManager().resetPromos()
+        let legacyStorage = KeyedStorage<SyncPromoLegacySettings>(storage: UserDefaults.standard)
+        legacyStorage.bookmarksDismissedDate = nil
+        legacyStorage.passwordsDismissedDate = nil
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupBookmarksPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupAutofillPromoID, clearHistory: true)
         DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
@@ -1045,11 +1047,13 @@ extension AppDelegate {
 
     @objc func resetVPNUpsell() {
         // Clear VPN upsell state
-        vpnUpsellUserDefaultsPersistor.vpnUpsellPopoverViewed = false
-        vpnUpsellUserDefaultsPersistor.vpnUpsellDismissed = false
-        vpnUpsellUserDefaultsPersistor.vpnUpsellFirstPinnedDate = nil
+        vpnUpsellUserDefaultsPersistor.legacyPopoverViewed = false
+        vpnUpsellUserDefaultsPersistor.legacyUpsellDismissed = false
+        vpnUpsellUserDefaultsPersistor.legacyFirstPinnedDate = nil
         // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
         vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval = 10
+        promoService?.undismiss(promoId: PromoServiceFactory.vpnUpsellToolbarButtonPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.vpnUpsellDotBadgePromoID, clearHistory: true)
     }
 }
 
@@ -1409,7 +1413,8 @@ extension MainViewController {
         if tabBarViewController.isDuckAIChatPresented {
             tabBarViewController.closeDuckAIChat()
         } else {
-            tabBarViewController.openDuckAISidebarWithPageAttachment()
+            tabBarViewController.openDuckAISidebarWithPageAttachment(conversationSource: .mainMenuAskAboutPage,
+                                                                     sidebarOpenSource: .mainMenuAskAboutPage)
         }
     }
 
@@ -1562,6 +1567,30 @@ extension MainViewController {
     @objc func inspectPermissions(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
+    }
+
+    @objc func debugShowPageSignals(_ sender: Any?) {
+        let signals = tabCollectionViewModel.selectedTabViewModel?.tab.pageSignals?.pageSignals
+        let alert = PageSignalsAlert(signals: signals)
+        alert.runModal()
+    }
+
+    @objc func debugVerifyDNSBlocking(_ sender: Any?) {
+        let host = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.host
+
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "DNS Blocking"
+
+            if let host {
+                let resolution = await DNSBlockDetector().resolution(for: host)
+                alert.informativeText = "\(host): \(resolution.rawValue)"
+            } else {
+                alert.informativeText = "The current tab has no site loaded."
+            }
+
+            await alert.runModal()
+        }
     }
 
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
@@ -1820,6 +1849,12 @@ extension MainViewController {
             tabCollectionViewModel.select(at: .unpinned(0))
         }
         Application.appDelegate.resetPinnedTabs(sender)
+    }
+
+    /// The feedback form is otherwise only reachable through a remote message action,
+    /// and only for non-internal users, so there is no way to open it by hand.
+    @objc func showFeedbackForm(_ sender: Any?) {
+        FeedbackPresenter.presentFeedbackForm()
     }
 
     @objc func showSaveCredentialsPopover(_ sender: Any?) {

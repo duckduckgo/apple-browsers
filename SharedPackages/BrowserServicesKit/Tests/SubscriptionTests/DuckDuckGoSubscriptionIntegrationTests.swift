@@ -111,7 +111,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(purchaseTransactionJWS)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, additionalParams: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, experimentAttribution: nil) {
         case .success:
             break
         case .failure(let error):
@@ -213,7 +213,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(purchaseTransactionJWS)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, additionalParams: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, experimentAttribution: nil) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -242,7 +242,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(purchaseTransactionJWS)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, additionalParams: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, experimentAttribution: nil) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -369,7 +369,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
 
         // But completing the purchase fails
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, additionalParams: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, experimentAttribution: nil) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):

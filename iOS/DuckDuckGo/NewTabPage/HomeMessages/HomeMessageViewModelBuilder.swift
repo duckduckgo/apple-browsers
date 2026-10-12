@@ -38,7 +38,8 @@ struct HomeMessageViewModelBuilder {
                       pixelReporter: RemoteMessagingPixelReporting?,
                       acquisitionIdentity: PromoQueueAcquisitionIdentity? = nil,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
-                      onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
+                      onDidAppear: @escaping () -> Void,
+                      onDidDisappear: @escaping () -> Void = {}) -> HomeMessageViewModel? {
         guard
             let content = remoteMessage.content,
             let homeSupportedMessageDisplayType = HomeSupportedMessageDisplayType(content)
@@ -80,6 +81,7 @@ struct HomeMessageViewModelBuilder {
             loadRemoteImage: loadRemoteImage,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
+            onDidDisappear: onDidDisappear,
             onAttachAdditionalParameters: { useCase, params in
                 subscriptionDataReporter?.mergeRandomizedParameters(for: useCase, with: params) ?? params
             }

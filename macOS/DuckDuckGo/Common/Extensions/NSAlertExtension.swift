@@ -50,7 +50,7 @@ extension NSAlert {
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)
         alert.informativeText = UserText.fireproofConfirmationMessage
         alert.alertStyle = .warning
-        alert.icon = .fireproof
+        alert.icon = NSImage(resource: .fireproof)
         alert.addButton(withTitle: UserText.fireproof)
         alert.addButton(withTitle: UserText.notNow)
         return alert
@@ -227,7 +227,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
-        alert.icon = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
+        alert.icon = DesignSystemRebrand.isAppRebranded() ? NSImage(resource: .burnAlert) : NSImage(resource: .burnAlertLegacy)
         alert.addButton(withTitle: UserText.clearAndQuit)
         alert.addButton(withTitle: UserText.quitWithoutClearing)
         alert.addButton(withTitle: UserText.cancel)

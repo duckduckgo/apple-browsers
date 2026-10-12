@@ -17,17 +17,20 @@
 //
 
 import Cocoa
+import PrivacyConfig
 import SwiftUI
 
 final class PermissionAuthorizationPopover: NSPopover {
 
     @nonobjc private var didShow: Bool = false
+    private let featureFlagger: FeatureFlagger
 
-    override init() {
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init()
 
         behavior = .applicationDefined
-        contentViewController = PermissionAuthorizationViewController()
+        contentViewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
         self.delegate = self
     }
 
@@ -46,7 +49,7 @@ final class PermissionAuthorizationPopover: NSPopover {
     var viewController: PermissionAuthorizationViewController {
         get {
             if contentViewController == nil {
-                contentViewController = PermissionAuthorizationViewController()
+                contentViewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
             }
             return contentViewController as! PermissionAuthorizationViewController
         }

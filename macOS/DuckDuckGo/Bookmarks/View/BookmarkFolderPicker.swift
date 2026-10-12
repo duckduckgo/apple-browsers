@@ -36,12 +36,12 @@ struct BookmarkFolderPicker: View {
             return popUpButton
         } content: {
 
-            PopupButtonItem(icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder, title: UserText.bookmarks)
+            PopupButtonItem(icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : NSImage(resource: .bookmarksFolder), title: UserText.bookmarks)
 
             PopupButtonItem.separator()
 
             for folder in folders {
-                PopupButtonItem(icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.folder : .folderLegacy, title: folder.title, indentation: folder.level, selectionValue: folder.entity)
+                PopupButtonItem(icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.folder : NSImage(resource: .folderLegacy), title: folder.title, indentation: folder.level, selectionValue: folder.entity)
             }
         }
 

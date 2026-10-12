@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let syncCredentialsAdapter: SyncCredentialsAdapter
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    weak var scanCodeNavigationController: UINavigationController?
     var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
@@ -65,6 +66,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let featureFlagger: FeatureFlagger
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     let pixelFiring: (any PixelKitFiring)?
+    let cameraAuthorization: SyncCameraAuthorizing
 
     var isSyncEnabled: Bool {
         syncService.account != nil
@@ -96,9 +98,13 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
     var source: String?
     var scanSetupSource: SyncSetupSource?
+    var scanScreenCameraPermission: SyncCameraPermissionPixelValue?
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
     var pairingV2JoinerCodeSource: SyncCodeSource?
+    var pairingV2ConfirmationAlert: UIAlertController?
+    var pairingV2ConfirmationContinuation: CheckedContinuation<Bool, Never>?
+    var pairingV2ConfirmationWasDismissedByController = false
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
 
@@ -128,7 +134,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+        cameraAuthorization: SyncCameraAuthorizing = SyncCameraAuthorization()
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -140,6 +147,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.pixelFiring = pixelFiring
+        self.cameraAuthorization = cameraAuthorization
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
@@ -147,7 +155,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
                 syncService.updateServerEnvironment(.production)
                 UserDefaults.standard.set(ServerEnvironment.production.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
             },
-            autoRestoreProvider: syncAutoRestoreHandler
+            autoRestoreProvider: syncAutoRestoreHandler,
+            isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow)
         )
         self.viewModel = viewModel
 
@@ -586,6 +595,18 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await dismissPresentedViewController()
         viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
     }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+        guard isPresentingConnectingSheet else { return }
+        switch status {
+        case .waiting:
+            if case .waitingForOtherDevice = viewModel.connectingSheetPhase {
+                viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+            }
+        case .unknown:
+            viewModel.connectingSheetPhase = .waitingForOtherDevice
+        }
+    }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
         viewModel.$devices
@@ -634,12 +655,17 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await performDeferredPreservedAccountCleanupIfNeeded()
     }
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole, shouldPromptBeforeSwitchingAccounts: Bool) async {
+    @discardableResult
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
+                                                    setupRole: SyncSetupRole,
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow _: Bool = false) async -> Bool {
         // The connecting sheet owns the completion prompt.
         if shouldPromptBeforeSwitchingAccounts && viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
+            return false
         } else {
-            await switchAccounts(recoveryKey: recoveryKey)
+            return await switchAccounts(recoveryKey: recoveryKey)
         }
     }
     
@@ -690,6 +716,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
+            await dismissPairingV2Setup()
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey,
                 .failedToFetchConnectRecoveryKey,
@@ -741,14 +768,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     }
 
-    private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) {
+    func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) {
         guard setupSource != .unknown else { return }
-        let parameters = syncSetupPixelParameters(setupSource: setupSource, codeType: setupSource.syncSetupCodeType, codeVersion: codeVersion.rawValue)
+        var parameters = syncSetupPixelParameters(setupSource: setupSource, codeType: setupSource.syncSetupCodeType, codeVersion: codeVersion.rawValue)
         switch codeSource {
         case .qrCode:
-            PixelKit.fire(Pixel.Event.syncSetupBarcodeScannerSuccess, options: .parameters(parameters))
+            parameters[SyncCameraPermissionPixelValue.parameterKey] = scanScreenCameraPermission?.rawValue
+            pixelFiring?.fire(Pixel.Event.syncSetupBarcodeScannerSuccess, options: .parameters(parameters))
         case .pastedCode:
-            PixelKit.fire(Pixel.Event.syncSetupManualCodeEnteredSuccess, options: .parameters(parameters))
+            pixelFiring?.fire(Pixel.Event.syncSetupManualCodeEnteredSuccess, options: .parameters(parameters))
         case .deepLink:
             break
         }

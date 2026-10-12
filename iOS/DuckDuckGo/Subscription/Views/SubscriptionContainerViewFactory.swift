@@ -93,7 +93,8 @@ enum SubscriptionContainerViewFactory {
                                                                        landingURL: landingURL,
                                                                        subscriptionManager: subscriptionManager,
                                                                        tld: tld,
-                                                                       performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider)
+                                                                       performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider,
+                                                                       featureFlagger: featureFlagger)
         if isDebugOverlayEnabled {
             initialURL = initialURL.appendingParameter(name: "debug", value: "1")
         }
@@ -118,7 +119,11 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: onboardingKeyValueStore,
             meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
@@ -212,7 +217,11 @@ enum SubscriptionContainerViewFactory {
                                                                                                      subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                                                      requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                                                      expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                                                     isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) })
+                                                                                                     isExpirationReminderFeatureEnabled: {
+                                                                                                         featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                                                     },
+                                                                                                     subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                                                         featureFlagger: featureFlagger))
 
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
@@ -284,7 +293,11 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
             meetsPIRLocaleRequirement: { false }
@@ -334,7 +347,11 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
             meetsPIRLocaleRequirement: { false }
@@ -354,7 +371,8 @@ enum SubscribeFlowInitialURLBuilder {
                                landingURL: URL?,
                                subscriptionManager: SubscriptionManager,
                                tld: TLD,
-                               performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding) -> URL {
+                               performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding,
+                               featureFlagger: FeatureFlagger) -> URL {
         // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
         if let landingURL { return landingURL }
 
@@ -363,16 +381,23 @@ enum SubscribeFlowInitialURLBuilder {
         } ?? subscriptionManager.url(for: .purchase)
 
         // Existing subscribers and intercepted `/pro` URLs keep the legacy paywall.
-        guard performanceOptimizedPaywalls.isEnabled,
-              !subscriptionManager.isSubscriptionPresent(),
+        guard !subscriptionManager.isSubscriptionPresent(),
               redirectURLComponents?.path != SubscriptionPurchaseFlowPath.pro.rawValue else { return purchaseURL }
 
-        let performanceOptimizedPaywallURL = SubscriptionURL.performanceOptimizedPaywallURL(
+        guard let performanceOptimizedPaywallURL = SubscriptionURL.performanceOptimizedPaywallURL(
             basedOn: purchaseURL,
             paths: performanceOptimizedPaywalls.paths,
             isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
             isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
-        )
-        return performanceOptimizedPaywallURL ?? purchaseURL
+        ) else { return purchaseURL }
+
+        // Only enroll users who can be shown either paywall.
+        guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.performanceOptimizedPaywalls)
+            as? FeatureFlag.PerformanceOptimizedPaywallsCohort else {
+            return purchaseURL
+        }
+        let paywallURL = cohort == .treatment ? performanceOptimizedPaywallURL : purchaseURL
+        return paywallURL.removingParameters(named: ["experiment_perfpaywall"])
+            .appendingParameter(name: "experiment_perfpaywall", value: cohort.rawValue)
     }
 }

@@ -353,6 +353,21 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {}
+    @MainActor func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? { nil }
+    @MainActor func dismissUsageLimits() {}
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome { .handled }
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    @MainActor var showAttachmentPrivacyDisclaimer: Bool { false }
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {}
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    @MainActor func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? { nil }
+    @MainActor func launcherPromoShown() {}
+    @MainActor func selectLauncherPromoCta() {}
+    @MainActor func dismissLauncherPromo() {}
+    @MainActor func launcherPromoIgnored() {}
+    var launcherPromoPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?

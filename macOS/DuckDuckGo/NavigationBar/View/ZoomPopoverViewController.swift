@@ -67,9 +67,9 @@ final class ZoomPopoverViewController: NSViewController {
             button.bezelStyle = .shadowlessSquare
             button.cornerRadius = 6
             button.normalTintColor = .controlTextColor
-            button.backgroundColor = .blackWhite10
-            button.mouseOverColor = .buttonMouseOver
-            button.mouseDownColor = .buttonMouseDown
+            button.backgroundColor = NSColor(resource: .blackWhite10)
+            button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+            button.mouseDownColor = NSColor(resource: .buttonMouseDown)
             button.imagePosition = (button === resetButton) ? .noImage : .imageOnly
             button.translatesAutoresizingMaskIntoConstraints = false
         }

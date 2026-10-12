@@ -73,24 +73,13 @@ struct AutocompleteView: View {
         }
         .modifier(CompactSectionSpacing())
         .modifier(DisableSelection())
-        .modifier(DismissKeyboardOnSwipe())
+        .scrollDismissesKeyboardIfAvailable()
         .environmentObject(model)
         .ignoresSafeArea(.keyboard, edges: .bottom)
    }
 
 }
 
-private struct DismissKeyboardOnSwipe: ViewModifier {
-
-    func body(content: Content) -> some View {
-        if #available(iOS 16, *) {
-            content.scrollDismissesKeyboard(.immediately)
-        } else {
-            content
-        }
-    }
-
-}
 
 private struct DisableSelection: ViewModifier {
 

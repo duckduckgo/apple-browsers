@@ -35,7 +35,7 @@ final class PrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStylePr
     let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
     let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
 
-    let hoverAnimation: String = "Shield-Color-24-Hover"
+    let hoverAnimation: String = "Shield-Color-24"
     let hoverAnimationWithDot: String = "Shield-Off-Gray"
     let animationForShield: String = "Shield-Color-24"
     let animationForShieldWithDot: String = "Shield-Off-Gray"

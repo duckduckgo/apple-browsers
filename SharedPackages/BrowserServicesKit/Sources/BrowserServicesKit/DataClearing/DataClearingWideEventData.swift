@@ -38,7 +38,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.1.1"
+        version: "1.1.3"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)
@@ -106,6 +106,15 @@ public class DataClearingWideEventData: WideEventData {
     public var clearAIChatHistoryDuration: WideEvent.MeasuredInterval?
     public var clearAIChatHistoryStatus: ActionStatus?
     public var clearAIChatHistoryError: WideEventErrorData?
+    /// Whether the Duck.ai clear was retried after a transient failure; the first attempt's error is kept alongside.
+    public var clearAIChatHistoryRetried: Bool?
+    public var clearAIChatHistoryFirstAttemptError: WideEventErrorData?
+    /// Slowest page load, script-ready wait and script reply of the first attempt, across Duck.ai origins.
+    public var clearAIChatHistoryPageLoadMilliseconds: Int?
+    public var clearAIChatHistoryScriptReadyMilliseconds: Int?
+    public var clearAIChatHistoryScriptReplyMilliseconds: Int?
+    /// How long the Duck.ai clear waited for the storage warm-up before starting; 0 when storage was already warm.
+    public var clearAIChatHistoryWarmupWaitMilliseconds: Int?
 
     public var clearAutoconsentManagementCacheDuration: WideEvent.MeasuredInterval?
     public var clearAutoconsentManagementCacheStatus: ActionStatus?
@@ -493,6 +502,12 @@ extension DataClearingWideEventData {
             (WideEventParameter.DataClearingFeature.source, source?.rawValue),
             (WideEventParameter.DataClearingFeature.path, path?.rawValue),
             (WideEventParameter.DataClearingFeature.includedDomains, includedDomains),
+            (WideEventParameter.DataClearingFeature.interruptedActions, interruptedActions),
+            (WideEventParameter.DataClearingFeature.aiChatRetried, clearAIChatHistoryRetried),
+            (WideEventParameter.DataClearingFeature.aiChatPageLoad, clearAIChatHistoryPageLoadMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatScriptReady, clearAIChatHistoryScriptReadyMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatScriptReply, clearAIChatHistoryScriptReplyMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatWarmupWait, clearAIChatHistoryWarmupWaitMilliseconds.map(processedDuration)),
         ])
 
         for action in Action.allCases {
@@ -500,6 +515,7 @@ extension DataClearingWideEventData {
             addActionStatus(self[keyPath: action.statusPath], action: action, to: &params)
             addActionError(self[keyPath: action.errorPath], action: action, to: &params)
         }
+        addError(clearAIChatHistoryFirstAttemptError, named: WideEventParameter.DataClearingFeature.aiChatFirstAttempt, to: &params)
 
         return params
     }
@@ -508,6 +524,15 @@ extension DataClearingWideEventData {
 // MARK: - Private Helpers
 
 private extension DataClearingWideEventData {
+
+    /// Actions that started but never finished, so an orphaned journey shows where it got stuck.
+    var interruptedActions: [String]? {
+        let interrupted = Action.allCases.filter { action in
+            let duration = self[keyPath: action.durationPath]
+            return duration?.start != nil && duration?.end == nil
+        }
+        return interrupted.isEmpty ? nil : interrupted.map(\.rawValue)
+    }
 
     /// Processes duration for pixel reporting: rounds to 10ms precision and caps at 10 seconds.
     ///
@@ -538,32 +563,36 @@ private extension DataClearingWideEventData {
     }
 
     func addActionError(_ error: WideEventErrorData?, action: Action, to params: inout [String: Encodable]) {
+        addError(error, named: action.rawValue, to: &params)
+    }
+
+    /// Adds `error` under `feature.data.ext.<name>_error.*`.
+    func addError(_ error: WideEventErrorData?, named name: String, to params: inout [String: Encodable]) {
         guard let error else { return }
         let errorParams = error.jsonParameters()
         for (key, value) in errorParams {
-            let actionKey = transformErrorKey(key, for: action)
-            params[actionKey] = value
+            params[transformErrorKey(key, named: name)] = value
         }
     }
 
-    func transformErrorKey(_ key: String, for action: Action) -> String {
+    func transformErrorKey(_ key: String, named name: String) -> String {
         switch key {
         case WideEventParameter.Feature.errorDomain:
-            return WideEventParameter.DataClearingFeature.errorDomain(at: action)
+            return WideEventParameter.DataClearingFeature.errorDomain(named: name)
 
         case WideEventParameter.Feature.errorCode:
-            return WideEventParameter.DataClearingFeature.errorCode(at: action)
+            return WideEventParameter.DataClearingFeature.errorCode(named: name)
 
         case WideEventParameter.Feature.errorDescription:
-            return WideEventParameter.DataClearingFeature.errorDescription(at: action)
+            return WideEventParameter.DataClearingFeature.errorDescription(named: name)
 
         case let key where key.hasPrefix(WideEventParameter.Feature.underlyingErrorDomain):
             let suffix = key.dropFirst(WideEventParameter.Feature.underlyingErrorDomain.count)
-            return WideEventParameter.DataClearingFeature.errorUnderlyingDomain(at: action, suffix: String(suffix))
+            return WideEventParameter.DataClearingFeature.errorUnderlyingDomain(named: name, suffix: String(suffix))
 
         case let key where key.hasPrefix(WideEventParameter.Feature.underlyingErrorCode):
             let suffix = key.dropFirst(WideEventParameter.Feature.underlyingErrorCode.count)
-            return WideEventParameter.DataClearingFeature.errorUnderlyingCode(at: action, suffix: String(suffix))
+            return WideEventParameter.DataClearingFeature.errorUnderlyingCode(named: name, suffix: String(suffix))
 
         default:
             assertionFailure("Unexpected error parameter key: \(key)")
@@ -586,6 +615,13 @@ extension WideEventParameter {
         static let source = "feature.data.ext.source"
         static let path = "feature.data.ext.path"
         static let includedDomains = "feature.data.ext.included_domains"
+        static let interruptedActions = "feature.data.ext.interrupted_actions"
+        static let aiChatRetried = "feature.data.ext.clear_aiChat_history_retried"
+        static let aiChatFirstAttempt = "clear_aiChat_history_first_attempt"
+        static let aiChatPageLoad = "feature.data.ext.clear_aiChat_history_page_load_ms"
+        static let aiChatScriptReady = "feature.data.ext.clear_aiChat_history_script_ready_ms"
+        static let aiChatScriptReply = "feature.data.ext.clear_aiChat_history_script_reply_ms"
+        static let aiChatWarmupWait = "feature.data.ext.clear_aiChat_history_warmup_wait_ms"
 
         static func latency(at action: DataClearingWideEventData.Action) -> String {
             "feature.data.ext.\(action.rawValue)_latency_ms"
@@ -595,24 +631,24 @@ extension WideEventParameter {
             "feature.data.ext.\(action.rawValue)_status"
         }
 
-        static func errorDomain(at action: DataClearingWideEventData.Action) -> String {
-            "feature.data.ext.\(action.rawValue)_error.domain"
+        static func errorDomain(named name: String) -> String {
+            "feature.data.ext.\(name)_error.domain"
         }
 
-        static func errorCode(at action: DataClearingWideEventData.Action) -> String {
-            "feature.data.ext.\(action.rawValue)_error.code"
+        static func errorCode(named name: String) -> String {
+            "feature.data.ext.\(name)_error.code"
         }
 
-        static func errorDescription(at action: DataClearingWideEventData.Action) -> String {
-            "feature.data.ext.\(action.rawValue)_error.description"
+        static func errorDescription(named name: String) -> String {
+            "feature.data.ext.\(name)_error.description"
         }
 
-        static func errorUnderlyingDomain(at action: DataClearingWideEventData.Action, suffix: String) -> String {
-            return "feature.data.ext.\(action.rawValue)_error.underlying_domain\(suffix)"
+        static func errorUnderlyingDomain(named name: String, suffix: String) -> String {
+            return "feature.data.ext.\(name)_error.underlying_domain\(suffix)"
         }
 
-        static func errorUnderlyingCode(at action: DataClearingWideEventData.Action, suffix: String) -> String {
-            return "feature.data.ext.\(action.rawValue)_error.underlying_code\(suffix)"
+        static func errorUnderlyingCode(named name: String, suffix: String) -> String {
+            return "feature.data.ext.\(name)_error.underlying_code\(suffix)"
         }
     }
 }

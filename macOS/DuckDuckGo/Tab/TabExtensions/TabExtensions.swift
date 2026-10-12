@@ -186,6 +186,12 @@ extension TabExtensionsBuilder {
                                        contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated))
         }
 
+        add {
+            PageSignalsTabExtension(webViewPublisher: args.webViewFuture,
+                                    featureFlagger: dependencies.featureFlagger,
+                                    tld: dependencies.privacyFeatures.contentBlocking.tld)
+        }
+
         if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
             add {
                 WebNotificationsTabExtension(
@@ -315,6 +321,7 @@ extension TabExtensionsBuilder {
         add {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
+                               contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                isTabBurner: args.isTabBurner,
                                burnerMode: args.burnerMode)

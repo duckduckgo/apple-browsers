@@ -22,6 +22,18 @@ import UIKit
 
 enum FloatingUILayoutPolicy {
 
+    struct WebViewLayout: Equatable {
+        let topAnchorConstant: CGFloat
+        let bottomAnchorConstant: CGFloat
+        let obscuredContentInsets: UIEdgeInsets
+    }
+
+    static func webViewLayout(obscuredContentInsets: UIEdgeInsets) -> WebViewLayout {
+        return WebViewLayout(topAnchorConstant: 0,
+                             bottomAnchorConstant: 0,
+                             obscuredContentInsets: obscuredContentInsets)
+    }
+
     static func shouldApplyFloatingTopContentInset(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputAffectingLayout: Bool) -> Bool {

@@ -107,6 +107,10 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case syncDidPresentFaviconsFetcherOnboarding = "sync.did-present-favicons-fetcher-onboarding"
     case bookmarksBarPromptShown = "bookmarks.bar.prompt.shown"
+    case syncPromoBookmarksDismissed = "sync.promotion-bookmarks-dismissed"
+    case syncPromoPasswordsDismissed = "sync.promotion-passwords-dismissed"
+    case bookmarksBarSyncPromoDismissed = "com.duckduckgo.bookmarksBarSyncPromoDismissed"
+    case bookmarksBarSyncPromoFirstPresentedDate = "com.duckduckgo.bookmarkFirstPresentedCount"
 }
 
 // MARK: - StorageKey Extensions

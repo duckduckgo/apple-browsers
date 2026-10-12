@@ -129,6 +129,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         let startedAt: Date
         /// Measurements up to this identifier were already in flight when the first failure arrived.
         let confirmationMustBeginAfter: UInt
+        /// Treatment state captured from the termination associated with this episode.
+        let graveyardTreatmentEnabled: Bool?
         var failedTabIdentifiers: Set<String>
         var isStuck = false
         /// The successful reload that a recovery must post-date to be attributed to that reload.
@@ -435,12 +437,16 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         closeEpisodeForCurrentGeneration()
     }
 
-    /// Closes an episode on proof that the extension is answering, without attributing it to a tab.
+    /// Records healthy CPM evidence and closes an episode without attributing the response to a tab.
     ///
     /// After a reload only a measurement begun against the new generation may validate it, so a
     /// response that cannot be tied to one is not allowed to claim that recovery.
     private func closeEpisodeForCurrentGeneration() {
-        guard let episode, episode.reloadGeneration == nil else { return }
+        if let episode, episode.reloadGeneration != nil {
+            return
+        }
+        diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
+        guard let episode else { return }
         if episode.isStuck {
             pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck))
         }
@@ -609,6 +615,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
         record.state = .failed
         measurements[measurement.identifier] = record
+        let graveyardTreatmentEnabled = diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
         // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
         // race to become "first" merely by returning their result sooner.
         let isPostExtensionReload = postReloadMeasurementIdentifier == measurement.identifier
@@ -619,7 +626,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         } else {
             failureReason = measurement.navigationKind.failureReason
         }
-        fireWithDiagnostics(tabIdentifier: measurement.tabIdentifier) { diagnostics in
+        fireWithDiagnostics(
+            tabIdentifier: measurement.tabIdentifier,
+            graveyardTreatmentEnabled: graveyardTreatmentEnabled
+        ) { diagnostics in
             .cpmInitializationFailed(reason: failureReason, diagnostics: diagnostics)
         }
         if isPostExtensionReload {
@@ -634,6 +644,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                 failureReason: failureReason,
                 startedAt: now(),
                 confirmationMustBeginAfter: latestMeasurementIdentifier,
+                graveyardTreatmentEnabled: graveyardTreatmentEnabled,
                 failedTabIdentifiers: [measurement.tabIdentifier],
                 reloadGeneration: isPostExtensionReload ? measurement.extensionReloadGeneration : nil
             )
@@ -650,7 +661,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             episode.isStuck = true
             didBecomeStuck = true
             let stuckReason = episode.failureReason
-            fireWithDiagnostics(tabIdentifier: measurement.tabIdentifier) { diagnostics in
+            fireWithDiagnostics(
+                tabIdentifier: measurement.tabIdentifier,
+                graveyardTreatmentEnabled: episode.graveyardTreatmentEnabled
+            ) { diagnostics in
                 .cpmMessagingStuck(reason: stuckReason, diagnostics: diagnostics)
             }
             onConfirmedHang?()
@@ -664,8 +678,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     }
 
     private func fireWithDiagnostics(tabIdentifier: String,
+                                     graveyardTreatmentEnabled: Bool? = nil,
                                      makeEvent: (CPMMessagingDiagnostics?) -> WebExtensionPixelEvent) {
-        let diagnostics = diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
+        var diagnostics = diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
+        diagnostics?.backgroundGraveyardTreatmentEnabled = graveyardTreatmentEnabled
         pixelFiring.fire(makeEvent(diagnostics))
     }
 
@@ -677,6 +693,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         discardExpiredState()
         guard let record = measurements[measurement.identifier], record.measurement == measurement else { return }
         measurements[measurement.identifier] = nil
+        diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
         if postReloadMeasurementIdentifier == measurement.identifier {
             postReloadMeasurementIdentifier = nil
         }

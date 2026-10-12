@@ -252,7 +252,7 @@ struct RequestNewFeatureFormView: View {
                                 VStack {
                                     HStack {
                                         Text(UserText.requestNewFeatureFormPlaceholder)
-                                            .systemLabel(color: .textTertiary)
+                                            .systemLabel(color: Color(.textTertiary))
                                         Spacer()
                                     }
                                     Spacer()
@@ -317,7 +317,7 @@ private struct IncognitoInfoBox: View {
                     .body()
 
                 Text(UserText.incognitoInfoBoxDescription)
-                    .systemLabel(color: .textSecondary)
+                    .systemLabel(color: Color(.textSecondary))
                     .multilineTextAlignment(.leading)
             }
 

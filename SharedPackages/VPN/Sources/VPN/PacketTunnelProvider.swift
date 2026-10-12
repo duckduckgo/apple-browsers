@@ -1405,6 +1405,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
+#if os(iOS)
+        // Loading preferences from the extension on iOS 16 can raise an Objective-C exception.
+        guard #available(iOS 17.0, *) else {
+            throw DisableOnDemandError.notSupportedByOS
+        }
+#endif
+
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
 

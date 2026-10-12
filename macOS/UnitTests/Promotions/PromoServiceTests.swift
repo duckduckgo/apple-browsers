@@ -263,6 +263,59 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertTrue(updatedRecord.actioned)
     }
 
+    func testWhenOnboardingIncomplete_ThenPromoThatCanShowDuringOnboardingIsShownAndOthersAreSuppressed() async {
+        // Given
+        let exemptDelegate = MockPromoDelegate(isEligible: true)
+        exemptDelegate.setShowResult(.actioned)
+        let gatedDelegate = MockPromoDelegate(isEligible: true)
+        gatedDelegate.setShowResult(.actioned)
+        let exemptPromo = PromoTestHelpers.makePromo(id: "onboarding-exempt",
+                                                     promoType: PromoType(.nudgeButton),
+                                                     canShowDuringOnboarding: true,
+                                                     delegate: exemptDelegate)
+        let gatedPromo = PromoTestHelpers.makePromo(id: "onboarding-gated",
+                                                    promoType: PromoType(.nudgeButton),
+                                                    delegate: gatedDelegate)
+        let promoService = makeService(
+            promos: [exemptPromo, gatedPromo],
+            isOnboardingCompletedProvider: { false }
+        )
+
+        let exemptResultExpectation = XCTestExpectation(description: "exempt promo result recorded")
+        promoService.historyPublisher(for: "onboarding-exempt")
+            .compactMap { $0 }
+            .sink { record in
+                if record.actioned {
+                    exemptResultExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        let gatedShownExpectation = XCTestExpectation(description: "gated promo shown")
+        gatedShownExpectation.isInverted = true
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "onboarding-gated" }) {
+                    gatedShownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [exemptResultExpectation], timeout: timeout)
+        await fulfillment(of: [gatedShownExpectation], timeout: 0.5)
+
+        // Then
+        XCTAssertTrue(historyStore.record(for: "onboarding-exempt").actioned)
+        XCTAssertFalse(historyStore.record(for: "onboarding-gated").actioned)
+    }
+
+    func testWhenInternalPromoCreatedWithDefaults_ThenItCannotShowDuringOnboarding() {
+        XCTAssertFalse(PromoTestHelpers.makePromo().canShowDuringOnboarding)
+    }
+
     func testWhenOnboardingIncomplete_ThenExternalPromoVisibilityStillObserved() async {
         // Given
         let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
@@ -358,8 +411,11 @@ final class PromoServiceTests: XCTestCase {
         triggerSubject.send(.appLaunched)
         triggerSubject.send(.newTabPageAppeared)
         await fulfillment(of: [bothShownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        delegate2.completeShow(with: .actioned)
+        // Serialize mock completion with show()'s main-actor continuation setup.
+        await MainActor.run {
+            delegate1.completeShow(with: .actioned)
+            delegate2.completeShow(with: .actioned)
+        }
         await fulfillment(of: [hideExpectation], timeout: timeout)
 
         // Then: Promo history records contain expected history

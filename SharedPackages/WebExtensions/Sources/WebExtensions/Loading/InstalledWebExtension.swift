@@ -37,6 +37,10 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil for user-installed extensions.
     public let embeddedType: DuckDuckGoWebExtensionType?
 
+    /// Stable identity supplied by the store installer, shared by successive versions.
+    /// Nil for bundled extensions, manual installations, and records saved before this field existed.
+    public let storeIdentity: WebExtensionStoreIdentity?
+
     public var id: String { uniqueIdentifier }
 
     /// Whether this extension was installed from the app bundle (embedded).
@@ -49,12 +53,29 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         filename: String,
         name: String?,
         version: String?,
-        embeddedType: DuckDuckGoWebExtensionType? = nil
+        embeddedType: DuckDuckGoWebExtensionType? = nil,
+        storeIdentity: WebExtensionStoreIdentity? = nil
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
         self.name = name
         self.version = version
         self.embeddedType = embeddedType
+        self.storeIdentity = storeIdentity
+    }
+}
+
+/// Identifies an extension across versions without replacing its per-installation UUID.
+public struct WebExtensionStoreIdentity: Codable, Equatable, Hashable, Sendable {
+    public enum Store: String, Codable, Sendable {
+        case chromeWebStore
+    }
+
+    public let store: Store
+    public let id: String
+
+    public init(store: Store, id: String) {
+        self.store = store
+        self.id = id
     }
 }

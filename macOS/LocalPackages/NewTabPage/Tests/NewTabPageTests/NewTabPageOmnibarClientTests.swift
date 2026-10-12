@@ -89,6 +89,17 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testGetConfigIncludesRequiresAiTermsAcceptanceFromProvider() async throws {
+        configProvider.requiresAiTermsAcceptance = true
+        var config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.requiresAiTermsAcceptance, true)
+
+        configProvider.requiresAiTermsAcceptance = false
+        config = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.requiresAiTermsAcceptance, false)
+    }
+
+    @MainActor
     func testGetConfigIncludesFreeTrialEligibilityFromProvider() async throws {
         modelsProvider.isEligibleForFreeTrial = true
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
@@ -132,6 +143,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
         XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
         XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 1)
+    }
+
+    /// The web echoes its whole config back, so a stale `true` (or a forged `false`) must change nothing.
+    @MainActor
+    func testWhenSetConfigEchoesRequiresAiTermsAcceptanceThenItIsIgnored() async throws {
+        configProvider.requiresAiTermsAcceptance = true
+        var newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+        newConfig.requiresAiTermsAcceptance = false
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertTrue(configProvider.requiresAiTermsAcceptance)
     }
 
     @MainActor
@@ -627,6 +650,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    // MARK: - openPrivacyTerms
+
+    func testOpenPrivacyTermsIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openPrivacyTermsCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openPrivacyTermsHandler = {
+            expectation.fulfill()
+        }
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openPrivacyTerms)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
     // MARK: - openCustomizeResponses
 
     func testOpenCustomizeResponsesIsForwardedToHandler() async throws {
@@ -773,6 +808,23 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    func testWhenSubmitChatAcceptsTermsThenAcceptanceIsForwardedToHandler() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.aiTermsAccepted = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.lastSubmitChatAiTermsAccepted, true)
+    }
+
+    func testWhenSubmitChatOmitsTermsAcceptanceThenHandlerIsToldTermsWereNotAccepted() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.lastSubmitChatAiTermsAccepted, false)
+    }
+
     func testWhenUpdatedCreateImageIsSubmittedThenResolvedImageGenerationModelIsUsed() async throws {
         configProvider.isUpdatedCreateImageEnabled = true
         configProvider.imageGenerationModelId = "preferred-image-model"
@@ -854,6 +906,58 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.createImageModelSwitch)
     }
 
+    // MARK: - attachment privacy disclaimer
+
+    @MainActor
+    func testTheProvidersAttachmentPrivacyAnswerIsIncludedInConfig() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, true)
+    }
+
+    @MainActor
+    func testWhenTheProviderRefusesThenConfigSaysSo() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyDisclaimerShownForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown(kind: .image)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown, parameters: action)
+
+        XCTAssertEqual(configProvider.attachmentPrivacyDisclaimerShownKinds, [.image])
+    }
+
+    @MainActor
+    func testWhenTheKindIsUnrecognisedThenNoDisplayIsSpent() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue(configProvider.attachmentPrivacyDisclaimerShownKinds.isEmpty)
+    }
+
+    @MainActor
+    func testOpenAttachmentPrivacyLearnMoreForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore(kind: .file)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds, [.file])
+    }
+
+    @MainActor
+    func testWhenTheLearnMoreKindIsUnrecognisedThenNothingIsForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds.isEmpty == true)
+    }
+
     // MARK: - usage limits
 
     @MainActor
@@ -881,6 +985,48 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertNil(config.usageLimits)
+    }
+
+    @MainActor
+    func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately from anywhere",
+                                                             secondaryText: " • Show Duck.ai in the menu bar",
+                                                             ctaLabel: "Try Now", dismissible: true)
+        configProvider.launcherPromoResult = promo
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.launcherPromo, promo)
+    }
+
+    @MainActor
+    func testLauncherPromoMessagesAreForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo)
+
+        XCTAssertEqual(configProvider.launcherPromoShownCallCount, 1)
+        XCTAssertEqual(configProvider.selectLauncherPromoCtaCallCount, 1)
+        XCTAssertEqual(configProvider.dismissLauncherPromoCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionPastTheLauncherPromoIsForwarded() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.launcherPromoVisible = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionWithoutTheLauncherPromoLeavesItAlone() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
     }
 
     @MainActor

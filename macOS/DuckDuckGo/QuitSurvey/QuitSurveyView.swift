@@ -227,7 +227,7 @@ private struct DomainToggleRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
-            Toggle("", isOn: $isSelected)
+            Toggle("" as String, isOn: $isSelected)
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .accessibilityLabel(entry.title ?? entry.domain)
@@ -307,7 +307,7 @@ private struct QuitSurveyPositiveView: View {
             header()
 
             Text(UserText.quitSurveyAutoQuitMessage(seconds: viewModel.autoQuitCountdown))
-                .systemLabel(color: .textSecondary)
+                .systemLabel(color: Color(.textSecondary))
                 .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             Button {
@@ -521,7 +521,7 @@ private struct QuitSurveyNegativeView: View {
                                 VStack {
                                     HStack {
                                         Text(UserText.quitSurveyTextPlaceholder)
-                                            .systemLabel(color: .textTertiary)
+                                            .systemLabel(color: Color(.textTertiary))
                                         Spacer()
                                     }
                                     Spacer()

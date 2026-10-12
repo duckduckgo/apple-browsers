@@ -26,13 +26,24 @@ enum PermissionPixel: PixelKit.Event {
     // MARK: - Authorization Flow
 
     /**
-     * Event Trigger: User selects an option in the permission authorization dialog.
+     * Event Trigger: User selects an option in the legacy Allow / Deny permission authorization dialog.
      *
      * Parameters:
      * - permissionType: The type of permission (camera, microphone, geolocation, etc.)
      * - decision: The user's decision (allow, deny)
      */
     case authorizationDecision(permissionType: PermissionType, decision: AuthorizationDecision)
+
+    /**
+     * Event Trigger: User answers the Website Permissions prompt, or closes it with the X button.
+     * Mirrors the Windows `permission_authorization_<kind>_<action>` pixel. Windows marks its new prompt with `v2=1`;
+     * here the name already tells it apart from the legacy `m_mac_permission_authorization` pixel.
+     *
+     * Parameters:
+     * - permissionType: The type of permission (camera, microphone, geolocation, etc.)
+     * - action: What the prompt resolved to (always, allow_once, never, deny_once, cancel)
+     */
+    case authorizationAction(permissionType: PermissionType, action: AuthorizationAction)
 
     // MARK: - Permission Center
 
@@ -107,6 +118,9 @@ enum PermissionPixel: PixelKit.Event {
         case .authorizationDecision(let permissionType, let decision):
             return "m_mac_permission_authorization_\(permissionType.pixelName)_\(decision.pixelName)"
 
+        case .authorizationAction(let permissionType, let action):
+            return "permission_authorization_\(permissionType.pixelName)_\(action.rawValue)_macos"
+
         case .permissionCenterChanged(let permissionType, _, let to):
             return "m_mac_permission_center_changed_\(permissionType.pixelName)_to_\(to.pixelName)"
 
@@ -145,7 +159,7 @@ enum PermissionPixel: PixelKit.Event {
     }
 
     /// Every name is already complete: the older cases spell out `m_mac_`, and the Website
-    /// Permissions settings cases end in `_macos` so they reach the server without `m_mac_`.
+    /// Permissions prompt and settings cases end in `_macos` so they reach the server without `m_mac_`.
     var namePrefix: PixelKitNamePrefix { .none }
 }
 
@@ -160,6 +174,27 @@ extension PermissionPixel {
 
         var pixelName: String {
             return rawValue
+        }
+    }
+
+    /// What the Website Permissions prompt resolved to, named as on Windows
+    enum AuthorizationAction: String {
+        case always
+        case allowOnce = "allow_once"
+        case never
+        case denyOnce = "deny_once"
+        case cancel
+
+        /// A choice that can't be saved for `permissionType` only applies to this visit, as on Windows
+        init(decision: PermissionPromptDecision, permissionType: PermissionType) {
+            switch decision {
+            case .allowThisVisit:
+                self = .allowOnce
+            case .alwaysAllow:
+                self = permissionType.canPersistGrantedDecision ? .always : .allowOnce
+            case .neverAllow:
+                self = permissionType.canPersistDeniedDecision ? .never : .denyOnce
+            }
         }
     }
 }

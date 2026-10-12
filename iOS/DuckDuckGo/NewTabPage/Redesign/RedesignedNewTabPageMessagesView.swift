@@ -27,7 +27,7 @@ struct RedesignedNewTabPageMessagesView: View {
         if !messagesModel.homeMessageViewModels.isEmpty {
             VStack(spacing: Metrics.messageSpacing) {
                 ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
-                    HomeMessageView(viewModel: messageModel)
+                    HomeMessageView(viewModel: messageModel, usesMaterialBackground: true)
                         .frame(maxWidth: .infinity)
                         .transition(.scale.combined(with: .opacity))
                 }

@@ -150,9 +150,16 @@ final class PromoCoordinationService {
         }
     }
     
-    /// Frees a deferred slot that was never redeemed during the session.
+    /// Frees a deferred slot that was never redeemed during the session, and stops waiting for a
+    /// launch prompt to close.
     func handleAppBackgrounded() {
         modalPromptCoordinationManager.releaseDeferredModal()
+        modalPromptCoordinationManager.cancelModalPromptCloseHandler()
+    }
+
+    /// Runs `handler` once the modal prompt now pending has closed. Returns `false` when none is pending.
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        modalPromptCoordinationManager.runOnceModalPromptCloses(while: shouldWait, handler)
     }
 }
 

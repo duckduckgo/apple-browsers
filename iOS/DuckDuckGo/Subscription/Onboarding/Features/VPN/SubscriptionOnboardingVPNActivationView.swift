@@ -17,9 +17,7 @@
 //  limitations under the License.
 //
 
-import Combine
 import SwiftUI
-import UIKit
 import DesignResourcesKit
 import UIComponents
 
@@ -40,10 +38,8 @@ struct SubscriptionOnboardingVPNActivationView: View {
     private let navigationButton: SubscriptionOnboardingNavigationButton?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
     @State private var isShowingInfoSheet = false
-    @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
     @State private var featureRowsOffset: CGFloat = 0
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
@@ -59,37 +55,13 @@ struct SubscriptionOnboardingVPNActivationView: View {
             title: title,
             navigationButton: navigationButton,
             header: header,
-            footer: footer) {
+            footer: footer,
+            footerBlur: true) {
             content
         }
         .onAppear { viewModel.onAppear() }
-        .onDisappear {
-            viewModel.onDisappear()
-            tapAllowHintWindow.hide()
-            tapAllowHint.disappeared()
-        }
+        .onDisappear { viewModel.onDisappear() }
         .subscriptionOnboardingInfoSheet(.vpn, isPresented: $isShowingInfoSheet)
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-            tapAllowHint.appWillResignActive(isVPNConfigured: viewModel.isVPNConfigured)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            tapAllowHint.appDidBecomeActive(isVPNConfigured: viewModel.isVPNConfigured)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            tapAllowHint.appDidEnterBackground()
-        }
-        .onReceive(viewModel.$didDenyVPNPermission) { didDeny in
-            guard didDeny else { return }
-            tapAllowHint.permissionDenied()
-        }
-        .onReceive(tapAllowHint.$shouldShowHint) { shouldShow in
-            viewModel.setConfigAlertShowing(shouldShow)
-            if shouldShow {
-                tapAllowHintWindow.show()
-            } else {
-                tapAllowHintWindow.hide()
-            }
-        }
     }
 }
 
@@ -198,10 +170,8 @@ private extension SubscriptionOnboardingVPNActivationView {
 
 private extension SubscriptionOnboardingVPNActivationView {
     func startVPN() {
-        tapAllowHint.startTapped()
         Task {
             await viewModel.turnOnVPN()
-            tapAllowHint.turnOnFinished()
         }
     }
 

@@ -88,8 +88,7 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            floatingUIManager: floatingUIManager,
-            tabProvider: { [weak self] in self?.tabManager.currentTabsModel.currentTab }
+            floatingUIManager: floatingUIManager
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -522,6 +521,10 @@ private extension MainViewController {
                 self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.onFloatingReturnKeyAvailabilityChanged = { [weak self] in
+            self?.updateFloatingReturnKeyVisibility()
+        }
 
         coordinator.textChangePublisher
             .sink { [weak self] text in
@@ -1031,6 +1034,7 @@ extension MainViewController {
         }
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.cancelPendingAppOpenKeyboard()
             self.recordNewTabPageSessionAction { $0.dismissKeyboard() }
             coordinator.dismissOmnibarKeyboard()
         }
@@ -1314,6 +1318,33 @@ extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
+    func activateFromOmnibarOnAppOpenIfNeeded(currentText: String?,
+                                              isRequestValid: @escaping () -> Bool,
+                                              completion: @escaping (Bool) -> Void) -> UnifiedToggleInputActivationDecision {
+        guard isRequestValid() else {
+            completion(false)
+            return .intercept
+        }
+        guard let coordinator = unifiedToggleInputCoordinator, currentTab?.isAITab != true else { return .allowDefault }
+        if coordinator.isOmnibarSession {
+            coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
+            return .intercept
+        }
+        revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
+        let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
+        let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
+        // activateFromOmnibar sets the initial mode without publishing a user toggle interaction.
+        coordinator.updateToggleEnabled(isAIChatSearchInputToggleEnabledForCurrentOnboardingState())
+        resetSERPFlowForQuery(currentText)
+        coordinator.activateFromOmnibar(prefilledText: currentText,
+                                        inputMode: inputMode,
+                                        cardPosition: position,
+                                        isFocusRequestValid: isRequestValid,
+                                        onFocus: completion)
+        return .intercept
+    }
+
     func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
@@ -1361,7 +1392,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
         recordDuckAISessionPromptSubmittedOnCurrentTab()
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
@@ -1378,7 +1409,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
+                   termsAccepted: termsAccepted)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -1433,6 +1465,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestAppMenu() {
         onMenuPressed()
+    }
+
+    func unifiedToggleInputDidRequestAppMenuLongPress() {
+        onMenuLongPressed()
     }
 
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
@@ -1578,6 +1614,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             view.addSubview(snapshot)
         }
         closeTab(tab, behavior: .onlyClose)
+        showKeyboardOnNewTabPageIfAllowed()
         guard let snapshot else { return }
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
             snapshot.alpha = 0
@@ -1586,11 +1623,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         })
     }
 
+    /// Opens the chat in a new tab, so the current one stays reachable.
     func aiChatTabChatHeaderDidTapNewChat() {
+        guard let tab = currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        unifiedToggleInputCoordinator?.startNewChat()
-        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
-        currentTab?.submitStartChatAction()
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {

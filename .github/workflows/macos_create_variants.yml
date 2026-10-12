@@ -40,6 +40,7 @@ jobs:
     outputs:
       build-variants-1: ${{ steps.get-build-variants.outputs.build-variants-1 }}
       build-variants-2: ${{ steps.get-build-variants.outputs.build-variants-2 }}
+      build-variants-3: ${{ steps.get-build-variants.outputs.build-variants-3 }}
 
     steps:
       - name: Check out repository
@@ -119,10 +120,24 @@ jobs:
       origin-variant: ${{ matrix.origin }}
     secrets: inherit
 
+  create-variants-3:
+
+    name: Create Variant
+    needs: [set-up-variants, download-dmg-and-upload-artifact]
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.set-up-variants.outputs.build-variants-3) }}
+    uses: ./.github/workflows/macos_create_variant.yml
+    with:
+      atb-variant: ${{ matrix.variant }}
+      origin-variant: ${{ matrix.origin }}
+    secrets: inherit
+
   mattermost:
 
     name: Send Mattermost message
-    needs: [create-variants-1, create-variants-2]
+    needs: [create-variants-1, create-variants-2, create-variants-3]
     runs-on: macos-26
 
     env:

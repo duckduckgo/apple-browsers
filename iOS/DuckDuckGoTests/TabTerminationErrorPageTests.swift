@@ -69,14 +69,6 @@ final class TabTerminationErrorPageTests: XCTestCase {
         XCTAssertEqual(settings.supportedFormFactors, [.phone, .tablet])
     }
 
-    func testWhenFeatureIsDisabledThenErrorPageIsNotShown() {
-        let detector = makeDetector(featureEnabled: false)
-
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
-    }
-
     func testWhenFormFactorIsSupportedThenErrorPageIsShown() {
         let json = "{\"terminationCount\": 1, \"supportedFormFactors\": [\"tablet\"]}"
         XCTAssertEqual(makeSettings(json: json).supportedFormFactors, [.tablet])
@@ -166,14 +158,11 @@ final class TabTerminationErrorPageTests: XCTestCase {
         return TabTerminationErrorPageSettings(privacyConfigurationManager: manager)
     }
 
-    private func makeDetector(featureEnabled: Bool = true,
-                              terminationCount: Int = 3,
+    private func makeDetector(terminationCount: Int = 3,
                               timeWindow: TimeInterval = 60,
                               supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor> = [.phone, .tablet],
                               formFactor: TabTerminationErrorPageSettings.FormFactor = .phone) -> TabTerminationErrorPageDetector {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.tabTerminationErrorPage] : [])
         return TabTerminationErrorPageDetector(
-            featureFlagger: featureFlagger,
             settings: MockTabTerminationErrorPageSettings(
                 terminationCount: terminationCount,
                 timeWindow: timeWindow,

@@ -41,10 +41,18 @@ extension MainViewController {
         if presentation.hidesNavigationContainer || presentation.transition != .inlineInput {
             restingNewTabPageSnapshot = nil
         }
+        let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
+        if !presentation.hidesNavigationContainer {
+            // Capture the scrolled resting layout before chrome changes the page's viewport.
+            transitionSource?.setSearchInputEditing(true)
+        }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
-        (newTabPageViewController as? NewTabPageInputTransitionSource)?.setSearchInputEditing(
-            !presentation.hidesNavigationContainer)
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
+        if presentation.hidesNavigationContainer {
+            // Restore scrolling only after the resting chrome and safe area have settled.
+            view.layoutIfNeeded()
+            transitionSource?.setSearchInputEditing(false)
+        }
     }
 
     func revealAddressBarForEditing() {

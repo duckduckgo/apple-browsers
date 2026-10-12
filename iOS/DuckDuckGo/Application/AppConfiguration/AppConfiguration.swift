@@ -24,7 +24,7 @@ import Core
 import Networking
 import Configuration
 import Persistence
-import WebKit
+import UIKit
 import PixelKit
 #if canImport(DuckSansFont)
 import DuckSansFont
@@ -111,7 +111,7 @@ struct AppConfiguration {
         if !FileManager.default.fileExists(atPath: tmp.path) {
             let isBackground = UIApplication.shared.applicationState == .background
             
-            Logger.general.error("💥 Temp directory still missing after all recreation attempts. Is background: \(isBackground)")
+            Logger.general.error("💥 Temp directory still missing after recreation. Is background: \(isBackground)")
             PixelKit.fire(Pixel.Event.tmpDirStillMissingAfterRecreation, options: .parameters(["isBackground": String(isBackground)]))
         }
     }
@@ -137,46 +137,13 @@ struct AppConfiguration {
             return
         }
 
-        let maxAttempts = 5
-        let retryInterval: TimeInterval = 1.0
-        
-        for attempt in 0..<maxAttempts {
-            do {
-                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-                Logger.general.info("📁 Recreated temp directory at: \(url.path)")
-                
-                if attempt > 0 {
-                    PixelKit.fire(Pixel.Event.recreateTmpSuccessOnRetry(attempt: attempt))
-                }
-                return
-            } catch {
-                Logger.general.error("❌ Failed to recreate tmp dir (attempt \(attempt)): \(error.localizedDescription)")
-                PixelKit.fire(Pixel.Event.recreateTmpAttemptFailed(attempt: attempt).withError(error))
-
-                let isLastAttempt = attempt == maxAttempts - 1
-                if isLastAttempt {
-                    attemptWebViewTempDirectoryFallback(at: url)
-                    return
-                } else {
-                    Thread.sleep(forTimeInterval: retryInterval)
-                }
-            }
-        }
-    }
-    
-    private func attemptWebViewTempDirectoryFallback(at url: URL) {
-        Logger.general.info("🌐 Attempting WKWebView fallback for temp directory recreation")
-        // Create a minimal WKWebView to trigger temp directory creation
-        // WebKit may have elevated privileges that could help with directory creation
-        _ = WKWebView(frame: .zero)
-
-        let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
-        if fallbackSucceeded {
-            Logger.general.info("✅ WKWebView fallback successfully recreated temp directory")
-            PixelKit.fire(Pixel.Event.recreateTmpWebViewFallbackSucceeded)
-        } else {
-            Logger.general.error("❌ WKWebView fallback failed to recreate temp directory")
-            PixelKit.fire(Pixel.Event.recreateTmpWebViewFallbackFailed)
+        // Failures are in practice always out of disk space, which waiting does not fix,
+        // so a single attempt avoids blocking launch on retries.
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+            Logger.general.info("📁 Recreated temp directory at: \(url.path)")
+        } catch {
+            Logger.general.error("❌ Failed to recreate tmp dir: \(error.localizedDescription)")
         }
     }
 

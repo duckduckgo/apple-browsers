@@ -321,7 +321,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
                                                   extensionType: .system)
             .markingMonitoringStarted(at: hourStart)
             .applyingConnectionTestResult(.connected, at: hourStart)
-            .finalized(for: .stoppedByUser, at: endedAt).event
+            .finalized(for: .stoppedByUser, at: endedAt, processStartDate: hourStart.addingTimeInterval(-100_000), processIdentifier: 123, appVersion: "1.0.0").event
         wideEvent.startFlow(ended)
 
         startTunnel(.manual)
@@ -401,6 +401,98 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(wideEvent.completions.count, 1)
         XCTAssertEqual(wideEvent.completions.first?.1, .failure)
         XCTAssertEqual(try completedEvent().endReason, .cancelledWithError)
+    }
+
+    // MARK: - Process diagnostics
+
+    func testWhenProcessIdentifierChangesBeforeStopThenProcessIDChangedIsReported() throws {
+        startMonitoredSession()
+        inputs.pid = 2
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        XCTAssertEqual(try completedEvent().processIDChanged, true)
+    }
+
+    func testWhenAppVersionMatchesAtStopThenAppVersionChangedIsOmitted() throws {
+        startMonitoredSession()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        XCTAssertNil(try completedEvent().appVersionChanged)
+    }
+
+    func testWhenOrphanIsRecoveredByNewerAppVersionThenAppVersionChangedIsReported() throws {
+        startMonitoredSession()
+        let orphanID = try latestEvent().globalData.id
+
+        inputs.appVersion = "1.1.0"
+        instrumentation = makeInstrumentation()
+        startTunnel(.onDemand)
+
+        let recovered = try completedEvent()
+        XCTAssertEqual(recovered.globalData.id, orphanID)
+        XCTAssertEqual(recovered.endReason, .processDied)
+        XCTAssertEqual(recovered.appVersionChanged, true)
+        let fresh = try XCTUnwrap(wideEvent.started.last as? VPNSessionHealthWideEventData)
+        XCTAssertEqual(fresh.appData.version, "1.1.0")
+        XCTAssertNil(fresh.appVersionChanged)
+    }
+
+    func testWhenStoppedThenCurrentProcessStartReasonIsOmitted() throws {
+        startTunnel(.onDemand)
+        inputs.pid = 2
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        let completed = try completedEvent()
+        XCTAssertEqual(completed.processIDChanged, true)
+        XCTAssertNil(completed.currentProcessStartReason)
+    }
+
+    func testWhenRestartedWithoutStopThenCurrentProcessStartReasonIsOmitted() throws {
+        startTunnel(.manual)
+        inputs.pid = 2
+        startTunnel(.onDemand)
+
+        let completed = try completedEvent()
+        XCTAssertEqual(completed.endReason, .restartedWithoutStop)
+        XCTAssertEqual(completed.processIDChanged, true)
+        XCTAssertNil(completed.currentProcessStartReason)
+    }
+
+    func testWhenOrphanIsRecoveredByNewProcessThenCurrentProcessStartReasonIsReported() throws {
+        startTunnel(.manual)
+
+        inputs.pid = 2
+        instrumentation = makeInstrumentation()
+        startTunnel(.onDemand)
+
+        let recovered = try completedEvent()
+        XCTAssertEqual(recovered.endReason, .processDied)
+        XCTAssertEqual(recovered.startReason, .physicalTunnelStartManual)
+        XCTAssertEqual(recovered.currentProcessStartReason, .physicalTunnelStartOnDemand)
+    }
+
+    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsReported() throws {
+        startTunnel(.manual)
+
+        instrumentation = makeInstrumentation()
+        startTunnel(.onDemand)
+
+        let recovered = try completedEvent()
+        XCTAssertEqual(recovered.endReason, .processDied)
+        XCTAssertNil(recovered.processIDChanged)
+        XCTAssertEqual(recovered.currentProcessStartReason, .physicalTunnelStartOnDemand)
+    }
+
+    func testOrphanOlderThanCurrentProcessReportsDurationExceedingLifetime() throws {
+        var orphan = VPNSessionHealthWideEventData(startReason: .physicalTunnelStartManual,
+                                                   startedAt: hourStart.addingTimeInterval(-3_600),
+                                                   extensionType: .system)
+        orphan.lastObservedAt = hourStart.addingTimeInterval(-60)
+        wideEvent.startFlow(orphan)
+
+        startTunnel(.manual)
+
+        XCTAssertEqual(try completedEvent().eventDurationExceedsProcessLifetime, true)
     }
 
     // MARK: - Start attempts
@@ -515,8 +607,11 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         return DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .system,
+            processStartedAt: hourStart,
             isTelemetryEnabled: { inputs.enabled },
-            now: { inputs.date })
+            now: { inputs.date },
+            processIdentifier: { inputs.pid },
+            appVersion: { inputs.appVersion })
     }
 
     private func latestEvent(file: StaticString = #filePath, line: UInt = #line) throws -> VPNSessionHealthWideEventData {
@@ -552,6 +647,8 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 private final class InstrumentationSettings: @unchecked Sendable {
     var date: Date
     var enabled = true
+    var pid: Int32 = 1
+    var appVersion = "1.0.0"
 
     init(date: Date) {
         self.date = date

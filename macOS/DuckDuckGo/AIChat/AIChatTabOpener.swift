@@ -18,6 +18,7 @@
 
 import Foundation
 import AIChat
+import PixelKit
 
 /// Represents different triggers for opening an AI chat tab.
 ///
@@ -119,56 +120,90 @@ protocol AIChatTabOpening {
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint)
 }
 
+/// Reports the surface that just opened Duck.ai, and where it opened, as `aiChatEntryPoint`.
+protocol AIChatEntryPointReporting {
+    /// Takes the pending entry and reports it in `target`. A `nil` target drops it unreported.
+    func reportEntry(to target: AIChatEntryPointTarget?)
+
+    /// The open was abandoned: drops the pending entry and the chat's pending source.
+    func cancelEntry()
+}
+
+struct AIChatEntryPointReporter: AIChatEntryPointReporting {
+    private let sourceHandler: AIChatConversationSourceHandler
+    private let pixelFiring: PixelFiring?
+
+    init(sourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
+        self.sourceHandler = sourceHandler
+        self.pixelFiring = pixelFiring
+    }
+
+    func reportEntry(to target: AIChatEntryPointTarget?) {
+        guard let source = sourceHandler.takeUnreportedEntry(), let target else { return }
+        pixelFiring?.fire(AIChatPixel.aiChatEntryPoint(source: source, target: target), frequency: .dailyAndCount)
+    }
+
+    func cancelEntry() {
+        sourceHandler.discardPendingOpen()
+    }
+}
+
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let aiChatTabManaging: AIChatTabManaging
+    private let entryPointReporter: AIChatEntryPointReporting
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(
         promptHandler: AIChatPromptHandler,
-        aiChatTabManaging: AIChatTabManaging
+        aiChatTabManaging: AIChatTabManaging,
+        entryPointReporter: AIChatEntryPointReporting = AIChatEntryPointReporter()
     ) {
         self.promptHandler = promptHandler
         self.aiChatTabManaging = aiChatTabManaging
+        self.entryPointReporter = entryPointReporter
     }
 
     // MARK: - New Simplified API
 
     @MainActor
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
+        let target: AIChatEntryPointTarget?
         switch trigger {
         case .newChat:
-            openAIChatTab(query: nil, with: behavior, autoSubmit: true)
+            target = openAIChatTab(query: nil, with: behavior, autoSubmit: true)
 
         case .chatHistory:
             let url = AIChatURLParameters.sidebarOpenURL(from: aiChatRemoteSettings.aiChatURL)
-            aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
+            target = aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
 
         case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
-            openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
+            target = openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
 
         case .url(let url):
-            aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
+            target = aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
 
         case .payload(let payload):
-            aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
+            target = aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
 
         case .restoration(let data):
-            aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
+            target = aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
 
         case .existingChat(let chatId):
             let chatURL = buildChatURL(for: chatId)
-            aiChatTabManaging.openAIChat(chatURL, with: behavior, hasPrompt: false)
+            target = aiChatTabManaging.openAIChat(chatURL, with: behavior, hasPrompt: false)
 
         case .mode(let mode):
             let prompt = AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode)
             promptHandler.setData(prompt)
-            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
+            target = aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
 
         case .openSettings:
-            aiChatTabManaging.insertAIChatTabRequestingOpenSettings(with: aiChatRemoteSettings.aiChatURL)
+            target = aiChatTabManaging.insertAIChatTabRequestingOpenSettings(with: aiChatRemoteSettings.aiChatURL)
         }
+        entryPointReporter.reportEntry(to: target)
     }
 
     @MainActor
@@ -179,6 +214,8 @@ struct AIChatTabOpener: AIChatTabOpening {
     @MainActor
     func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior) {
         if aiChatTabManaging.focusActiveVoiceSessionTab(inSourceCollection: sourceCollection) {
+            // Nothing opened, and no chat will load to consume the stamp.
+            entryPointReporter.cancelEntry()
             return
         }
         openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: behavior)
@@ -187,23 +224,25 @@ struct AIChatTabOpener: AIChatTabOpening {
     @MainActor
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
         promptHandler.setData(.queryPrompt(query, autoSubmit: true))
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+        let target = aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+        entryPointReporter.reportEntry(to: target)
     }
 
     @MainActor
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
         promptHandler.setData(.queryPrompt(query, autoSubmit: true))
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+        let target = aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+        entryPointReporter.reportEntry(to: target)
     }
 
     // MARK: - Private Helpers
 
     @MainActor
-    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
+    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) -> AIChatEntryPointTarget? {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+        return aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
     }
 
     /// Builds a URL to open an existing chat by its ID.
@@ -222,27 +261,28 @@ struct AIChatTabOpener: AIChatTabOpening {
     }
 }
 
+/// The open methods return where Duck.ai opened, or `nil` when nothing opened.
 protocol AIChatTabManaging {
-    @MainActor
-    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
+    @MainActor @discardableResult
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) -> AIChatEntryPointTarget?
 
-    @MainActor
-    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool)
+    @MainActor @discardableResult
+    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) -> AIChatEntryPointTarget?
 
-    @MainActor
-    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool)
+    @MainActor @discardableResult
+    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) -> AIChatEntryPointTarget?
 
-    @MainActor
-    func insertAIChatTab(with url: URL, payload: AIChatPayload)
+    @MainActor @discardableResult
+    func insertAIChatTab(with url: URL, payload: AIChatPayload) -> AIChatEntryPointTarget?
 
-    @MainActor
-    func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData)
+    @MainActor @discardableResult
+    func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData) -> AIChatEntryPointTarget?
 
     /// Inserts a new Duck.ai tab and arms its `AIChatUserScript` to push the open-settings
     /// action once the page's subscriptions are wired. Used by Settings → AI Features →
     /// "Open Duck.ai Settings".
-    @MainActor
-    func insertAIChatTabRequestingOpenSettings(with url: URL)
+    @MainActor @discardableResult
+    func insertAIChatTabRequestingOpenSettings(with url: URL) -> AIChatEntryPointTarget?
 
     /// If a tab in `sourceCollection`'s window currently hosts an active Duck.ai voice session,
     /// focuses that window and selects the tab. When the original session was hosted in a Duck.ai
@@ -262,9 +302,12 @@ extension WindowControllersManager: AIChatTabManaging {
     ///   - hasPrompt: With `.currentTab`, if the current tab is already an AI chat and a prompt was supplied,
     ///                opens a fresh chat in a new selected tab so the loaded conversation is left untouched.
     ///                Ignored for `.newTab` / `.newWindow`, which always open a new tab/window.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
+    @discardableResult
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) -> AIChatEntryPointTarget? {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
+        // With no window to open in, `open` and `show` both open a new one.
+        let hasWindow = lastKeyMainWindowController != nil
 
         switch linkOpenBehavior {
         case .currentTab:
@@ -274,46 +317,63 @@ extension WindowControllersManager: AIChatTabManaging {
                     // selected tab rather than injecting the prompt into the loaded conversation,
                     // which users found confusing.
                     open(url, with: .newTab(selected: true), source: .ui, target: nil)
+                    return hasWindow ? .newTab : .newWindow
                 } else if url.getParameter(named: "chatID") != nil {
                     // Navigate to a specific existing chat — must load even if already on duck.ai
                     show(url: url, source: .ui, newTab: false)
+                    return .currentTab
                 }
+                return nil
             } else {
                 show(url: url, source: .ui, newTab: false)
+                return hasWindow ? .currentTab : .newWindow
             }
-        default:
+        case .newTab:
             open(url, with: linkOpenBehavior, source: .ui, target: nil)
+            return hasWindow ? .newTab : .newWindow
+        case .newWindow:
+            open(url, with: linkOpenBehavior, source: .ui, target: nil)
+            return .newWindow
         }
     }
 
-    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) {
+    @discardableResult
+    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) -> AIChatEntryPointTarget? {
         open(url, with: .newTab(selected: true), source: .ui, target: windowController)
+        return .newTab
     }
 
-    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) {
+    @discardableResult
+    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) -> AIChatEntryPointTarget? {
         WindowsManager.openNewWindow(with: url, source: .ui, droppingPoint: droppingPoint)
+        return .newWindow
     }
 
-    func insertAIChatTab(with url: URL, payload: AIChat.AIChatPayload) {
-        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+    @discardableResult
+    func insertAIChatTab(with url: URL, payload: AIChat.AIChatPayload) -> AIChatEntryPointTarget? {
+        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return nil }
         let newAIChatTab = Tab(content: .contentFromURL(url, source: .ui), burnerMode: tabCollectionViewModel.burnerMode)
         newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
-
+        return .newTab
     }
 
-    func insertAIChatTab(with url: URL, restorationData: AIChat.AIChatRestorationData) {
-        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+    @discardableResult
+    func insertAIChatTab(with url: URL, restorationData: AIChat.AIChatRestorationData) -> AIChatEntryPointTarget? {
+        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return nil }
         let newAIChatTab = Tab(content: .contentFromURL(url, source: .ui), burnerMode: tabCollectionViewModel.burnerMode)
         newAIChatTab.aiChat?.setAIChatRestorationData(restorationData)
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+        return .newTab
     }
 
-    func insertAIChatTabRequestingOpenSettings(with url: URL) {
-        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+    @discardableResult
+    func insertAIChatTabRequestingOpenSettings(with url: URL) -> AIChatEntryPointTarget? {
+        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return nil }
         let newAIChatTab = Tab(content: .contentFromURL(url, source: .ui), burnerMode: tabCollectionViewModel.burnerMode)
         newAIChatTab.aiChat?.requestOpenSettings()
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+        return .newTab
     }
 
     @MainActor

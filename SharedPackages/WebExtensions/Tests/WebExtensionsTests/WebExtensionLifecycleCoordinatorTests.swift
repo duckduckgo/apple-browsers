@@ -607,6 +607,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
     var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { NoOpCPMMessagingHealthMonitor() }
     func installExtension(from sourceURL: URL) async throws {}
+    func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
     @MainActor @discardableResult func uninstallAllExtensions() -> [Result<Void, Error>] { [] }
     @MainActor func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {}

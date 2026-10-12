@@ -30,6 +30,8 @@ final class AuthenticationService {
     private let authenticator: Authenticating
     private let overlayWindowManager: OverlayWindowManaging
     private let privacyStore: PrivacyStore
+    /// Whether the app has been unlocked, or needed no unlock, since launch.
+    private(set) var hasCompletedAuthentication = false
 
     init(authenticator: Authenticating = Authenticator(),
          overlayWindowManager: OverlayWindowManaging,
@@ -54,6 +56,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
     @MainActor
     func authenticate() async {
         guard shouldAuthenticate else {
+            hasCompletedAuthentication = true
             return
         }
         overlayWindowManager.removeAnyOverlay()
@@ -69,6 +72,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
     private func authenticate(with authenticationViewController: AuthenticationViewController) async {
         let didAuthenticate = await authenticator.authenticate(reason: UserText.appUnlock)
         if didAuthenticate {
+            hasCompletedAuthentication = true
             overlayWindowManager.removeAnyOverlay()
             authenticationViewController.dismiss(animated: true)
         } else {

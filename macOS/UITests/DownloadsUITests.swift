@@ -934,13 +934,13 @@ class DownloadsUITests: UITestCase {
             XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         }
 
-        // Larger file to keep download in-progress reliably
-        let url = "https://mmatechnical.com/Download/Download-Test-File/(MMA)-10GB.zip"
-        openSiteForDownloadingFile(url: url)
+        // Serve a larger file locally to keep the download in progress without an external connection.
+        let filename = "(MMA)-10GB.zip"
+        let url = URL.testsDownload(size: "10GB", filename: filename)
+        openSiteForDownloadingFile(url: url.absoluteString)
 
         // Track both the final file and the temporary .duckload file
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
-        let filename = url.components(separatedBy: "/").last ?? "(MMA)-10GB.zip"
         let finalPath = downloadsDir.appendingPathComponent(filename).path
         let tempPath = downloadsDir.appendingPathComponent(filename + ".duckload").path
         trackForCleanup(finalPath)

@@ -180,10 +180,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let ntpAfterIdleState = idleReturnEligibilityManager.ntpAfterIdleState().rawValue
 
+        let hardwareCanUpgradeOS = SupportedOSChecker().osUpgradeCapability.canUpgradeOS
+        let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager,
-                                                     isInternalUser: internalUserDecider.isInternalUser),
+                                                     isInternalUser: internalUserDecider.isInternalUser,
+                                                     canUpgradeOS: canUpgradeOS),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
                                                        featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager,

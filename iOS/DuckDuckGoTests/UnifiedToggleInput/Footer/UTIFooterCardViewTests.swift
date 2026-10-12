@@ -34,6 +34,119 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
+    func testWhenPromotionContainsSeparatorThenOnlyLocalizedPrefixIsEmphasized() throws {
+        for prefix in ["Nowość", "Nytt", "新機能"] {
+            let sut = UTIFooterCardView()
+            let title = "  \(prefix)  · Add {attachment} · More"
+            let message = UTIFooterMessageMapper().multiTabPromotionMessage(title: title)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let renderedTitle = try XCTUnwrap(label.attributedText)
+            let prefixRange = (renderedTitle.string as NSString).range(of: prefix)
+            XCTAssertNotEqual(prefixRange.location, NSNotFound)
+            for index in 0..<renderedTitle.length {
+                guard renderedTitle.attribute(.attachment, at: index, effectiveRange: nil) == nil else { continue }
+                let expectedFont: UIFont = NSLocationInRange(index, prefixRange) ? .daxFootnoteSemibold() : .daxFootnoteRegular()
+                XCTAssertEqual(renderedTitle.attribute(.font, at: index, effectiveRange: nil) as? UIFont, expectedFont, prefix)
+            }
+            XCTAssertTrue(renderedTitle.string.contains("\u{fffc}"))
+            XCTAssertFalse(renderedTitle.string.contains("{attachment}"))
+            XCTAssertEqual(label.accessibilityLabel,
+                           title.replacingOccurrences(of: "{attachment}", with: UserText.aiChatMultiTabPromotionAttachment))
+        }
+    }
+
+    func testWhenPromotionHasNoPrefixOrSeparatorThenTitleIsNotEmphasized() throws {
+        for title in ["Nowość Add {attachment}", "  · Add {attachment}"] {
+            let sut = UTIFooterCardView()
+            let message = UTIFooterMessageMapper().multiTabPromotionMessage(title: title)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let renderedTitle = try XCTUnwrap(label.attributedText)
+            renderedTitle.enumerateAttributes(in: NSRange(location: 0, length: renderedTitle.length)) { attributes, _, _ in
+                guard attributes[.attachment] == nil else { return }
+                XCTAssertEqual(attributes[.font] as? UIFont, .daxFootnoteRegular())
+            }
+            XCTAssertTrue(renderedTitle.string.contains("\u{fffc}"))
+            XCTAssertEqual(label.accessibilityLabel,
+                           title.replacingOccurrences(of: "{attachment}", with: UserText.aiChatMultiTabPromotionAttachment))
+        }
+    }
+
+    func testSwitchingFromPromotionToPlainTitleRestoresOriginalPresentation() throws {
+        for message in [makeMessage(), makeNotice()] {
+            let sut = UTIFooterCardView()
+            sut.configure(with: UTIFooterMessageMapper().multiTabPromotionMessage(), animateIcon: false)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let reference = UTIFooterCardView()
+            reference.configure(with: message, animateIcon: false)
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let referenceLabel = try XCTUnwrap(titleLabel(in: reference))
+            XCTAssertEqual(label.text, message.title)
+            XCTAssertEqual(label.font, referenceLabel.font)
+            XCTAssertEqual(label.accessibilityLabel, referenceLabel.accessibilityLabel)
+            if let title = label.attributedText {
+                title.enumerateAttribute(.attachment, in: NSRange(location: 0, length: title.length)) { value, _, _ in
+                    XCTAssertNil(value)
+                }
+            }
+        }
+    }
+
+    func testStackedTermsAndPrivacyHaveTheSameTextGapAsBottomPadding() throws {
+        let terms = UTIFooterCardView()
+        let privacy = UTIFooterCardView()
+        let mapper = UTIFooterMessageMapper()
+        terms.configure(with: mapper.termsOfServiceMessage(), animateIcon: false)
+        privacy.configure(with: mapper.attachmentPrivacyMessage(), animateIcon: false)
+        privacy.isBelowAnotherCard = true
+        let stack = UIStackView(arrangedSubviews: [terms, privacy])
+        stack.axis = .vertical
+        stack.spacing = -UTIFooterCardView.overlap
+        let width: CGFloat = 1024
+        stack.frame = CGRect(x: 0, y: 0, width: width, height: 200)
+        stack.layoutIfNeeded()
+        let size = stack.systemLayoutSizeFitting(CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                                                withHorizontalFittingPriority: .required,
+                                                verticalFittingPriority: .fittingSizeLevel)
+        stack.frame = CGRect(origin: .zero, size: size)
+        stack.setNeedsLayout()
+        stack.layoutIfNeeded()
+
+        let termsText = try XCTUnwrap(linkTextView(in: terms))
+        let privacyText = try XCTUnwrap(linkTextView(in: privacy))
+        let termsFrame = stack.convert(termsText.bounds, from: termsText)
+        let privacyFrame = stack.convert(privacyText.bounds, from: privacyText)
+        let bottomGap = stack.bounds.maxY - privacyFrame.maxY
+        XCTAssertLessThan(termsFrame.height, 34)
+        XCTAssertEqual(privacyFrame.minY - termsFrame.maxY, bottomGap, accuracy: 0.5)
+        XCTAssertEqual(bottomGap, 12, accuracy: 0.5)
+    }
+
+    func testReusingDisclosureCardRestoresVisibleControlHeights() throws {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().termsOfServiceMessage(), animateIcon: false)
+        sut.configure(with: makeMessage(title: "Limit", subtitle: nil), animateIcon: false)
+        sut.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: height(of: sut))
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        let action = try XCTUnwrap(actionButton(in: sut))
+        let dismiss = try XCTUnwrap(dismissButton(in: sut))
+        XCTAssertFalse(action.isHidden)
+        XCTAssertFalse(dismiss.isHidden)
+        XCTAssertEqual(action.bounds.height, 34, accuracy: 0.5)
+        XCTAssertEqual(dismiss.bounds.height, 32, accuracy: 0.5)
+        XCTAssertGreaterThanOrEqual(sut.contentView.bounds.height, action.bounds.height)
+        XCTAssertGreaterThanOrEqual(sut.contentView.bounds.height, dismiss.bounds.height)
+    }
+
     func testPrivacyUsesNativeLinkAndHidesItOnReuse() throws {
         let sut = UTIFooterCardView()
         let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
@@ -115,6 +228,20 @@ final class UTIFooterCardViewTests: XCTestCase {
         sut.configure(with: makeMessage(), animateIcon: false)
 
         XCTAssertGreaterThan(height(of: sut), UTIFooterCardView.overlap + 34)
+    }
+
+    func test_cardHeight_dropsTheTopGapWhenStackedUnderAnotherCard() {
+        let sut = UTIFooterCardView()
+        sut.configure(with: makeMessage(), animateIcon: false)
+        let standalone = height(of: sut)
+
+        sut.isBelowAnotherCard = true
+        let stacked = height(of: sut)
+
+        XCTAssertEqual(standalone - stacked, 12, accuracy: 0.5)
+
+        sut.isBelowAnotherCard = false
+        XCTAssertEqual(height(of: sut), standalone, accuracy: 0.5)
     }
 
     /// The whole message has to be readable, reset line beside it or not.
@@ -314,6 +441,28 @@ final class UTIFooterCardViewTests: XCTestCase {
         }
     }
 
+    func test_oneLineLinkCopy_isCenteredOnItsIcon() throws {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().termsOfServiceMessage(), animateIcon: false)
+        let wideCardWidth: CGFloat = 900
+        sut.frame = CGRect(x: 0, y: 0, width: wideCardWidth, height: 0)
+        sut.layoutIfNeeded()
+        let height = sut.systemLayoutSizeFitting(CGSize(width: wideCardWidth, height: UIView.layoutFittingCompressedSize.height),
+                                                 withHorizontalFittingPriority: .required,
+                                                 verticalFittingPriority: .fittingSizeLevel).height
+        sut.frame = CGRect(x: 0, y: 0, width: wideCardWidth, height: height)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        let linkText = try XCTUnwrap(linkTextView(in: sut))
+        let shield = try XCTUnwrap(sut.contentView.subviews.first { $0.accessibilityIdentifier == "AIChat.Footer.Icon.Shield" })
+        let oneLine = linkText.sizeThatFits(CGSize(width: linkText.bounds.width, height: CGFloat.greatestFiniteMagnitude)).height
+        XCTAssertLessThan(oneLine, UIFont.daxFootnoteRegular().lineHeight * 2, "The copy has to fit one line for this to mean anything")
+        XCTAssertEqual(linkText.bounds.height, oneLine, accuracy: 0.5)
+        let linkTextCenter = sut.contentView.convert(CGPoint(x: linkText.bounds.midX, y: linkText.bounds.midY), from: linkText)
+        XCTAssertEqual(shield.center.y, linkTextCenter.y, accuracy: 0.5)
+    }
+
     func testPurchaseAvailabilityRemovesAndRestoresRenderedButtonWhileKeepingNotice() throws {
         let card = UTIFooterCardView()
         let mapper = UTIFooterMessageMapper()
@@ -337,6 +486,20 @@ final class UTIFooterCardViewTests: XCTestCase {
         }
     }
 
+    func test_infoIcon_matchesTheShieldTint() {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().attachmentPrivacyMessage(), animateIcon: false)
+        let info = try? XCTUnwrap(infoIcon(in: sut))
+        let shield = sut.subviews.flatMap(\.subviews).compactMap { $0 as? UIImageView }
+            .first { $0.accessibilityIdentifier == "AIChat.Footer.Icon.Shield" }
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            let expected = UIColor(designSystemColor: .iconsSecondary).resolvedColor(with: traits)
+            XCTAssertEqual(info?.tintColor.resolvedColor(with: traits), expected)
+            XCTAssertEqual(shield?.tintColor.resolvedColor(with: traits), expected)
+        }
+    }
+
     // MARK: - Helpers
 
     /// Lays the card out at phone width for `isDismissible` and reports the trailing edge of the
@@ -354,6 +517,11 @@ final class UTIFooterCardViewTests: XCTestCase {
             return 0
         }
         return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func linkTextView(in card: UTIFooterCardView) -> UTIFooterLinkTextView? {
+        card.subviews.flatMap(\.subviews).compactMap { $0 as? UIStackView }.first?
+            .arrangedSubviews.compactMap { $0 as? UTIFooterLinkTextView }.first
     }
 
     private func layOut(_ card: UTIFooterCardView, atWidth width: CGFloat) {

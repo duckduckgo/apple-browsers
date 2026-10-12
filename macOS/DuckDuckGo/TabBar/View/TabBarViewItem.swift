@@ -178,12 +178,12 @@ final class TabBarItemCellView: NSView {
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
         crashIndicatorButton.bezelStyle = .shadowlessSquare
-        crashIndicatorButton.normalTintColor = .audioTabIcon
-        crashIndicatorButton.mouseDownColor = .buttonMouseDown
-        crashIndicatorButton.mouseOverColor = .buttonMouseOver
+        crashIndicatorButton.normalTintColor = NSColor(resource: .audioTabIcon)
+        crashIndicatorButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        crashIndicatorButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         crashIndicatorButton.imagePosition = .imageOnly
         crashIndicatorButton.imageScaling = .scaleNone
-        crashIndicatorButton.image = .tabCrash
+        crashIndicatorButton.image = NSImage(resource: .tabCrash)
         crashIndicatorButton.isHidden = true
         return crashIndicatorButton
     }()
@@ -191,21 +191,21 @@ final class TabBarItemCellView: NSView {
     fileprivate let audioButton = {
         let audioButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.audioButtonAction))
         audioButton.bezelStyle = .shadowlessSquare
-        audioButton.normalTintColor = .audioTabIcon
-        audioButton.mouseDownColor = .buttonMouseDown
-        audioButton.mouseOverColor = .buttonMouseOver
+        audioButton.normalTintColor = NSColor(resource: .audioTabIcon)
+        audioButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        audioButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         audioButton.imagePosition = .imageOnly
         audioButton.imageScaling = .scaleNone
         return audioButton
     }()
 
     fileprivate lazy var closeButton = {
-        let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
+        let closeButton = MouseOverButton(image: NSImage(resource: .close), target: nil, action: #selector(TabBarViewItem.closeButtonAction))
         closeButton.frame.size = NSSize(width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
         closeButton.bezelStyle = .shadowlessSquare
-        closeButton.normalTintColor = .button
-        closeButton.mouseDownColor = .buttonMouseDown
-        closeButton.mouseOverColor = .buttonMouseOver
+        closeButton.normalTintColor = NSColor(resource: .button)
+        closeButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        closeButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         closeButton.imagePosition = .imageOnly
         closeButton.imageScaling = .scaleNone
         closeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
@@ -411,12 +411,12 @@ final class TabBarItemCellView: NSView {
         if crashIndicatorButton.isShown {
             crashIndicatorButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
             crashIndicatorButton.cornerRadius = faviconFrame.height/2
-            crashIndicatorButton.backgroundColor = .pinnedTabMuteStateCircle
+            crashIndicatorButton.backgroundColor = NSColor(resource: .pinnedTabMuteStateCircle)
             crashIndicatorButton.mouseOverColor = nil
         } else if audioButton.isShown {
             audioButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
             audioButton.cornerRadius = faviconFrame.height/2
-            audioButton.backgroundColor = .pinnedTabMuteStateCircle
+            audioButton.backgroundColor = NSColor(resource: .pinnedTabMuteStateCircle)
             audioButton.mouseOverColor = nil
         }
     }
@@ -703,7 +703,7 @@ final class TabBarViewItem: NSCollectionViewItem {
             view.layer?.zPosition = isSelected ? 1 : 0
 
             if isSelected && theme.tabStyleProvider.applyTabShadow {
-                view.layer?.shadowColor = NSColor.shadowPrimary.cgColor
+                view.layer?.shadowColor = NSColor(resource: .shadowPrimary).cgColor
                 view.layer?.shadowOffset = CGSize(width: 0, height: -2)
                 view.layer?.shadowRadius = 6
                 view.layer?.masksToBounds = false
@@ -1119,13 +1119,13 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.audioButton.isHidden = true
 
         case .muted(isPlayingAudio: true):
-            cell.audioButton.image = .audioMute
+            cell.audioButton.image = NSImage(resource: .audioMute)
             cell.audioButton.isHidden = false
             cell.audioButton.toolTip = UserText.unmuteTab
             cell.audioButton.setAccessibilityTitle(UserText.unmuteTab)
 
         case .unmuted(isPlayingAudio: true):
-            cell.audioButton.image = .audio
+            cell.audioButton.image = NSImage(resource: .audio)
             cell.audioButton.isHidden = false
             cell.audioButton.toolTip = UserText.muteTab
             cell.audioButton.setAccessibilityTitle(UserText.muteTab)
@@ -1463,27 +1463,27 @@ extension TabBarViewItem: MouseClickViewDelegate {
             .init(width: TabBarViewItem.Width.maximum, title: "about:blank", favicon: nil, selected: true),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "DuckDuckGo", favicon: .homeFavicon, selected: false),
-            .init(width: TabBarViewItem.Width.maximum, title: "Appearance", favicon: .appearance, selected: true),
-            .init(width: TabBarViewItem.Width.maximum, title: "Bookmarks", favicon: .bookmarksFolder, selected: false),
+            .init(width: TabBarViewItem.Width.maximum, title: "DuckDuckGo", favicon: NSImage(resource: .homeFavicon), selected: false),
+            .init(width: TabBarViewItem.Width.maximum, title: "Appearance", favicon: NSImage(resource: .appearance), selected: true),
+            .init(width: TabBarViewItem.Width.maximum, title: "Bookmarks", favicon: NSImage(resource: .bookmarksFolder), selected: false),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: .aDark, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: NSImage(resource: .aDark), usedPermissions: [
                 .camera: .paused,
             ], audioState: .muted(isPlayingAudio: true)),
             .init(width: TabBarViewItem.Width.maximum, title: "Somewhere all we go now to get totally drunk", favicon: nil),
-            .init(width: TabBarViewItem.Width.maximum, title: "Long Previewable Title with Permissions", favicon: .h, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Long Previewable Title with Permissions", favicon: NSImage(resource: .h), usedPermissions: [
                 .camera: .paused,
             ], audioState: .muted(isPlayingAudio: true)),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to be shrunk", favicon: .aDark, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to be shrunk", favicon: NSImage(resource: .aDark), usedPermissions: [
                 .camera: .active
             ], audioState: .muted(isPlayingAudio: true), selected: true),
-            .init(width: TabBarViewItem.Width.maximum, title: "Test 1", favicon: .homeFavicon, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Test 1", favicon: NSImage(resource: .homeFavicon), usedPermissions: [
                 .camera: .disabled(systemWide: true),
             ], audioState: .muted(isPlayingAudio: true)),
-            .init(width: TabBarViewItem.Width.maximum, title: "Test 2", favicon: .homeFavicon, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Test 2", favicon: NSImage(resource: .homeFavicon), usedPermissions: [
                 .camera: .paused,
             ], audioState: .muted(isPlayingAudio: true)),
         ],
@@ -1496,51 +1496,51 @@ extension TabBarViewItem: MouseClickViewDelegate {
             ], selected: false),
         ],
         [
-            .init(width: TabBarViewItem.mediumWidth, title: "DuckDuckGo", favicon: .homeFavicon, selected: false),
-            .init(width: TabBarViewItem.Width.maximum, title: "Appearance", favicon: .appearance, selected: true),
-            .init(width: TabBarViewItem.mediumWidth, title: "Bookmarks", favicon: .bookmarksFolder, selected: false),
-            .init(width: TabBarViewItem.mediumWidth, title: "Appearance", favicon: .appearance, usedPermissions: [
+            .init(width: TabBarViewItem.mediumWidth, title: "DuckDuckGo", favicon: NSImage(resource: .homeFavicon), selected: false),
+            .init(width: TabBarViewItem.Width.maximum, title: "Appearance", favicon: NSImage(resource: .appearance), selected: true),
+            .init(width: TabBarViewItem.mediumWidth, title: "Bookmarks", favicon: NSImage(resource: .bookmarksFolder), selected: false),
+            .init(width: TabBarViewItem.mediumWidth, title: "Appearance", favicon: NSImage(resource: .appearance), usedPermissions: [
                 .microphone: .active
             ]),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: .aDark, selected: true),
+            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: NSImage(resource: .aDark), selected: true),
             .init(width: TabBarViewItem.mediumWidth, title: "Somewhere all we go now to get totally drunk", favicon: nil),
-            .init(width: TabBarViewItem.mediumWidth, title: "Long Previewable Title with Permissions", favicon: .b, usedPermissions: [
+            .init(width: TabBarViewItem.mediumWidth, title: "Long Previewable Title with Permissions", favicon: NSImage(resource: .b), usedPermissions: [
                 .camera: .paused,
             ], audioState: .muted(isPlayingAudio: true)),
-            .init(width: TabBarViewItem.mediumWidth, title: "Long Previewable Title with Permissions", favicon: .h, usedPermissions: [
+            .init(width: TabBarViewItem.mediumWidth, title: "Long Previewable Title with Permissions", favicon: NSImage(resource: .h), usedPermissions: [
                 .camera: .active,
             ]),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to be shrunk", favicon: .aDark, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to be shrunk", favicon: NSImage(resource: .aDark), usedPermissions: [
                 .camera: .active
             ], audioState: .muted(isPlayingAudio: true), selected: true),
-            .init(width: TabBarViewItem.mediumWidth, title: "Test 1", favicon: .homeFavicon, usedPermissions: [
+            .init(width: TabBarViewItem.mediumWidth, title: "Test 1", favicon: NSImage(resource: .homeFavicon), usedPermissions: [
                 .camera: .disabled(systemWide: true),
             ], audioState: .unmuted(isPlayingAudio: true)),
             .init(width: TabBarViewItem.mediumWidth, title: "Test 2", favicon: nil, usedPermissions: [
                 .microphone: .active,
             ], audioState: .muted(isPlayingAudio: true)),
-                  .init(width: TabBarViewItem.mediumWidth, title: "Test 2", favicon: .homeFavicon, audioState: .unmuted(isPlayingAudio: true)),
+                  .init(width: TabBarViewItem.mediumWidth, title: "Test 2", favicon: NSImage(resource: .homeFavicon), audioState: .unmuted(isPlayingAudio: true)),
         ],
 
         [
-            .init(width: TabBarViewItem.Width.minimum, title: "Test 9", favicon: .a, usedPermissions: [
+            .init(width: TabBarViewItem.Width.minimum, title: "Test 9", favicon: NSImage(resource: .a), usedPermissions: [
                 .microphone: .active,
             ]),
-            .init(width: TabBarViewItem.Width.maximum, title: "Test 10", favicon: .error, usedPermissions: [
+            .init(width: TabBarViewItem.Width.maximum, title: "Test 10", favicon: NSImage(resource: .error), usedPermissions: [
                 .camera: .paused,
             ], audioState: .unmuted(isPlayingAudio: true), selected: true),
-            .init(width: TabBarViewItem.Width.minimum, title: "Test 11", favicon: .b, usedPermissions: [
+            .init(width: TabBarViewItem.Width.minimum, title: "Test 11", favicon: NSImage(resource: .b), usedPermissions: [
                 .camera: .active,
             ], audioState: .unmuted(isPlayingAudio: true)),
-            .init(width: TabBarViewItem.Width.minimum, title: "Test 12", favicon: .c, usedPermissions: [
+            .init(width: TabBarViewItem.Width.minimum, title: "Test 12", favicon: NSImage(resource: .c), usedPermissions: [
                 .microphone: .active,
             ], audioState: .muted(isPlayingAudio: true)),
-            .init(width: TabBarViewItem.Width.minimum, title: "Test 13", favicon: .d),
-            .init(width: TabBarViewItem.Width.minimum, title: "Test 14", favicon: .e, usedPermissions: [
+            .init(width: TabBarViewItem.Width.minimum, title: "Test 13", favicon: NSImage(resource: .d)),
+            .init(width: TabBarViewItem.Width.minimum, title: "Test 14", favicon: NSImage(resource: .e), usedPermissions: [
                 .camera: .paused,
             ], audioState: .unmuted(isPlayingAudio: true)),
             .init(width: TabBarViewItem.Width.minimum, title: "Test 16", favicon: nil, usedPermissions: [
@@ -1604,7 +1604,7 @@ extension TabBarViewItem {
             @Published var isSuspended: Bool = false
             var canBeSuspended: Bool = true
 
-            init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
+            init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = NSImage(resource: .aDark), tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width
                 self.title = title
                 self.url = url
@@ -1668,7 +1668,7 @@ extension TabBarViewItem {
                     collectionView.heightAnchor.constraint(equalToConstant: 38),
                 ])
 
-                let separator = ColorView(frame: .zero, backgroundColor: .navigationBarBackground, borderColor: .separator, borderWidth: 1)
+                let separator = ColorView(frame: .zero, backgroundColor: NSColor(resource: .navigationBarBackground), borderColor: NSColor(resource: .separator), borderWidth: 1)
                 view.addSubview(separator)
                 constraints.append(contentsOf: [
                     separator.topAnchor.constraint(equalTo: collectionView.topAnchor, constant: 34),

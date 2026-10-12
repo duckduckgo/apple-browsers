@@ -37,7 +37,8 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
             footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton, action: {
                 onComplete()
                 onNext()
-            }))) {
+            })),
+            footerBlur: true) {
             WidgetEducationContentView(
                 thirdParagraphText: UserText.addVPNWidgetSettingsThirdParagraph,
                 thirdParagraphDetail: .image(

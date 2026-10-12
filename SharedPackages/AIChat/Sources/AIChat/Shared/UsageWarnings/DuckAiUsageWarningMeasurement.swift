@@ -78,6 +78,7 @@ public enum DuckAiUsageWarningMeasurementEvent: Equatable {
     case dismissed(DuckAiUsageWarningExposure)
     case switchModelTapped(DuckAiUsageWarningExposure)
     case upsellTapped(DuckAiUsageWarningExposure)
+    case weeklyLimitTapped(DuckAiUsageWarningExposure)
     case promptSubmitted(DuckAiUsageWarningExposure)
     case modelSwitched(DuckAiUsageWarningExposure)
     case abandoned(DuckAiUsageWarningExposure)
@@ -102,6 +103,7 @@ public final class DuckAiUsageWarningMeasurement {
     public enum CTA {
         case switchModel
         case upsell
+        case weeklyLimit
     }
 
     private struct Exposure {
@@ -143,6 +145,7 @@ public final class DuckAiUsageWarningMeasurement {
         switch cta {
         case .switchModel: pixelFiring.fire(.switchModelTapped(exposure.subject))
         case .upsell: pixelFiring.fire(.upsellTapped(exposure.subject))
+        case .weeklyLimit: pixelFiring.fire(.weeklyLimitTapped(exposure.subject))
         }
     }
 

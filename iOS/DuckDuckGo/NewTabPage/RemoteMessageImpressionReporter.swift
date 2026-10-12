@@ -20,6 +20,12 @@
 import Combine
 import UIKit
 
+/// Implemented by the controller that actually hosts a remote message, including SwiftUI surfaces.
+@MainActor
+protocol RemoteMessagePresenting: AnyObject {
+    func hasVisibleRemoteMessage(withID messageID: String) -> Bool
+}
+
 @MainActor
 final class RemoteMessageImpressionReporter {
 
@@ -174,8 +180,9 @@ final class RemoteMessageImpressionReporter {
             ancestor = view.superview
         }
         guard surfaceView.convert(surfaceView.bounds, to: window).intersects(window.bounds) else { return false }
-        if let page = controller as? NewTabPageViewController {
-            return page.isRemoteMessageSurfacePresented && page.hasAppearedRemoteMessage(withID: messageID)
+        if let surface = controller as? RemoteMessagePresenting,
+           surface.hasVisibleRemoteMessage(withID: messageID) {
+            return true
         }
         return controller.children.contains { containsVisibleRemoteMessage(messageID, in: $0, window: window) }
     }

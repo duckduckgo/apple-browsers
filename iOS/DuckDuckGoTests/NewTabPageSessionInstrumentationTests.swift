@@ -148,6 +148,7 @@ struct NewTabPageSessionInstrumentationTests {
     func actionsWithoutActiveVisitAreNoops() {
         let (sut, wideEvent, _) = makeSUT()
 
+        sut.keyboardRaisedOnArrival()
         for action in actionCases() {
             action.invoke(sut)
         }
@@ -276,6 +277,56 @@ struct NewTabPageSessionInstrumentationTests {
 
         #expect(wideEvent.updates.isEmpty)
         #expect(wideEvent.started.count == 1)
+    }
+
+    // MARK: - Keyboard raised on arrival
+
+    @available(iOS 16, *)
+    @Test("Arrival focus reports keyboard up without an interaction or resetting the timeout", .timeLimit(.minutes(1)))
+    func whenKeyboardRaisedOnArrivalThenVisitReportsKeyboardUp() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout - 5)
+        sut.keyboardRaisedOnArrival()
+        clock.advance(by: 6)
+        sut.visitBackgrounded()
+
+        let visit = lastCompletion(wideEvent)?.0
+        #expect(visit?.launchKeyboardMode == .up)
+        #expect(visit?.actionCount == 0)
+        #expect(visit?.firstInteractionInterval.end == nil)
+        #expect(visit?.terminalAction == .noActionTimeout)
+        #expect(wideEvent.updates.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("When the user acted first then a raised keyboard leaves the starting mode", .timeLimit(.minutes(1)))
+    func whenUserActedFirstThenRaisedKeyboardLeavesStartingMode() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: 0.1)
+        sut.scrollView()
+        sut.keyboardRaisedOnArrival()
+        sut.visitBackgrounded()
+
+        #expect(lastCompletion(wideEvent)?.0.launchKeyboardMode == .down)
+    }
+
+    @available(iOS 16, *)
+    @Test("When the visit already timed out then a raised keyboard leaves it down", .timeLimit(.minutes(1)))
+    func whenVisitTimedOutThenRaisedKeyboardLeavesItDown() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout)
+        sut.keyboardRaisedOnArrival()
+        sut.visitBackgrounded()
+
+        let visit = lastCompletion(wideEvent)?.0
+        #expect(visit?.launchKeyboardMode == .down)
+        #expect(visit?.terminalAction == .noActionTimeout)
     }
 
     // MARK: - Terminals

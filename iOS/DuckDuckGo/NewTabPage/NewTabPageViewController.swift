@@ -27,7 +27,7 @@ import Onboarding
 import RemoteMessaging
 import Subscription
 
-final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
+final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage, RemoteMessagePresenting {
 
     var isShowingLogo: Bool {
         guard !newTabPageViewModel.isLogoHidden else { return false }
@@ -439,6 +439,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     // MARK: - RMF
+
+    func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
+        isRemoteMessageSurfacePresented && hasAppearedRemoteMessage(withID: messageID)
+    }
 
     func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
         messagesModel.hasAppearedRemoteMessage(withID: messageID)

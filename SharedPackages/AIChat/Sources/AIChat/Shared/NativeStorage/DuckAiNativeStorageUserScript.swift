@@ -54,7 +54,8 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     /// falling back to disk.
     public var fireModeStorageProvider: (() -> DuckAiFireModeStorage)?
 
-    private var handler: DuckAiNativeStorageHandling {
+    /// The store for the surrounding webview, resolved through `fireModeStorageProvider`.
+    var handler: DuckAiNativeStorageHandling {
         switch fireModeStorageProvider?() ?? .notFireMode {
         case .notFireMode:
             return diskHandler

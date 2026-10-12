@@ -21,6 +21,11 @@ import AIChat
 
 /// A frozen attachment selection, collected before its prompt is dispatched.
 struct MultiTabAttachmentRequest {
+    struct SubmissionResult {
+        let totalTabCount: Int
+        let additionalTabCount: Int
+    }
+
     /// Returns available contexts in attachment order. Additional tabs carry their stable `tabId`;
     /// only the current page may omit it. Preparation and its timeouts belong to the provider.
     let contexts: @MainActor () async -> [AIChatPageContextData]
@@ -28,4 +33,6 @@ struct MultiTabAttachmentRequest {
     var cancel: @MainActor () -> Void = {}
     /// Rechecks source eligibility and feature availability without requiring collected pages to remain unchanged.
     var validate: @MainActor ([AIChatPageContextData]) -> [AIChatPageContextData] = { $0 }
+    /// Called after dispatch, including when none of the requested additional contexts survived.
+    var didDispatch: @MainActor (SubmissionResult) -> Void = { _ in }
 }

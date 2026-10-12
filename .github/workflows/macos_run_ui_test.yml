@@ -14,7 +14,7 @@ on:
     inputs:
       runner:
         # A workflow_call input cannot be an array, so the caller passes toJSON of its label list.
-        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-26\",\"ui-tests\"]'."
+        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-27\",\"ui-tests\"]'."
         required: true
         type: string
       os-version:
@@ -22,8 +22,8 @@ on:
         required: true
         type: string
       xcode-version:
-        description: "Xcode version to select (e.g. '26.6')"
-        required: true
+        description: "Xcode version override; defaults to the checked-out .xcode-version file"
+        required: false
         type: string
       test:
         description: "The UITestCase class to run"
@@ -116,6 +116,14 @@ jobs:
       if: inputs.os-version != '14'
       run: brew install screenresolution
 
+    - name: Ensure GNU timeout is available
+      shell: bash
+      timeout-minutes: 5
+      run: |
+        if ! command -v gtimeout >/dev/null && ! command -v timeout >/dev/null; then
+          brew install coreutils
+        fi
+
     - name: Change screen resolution
       if: inputs.os-version != '14'
       run: screenresolution set 1920x1080x32@60
@@ -195,19 +203,34 @@ jobs:
         echo $! > log_stream.pid
 
     - name: Resolve package dependencies
+      id: resolve-packages
       working-directory: macOS
+      shell: bash
+      timeout-minutes: 30
+      env:
+        RESOLVE_SCHEME: ${{ env.scheme }}
       run: |
         max_attempts=5
         retry_delay=10
+        TIMEOUT_BIN="$(command -v gtimeout || command -v timeout)"
 
         for attempt in $(seq 1 $max_attempts); do
+          attempt_directory="package-resolution/attempt-${attempt}"
+          mkdir -p "$attempt_directory"
           echo "Attempt $attempt of $max_attempts"
-          if xcodebuild -resolvePackageDependencies \
-            -scheme "${{ env.scheme }}" \
+          if "$TIMEOUT_BIN" --verbose --kill-after=10s 5m \
+            xcodebuild -resolvePackageDependencies \
+            -scheme "$RESOLVE_SCHEME" \
             -derivedDataPath DerivedData \
-            2>&1 | tee resolve.log; then
+            2>&1 | tee "$attempt_directory/resolve.log"; then
             echo "Package resolution succeeded"
             exit 0
+          else
+            status=$?
+            echo "Package resolution exited with status $status (attempt $attempt)"
+            if [[ $status -eq 130 || $status -eq 143 ]]; then
+              exit "$status"
+            fi
           fi
 
           if [[ $attempt -lt $max_attempts ]]; then
@@ -217,6 +240,14 @@ jobs:
         done
         echo "Package resolution failed after $max_attempts attempts"
         exit 1
+
+    - name: Upload package resolution logs
+      if: always() && steps.resolve-packages.outcome != 'skipped'
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "package-resolution-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
+        path: macOS/package-resolution/
+        retention-days: 7
 
     - name: Restore Xcode Compilation Cache
       if: runner.environment != 'self-hosted'
@@ -294,6 +325,7 @@ jobs:
           -scheme "${{ env.scheme }}" \
           "${test_plan_args[@]}" \
           -derivedDataPath DerivedData \
+          -resultBundlePath "DerivedData/Logs/Test/macOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \

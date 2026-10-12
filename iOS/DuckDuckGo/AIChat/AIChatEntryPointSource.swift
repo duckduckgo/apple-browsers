@@ -62,6 +62,8 @@ public enum AIChatEntryPointSource: String {
     case ipadTogglePrompt = "ipad_toggle_prompt"
     case browsingMenuNTP = "browsing_menu_ntp"
     case browsingMenuWebpage = "browsing_menu_webpage"
+    case browsingMenuDuckAI = "browsing_menu_duckai"
+    case duckAINewChat = "duck_ai_new_chat"
     case tabSwitcher = "tab_switcher"
     case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarButton = "tabs_bar_button"

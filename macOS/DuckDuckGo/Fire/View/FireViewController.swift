@@ -67,7 +67,7 @@ final class FireViewController: NSViewController {
     // UI Elements
     private lazy var transparentBackgroundView: ColorView = {
         // Clicks used to fall through to the page and tab bar while a burn was in progress.
-        let view = ColorView(frame: .zero, backgroundColor: .fireBackground, interceptClickEvents: true)
+        let view = ColorView(frame: .zero, backgroundColor: NSColor(resource: .fireBackground), interceptClickEvents: true)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -91,7 +91,7 @@ final class FireViewController: NSViewController {
         // The legacy dialog keeps its fixed background color, which its design was made for.
         let backgroundColor: NSColor = featureFlagger.isFeatureOn(.fireDialogSimplified)
             ? .init(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette)
-            : .newTabPageBackground
+            : NSColor(resource: .newTabPageBackground)
         let view = ColorView(frame: .zero, backgroundColor: backgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.cornerRadius = featureFlagger.isFeatureOn(.fireDialogSimplified) ? 24 : 8
@@ -142,7 +142,7 @@ final class FireViewController: NSViewController {
     private lazy var fakeFireButtonIconView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
+        imageView.image = DesignSystemRebrand.isAppRebranded() ? NSImage(resource: .burnAlert) : NSImage(resource: .burnAlertLegacy)
         return imageView
     }()
 
@@ -323,7 +323,7 @@ final class FireViewController: NSViewController {
         animationView.animationSpeed = settings.animationSpeed
 
         fakeFireButton.wantsLayer = true
-        fakeFireButton.layer?.backgroundColor = NSColor.buttonMouseDown.cgColor
+        fakeFireButton.layer?.backgroundColor = NSColor(resource: .buttonMouseDown).cgColor
 
         fakeFireButton.setAccessibilityIdentifier("FireViewController.fakeFireButton")
         subscribeToIsBurning()

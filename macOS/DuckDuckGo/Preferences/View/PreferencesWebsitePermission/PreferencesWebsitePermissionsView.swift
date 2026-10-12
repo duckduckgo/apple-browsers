@@ -79,7 +79,7 @@ struct PreferencesWebsitePermissionsView: View {
 
     private func recentRow(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
         PreferencesWebsitePermissionSiteRowView(
-            domain: row.domain,
+            domain: row.displayName,
             faviconURL: row.faviconURL,
             permissionType: row.permissionType,
             permissionTitle: row.permissionTitle,

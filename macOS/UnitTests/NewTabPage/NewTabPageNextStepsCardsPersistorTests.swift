@@ -218,22 +218,6 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         XCTAssertEqual(persistor.firstCardLevel, level)
     }
 
-    // MARK: - First Session Tests
-
-    func testIsFirstSessionReturnsTrueByDefault() {
-        XCTAssertTrue(persistor.isFirstSession)
-    }
-
-    func testWhenIsFirstSessionIsSetThenValueIsStored() throws {
-        persistor.isFirstSession = false
-        XCTAssertEqual(try keyValueStore.object(forKey: "new.tab.page.next.steps.is.first.session") as? Bool, false)
-    }
-
-    func testWhenIsFirstSessionIsRetrievedThenStoredValueIsReturned() throws {
-        try keyValueStore.set(false, forKey: "new.tab.page.next.steps.is.first.session")
-        XCTAssertEqual(persistor.isFirstSession, false)
-    }
-
     // MARK: - Clear Method Tests
 
     func testWhenClearIsCalledThenAllCardDataIsRemoved() throws {

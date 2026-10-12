@@ -83,7 +83,7 @@ final class TabTests: XCTestCase {
         let tabs: [Tab.Content] = [
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),
-            .dataBrokerProtection,
+            .dataBrokerProtection(.subscribed),
             .anyHistoryPane,
             .settings(pane: .general),
             .newtab,
@@ -493,6 +493,24 @@ final class TabTests: XCTestCase {
     @MainActor func testCanReportBrokenSiteIsTrueForAIChatContent() {
         tab = Tab(content: .aiChat(.duckDuckGo))
         XCTAssertTrue(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testWhenTheOpenDuckAIURLIsSetAgainWithAnotherSourceThenNothingChanges() {
+        let url = URL(string: "https://duck.ai/chat")!
+        tab = Tab(content: .aiChat(url))
+
+        tab.setContent(.aiChat(url, source: .userEntered("duck.ai")))
+
+        XCTAssertEqual(tab.content, .aiChat(url))
+    }
+
+    @MainActor func testWhenAnotherDuckAIURLIsSetThenItsSourceIsKept() {
+        tab = Tab(content: .aiChat(URL(string: "https://duck.ai/chat")!))
+        let otherURL = URL(string: "https://duck.ai/chat?chatID=abc")!
+
+        tab.setContent(.aiChat(otherURL, source: .bookmark(isFavorite: false)))
+
+        XCTAssertEqual(tab.content, .aiChat(otherURL, source: .bookmark(isFavorite: false)))
     }
 
 }

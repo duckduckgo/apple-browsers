@@ -100,6 +100,27 @@
                 "type": "string",
                 "description": "The kind of this client.",
                 "enum": ["ddg"]
+            },
+            {
+                "key": "camera_permission",
+                "type": "string",
+                "description": "Camera permission when the screen is shown. restricted is reported as denied.",
+                "enum": ["authorized", "not_determined", "denied"]
+            }
+        ]
+    },
+    "sync_setup_camera_permission_prompt_result": {
+        "description": "Fired when the user responds to the system camera permission prompt shown from the Sync setup scan QR screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "result",
+                "type": "string",
+                "description": "Whether the user granted or denied camera access.",
+                "enum": ["authorized", "denied"]
             }
         ]
     },
@@ -139,6 +160,12 @@
                 "type": "string",
                 "description": "The version of Sync setup code recognized.",
                 "enum": ["v1", "v2"]
+            },
+            {
+                "key": "camera_permission",
+                "type": "string",
+                "description": "Camera permission when the scan QR screen was first shown in this setup attempt. restricted is reported as denied. Absent if the screen wasn't shown.",
+                "enum": ["authorized", "not_determined", "denied"]
             }
         ]
     },

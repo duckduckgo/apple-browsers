@@ -135,6 +135,39 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
     }
 
+    func testPromotionDateRequiresValidTimestampAndDoesNotAffectTabLimit() throws {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+        let config = try XCTUnwrap(mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
+        for value in ["null", "42", "\"invalid\"", "\"2026-09-28\""] {
+            config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+                "{\"aiChatAttachMoreTabsLimit\":5,\"promotionStartDate\":\(value)}"
+            XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
+            XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 5)
+        }
+    }
+
+    func testPromotionDateUpdatesWithoutRecreatingSettingsAndIgnoresInvalidTabLimit() throws {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+        let config = try XCTUnwrap(mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+            #"{"promotionStartDate":"2026-09-28T00:00:00Z","aiChatAttachMoreTabsLimit":"invalid"}"#
+        let firstDate = ISO8601DateFormatter().date(from: "2026-09-28T00:00:00Z")
+        XCTAssertEqual(settings.aiChatAttachMoreTabsPromotionStartDate, firstDate)
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+        config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+            #"{"promotionStartDate":"2026-10-12T00:00:00Z"}"#
+        XCTAssertEqual(settings.aiChatAttachMoreTabsPromotionStartDate, firstDate?.addingTimeInterval(14 * 24 * 60 * 60))
+        config.subfeatureSettings.removeValue(forKey: AIChatSubfeature.contextualAttachMoreTabs.rawValue)
+        XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
+    }
+
     func testEnableAIChatBrowsingMenuUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,

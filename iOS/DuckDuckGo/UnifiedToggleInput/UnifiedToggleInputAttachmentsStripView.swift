@@ -23,7 +23,8 @@ import UIKit
 final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     enum Constants {
-        static let spacing: CGFloat = 10
+        static let spacing: CGFloat = 4
+        static let standardSpacing: CGFloat = 10
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
         static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight
@@ -40,31 +41,38 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private(set) var hasVisiblePageContext = false
     private(set) var hasVisibleSelectionContext = false
 
-    private let scrollView: UIScrollView = {
+    private let usesCompactLayout: Bool
+
+    private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsHorizontalScrollIndicator = false
-        scrollView.alwaysBounceHorizontal = true
+        scrollView.alwaysBounceHorizontal = !usesCompactLayout
         scrollView.clipsToBounds = true
         return scrollView
     }()
 
-    private let stackView: UIStackView = {
+    private lazy var stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = Constants.spacing
+        stack.spacing = usesCompactLayout ? Constants.spacing : Constants.standardSpacing
         stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
 
-    private let pageContextChip = AIChatContextChipView()
+    private var contextChipStyle: AIChatContextChipView.Style {
+        usesCompactLayout ? .attachmentStrip : .standalone
+    }
+
+    private lazy var pageContextChip = AIChatContextChipView(style: contextChipStyle)
 
     /// Page context keeps its own separate slot — selections augment the page rather than replace it.
     private var selectionContextChips: [(id: String, view: AIChatContextChipView)] = []
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(usesCompactLayout: Bool = false) {
+        self.usesCompactLayout = usesCompactLayout
+        super.init(frame: .zero)
         setupUI()
     }
 
@@ -73,10 +81,82 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    struct ChipWidthLimits {
+        let maximumWidth: CGFloat
+        let minimumContentWidth: CGFloat
+    }
+
+    static func chipWidths(visibleWidth: CGFloat, chips: [ChipWidthLimits]) -> [CGFloat] {
+        guard !chips.isEmpty, visibleWidth.isFinite, visibleWidth > 0 else { return [] }
+        let availableWidth = visibleWidth - 2 * Constants.horizontalPadding - CGFloat(chips.count - 1) * Constants.spacing
+        let fourSlotWidth = max(0, (visibleWidth - 2 * Constants.horizontalPadding - 3 * Constants.spacing) / 4)
+        let minimumWidths = chips.map { max($0.minimumContentWidth, min($0.maximumWidth, fourSlotWidth)) }
+        var widths = chips.map { max($0.maximumWidth, $0.minimumContentWidth) }
+        var excessWidth = widths.reduce(0, +) - availableWidth
+
+        // Lower the widest group until it reaches another chip's width or a content minimum.
+        while excessWidth > 0 {
+            let shrinkable = widths.indices.filter { widths[$0] > minimumWidths[$0] }
+            guard let widest = shrinkable.map({ widths[$0] }).max() else { break }
+            let widestIndices = shrinkable.filter { widths[$0] == widest }
+            let nextWidth = shrinkable.map { widths[$0] }.filter { $0 < widest }.max() ?? 0
+            let groupMinimum = widestIndices.map { minimumWidths[$0] }.max() ?? 0
+            let targetWidth = max(nextWidth, groupMinimum)
+            let availableReduction = (widest - targetWidth) * CGFloat(widestIndices.count)
+
+            if excessWidth <= availableReduction {
+                let finalWidth = widest - excessWidth / CGFloat(widestIndices.count)
+                for index in widestIndices {
+                    widths[index] = finalWidth
+                }
+                break
+            }
+
+            for index in widestIndices {
+                widths[index] = targetWidth
+            }
+            excessWidth -= availableReduction
+        }
+        return widths
+    }
+
+    override func layoutSubviews() {
+        guard usesCompactLayout else {
+            super.layoutSubviews()
+            return
+        }
+        let chips = stackView.arrangedSubviews
+        let limits = chips.map { view -> ChipWidthLimits in
+            if let chip = view as? AIChatContextChipView {
+                return ChipWidthLimits(maximumWidth: chip.maximumContentWidth, minimumContentWidth: chip.minimumContentWidth)
+            }
+            let thumbnail = view as? UnifiedToggleInputAttachmentThumbnailView
+            return ChipWidthLimits(maximumWidth: thumbnail?.intrinsicContentSize.width ?? 0,
+                                   minimumContentWidth: thumbnail?.minimumContentWidth ?? 0)
+        }
+        let widths = Self.chipWidths(visibleWidth: bounds.width, chips: limits)
+        for (view, width) in zip(chips, widths) {
+            if let chip = view as? AIChatContextChipView {
+                chip.preferredWidth = width
+            } else if let chip = view as? UnifiedToggleInputAttachmentThumbnailView {
+                chip.setWidth(width)
+            }
+        }
+        super.layoutSubviews()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            setNeedsLayout()
+        }
+    }
+
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         let shouldAutoScroll = shouldAutoScrollAfterAddingAttachment()
         attachments.append(attachment)
         stackView.addArrangedSubview(makeThumbnail(for: attachment))
+        setNeedsLayout()
         onAttachmentsChanged?()
         if shouldAutoScroll {
             scheduleScrollToTrailingEdge()
@@ -92,6 +172,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         stackView.removeArrangedSubview(view)
         view.removeFromSuperview()
         stackView.insertArrangedSubview(makeThumbnail(for: attachment), at: arrangedIndex)
+        setNeedsLayout()
         onAttachmentsChanged?()
     }
 
@@ -105,6 +186,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             view.removeFromSuperview()
         }
         onAttachmentRemoved?(id, removedAttachment, isUserInitiated)
+        setNeedsLayout()
         onAttachmentsChanged?()
     }
 
@@ -116,11 +198,13 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
                 stackView.removeArrangedSubview($0)
                 $0.removeFromSuperview()
             }
+        setNeedsLayout()
         onAttachmentsChanged?()
     }
 
     func setPageContextChipState(_ state: AIChatContextChipView.State) {
         pageContextChip.configure(state: state)
+        setNeedsLayout()
     }
 
     func setPageContextChipVisible(_ isVisible: Bool) {
@@ -129,7 +213,11 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         hasVisiblePageContext = isVisible
 
         if isVisible {
-            stackView.addArrangedSubview(pageContextChip)
+            if usesCompactLayout {
+                stackView.insertArrangedSubview(pageContextChip, at: 0)
+            } else {
+                stackView.addArrangedSubview(pageContextChip)
+            }
             if shouldAutoScroll {
                 scheduleScrollToTrailingEdge()
             }
@@ -138,6 +226,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             pageContextChip.removeFromSuperview()
         }
 
+        setNeedsLayout()
         onAttachmentsChanged?()
     }
 
@@ -158,7 +247,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
                 existing.view.configure(state: .attached(title: item.title, favicon: item.favicon))
                 reconciled.append(existing)
             } else {
-                let view = AIChatContextChipView()
+                let view = AIChatContextChipView(style: contextChipStyle)
                 view.configure(state: .attached(title: item.title, favicon: item.favicon))
                 view.onRemove = { [weak self] in
                     self?.onSelectionContextRemove?(item.id)
@@ -170,6 +259,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
 
         selectionContextChips = reconciled
         hasVisibleSelectionContext = !items.isEmpty
+        setNeedsLayout()
 
         guard didChange else { return }
         if shouldAutoScroll {
@@ -207,7 +297,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     private func makeThumbnail(for attachment: UnifiedToggleInputAttachment) -> UnifiedToggleInputAttachmentThumbnailView {
-        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
+        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment, usesCompactLayout: usesCompactLayout)
         thumbnail.onRemove = { [weak self] id in
             self?.removeAttachment(id: id, isUserInitiated: true)
         }

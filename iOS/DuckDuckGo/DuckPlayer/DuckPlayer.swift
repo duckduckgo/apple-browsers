@@ -409,7 +409,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                      userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                      floatingUIManager: FloatingUIManaging? = nil) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
-            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         self.init(settings: settings,
                   featureFlagger: featureFlagger,

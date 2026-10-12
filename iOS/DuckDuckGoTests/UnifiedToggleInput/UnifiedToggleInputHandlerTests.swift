@@ -221,6 +221,30 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    /// Return and Paste & Go never count as tapping Ask.
+    func test_submitText_withoutATrigger_reportsTextEntry() {
+        var triggers: [TextSubmissionTrigger] = []
+        sut.textSubmissionPublisher
+            .sink { triggers.append($0.trigger) }
+            .store(in: &cancellables)
+
+        sut.submitText("hello")
+
+        XCTAssertEqual(triggers, [.textEntry])
+    }
+
+    func test_submitText_fromTheSendButton_reportsTheSendButton() {
+        var triggers: [TextSubmissionTrigger] = []
+        sut.textSubmissionPublisher
+            .sink { triggers.append($0.trigger) }
+            .store(in: &cancellables)
+
+        sut.submitText("hello", trigger: .sendButton)
+        sut.submitAIChatAttachmentOnlyPrompt()
+
+        XCTAssertEqual(triggers, [.sendButton, .sendButton])
+    }
+
     func test_submitText_trimsWhitespace() {
         let expectation = expectation(description: "trimmed text submitted")
         sut.textSubmissionPublisher

@@ -83,7 +83,7 @@ final class BookmarksBarViewController: NSViewController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
-    let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
+    let syncButtonModel: DismissableSyncDeviceButtonModel
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -119,6 +119,7 @@ final class BookmarksBarViewController: NSViewController {
          featureFlagger: FeatureFlagger,
          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         syncButtonModel: DismissableSyncDeviceButtonModel? = nil,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -126,6 +127,7 @@ final class BookmarksBarViewController: NSViewController {
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
+        self.syncButtonModel = syncButtonModel ?? DismissableSyncDeviceButtonModel(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
@@ -165,8 +167,8 @@ final class BookmarksBarViewController: NSViewController {
 
         let mouseOverView = MouseOverView(frame: .zero)
         mouseOverView.translatesAutoresizingMaskIntoConstraints = false
-        mouseOverView.mouseOverColor = .buttonMouseOver
-        mouseOverView.mouseDownColor = .buttonMouseDown
+        mouseOverView.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        mouseOverView.mouseDownColor = NSColor(resource: .buttonMouseDown)
         mouseOverView.cornerRadius = Constants.mouseOverCornerRadius
         mouseOverView.target = self
         mouseOverView.action = action
@@ -204,7 +206,7 @@ final class BookmarksBarViewController: NSViewController {
 
     override func loadView() {
         backgroundColorView = ColorView(frame: NSRect(origin: .zero, size: Constants.contentSize),
-                                        backgroundColor: .bookmarkBarBackground)
+                                        backgroundColor: NSColor(resource: .bookmarkBarBackground))
         backgroundColorView.wantsLayer = true
 
         backseparatorColorView = ColorView(frame: .zero)
@@ -219,7 +221,7 @@ final class BookmarksBarViewController: NSViewController {
         bookmarksBarCollectionView = BookmarksBarCollectionView(frame: .zero)
         bookmarksBarCollectionView.isSelectable = true
         bookmarksBarCollectionView.collectionViewLayout = NSCollectionViewLayout()
-        bookmarksBarCollectionView.backgroundColors = [.navigationBarBackground]
+        bookmarksBarCollectionView.backgroundColors = [NSColor(resource: .navigationBarBackground)]
         bookmarksBarCollectionView.autoresizingMask = [.width]
 
         let clipView = NSClipView()
@@ -245,13 +247,13 @@ final class BookmarksBarViewController: NSViewController {
         clippedItemsIndicator.setButtonType(.momentaryPushIn)
         clippedItemsIndicator.bezelStyle = .rounded
         clippedItemsIndicator.isBordered = false
-        clippedItemsIndicator.image = .chevronDoubleRight16
+        clippedItemsIndicator.image = NSImage(resource: .chevronDoubleRight16)
         clippedItemsIndicator.imagePosition = .imageOverlaps
         clippedItemsIndicator.title = ""
         clippedItemsIndicator.imageScaling = .scaleProportionallyDown
         clippedItemsIndicator.alignment = .center
-        clippedItemsIndicator.mouseOverColor = .buttonMouseOver
-        clippedItemsIndicator.mouseDownColor = .buttonMouseDown
+        clippedItemsIndicator.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        clippedItemsIndicator.mouseDownColor = NSColor(resource: .buttonMouseDown)
         clippedItemsIndicator.cornerRadius = Constants.mouseOverCornerRadius
         clippedItemsIndicator.target = self
         clippedItemsIndicator.action = #selector(clippedItemsIndicatorClicked(_:))
@@ -365,21 +367,18 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     private func setUpSyncButton() {
-        if appereancePreferences.showBookmarksBar {
-            syncButtonModel.viewDidLoad()
-        }
         syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
-        syncButtonIcon.contentTintColor = .textPrimary
+        syncButtonIcon.contentTintColor = NSColor(resource: .textPrimary)
         syncButtonLabel.stringValue = UserText.bookmarksEmptyStateSyncButtonTitle
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
     }
 
     private func setUpImportBookmarksButton() {
-        importBookmarksIcon.image = NSImage(named: "Import-16D")
-        importBookmarksIcon.contentTintColor = .textPrimary
+        importBookmarksIcon.image = NSImage(resource: .import16D)
+        importBookmarksIcon.contentTintColor = NSColor(resource: .textPrimary)
         importBookmarksButton.isHidden = true
         importBookmarksButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         importBookmarksMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
@@ -505,9 +504,13 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
-            self?.syncButton.isHidden = !$0
-            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            guard let self else { return }
+            syncButton.isHidden = !shouldShow
+            syncButtonZeroWidthConstraint.priority = shouldShow ? .defaultLow : .required
+            if shouldShow {
+                syncButtonModel.syncButtonDidAppear()
+            }
         }
         .store(in: &cancellables)
     }
@@ -770,8 +773,8 @@ private extension BookmarksBarViewController {
 
         if view === clippedItemsIndicator {
             // display pressed state
-            clippedItemsIndicator.backgroundColor = .buttonMouseDown
-            clippedItemsIndicator.mouseOverColor = .buttonMouseDown
+            clippedItemsIndicator.backgroundColor = NSColor(resource: .buttonMouseDown)
+            clippedItemsIndicator.mouseOverColor = NSColor(resource: .buttonMouseDown)
         } else if let collectionViewItem = view.nextResponder as? BookmarksBarCollectionViewItem {
             collectionViewItem.isDisplayingMouseDownState = true
         }
@@ -835,7 +838,7 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
 
         if positioningView === clippedItemsIndicator {
             clippedItemsIndicator.backgroundColor = .clear
-            clippedItemsIndicator.mouseOverColor = .buttonMouseOver
+            clippedItemsIndicator.mouseOverColor = NSColor(resource: .buttonMouseOver)
         } else if let collectionViewItem = positioningView.nextResponder as? BookmarksBarCollectionViewItem {
             collectionViewItem.isDisplayingMouseDownState = false
         }

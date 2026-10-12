@@ -113,7 +113,7 @@ final class SuggestionViewController: NSViewController {
 
         shadowView = ShadowView()
         shadowView.translatesAutoresizingMaskIntoConstraints = false
-        shadowView.shadowColor = .suggestionsShadow
+        shadowView.shadowColor = NSColor(resource: .suggestionsShadow)
         shadowView.shadowRadius = LayoutConstants.shadowRadius
         shadowView.cornerRadius = LayoutConstants.shadowCornerRadius
         shadowView.shadowOpacity = 1
@@ -123,15 +123,15 @@ final class SuggestionViewController: NSViewController {
         clipView.translatesAutoresizingMaskIntoConstraints = false
 
         backgroundView = ColorView(frame: .zero,
-                                   backgroundColor: .addressBarBackground,
+                                   backgroundColor: NSColor(resource: .addressBarBackground),
                                    cornerRadius: LayoutConstants.cornerRadius,
-                                   borderColor: .addressBarBorder,
+                                   borderColor: NSColor(resource: .addressBarBorder),
                                    borderWidth: LayoutConstants.borderWidth)
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
 
         innerBorderView = ColorView(frame: .zero,
                                     cornerRadius: LayoutConstants.cornerRadius,
-                                    borderColor: .addressBarInnerBorder,
+                                    borderColor: NSColor(resource: .addressBarInnerBorder),
                                     borderWidth: LayoutConstants.borderWidth)
         innerBorderView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -183,7 +183,7 @@ final class SuggestionViewController: NSViewController {
         backgroundView.addSubview(innerBorderView)
         backgroundView.addSubview(scrollView)
 
-        topSeparatorView = ColorView(frame: .zero, backgroundColor: .addressBarSeparator)
+        topSeparatorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .addressBarSeparator))
         topSeparatorView.translatesAutoresizingMaskIntoConstraints = false
 
         clipView.addSubview(backgroundView)
@@ -588,7 +588,7 @@ extension SuggestionViewController: NSTableViewDelegate {
         switch rowContent {
         case .aiChatCell:
             let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let aiChatIcon: NSImage = .aiChat
+            let aiChatIcon: NSImage = NSImage(resource: .aiChat)
             cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
 
         case .sectionDivider:
@@ -618,7 +618,7 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         let dividerLine = NSView()
         dividerLine.wantsLayer = true
-        dividerLine.layer?.backgroundColor = NSColor.addressBarSeparator.cgColor
+        dividerLine.layer?.backgroundColor = NSColor(resource: .addressBarSeparator).cgColor
         dividerLine.translatesAutoresizingMaskIntoConstraints = false
 
         containerView.addSubview(dividerLine)

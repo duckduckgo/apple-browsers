@@ -246,8 +246,6 @@ final class BrowserToolbarView: UIView {
         view.backgroundColor = .clear
         return view
     }()
-    /// Icons sit here as a sibling of the glass, not inside `UIVisualEffectView.contentView`. Nested
-    /// glass interpolates on a different clock from `contentView` descendants when the pill moves.
     private let chromeContentHost: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -435,7 +433,7 @@ final class BrowserToolbarView: UIView {
 
         addSubview(chromeContainer)
         chromeContainer.addSubview(materialBackgroundView)
-        chromeContainer.addSubview(chromeContentHost)
+        materialBackgroundView.contentView.addSubview(chromeContentHost)
         chromeContentHost.addSubview(contentStack)
         contentStack.addArrangedSubview(expandedContentContainer)
         contentStack.addArrangedSubview(omnibarContainer)
@@ -464,10 +462,10 @@ final class BrowserToolbarView: UIView {
             materialBackgroundView.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
             materialBackgroundView.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
             materialBackgroundView.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
-            chromeContentHost.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
-            chromeContentHost.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
-            chromeContentHost.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
-            chromeContentHost.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
+            chromeContentHost.topAnchor.constraint(equalTo: materialBackgroundView.contentView.topAnchor),
+            chromeContentHost.leadingAnchor.constraint(equalTo: materialBackgroundView.contentView.leadingAnchor),
+            chromeContentHost.trailingAnchor.constraint(equalTo: materialBackgroundView.contentView.trailingAnchor),
+            chromeContentHost.bottomAnchor.constraint(equalTo: materialBackgroundView.contentView.bottomAnchor),
             materialBackgroundLeadingConstraint,
             materialBackgroundTrailingConstraint,
             materialBackgroundTopConstraint,
@@ -509,6 +507,8 @@ final class BrowserToolbarView: UIView {
 
     func setToolbarButtons(_ views: [UIView]) {
         toolbarButtonViews = views
+        guard !buttonStack.arrangedSubviews.elementsEqual(views, by: { $0 === $1 })
+                || views.contains(where: { $0.superview !== buttonStack }) else { return }
         rebuildButtonRow()
     }
 
@@ -517,7 +517,6 @@ final class BrowserToolbarView: UIView {
             buttonStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        buttonStack.distribution = .equalCentering
         toolbarButtonViews.forEach { view in
             view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
             buttonStack.addArrangedSubview(view)
@@ -558,12 +557,12 @@ final class BrowserToolbarView: UIView {
 
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
         endOmnibarSwipe()
-        hostedOmnibarView?.removeFromSuperview()
-        hostedOmnibarView = nil
         isOmnibarMorphing = false
         buttonRowCollapseProgress = 0
         
         guard let view else {
+            hostedOmnibarView?.removeFromSuperview()
+            hostedOmnibarView = nil
             applyOmnibarDetachmentPose()
             return
         }
@@ -571,19 +570,21 @@ final class BrowserToolbarView: UIView {
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: isFloatingStyleEnabled)
         applyContentStackMetrics()
-        rebuildButtonRow()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isUserInteractionEnabled = true
         (view as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
-        omnibarContainer.addSubview(view)
-        hostedOmnibarView = view
-        
-        NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: omnibarContainer.leadingAnchor, constant: Self.omnibarHorizontalInset),
-            view.trailingAnchor.constraint(equalTo: omnibarContainer.trailingAnchor, constant: -Self.omnibarHorizontalInset),
-            view.topAnchor.constraint(equalTo: omnibarContainer.topAnchor),
-            view.bottomAnchor.constraint(equalTo: omnibarContainer.bottomAnchor),
-        ])
+        if hostedOmnibarView !== view || view.superview !== omnibarContainer {
+            hostedOmnibarView?.removeFromSuperview()
+            omnibarContainer.addSubview(view)
+            hostedOmnibarView = view
+
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: omnibarContainer.leadingAnchor, constant: Self.omnibarHorizontalInset),
+                view.trailingAnchor.constraint(equalTo: omnibarContainer.trailingAnchor, constant: -Self.omnibarHorizontalInset),
+                view.topAnchor.constraint(equalTo: omnibarContainer.topAnchor),
+                view.bottomAnchor.constraint(equalTo: omnibarContainer.bottomAnchor),
+            ])
+        }
         
         updateCornerStyle()
         scheduleHostedOmnibarMaterialRefresh()
@@ -604,7 +605,6 @@ final class BrowserToolbarView: UIView {
         // Settled into the buttons-only pose now, so drop the embedded (bottom omnibar) metrics.
         isOmnibarMorphing = false
         applyContentStackMetrics()
-        rebuildButtonRow()
         updateCornerStyle()
     }
 
@@ -615,7 +615,6 @@ final class BrowserToolbarView: UIView {
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
         applyContentStackMetrics()
-        rebuildButtonRow()
         updateCornerStyle()
     }
 
@@ -623,12 +622,16 @@ final class BrowserToolbarView: UIView {
         guard isFloatingStyleEnabled else { return }
         materialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
-            materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+            if #available(iOS 26.0, *) {
+                materialBackgroundView.overrideUserInterfaceStyle = .unspecified
+                chromeContentHost.overrideUserInterfaceStyle = .unspecified
+            } else {
+                materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+                chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
+            }
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
             materialBackgroundView.layoutIfNeeded()
-            // chromeContentHost is a sibling of materialBackgroundView, not a descendant — needs the override too.
-            chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
         }
         scheduleHostedOmnibarMaterialRefresh()
     }
@@ -877,7 +880,18 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
     }
 
+    var usesRedesignedNewTabPageLayout = false {
+        didSet {
+            guard oldValue != usesRedesignedNewTabPageLayout else { return }
+            setNeedsLayout()
+        }
+    }
+
     var floatingBottomMargin: CGFloat {
+        if usesRedesignedNewTabPageLayout, let host = superview, host.bounds.width > host.bounds.height {
+            // The cutout widens the horizontal guide in landscape; it should not lift the toolbar.
+            return Self.floatingEmbeddedBottomMargin
+        }
         if #available(iOS 26.0, *) {
             return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingHorizontalInset
         }
@@ -911,7 +925,7 @@ final class BrowserToolbarView: UIView {
                 let horizontalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
                 left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: horizontalInset)
                 right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: horizontalInset)
-                bottom = bounds.maxY - horizontalInset
+                bottom = bounds.maxY - floatingBottomMargin
             }
         } else {
             let insets = currentBarOuterInsets
@@ -975,8 +989,7 @@ final class BrowserToolbarView: UIView {
         if #available(iOS 26.0, *), isFloatingStyleEnabled {
             if let host = superview, host.bounds.height > 0 {
                 let guideBottomGap = Self.verticalGuideBottomInset(in: host)
-                let bottomMargin = usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingHorizontalInset
-                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: bottomMargin)
+                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: floatingBottomMargin)
             } else {
                 target = 0
             }
@@ -1026,7 +1039,6 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.applyContentStackMetrics()
-            self.rebuildButtonRow()
             // Keep the buttons-only height in sync with the style (49 legacy / 62 floating standalone).
             // The embedded-omnibar height is floating-only and owned by `setOmnibarView`, so leave it.
             if !self.hasEmbeddedOmnibar {

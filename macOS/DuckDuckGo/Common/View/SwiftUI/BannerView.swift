@@ -87,7 +87,7 @@ struct BannerView: View {
 
                 Spacer()
 
-                HoverButton(image: .closeLarge, cornerRadius: 6) {
+                HoverButton(image: NSImage(resource: .closeLarge), cornerRadius: 6) {
                     viewModel.closeAction()
                 }
                 .padding(.trailing, 10)
@@ -99,7 +99,7 @@ struct BannerView: View {
             Divider()
                 .frame(height: 1)
                 .frame(maxWidth: .infinity)
-                .background(Color.bannerViewDivider.opacity(0.09))
+                .background(Color(.bannerViewDivider).opacity(0.09))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(Color(colorsProvider.bannerBackgroundColor))

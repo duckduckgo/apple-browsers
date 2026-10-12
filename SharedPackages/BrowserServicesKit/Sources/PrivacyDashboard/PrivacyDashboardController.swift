@@ -44,6 +44,7 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
                                     didRequestSubmitBrokenSiteReportWithCategory category: String,
                                     description: String)
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController)
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController)
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,
                                     didRequestSubmitToggleReportWithSource source: BrokenSiteReport.Source)
     func privacyDashboardControllerDidRequestClose(_ privacyDashboardController: PrivacyDashboardController)
@@ -392,6 +393,7 @@ extension PrivacyDashboardController: PrivacyDashboardUserScriptDelegate {
         eventMapping.fire(.reportBrokenSiteShown, parameters: [
             PrivacyDashboardEvents.Parameters.source: source.rawValue
         ])
+        delegate?.privacyDashboardControllerDidShowBrokenSiteReport(self)
     }
 
     func userScript(_ userScript: PrivacyDashboardUserScript, setHeight height: Int) {

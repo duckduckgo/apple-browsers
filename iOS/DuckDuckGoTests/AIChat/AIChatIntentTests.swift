@@ -1,6 +1,5 @@
 //
 //  AIChatIntentTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -137,7 +136,8 @@ private final class MockAIChatShortcutPresenter: UIViewController, AIChatDeepLin
                     files: [AIChatNativePrompt.NativePromptFile]?,
                     reportsNewTab: Bool?,
                     forcesNewTab: Bool,
-                    fromDeepLink: Bool) {
+                    fromDeepLink: Bool,
+                    termsAccepted: Bool) {
         textChatOpenCount += 1
         self.query = query
         self.autoSend = autoSend

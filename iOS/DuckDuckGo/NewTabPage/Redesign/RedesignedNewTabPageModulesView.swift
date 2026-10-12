@@ -22,16 +22,32 @@ import SwiftUI
 /// Shared module arrangement. Each presentation owns its scrolling and supplies existing models.
 struct RedesignedNewTabPageModulesView: View {
     let favoritesModel: FavoritesViewModel?
+    let onAddFavorite: (() -> Void)?
+    private let customizationStore: NewTabPageCustomizationStore
+    @State private var isFavoritesSectionVisible: Bool
+
+    init(favoritesModel: FavoritesViewModel?,
+         onAddFavorite: (() -> Void)? = nil,
+         customizationStore: NewTabPageCustomizationStore = NewTabPageCustomizationStore()) {
+        self.favoritesModel = favoritesModel
+        self.onAddFavorite = onAddFavorite
+        self.customizationStore = customizationStore
+        _isFavoritesSectionVisible = State(initialValue: customizationStore.isFavoritesSectionVisible)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.moduleSpacing) {
-            if let favoritesModel {
-                RedesignedFavoritesView(model: favoritesModel)
+            if isFavoritesSectionVisible, let favoritesModel {
+                RedesignedFavoritesView(model: favoritesModel, onAddFavorite: onAddFavorite)
+                    .padding(.horizontal, Metrics.horizontalPadding)
+                    .padding(.bottom, Metrics.bottomPadding)
             }
         }
-        .padding(.horizontal, Metrics.horizontalPadding)
+        // This is the input-to-modules gap, even when the first visible module is the escape hatch.
         .padding(.top, Metrics.topPadding)
-        .padding(.bottom, Metrics.bottomPadding)
+        .onReceive(customizationStore.favoritesVisibilityPublisher.receive(on: DispatchQueue.main)) { isVisible in
+            isFavoritesSectionVisible = isVisible
+        }
     }
 }
 

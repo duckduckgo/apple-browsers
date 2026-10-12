@@ -487,5 +487,11 @@
         "owners": ["pballart"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_other_device_details_remove_device_confirmed_mac": {
+        "description": "Fired when another synced device is successfully removed after the user confirms 'Remove Device' from its details screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

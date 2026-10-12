@@ -74,6 +74,7 @@ final class EscapeHatchModel: ObservableObject {
     let tabType: TabType
     let domain: String?
     let targetTab: Tab
+    let thumbnail: UIImage?
     /// `false` for tab-switcher-only hatches, so the card never appears (it would be empty: no tab to return to).
     let hasReturnToTabCard: Bool
     let onCardTap: () -> Void
@@ -91,6 +92,7 @@ final class EscapeHatchModel: ObservableObject {
          tabType: TabType,
          domain: String?,
          targetTab: Tab,
+         thumbnail: UIImage? = nil,
          tabsSource: some EscapeHatchTabsSource,
          hasReturnToTabCard: Bool = true,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
@@ -108,6 +110,7 @@ final class EscapeHatchModel: ObservableObject {
         self.tabType = tabType
         self.domain = domain
         self.targetTab = targetTab
+        self.thumbnail = thumbnail
         self.hasReturnToTabCard = hasReturnToTabCard
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastTabShortcutAdapter = lastTabShortcutAdapter
@@ -127,13 +130,14 @@ final class EscapeHatchModel: ObservableObject {
 
     /// Builds the model with action closures wired to a router. The router is captured weakly so holders of `EscapeHatchModel` don't pin its owner's lifecycle.
     ///
-    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, hasReturnToTabCard: Bool = true, router: EscapeHatchActionRouter, afterInactivityOptionAdapter: AfterInactivityOptionAdapter, lastTabShortcutAdapter: LastTabShortcutAdapter, onShortcutHidden: @escaping () -> Void = {}, instrumentation: NTPAfterIdleInstrumentation? = nil) {
+    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, thumbnail: UIImage? = nil, tabsSource: some EscapeHatchTabsSource, hasReturnToTabCard: Bool = true, router: EscapeHatchActionRouter, afterInactivityOptionAdapter: AfterInactivityOptionAdapter, lastTabShortcutAdapter: LastTabShortcutAdapter, onShortcutHidden: @escaping () -> Void = {}, instrumentation: NTPAfterIdleInstrumentation? = nil) {
         self.init(
             title: title,
             subtitle: subtitle,
             tabType: tabType,
             domain: domain,
             targetTab: targetTab,
+            thumbnail: thumbnail,
             tabsSource: tabsSource,
             hasReturnToTabCard: hasReturnToTabCard,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,

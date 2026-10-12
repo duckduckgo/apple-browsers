@@ -31,13 +31,14 @@ import UIKit
 protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView)
-    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
+    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidLongPressAppMenu(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView)
@@ -252,6 +253,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelName = newValue }
     }
 
+    var modelIcon: UIImage? {
+        get { toolsToolbar.modelIcon }
+        set { toolsToolbar.modelIcon = newValue }
+    }
+
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }
@@ -280,6 +286,11 @@ final class UnifiedToggleInputView: UIView {
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
         get { textEntryView.attachmentPasteHandler }
         set { textEntryView.attachmentPasteHandler = newValue }
+    }
+
+    weak var mentionHandler: TextEntryMentionHandling? {
+        get { textEntryView.mentionHandler }
+        set { textEntryView.mentionHandler = newValue }
     }
 
     var reasoningPickerMenu: UIMenu? {
@@ -454,6 +465,7 @@ final class UnifiedToggleInputView: UIView {
             for (index, item) in messages.enumerated() {
                 let row = (existingRows[item.id] as? UTIFooterCardView) ?? UTIFooterCardView()
                 row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
+                row.isBelowAnotherCard = index > 0
                 if !previousMessages.contains(item) {
                     row.configure(with: item.message, animateIcon: existingRows[item.id] != nil)
                 }
@@ -617,7 +629,7 @@ final class UnifiedToggleInputView: UIView {
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
     private let toggleView = UnifiedToggleInputToggleView()
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
-    private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
+    private let attachmentsStrip: UnifiedToggleInputAttachmentsStripView
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
@@ -644,6 +656,7 @@ final class UnifiedToggleInputView: UIView {
         button.isHidden = true
         button.accessibilityLabel = UserText.menuButtonHint
         button.addTarget(self, action: #selector(appMenuTapped), for: .touchUpInside)
+        button.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(appMenuLongPressed)))
         return button
     }()
 
@@ -653,6 +666,11 @@ final class UnifiedToggleInputView: UIView {
 
     @objc private func appMenuTapped() {
         delegate?.unifiedToggleInputViewDidTapAppMenu(self)
+    }
+
+    @objc private func appMenuLongPressed(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
+        delegate?.unifiedToggleInputViewDidLongPressAppMenu(self)
     }
 
     // MARK: - Shadow
@@ -797,10 +815,12 @@ final class UnifiedToggleInputView: UIView {
 
     init(handler: UnifiedToggleInputHandler,
          isToggleEnabled: Bool = true,
-         placesAttachmentsAboveInput: Bool = false) {
+         placesAttachmentsAboveInput: Bool = false,
+         usesCompactAttachmentLayout: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
+        self.attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
@@ -1630,6 +1650,8 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateSubmitButtonStyle() {
         toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
+        toolsToolbar.termsOfServiceSendButton = handler.termsOfServiceSendButton
+        toolsToolbar.reservesTermsOfServiceSendButton = handler.reservesTermsOfServiceSendButton
     }
 
     private func submitCurrentInput() {
@@ -2004,7 +2026,7 @@ private extension UnifiedToggleInputView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
                 guard let self else { return }
-                delegate?.unifiedToggleInputViewDidSubmitText(self, text: submission.text, mode: submission.mode)
+                delegate?.unifiedToggleInputViewDidSubmitText(self, text: submission.text, mode: submission.mode, trigger: submission.trigger)
             }
             .store(in: &cancellables)
 
@@ -2029,6 +2051,20 @@ private extension UnifiedToggleInputView {
             .store(in: &cancellables)
 
         handler.usesReturnKeySubmitButtonStylePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.termsOfServiceSendButtonPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.reservesTermsOfServiceSendButtonPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateSubmitButtonStyle()

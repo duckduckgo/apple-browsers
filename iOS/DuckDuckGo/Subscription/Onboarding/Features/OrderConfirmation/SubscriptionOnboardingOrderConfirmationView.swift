@@ -24,7 +24,6 @@ import UIComponents
 struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
-        static let illustrationOverhang: CGFloat = 36
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingOrderConfirmationViewModel
@@ -38,14 +37,19 @@ struct SubscriptionOnboardingOrderConfirmationView: View {
     }
 
     var body: some View {
-        SubscriptionOnboardingBaseView(
+        let state = viewModel.state
+        return SubscriptionOnboardingBaseView(
             navigationButton: navigationButton,
             header: header,
             footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton) { viewModel.proceed() }),
             scrollsContent: false,
-            pageBackground: { illustration }) {
+            backgroundPreference: SubscriptionOnboardingCalendarFrameKey.self,
+            pageBackground: { calendarFrame in
+                SubscriptionOnboardingOrderConfirmationBackgroundView(state: state, calendarFrame: calendarFrame)
+            }) {
             content
         }
+        .coordinateSpace(name: SubscriptionOnboardingOrderConfirmationBackgroundView.coordinateSpaceName)
         .overlay { ConfettiView() }
         .task { await viewModel.load() }
     }
@@ -66,23 +70,28 @@ private extension SubscriptionOnboardingOrderConfirmationView {
         VStack(spacing: Metrics.contentSpacing) {
             if let freeTrialCard = viewModel.freeTrialCard {
                 SubscriptionOnboardingFreeTrialCalendarCard(model: freeTrialCard)
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: SubscriptionOnboardingCalendarFrameKey.self,
+                                value: proxy.frame(in: .named(SubscriptionOnboardingOrderConfirmationBackgroundView.coordinateSpaceName))
+                            )
+                        }
+                    }
             }
 
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
 
-    var illustration: some View {
-        GeometryReader { proxy in
-            Image(.daxThumbupStatic)
-                .resizable()
-                .scaledToFit()
-                .frame(width: proxy.size.width)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .offset(y: Metrics.illustrationOverhang)
-        }
-        .accessibilityHidden(true)
+/// The free-trial calendar card's frame, in `SubscriptionOnboardingOrderConfirmationBackgroundView.coordinateSpaceName`.
+/// `nil` when there's no card on screen.
+private struct SubscriptionOnboardingCalendarFrameKey: PreferenceKey {
+    static let defaultValue: CGRect? = nil
+    static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
+        value = nextValue() ?? value
     }
 }
 

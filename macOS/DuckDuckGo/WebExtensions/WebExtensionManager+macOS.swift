@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import Combine
 import FeatureFlags_macOS
+import Persistence
 import PrivacyConfig
 import WebExtensions
 
@@ -34,6 +35,10 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
 
     var isBackgroundDelegateProxyEnabled: Bool {
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
+    }
+
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
     }
 
     var updatesPublisher: AnyPublisher<Void, Never> {
@@ -64,8 +69,10 @@ enum WebExtensionManagerFactory {
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
     static func makeManager(
+        keyValueStore: any ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        buildType: ApplicationBuildType = StandardApplicationBuildType(),
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
@@ -86,10 +93,18 @@ enum WebExtensionManagerFactory {
             appSession: Application.appDelegate.cpmAppSessionDiagnostics
         ) : nil
 
+        let installationStore = InstalledWebExtensionStore()
+        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
+            store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
+            installationStore: installationStore,
+            prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        ) : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
+            installationStore: installationStore,
+            permissionController: permissionController,
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
@@ -107,6 +122,13 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
+        if buildType.isSparkleBuild {
+            manager.chromeWebStore = ChromeWebStoreService(
+                manager: manager,
+                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+            )
+        }
 
         return manager
     }

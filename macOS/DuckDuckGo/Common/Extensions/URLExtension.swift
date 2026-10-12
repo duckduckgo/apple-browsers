@@ -680,6 +680,14 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
     }
 
+    static var aiChatPrivacy: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy")!
+    }
+
+    static var aiChatPrivacyTerms: URL {
+        return URL(string: "\(base)/duckai/privacy-terms")!
+    }
+
     static var aiChatHelpPages: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
     }

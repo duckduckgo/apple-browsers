@@ -199,7 +199,7 @@ final class PopupHandlingTabExtension {
         var resultWebView: WKWebView?
         var isCalledSynchronously = true
         defer { isCalledSynchronously = false } // whether the callback was called synchronously or asynchronously
-        permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
+        permissionModel.request([.popups], forDomain: permissionModel.permissionDomain(for: sourceSecurityOrigin), url: url)
             .receive { [weak self] result in
                 self?.handlePermissionRequestResult(result,
                                                     from: webView,
@@ -284,6 +284,9 @@ final class PopupHandlingTabExtension {
 
         let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
         guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }
+        if isUserInitiated {
+            childTab.aiChat?.noteOpenedForLink(from: navigationAction.safeSourceFrame?.safeRequest?.url)
+        }
 
         presentTab(childTab, kind)
 

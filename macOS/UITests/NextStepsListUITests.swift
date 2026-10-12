@@ -56,7 +56,7 @@ final class NextStepsListUITests: UITestCase {
                       "A Next Steps card should be visible on the New Tab Page")
 
         let buttonsBeforeDismissal = visibleWebViewButtonTitles()
-        nextStepsCardDismissButton.tap()
+        nextStepsCardDismissButton.click()
 
         let dismissedCardCycledAway = webView.wait(for: NSPredicate { _, _ in
             !buttonsBeforeDismissal.subtracting(self.visibleWebViewButtonTitles()).isEmpty

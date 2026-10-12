@@ -61,7 +61,7 @@ struct BookmarkViewModel {
 fileprivate extension NSImage {
 
     func makeFavoriteOverlay() -> NSImage {
-        let overlayImage = NSImage.favoriteFavicon
+        let overlayImage = NSImage(resource: .favoriteFavicon)
 
         let newImage = NSImage(size: size)
         newImage.lockFocus()

@@ -308,6 +308,168 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@1m,view@1m,died_crash@1m")
     }
 
+    func testGraveyardIsDisabledByDefault() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+    }
+
+    func testTreatmentDisabledDoesNotRetainTerminatedView() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: false)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+    }
+
+    func testGraveyardRetainsOnlyLatestViewUntilScheduledRelease() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: true)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        var scheduledReleases: [(delay: TimeInterval, workItem: DispatchWorkItem)] = []
+        recorder.backgroundWebViewGraveyard.releaseScheduler = { delay, workItem in
+            scheduledReleases.append((delay, workItem))
+        }
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 1)
+
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .exceededMemoryLimit)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 1)
+        XCTAssertEqual(scheduledReleases.count, 2)
+        XCTAssertEqual(scheduledReleases.last?.delay, CPMBackgroundWebViewGraveyard.holdDuration)
+
+        scheduledReleases[0].workItem.perform()
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 1, "a stale release must not clear the current graveyard entry")
+
+        scheduledReleases[1].workItem.perform()
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        let events = recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents] ?? ""
+        XCTAssertTrue(events.contains("hold@"), events)
+        XCTAssertTrue(events.contains("release@"), events)
+    }
+
+    func testRuntimeTreatmentDeactivationPreventsNewRetention() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: true)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        var scheduledReleases: [DispatchWorkItem] = []
+        recorder.backgroundWebViewGraveyard.releaseScheduler = { _, workItem in
+            scheduledReleases.append(workItem)
+        }
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        let firstWebView = WKWebView(frame: .zero)
+        recorder.didCreateBackgroundWebView(firstWebView, for: context)
+        recorder.backgroundWebView(firstWebView, webContentProcessDidTerminateWith: .crash)
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 1)
+
+        scheduledReleases[0].perform()
+        flags.isBackgroundGraveyardTreatmentEnabled = false
+
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+    }
+
+    func testContextUnloadReleasesHeldView() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: true)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        recorder.contextDidUnload(identifier: context.uniqueIdentifier)
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+    }
+
+    func testContextReloadReleasesHeldViewWithoutRecordingOldRelease() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: true)
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)
+        let oldContext = try await makeContext()
+        let newContext = try await makeContext()
+        recorder.contextWillLoad(oldContext)
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: oldContext)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        recorder.contextWillLoad(newContext)
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        let events = recorder.snapshot().backgroundEvents.map(\.token)
+        XCTAssertTrue(events.contains("load"), events.description)
+        XCTAssertFalse(events.contains("hold"), events.description)
+        XCTAssertFalse(events.contains("release"), events.description)
+    }
+
+    func testTerminationTreatmentAttributionIsConsumedOnce() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: true)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        let webView = WKWebView(frame: .zero)
+        recorder.didCreateBackgroundWebView(webView, for: context)
+        recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+
+        XCTAssertEqual(recorder.consumeBackgroundGraveyardTreatmentState(), true)
+        XCTAssertNil(recorder.consumeBackgroundGraveyardTreatmentState())
+    }
+
     func testWhenProxyDisabledThenAllSurvivingViewDelegatesAreRestored() async throws {
         let flags = CPMDiagnosticsStaticFeatureFlags()
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)

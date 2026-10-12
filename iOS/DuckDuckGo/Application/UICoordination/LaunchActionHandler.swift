@@ -20,15 +20,18 @@
 import UIKit
 import Core
 import PixelKit
+import PrivacyConfig
+import FeatureFlags_iOS
 
 enum LaunchAction {
 
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
     case handleUserActivity(NSUserActivity)
-    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool)
+    /// `hasCompletedAuthentication` is `false` while App Lock has not been unlocked since launch.
+    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool, hasCompletedAuthentication: Bool = true)
 
-    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false) {
+    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false, hasCompletedAuthentication: Bool = true) {
         switch actionToHandle {
         case .openURL(let url)?:
             self = .openURL(url)
@@ -37,7 +40,9 @@ enum LaunchAction {
         case .handleUserActivity(let userActivity)?:
             self = .handleUserActivity(userActivity)
         case nil:
-            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate, isFirstForeground: isFirstForeground)
+            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate,
+                                   isFirstForeground: isFirstForeground,
+                                   hasCompletedAuthentication: hasCompletedAuthentication)
         }
     }
 
@@ -59,10 +64,17 @@ protocol OnboardingPresenting: AnyObject {
 
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?)
+    /// Completes after any screen dismissal and New Tab Page creation finish.
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
+}
+
+enum IdleReturnNewTabPageResult {
+    case keptCurrent
+    case openedNewTab
+    case suppressed
 }
 
 @MainActor
@@ -82,6 +94,7 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let pixelFiring: (any PixelKitFiring)?
     private let launchSourceManager: LaunchSourceManaging
     private let idleReturnEvaluator: IdleReturnEvaluating
+    private let featureFlagger: FeatureFlagger
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
     init(urlHandler: URLHandling,
@@ -90,6 +103,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
          idleReturnEvaluator: IdleReturnEvaluating,
+         featureFlagger: FeatureFlagger,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.urlHandler = urlHandler
@@ -98,6 +112,7 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
         self.idleReturnEvaluator = idleReturnEvaluator
+        self.featureFlagger = featureFlagger
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
@@ -113,13 +128,27 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
             userActivityHandler.handleUserActivity(userActivity)
-        case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
+        case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
             let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
-            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+            let isAfterIdleReturn = idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate)
+            if isAfterIdleReturn {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
+                    let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) { [self] result in
+                        guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
+                        switch result {
+                        case .keptCurrent:
+                            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                                   hasCompletedAuthentication: hasCompletedAuthentication,
+                                                                   isAfterIdleReturn: true)
+                        case .openedNewTab:
+                            keyboardPresenter.showKeyboardOnNewTabPageCreated()
+                        case .suppressed:
+                            break
+                        }
+                    }
                     return
                 case .lut:
                     idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
@@ -127,7 +156,9 @@ final class LaunchActionHandler: LaunchActionHandling {
             } else {
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
-            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
+            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                   hasCompletedAuthentication: hasCompletedAuthentication,
+                                                   isAfterIdleReturn: isAfterIdleReturn)
         }
     }
     

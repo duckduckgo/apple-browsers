@@ -213,6 +213,50 @@ final class BookmarksExporterTests: XCTestCase {
         ].joined())
     }
 
+    func test_WhenBookmarkURLHasHTMLMetacharacters_ThenTheExportedAttributeIsEscaped() throws {
+        let url = "https://example.com/?q=\"<value>\"&literal=&amp;&encoded=%26"
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            Bookmark(id: UUID().uuidString, url: url, title: TestData.exampleTitle, isFavorite: true)
+        ]))
+        defer { try? FileManager.default.removeItem(at: tmpFile) }
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+
+        let actual = try String(contentsOf: tmpFile, encoding: .utf8)
+        XCTAssertTrue(actual.contains(
+            "<A HREF=\"https://example.com/?q=&quot;&lt;value&gt;&quot;&amp;literal=&amp;amp;&amp;encoded=%26\" duckduckgo:favorite=\"true\">Example</A>"
+        ))
+    }
+
+    func test_WhenBookmarkURLsAreExportedAndImported_ThenURLsArePreserved() throws {
+        let urls = [
+            "https://example.com/?q=&amp;",
+            "https://example.com/?q=&quot;&other=&lt;tag&gt;",
+            "https://example.com/?q=&#38;&other=&#x26;",
+            "https://example.com/?q=&amp;amp;",
+            // The importer's HTML tidy parser percent-encodes literal angle brackets in HREF values.
+            "https://example.com/?q=\"%3Cvalue%3E\"&other='value'",
+            "https://example.com/a%2Fb?q=%26amp%3B&other=two#fragment",
+            "https://example.com/?q=`value`&other=[one]"
+        ]
+        let bookmarks = urls.map {
+            Bookmark(id: UUID().uuidString, url: $0, title: TestData.exampleTitle, isFavorite: true)
+        }
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            BookmarkFolder(id: UUID().uuidString, title: TestData.folderName1, children: bookmarks)
+        ]))
+        defer { try? FileManager.default.removeItem(at: tmpFile) }
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+        let imported = try BookmarkHTMLReader(bookmarksFileURL: tmpFile).readBookmarks().get()
+        let folder = try XCTUnwrap(imported.bookmarks.topLevelFolders.otherBookmarks?.children?.first)
+        let importedBookmarks = try XCTUnwrap(folder.children)
+
+        XCTAssertEqual(folder.name, TestData.folderName1)
+        XCTAssertEqual(importedBookmarks.compactMap(\.urlString), urls)
+        XCTAssertEqual(importedBookmarks.map(\.isDDGFavorite), Array(repeating: true, count: urls.count))
+    }
+
     func test_WhenBookmarkAtTopLevel_ThenFileContainsBookmarkAtTopLevel() throws {
         let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
             Bookmark(id: UUID().uuidString, url: TestData.exampleUrl.absoluteString, title: TestData.exampleTitle, isFavorite: false)

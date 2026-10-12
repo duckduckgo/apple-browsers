@@ -85,6 +85,24 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
 
     // MARK: - Remove Tests
 
+    func testStoreIdentityFindsBothUpdateVersionsAndSurvivesOldVersionRemoval() {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let old = InstalledWebExtension(uniqueIdentifier: "old", filename: "old.zip", name: nil, version: "1.0", storeIdentity: identity)
+        let replacement = InstalledWebExtension(uniqueIdentifier: "new", filename: "new.zip", name: nil, version: "2.0", storeIdentity: identity)
+        let other = InstalledWebExtension(uniqueIdentifier: "other", filename: "other.zip", name: nil, version: "1.0",
+                                           storeIdentity: .init(store: .chromeWebStore, id: "other-extension"))
+        store.add(old)
+        store.add(replacement)
+        store.add(other)
+        store.add(makeExtension(uniqueIdentifier: "manual"))
+
+        XCTAssertEqual(store.installedExtensions(withStoreIdentity: identity), [old, replacement])
+        store.remove(uniqueIdentifier: old.uniqueIdentifier)
+
+        let restored = InstalledWebExtensionStore(storage: storage)
+        XCTAssertEqual(restored.installedExtensions(withStoreIdentity: identity), [replacement])
+    }
+
     func testWhenExtensionIsRemoved_ThenInstalledWebExtensionsDoesNotContainIt() {
         let ext = makeExtension()
         storage.extensions = [ext]

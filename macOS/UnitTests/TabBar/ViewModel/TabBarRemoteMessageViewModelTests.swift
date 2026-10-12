@@ -28,6 +28,28 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         cancellables = []
     }
 
+    func testImpressionTrackerReportsOncePerContinuousShowing() {
+        var reportedMessageIDs: [String] = []
+        let tracker = TabBarRemoteMessageImpressionTracker { reportedMessageIDs.append($0) }
+
+        tracker.update(isEligible: true, messageID: "message-a")
+        tracker.update(isEligible: true, messageID: "message-a")
+
+        XCTAssertEqual(reportedMessageIDs, ["message-a"])
+    }
+
+    func testImpressionTrackerResetsWhenIneligibleAndReportsReplacement() {
+        var reportedMessageIDs: [String] = []
+        let tracker = TabBarRemoteMessageImpressionTracker { reportedMessageIDs.append($0) }
+
+        tracker.update(isEligible: true, messageID: "message-a")
+        tracker.update(isEligible: false, messageID: nil)
+        tracker.update(isEligible: true, messageID: "message-a")
+        tracker.update(isEligible: true, messageID: "message-b")
+
+        XCTAssertEqual(reportedMessageIDs, ["message-a", "message-a", "message-b"])
+    }
+
     func testWhenModelIsNotForTabBar_thenIsNotSetAsRemoteMessage() {
         let mock = MockTabBarRemoteMessageProvider()
         let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)
@@ -200,7 +222,11 @@ class MockTabBarRemoteMessageProvider: TabBarRemoteMessageProviding {
         return surveyURLRefresher(urlString)
     }
 
-    func markRemoteMessageAsShown() async {
+    func refreshRemoteMessageForPresentation() {
+        // No-op
+    }
+
+    func markRemoteMessageAsShown(withID id: String) async {
         // No-op
     }
 

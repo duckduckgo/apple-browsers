@@ -153,8 +153,10 @@ final class URLParameterTests: XCTestCase {
         let foundationCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { false })
         let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
         let query = String(repeating: "p=" + String(repeating: "a", count: 30) + "&", count: 30_000)
+        let trackingQuery = String(repeating: "utm_source=" + String(repeating: "a", count: 30) + "&", count: 30_000)
 
-        for string in ["https://www.example.com/?" + query + "q=1#f", "https://www.example.com/?utm_source=x&" + query + "utm_medium=y#f"] {
+        for string in ["https://www.example.com/?" + query + "q=1#f", "https://www.example.com/?utm_source=x&" + query + "utm_medium=y#f",
+                       "https://www.example.com/?" + trackingQuery + "q=1#f", "https://www.example.com/?" + trackingQuery + "utm_medium=y#f"] {
             let url = try XCTUnwrap(Self.webKitStyleURL(string))
             let expected = foundationCleaner.cleanTrackingParameters(initiator: nil, url: url)
             XCTAssertEqual(fastCleaner.cleanTrackingParameters(initiator: nil, url: url)?.absoluteString, expected?.absoluteString)

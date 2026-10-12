@@ -190,6 +190,7 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             }
             shouldResetClickCountForNextEventOfTypes = nil
         }
+
         super.sendEvent(event)
     }
 

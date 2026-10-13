@@ -46,19 +46,20 @@ final class NativeMessagingHostSession {
     private let inputPipe = Pipe()
     private let outputPipe = Pipe()
     private let errorPipe = Pipe()
-    private var readTask: Task<Void, Never>?
-    private var errorTask: Task<Void, Never>?
     private var didFinish = false
 
     /// Serial, so frames are written to the host in send order and never interleave.
     private let writeQueue = DispatchQueue(label: "com.duckduckgo.native-messaging.host-write")
 
-    /// Signalled by the process's termination handler, so the read loop can wait for the exit
-    /// instead of polling for it.
-    private let didExit = DispatchSemaphore(value: 0)
+    /// Bytes the host wrote that don't make a whole message yet. Only the output pipe's
+    /// readability handler touches it, and that handler never runs concurrently with itself.
+    private var outputBuffer = Data()
 
-    /// Set when the process ends. The read loop still has to drain the pipe.
+    /// Set when the process ends. The output pipe may still hold messages.
     private var exitStatus: Int32?
+
+    /// Set when the output pipe reaches EOF, so the host has nothing more to say.
+    private var outputDidClose = false
 
     /// Prepares a host process.
     ///
@@ -85,17 +86,19 @@ final class NativeMessagingHostSession {
     func start() throws {
         process.terminationHandler = { [weak self] process in
             let status = process.terminationStatus
-            // Before the hop to the main actor: the read loop waits on this and must not be held
-            // up by whatever else is queued there.
-            self?.didExit.signal()
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.exitStatus = status
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeMainThread {
+                    guard let self else { return }
+                    self.exitStatus = status
 
-                // Do not finish here. A host often writes its last message and exits at once,
-                // and that message explains why it exited. The read loop ends by itself when
-                // the pipe reaches EOF, and only then has it seen everything.
-                self.finishIfDrainStalls()
+                    // Finish only once the output has closed. A host often writes its last message
+                    // and exits at once, and that message explains why it exited.
+                    if self.outputDidClose {
+                        self.finishAfterDrain()
+                    } else {
+                        self.finishIfDrainStalls()
+                    }
+                }
             }
         }
 
@@ -129,16 +132,15 @@ final class NativeMessagingHostSession {
         handler?(error)
     }
 
-    /// Cancels the pipe readers, ends the host if it still runs, and closes its input.
+    /// Stops reading the pipes, ends the host if it still runs, and closes its input.
     ///
-    /// Both ways out of a session go through here, so a host that made the read loop throw
+    /// Both ways out of a session go through here, so a host that sent something unreadable
     /// does not stay alive with an open stdin after the session is gone.
     @MainActor
     private func tearDown() {
-        readTask?.cancel()
-        readTask = nil
-        errorTask?.cancel()
-        errorTask = nil
+        // Removing the handlers also releases the session they hold.
+        outputPipe.fileHandleForReading.readabilityHandler = nil
+        errorPipe.fileHandleForReading.readabilityHandler = nil
 
         process.terminationHandler = nil
         if process.isRunning {
@@ -170,37 +172,76 @@ final class NativeMessagingHostSession {
     // MARK: - Read
 
     private func startReadLoop() {
-        let handle = outputPipe.fileHandleForReading
         let name = hostName
 
-        // A strong reference keeps the session alive until the pipe drains. Otherwise the
-        // port may release it first, and a final message would go unseen. `stop()` cancels
-        // this task, so the reference does not outlive the session's use.
-        readTask = Task.detached { [self] in
-            do {
-                while !Task.isCancelled {
-                    guard let prefix = try Self.readExactly(NativeMessagingFraming.prefixSize, from: handle) else {
-                        break
-                    }
-                    let length = try NativeMessagingFraming.decodeLength(prefix)
-                    guard length > 0 else { continue }
-
-                    guard let payload = try Self.readExactly(length, from: handle) else { break }
-                    let message = try NativeMessagingFraming.decodePayload(payload)
-
-                    await MainActor.run {
-                        self.messageHandler?(message)
-                    }
+        // The handler holds the session strongly, so it lives until the pipe drains. Otherwise the
+        // port may release it first, and a final message would go unseen. EOF, an unreadable
+        // message and `tearDown()` all remove the handler, which releases the session.
+        outputPipe.fileHandleForReading.readabilityHandler = { [self] handle in
+            guard let chunk = Self.readAvailableData(from: handle) else {
+                handle.readabilityHandler = nil
+                DispatchQueue.main.async {
+                    MainActor.assumeMainThread { self.didCloseOutput() }
                 }
-                waitForExit()
-                await MainActor.run {
-                    self.finishAfterDrain()
+                return
+            }
+
+            do {
+                outputBuffer.append(chunk)
+                let messages = try takeMessages()
+                guard !messages.isEmpty else { return }
+                // One hop for all of them, in order. Separate tasks could deliver them out of order.
+                DispatchQueue.main.async {
+                    MainActor.assumeMainThread {
+                        for message in messages where !self.didFinish {
+                            self.messageHandler?(message)
+                        }
+                    }
                 }
             } catch {
+                handle.readabilityHandler = nil
                 Logger.webExtensions.error("❌ Read from host \(name, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-                await MainActor.run {
-                    self.finish(with: error)
+                DispatchQueue.main.async {
+                    MainActor.assumeMainThread { self.finish(with: error) }
                 }
+            }
+        }
+    }
+
+    /// Removes every whole message from the front of `outputBuffer`, and leaves a partial one for
+    /// the next read.
+    private func takeMessages() throws -> [Any] {
+        var messages: [Any] = []
+        while outputBuffer.count >= NativeMessagingFraming.prefixSize {
+            let length = try NativeMessagingFraming.decodeLength(outputBuffer.prefix(NativeMessagingFraming.prefixSize))
+            let frameSize = NativeMessagingFraming.prefixSize + length
+            guard outputBuffer.count >= frameSize else { break }
+
+            let payload = Data(outputBuffer.dropFirst(NativeMessagingFraming.prefixSize).prefix(length))
+            outputBuffer = Data(outputBuffer.dropFirst(frameSize))
+            if length > 0 {
+                messages.append(try NativeMessagingFraming.decodePayload(payload))
+            }
+        }
+        return messages
+    }
+
+    /// Finishes once the host has also exited, and waits briefly for that.
+    ///
+    /// EOF on the output pipe and `Process` reporting the exit race each other, and a host's exit
+    /// status is what tells one that failed from one that ended normally. A host that closed its
+    /// output and stayed up is finished after a second anyway.
+    @MainActor
+    private func didCloseOutput() {
+        guard !didFinish else { return }
+        outputDidClose = true
+
+        if exitStatus != nil || !process.isRunning {
+            finishAfterDrain()
+        } else {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: NSEC_PER_SEC)
+                self.finishAfterDrain()
             }
         }
     }
@@ -210,9 +251,8 @@ final class NativeMessagingHostSession {
     private func finishAfterDrain() {
         guard !didFinish else { return }
 
-        // EOF on the output pipe and `Process` reporting the exit race each other, so the
-        // status the termination handler records may not have arrived. The process still
-        // carries it, and without it a host that failed looks like one that ended well.
+        // The termination handler may not have run yet. The process still carries the status,
+        // and without it a host that failed looks like one that ended well.
         if exitStatus == nil, !process.isRunning {
             exitStatus = process.terminationStatus
         }
@@ -249,38 +289,32 @@ final class NativeMessagingHostSession {
     /// A host that refuses the connection usually explains itself here, and that explanation
     /// is the only clue the browser gets.
     private func startErrorLoop() {
-        let handle = errorPipe.fileHandleForReading
         let name = hostName
 
-        errorTask = Task.detached {
-            while !Task.isCancelled {
-                guard let chunk = try? handle.read(upToCount: 4096), !chunk.isEmpty else { return }
-                let text = String(data: chunk, encoding: .utf8) ?? "(\(chunk.count) bytes)"
-                Logger.webExtensions.error("❌ Host \(name, privacy: .public) stderr: \(text, privacy: .public)")
+        errorPipe.fileHandleForReading.readabilityHandler = { handle in
+            guard let chunk = Self.readAvailableData(from: handle) else {
+                handle.readabilityHandler = nil
+                return
             }
+            let text = String(data: chunk, encoding: .utf8) ?? "(\(chunk.count) bytes)"
+            Logger.webExtensions.error("❌ Host \(name, privacy: .public) stderr: \(text, privacy: .public)")
         }
     }
 
-    /// Waits briefly for a host that closed its output to finish exiting.
+    /// Reads what the pipe holds, or returns `nil` once the host closes it.
     ///
-    /// A host's exit status is what tells one that failed from one that ended normally, and
-    /// the read loop reaches EOF at about the moment `Process` learns of the exit. This runs
-    /// on the read loop's own thread and never on the main one, and it gives up rather than
-    /// wait on a host that closed its output and stayed up — which is also what happens when
-    /// `tearDown()` has already cleared the termination handler that would have signalled here.
-    private func waitForExit(timeout: TimeInterval = 1) {
-        _ = didExit.wait(timeout: .now() + timeout)
-    }
+    /// This calls `read(2)` rather than `availableData`, which raises an Objective-C exception on
+    /// a read error, and Swift can't catch that. The readability handler only runs when there is
+    /// something to read, so this doesn't block.
+    private static func readAvailableData(from handle: FileHandle) -> Data? {
+        var buffer = [UInt8](repeating: 0, count: 64 * 1024)
+        var count: Int
+        repeat {
+            count = read(handle.fileDescriptor, &buffer, buffer.count)
+        } while count < 0 && errno == EINTR
 
-    /// Reads exactly `count` bytes, or returns `nil` once the host closes its output.
-    private static func readExactly(_ count: Int, from handle: FileHandle) throws -> Data? {
-        var data = Data()
-        while data.count < count {
-            guard let chunk = try handle.read(upToCount: count - data.count), !chunk.isEmpty else {
-                return nil
-            }
-            data.append(chunk)
-        }
-        return data
+        // 0 is EOF. A read error also ends the host's output.
+        guard count > 0 else { return nil }
+        return Data(buffer[..<count])
     }
 }

@@ -282,6 +282,33 @@ final class SyncSettingsViewControllerPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Setup authentication results fire the authentication result pixel with result and source",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (SyncSettingsViewModel.SetupAuthenticationResult.succeeded, SyncSettingsViewModel.SetupAuthenticationSource.settingsNotSynced,
+             ["result": "succeeded", "source": "settings_not_synced"]),
+            (.failed, .settingsSynced, ["result": "failed", "source": "settings_synced"]),
+            (.unconfigured, .thisDevice, ["result": "unconfigured", "source": "this_device"]),
+            (.succeeded, .recover, ["result": "succeeded", "source": "recover"]),
+            (.failed, .deepLink, ["result": "failed", "source": "deep_link"])
+          ])
+    func setupAuthenticationResultFiresPixel(result: SyncSettingsViewModel.SetupAuthenticationResult,
+                                             source: SyncSettingsViewModel.SetupAuthenticationSource,
+                                             expectedParameters: [String: String]) {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.fireSyncSetupPixel(event: .authenticationResult(result, source: source))
+
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_setup_authentication_result" &&
+            $0.pixel.parameters == expectedParameters &&
+            ($0.additionalParameters ?? [:]).isEmpty &&
+            $0.includeAppVersionParameter == true
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Turning off sync without a confirmation fires the sync disabled pixel", .timeLimit(.minutes(1)))
     func disablingSyncFiresSyncDisabledPixel() async {
         let vc = makeViewController(source: nil, enabledFeatureFlags: [])

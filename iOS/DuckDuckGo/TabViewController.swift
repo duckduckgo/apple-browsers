@@ -4735,10 +4735,10 @@ extension TabViewController: WKUIDelegate {
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()
-        freezeMonitor.end(.terminated)
 
         if webView === self.webView {
             cancelWebExtensionNavigationWait()
+            freezeMonitor.end(.terminated)
         }
 
         pageContextProcessTerminated = true
@@ -4780,11 +4780,13 @@ extension TabViewController: WKUIDelegate {
     // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
     @objc(_webViewWebProcessDidBecomeUnresponsive:)
     func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
-        freezeMonitor.didBecomeUnresponsive(freezePageContext)
+        guard webView === self.webView else { return }
+        freezeMonitor.didBecomeUnresponsive(freezePageContext(for: webView))
     }
 
     @objc(_webViewWebProcessDidBecomeResponsive:)
     func webViewWebProcessDidBecomeResponsive(_ webView: WKWebView) {
+        guard webView === self.webView else { return }
         freezeMonitor.end(.recovered)
     }
 
@@ -4793,14 +4795,14 @@ extension TabViewController: WKUIDelegate {
         freezeMonitor.didAttemptNavigation()
     }
 
-    private var freezePageContext: WebContentHealthPixel.PageContext {
+    private func freezePageContext(for webView: WKWebView) -> WebContentHealthPixel.PageContext {
         let url = webView.url
         var hasWebExtension = false
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
             hasWebExtension = !webExtensionManager.loadedExtensions.isEmpty
         }
         return .init(surface: .init(url: url),
-                     isLoading: isLoading,
+                     isLoading: webView.isLoading && !wasLoadingStoppedExternally,
                      isDesktopMode: tabModel.isDesktop,
                      isProtected: privacyConfigurationManager.privacyConfig.isProtected(domain: url?.host),
                      hasWebExtension: hasWebExtension)

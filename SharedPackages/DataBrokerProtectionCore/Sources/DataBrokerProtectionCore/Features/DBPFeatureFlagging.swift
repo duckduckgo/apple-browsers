@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+// This is a test comment to trigger all required checks on main
 import Foundation
 
 public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging

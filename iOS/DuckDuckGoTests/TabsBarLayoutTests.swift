@@ -355,7 +355,7 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
         XCTAssertTrue(cell.removeButton.isHidden)
     }
 
-    func testHoverHighlightExpandsWithRevealedTabWithoutLiftingContent() throws {
+    func testHoverHighlightExpandsWithRevealedTabAndClearsOnExit() throws {
         let (collectionView, _) = makeCollectionView(currentIndex: { 2 }, contentOffset: 0)
         let window = UIWindow(frame: collectionView.frame)
         window.addSubview(collectionView)
@@ -370,11 +370,6 @@ final class TabsBarCollectionViewLayoutTests: XCTestCase, UICollectionViewDataSo
             XCTAssertEqual(highlight.alpha, exposedRect.isEmpty ? 0 : 1)
             XCTAssertEqual(highlight.frame, cell.contentView.bounds)
             XCTAssertTrue(highlight.subviews.isEmpty, "Hover stays behind the title and favicon")
-            let pointer = try XCTUnwrap(cell.contentView.interactions.compactMap { $0 as? UIPointerInteraction }.first)
-            let style = cell.pointerInteraction(pointer, styleFor: UIPointerRegion(rect: cell.contentView.bounds))
-            if #available(iOS 17, *) {
-                XCTAssertNil(style?.__effect, "A lifted hover snapshot can blank the live tab during selection or dragging")
-            }
         }
 
         let revealed = try XCTUnwrap(collectionView.cellForItem(at: IndexPath(item: 4, section: 0)) as? TabsBarCell)

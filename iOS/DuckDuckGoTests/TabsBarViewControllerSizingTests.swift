@@ -159,7 +159,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     @MainActor
     func testDraggingInNarrowStripStaysStillAtCenterAndScrollsTowardEdge() throws {
         let (controller, model) = makeOverflowingController()
-        controller.view.frame.size.width = 300
+        controller.view.frame.size.width = 400
         controller.view.layoutIfNeeded()
         controller.refresh(tabsModel: model)
         let collectionView = controller.collectionView
@@ -171,6 +171,8 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
                                          point: cell.convert(CGPoint(x: 20, y: cell.bounds.midY), to: controller.view))
         session.items = controller.collectionView(collectionView, itemsForBeginning: session, at: source)
         let viewport = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+        XCTAssertGreaterThan(viewport.width, cell.bounds.width)
+        XCTAssertLessThan(viewport.width, cell.bounds.width * 2)
         let fingerX = viewport.midX - cell.bounds.width / 2 + 20
         session.point = collectionView.convert(CGPoint(x: fingerX, y: viewport.midY), to: controller.view)
         _ = controller.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: source)
@@ -282,7 +284,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
 
     @MainActor
     func testFoldedTabSelectsImmediatelyWhileRevealingAndRequiresSecondTapWhenHalfCovered() async throws {
-        for width in [CGFloat(1024), 300] {
+        for width in [CGFloat(1024), 400] {
             let (controller, model) = makeOverflowingController()
             controller.view.frame.size.width = width
             controller.view.layoutIfNeeded()
@@ -294,6 +296,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
             let selectedTab = try XCTUnwrap(model.currentTab)
             let originalFrame = try XCTUnwrap(layout.unpinnedFrameForItem(at: current))
             let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
+            XCTAssertGreaterThan(viewportWidth, originalFrame.width)
             let peek = min(originalFrame.width / 2, (viewportWidth - originalFrame.width) / 2)
             let pinOffset = originalFrame.minX - collectionView.adjustedContentInset.left - peek
 
@@ -324,6 +327,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
             collectionView.layoutIfNeeded()
             let cell = try XCTUnwrap(collectionView.cellForItem(at: target) as? TabsBarCell)
             XCTAssertEqual(cell.visiblePointerRect(in: cell.contentView).width, peek, accuracy: 0.001)
+            XCTAssertGreaterThan(peek, 0)
             XCTAssertLessThanOrEqual(peek, cell.bounds.width / 2)
             XCTAssertTrue(controller.collectionView(collectionView, shouldSelectItemAt: current))
             let offset = collectionView.contentOffset
@@ -341,7 +345,7 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
 
     @MainActor
     func testPointerClickSelectsHalfCoveredTabImmediatelyAndLeavesTouchOnTheRevealPath() throws {
-        for width in [CGFloat(1024), 300] {
+        for width in [CGFloat(1024), 400] {
             let (controller, model) = makeOverflowingController()
             controller.view.frame.size.width = width
             controller.view.layoutIfNeeded()
@@ -360,6 +364,10 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
             let selectedTab = try XCTUnwrap(model.currentTab)
             let frame = try XCTUnwrap(layout.unpinnedFrameForItem(at: current))
             let viewportWidth = collectionView.bounds.inset(by: collectionView.adjustedContentInset).width
+            XCTAssertGreaterThan(viewportWidth, frame.width)
+            if width == 400 {
+                XCTAssertLessThan(viewportWidth, frame.width * 2)
+            }
             let peek = min(frame.width / 2, (viewportWidth - frame.width) / 2)
             let offset = frame.minX - collectionView.adjustedContentInset.left - peek + frame.width * 2
             collectionView.contentOffset.x = offset

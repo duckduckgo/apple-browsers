@@ -19,6 +19,10 @@
 import Foundation
 import Persistence
 
+extension Notification.Name {
+    static let duckAiTermsOfServiceDidChange = Notification.Name(rawValue: "com.duckduckgo.aiChat.termsOfServiceDidChange")
+}
+
 /// The one record of whether the user accepted Duck.ai's Terms of Service, whichever side they
 /// accepted on. The key predates native acceptance, so the web's reports already live under it.
 struct DuckAiTermsOfServiceStore {
@@ -34,10 +38,14 @@ struct DuckAiTermsOfServiceStore {
     }
 
     private let keyValueStore: KeyValueStoring
+    private let notificationCenter: NotificationCenter
 
     /// `UserDefaults.standard`, where `AIChatPreferencesStorage` keeps the same key.
-    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+    /// Posts `duckAiTermsOfServiceDidChange` on `notificationCenter` whenever the acceptance flips, so open
+    /// New Tab Pages can drop or bring back their disclaimer.
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard, notificationCenter: NotificationCenter = .default) {
         self.keyValueStore = keyValueStore
+        self.notificationCenter = notificationCenter
     }
 
     var hasAccepted: Bool {
@@ -62,6 +70,9 @@ struct DuckAiTermsOfServiceStore {
         let wasAwaitingWebReport = keyValueStore.object(forKey: Key.isAwaitingWebReport.rawValue) as? Bool == true
         keyValueStore.removeObject(forKey: Key.isAwaitingWebReport.rawValue)
         keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
+        if !wasAccepted {
+            notificationCenter.post(name: .duckAiTermsOfServiceDidChange, object: nil)
+        }
         return wasAccepted && !wasAwaitingWebReport ? .alreadyAccepted : .firstAcceptance
     }
 
@@ -69,11 +80,13 @@ struct DuckAiTermsOfServiceStore {
         guard !hasAccepted else { return }
         keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
         keyValueStore.set(true, forKey: Key.isAwaitingWebReport.rawValue)
+        notificationCenter.post(name: .duckAiTermsOfServiceDidChange, object: nil)
     }
 
     /// Native only: the web app keeps its own copy until Duck.ai data is cleared.
     func resetForDebugging() {
         keyValueStore.removeObject(forKey: Key.hasAccepted.rawValue)
         keyValueStore.removeObject(forKey: Key.isAwaitingWebReport.rawValue)
+        notificationCenter.post(name: .duckAiTermsOfServiceDidChange, object: nil)
     }
 }

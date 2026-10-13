@@ -128,6 +128,30 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         XCTAssertNil(terminationError)
     }
 
+    /// A pipe hands over whatever the host has written so far, which can be several messages at
+    /// once or part of one.
+    func testWhenHostWritesMessagesTogetherAndInPiecesThenTheSessionDeliversEachOnce() throws {
+        let executable = try makeHost(named: "chunked-host", script: Self.chunkedHostScript)
+        let session = makeSession(executable: executable)
+
+        let finished = expectation(description: "session finished")
+        var indices: [Int] = []
+        session.messageHandler = { message in
+            if let index = (message as? [String: Int])?["index"] {
+                indices.append(index)
+            }
+        }
+        session.terminationHandler = { error in
+            XCTAssertNil(error)
+            finished.fulfill()
+        }
+
+        try session.start()
+
+        wait(for: [finished], timeout: 10)
+        XCTAssertEqual(indices, [1, 2, 3])
+    }
+
     /// A host that fails has to be told apart from one that ended normally, and the exit
     /// status is the only sign. The output pipe reaches EOF at about the same moment, so this
     /// also guards the race between the two.
@@ -334,6 +358,23 @@ final class NativeMessagingHostSessionTests: XCTestCase {
     private static let farewellHostScript = NativeMessagingHostSessionTests.framingPreamble + """
     write_frame(b'{"type":"disconnected"}')
     sys.exit(0)
+    """
+
+    /// Writes two messages in one go, then a third in two pieces with a pause between them.
+    private static let chunkedHostScript = NativeMessagingHostSessionTests.framingPreamble + """
+    import time
+
+    def frame(payload):
+        return struct.pack('<I', len(payload)) + payload
+
+    sys.stdout.buffer.write(frame(b'{"index":1}') + frame(b'{"index":2}'))
+    sys.stdout.buffer.flush()
+    third = frame(b'{"index":3}')
+    sys.stdout.buffer.write(third[:6])
+    sys.stdout.buffer.flush()
+    time.sleep(0.3)
+    sys.stdout.buffer.write(third[6:])
+    sys.stdout.buffer.flush()
     """
 
     /// Reads its input and never answers.

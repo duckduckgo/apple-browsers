@@ -116,6 +116,7 @@ jobs:
           PATHS: ${{ inputs.paths }}
         run: |
           set -euo pipefail
+          exit 1 # Deliberate failure to check that a failing should-run-checks blocks the merge
 
           # One `:(glob)` pathspec per non-empty line of `paths`, so `dir/**` matches everything under `dir`
           pathspecs=()

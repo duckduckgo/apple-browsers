@@ -116,6 +116,7 @@ extension NewTabPageActionsManager {
             suggestionContainer: suggestionContainer,
             searchPreferences: NSApp.delegateTyped.searchPreferences
         )
+        let termsOfServiceStore = DuckAiTermsOfServiceStore()
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
@@ -125,7 +126,8 @@ extension NewTabPageActionsManager {
                 privacyConfig: contentBlocking.privacyConfigurationManager,
                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            ))
+            )),
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
         )
         let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
@@ -139,17 +141,9 @@ extension NewTabPageActionsManager {
                 NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
+            termsOfServiceStore: termsOfServiceStore,
             attachmentPrivacyDisclosureStore: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
-            duckAiLauncherPromo: DuckAiLauncherPromo(
-                featureFlagger: featureFlagger,
-                preferences: NSApp.delegateTyped.promptBarPreferences,
-                chatCountPublisher: (NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
-                    .map(\.count)
-                    .replaceError(with: 0)
-                    .eraseToAnyPublisher() ?? Just(0).eraseToAnyPublisher(),
-                keyValueStore: keyValueStore,
-                openSettings: { Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat) }
-            ),
+            duckAiLauncherPromo: NSApp.delegateTyped.duckAiLauncherPromo,
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },

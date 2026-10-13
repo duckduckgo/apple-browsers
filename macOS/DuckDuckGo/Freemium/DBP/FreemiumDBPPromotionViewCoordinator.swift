@@ -170,7 +170,9 @@ private extension FreemiumDBPPromotionViewCoordinator {
     /// Shows the Freemium DBP user interface via the presenter.
     @MainActor
     func showFreemiumDBP() {
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllersManager: Application.appDelegate.windowControllersManager)
+        let entryPoint: FreemiumDBPEntryPoint = freemiumDBPUserStateManager.firstScanResults == nil ? .freeScanBanner : .viewResultsBanner
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(entryPoint: entryPoint,
+                                                            windowControllersManager: Application.appDelegate.windowControllersManager)
     }
 
     /// Creates the view model for the promotion, updating based on the user's scan results.

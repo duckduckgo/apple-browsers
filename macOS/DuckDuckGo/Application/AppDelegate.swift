@@ -144,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var passwordsMenuBarCancellable: AnyCancellable?
     private var promptBarMenuBarController: PromptBarMenuBarController?
     private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarLauncherIntroductionCancellable: AnyCancellable?
     private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -280,6 +281,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let duckAiTermsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
 
     private var updateProgressCancellable: AnyCancellable?
+
+    @MainActor
+    private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
@@ -421,6 +425,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public let vpnSettings = VPNSettings(defaults: .netP)
     let networkSignalsProvider: NetworkSignalsProviding
+    let memoryPressureProvider: MemoryPressureProviding
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
         featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
@@ -454,6 +459,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visibilityManager: vpnUpsellVisibilityManager,
         persistor: vpnUpsellUserDefaultsPersistor
     )
+
+    lazy var bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksBarSyncPromoDelegate(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            isBookmarksBarSettingOn: { [keyValueStore] in
+                AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore).showBookmarksBar
+            },
+            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -759,6 +778,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
             pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
             isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+
+        memoryPressureProvider = MemoryPressureMonitor(isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
@@ -1228,7 +1249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
                 await MainActor.run {
                     if hasEntitlement {
-                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                        windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
                     } else {
                         let url = subscriptionManagerForPIR.url(for: .purchase)
                         windowControllersManager.showTab(with: .subscription(url))
@@ -1612,7 +1633,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
             autofillImportPromoObserver: autofillImportPromoObserver,
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
-            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager
+            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
+            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2431,6 +2453,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 canUseExchangeV2Point1: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
                 },
+                canSendExchangeChannelSecret: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanSendExchangeChannelSecret)
+                },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
                 },
@@ -2689,7 +2714,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: content)
+            presenter: PromptBarPresenter(content: content,
+                                          presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
         )
         coordinator.start()
         promptBarCoordinator = coordinator
@@ -2713,6 +2740,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     self?.promptBarMenuBarController?.hide()
                 }
+            }
+        promptBarLauncherIntroductionCancellable = promptBarPreferences.$pendingLauncherIntroduction
+            .receive(on: DispatchQueue.main)
+            .filter { $0 }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                promptBarPreferences.pendingLauncherIntroduction = false
+                promptBarCoordinator?.showPromptBarForLauncherPromo()
             }
     }
 

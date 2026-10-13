@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import NewTabPage
 
 // MARK: - Localized copy
 
@@ -252,11 +253,13 @@ final class AIChatUsageWarningCardView: NSView {
     var onDismiss: (() -> Void)?
     var onLearnMore: (() -> Void)?
     var onTermsOfServiceLink: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 
     /// The sentence-with-a-link messages, which route their link to their own callback.
     private enum Disclosure {
         case attachmentPrivacy
         case termsOfService
+        case launcherIntroduction
     }
 
     private var shownDisclosure: Disclosure?
@@ -427,7 +430,7 @@ final class AIChatUsageWarningCardView: NSView {
     // MARK: - Content
 
     func updateForAttachmentPrivacy() {
-        applyInfoIcon()
+        applyGlyph(DesignSystemImages.Glyphs.Size16.info)
         showDisclosure(.attachmentPrivacy, text: Self.attributedAttachmentPrivacyDisclosure())
         applyStackedAttachmentPrivacy(false)
     }
@@ -435,9 +438,21 @@ final class AIChatUsageWarningCardView: NSView {
     /// Names the button that accepts, which reads "Create" while Create Image is selected. The
     /// attachment notice is required too, so it stacks underneath rather than waiting its turn.
     func updateForTermsOfService(sendButton: DuckAiTermsOfServiceSendButton, stackingAttachmentPrivacy: Bool) {
-        applyShieldIcon()
+        applyGlyph(DesignSystemImages.Glyphs.Size16.shieldCheck)
         showDisclosure(.termsOfService, text: Self.attributedTermsOfServiceDisclaimer(sendButton: sendButton))
         applyStackedAttachmentPrivacy(stackingAttachmentPrivacy)
+    }
+
+    func updateForLauncherIntroduction(shortcut: String) {
+        applyGlyph(DesignSystemImages.Glyphs.Size16.info)
+        let format = UserText.duckAiLauncherIntroductionFormat
+            .replacingOccurrences(of: "%1$@", with: shortcut)
+            .replacingOccurrences(of: "%2$@", with: "%@")
+        showDisclosure(.launcherIntroduction, text: Self.attributedDisclosure(format: format,
+                                                                             linkText: UserText.duckAiLauncherIntroductionSettings,
+                                                                             url: URL.settings))
+        applyStackedAttachmentPrivacy(false)
+        applyCloseButton(isVisible: true)
     }
 
     /// Re-words the disclaimer when Create Image toggles, leaving any notice stacked under it.
@@ -480,7 +495,7 @@ final class AIChatUsageWarningCardView: NSView {
     func update(with notice: DuckAiHighUsageModelNotice) {
         showTitleLabel()
         let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
-        applyInfoIcon()
+        applyGlyph(DesignSystemImages.Glyphs.Size16.info)
         titleLabel.maximumNumberOfLines = 1
         titleLabel.attributedStringValue = Self.attributedNotice(text)
         titleLabel.setAccessibilityLabel(text)
@@ -535,12 +550,31 @@ final class AIChatUsageWarningCardView: NSView {
         }
     }
 
+    func update(with promo: NewTabPageDataModel.OmnibarLauncherPromo) {
+        showTitleLabel()
+        applyGlyph(DesignSystemImages.Glyphs.Size16.announce)
+        titleLabel.maximumNumberOfLines = 1
+        let title = NSMutableAttributedString(string: promo.message, attributes: Self.textAttributes(weight: .semibold))
+        title.append(NSAttributedString(string: promo.secondaryText ?? "", attributes: Self.textAttributes(weight: .regular)))
+        titleLabel.attributedStringValue = title
+        titleLabel.setAccessibilityLabel(title.string)
+
+        actionButton.isHidden = promo.ctaLabel == nil
+        if let ctaLabel = promo.ctaLabel {
+            actionButton.configure(title: ctaLabel, offersModelPicker: false, showsSwapIcon: false)
+        } else {
+            actionButton.collapse()
+        }
+
+        applyCloseButton(isVisible: promo.dismissible == true)
+    }
+
     func update(with notice: AIChatCreateImageModelSwitchNotice) {
         showTitleLabel()
         let title = notice.localizedTitle
         let subtitle = notice.localizedSubtitle
 
-        applyModelSwitchIcon()
+        applyGlyph(DesignSystemImages.Glyphs.Size12.swap)
         titleLabel.maximumNumberOfLines = 2
         titleLabel.attributedStringValue = Self.attributedModelSwitch(title: title, subtitle: subtitle)
         titleLabel.setAccessibilityLabel("\(title). \(subtitle)")
@@ -551,34 +585,11 @@ final class AIChatUsageWarningCardView: NSView {
         applyCloseButton(isVisible: true)
     }
 
-    /// Bold headline, regular reset detail, one string so the two can never wrap apart.
-    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
-    /// alert, where a nearly-full ring would say less than the copy already does.
-    private func applyInfoIcon() {
+    private func applyGlyph(_ image: NSImage) {
         ringView.isHidden = true
         iconImageView.isHidden = false
         lastShownApproachingPercent = nil
-        iconImageView.image = DesignSystemImages.Glyphs.Size16.info
-        NSAppearance.withAppearance(appearance) {
-            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
-        }
-    }
-
-    private func applyShieldIcon() {
-        ringView.isHidden = true
-        iconImageView.isHidden = false
-        lastShownApproachingPercent = nil
-        iconImageView.image = DesignSystemImages.Glyphs.Size16.shieldCheck
-        NSAppearance.withAppearance(appearance) {
-            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
-        }
-    }
-
-    private func applyModelSwitchIcon() {
-        ringView.isHidden = true
-        iconImageView.isHidden = false
-        lastShownApproachingPercent = nil
-        iconImageView.image = DesignSystemImages.Glyphs.Size12.swap
+        iconImageView.image = image
         NSAppearance.withAppearance(appearance) {
             iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
         }
@@ -1031,6 +1042,8 @@ extension AIChatUsageWarningCardView: NSTextViewDelegate {
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
         if textView !== stackedDisclosureTextView, isShowingTermsOfService {
             onTermsOfServiceLink?()
+        } else if textView !== stackedDisclosureTextView, shownDisclosure == .launcherIntroduction {
+            onOpenSettings?()
         } else {
             onLearnMore?()
         }

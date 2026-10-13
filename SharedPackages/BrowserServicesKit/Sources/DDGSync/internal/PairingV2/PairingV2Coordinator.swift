@@ -25,16 +25,27 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
     /// Asks the local joiner whether to continue with the host that offered a recovery code.
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    /// Dismisses a pending host or joiner confirmation without treating it as a user decision.
+    func pairingV2CoordinatorDismissConfirmation() async
     /// Notifies the app that Pairing V2 created a local account before preparing a recovery code.
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
 }
 
-/// Default timing for the polling loop in `pollUntilFinished`.
+/// Pairing V2 timing defaults and remote configuration bounds.
 enum PairingV2PollingDefaults {
     /// Give up on the pairing session after this many seconds (5 minutes).
     static let sessionTimeout: TimeInterval = 300
+    /// Show the unknown join outcome after this many seconds without a status report.
+    static let joinStatusDeadline: TimeInterval = 30
     /// Wait this long between relay polls (1 second, in nanoseconds).
     static let pollIntervalNanoseconds: UInt64 = 1_000_000_000
+
+    static func resolvedJoinStatusDeadline(from featureSettings: [String: Any]) -> TimeInterval {
+        guard let milliseconds = featureSettings["joinStatusDeadlineMs"] as? Int else {
+            return joinStatusDeadline
+        }
+        return TimeInterval(min(max(milliseconds, 5_000), 120_000)) / 1_000
+    }
 }
 
 final class PairingV2Coordinator {
@@ -46,18 +57,32 @@ final class PairingV2Coordinator {
     private let deviceType: String
     private let localKind: PairingV2DeviceKind
     private let flags: PairingV2RolloutFlags
+    private let shouldAuthenticateExchangeEndpoints: Bool
+    private let advertisedVersion: PairingV2ProtocolVersion
     private let makeKeyPair: () throws -> PairingV2KeyPair
+    private let makeChannelSecret: () throws -> String
+    private let joinStatusDeadline: TimeInterval
+    private let now: () -> Date
     private weak var confirmationDelegate: PairingV2ConfirmationDelegate?
 
     private var stateMachine = PairingV2StateMachine()
     private var entryRole: PairingV2EntryRole?
     private var localKeyPair: PairingV2KeyPair?
+    private var localChannelSecret: String?
     private var peerChannelID: String?
     private var peerPublicKey: String?
     private var lastProcessedSequence = 0
+    private var hasOpenedLocalChannel = false
     private var hasClosedLocalChannel = false
+    private var pendingConfirmation: PairingV2PendingConfirmation?
+    private var pendingConfirmationTask: Task<Void, Never>?
+    private var pendingRecoveryCode: PairingV2RecoveryCodeResponseMessage?
+    private var joinStatusDeadlineDate: Date?
+    private var recoveryCodeWaitDeadlineDate: Date?
+    private var hasRecoveryCodeWaitDeadlinePassed = false
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
+    private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
 
     init(syncService: DDGSyncing,
          messageExchanger: PairingV2MessageExchanging,
@@ -66,8 +91,13 @@ final class PairingV2Coordinator {
          deviceType: String,
          localKind: PairingV2DeviceKind = .ddg,
          flags: PairingV2RolloutFlags,
+         canSendExchangeChannelSecret: Bool,
+         advertisedVersion: PairingV2ProtocolVersion,
          confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
-         makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() }) {
+         joinStatusDeadline: TimeInterval = PairingV2PollingDefaults.joinStatusDeadline,
+         now: @escaping () -> Date = Date.init,
+         makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
+         makeChannelSecret: @escaping () throws -> String = { try PairingV2ChannelSecretFactory.makeSecret() }) {
         self.syncService = syncService
         self.messageExchanger = messageExchanger
         self.messageCrypto = messageCrypto
@@ -75,12 +105,31 @@ final class PairingV2Coordinator {
         self.deviceType = deviceType
         self.localKind = localKind
         self.flags = flags
+        self.shouldAuthenticateExchangeEndpoints = advertisedVersion >= .v2Point1 || canSendExchangeChannelSecret
+        self.advertisedVersion = advertisedVersion
         self.confirmationDelegate = confirmationDelegate
+        self.joinStatusDeadline = joinStatusDeadline
+        self.now = now
         self.makeKeyPair = makeKeyPair
+        self.makeChannelSecret = makeChannelSecret
     }
 
     var state: PairingV2State {
         stateMachine.state
+    }
+
+    /// Waiting-screen status for both the host awaiting the join result and the joiner awaiting the recovery code.
+    var joinStatus: PairingV2JoinStatus? {
+        switch state {
+        case .hostWaitingForJoinStatus, .joinerLoggingIn:
+            return .waiting
+        case .hostJoinOutcomeUnknown:
+            return .unknown
+        case .joinerWaitingForRecoveryCode:
+            return hasRecoveryCodeWaitDeadlinePassed ? .unknown : .waiting
+        default:
+            return nil
+        }
     }
 
     func startPresenting() async throws -> PairingV2QRCodePayload {
@@ -93,7 +142,7 @@ final class PairingV2Coordinator {
         )
         try await execute(commands)
 
-        return PairingV2QRCodePayload(channelId: keyPair.channelID, publicKey: keyPair.publicKey)
+        return PairingV2QRCodePayload(version: advertisedVersion.rawValue, channelId: keyPair.channelID, publicKey: keyPair.publicKey)
     }
 
     func startScanning(qrPayload: PairingV2QRCodePayload) async throws {
@@ -102,6 +151,7 @@ final class PairingV2Coordinator {
         localKeyPair = keyPair
         peerChannelID = qrPayload.channelId
         peerPublicKey = qrPayload.publicKey
+        negotiateProtocolVersion(with: qrPayload.version)
 
         let commands = stateMachine.handle(
             .scannedCode(.v2Linking(peerChannelID: qrPayload.channelId, localChannelID: keyPair.channelID), localClient: localClient(isPresenter: false), flags: flags)
@@ -111,9 +161,15 @@ final class PairingV2Coordinator {
 
     /// Performs one poll of this device's channel and handles any new messages.
     /// Production polling goes through `pollUntilFinished`; this is internal for unit testing.
-    func pollOnce() async throws {
+    func pollOnce(onStateChange: ((PairingV2State) async -> Void)? = nil) async throws {
         guard let channelID = localKeyPair?.channelID else {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)
+        }
+
+        try await handleConfirmationResult(onStateChange: onStateChange)
+        await onStateChange?(state)
+        guard !hasFinishedPairing else {
+            return
         }
 
         let messages: [PairingV2SequencedMessage]
@@ -121,7 +177,9 @@ final class PairingV2Coordinator {
             messages = try await performRelayOperation(
                 at: failureStage(presenter: .presenterPollOwnChannel, scanner: .scannerPollOwnChannel)
             ) {
-                try await messageExchanger.fetchMessages(from: channelID, after: lastProcessedSequence)
+                try await messageExchanger.fetchMessages(from: channelID,
+                                                          after: lastProcessedSequence,
+                                                          authorizationSecret: localChannelSecret)
             }
         } catch let operationFailure as PairingV2OperationFailure {
             if let stateMachineError = operationFailure.context.kind?.stateMachineError {
@@ -129,11 +187,31 @@ final class PairingV2Coordinator {
             }
             throw operationFailure
         }
-        for message in messages.sorted(by: { $0.seq < $1.seq }) {
+        try await processPolledMessages(messages, onStateChange: onStateChange)
+        try await handleJoinStatusDeadlineIfNeeded()
+        if case .joinerWaitingForRecoveryCode = state, let recoveryCodeWaitDeadlineDate {
+            hasRecoveryCodeWaitDeadlinePassed = now() >= recoveryCodeWaitDeadlineDate
+        }
+    }
+
+    private func processPolledMessages(_ messages: [PairingV2SequencedMessage],
+                                       onStateChange: ((PairingV2State) async -> Void)?) async throws {
+        for message in messages.sorted(by: { $0.seq < $1.seq }) where message.seq > lastProcessedSequence {
             guard !hasFinishedPairing else {
                 return
             }
-            try await handle(message.encryptedMessage)
+
+            guard let applicationMessage = try decrypt(message.encryptedMessage) else {
+                lastProcessedSequence = max(lastProcessedSequence, message.seq)
+                continue
+            }
+            if case .joinerWaitingForConfirmation = state,
+               case .recoveryCodeResponse(let response) = applicationMessage {
+                // The peer may release its code before the local user confirms. Keep it while continuing to receive other messages.
+                pendingRecoveryCode = pendingRecoveryCode ?? response
+            } else {
+                try await handle(applicationMessage, onStateChange: onStateChange)
+            }
             lastProcessedSequence = max(lastProcessedSequence, message.seq)
         }
     }
@@ -141,18 +219,18 @@ final class PairingV2Coordinator {
     func pollUntilFinished(timeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
                            pollInterval: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds,
                            onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
-        let timeoutDate = Date().addingTimeInterval(timeout)
+        let timeoutDate = now().addingTimeInterval(timeout)
 
         while true {
             if let completion = try checkPairingCompletion() {
                 return completion
             }
 
-            if Date() > timeoutDate {
+            if now() > timeoutDate {
                 throw SyncError.pollingDidTimeOut
             }
 
-            try await pollOnce()
+            try await pollOnce(onStateChange: onDidPoll)
             await onDidPoll?(state)
             if let completion = try checkPairingCompletion() {
                 return completion
@@ -162,44 +240,97 @@ final class PairingV2Coordinator {
     }
 
     func cancel() async {
-        _ = stateMachine.handle(.failed(.cancelled))
-        await closeLocalChannel()
+        let commands = stateMachine.handle(.failed(.cancelled))
+        await dismissPendingConfirmation()
+        try? await execute(commands)
+        await closeLocalChannel(byeReason: .cancelled)
     }
 
-    private func closeLocalChannel() async {
-        guard !hasClosedLocalChannel else {
-            return
-        }
-        guard let channelID = localKeyPair?.channelID else {
-            return
-        }
-        hasClosedLocalChannel = true
-        try? await messageExchanger.closeChannel(channelID)
+    func closeAfterLocalError() async {
+        // Claim teardown before notifying the UI, while preserving state for timeout classification.
+        closeLocalChannelBestEffort(byeReason: .error)
+        await dismissPendingConfirmation()
     }
 
-    private func closeLocalChannelBestEffort() {
-        guard !hasClosedLocalChannel else {
-            return
+    func completeAccountSwitch(didSucceed: Bool) async throws {
+        if didSucceed {
+            await reportJoinStatus(.success)
+            try await execute(stateMachine.handle(.loginSucceeded))
+        } else {
+            await reportJoinStatus(.loginFailed)
+            try await execute(stateMachine.handle(.failed(.loginFailed)))
         }
-        guard let channelID = localKeyPair?.channelID else {
-            return
-        }
+    }
 
-        hasClosedLocalChannel = true
+    private func closeLocalChannel(byeReason: PairingV2ByeReason) async {
+        guard let teardown = makeChannelTeardown(byeReason: byeReason) else {
+            return
+        }
+        await Self.perform(teardown, using: messageExchanger)
+    }
+
+    private func closeLocalChannelBestEffort(byeReason: PairingV2ByeReason) {
+        guard let teardown = makeChannelTeardown(byeReason: byeReason) else {
+            return
+        }
         Task { [messageExchanger] in
-            try? await messageExchanger.closeChannel(channelID)
+            await Self.perform(teardown, using: messageExchanger)
         }
     }
 
-    private func handle(_ encryptedMessage: PairingV2EncryptedMessage) async throws {
+    private func makeChannelTeardown(byeReason: PairingV2ByeReason) -> PairingV2ChannelTeardown? {
+        guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
+            return nil
+        }
+        guard let channelID = localKeyPair?.channelID else {
+            return nil
+        }
+
+        let authorizationSecret = localChannelSecret
+        hasClosedLocalChannel = true
+        localChannelSecret = nil
+
+        var bye: PairingV2EncryptedMessage?
+        if supportsBye {
+            if let peerPublicKey, peerChannelID != nil {
+                bye = try? messageCrypto.encrypt(.bye(.init(reason: byeReason)),
+                                                 recipientPublicKey: peerPublicKey,
+                                                 senderChannelID: channelID)
+            }
+        }
+
+        return PairingV2ChannelTeardown(localChannelID: channelID,
+                                        peerChannelID: peerChannelID,
+                                        authorizationSecret: authorizationSecret,
+                                        bye: bye)
+    }
+
+    private static func perform(_ teardown: PairingV2ChannelTeardown,
+                                using messageExchanger: PairingV2MessageExchanging) async {
+        if let bye = teardown.bye, let peerChannelID = teardown.peerChannelID {
+            try? await messageExchanger.send([bye],
+                                             to: peerChannelID,
+                                             authorizationSecret: teardown.authorizationSecret)
+        }
+        try? await messageExchanger.closeChannel(teardown.localChannelID,
+                                                 authorizationSecret: teardown.authorizationSecret)
+    }
+
+    private func decrypt(_ encryptedMessage: PairingV2EncryptedMessage) throws -> PairingV2ApplicationMessage? {
         guard let privateKey = localKeyPair?.privateKey else {
             throw PairingV2Error.pairingSessionNotReady(.localPrivateKey)
         }
-
         guard let message = try messageCrypto.decrypt(encryptedMessage, privateKey: privateKey, expectedSenderChannelID: peerChannelID) else {
-            return
+            return nil
         }
+        guard message.minimumProtocolVersion <= negotiatedVersion else {
+            return nil
+        }
+        return message
+    }
 
+    private func handle(_ message: PairingV2ApplicationMessage,
+                        onStateChange: ((PairingV2State) async -> Void)?) async throws {
         let commands: [PairingV2Command]
         let stateBeforeMessage = stateMachine.state
         switch message {
@@ -212,6 +343,7 @@ final class PairingV2Coordinator {
             if case .waitingForPeerHello = stateBeforeMessage, !hasFinishedPairing {
                 peerChannelID = message.channelId
                 peerPublicKey = message.publicKey
+                negotiateProtocolVersion(with: message.version)
             }
 
         case .recoveryCodeAvailable(let message):
@@ -228,12 +360,22 @@ final class PairingV2Coordinator {
 
         case .recoveryCodeResponse(let message):
             commands = stateMachine.handle(.receivedRecoveryCode(message.recoveryCode))
+            if case .joinerLoggingIn = state {
+                // The code has arrived; stop directing the user to the peer while local account work runs.
+                await onStateChange?(state)
+            }
 
         case .recoveryCodeDenied:
             commands = stateMachine.handle(.receivedRecoveryCodeDenied)
 
         case .recoveryCodeUnavailable:
             commands = stateMachine.handle(.receivedRecoveryCodeUnavailable)
+
+        case .recoveryCodeDone(let message):
+            commands = stateMachine.handle(.receivedRecoveryCodeDone(message.reason))
+
+        case .bye(let message):
+            commands = stateMachine.handle(.receivedBye(message.reason))
         }
 
         try await execute(commands)
@@ -262,13 +404,37 @@ final class PairingV2Coordinator {
         switch command {
         case .openV2Channel(let channelID):
             let channelID = try channelID ?? requiredLocalChannelID()
-            try await performRelayOperation(at: relayFailureStage) {
-                try await messageExchanger.openChannel(channelID)
+            let authorizationSecret = try generateChannelSecret()
+
+            do {
+                try await performRelayOperation(at: relayFailureStage) {
+                    try await messageExchanger.openChannel(channelID, authorizationSecret: authorizationSecret)
+                }
+            } catch let operationFailure as PairingV2OperationFailure {
+                // The PUT may have succeeded before its response was lost. Now that the
+                // request has finished, make one cleanup attempt with the same credentials.
+                if operationFailure.context.kind == .networkError {
+                    try? await messageExchanger.closeChannel(
+                        channelID,
+                        authorizationSecret: authorizationSecret
+                    )
+                }
+                throw operationFailure
+            }
+
+            localChannelSecret = authorizationSecret
+            hasOpenedLocalChannel = true
+
+            // If cancelled while channel creation was in flight, clean up now using the secret the server accepted
+            if case .failed(.cancelled) = stateMachine.state {
+                await closeLocalChannel(byeReason: .cancelled)
+                throw PairingV2Error.cancelled
             }
 
         case .sendHello:
             let keyPair = try requiredLocalKeyPair()
-            try await send(.hello(.init(channelId: keyPair.channelID, publicKey: keyPair.publicKey)), failureStage: relayFailureStage)
+            try await send(.hello(.init(channelId: keyPair.channelID, publicKey: keyPair.publicKey, version: advertisedVersion.rawValue)),
+                           failureStage: relayFailureStage)
 
         case .sendRecoveryCodeStatus(let status):
             try await send(recoveryCodeStatusMessage(for: status), failureStage: relayFailureStage)
@@ -285,23 +451,28 @@ final class PairingV2Coordinator {
         case .sendRecoveryCodeUnavailable:
             try await send(.recoveryCodeUnavailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeUnavailable)), failureStage: relayFailureStage)
 
+        case .startJoinStatusDeadline:
+            joinStatusDeadlineDate = now().addingTimeInterval(joinStatusDeadline)
+
         case .requestHostConfirmation(let peerName, let peerKind):
             guard let confirmationDelegate else {
                 try await execute(stateMachine.handle(.hostConfirmationDenied))
                 return
             }
-            let isConfirmed = await confirmationDelegate.pairingV2CoordinatorShouldAllowPeerToJoin(peerName: peerName, peerKind: peerKind)
-            let event: PairingV2Event = isConfirmed ? .hostConfirmationAccepted : .hostConfirmationDenied
-            try await execute(stateMachine.handle(event))
+            beginConfirmation { [weak confirmationDelegate] in
+                let isConfirmed = await confirmationDelegate?.pairingV2CoordinatorShouldAllowPeerToJoin(peerName: peerName, peerKind: peerKind) ?? false
+                return isConfirmed ? .hostConfirmationAccepted : .hostConfirmationDenied
+            }
 
         case .requestJoinerConfirmation(let peerName, let peerKind):
             guard let confirmationDelegate else {
                 try await execute(stateMachine.handle(.joinerConfirmationDenied))
                 return
             }
-            let isConfirmed = await confirmationDelegate.pairingV2CoordinatorShouldJoinPeer(peerName: peerName, peerKind: peerKind)
-            let event: PairingV2Event = isConfirmed ? .joinerConfirmationAccepted : .joinerConfirmationDenied
-            try await execute(stateMachine.handle(event))
+            beginConfirmation { [weak confirmationDelegate] in
+                let isConfirmed = await confirmationDelegate?.pairingV2CoordinatorShouldJoinPeer(peerName: peerName, peerKind: peerKind) ?? false
+                return isConfirmed ? .joinerConfirmationAccepted : .joinerConfirmationDenied
+            }
 
         case .prepareRecoveryCode(let credentialKind, let purpose):
             let recoveryCode: String
@@ -328,7 +499,7 @@ final class PairingV2Coordinator {
                 try await execute(stateMachine.handle(.failed(.recoveryCodeSendFailed)))
                 throw PairingV2Error.recoveryCodeSendFailed
             }
-            try await execute(stateMachine.handle(.recoveryCodeSent))
+            try await execute(stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: supportsRecoveryCodeDone)))
 
         case .loginWithRecoveryCode(let recoveryCode):
             do {
@@ -336,15 +507,19 @@ final class PairingV2Coordinator {
             } catch SyncError.accountAlreadyExists {
                 throw SyncError.accountAlreadyExists
             } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.invalidCredentials)))
                 throw PairingV2Error.invalidCredentials
             } catch SyncError.failedToWriteSecureStore {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.localStorageFailed)))
                 throw PairingV2Error.localStorageFailed
             } catch {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.loginFailed)))
                 throw PairingV2Error.loginFailed
             }
+            await reportJoinStatus(.success)
             try await execute(stateMachine.handle(.loginSucceeded))
 
         case .upgradeThirdPartyAccountWithRecoveryCode(let recoveryCode):
@@ -352,27 +527,45 @@ final class PairingV2Coordinator {
                 try await upgradeThirdPartyAccount(with: recoveryCode)
             } catch let error as ThirdPartyAccountUpgradeError {
                 let pairingError = pairingV2AccountUpgradeError(for: error)
+                await reportJoinStatus(error == .invalidRecoveryCode ? .scopeRejected : .loginFailed)
                 try await execute(stateMachine.handle(.failed(pairingError)))
                 throw pairingError
             } catch let error as PairingV2Error {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(error)))
                 throw error
             } catch {
+                await reportJoinStatus(.loginFailed)
                 try await execute(stateMachine.handle(.failed(.upgradeFailed)))
                 throw PairingV2Error.upgradeFailed
             }
+            await reportJoinStatus(.success)
             try await execute(stateMachine.handle(.loginSucceeded))
 
         case .stopPolling:
             // Do not block successful pairing on relay channel cleanup.
-            closeLocalChannelBestEffort()
+            closeLocalChannelBestEffort(byeReason: .done)
 
-        case .abort:
-            await closeLocalChannel()
+        case .abort(let error):
+            await dismissPendingConfirmation()
+            let byeReason: PairingV2ByeReason
+            switch error {
+            case .peerCancelled, .peerDisconnected:
+                byeReason = .done
+            case .cancelled:
+                byeReason = .cancelled
+            default:
+                byeReason = .error
+            }
+            // Report the terminal outcome without waiting for best-effort relay cleanup.
+            closeLocalChannelBestEffort(byeReason: byeReason)
         }
     }
 
     private func send(_ message: PairingV2ApplicationMessage, failureStage: PairingV2FailureStage?) async throws {
+        guard message.minimumProtocolVersion <= negotiatedVersion else {
+            return
+        }
         guard let peerChannelID else {
             throw PairingV2Error.pairingSessionNotReady(.peerChannelID)
         }
@@ -382,7 +575,9 @@ final class PairingV2Coordinator {
 
         let encryptedMessage = try messageCrypto.encrypt(message, recipientPublicKey: peerPublicKey, senderChannelID: try requiredLocalChannelID())
         try await performRelayOperation(at: failureStage) {
-            try await messageExchanger.send([encryptedMessage], to: peerChannelID)
+            try await messageExchanger.send([encryptedMessage],
+                                            to: peerChannelID,
+                                            authorizationSecret: localChannelSecret)
         }
     }
 
@@ -433,6 +628,68 @@ final class PairingV2Coordinator {
         try await send(response, failureStage: failureStage)
     }
 
+    private func reportJoinStatus(_ reason: PairingV2RecoveryCodeDoneReason) async {
+        guard supportsRecoveryCodeDone else {
+            return
+        }
+        do {
+            try await send(.recoveryCodeDone(.init(reason: reason)), failureStage: nil)
+        } catch {
+            Logger.sync.debug("Pairing V2 could not report join status: \(String(reflecting: error))")
+        }
+    }
+
+    private func beginConfirmation(_ operation: @escaping () async -> PairingV2Event) {
+        let confirmation = PairingV2PendingConfirmation()
+        pendingConfirmation = confirmation
+        pendingConfirmationTask = Task {
+            await confirmation.resolve(operation())
+        }
+    }
+
+    private func handleConfirmationResult(onStateChange: ((PairingV2State) async -> Void)?) async throws {
+        guard let confirmation = pendingConfirmation,
+              let event = await confirmation.result,
+              pendingConfirmation === confirmation else {
+            return
+        }
+        pendingConfirmation = nil
+        pendingConfirmationTask = nil
+        let recoveryCode = pendingRecoveryCode
+        pendingRecoveryCode = nil
+        try await execute(stateMachine.handle(event))
+        if case .joinerWaitingForRecoveryCode = state {
+            recoveryCodeWaitDeadlineDate = now().addingTimeInterval(joinStatusDeadline)
+        }
+        if let recoveryCode, !hasFinishedPairing {
+            try await handle(.recoveryCodeResponse(recoveryCode), onStateChange: onStateChange)
+        }
+    }
+
+    private func handleJoinStatusDeadlineIfNeeded() async throws {
+        guard case .hostWaitingForJoinStatus = state else {
+            joinStatusDeadlineDate = nil
+            return
+        }
+        guard let joinStatusDeadlineDate, now() >= joinStatusDeadlineDate else {
+            return
+        }
+
+        self.joinStatusDeadlineDate = nil
+        try await execute(stateMachine.handle(.joinStatusDeadlineReached))
+    }
+
+    private func dismissPendingConfirmation() async {
+        let confirmation = pendingConfirmation
+        pendingConfirmation = nil
+        pendingConfirmationTask?.cancel()
+        pendingConfirmationTask = nil
+        pendingRecoveryCode = nil
+        if confirmation != nil {
+            await confirmationDelegate?.pairingV2CoordinatorDismissConfirmation()
+        }
+    }
+
     private func login(with recoveryCode: String) async throws {
         let syncCode = try SyncCode.decodeBase64String(recoveryCode)
         guard let recovery = syncCode.recovery else {
@@ -473,10 +730,10 @@ final class PairingV2Coordinator {
         do {
             try await execute(stateMachine.handle(.failed(error)))
         } catch let relayFailure as PairingV2OperationFailure {
-            await closeLocalChannel()
+            await closeLocalChannel(byeReason: .error)
             throw relayFailure
         } catch {
-            await closeLocalChannel()
+            await closeLocalChannel(byeReason: .error)
         }
         throw error
     }
@@ -505,17 +762,47 @@ final class PairingV2Coordinator {
 
     private func prepareForNewSession(entryRole: PairingV2EntryRole) {
         self.entryRole = entryRole
+        negotiatedVersion = .v2
         localKeyPair = nil
+        localChannelSecret = nil
         peerChannelID = nil
         peerPublicKey = nil
         lastProcessedSequence = 0
+        hasOpenedLocalChannel = false
         hasClosedLocalChannel = false
+        pendingConfirmation = nil
+        pendingConfirmationTask?.cancel()
+        pendingConfirmationTask = nil
+        pendingRecoveryCode = nil
+        joinStatusDeadlineDate = nil
+        recoveryCodeWaitDeadlineDate = nil
+        hasRecoveryCodeWaitDeadlinePassed = false
+    }
+
+    private func negotiateProtocolVersion(with peerVersion: String) {
+        negotiatedVersion = advertisedVersion.negotiated(with: peerVersion)
+        Logger.sync.debug("\("Pairing V2 negotiated version: \(self.negotiatedVersion.rawValue), local: \(self.advertisedVersion.rawValue), peer: \(peerVersion)", privacy: .private)")
     }
 
     private func generateKeyPair(failureStage: PairingV2FailureStage) throws -> PairingV2KeyPair {
         do {
             return try makeKeyPair()
         } catch {
+            throw PairingV2OperationFailure(generationStage: failureStage, underlyingError: error)
+        }
+    }
+
+    private func generateChannelSecret() throws -> String? {
+        guard shouldAuthenticateExchangeEndpoints else {
+            return nil
+        }
+
+        do {
+            return try makeChannelSecret()
+        } catch {
+            guard let failureStage = failureStage(presenter: .presenterGenerateCode, scanner: .scannerGenerateKeys) else {
+                throw error
+            }
             throw PairingV2OperationFailure(generationStage: failureStage, underlyingError: error)
         }
     }
@@ -568,6 +855,29 @@ final class PairingV2Coordinator {
             return false
         }
     }
+
+    var supportsRecoveryCodeDone: Bool {
+        negotiatedVersion >= .v2Point1
+    }
+
+    var supportsBye: Bool {
+        negotiatedVersion >= .v2Point1
+    }
+}
+
+private actor PairingV2PendingConfirmation {
+    private(set) var result: PairingV2Event?
+
+    func resolve(_ event: PairingV2Event) {
+        result = event
+    }
+}
+
+private struct PairingV2ChannelTeardown {
+    let localChannelID: String
+    let peerChannelID: String?
+    let authorizationSecret: String?
+    let bye: PairingV2EncryptedMessage?
 }
 
 enum PairingV2EntryRole {
@@ -607,6 +917,7 @@ extension PairingV2Command {
         case .sendRecoveryCodeUnavailable:
             return entryRole.failureStage(presenter: .presenterSendRecoveryUnavailable, scanner: .scannerSendRecoveryUnavailable)
         case .stopPolling,
+                .startJoinStatusDeadline,
                 .requestHostConfirmation,
                 .requestJoinerConfirmation,
                 .prepareRecoveryCode,

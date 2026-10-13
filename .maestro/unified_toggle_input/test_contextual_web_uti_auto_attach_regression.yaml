@@ -52,8 +52,9 @@ name: test_contextual_web_uti_auto_attach_regression
     visible:
         id: "AIChat.ContextualSheet"
     timeout: 15000
+# Wait on our own prompt rather than Duck.ai's page copy, which changes without notice.
 - extendedWaitUntil:
-    visible: "We don't track you.*"
+    visible: "First contextual prompt"
     timeout: 30000
 
 - tapOn:

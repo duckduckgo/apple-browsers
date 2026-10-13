@@ -87,6 +87,7 @@ final class SaveCredentialsViewController: NSViewController {
         static let revealButtonSize = CGSize(width: 30, height: 20)
         static let lockBoxInset: CGFloat = 6
         static let lockBoxLeading: CGFloat = 14
+        static let tooltipInset: CGFloat = 5
     }
 
     var themeUpdateCancellable: AnyCancellable?
@@ -344,8 +345,8 @@ final class SaveCredentialsViewController: NSViewController {
 
         let lockImage = makeLogoImageView(NSImage(resource: .lockColor16))
         tooltipView = MouseOverView(frame: .zero)
+        tooltipView.translatesAutoresizingMaskIntoConstraints = false
         tooltipView.cornerRadius = 4
-        tooltipView.autoresizingMask = [.width, .height, .minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
 
         lockImageBackgroundView = NSBox()
         lockImageBackgroundView.translatesAutoresizingMaskIntoConstraints = false
@@ -538,8 +539,12 @@ final class SaveCredentialsViewController: NSViewController {
                                                             constant: LayoutConstants.lockBoxInset),
 
         ])
-
-        tooltipView.frame = lockImageBackgroundView.bounds.insetBy(dx: 5, dy: 5)
+        NSLayoutConstraint.activate([
+            tooltipView.topAnchor.constraint(equalTo: lockImageBackgroundView.topAnchor, constant: LayoutConstants.tooltipInset),
+            tooltipView.leadingAnchor.constraint(equalTo: lockImageBackgroundView.leadingAnchor, constant: LayoutConstants.tooltipInset),
+            lockImageBackgroundView.trailingAnchor.constraint(equalTo: tooltipView.trailingAnchor, constant: LayoutConstants.tooltipInset),
+            lockImageBackgroundView.bottomAnchor.constraint(equalTo: tooltipView.bottomAnchor, constant: LayoutConstants.tooltipInset),
+        ])
 
         self.view = view
     }

@@ -66,7 +66,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private lazy var loadingProgressIndicator = NSProgressIndicator()
     private lazy var emptyStateHostingView: NSHostingView<BookmarksEmptyStateView> = {
-        let view = NSHostingView(rootView: BookmarksEmptyStateView(content: .noBookmarks, onImportClicked: { [weak self] in
+        let view = NSHostingView(rootView: BookmarksEmptyStateView(content: .noBookmarks,
+                                                                   isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher,
+                                                                   onImportClicked: { [weak self] in
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
@@ -99,6 +101,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private var documentView = FlippedView()
 
     private let syncPromoManager: SyncPromoManaging
+    private let emptyStatePromo: BookmarksEmptyStatePromoPresenting
 
     private lazy var syncPromoViewHostingView: NSView = {
         let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
@@ -138,7 +141,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         pinningManager: PinningManager,
         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-        syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager
+        syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
+        emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -149,6 +153,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.sortBookmarksViewModel = sortViewModel
         self.themeManager = themeManager
         self.syncPromoManager = syncPromoManager
+        self.emptyStatePromo = emptyStatePromo
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(
             bookmarkManager: bookmarkManager,
             metrics: metrics,
@@ -439,7 +444,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         tableView.isHidden = true
         loadingProgressIndicator.isHidden = true
         loadingProgressIndicator.stopAnimation(nil)
-        emptyStateHostingView.rootView = BookmarksEmptyStateView(content: mode, onImportClicked: { [weak self] in
+        emptyStateHostingView.rootView = BookmarksEmptyStateView(content: mode,
+                                                                 isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher,
+                                                                 onImportClicked: { [weak self] in
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty

@@ -64,7 +64,7 @@ final class BookmarkListViewController: NSViewController {
     private lazy var outlineView = BookmarksOutlineView(frame: scrollView.frame)
 
     private lazy var emptyStateHostingView: NSHostingView<BookmarksEmptyStateView> = {
-        let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks) { [weak self] in
+        let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks, isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher) { [weak self] in
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
@@ -129,6 +129,7 @@ final class BookmarkListViewController: NSViewController {
     private var outlineViewTopToDocumentTopConstraint: NSLayoutConstraint?
 
     private let syncPromoManager: SyncPromoManaging
+    private let emptyStatePromo: BookmarksEmptyStatePromoPresenting
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
         let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
@@ -149,7 +150,8 @@ final class BookmarkListViewController: NSViewController {
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-         syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager) {
+         syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
+         emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
@@ -164,6 +166,7 @@ final class BookmarkListViewController: NSViewController {
                                                      isBookmarksBarMenu: false)
         self.themeManager = themeManager
         self.syncPromoManager = syncPromoManager
+        self.emptyStatePromo = emptyStatePromo
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -572,7 +575,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
-        let emptyStateView = BookmarksEmptyStateView(content: mode) { [weak self] in
+        let emptyStateView = BookmarksEmptyStateView(content: mode, isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher) { [weak self] in
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty

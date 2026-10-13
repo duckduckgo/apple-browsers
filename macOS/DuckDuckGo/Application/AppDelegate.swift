@@ -485,6 +485,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            bookmarksCountProvider: { [bookmarkManager] in
+                bookmarkManager.bookmarksCount()
+            },
+            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher()
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -1655,7 +1665,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
             syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
             bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate,
-            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate
+            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate,
+            bookmarksEmptyStatePromoDelegate: bookmarksEmptyStatePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

@@ -86,7 +86,8 @@ struct PromoServiceFactory {
             syncSetupBookmarks(dependencies: dependencies),
             syncSetupAutofill(dependencies: dependencies),
             bookmarksBarSync(dependencies: dependencies),
-            bookmarkAddedSync(dependencies: dependencies)
+            bookmarkAddedSync(dependencies: dependencies),
+            bookmarksEmptyStateImportSync(dependencies: dependencies)
         ]
 
         if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {

@@ -164,7 +164,11 @@ final class LocalBookmarkManager: BookmarkManager {
                     }
 
                     self.isLoading = false
+                    let hadTopLevelEntities = self.list?.topLevelEntities.isEmpty == false
                     self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
+                    if hadTopLevelEntities, topLevelEntities.isEmpty {
+                        NotificationCenter.default.post(name: .bookmarksBecameEmpty, object: nil)
+                    }
                 }
             }
         }

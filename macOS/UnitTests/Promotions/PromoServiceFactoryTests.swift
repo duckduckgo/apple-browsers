@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -270,6 +271,11 @@ extension PromoServiceFactoryTests {
                 syncService: nil,
                 storage: KeyedStorage(storage: InMemoryKeyValueStore()),
                 recordResult: { _, _ in }
+            ),
+            bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                bookmarksCountProvider: { 0 },
+                bookmarksChangedPublisher: Empty().eraseToAnyPublisher()
             )
         )
     }

@@ -305,6 +305,21 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertNil(store.object(forKey: "web-content-freeze.start-date"))
     }
 
+    func testWhenAnotherTabFreezesThenEndingTheFirstKeepsItsRecord() {
+        let store = MockKeyValueStore()
+        let first = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store)
+        let second = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store)
+
+        first.didBecomeUnresponsive(makeContext())
+        date += 1
+        second.didBecomeUnresponsive(makeContext())
+        first.end(.recovered)
+        XCTAssertEqual(store.object(forKey: "web-content-freeze.start-date") as? Date, date)
+
+        second.end(.recovered)
+        XCTAssertNil(store.object(forKey: "web-content-freeze.start-date"))
+    }
+
     func testWhenTelemetryIsDisabledThenFreezesAreNotReported() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let monitor = makeFreezeMonitor(featureEnabled: false, pixelFiring: pixelFiring)

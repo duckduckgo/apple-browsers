@@ -119,6 +119,8 @@ final class WebContentFreezeMonitor {
 
     private let pixelFiring: (any PixelKitFiring)?
     private let featureFlagger: FeatureFlagger
+    // One record for every tab, so a second frozen tab overwrites the first.
+    // Deferred improvement: Key it by tab.
     private let record: WebContentFreezeRecord
     private let applicationState: () -> UIApplication.State
     private let notificationCenter: NotificationCenter
@@ -180,8 +182,11 @@ final class WebContentFreezeMonitor {
 
     func end(_ outcome: Outcome) {
         guard let startDate, let context else { return }
+        // Another tab's freeze may have taken the record since.
+        if record.startDate == startDate {
+            record.clear()
+        }
         self.startDate = nil
-        record.clear()
         let duration = DurationBucket(seconds: date().timeIntervalSince(startDate))
         pixelFiring?.fire(WebContentHealthPixel.unresponsiveResult(outcome: outcome,
                                                                    duration: duration,

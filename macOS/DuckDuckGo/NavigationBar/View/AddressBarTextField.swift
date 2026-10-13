@@ -682,9 +682,6 @@ final class AddressBarTextField: NSTextField {
                     stringValueWithoutSuffix: stringValueWithoutSuffix,
                     completion: { [weak self] url, userEnteredValue, isUpgraded in
             guard let url else { return }
-            if url.isDuckAIURL {
-                logDuckAIAttribution("addressBar currentTab url=\(url.absoluteString) upgraded=\(isUpgraded) suggestion=\(String(describing: suggestion))")
-            }
 
             if isUpgraded {
                 self?.updateTab(self?.tabCollectionViewModel?.selectedTabViewModel?.tab, upgradedTo: url)
@@ -705,9 +702,6 @@ final class AddressBarTextField: NSTextField {
             guard let self, let tabCollectionViewModel, let url else {
                 Logger.general.error("AddressBarTextField: Making url from address bar string failed")
                 return
-            }
-            if url.isDuckAIURL {
-                logDuckAIAttribution("addressBar new \(tabOrWindow) url=\(url.absoluteString) upgraded=\(isUpgraded) suggestion=\(String(describing: suggestion))")
             }
             let tab = Tab(content: .url(url, source: .userEntered(userEnteredValue)),
                           shouldLoadInBackground: true,

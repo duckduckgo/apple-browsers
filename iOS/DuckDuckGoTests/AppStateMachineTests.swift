@@ -684,6 +684,39 @@ final class LaunchBreadcrumbTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A window dropped while initializing is reported with the launch step reached", .timeLimit(.minutes(1)))
+    func windowDroppedWhileInitializingIsReported() {
+        // As if Launching.init spun the run loop after marking content-blocking.
+        store.set(["step": "content-blocking"], forKey: LaunchBreadcrumb.key)
+
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(
+            pixel: LaunchBreadcrumbPixel.eventDroppedDuringLaunch(event: "willConnectToWindow", state: "initializing", step: "content-blocking"),
+            frequency: .dailyAndCount)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An event dropped while launching is reported", .timeLimit(.minutes(1)))
+    func eventDroppedWhileLaunchingIsReported() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.didBecomeActive)
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["event": "didBecomeActive", "state": "launching", "step": "launched"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Events dropped after launch are not reported as dropped during launch", .timeLimit(.minutes(1)))
+    func eventDroppedAfterLaunchIsNotReported() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.willResignActive)
+
+        #expect(stateMachine.currentState.name == "connected")
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Nothing is reported after a launch that finished", .timeLimit(.minutes(1)))
     func nothingReportedAfterCompletedLaunch() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))

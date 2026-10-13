@@ -661,5 +661,30 @@
         "type": "string",
         "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "appLifecycleState": {
+        "key": "state",
+        "type": "string",
+        "description": "iOS app state machine state (AppState.name)",
+        "enum": ["initializing", "launching", "connected", "foreground", "background", "terminating", "simulated"]
+    },
+    "appLifecycleLaunchStep": {
+        "key": "step",
+        "type": "string",
+        "description": "Last launch step reached, in launch order (LaunchBreadcrumb.Step). ui-attached: the scene connected but never started entering the foreground, usually a scene connected in the background. entering-foreground: the app was coming to the foreground but never became active. none: launch had not started",
+        "enum": [
+            "none",
+            "launching-started",
+            "key-value-store",
+            "persistent-stores",
+            "sync",
+            "content-blocking",
+            "main-coordinator",
+            "launched",
+            "window-connected",
+            "ui-attached",
+            "entering-foreground",
+            "terminating"
+        ]
     }
 }

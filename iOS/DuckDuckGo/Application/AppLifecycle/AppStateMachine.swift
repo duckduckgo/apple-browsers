@@ -349,6 +349,12 @@ final class AppStateMachine {
                       frequency: .dailyAndCount,
                       options: .parameters([PixelParameters.appState: state.name,
                                                                 PixelParameters.appEvent: event.name]))
+        switch state {
+        case .initializing, .launching:
+            launchBreadcrumb.reportDroppedEvent(event, in: state)
+        case .connected, .foreground, .background, .terminating, .simulated:
+            break
+        }
     }
 
 }
@@ -356,12 +362,19 @@ final class AppStateMachine {
 enum LaunchBreadcrumbPixel: PixelKit.Event {
 
     case previousLaunchIncomplete(breadcrumb: [String: String])
+    case eventDroppedDuringLaunch(event: String, state: String, step: String)
 
-    var name: String { "app-lifecycle_previous-launch-incomplete" }
+    var name: String {
+        switch self {
+        case .previousLaunchIncomplete: return "app-lifecycle_previous-launch-incomplete"
+        case .eventDroppedDuringLaunch: return "app-lifecycle_event-dropped-during-launch"
+        }
+    }
 
     var parameters: [String: String]? {
         switch self {
         case .previousLaunchIncomplete(let breadcrumb): return breadcrumb
+        case .eventDroppedDuringLaunch(let event, let state, let step): return ["event": event, "state": state, "step": step]
         }
     }
 
@@ -447,6 +460,15 @@ struct LaunchBreadcrumb {
         guard let pendingReport else { return }
         store.removeObject(forKey: Self.pendingReportKey)
         pixelFiring()?.fire(LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: pendingReport), frequency: .dailyAndCount)
+    }
+
+    /// Reports a lifecycle event the state machine dropped while launching, with the launch step reached at that
+    /// moment. An event arriving during `Launching.init` means it spun the run loop at that step; a dropped
+    /// `willConnectToWindow` leaves the app without UI.
+    func reportDroppedEvent(_ event: AppEvent, in state: AppState) {
+        let step = current?["step"] ?? "none"
+        pixelFiring()?.fire(LaunchBreadcrumbPixel.eventDroppedDuringLaunch(event: event.name, state: state.name, step: step),
+                            frequency: .dailyAndCount)
     }
 
 }

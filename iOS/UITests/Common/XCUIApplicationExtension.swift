@@ -113,8 +113,26 @@ extension XCUIApplication {
 extension XCUIElement {
 
     func tapWhenHittable(file: StaticString = #filePath, line: UInt = #line) {
+        let predicate = NSPredicate(format: "isHittable == true AND isEnabled == true")
+        let timeout = UITestTimeouts.elementExistence
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        let becameTappable = wait(for: predicate, timeout: timeout)
+        let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
+        let timing = """
+        source=\(file):\(line)
+        predicate=\(predicate.predicateFormat)
+        timeout=\(timeout)s
+        elapsed=\(String(format: "%.3f", elapsed))s
+        becameTappable=\(becameTappable)
+        """
+        let attachment = XCTAttachment(string: timing)
+        attachment.name = "Tappability wait timing"
+        attachment.lifetime = .keepAlways
+        XCTContext.runActivity(named: "Record tappability wait timing") { activity in
+            activity.add(attachment)
+        }
         XCTAssertTrue(
-            wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.elementExistence),
+            becameTappable,
             "Element did not become tappable: \(self)", file: file, line: line)
         tap()
     }

@@ -315,6 +315,6 @@ final class PromptBarPresenter: PromptBarPresenting {
 }
 
 extension NSUserInterfaceItemIdentifier {
-    /// Lets a screenshot leave the prompt bar's dim layer out of the capture.
+    /// Lets a screenshot take the prompt bar's dim layer off screen while it captures.
     static let promptBarDimWindow = NSUserInterfaceItemIdentifier("PromptBarDimWindow")
 }

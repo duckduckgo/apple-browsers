@@ -2194,10 +2194,30 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         canPickAdditionalImages && !AIChatScreenshotCaptureService.shared.isCapturing
     }
 
-    /// Our own windows the capture leaves out: the prompt bar floats over other apps with a dim layer.
+    /// The prompt bar floats over other apps, so it stays out of the picker and the frozen frame.
     private var screenshotExcludedWindows: [NSWindow] {
         guard omnibarController.surface == .promptBar, let window = view.window else { return [] }
-        return [window] + NSApp.windows.filter { $0.identifier == .promptBarDimWindow }
+        return [window]
+    }
+
+    /// Moves our own chrome out of the capture's way and returns how to put it back. The address-bar
+    /// panel sits over the page; the prompt bar's dim covers its whole display, which also keeps the
+    /// system picker from reaching the windows under it.
+    private func clearSurfaceForScreenshot() -> () -> Void {
+        switch omnibarController.surface {
+        case .addressBar:
+            view.alphaValue = 0
+            return { [weak self] in
+                self?.view.alphaValue = 1
+            }
+        case .promptBar:
+            let dimWindows = NSApp.windows.filter { $0.identifier == .promptBarDimWindow && $0.isVisible }
+            dimWindows.forEach { $0.orderOut(nil) }
+            return { [weak self] in
+                guard let panel = self?.view.window, panel.isVisible else { return }
+                dimWindows.forEach { $0.order(.below, relativeTo: panel.windowNumber) }
+            }
+        }
     }
 
     @objc private func screenshotModeClicked(_ sender: NSMenuItem) {
@@ -2214,17 +2234,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func captureScreenshot(mode: AIChatScreenshotMode) async {
-        // The address-bar panel sits over the page, so it steps aside to let the page be captured.
-        let hidesPanel = omnibarController.surface == .addressBar
-        if hidesPanel {
-            view.alphaValue = 0
-        }
+        let restoreSurface = clearSurfaceForScreenshot()
         let result = await AIChatScreenshotCaptureService.shared.capture(mode: mode,
                                                                           excluding: screenshotExcludedWindows,
                                                                           returningFocusTo: view.window)
-        if hidesPanel {
-            view.alphaValue = 1
-        }
+        restoreSurface()
         isCapturingScreenshot = false
         handleScreenshotResult(result)
     }

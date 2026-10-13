@@ -18,7 +18,9 @@
 
 import AppKit
 import History
+@_spi(Testing) import Persistence
 import PixelKit
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -52,9 +54,26 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             historyCoordinator: historyCoordinator,
             aiChatDeleter: aiChatDeleter,
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+                featureFlagger: MockFeatureFlagger(),
+                store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter())
+            ),
             fireDailyCountPixel: { [weak self] event in self?.firedPixels.append(event.name) },
             presentDeleteConfirmation: { _, _ in confirmResult }
         )
+    }
+
+    // MARK: - submitSearch
+
+    func testThatDuckAITypedInTheSearchBoxLoadsAsTheWebViewReportsIt() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "Duck.AI")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai/chat?q=hi")?.absoluteString, "https://duck.ai/chat?q=hi")
+    }
+
+    func testThatOtherURLsTypedInTheSearchBoxKeepTheirScheme() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "wikipedia.org")?.absoluteString, "http://wikipedia.org")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duckduckgo")?.absoluteString, "https://duckduckgo.com/?q=duckduckgo")
     }
 
     // MARK: - viewAllAiChats
@@ -119,6 +138,21 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
         XCTAssertFalse(historyCoordinator.removeUrlEntryCalled)
         XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    // MARK: - openPrivacyTerms
+
+    func testOpenPrivacyTermsOpensDuckAiPrivacyTermsInNewSelectedTab() {
+        let sut = makeSUT()
+
+        sut.openPrivacyTerms()
+
+        XCTAssertEqual(windowControllersManager.showCalled, .init(
+            url: URL(string: "https://duckduckgo.com/duckai/privacy-terms")!,
+            source: .ui,
+            newTab: true,
+            selected: true
+        ))
     }
 
 }

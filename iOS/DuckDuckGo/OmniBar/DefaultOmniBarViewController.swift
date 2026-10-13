@@ -267,7 +267,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let activationDecision = unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
             currentText: extractCurrentTextForEditing(textField),
             tapped: textFieldTapped,
-            textEntryMode: textEntryMode)
+            textEntryMode: textEntryMode,
+            isRequestValid: { true },
+            onFocus: nil)
 
         if activationDecision == .intercept {
             return false
@@ -317,6 +319,28 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     // MARK: - Editing Lifecycle Overrides
 
+    func beginEditingAutomatically(isRequestValid: @escaping () -> Bool = { true }, completion: @escaping (Bool) -> Void) {
+        guard isRequestValid() else {
+            completion(false)
+            return
+        }
+        guard !isInputFirstResponder else {
+            completion(true)
+            return
+        }
+        if !omniBarView.isSearchAreaExpanded,
+           unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
+            currentText: extractCurrentTextForEditing(omniBarView.textField),
+            tapped: false,
+            textEntryMode: nil,
+            isRequestValid: isRequestValid,
+            onFocus: completion) == .intercept {
+            return
+        }
+        super.beginEditing(animated: true, forTextEntryMode: nil)
+        completion(isInputFirstResponder)
+    }
+
     func beginEditingOnNewTabPageAppOpen(isRequestValid: @escaping () -> Bool,
                                          completion: @escaping (Bool) -> Void) {
         if dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
@@ -331,7 +355,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return
         }
         super.beginEditing(animated: true, forTextEntryMode: nil)
-        completion(isTextFieldEditing)
+        completion(isInputFirstResponder)
     }
 
     override func setSelectedTextEntryMode(_ mode: TextEntryMode) {

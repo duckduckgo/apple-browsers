@@ -32,6 +32,7 @@ import WebKit
  * The delegate callbacks taking `Int` indexes are triggered for events related to unpinned tabs only.
  * Callbacks taking `TabIndex` indexes are triggered for events related to both pinned and unpinned tabs.
  */
+@MainActor
 protocol TabCollectionViewModelDelegate: AnyObject {
 
     func tabCollectionViewModelDidAppend(_ tabCollectionViewModel: TabCollectionViewModel, selected: Bool)
@@ -820,14 +821,18 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(before index: Int) {
         guard changesEnabled else { return }
 
+        if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, currentSelection.item < index {
+            materialize(at: .unpinned(index))
+        }
+
         notifyTabsWillClose(keepingIndices: Set(index..<tabCollection.tabs.count))
         tabCollection.removeTabs(before: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab {
             if currentSelection.item < index {
-                selectionIndex = .unpinned(0)
+                selectUnpinnedTab(at: 0)
             } else {
-                selectionIndex = .unpinned(currentSelection.item - index)
+                selectUnpinnedTab(at: currentSelection.item - index)
             }
         }
 
@@ -837,11 +842,15 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(after index: Int) {
         guard changesEnabled else { return }
 
+        if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, currentSelection.item > index {
+            materialize(at: .unpinned(index))
+        }
+
         notifyTabsWillClose(keepingIndices: Set(0...index))
         tabCollection.removeTabs(after: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, !tabCollection.tabs.indices.contains(currentSelection.item) {
-            selectionIndex = .unpinned(tabCollection.tabs.count - 1)
+            selectUnpinnedTab(at: tabCollection.tabs.count - 1)
         }
 
         delegate?.tabCollectionViewModelDidMultipleChanges(self)

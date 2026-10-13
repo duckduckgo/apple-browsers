@@ -4,12 +4,30 @@
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": [
-            {
-                "description": "Permission type requested by the site.",
-                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
-            },
-            "platform",
-            "form_factor"
+            [
+                {
+                    "description": "Permission type requested by the site.",
+                    "enum": ["camera", "microphone", "geolocation"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "First word of the camera_and_microphone permission type.",
+                    "enum": ["camera"]
+                },
+                {
+                    "description": "Literal separator.",
+                    "enum": ["and"]
+                },
+                {
+                    "description": "Last word of the camera_and_microphone permission type.",
+                    "enum": ["microphone"]
+                },
+                "platform",
+                "form_factor"
+            ]
         ],
         "parameters": ["appVersion"]
     },
@@ -18,16 +36,78 @@
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": [
-            {
-                "description": "Permission type requested by the site.",
-                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
-            },
-            {
-                "description": "Option selected in the on-site permission dialog, or dismissed for a one-time denial.",
-                "enum": ["allow_once", "allow_always", "never", "dismissed"]
-            },
-            "platform",
-            "form_factor"
+            [
+                {
+                    "description": "Permission type requested by the site.",
+                    "enum": ["camera", "microphone", "geolocation"]
+                },
+                {
+                    "description": "Allow option selected in the on-site permission dialog.",
+                    "enum": ["allow"]
+                },
+                {
+                    "description": "Duration of the allow option.",
+                    "enum": ["once", "always"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "Permission type requested by the site.",
+                    "enum": ["camera", "microphone", "geolocation"]
+                },
+                {
+                    "description": "Never option selected in the on-site permission dialog, or dismissed for a one-time denial.",
+                    "enum": ["never", "dismissed"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "First word of the camera_and_microphone permission type.",
+                    "enum": ["camera"]
+                },
+                {
+                    "description": "Literal separator.",
+                    "enum": ["and"]
+                },
+                {
+                    "description": "Last word of the camera_and_microphone permission type.",
+                    "enum": ["microphone"]
+                },
+                {
+                    "description": "Allow option selected in the on-site permission dialog.",
+                    "enum": ["allow"]
+                },
+                {
+                    "description": "Duration of the allow option.",
+                    "enum": ["once", "always"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "First word of the camera_and_microphone permission type.",
+                    "enum": ["camera"]
+                },
+                {
+                    "description": "Literal separator.",
+                    "enum": ["and"]
+                },
+                {
+                    "description": "Last word of the camera_and_microphone permission type.",
+                    "enum": ["microphone"]
+                },
+                {
+                    "description": "Never option selected in the on-site permission dialog, or dismissed for a one-time denial.",
+                    "enum": ["never", "dismissed"]
+                },
+                "platform",
+                "form_factor"
+            ]
         ],
         "parameters": ["appVersion"]
     },
@@ -54,16 +134,38 @@
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": [
-            {
-                "description": "Permission type or types covered by the reminder.",
-                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
-            },
-            {
-                "description": "Reminder dialog interaction.",
-                "enum": ["shown", "settings", "cancel"]
-            },
-            "platform",
-            "form_factor"
+            [
+                {
+                    "description": "Permission type covered by the reminder.",
+                    "enum": ["camera", "microphone", "geolocation"]
+                },
+                {
+                    "description": "Reminder dialog interaction.",
+                    "enum": ["shown", "settings", "cancel"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "First word of the camera_and_microphone permission type.",
+                    "enum": ["camera"]
+                },
+                {
+                    "description": "Literal separator.",
+                    "enum": ["and"]
+                },
+                {
+                    "description": "Last word of the camera_and_microphone permission type.",
+                    "enum": ["microphone"]
+                },
+                {
+                    "description": "Reminder dialog interaction.",
+                    "enum": ["shown", "settings", "cancel"]
+                },
+                "platform",
+                "form_factor"
+            ]
         ],
         "parameters": ["appVersion"]
     },
@@ -72,12 +174,30 @@
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": [
-            {
-                "description": "Permission type or types for which System Settings is opened.",
-                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
-            },
-            "platform",
-            "form_factor"
+            [
+                {
+                    "description": "Permission type for which System Settings is opened.",
+                    "enum": ["camera", "microphone", "geolocation"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "First word of the camera_and_microphone permission type.",
+                    "enum": ["camera"]
+                },
+                {
+                    "description": "Literal separator.",
+                    "enum": ["and"]
+                },
+                {
+                    "description": "Last word of the camera_and_microphone permission type.",
+                    "enum": ["microphone"]
+                },
+                "platform",
+                "form_factor"
+            ]
         ],
         "parameters": ["appVersion"]
     },

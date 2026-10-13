@@ -1016,7 +1016,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeTermsOfService:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
         case .aiChatDragPromptBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

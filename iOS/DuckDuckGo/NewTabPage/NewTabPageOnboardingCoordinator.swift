@@ -225,7 +225,7 @@ final class NewTabPageOnboardingCoordinator {
         guard let page else { return }
         isShowingDuckAICompletionDialog = true
         // Hide the logo before restoring the page alpha. The completion background is
-        // transparent on the legacy page; redesigned modules were hidden before input activation.
+        // transparent on the existing NTP; redesigned modules were hidden before input activation.
         setLogoHidden(true)
         page.view.alpha = 1
         // Mirror showNextDaxDialogNew: suppress the UTI content overlay so the NTP
@@ -290,7 +290,7 @@ final class NewTabPageOnboardingCoordinator {
         }
 
         // Overlays the NTP view, visible after the omnibar closes.
-        // Parented to mainVC because the legacy page is a UIHostingController<NewTabPageView>:
+        // Parented to mainVC because the existing NTP is a UIHostingController<NewTabPageView>:
         // adding one _UIHostingView as a subview of another UIHostingController.view is
         // unsupported and triggers a UIKit warning. the page's superview is the content
         // container's plain UIView, so it is safe to host into.

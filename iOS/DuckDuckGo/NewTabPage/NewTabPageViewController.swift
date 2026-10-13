@@ -372,7 +372,7 @@ extension NewTabPageViewController: NewTabPageOnboardingHosting {
     var hidesOnboardingContentBeforeInputActivation: Bool { false }
     var isPresentingOnboardingDialog: Bool { onboardingCoordinator.isPresentingDialog }
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
-        // The transparent Duck.ai completion dialog needs the legacy NTP background beneath it.
+        // The transparent Duck.ai completion dialog needs the existing NTP background beneath it.
         if hidden && dialog == .contextual {
             newTabPageViewModel.startOnboarding()
         } else {

@@ -121,7 +121,7 @@
         ]
     },
     "web-content_unresponsive": {
-        "description": "Fires when WebKit reports that a tab's web content process stopped responding (private WKNavigationDelegate callback _webViewWebProcessDidBecomeUnresponsive:), e.g. a JavaScript busy loop or a long layout. Detects pages that are alive but hung. WebKit only checks after a reload or navigation, so this counts freezes the user tried to get out of. The yes/no context tells whether our own pages, scripts or desktop mode are involved; web-content_unresponsive-result reports how the freeze ended.",
+        "description": "Fires when WebKit reports that a tab's web content process stopped responding (private WKNavigationDelegate callback _webViewWebProcessDidBecomeUnresponsive:), e.g. a JavaScript busy loop or a long layout. Detects pages that are alive but hung. WebKit only checks after a reload or navigation, so this counts freezes the user tried to get out of. The yes/no context tells whether our own pages, scripts or desktop mode are involved; web-content_unresponsive-result reports how the freeze ended. Gated by the tabTerminationTelemetry subfeature.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -140,22 +140,22 @@
             {
                 "key": "loading",
                 "description": "Whether the page was still loading",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "desktop_mode",
                 "description": "Whether the tab requested the desktop site",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "protections",
                 "description": "Whether privacy protections were enabled for the site",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "web_extension",
                 "description": "Whether a web extension was loaded (iOS 18.4 and later)",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -194,22 +194,22 @@
             {
                 "key": "loading",
                 "description": "Whether the page was still loading",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "desktop_mode",
                 "description": "Whether the tab requested the desktop site",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "protections",
                 "description": "Whether privacy protections were enabled for the site",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "web_extension",
                 "description": "Whether a web extension was loaded (iOS 18.4 and later)",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -228,7 +228,7 @@
             {
                 "key": "unresponsive",
                 "description": "Whether WebKit had already reported the page as unresponsive",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "app_state",

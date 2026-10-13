@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+// This is a test comment to check required checks on a draft PR
 /// The search mode selected by the user in the Duck.ai query selection onboarding step.
 enum DuckAIQueryMode: Equatable {
     case search

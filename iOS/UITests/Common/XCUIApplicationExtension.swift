@@ -44,8 +44,65 @@ extension XCUIApplication {
     func assertPageContains(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         // Scope to web content so a tab card or autocomplete suggestion cannot satisfy the assertion.
         let content = webViews.staticTexts[text]
+        let labelMatch = webViews.staticTexts.matching(NSPredicate(format: "label == %@", text)).firstMatch
+        let timeout = UITestTimeouts.navigation
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        let deadline = startedAt + timeout
+        var observations = ["text=\(text)", "timeout=\(timeout)s"]
+        var passed = false
+        var capturedMismatch = false
+
+        while true {
+            let remaining = deadline - ProcessInfo.processInfo.systemUptime
+            guard remaining > 0 else { break }
+            let waitResult = content.waitForExistence(timeout: min(5, remaining))
+            let waitElapsed = ProcessInfo.processInfo.systemUptime - startedAt
+            let keyedNow = content.exists
+            let keyedElapsed = ProcessInfo.processInfo.systemUptime - startedAt
+            let labelExists = labelMatch.exists
+            let labelElapsed = ProcessInfo.processInfo.systemUptime - startedAt
+            let keyedExists = (waitResult && waitElapsed <= timeout) || (keyedNow && keyedElapsed <= timeout)
+            observations.append(String(format: "wait=%.3fs:%@ keyed=%.3fs:%@ label=%.3fs:%@", waitElapsed, waitResult.description, keyedElapsed, keyedNow.description, labelElapsed, labelExists.description))
+
+            if keyedExists {
+                passed = true
+                break
+            }
+
+            if labelExists && labelElapsed <= timeout {
+                let keyedRecheck = content.exists
+                let recheckElapsed = ProcessInfo.processInfo.systemUptime - startedAt
+                observations.append(String(format: "t=%.3fs keyedRecheck=%@", recheckElapsed, keyedRecheck.description))
+                if keyedRecheck && recheckElapsed <= timeout {
+                    passed = true
+                    break
+                }
+
+                if !capturedMismatch && recheckElapsed < timeout {
+                    capturedMismatch = true
+                    let screenshot = XCTAttachment(screenshot: self.screenshot())
+                    screenshot.name = "Page content query mismatch screen"
+                    screenshot.lifetime = .keepAlways
+                    let hierarchy = XCTAttachment(string: debugDescription)
+                    hierarchy.name = "Page content query mismatch hierarchy"
+                    hierarchy.lifetime = .keepAlways
+                    XCTContext.runActivity(named: "Capture first page content query mismatch") { activity in
+                        activity.add(screenshot)
+                        activity.add(hierarchy)
+                    }
+                }
+            }
+        }
+
+        observations.append(String(format: "result=%@ elapsed=%.3fs", passed.description, ProcessInfo.processInfo.systemUptime - startedAt))
+        let trace = XCTAttachment(string: observations.joined(separator: "\n"))
+        trace.name = "Page content query observations"
+        trace.lifetime = .keepAlways
+        XCTContext.runActivity(named: "Record page content query observations") { activity in
+            activity.add(trace)
+        }
         XCTAssertTrue(
-            content.waitForExistence(timeout: UITestTimeouts.navigation),
+            passed,
             "Expected page content '\(text)' did not appear.", file: file, line: line)
     }
 

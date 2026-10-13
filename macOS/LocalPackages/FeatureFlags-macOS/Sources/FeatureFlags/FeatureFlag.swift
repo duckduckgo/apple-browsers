@@ -409,6 +409,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
 
+    /// Duck.ai "Add Screenshot" in the address bar and prompt bar attach menus.
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case aiChatOmnibarScreenshot
+
+    /// Duck.ai "Add Screenshot" in the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case aiChatNtpScreenshot
+
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
     case aiChatNtpSuggestionsDeletion
@@ -921,6 +929,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatOmnibarScreenshot:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
+        case .aiChatNtpScreenshot:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:

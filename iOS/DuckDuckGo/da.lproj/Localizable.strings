@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "App-start";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Ny fane";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Vis tastaturet på";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Viser et link til at vende tilbage til den sidst brugte fane, når du åbner appen efter inaktivitet.";
 
@@ -5352,9 +5361,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Slå Sync & Backup fra, og slet serverdata?";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Ny enhed tilføjet!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Gendannelseskode kopieret";

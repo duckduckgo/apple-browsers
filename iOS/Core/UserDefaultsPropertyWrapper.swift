@@ -147,7 +147,6 @@ public struct UserDefaultsWrapper<T> {
 
         case hadVPNEntitlements = "com.duckduckgo.had.vpn.entitlements"
         case networkProtectionDebugOptionAlwaysOnDisabled = "com.duckduckgo.network-protection.always-on.disabled"
-        case networkProtectionWaitlistTermsAndConditionsAccepted = "com.duckduckgo.ios.vpn.terms-and-conditions-accepted"
 
         case addressBarPosition = "com.duckduckgo.ios.addressbarposition"
         case showFullURLAddress = "com.duckduckgo.ios.showfullurladdress"

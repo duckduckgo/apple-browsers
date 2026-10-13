@@ -68,6 +68,24 @@ struct NetworkSignalsProviderTests {
 
         #expect(await provider.currentSignals()?.pingQuality == .unknown)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new prefetch discards the previous ping", .timeLimit(.minutes(1)))
+    func newPrefetchDiscardsPreviousPing() async {
+        let pathProvider = NetworkPathProviderMock(currentPathState: NetworkPathState(isNetworkAvailable: true, networkType: .wifi, isConstrained: false))
+        let provider = NetworkSignalsProvider(pathProvider: pathProvider,
+                                              vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviderMock(hasIssues: false),
+                                              pingQualityProvider: PingQualityProviderMock(quality: .poor),
+                                              isEnabledProvider: { true })
+
+        await provider.prefetchSignals()?.value
+        #expect(await provider.currentSignals()?.pingQuality == .poor)
+
+        pathProvider.currentPathState = NetworkPathState(isNetworkAvailable: false, networkType: .unknown, isConstrained: false)
+        provider.prefetchSignals()
+
+        #expect(await provider.currentSignals()?.pingQuality == .unknown)
+    }
 }
 
 private extension NetworkSignalsProviderTests {
@@ -86,7 +104,7 @@ private extension NetworkSignalsProviderTests {
 }
 
 private final class NetworkPathProviderMock: NetworkPathProviding {
-    let currentPathState: NetworkPathState
+    var currentPathState: NetworkPathState
 
     init(currentPathState: NetworkPathState) {
         self.currentPathState = currentPathState

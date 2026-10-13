@@ -197,52 +197,13 @@ struct ManageDeviceView: View {
     }
 }
 
-private struct RemoveDeviceConfirmationAlert: ViewModifier {
-
-    @Binding var isPresented: Bool
-    let deviceName: String
-    let isImprovedPairingFlowEnabled: Bool
-    let onConfirm: () -> Void
-
-    func body(content: Content) -> some View {
-        content.alert(title, isPresented: $isPresented) {
-            Button(UserText.cancelButton, role: .cancel) {}
-            Button(confirmButtonTitle, role: .destructive, action: onConfirm)
-        } message: {
-            Text(message)
-        }
-    }
-
-    private var title: String {
-        isImprovedPairingFlowEnabled ? UserText.simplifiedRemoveDeviceConfirmTitle(deviceName) : UserText.removeDeviceTitle
-    }
-
-    private var message: String {
-        isImprovedPairingFlowEnabled ? UserText.simplifiedRemoveDeviceConfirmMessage(deviceName) : UserText.removeDeviceMessage(deviceName)
-    }
-
-    private var confirmButtonTitle: String {
-        isImprovedPairingFlowEnabled ? UserText.simplifiedRemoveDeviceConfirmAction : UserText.removeDeviceButton
-    }
-}
-
-private extension View {
-
-    func removeDeviceConfirmationAlert(isPresented: Binding<Bool>,
-                                       deviceName: String,
-                                       isImprovedPairingFlowEnabled: Bool,
-                                       onConfirm: @escaping () -> Void) -> some View {
-        modifier(RemoveDeviceConfirmationAlert(isPresented: isPresented,
-                                               deviceName: deviceName,
-                                               isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled,
-                                               onConfirm: onConfirm))
-    }
-}
-
 private extension SyncSettingsViewModel.Device {
 
     var syncedIllustrationName: String {
-        type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"
+        if isThirdParty || isUnknownType {
+            return "Browser-V2-Synced-Feature-128"
+        }
+        return type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"
     }
 }
 

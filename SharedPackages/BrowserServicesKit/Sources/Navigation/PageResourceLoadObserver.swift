@@ -88,7 +88,7 @@ extension PageResourceLoadObserver {
     }
 }
 
-private extension WKWebView {
+extension WKWebView {
 
     enum ResourceLoadDelegateSelector {
         static let resourceLoadDelegate = NSSelectorFromString("_resourceLoadDelegate")

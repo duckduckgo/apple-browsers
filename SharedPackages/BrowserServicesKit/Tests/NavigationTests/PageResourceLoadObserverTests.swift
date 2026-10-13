@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if PRIVATE_PAGE_SIGNALS_ENABLED
 import Common
 import Foundation
 import Testing
@@ -27,18 +28,45 @@ import WebKit
 struct PageResourceLoadObserverTests {
 
     private let webView = WKWebView()
-    private let existingDelegate = NSObject()
+    private let observer = PageResourceLoadObserver { _, _ in }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching and detaching set and clear the resource load delegate", .timeLimit(.minutes(1)))
+    func attachAndDetachOwnDelegate() {
+        observer.attach(to: webView)
+        #expect(webView.resourceLoadDelegate === observer)
+
+        observer.detach()
+        #expect(webView.resourceLoadDelegate == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Another object's resource load delegate is never replaced or cleared", .timeLimit(.minutes(1)))
+    func existingDelegateIsPreserved() {
+        let existingDelegate = NSObject()
+        webView.resourceLoadDelegate = existingDelegate
+
+        observer.attach(to: webView)
+        #expect(webView.resourceLoadDelegate === existingDelegate)
+
+        observer.detach()
+        #expect(webView.resourceLoadDelegate === existingDelegate)
+
+        withExtendedLifetime(existingDelegate) {}
+    }
 
     @available(iOS 16, macOS 13, *)
     @Test("Attaching when another resource load delegate is set fires resourceLoadDelegateAlreadySet", .timeLimit(.minutes(1)))
     func attachWithExistingDelegateFiresEvent() {
         var events = [PageSignalsEvent]()
         let observer = PageResourceLoadObserver(eventMapping: EventMapping { event, _, _, _ in events.append(event) }) { _, _ in }
-        setResourceLoadDelegate(existingDelegate)
+        let existingDelegate = NSObject()
+        webView.resourceLoadDelegate = existingDelegate
 
         observer.attach(to: webView)
 
         #expect(events == [.resourceLoadDelegateAlreadySet])
+        withExtendedLifetime(existingDelegate) {}
     }
 
     @available(iOS 16, macOS 13, *)
@@ -57,14 +85,13 @@ struct PageResourceLoadObserverTests {
     func monitorForwardsEventMapping() {
         var events = [PageSignalsEvent]()
         let monitor = PageSignalsMonitor(tld: TLD(), isEnabled: { true }, eventMapping: EventMapping { event, _, _, _ in events.append(event) })
-        setResourceLoadDelegate(existingDelegate)
+        let existingDelegate = NSObject()
+        webView.resourceLoadDelegate = existingDelegate
 
         monitor.attach(to: webView)
 
         #expect(events == [.resourceLoadDelegateAlreadySet])
-    }
-
-    private func setResourceLoadDelegate(_ delegate: AnyObject) {
-        webView.perform(NSSelectorFromString("_setResourceLoadDelegate:"), with: delegate)
+        withExtendedLifetime(existingDelegate) {}
     }
 }
+#endif

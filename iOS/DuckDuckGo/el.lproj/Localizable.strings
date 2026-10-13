@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Εκκίνηση εφαρμογής";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Νέα καρτέλα";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Εμφάνιση πληκτρολογίου όταν";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Εμφανίζει έναν σύνδεσμο για επιστροφή στην τελευταία καρτέλα που χρησιμοποίησες όταν ανοίγεις την εφαρμογή μετά από αδράνεια.";
 
@@ -5352,9 +5361,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Απενεργοποίηση του Sync & Backup και διαγραφή των δεδομένων διακομιστή;";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Προστέθηκε νέα συσκευή!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Αντιγραφή κωδικού ανάκτησης";

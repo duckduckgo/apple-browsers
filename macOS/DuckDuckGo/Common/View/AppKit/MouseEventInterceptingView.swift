@@ -30,6 +30,7 @@ import Cocoa
 internal class MouseEventInterceptingView: ColorView {
 
     private var localMonitor: Any?
+    private var ownsPress = false
 
     init() {
         super.init(frame: .zero, backgroundColor: nil, cornerRadius: 0, borderColor: nil, borderWidth: 0, interceptClickEvents: false)
@@ -92,7 +93,25 @@ internal class MouseEventInterceptingView: ColorView {
 
     // MARK: - Event handling
 
-    private func handleMonitoredEvent(_ event: NSEvent) -> NSEvent? {
+    func handleMonitoredEvent(_ event: NSEvent) -> NSEvent? {
+        switch event.type {
+        case .leftMouseDown:
+            let result = route(event)
+            ownsPress = result == nil
+            return result
+        case .leftMouseDragged, .leftMouseUp:
+            guard ownsPress else { return event }
+            if event.type == .leftMouseUp {
+                ownsPress = false
+            }
+            _ = route(event)
+            return nil
+        default:
+            return route(event)
+        }
+    }
+
+    private func route(_ event: NSEvent) -> NSEvent? {
         guard !isHidden else { return event }
         guard let window, event.window === window, window.isKeyWindow || window.isMainWindow else { return event }
         let locationInWindow = event.locationInWindow
@@ -110,8 +129,19 @@ internal class MouseEventInterceptingView: ColorView {
             }
         }
 
-        if let hitView = hitTest(inSelfSpace: locationInView), hitView != self {
-            forward(event, to: hitView, in: window)
+        let hitView = hitTest(inSelfSpace: locationInView).flatMap { $0 === self ? nil : $0 }
+        return dispatch(event, to: hitView, in: window)
+    }
+
+    private func dispatch(_ event: NSEvent, to hitView: NSView?, in window: NSWindow) -> NSEvent? {
+        if event.type == .leftMouseDown, let hitView, hitView.acceptsFirstResponder {
+            window.makeFirstResponder(hitView)
+        }
+        if event.type == .leftMouseDown, hitView is NSButton {
+            return event
+        }
+        if let hitView {
+            forward(event, to: hitView)
         }
 
         // AppKit needs mouse-moved to drive tracking-area enter/exit, which every hover effect
@@ -119,12 +149,9 @@ internal class MouseEventInterceptingView: ColorView {
         return event.type == .mouseMoved ? event : nil
     }
 
-    private func forward(_ event: NSEvent, to hitView: NSView, in window: NSWindow) {
+    private func forward(_ event: NSEvent, to hitView: NSView) {
         switch event.type {
         case .leftMouseDown:
-            if hitView.acceptsFirstResponder {
-                window.makeFirstResponder(hitView)
-            }
             hitView.mouseDown(with: event)
         case .leftMouseUp:
             hitView.mouseUp(with: event)

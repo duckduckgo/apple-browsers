@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatūra";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Lietotnes palaišana";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Jauna cilne";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Rādīt tastatūru";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Rāda saiti, lai atgrieztos pēdējā izmantotajā cilnē, kad atver lietotni pēc neaktivitātes perioda.";
 
@@ -5352,9 +5361,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Vai izslēgt Sync & Backup un dzēst servera datus?";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Pievienota jauna ierīce!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atgūšanas kods nokopēts";

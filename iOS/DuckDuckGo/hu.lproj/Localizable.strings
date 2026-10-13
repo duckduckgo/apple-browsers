@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Billentyűzet";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Alkalmazás indítása";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Új lap";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Billentyűzet megjelenítése bekapcsolva";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Az alkalmazás inaktivitás utáni megnyitásakor megjelenít egy hivatkozást, amellyel visszatérhetsz az utoljára használt laphoz.";
 
@@ -5352,9 +5361,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Kikapcsolod a Sync & Backup funkciót és törlöd a szerveradatokat?";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Új eszköz hozzáadva!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Helyreállítási kód másolva";

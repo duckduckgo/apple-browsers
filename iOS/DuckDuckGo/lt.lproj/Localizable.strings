@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Programos paleidimas";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nauja kortelė";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Rodyti klaviatūrą";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Rodo nuorodą grįžti į paskutinę naudotą kortelę, kai paleidžiate programą po neaktyvumo.";
 
@@ -5352,9 +5361,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Išjungti „Sync & Backup“ ir ištrinti serverio duomenis?";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Pridėtas naujas įrenginys!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atkūrimo kodas nukopijuotas";

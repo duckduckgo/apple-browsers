@@ -196,7 +196,7 @@ extension MainViewController {
     }
 
     private func makeRestingNewTabPageSnapshot() -> UIView? {
-        guard newTabPageViewController?.isPresentingOnboardingDialog == false else {
+        guard (newTabPageViewController as? NewTabPageInputTransitionSource)?.canAnimateSearchInput == true else {
             restingNewTabPageSnapshot = nil
             return nil
         }

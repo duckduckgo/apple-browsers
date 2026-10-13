@@ -419,12 +419,14 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
 
 extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
+    var canAnimateSearchInput: Bool { !isPresentingOnboardingDialog }
+
     var searchInputView: UIView? {
         blocks.first { $0.id == .searchInput }?.viewController.view
     }
 
     func searchInputTransitionFrame(in targetView: UIView) -> CGRect? {
-        guard !isPresentingOnboardingDialog else { return nil }
+        guard canAnimateSearchInput else { return nil }
         guard let window = view.window else { return nil }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid, inputEditingLayout.windowBounds == window.bounds {
             return inputEditingLayout.inputFrameInWindow.map { targetView.convert($0, from: window) }

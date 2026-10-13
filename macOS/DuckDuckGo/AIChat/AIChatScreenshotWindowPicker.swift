@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
+import os.log
 import ScreenCaptureKit
 
 /// Select Window or Display through the system's content-sharing picker.
@@ -24,15 +26,22 @@ import ScreenCaptureKit
 final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserver {
 
     enum Outcome {
+        case captured(image: CGImage, kind: AIChatScreenshotKind)
+        case cancelled
+        case failed(AIChatScreenshotFailureReason)
+    }
+
+    private enum Pick {
         case picked(SCContentFilter)
         case cancelled
         case failed
     }
 
-    private var continuation: CheckedContinuation<Outcome, Never>?
+    private var continuation: CheckedContinuation<Pick, Never>?
 
+    /// Captures while the picker is still active: the pick is what may authorize the capture.
     @MainActor
-    func pick(excludingWindowIDs windowIDs: [Int]) async -> Outcome {
+    func capture(excludingWindowIDs windowIDs: [Int]) async -> Outcome {
         let picker = SCContentSharingPicker.shared
         var configuration = SCContentSharingPickerConfiguration()
         configuration.allowedPickerModes = [.singleWindow, .singleDisplay]
@@ -41,32 +50,46 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
         picker.defaultConfiguration = configuration
         picker.add(self)
         picker.isActive = true
+        defer {
+            picker.isActive = false
+            picker.remove(self)
+        }
 
-        let outcome = await withCheckedContinuation { continuation in
+        let pick = await withCheckedContinuation { continuation in
             self.continuation = continuation
             picker.present()
         }
-
-        picker.isActive = false
-        picker.remove(self)
-        return outcome
+        switch pick {
+        case .cancelled:
+            return .cancelled
+        case .failed:
+            return .failed(.unavailable)
+        case .picked(let filter):
+            return await capture(filter)
+        }
     }
 
     @MainActor
-    func capture(_ filter: SCContentFilter) async -> (image: CGImage, kind: AIChatScreenshotKind)? {
+    private func capture(_ filter: SCContentFilter) async -> Outcome {
         let kind: AIChatScreenshotKind
         switch filter.style {
         case .window: kind = .window
         case .display: kind = .screen
-        default: return nil
+        default: return .failed(.failed)
         }
 
         let configuration = SCStreamConfiguration()
         configuration.width = Int(filter.contentRect.width * CGFloat(filter.pointPixelScale))
         configuration.height = Int(filter.contentRect.height * CGFloat(filter.pointPixelScale))
         configuration.showsCursor = false
-        guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration) else { return nil }
-        return (image, kind)
+        do {
+            let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+            return .captured(image: image, kind: kind)
+        } catch {
+            let error = error as NSError
+            Logger.aiChat.error("Duck.ai screenshot capture failed: \(error.domain, privacy: .public) \(error.code, privacy: .public)")
+            return .failed(.failed)
+        }
     }
 
     // MARK: - SCContentSharingPickerObserver
@@ -80,11 +103,13 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
     }
 
     func contentSharingPickerStartDidFailWithError(_ error: Error) {
+        let error = error as NSError
+        Logger.aiChat.error("Duck.ai screenshot picker failed to start: \(error.domain, privacy: .public) \(error.code, privacy: .public)")
         finish(.failed)
     }
 
     /// The observer is called off the main thread; the continuation resumes once.
-    private func finish(_ outcome: Outcome) {
+    private func finish(_ outcome: Pick) {
         DispatchQueue.main.async { [weak self] in
             self?.continuation?.resume(returning: outcome)
             self?.continuation = nil

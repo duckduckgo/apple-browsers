@@ -69,15 +69,13 @@ final class AIChatScreenshotCaptureService {
         let windowIDs = windows.map { CGWindowID($0.windowNumber) }
         switch mode {
         case .selectWindowOrDisplay:
-            let picker = AIChatScreenshotWindowPicker()
-            switch await picker.pick(excludingWindowIDs: windowIDs.map(Int.init)) {
+            switch await AIChatScreenshotWindowPicker().capture(excludingWindowIDs: windowIDs.map(Int.init)) {
             case .cancelled:
                 return .cancelled
-            case .failed:
-                return .failed(.unavailable)
-            case .picked(let filter):
-                guard let capture = await picker.capture(filter) else { return .failed(.failed) }
-                return await process(capture.image, kind: capture.kind)
+            case .failed(let reason):
+                return .failed(reason)
+            case .captured(let image, let kind):
+                return await process(image, kind: kind)
             }
 
         case .dragToSelect:

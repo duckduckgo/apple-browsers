@@ -589,7 +589,7 @@ final class AIChatUsageWarningCardView: NSView {
     func updateForScreenRecordingPermission() {
         showTitleLabel()
         let title = UserText.screenRecordingPermissionPrompt
-        let subtitle = UserText.screenRecordingPermissionDisabled.trimmingCharacters(in: .whitespaces)
+        let subtitle = UserText.screenRecordingPermissionDisabled
 
         applyGlyph(DesignSystemImages.Glyphs.Size16.screenShareBlocked)
         titleLabel.maximumNumberOfLines = 2

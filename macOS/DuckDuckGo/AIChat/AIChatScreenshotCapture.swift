@@ -141,8 +141,3 @@ struct AIChatScreenRecordingPermission {
         return .requestedSystemPrompt
     }
 }
-
-extension Notification.Name {
-    /// Drag to Select was denied Screen Recording. `object` is the window whose address bar shows the explainer.
-    static let aiChatScreenRecordingPermissionRequested = Notification.Name("com.duckduckgo.aiChat.screenRecordingPermissionRequested")
-}

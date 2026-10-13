@@ -144,35 +144,3 @@ struct SystemDisabledPermissionInfoView: View {
         NSWorkspace.shared.open(url)
     }
 }
-
-/// Where to turn Screen Recording back on once macOS has stopped prompting for it. Same layout as
-/// `SystemDisabledPermissionInfoView`, which is keyed to website permissions.
-struct ScreenRecordingPermissionInfoView: View {
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text(UserText.screenRecordingPermissionPrompt)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            (Text(UserText.screenRecordingPermissionDisabled)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-             + Text(UserText.screenRecordingPermissionOpenSettings)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .accentTextPrimary)))
-                .lineSpacing(6)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .cursor(.pointingHand)
-                .onTapGesture {
-                    NSWorkspace.shared.open(.screenRecordingSystemSettings)
-                }
-        }
-        .padding(16)
-        .frame(width: 360)
-        .background(Color(designSystemColor: .surfaceSecondary))
-    }
-}

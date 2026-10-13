@@ -179,11 +179,8 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     private func presentDefaultFlowDialog(for event: NewTabPageOnboardingDialogEvent) {
-        switch event {
-        case .nextDialogRequested:
-            showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
-        case .linearOnboardingCompleted:
-            showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+        showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+        if event == .linearOnboardingCompleted {
             // Show keyboard when surfacing the first Dax tip after linear onboarding.
             chromeDelegate?.omniBar.beginEditing(animated: true)
         }

@@ -124,7 +124,6 @@ final class AIChatTabExtension {
 
         contentPublisher.sink { [weak self] content in
             self?.latestContentSource = Self.navigationSource(of: content)
-            Self.logContentForAttribution(content)
         }.store(in: &cancellables)
 
         scriptsPublisher.sink { [weak self] scripts in
@@ -287,11 +286,6 @@ final class AIChatTabExtension {
         pendingRecreationSource = source
     }
 
-    private static func logContentForAttribution(_ content: TabContent) {
-        guard let url = content.urlForWebView, url.isDuckAIURL else { return }
-        logDuckAIAttribution("content url=\(url.absoluteString) source=\(String(describing: navigationSource(of: content)))")
-    }
-
     /// Many surfaces open duck.ai as plain `.url` content, so both carry the navigation's source.
     private static func navigationSource(of content: TabContent) -> TabContent.URLSource? {
         switch content {
@@ -361,9 +355,6 @@ final class AIChatTabExtension {
 extension AIChatTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
-        if navigationAction.isForMainFrame, navigationAction.url.isDuckAIURL || navigationAction.redirectHistory?.contains(where: { $0.url.isDuckAIURL }) == true {
-            logDuckAIAttribution("decidePolicy type=\(navigationAction.navigationType) url=\(navigationAction.url.absoluteString) userInitiated=\(String(describing: navigationAction.isUserInitiated)) content=\(String(describing: latestContentSource)) sidebar=\(isLoadedInSidebar)")
-        }
         refreshNativeStorageBootstrapIfNeeded(for: navigationAction)
 
         // Only handle sidebar, user-initiated, cross-document navigations; otherwise let them proceed normally
@@ -407,16 +398,6 @@ extension AIChatTabExtension: NavigationResponder {
     }
 
     func willStart(_ navigation: Navigation) {
-        let isDuckAINavigation = navigation.url.isDuckAIURL || navigation.redirectHistory.contains { $0.url.isDuckAIURL }
-        if isDuckAINavigation {
-            let redirects = navigation.redirectHistory.map { "\($0.navigationType) \($0.url.absoluteString)" }
-            logDuckAIAttribution("willStart type=\(navigation.navigationAction.navigationType) url=\(navigation.url.absoluteString) sidebar=\(isLoadedInSidebar) content=\(String(describing: latestContentSource)) suggestionURL=\(addressBarSuggestionURL?.absoluteString ?? "nil") inherited=\(String(describing: originForClientRedirect)) linkOpener=\(linkOpener != nil) redirectHistory=\(redirects)")
-        }
-        defer {
-            if isDuckAINavigation {
-                logDuckAIAttribution("willStart url=\(navigation.url.absoluteString) origin=\(String(describing: navigation.duckAIOrigin))")
-            }
-        }
         guard !isLoadedInSidebar,
               navigation.navigationAction.isForMainFrame,
               !navigation.navigationAction.navigationType.isSameDocumentNavigation else { return }
@@ -443,9 +424,6 @@ extension AIChatTabExtension: NavigationResponder {
         // Only the first commit may use it, so a later chat in this tab isn't labelled as re-created.
         let recreationSource = pendingRecreationSource
         pendingRecreationSource = nil
-        if navigation.url.isDuckAIURL {
-            logDuckAIAttribution("didCommit url=\(navigation.url.absoluteString) current=\(navigation.isCurrent) type=\(navigation.navigationAction.navigationType) origin=\(String(describing: navigation.duckAIOrigin)) recreation=\(String(describing: recreationSource)) homepage=\(navigation.url.isDuckAIOpenedFromHomepage)")
-        }
 
         guard navigation.isCurrent else { return }
         guard let origin = navigation.duckAIOrigin else {
@@ -460,7 +438,6 @@ extension AIChatTabExtension: NavigationResponder {
         }
         guard !navigation.url.isDuckAIOpenedFromHomepage else { return }
 
-        logDuckAIAttribution("didCommit url=\(navigation.url.absoluteString) fallback=\(origin.conversationSource.rawValue) firesPixel=\(String(describing: origin).hasPrefix("direct"))")
         if case .direct(let via) = origin {
             let isDuckAIEnabled = preferencesStorage.isAIFeaturesEnabled
             pixelFiring?.fire(AIChatPixel.aiChatDuckAIDirectNavigation(via: via,
@@ -591,11 +568,6 @@ extension AIChatTabExtension {
         refresher.fireModeStorageProvider = fireModeStorageProvider
         return refresher
     }
-}
-
-// TEMP: Duck.ai attribution diagnostics for the #7246 review; revert this commit before merging.
-func logDuckAIAttribution(_ message: String) {
-    Logger.aiChat.log("[DuckAIAttribution] \(message, privacy: .public)")
 }
 
 protocol AIChatProtocol: AnyObject, NavigationResponder {

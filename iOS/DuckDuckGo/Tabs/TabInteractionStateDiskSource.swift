@@ -193,3 +193,25 @@ private struct TabInteractionStateDataSizeBucket {
         }
     }
 }
+
+enum TabInteractionStatePixel: PixelKit.Event {
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
+    case interactionStateFailedToRestore
+    case interactionStateFailedToRestoreDaily
+
+    var name: String {
+        switch self {
+        case .interactionStateFailedToRestore:
+            return "m_d_tab-interaction-state_failed-to-restore"
+        case .interactionStateFailedToRestoreDaily:
+            return "m_d_tab-interaction-state_failed-to-restore_daily"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: PixelKitNamePrefix { .none }
+}

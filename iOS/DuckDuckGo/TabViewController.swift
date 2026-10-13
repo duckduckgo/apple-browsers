@@ -89,8 +89,33 @@ enum WebViewPreviewSnapshotGeometry {
 
 enum WebViewPreviewSnapshotPolicy {
 
+    static let timeout: TimeInterval = 1
+
     static func shouldCapture(isLoading: Bool) -> Bool {
         !isLoading
+    }
+
+    /// A frozen web content process never draws, so `takeSnapshot` never calls back and the tab switcher would wait
+    /// forever. Runs each attempt in turn while the previous one times out, ignores late results, and completes with
+    /// `nil` once all have timed out. Call on the main thread.
+    static func capture(timeout: TimeInterval = timeout,
+                        attempts: [(@escaping (UIImage?) -> Void) -> Void],
+                        completion: @escaping (UIImage?) -> Void) {
+        guard let attempt = attempts.first else {
+            completion(nil)
+            return
+        }
+        var didFinish = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
+            guard !didFinish else { return }
+            didFinish = true
+            capture(timeout: timeout, attempts: Array(attempts.dropFirst()), completion: completion)
+        }
+        attempt { image in
+            guard !didFinish else { return }
+            didFinish = true
+            completion(image)
+        }
     }
 }
 
@@ -3044,13 +3069,22 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            let configuration = makePreviewSnapshotConfiguration(
-                rect: visibleRect,
-                windowSize: webView.window?.bounds.size ?? visibleRect.size,
-                afterScreenUpdates: true)
-            webView.takeSnapshot(with: configuration) { image, _ in
-                completion(image)
+            func snapshot(afterScreenUpdates: Bool) -> (@escaping (UIImage?) -> Void) -> Void {
+                let configuration = makePreviewSnapshotConfiguration(
+                    rect: visibleRect,
+                    windowSize: webView.window?.bounds.size ?? visibleRect.size,
+                    afterScreenUpdates: afterScreenUpdates)
+                return { finish in
+                    webView.takeSnapshot(with: configuration) { image, _ in
+                        finish(image)
+                    }
+                }
             }
+
+            // The retry doesn't wait for the page to draw, which a frozen page never does.
+            let attempts = [snapshot(afterScreenUpdates: true), snapshot(afterScreenUpdates: false)]
+            WebViewPreviewSnapshotPolicy.capture(attempts: attempts,
+                                                 completion: completion)
         }
     }
 

@@ -1667,6 +1667,68 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
     func testWhenPageIsNotLoadingThenSnapshotIsCaptured() {
         XCTAssertTrue(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: false))
     }
+
+    func testWhenSnapshotCompletesBeforeTimeoutThenCompletionRunsOnceWithImageAndNoRetry() {
+        let image = UIImage()
+        var retried = false
+        var results = [UIImage?]()
+        let completed = expectation(description: "completed")
+        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
+                                             attempts: [{ $0(image) }, { _ in retried = true }],
+                                             completion: { results.append($0); completed.fulfill() })
+        wait(for: [completed], timeout: 5)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1)) // Past the timeout, to catch a retry or a second completion.
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0], image)
+        XCTAssertFalse(retried)
+    }
+
+    func testWhenSnapshotFailsBeforeTimeoutThenItIsNotRetried() {
+        var retried = false
+        var results = [UIImage?]()
+        let completed = expectation(description: "completed")
+        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
+                                             attempts: [{ $0(nil) }, { _ in retried = true }],
+                                             completion: { results.append($0); completed.fulfill() })
+        wait(for: [completed], timeout: 5)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertNil(results[0])
+        XCTAssertFalse(retried)
+    }
+
+    func testWhenFirstSnapshotTimesOutThenRetryResultIsUsedAndLateFirstImageIsIgnored() {
+        let retryImage = UIImage()
+        var firstCompletion: ((UIImage?) -> Void)?
+        var retryCompletion: ((UIImage?) -> Void)?
+        var results = [UIImage?]()
+        let retryStarted = expectation(description: "retry started")
+        let completed = expectation(description: "completed")
+        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
+                                             attempts: [{ firstCompletion = $0 }, { retryCompletion = $0; retryStarted.fulfill() }],
+                                             completion: { results.append($0); completed.fulfill() })
+        wait(for: [retryStarted], timeout: 5)
+
+        firstCompletion?(UIImage()) // Late, so ignored.
+        retryCompletion?(retryImage)
+        wait(for: [completed], timeout: 5)
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0], retryImage)
+    }
+
+    func testWhenEverySnapshotTimesOutThenCompletionRunsOnceWithNil() {
+        var results = [UIImage?]()
+        let completed = expectation(description: "completed")
+        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
+                                             attempts: [{ _ in }, { _ in }],
+                                             completion: { results.append($0); completed.fulfill() })
+        wait(for: [completed], timeout: 5)
+
+        XCTAssertEqual(results, [nil])
+    }
 }
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {

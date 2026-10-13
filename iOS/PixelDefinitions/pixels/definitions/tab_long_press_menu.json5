@@ -48,7 +48,7 @@
     "tab_long_press_menu_new_chat": {
         "description": "User selected 'New Chat' from the long-press menu, opening Duck.ai in a new tab. Only offered while Duck.ai is enabled.",
         "owners": ["hassaanelgarem"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",

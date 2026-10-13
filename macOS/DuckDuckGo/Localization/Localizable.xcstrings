@@ -79448,18 +79448,6 @@
         }
       }
     },
-    "permission.prompt.system.camera-and-microphone.required" : {
-      "comment" : "Permission prompt message shown after allowing a site when macOS hasn't asked for camera or microphone access yet",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "DuckDuckGo needs your system's permission to share your camera and microphone with sites."
-          }
-        }
-      }
-    },
     "permission.prompt.system.camera.off" : {
       "comment" : "Permission prompt message shown after allowing a site when camera access is off in macOS System Settings",
       "extractionState" : "extracted_with_value",

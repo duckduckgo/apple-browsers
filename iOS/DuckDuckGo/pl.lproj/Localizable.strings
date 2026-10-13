@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Ukryj skrót „Wróć do”";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Wróć do ostatnio używanej karty";
+"escapeHatch.menu.lastUsedTab" = "Ostatnio używana karta";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Więcej opcji";

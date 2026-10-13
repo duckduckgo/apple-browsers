@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Skrij bližnjico »Nazaj na«";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Nazaj na nazadnje uporabljeni zavihek";
+"escapeHatch.menu.lastUsedTab" = "Nazadnje uporabljeni zavihek";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Več možnosti";

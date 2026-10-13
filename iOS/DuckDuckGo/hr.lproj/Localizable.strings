@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Sakrij prečac ‘Povratak na’";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Povratak na posljednju korištenu karticu";
+"escapeHatch.menu.lastUsedTab" = "Posljednja korištena kartica";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Više opcija";

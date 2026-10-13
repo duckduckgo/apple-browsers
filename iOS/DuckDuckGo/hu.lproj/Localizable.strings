@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "„Vissza” gyorsparancs elrejtése";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Vissza az utoljára használt lapra";
+"escapeHatch.menu.lastUsedTab" = "Utoljára használt lap";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "További lehetőségek";

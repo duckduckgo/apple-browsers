@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Piilota Palaa välilehdelle -pikavalinta";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Palaa viimeksi käytettyyn välilehteen";
+"escapeHatch.menu.lastUsedTab" = "Viimeksi käytetty välilehti";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Lisää vaihtoehtoja";

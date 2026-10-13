@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Skrýt zkratku „Zpět na”";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Zpět na naposledy použitou kartu";
+"escapeHatch.menu.lastUsedTab" = "Naposledy použitá karta";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Další možnosti";

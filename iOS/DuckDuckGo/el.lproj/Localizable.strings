@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Απόκρυψη συντόμευσης «Επιστροφή σε»";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Επιστροφή στην τελευταία καρτέλα που χρησιμοποιήθηκε";
+"escapeHatch.menu.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Περισσότερες επιλογές";

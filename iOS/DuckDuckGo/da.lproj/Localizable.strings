@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Skjul genvejen \"Gå tilbage til\"";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Gå tilbage til sidst brugte fane";
+"escapeHatch.menu.lastUsedTab" = "Sidst brugte fane";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Flere muligheder";

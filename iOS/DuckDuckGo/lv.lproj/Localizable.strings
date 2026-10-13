@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Paslēpt “Atgriezties” saīsni";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Atgriezties pēdējā izmantotajā cilnē";
+"escapeHatch.menu.lastUsedTab" = "Pēdējā lietotā cilne";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Citas iespējas";

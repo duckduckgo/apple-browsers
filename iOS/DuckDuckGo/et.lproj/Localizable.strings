@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Peida otsetee „Tagasi”";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Tagasi viimati kasutatud vahelehele";
+"escapeHatch.menu.lastUsedTab" = "Viimati kasutatud vahekaart";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Veel valikuid";

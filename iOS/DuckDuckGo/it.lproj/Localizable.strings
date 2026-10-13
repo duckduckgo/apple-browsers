@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Nascondi scorciatoia \"Torna a\"";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Torna all'ultima scheda usata";
+"escapeHatch.menu.lastUsedTab" = "Ultima scheda usata";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Altre opzioni";

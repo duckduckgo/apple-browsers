@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Ascunde scurtătura pentru „Revino la”";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Revino la ultima filă utilizată";
+"escapeHatch.menu.lastUsedTab" = "Ultima filă utilizată";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Mai multe opțiuni";

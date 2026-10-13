@@ -298,7 +298,8 @@
 		75F9178AB05048B7B847DE10 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = F65BA8F830862DB77E43E2C1 /* WideEvent */; };
 		75FA22045AC409B996F2A204 /* SyncSettingsViewControllerPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E979526F6A54D9214F20EA13 /* SyncSettingsViewControllerPixelTests.swift */; };
 		78BBBA6B2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78BBBA6A2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift */; };
-		7A0308260000000000000004 /* TabTerminationTelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */; };
+		7A0308260000000000000004 /* WebContentHealthPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308260000000000000003 /* WebContentHealthPixelTests.swift */; };
+		7039E806C1DF0AF3836D6E1A /* TabEvictionSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C0F9A0A007BE54F8EDD5599 /* TabEvictionSettingsTests.swift */; };
 		7A0308270000000000000004 /* TabTerminationErrorPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */; };
 		7A11B0C0D0E0F00102030407 /* IPadOmnibarToolPickerControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11B0C0D0E0F00102030408 /* IPadOmnibarToolPickerControllerTests.swift */; };
 		7A1B2C3D2E0000000000F001 /* TabsBarViewControllerSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D2E0000000000F002 /* TabsBarViewControllerSizingTests.swift */; };
@@ -1949,7 +1950,8 @@
 		7114FFFEE417A0A0B305C1D5 /* SyncDeviceDetailsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDeviceDetailsPixel.swift; sourceTree = "<group>"; };
 		78BBBA6A2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchFeedbackView_PreviewMocks.swift; sourceTree = "<group>"; };
 		79F38CB257BE94EF3752259B /* SyncSuccessViewTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSuccessViewTests.swift; sourceTree = "<group>"; };
-		7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationTelemetryTests.swift; sourceTree = "<group>"; };
+		7A0308260000000000000003 /* WebContentHealthPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContentHealthPixelTests.swift; sourceTree = "<group>"; };
+		0C0F9A0A007BE54F8EDD5599 /* TabEvictionSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabEvictionSettingsTests.swift; sourceTree = "<group>"; };
 		7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationErrorPageTests.swift; sourceTree = "<group>"; };
 		7A11B0C0D0E0F00102030408 /* IPadOmnibarToolPickerControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarToolPickerControllerTests.swift; sourceTree = "<group>"; };
 		7A1B2C3D2E0000000000F002 /* TabsBarViewControllerSizingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsBarViewControllerSizingTests.swift; sourceTree = "<group>"; };
@@ -6534,7 +6536,8 @@
 				8581F4D22D8AE04700D93DA6 /* TabManagerTests.swift */,
 				C84EFBF9259C5F5039CDEFD1 /* TabNavigationDecisionTests.swift */,
 				7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */,
-				7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */,
+				7A0308260000000000000003 /* WebContentHealthPixelTests.swift */,
+				0C0F9A0A007BE54F8EDD5599 /* TabEvictionSettingsTests.swift */,
 				6F1422832D314DC900B6D3DE /* TabInteractionStateDiskSourceTests.swift */,
 				6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */,
 				85010503292FFB080033978F /* FireproofFaviconUpdaterTests.swift */,
@@ -8413,7 +8416,8 @@
 				8581F4D32D8AE04B00D93DA6 /* TabManagerTests.swift in Sources */,
 				5A73728465C83D08A704739C /* TabNavigationDecisionTests.swift in Sources */,
 				7A0308270000000000000004 /* TabTerminationErrorPageTests.swift in Sources */,
-				7A0308260000000000000004 /* TabTerminationTelemetryTests.swift in Sources */,
+				7A0308260000000000000004 /* WebContentHealthPixelTests.swift in Sources */,
+				7039E806C1DF0AF3836D6E1A /* TabEvictionSettingsTests.swift in Sources */,
 				987130C4294AAB9F00AB05E0 /* FavoriteListViewModelTests.swift in Sources */,
 				CB3B4D542D648C44006DAD63 /* AuthenticationServiceTests.swift in Sources */,
 				8565A34D1FC8DFE400239327 /* LaunchTabNotificationTests.swift in Sources */,

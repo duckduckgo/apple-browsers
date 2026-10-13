@@ -237,6 +237,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var onTextInputActivated: (() -> Void)?
+    var onTextInputFocusChanged: ((Bool) -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
     weak var mentionHandler: TextEntryMentionHandling?
@@ -1149,11 +1150,13 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidBeginEditing(_ textView: UITextView) {
         onTextInputActivated?()
+        onTextInputFocusChanged?(true)
         fireTextAreaFocusedPixel()
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
         mentionHandler?.dismiss()
+        onTextInputFocusChanged?(false)
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -1210,7 +1213,12 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
         hasBeenInteractedWith = true
         onTextInputActivated?()
+        onTextInputFocusChanged?(true)
         fireTextAreaFocusedPixel()
+    }
+
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        onTextInputFocusChanged?(false)
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {

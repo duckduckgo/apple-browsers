@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Skjul genvejen \"Gå tilbage til\"";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Gå tilbage til sidst brugte fane";
+"escapeHatch.menu.lastUsedTab" = "Sidst brugte fane";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Flere muligheder";
@@ -4520,25 +4520,25 @@
 "settings.complete.setup" = "Færdiggør opsætningen";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Vi vil forsøge kun at vælge de mest private cookieindstillinger for dig og derefter lukke disse pop op-vinduer.";
+"settings.cookie.auto-manage.explanation" = "Vi vil forsøge at afvise så mange cookies som muligt for dig og derefter lukke pop op-vinduerne.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Administrer automatisk pop op-beskeder om cookies";
+"settings.cookie.auto-manage.title" = "Afvis valgfrie cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mod pop op-beskeder om cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan automatisk administrere dine cookiepræferencer for at maksimere fortrolighed, minimere cookies og lukke disse pop op-vinduer.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan automatisk administrere cookie-pop op-vinduer for at maksimere fortrolighed og minimere cookies, før du overhovedet ser dem.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer cookie pop op-vinduer";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Lad også DuckDuckGo spare dig for et klik ved at acceptere cookies på dine vegne for at lukke pop op-vinduer, hvor du ikke kan fravælge dem.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Hvis der ikke er en afvisningsmulighed, sparer vi dig for et klik, accepterer disse cookies for dig og lukker pop op-vinduerne.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Pop op-vinduer uden fravalgsmulighed";
+"settings.cookie.popups-without-opt-outs.title" = "Acceptér cookies, der ikke kan fravælges";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Slet faner og data";
@@ -4641,15 +4641,6 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
-
-/* Keyboard setting to show the keyboard on App Launch */
-"settings.keyboard.app-launch" = "App-start";
-
-/* Keyboard setting to show the keyboard on a New Tab page */
-"settings.keyboard.new-tab" = "Ny fane";
-
-/* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Vis tastaturet på";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Viser et link til at vende tilbage til den sidst brugte fane, når du åbner appen efter inaktivitet.";

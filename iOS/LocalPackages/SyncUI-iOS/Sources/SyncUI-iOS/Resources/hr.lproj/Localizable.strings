@@ -175,9 +175,6 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Dijeli favorite na svim uređajima";
 
-/* Title shown when Sync setup is still waiting for the other device to finish */
-"sync.simplified.connecting.v2.check-other-device.title" = "Provjeri svoj drugi uređaj.";
-
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Opcija Sync & Backup šifrirana je metodom \"od kraja do kraja\" na svim tvojim uređajima.";
 
@@ -277,9 +274,6 @@
 /* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikacija DuckDuckGo";
 
-/* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Povezivanje u tijeku...";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vrati se na ovaj uređaj nakon što zalijepiš kôd.";
 
@@ -360,3 +354,4 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Koristi Sync Development okruženje";
+

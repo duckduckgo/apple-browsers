@@ -175,9 +175,6 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Sdílej oblíbené položky na různých zařízeních";
 
-/* Title shown when Sync setup is still waiting for the other device to finish */
-"sync.simplified.connecting.v2.check-other-device.title" = "Podívej se na druhé zařízení.";
-
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Funkce Sync & Backup používá end-to-end šifrování na všech tvých zařízeních.";
 
@@ -277,9 +274,6 @@
 /* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikace DuckDuckGo";
 
-/* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Připojování...";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po vložení kódu se vrať zpět na toto zařízení.";
 
@@ -360,3 +354,4 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Používáš synchronizaci vývojového prostředí";
+

@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Verknüpfung „Zurück zu“ ausblenden";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Zurück zum zuletzt verwendeten Tab";
+"escapeHatch.menu.lastUsedTab" = "Zuletzt verwendeter Tab";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Weitere Optionen";
@@ -4520,25 +4520,25 @@
 "settings.complete.setup" = "Einrichtung abschließen";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Wir werden versuchen, nur die privatesten verfügbaren Cookie-Optionen für dich auszuwählen und diese Pop-ups dann zu schließen.";
+"settings.cookie.auto-manage.explanation" = "Wir werden versuchen, so viele Cookies wie möglich für dich abzulehnen und dann die Pop-ups zu schließen.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Cookie-Pop-ups automatisch verwalten";
+"settings.cookie.auto-manage.title" = "Optionale Cookies ablehnen";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Cookie-Pop-up-Schutz";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kann Cookie-Einstellungen automatisch verwalten, um die Privatsphäre zu maximieren, Cookies zu minimieren und diese Pop-ups zu schließen.\n[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kann Cookie-Pop-ups automatisch verwalten, um die Privatsphäre zu maximieren und Cookies zu minimieren, bevor du sie überhaupt siehst.[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookie-Pop-ups verwalten";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Lass DuckDuckGo dir außerdem einen Klick ersparen, indem Cookies in deinem Namen akzeptiert werden, um Pop-ups zu schließen, bei denen du dich nicht abmelden kannst.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Falls es keine Option zum Ablehnen gibt, ersparen wir dir einen Klick, akzeptieren diese Cookies für dich und schließen die Pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Pop-ups ohne Abmeldemöglichkeit";
+"settings.cookie.popups-without-opt-outs.title" = "Cookies akzeptieren, die nicht abgelehnt werden können";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Tabs und Daten löschen";
@@ -4641,15 +4641,6 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
-
-/* Keyboard setting to show the keyboard on App Launch */
-"settings.keyboard.app-launch" = "Start der App";
-
-/* Keyboard setting to show the keyboard on a New Tab page */
-"settings.keyboard.new-tab" = "Neuer Tab";
-
-/* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Tastatur anzeigen bei";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Zeigt einen Link an, über den du zum zuletzt verwendeten Tab zurückkehren kannst, wenn du die App nach einer Pause wieder startest.";

@@ -2678,7 +2678,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "‘Geri Dön’ Kısayolunu Gizle";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Son Kullanılan Sekmeye Dön";
+"escapeHatch.menu.lastUsedTab" = "Son Kullanılan Sekme";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Diğer seçenekler";
@@ -4520,25 +4520,25 @@
 "settings.complete.setup" = "Kurulumu Tamamlayın";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Sizin için mümkün olan en gizli çerez seçeneklerini belirlemeyi hedefleyecek ve ardından bu açılır pencereleri kapatacağız.";
+"settings.cookie.auto-manage.explanation" = "Mümkün olduğunca çok sayıda çerezi reddetmeyi hedefleyecek ve ardından açılır pencereleri kapatacağız.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Çerez Açılır Pencerelerini Otomatik Yönet";
+"settings.cookie.auto-manage.title" = "İsteğe bağlı çerezleri reddet";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Çerez Açılır Pencere Engelleyici";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo, gizliliği en üst düzeye çıkarmak, çerezleri en aza indirmek ve bu açılır pencereleri kapatmak için çerez tercihlerinizi otomatik olarak yönetebilir.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo, siz daha görmeden gizliliği en üst düzeye çıkarmak ve çerezleri en aza indirmek için çerez açılır pencerelerini otomatik olarak yönetebilir.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Çerez Açılır Pencerelerini Yönetin";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Ayrıca DuckDuckGo'nun, devre dışı bırakma seçeneği sunmayan açılır pencereleri kapatmak için sizin adınıza çerezleri kabul etmesine izin verin. Böylece bir tıklamadan tasarruf edebilirsiniz.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Reddetme seçeneği yoksa, sizi tıklama zahmetinden kurtarmak için bu çerezleri sizin yerinize kabul edecek ve açılır pencereleri kapatacağız.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Devre Dışı Bırakma Seçeneği Olmayan Açılır Pencereler";
+"settings.cookie.popups-without-opt-outs.title" = "Reddedilemeyen çerezleri kabul et";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Sekmeleri ve Verileri Sil";
@@ -4641,15 +4641,6 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";
-
-/* Keyboard setting to show the keyboard on App Launch */
-"settings.keyboard.app-launch" = "Uygulamayı Başlatma";
-
-/* Keyboard setting to show the keyboard on a New Tab page */
-"settings.keyboard.new-tab" = "Yeni Sekme";
-
-/* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Şu durumda klavyeyi göster:";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Hareketsizlikten sonra uygulamayı açtığınızda son kullanılan sekmeye dönmeniz için bir bağlantı gösterir.";

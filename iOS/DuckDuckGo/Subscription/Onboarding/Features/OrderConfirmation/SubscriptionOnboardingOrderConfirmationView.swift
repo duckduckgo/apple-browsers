@@ -87,59 +87,47 @@ private extension SubscriptionOnboardingOrderConfirmationView {
 #if DEBUG
 
 #Preview("Free trial — day 1") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Free trial — midway") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Paid") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .paid),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .paid),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Loading") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .loading),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .loading),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

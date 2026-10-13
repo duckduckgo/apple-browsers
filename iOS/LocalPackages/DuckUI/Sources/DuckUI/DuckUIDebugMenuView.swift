@@ -29,11 +29,8 @@ public struct DuckUIDebugMenuView: View {
     public var body: some View {
         List {
             Section(header: Text(verbatim: "Buttons")) {
-                row("Button Styles (Legacy)", title: "Buttons (Legacy)") {
-                    ButtonStylesGallery(isRebranded: false)
-                }
-                row("Button Styles (Rebranded)", title: "Buttons (Rebranded)") {
-                    ButtonStylesGallery(isRebranded: true)
+                row("Button Styles", title: "Buttons") {
+                    ButtonStylesGallery()
                 }
                 row("iOS Buttons (Figma)", title: "iOS Buttons (Figma)") {
                     IOSButtonsDebugView()

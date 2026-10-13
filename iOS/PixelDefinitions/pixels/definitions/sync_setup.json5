@@ -52,8 +52,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -92,8 +92,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -140,8 +140,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -185,8 +185,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -218,8 +218,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -246,8 +246,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -273,8 +273,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -312,8 +312,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -345,8 +345,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -378,8 +378,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -494,8 +494,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -602,5 +602,79 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_setup_joiner_recovery_code_done_success": {
+        "description": "Fired by the joiner after successfully sending a recovery_code_done success report to the host.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "host_has_account",
+                "type": "boolean",
+                "description": "Whether the host had an account when roles were negotiated."
+            },
+            {
+                "key": "host_kind",
+                "type": "string",
+                "description": "The host client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "joiner_has_account",
+                "type": "boolean",
+                "description": "Whether the joiner had an account when roles were negotiated."
+            },
+            {
+                "key": "joiner_kind",
+                "type": "string",
+                "description": "The joiner client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "protocol_version",
+                "type": "string",
+                "description": "The negotiated Exchange protocol version."
+            }
+        ]
+    },
+    "sync_setup_joiner_recovery_code_done_failed": {
+        "description": "Fired by the joiner after successfully sending a recovery_code_done failed report to the host.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "host_has_account",
+                "type": "boolean",
+                "description": "Whether the host had an account when roles were negotiated."
+            },
+            {
+                "key": "host_kind",
+                "type": "string",
+                "description": "The host client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "joiner_has_account",
+                "type": "boolean",
+                "description": "Whether the joiner had an account when roles were negotiated."
+            },
+            {
+                "key": "joiner_kind",
+                "type": "string",
+                "description": "The joiner client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "protocol_version",
+                "type": "string",
+                "description": "The negotiated Exchange protocol version."
+            }
+        ]
     }
 }

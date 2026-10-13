@@ -5353,9 +5353,6 @@
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Απενεργοποίηση του Sync & Backup και διαγραφή των δεδομένων διακομιστή;";
 
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Προστέθηκε νέα συσκευή!";
-
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Αντιγραφή κωδικού ανάκτησης";
 

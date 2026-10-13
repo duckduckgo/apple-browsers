@@ -1071,6 +1071,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         cancelTunnelWithError(stopError)
     }
 
+    /// Apple docs explicitly say we shouldn't be overridding this API. Reasons for this is:
+    /// - We're observing a large number of `process_died` VPNSessionHealth wide pixel events
+    /// - We're also observing a large number of `Tunnel Start`, with no `Tunnel Stop` counterpart
+    ///
+    /// Signaling this API is being invoked might help us conclusively determine if the process is being terminated with no proper tunnel termination callbacks.
+    ///
     open override func cancelTunnelWithError(_ error: Error?) {
         sessionHealth.tunnelCancelledWithError()
         super.cancelTunnelWithError(error)

@@ -606,17 +606,7 @@ private struct FireDialogStyle {
     let selectedForeground: Color
     let selectedIconBackground: Color
 
-    private static var `default`: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary),
-                        individualSitesColor: NSColor(designSystemColor: .accentTextPrimary),
-                        rowCornerRadius: 12,
-                        segmentedControlCornerRadius: 12,
-                        segmentedControlItemCornerRadius: 10,
-                        selectedForeground: Color(designSystemColor: .accentPrimary),
-                        selectedIconBackground: Color(designSystemColor: .accentGlowSecondary))
-    }
-
-    private static var rebranded: FireDialogStyle {
+    static var current: FireDialogStyle {
         FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent),
                         individualSitesColor: NSColor(designSystemColor: .textPrimary),
                         rowCornerRadius: 16,
@@ -624,10 +614,6 @@ private struct FireDialogStyle {
                         segmentedControlItemCornerRadius: 14,
                         selectedForeground: Color(designSystemColor: .accentFirePrimary),
                         selectedIconBackground: Color(designSystemColor: .accentFireGlowSecondary))
-    }
-
-    static var current: FireDialogStyle {
-        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
     }
 }
 

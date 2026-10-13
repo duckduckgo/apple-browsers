@@ -344,9 +344,9 @@ final class PasswordManagementViewController: NSViewController {
         lockScreenIconImageView.setContentHuggingPriority(.init(251), for: .horizontal)
         lockScreenIconImageView.setContentHuggingPriority(.init(251), for: .vertical)
         if DeviceAuthenticator.deviceSupportsBiometrics {
-            lockScreenIconImageView.image = themeManager.isAppRebranded ? NSImage(resource: .lockTouchID128) : NSImage(resource: .loginsLockTouchIDLegacy)
+            lockScreenIconImageView.image = NSImage(resource: .lockTouchID128)
         } else {
-            lockScreenIconImageView.image = themeManager.isAppRebranded ? NSImage(resource: .lockLocked128) : NSImage(resource: .loginsLockPasswordLegacy)
+            lockScreenIconImageView.image = NSImage(resource: .lockLocked128)
         }
 
         unlockYourAutofillLabel = FlatButton(frame: .zero)
@@ -1598,8 +1598,7 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
-        let isAppRebranded = themeManager.isAppRebranded
-        let passwordsAddImage: NSImage = isAppRebranded ? NSImage(resource: .passwordsAdd128) : NSImage(resource: .passwordsAddLegacy128)
+        let passwordsAddImage: NSImage = NSImage(resource: .passwordsAdd128)
 
         switch category {
         case .allItems:
@@ -1607,10 +1606,10 @@ final class PasswordManagementViewController: NSViewController {
         case .logins:
             showEmptyState(image: passwordsAddImage, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
         case .identities:
-            let identityAddImage: NSImage = isAppRebranded ? NSImage(resource: .identityAdd128) : NSImage(resource: .identityAddLegacy128)
+            let identityAddImage: NSImage = NSImage(resource: .identityAdd128)
             showEmptyState(image: identityAddImage, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
         case .cards:
-            let creditCardsAddImage: NSImage = isAppRebranded ? NSImage(resource: .creditCardsAdd128) : NSImage(resource: .creditCardsAddLegacy128)
+            let creditCardsAddImage: NSImage = NSImage(resource: .creditCardsAdd128)
             showEmptyState(image: creditCardsAddImage, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
@@ -1637,15 +1636,8 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateImportButton.title = importTitle
         emptyStateSyncButton.title = syncTitle
 
-        if themeManager.isAppRebranded {
-            emptyStateImportButton.layer?.cornerRadius = 14
-            emptyStateSyncButton.layer?.cornerRadius = 14
-        } else {
-            emptyStateImportButton.isBordered = true
-            emptyStateSyncButton.isBordered = true
-            emptyStateImportButton.bezelStyle = .rounded
-            emptyStateSyncButton.bezelStyle = .rounded
-        }
+        emptyStateImportButton.layer?.cornerRadius = 14
+        emptyStateSyncButton.layer?.cornerRadius = 14
     }
 
     private func requestSync() {
@@ -1670,10 +1662,6 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         searchField.borderColor = palette.controlsBorderPrimary
         searchField.borderHighlightColor = palette.accentPrimary
         searchField.innerBackgroundColor = palette.surfaceTertiary
-
-        guard themeManager.isAppRebranded else {
-            return
-        }
 
         NSAppearance.withAppAppearance {
             emptyStateImportButton.wantsLayer = true

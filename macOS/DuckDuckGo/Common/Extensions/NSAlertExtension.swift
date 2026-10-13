@@ -18,7 +18,6 @@
 
 import Foundation
 import Cocoa
-import DesignResourcesKit
 
 extension NSAlert {
 
@@ -227,7 +226,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
-        alert.icon = DesignSystemRebrand.isAppRebranded() ? NSImage(resource: .burnAlert) : NSImage(resource: .burnAlertLegacy)
+        alert.icon = NSImage(resource: .burnAlert)
         alert.addButton(withTitle: UserText.clearAndQuit)
         alert.addButton(withTitle: UserText.quitWithoutClearing)
         alert.addButton(withTitle: UserText.cancel)

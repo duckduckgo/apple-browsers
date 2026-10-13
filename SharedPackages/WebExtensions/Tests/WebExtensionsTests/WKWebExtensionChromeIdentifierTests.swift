@@ -81,6 +81,43 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
         XCTAssertEqual(webExtension.chromeExtensionOrigin, "chrome-extension://\(Self.bitwardenIdentifier)/")
     }
 
+    // MARK: - chromeOrigin(webStoreIdentifier:)
+
+    func testWhenInstalledFromWebStoreWithoutKey_ThenOriginIsTheWebStoreOrigin() async throws {
+        let webExtension = try await makeExtension(manifest: manifest(key: nil))
+
+        XCTAssertEqual(try webExtension.chromeOrigin(webStoreIdentifier: Self.bitwardenIdentifier),
+                       "chrome-extension://\(Self.bitwardenIdentifier)/")
+    }
+
+    func testWhenInstalledFromWebStoreWithMatchingKey_ThenOriginIsTheWebStoreOrigin() async throws {
+        let bitwardenKey = Self.bitwardenPublicKey
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
+
+        XCTAssertEqual(try webExtension.chromeOrigin(webStoreIdentifier: Self.bitwardenIdentifier),
+                       "chrome-extension://\(Self.bitwardenIdentifier)/")
+    }
+
+    func testWhenManifestKeyNamesAnotherExtensionThanTheWebStore_ThenOriginIsRefused() async throws {
+        let bitwardenKey = Self.bitwardenPublicKey
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
+        let otherIdentifier = "abcdefghijklmnopabcdefghijklmnop"
+
+        XCTAssertThrowsError(try webExtension.chromeOrigin(webStoreIdentifier: otherIdentifier)) { error in
+            XCTAssertEqual(error as? ChromeExtensionOriginError,
+                           .manifestKeyMismatch(manifestOrigin: "chrome-extension://\(Self.bitwardenIdentifier)/",
+                                                webStoreOrigin: "chrome-extension://\(otherIdentifier)/"))
+        }
+    }
+
+    func testWhenNotInstalledFromWebStore_ThenOriginComesFromTheManifestKey() async throws {
+        let bitwardenKey = Self.bitwardenPublicKey
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
+
+        XCTAssertEqual(try webExtension.chromeOrigin(webStoreIdentifier: nil),
+                       "chrome-extension://\(Self.bitwardenIdentifier)/")
+    }
+
     // MARK: - Helpers
 
     private func manifest(key: String?) -> String {

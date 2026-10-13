@@ -186,44 +186,49 @@ final class NativeMessagingHostSession {
                 return
             }
 
-            do {
-                outputBuffer.append(chunk)
-                let messages = try takeMessages()
-                guard !messages.isEmpty else { return }
-                // One hop for all of them, in order. Separate tasks could deliver them out of order.
-                DispatchQueue.main.async {
-                    MainActor.assumeMainThread {
-                        for message in messages where !self.didFinish {
-                            self.messageHandler?(message)
-                        }
-                    }
-                }
-            } catch {
+            outputBuffer.append(chunk)
+            let (messages, error) = takeMessages()
+            if let error {
                 handle.readabilityHandler = nil
                 Logger.webExtensions.error("❌ Read from host \(name, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-                DispatchQueue.main.async {
-                    MainActor.assumeMainThread { self.finish(with: error) }
+            }
+            guard !messages.isEmpty || error != nil else { return }
+
+            // One hop for all of them, in order. Separate tasks could deliver them out of order.
+            // The messages that came before an unreadable one still go first.
+            DispatchQueue.main.async {
+                MainActor.assumeMainThread {
+                    for message in messages where !self.didFinish {
+                        self.messageHandler?(message)
+                    }
+                    if let error {
+                        self.finish(with: error)
+                    }
                 }
             }
         }
     }
 
     /// Removes every whole message from the front of `outputBuffer`, and leaves a partial one for
-    /// the next read.
-    private func takeMessages() throws -> [Any] {
+    /// the next read. Stops at the first message it can't read, and returns those before it.
+    private func takeMessages() -> (messages: [Any], error: Error?) {
         var messages: [Any] = []
-        while outputBuffer.count >= NativeMessagingFraming.prefixSize {
-            let length = try NativeMessagingFraming.decodeLength(outputBuffer.prefix(NativeMessagingFraming.prefixSize))
-            let frameSize = NativeMessagingFraming.prefixSize + length
-            guard outputBuffer.count >= frameSize else { break }
+        do {
+            while outputBuffer.count >= NativeMessagingFraming.prefixSize {
+                let length = try NativeMessagingFraming.decodeLength(outputBuffer.prefix(NativeMessagingFraming.prefixSize))
+                let frameSize = NativeMessagingFraming.prefixSize + length
+                guard outputBuffer.count >= frameSize else { break }
 
-            let payload = Data(outputBuffer.dropFirst(NativeMessagingFraming.prefixSize).prefix(length))
-            outputBuffer = Data(outputBuffer.dropFirst(frameSize))
-            if length > 0 {
-                messages.append(try NativeMessagingFraming.decodePayload(payload))
+                let payload = Data(outputBuffer.dropFirst(NativeMessagingFraming.prefixSize).prefix(length))
+                outputBuffer = Data(outputBuffer.dropFirst(frameSize))
+                if length > 0 {
+                    messages.append(try NativeMessagingFraming.decodePayload(payload))
+                }
             }
+        } catch {
+            return (messages, error)
         }
-        return messages
+        return (messages, nil)
     }
 
     /// Finishes once the host has also exited, and waits briefly for that.

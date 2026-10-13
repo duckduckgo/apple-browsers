@@ -152,6 +152,26 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         XCTAssertEqual(indices, [1, 2, 3])
     }
 
+    func testWhenHostWritesAMessageAndThenGarbageTogetherThenTheMessageArrivesBeforeTheError() throws {
+        let executable = try makeHost(named: "garbage-host", script: Self.garbageHostScript)
+        let session = makeSession(executable: executable)
+
+        let finished = expectation(description: "session finished")
+        var events: [String] = []
+        session.messageHandler = { message in
+            events.append("message:\((message as? [String: Int])?["index"] ?? -1)")
+        }
+        session.terminationHandler = { error in
+            events.append(error == nil ? "termination" : "error")
+            finished.fulfill()
+        }
+
+        try session.start()
+
+        wait(for: [finished], timeout: 10)
+        XCTAssertEqual(events, ["message:1", "error"])
+    }
+
     /// A host that fails has to be told apart from one that ended normally, and the exit
     /// status is the only sign. The output pipe reaches EOF at about the same moment, so this
     /// also guards the race between the two.
@@ -375,6 +395,18 @@ final class NativeMessagingHostSessionTests: XCTestCase {
     time.sleep(0.3)
     sys.stdout.buffer.write(third[6:])
     sys.stdout.buffer.flush()
+    """
+
+    /// Writes a message and a frame that isn't JSON in one go, then stays up.
+    private static let garbageHostScript = NativeMessagingHostSessionTests.framingPreamble + """
+    import time
+
+    def frame(payload):
+        return struct.pack('<I', len(payload)) + payload
+
+    sys.stdout.buffer.write(frame(b'{"index":1}') + frame(b'not json'))
+    sys.stdout.buffer.flush()
+    time.sleep(5)
     """
 
     /// Reads its input and never answers.

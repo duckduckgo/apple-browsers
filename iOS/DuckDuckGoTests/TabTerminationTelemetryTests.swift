@@ -359,6 +359,21 @@ final class TabTerminationTelemetryTests: XCTestCase {
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
     }
 
+    func testWhenHangIsReportedInBackgroundThenAppEndedDurationRunsFromTheReport() {
+        let store = MockKeyValueStore()
+        let monitor = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store, applicationState: .background)
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 10
+
+        let launchPixelFiring = MockTabTerminationPixelFiring()
+        WebContentFreezeMonitor.reportFreezeEndedWithApp(record: .init(store: store),
+                                                         pixelFiring: launchPixelFiring,
+                                                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabTerminationTelemetry]))
+
+        XCTAssertEqual(launchPixelFiring.calls.last?.event.parameters?["duration"], "0-2")
+        XCTAssertEqual(launchPixelFiring.calls.last?.event.parameters?["app_state"], "background")
+    }
+
     func testWhenNoFreezeWasInterruptedThenLaunchReportsNothing() {
         let pixelFiring = MockTabTerminationPixelFiring()
         WebContentFreezeMonitor.reportFreezeEndedWithApp(record: .init(store: MockKeyValueStore()),

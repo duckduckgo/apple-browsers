@@ -165,7 +165,7 @@ final class WebContentFreezeMonitor {
         self.context = context
         attempts = 0
         record.startDate = now
-        record.backgroundDate = nil
+        record.backgroundDate = applicationState() == .background ? now : nil
         record.attempts = 0
         record.context = context
         pixelFiring?.fire(WebContentHealthPixel.unresponsive(context: context, appState: appState), frequency: .dailyAndCount)

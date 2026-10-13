@@ -65,7 +65,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
 
         XCTAssertFalse(dialogs.nextHomeScreenMessageNewCalled)
         XCTAssertFalse(coordinator.isPresentingDialog)
-        XCTAssertTrue(page.canAnimateSearchInput)
+        XCTAssertFalse(page.isPresentingOnboardingDialog)
     }
 
     func testWhenOnboardingCompletesThenDialogReplacesRestingContent() {
@@ -75,7 +75,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(factory.specs, [.initial])
         XCTAssertEqual(page.children.count, 1)
-        XCTAssertFalse(page.canAnimateSearchInput)
+        XCTAssertTrue(page.isPresentingOnboardingDialog)
         XCTAssertTrue(coordinator.isPresentingDialog)
     }
 
@@ -88,7 +88,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(dialogs.dismissCalled)
         XCTAssertTrue(page.children.isEmpty)
-        XCTAssertTrue(page.canAnimateSearchInput)
+        XCTAssertFalse(page.isPresentingOnboardingDialog)
     }
 
     func testWhenPageAppearsAgainThenDialogIsRebuiltWithoutStacking() {
@@ -115,7 +115,6 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
 
         XCTAssertFalse(page.isPresentingOnboardingDialog)
         XCTAssertTrue(page.children.isEmpty)
-        XCTAssertTrue(page.canAnimateSearchInput)
     }
 
     func testWhenPageDetachesThenDialogStateIsKeptUntilReappearance() {
@@ -196,7 +195,6 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         var didBeginEditing = false
         input.onBeginEditing = { [unowned self] in
             didBeginEditing = true
-            XCTAssertFalse(page.canAnimateSearchInput)
             XCTAssertTrue(page.isPresentingOnboardingDialog)
             XCTAssertTrue(chrome.isUnifiedInputContentOverlaySuppressed)
         }

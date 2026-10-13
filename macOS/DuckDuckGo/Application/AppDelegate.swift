@@ -74,6 +74,7 @@ import VPNAppState
 import WebExtensions
 import WebKit
 
+// This is a test comment to trigger macOS required checks
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG

@@ -1055,7 +1055,12 @@ final class BrowserToolbarView: UIView {
     private func applyCurrentStyle(animated: Bool) {
         let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
-            self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
+            if #available(iOS 26.0, *) {
+                // Liquid Glass already provides a shadow; avoid compositing another dynamic shadow.
+                self.materialBackgroundView.layer.shadowOpacity = 0
+            } else {
+                self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
+            }
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor

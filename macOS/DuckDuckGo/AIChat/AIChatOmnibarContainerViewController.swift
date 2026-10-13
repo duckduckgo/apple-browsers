@@ -2236,8 +2236,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         case .cancelled:
             return
         case .permissionDenied(let showExplainer):
+            // macOS won't prompt again, so the drawer says where to turn it on.
             if showExplainer {
-                presentScreenRecordingPermissionExplainer()
+                setScreenRecordingNotice(visible: true)
             }
         case .failed:
             lastAttachmentError = UserText.aiChatScreenshotCaptureFailed
@@ -2261,17 +2262,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         setScreenRecordingNotice(visible: false)
         omnibarController.pixelHandler.fire(.imageAttached)
         updateAttachmentsLayout()
-    }
-
-    /// The address bar explains from the shield, like the Duck.ai microphone; the prompt bar has no
-    /// address bar, so it explains in its own drawer.
-    private func presentScreenRecordingPermissionExplainer() {
-        switch omnibarController.surface {
-        case .addressBar:
-            NotificationCenter.default.post(name: .aiChatScreenRecordingPermissionRequested, object: view.window)
-        case .promptBar:
-            setScreenRecordingNotice(visible: true)
-        }
     }
 
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {

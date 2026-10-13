@@ -34,6 +34,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         case permissionMissing(host: String)
         case hostUnavailable(host: String, underlying: Error)
         case originNotAllowed(host: String, origin: String?)
+        case originMismatch(host: String, manifestOrigin: String, webStoreOrigin: String)
         case timedOut(host: String)
 
         var errorDescription: String? {
@@ -48,6 +49,9 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
             case .originNotAllowed(let host, let origin):
                 return "The native messaging host \(host) does not allow "
                     + "\(origin ?? "an extension with no manifest key") to connect."
+            case .originMismatch(let host, let manifestOrigin, let webStoreOrigin):
+                return "The extension's manifest key claims \(manifestOrigin), but it was installed from the Chrome Web Store "
+                    + "as \(webStoreOrigin), so it cannot connect to \(host)."
             case .timedOut(let host):
                 return "The native messaging host \(host) did not answer in time."
             }
@@ -233,7 +237,12 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     private func callerOrigin(for context: WKWebExtensionContext,
                               hostName: String,
                               manifest: NativeMessagingHostManifest) throws -> String {
-        let chromeOrigin = context.webExtension.chromeExtensionOrigin ?? webStoreOrigin(of: context)
+        let chromeOrigin: String?
+        do {
+            chromeOrigin = try context.webExtension.chromeOrigin(webStoreIdentifier: webStoreIdentifier(of: context))
+        } catch ChromeExtensionOriginError.manifestKeyMismatch(let manifestOrigin, let webStoreOrigin) {
+            throw HandlerError.originMismatch(host: hostName, manifestOrigin: manifestOrigin, webStoreOrigin: webStoreOrigin)
+        }
 
         // A missing or empty list trusts nobody, so it must not fall through.
         guard let chromeOrigin, manifest.allowedOrigins?.contains(chromeOrigin) == true else {
@@ -243,11 +252,11 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         return chromeOrigin
     }
 
-    /// The Chrome origin of an extension installed from the Chrome Web Store, whose manifest carries no `key`:
-    /// the Web Store keeps it in the package header instead.
-    private func webStoreOrigin(of context: WKWebExtensionContext) -> String? {
+    /// The identifier of an extension installed from the Chrome Web Store, which the installer
+    /// checked against the package signatures.
+    private func webStoreIdentifier(of context: WKWebExtensionContext) -> String? {
         guard let identity = installationStore?.installedExtension(withUniqueIdentifier: context.uniqueIdentifier)?.storeIdentity,
               identity.store == .chromeWebStore else { return nil }
-        return "chrome-extension://\(identity.id)/"
+        return identity.id
     }
 }

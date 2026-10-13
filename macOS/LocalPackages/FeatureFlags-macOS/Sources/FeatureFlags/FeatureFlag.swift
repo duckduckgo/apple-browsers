@@ -202,6 +202,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215330116840129?focus=true
     case osSupportWarning
 
+    /// Remote kill switch for aborting pending conditional-mediation passkey requests on `pagehide`.
+    /// A request left pending across a navigation is never cancelled, and the system passkey agent
+    /// then rejects every later passkey request from the app. Disable via privacy config
+    /// (`macOSBrowserConfig.passkeyConditionalAbortOnPagehide`).
+    case passkeyConditionalAbortOnPagehide
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -790,6 +796,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.osSupportWarning), category: .osSupportWarnings)
+        case .passkeyConditionalAbortOnPagehide:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.passkeyConditionalAbortOnPagehide))
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:

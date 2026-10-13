@@ -256,6 +256,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(webExtensionPageStubUserScript)
         }
 
+        if sourceProvider.featureFlagger.isFeatureOn(.passkeyConditionalAbortOnPagehide) {
+            userScripts.append(PasskeyConditionalAbortUserScript())
+        }
+
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
@@ -379,6 +383,62 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
     }
 
+}
+
+/// Document-start, page-content-world script that keeps conditional-mediation passkey requests
+/// (`navigator.credentials.get({ mediation: "conditional" })`) from being orphaned in WebKit:
+/// - aborts them on `pagehide`, since WebKit doesn't cancel them when the page navigates away;
+/// - aborts them and waits for them to settle before a modal `get` or a `create` proceeds, since WebKit
+///   replaces the pending request without cancelling it.
+/// An orphaned request makes the system passkey agent reject every later passkey request from the app
+/// until the agent restarts. Safari isn't affected.
+final class PasskeyConditionalAbortUserScript: NSObject, UserScript {
+    var messageNames: [String] { [] }
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly: Bool = false
+    let requiresRunInPageContentWorld: Bool = true
+
+    let source = """
+        if (typeof CredentialsContainer === "undefined" || typeof AbortSignal.any !== "function") { return; }
+        const originalGet = CredentialsContainer.prototype.get;
+        const originalCreate = CredentialsContainer.prototype.create;
+        // Pending conditional requests: AbortController -> promise that settles when the request does.
+        const pending = new Map();
+        const abortPending = () => pending.forEach((_, controller) => controller.abort());
+        // Aborts pending conditional requests and waits (up to 1 s) for them to settle, so a modal
+        // request never overlaps one: WebKit replaces the pending request without cancelling it.
+        const drainPending = () => {
+            const settled = [...pending.values()];
+            abortPending();
+            return Promise.race([Promise.all(settled), new Promise((resolve) => setTimeout(resolve, 1000))]);
+        };
+        const serialized = (originalFn) => function (options) {
+            const args = arguments;
+            if (!options || !options.publicKey || pending.size === 0) {
+                return originalFn.apply(this, args);
+            }
+            return drainPending().then(() => originalFn.apply(this, args));
+        };
+        const serializedGet = serialized(originalGet);
+        CredentialsContainer.prototype.get = function get(options) {
+            if (!options || options.mediation !== "conditional" || !options.publicKey) {
+                return serializedGet.apply(this, arguments);
+            }
+            const controller = new AbortController();
+            const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
+            const result = originalGet.call(this, { ...options, signal });
+            const settle = () => pending.delete(controller);
+            pending.set(controller, result.then(settle, settle));
+            return result;
+        };
+        CredentialsContainer.prototype.create = serialized(originalCreate);
+        window.addEventListener("pagehide", () => {
+            abortPending();
+            pending.clear();
+        });
+        """
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 }
 
 /// Document-start, page-content-world script that mirrors the onboarding search-mode choice onto the

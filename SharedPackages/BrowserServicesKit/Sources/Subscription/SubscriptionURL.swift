@@ -169,20 +169,22 @@ extension SubscriptionURL {
     }
 
     /**
-     * Creates URL components for the plans page with origin parameter
+     * Creates URL components for the plans page, optionally with origin and tier parameters
      *
      * - Parameters:
-     *   - origin: Attribution origin for analytics
+     *   - origin: Attribution origin for analytics. If nil, no origin parameter is added.
      *   - tier: If provided, includes tier=<value> parameter for direct upgrade flow to the specified tier.
      *           The tier value should come from the backend's available upgrade tiers (e.g., "pro", "plus").
      *   - environment: The subscription environment (production/staging)
      *
-     * - Returns: URLComponents containing the plans URL with origin parameter
+     * - Returns: URLComponents containing the plans URL
      */
-    public static func plansURLComponents(_ origin: String, tier: String? = nil, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+    public static func plansURLComponents(origin: String?, tier: String? = nil, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
         var url = SubscriptionURL.plans
             .subscriptionURL(environment: environment)
-            .appendingParameter(name: AttributionParameter.origin, value: origin)
+        if let origin {
+            url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
+        }
         if let tier {
             url = url.appendingParameter(name: "tier", value: tier)
         }

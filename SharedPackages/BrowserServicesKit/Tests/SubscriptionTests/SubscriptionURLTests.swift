@@ -636,7 +636,7 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios")!
 
         // When
-        let components = SubscriptionURL.plansURLComponents(origin, environment: .production)
+        let components = SubscriptionURL.plansURLComponents(origin: origin, environment: .production)
 
         // Then
         XCTAssertNotNil(components)
@@ -649,7 +649,7 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging&origin=funnel_appsettings_ios")!
 
         // When
-        let components = SubscriptionURL.plansURLComponents(origin, environment: .staging)
+        let components = SubscriptionURL.plansURLComponents(origin: origin, environment: .staging)
 
         // Then
         XCTAssertNotNil(components)
@@ -662,7 +662,7 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios&tier=pro")!
 
         // When
-        let components = SubscriptionURL.plansURLComponents(origin, tier: "pro", environment: .production)
+        let components = SubscriptionURL.plansURLComponents(origin: origin, tier: "pro", environment: .production)
 
         // Then
         XCTAssertNotNil(components)
@@ -675,7 +675,7 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging&origin=funnel_appsettings_ios&tier=pro")!
 
         // When
-        let components = SubscriptionURL.plansURLComponents(origin, tier: "pro", environment: .staging)
+        let components = SubscriptionURL.plansURLComponents(origin: origin, tier: "pro", environment: .staging)
 
         // Then
         XCTAssertNotNil(components)
@@ -689,7 +689,7 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios&tier=plus")!
 
         // When
-        let components = SubscriptionURL.plansURLComponents(origin, tier: dynamicTier, environment: .production)
+        let components = SubscriptionURL.plansURLComponents(origin: origin, tier: dynamicTier, environment: .production)
 
         // Then
         XCTAssertNotNil(components)
@@ -702,7 +702,7 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=")!
 
         // When
-        let components = SubscriptionURL.plansURLComponents(origin, environment: .production)
+        let components = SubscriptionURL.plansURLComponents(origin: origin, environment: .production)
 
         // Then
         XCTAssertNotNil(components)

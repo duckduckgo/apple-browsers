@@ -447,9 +447,11 @@ enum Preferences {
 
         private func openURL(subscriptionURL: SubscriptionURL) {
             DispatchQueue.main.async {
-                let url = subscriptionManager.url(for: subscriptionURL)
-                    .appendingParameter(name: AttributionParameter.origin,
-                                        value: SubscriptionFunnelOrigin.appSettings.rawValue)
+                let origin: String? = switch subscriptionURL {
+                case .plans, .upgradeToTier: nil
+                default: SubscriptionFunnelOrigin.appSettings.rawValue
+                }
+                let url = subscriptionManager.url(for: subscriptionURL).appendingOriginParameterIfPresent(origin)
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {

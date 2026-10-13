@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Стартиране на приложение";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Нов раздел";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Показване на клавиатура в";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Показва връзка за връщане към последно използвания раздел, когато отвориш приложението след неактивност.";
 

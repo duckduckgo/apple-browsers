@@ -34,7 +34,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         var wasDismissedKey: String {
             switch self {
             case .bookmarksBar:
-                return "com.duckduckgo.bookmarksBarSyncPromoDismissed"
+                return UserDefaultsKeys.bookmarksBarSyncPromoDismissed.rawValue
             case .bookmarkAdded:
                 return "com.duckduckgo.bookmarkAddedSyncPromoDismissed"
             }
@@ -52,7 +52,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         var promoFirstPresentedDateKey: String? {
             switch self {
             case .bookmarksBar:
-                return "com.duckduckgo.bookmarkFirstPresentedCount"
+                return UserDefaultsKeys.bookmarksBarSyncPromoFirstPresentedDate.rawValue
             case .bookmarkAdded:
                 return nil
             }
@@ -67,21 +67,22 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             }
         }
 
-        var promoMaxPresentationDays: Int {
-            switch self {
-            case .bookmarksBar:
-                return 7
-            case .bookmarkAdded:
-                return .max
-            }
-        }
-
         var pixelSource: SyncDeviceButtonTouchpoint {
             switch self {
             case .bookmarksBar:
                 return SyncDeviceButtonTouchpoint.bookmarksBar
             case .bookmarkAdded:
                 return SyncDeviceButtonTouchpoint.bookmarkAdded
+            }
+        }
+
+        @MainActor
+        var promo: BookmarksBarSyncPromoPresenting? {
+            switch self {
+            case .bookmarksBar:
+                return NSApp.delegateTyped.bookmarksBarSyncPromoDelegate
+            case .bookmarkAdded:
+                return nil
             }
         }
     }
@@ -94,8 +95,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
                 featureFlagger.isNewSyncEntryPointsFeatureOn,
                 case .inactive = authState,
                 !wasDimissed,
-                !wasPresentationCountLimitReached,
-                !hasPromoDateExpired else {
+                !wasPresentationCountLimitReached else {
                 shouldShowSyncButton = false
                 return
             }
@@ -107,6 +107,8 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private let keyValueStore: KeyValueStoring
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
+    private let promo: BookmarksBarSyncPromoPresenting?
 
     private var cancellables: Set<AnyCancellable> = []
     private var hasFiredImpressionPixel = false
@@ -129,29 +131,29 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         return false
     }
 
-    private var hasPromoDateExpired: Bool {
-        guard let key = source.promoFirstPresentedDateKey else {
-            return false
-        }
-        guard let firstSeenDate = keyValueStore.object(forKey: key) as? Date else {
-            return false
-        }
-
-        return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
-    }
-
     init(
         source: DismissableSyncDevicePromoSource,
         keyValueStore: KeyValueStoring,
         authStatePublisher: AnyPublisher<SyncAuthState, Never>,
         initialAuthState: SyncAuthState,
         syncLauncher: SyncDeviceFlowLaunching?,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        pixelFiring: PixelFiring? = PixelKit.shared,
+        promo: BookmarksBarSyncPromoPresenting? = nil
     ) {
         self.source = source
         self.keyValueStore = keyValueStore
         self.syncLauncher = syncLauncher
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
+        self.promo = promo ?? source.promo
+
+        if let promo = self.promo {
+            promo.isPromoActivePublisher
+                .assign(to: &$shouldShowSyncButton)
+            return
+        }
+
         self.authState = initialAuthState
         authStatePublisher
             .receive(on: DispatchQueue.main)
@@ -160,33 +162,37 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     }
 
     func viewDidLoad() {
+        guard promo == nil else { return }
         guard
             featureFlagger.isNewSyncEntryPointsFeatureOn,
             syncLauncher != nil,
             case .inactive = authState,
             !wasDimissed,
-            !incrementPresentationCountLimitReturningLimitReached(),
-            !setFirstSeenDateReturningHasExpired()
+            !incrementPresentationCountLimitReturningLimitReached()
         else {
             shouldShowSyncButton = false
             return
         }
-        if !hasFiredImpressionPixel {
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": source.pixelSource.rawValue])
-            hasFiredImpressionPixel = true
-        }
+        syncButtonDidAppear()
         shouldShowSyncButton = true
     }
 
+    func syncButtonDidAppear() {
+        guard !hasFiredImpressionPixel else { return }
+        hasFiredImpressionPixel = true
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, options: .parameters(["source": source.pixelSource.rawValue]))
+    }
+
     func syncButtonAction() {
+        promo?.syncSetupStarted()
         syncLauncher?.startDeviceSyncFlow(source: source.pixelSource, completion: nil)
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.pixelSource.rawValue])
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.pixelSource.rawValue]))
     }
 
     func dismissSyncButtonAction() {
         shouldShowSyncButton = false
         keyValueStore.set(true, forKey: source.wasDismissedKey)
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed, withAdditionalParameters: ["source": source.pixelSource.rawValue])
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDismissed, options: .parameters(["source": source.pixelSource.rawValue]))
     }
 
     static func resetAllState(from keyValueStore: KeyValueStoring) {
@@ -212,17 +218,46 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         keyValueStore.set(count + 1, forKey: key)
         return false
     }
+}
 
-    private func setFirstSeenDateReturningHasExpired() -> Bool {
-        guard let key = source.promoFirstPresentedDateKey else {
+extension DismissableSyncDeviceButtonModel {
+    /// Decides visibility for buttons that aren't shown through the promo queue.
+    struct Legacy {
+        let source: DismissableSyncDevicePromoSource
+        let keyValueStore: KeyValueStoring
+        let syncLauncher: SyncDeviceFlowLaunching?
+        let featureFlagger: FeatureFlagger
+
+        func canShowSyncButton(authState: SyncAuthState) -> Bool {
+            featureFlagger.isNewSyncEntryPointsFeatureOn
+                && authState == .inactive
+                && !wasDismissed
+                && !wasPresentationCountLimitReached
+        }
+
+        private var wasDismissed: Bool {
+            keyValueStore.object(forKey: source.wasDismissedKey) as? Bool ?? false
+        }
+
+        private var wasPresentationCountLimitReached: Bool {
+            guard let key = source.promoWasPresentedCountKey else {
+                return false
+            }
+            let count = keyValueStore.object(forKey: key) as? Int ?? 0
+            return count >= source.promoMaxPresentationCount
+        }
+
+        func incrementPresentationCountLimitReturningLimitReached() -> Bool {
+            guard let key = source.promoWasPresentedCountKey else {
+                return false
+            }
+            let count = keyValueStore.object(forKey: key) as? Int ?? 0
+            guard count < source.promoMaxPresentationCount else {
+                return true
+            }
+            keyValueStore.set(count + 1, forKey: key)
             return false
         }
-        guard let firstSeenDate = keyValueStore.object(forKey: key) as? Date else {
-            keyValueStore.set(Date(), forKey: key)
-            return false
-        }
-
-        return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
     }
 }
 

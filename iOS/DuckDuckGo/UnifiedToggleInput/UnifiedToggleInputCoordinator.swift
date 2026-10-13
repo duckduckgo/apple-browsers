@@ -758,6 +758,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         } else {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }
+        endMultiTabPromotionOpening()
         currentTabUID = uid
         lastActivatedTabUID = uid
         if isTabAttachmentFeatureAvailable,
@@ -925,6 +926,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = duckAISurfaceState(.expanded)
+        beginMultiTabPromotionOpening()
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
         if host == .omnibar, previousDisplayState != .aiTab(.expanded) {
             pixelReporter.reportOmnibarInputSurfaceShown()
@@ -1077,16 +1079,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 return featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy)
             }
         )
-        if host == .contextualChat {
-            multiTabPromotionSource = UTIFooterMultiTabPromotionSource(
-                feature: { [weak self] in self?.tabAttachmentFeature },
-                isEligible: { [weak self] in
-                    guard let self else { return false }
-                    return self.isContextualChatState && self.tabAttachmentSource != nil
-                        && !self.hasSubmittedPrompt && !self.contextualChatHasActiveConversation()
-                }
-            )
-        }
+        multiTabPromotionSource = UTIFooterMultiTabPromotionSource(
+            feature: { [weak self] in self?.tabAttachmentFeature },
+            isEligible: { [weak self] in
+                guard let self, !self.isApplyingState, !self.hasSubmittedPrompt,
+                      self.attachmentController?.canUseTabAttachments == true else { return false }
+                return self.isOmnibarSession || self.isAITabState
+                    || (self.isContextualChatState && !self.contextualChatHasActiveConversation())
+            }
+        )
         footerController = UTIFooterController(viewModel: viewModel,
                                               termsOfServiceStore: termsOfServiceStore,
                                               highUsageNotice: viewModel == nil ? nil : makeHighUsageNoticeSource(),
@@ -1185,6 +1186,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelPendingOmnibarFocus()
         keyboardMonitor.disarm()
         displayState = .hidden
+        endMultiTabPromotionOpening()
         isClearingModelPickerPinWithoutPersist = true
         isModelPickerForcedVisible = false
         isClearingModelPickerPinWithoutPersist = false
@@ -1226,6 +1228,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let tabAttachmentDraftText = browserTabAttachmentDraftText()
         keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
+        beginMultiTabPromotionOpening()
         if host == .omnibar {
             pixelReporter.reportOmnibarInputSurfaceShown()
         }
@@ -1359,6 +1362,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         inputMode = committedInputMode
         keyboardMonitor.disarm()
         displayState = .hidden
+        endMultiTabPromotionOpening()
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
         syncInputBehaviorToHandler()
@@ -1916,6 +1920,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return count
     }
 
+    private func beginMultiTabPromotionOpening() {
+        guard host == .omnibar, isInputPaneExpanded else { return }
+        multiTabPromotionSource?.beginPresentation()
+    }
+
+    private func endMultiTabPromotionOpening() {
+        guard host == .omnibar else { return }
+        multiTabPromotionSource?.endPresentation()
+    }
+
     func beginContextualInputPresentation() {
         multiTabPromotionSource?.beginPresentation()
         footerController?.refreshMultiTabPromotion()
@@ -1975,6 +1989,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         if synchronizesDraft { synchronizeTabAttachmentPreparations() }
         updateImageButtonVisibility()
+        footerController?.refreshMultiTabPromotion()
     }
 
     func dismissTabMentions() {

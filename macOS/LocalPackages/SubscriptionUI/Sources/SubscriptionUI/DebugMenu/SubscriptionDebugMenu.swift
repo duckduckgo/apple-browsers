@@ -214,6 +214,12 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         let clearItem = NSMenuItem(title: "Clear storefront region override", action: #selector(clearRegionOverride), target: self)
         menu.addItem(clearItem)
 
+        menu.addItem(.separator())
+
+        let noProductsItem = NSMenuItem(title: "Load no products", action: #selector(toggleNoProductsOverride), target: self)
+        noProductsItem.state = subscriptionUserDefaults.noSubscriptionProductsOverride ? .on : .off
+        menu.addItem(noProductsItem)
+
         return menu
     }
 
@@ -417,6 +423,14 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     @IBAction func setRegionOverrideToROW(_ sender: Any?) {
         updateRegionOverride(to: .restOfWorld)
+    }
+
+    @IBAction func toggleNoProductsOverride(_ sender: Any?) {
+        subscriptionUserDefaults.noSubscriptionProductsOverride.toggle()
+
+        Task {
+            await subscriptionManager.storePurchaseManager().updateAvailableProducts()
+        }
     }
 
     private func updateRegionOverride(to region: SubscriptionRegion?) {

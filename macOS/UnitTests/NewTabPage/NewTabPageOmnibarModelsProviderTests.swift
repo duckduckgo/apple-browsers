@@ -128,6 +128,47 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertEqual(proOnlyItem?.upsell, "upgrade")
     }
 
+    /// Where the storefront sells nothing, the purchase page would only fail.
+    func testWhenFreeUserHasNoAppStoreProductsThenGatedModelsAndEffortsAreHidden() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(
+                id: "reasoning-model",
+                supportedReasoningEffort: [.none, .low],
+                accessTier: ["free"],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["free"], entityHasAccess: true),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["plus", "pro"], entityHasAccess: false)
+                ]
+            ),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let items = sections.flatMap(\.items)
+
+        XCTAssertEqual(items.map(\.id), ["reasoning-model"])
+        XCTAssertEqual(items.first?.reasoningEfforts.map(\.isAvailable), [true])
+        XCTAssertFalse(provider.allowsSubscriptionUpsell)
+    }
+
+    /// A subscriber may have bought on Stripe, so an empty storefront doesn't stop the upgrade.
+    func testWhenPlusUserHasNoAppStoreProductsThenGatedModelStillOffersUpgrade() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatOmnibarSubscriptionUpsell)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plus-model", accessTier: ["plus", "pro"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.flatMap(\.items).first(where: { $0.id == "pro-only" })?.upsell, "upgrade")
+        XCTAssertTrue(provider.allowsSubscriptionUpsell)
+    }
+
     // MARK: - Attachment Limits Tests
 
     func testWhenResponseHasNoAttachmentLimitsThenFileAndImageLimitsAreNilButTabLimitIsPresent() async {

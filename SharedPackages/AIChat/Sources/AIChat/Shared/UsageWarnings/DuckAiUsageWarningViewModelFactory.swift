@@ -29,6 +29,7 @@ public enum DuckAiUsageWarningViewModelFactory {
                             dismissalStore: DuckAiUsageWarningDismissalStoring,
                             modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                             isTrialEligible: @escaping () -> Bool = { false },
+                            allowsSubscriptionUpsell: @escaping () -> Bool = { true },
                             isFireMode: @escaping () -> Bool = { false },
                             storagePixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) -> DuckAiUsageWarningViewModel? {
@@ -39,6 +40,7 @@ public enum DuckAiUsageWarningViewModelFactory {
             dismissalStore: dismissalStore,
             modelSuggester: modelSuggester,
             isTrialEligible: isTrialEligible,
+            allowsSubscriptionUpsell: allowsSubscriptionUpsell,
             isFireMode: isFireMode
         )
     }

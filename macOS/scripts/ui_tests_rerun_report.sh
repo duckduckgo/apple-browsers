@@ -99,7 +99,7 @@ report() {
 
 	job_rows="$(jobs_for_leg)"
 	failing_count="$(awk -F'\t' '$2 == "fail"' <<< "${job_rows}" | grep -c . || true)"
-	has_current="$(awk -F'\t' '$3 != "-" { found = 1 } END { print (found ? "true" : "false") }' <<< "${job_rows}")"
+	has_current="$(awk -F'\t' 'NF && $3 != "-" { found = 1 } END { print (found ? "true" : "false") }' <<< "${job_rows}")"
 	if grep -qxF "${gid_prefix}${leg}" <<< "${listing}"; then
 		has_gid=true
 	fi

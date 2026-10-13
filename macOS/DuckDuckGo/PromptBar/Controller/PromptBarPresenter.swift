@@ -192,6 +192,7 @@ final class PromptBarPresenter: PromptBarPresenting {
 
         let dimWindow = makeDimWindow(screen.frame)
         dimWindow.isReleasedWhenClosed = false
+        dimWindow.identifier = .promptBarDimWindow
         dimWindow.backgroundColor = .black
         dimWindow.isOpaque = false
         dimWindow.hasShadow = false

@@ -222,7 +222,10 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     var isPresentingAuxiliaryUI: Bool {
-        isMenuTracking || view.window?.attachedSheet != nil || NSApp.modalWindow != nil
+        isMenuTracking
+            || containerViewController.isCapturingScreenshot
+            || view.window?.attachedSheet != nil
+            || NSApp.modalWindow != nil
     }
 
     /// Attachments don't count: this reports the text field alone.

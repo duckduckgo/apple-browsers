@@ -19,8 +19,7 @@
 import AppKit
 import ScreenCaptureKit
 
-/// Select Window or Display through the system's content-sharing picker. The pick is the user's
-/// consent, so this path needs no Screen Recording permission and works in the App Store sandbox.
+/// Select Window or Display through the system's content-sharing picker.
 @available(macOS 14.0, *)
 final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserver {
 

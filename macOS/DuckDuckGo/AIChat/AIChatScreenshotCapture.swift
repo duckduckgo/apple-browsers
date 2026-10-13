@@ -114,8 +114,7 @@ enum AIChatScreenshotImageProcessor {
     }
 }
 
-/// Drag to Select needs Screen Recording. Select Window or Display goes through the system picker,
-/// where the pick itself is the consent, so it never comes here.
+/// Checked before either mode, since both need Screen Recording.
 struct AIChatScreenRecordingPermission {
 
     enum Decision: Equatable {

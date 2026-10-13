@@ -143,6 +143,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let modelPickerHeight: CGFloat = 28
         static let recentTabsInMenu = 5
         static let screenshotMenuFadeDelay: UInt64 = 100_000_000
+        static let screenshotFocusSettleDelay: UInt64 = 500_000_000
         static let attachmentsLeadingInset: CGFloat = 13
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
@@ -292,6 +293,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// True from the menu pick until the capture ends; the prompt bar stays open while it is.
     private(set) var isCapturingScreenshot = false
+
+    /// Called once a screenshot has finished and focus has settled, for the prompt bar to take key back.
+    var onScreenshotCaptureEnded: (() -> Void)?
 
     /// Sticky error from the most recent file pick that was rejected at pick-time (too large, too
     /// many pages, encrypted/unreadable, unsupported, or over the count limit). Shown in the
@@ -2239,8 +2243,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                                                                           excluding: screenshotExcludedWindows,
                                                                           returningFocusTo: view.window)
         restoreSurface()
-        isCapturingScreenshot = false
         handleScreenshotResult(result)
+        // The picker and the overlay hand focus back asynchronously, and the prompt bar would read
+        // losing key then as a click outside; the capture lasts until focus has settled.
+        try? await Task.sleep(nanoseconds: Constants.screenshotFocusSettleDelay)
+        isCapturingScreenshot = false
+        onScreenshotCaptureEnded?()
     }
 
     private func handleScreenshotResult(_ result: AIChatScreenshotCaptureResult) {

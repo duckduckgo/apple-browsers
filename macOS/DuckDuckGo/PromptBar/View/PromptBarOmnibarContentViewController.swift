@@ -94,6 +94,9 @@ final class PromptBarOmnibarContentViewController: NSViewController {
 
         subscribeToMenuTracking()
         wireHeightUpdates()
+        containerViewController.onScreenshotCaptureEnded = { [weak self] in
+            self?.reclaimKeyIfStillVisible()
+        }
     }
 
     private func setUpUI() {

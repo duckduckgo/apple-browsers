@@ -699,6 +699,20 @@ final class LaunchBreadcrumbTests {
 }
 
 @MainActor
+@Suite("App event names")
+final class AppEventNameTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Event names leave out associated values", .timeLimit(.minutes(1)))
+    func namesLeaveOutAssociatedValues() {
+        #expect(AppEvent.willConnectToWindow(window: UIWindow()).name == "willConnectToWindow")
+        #expect(AppEvent.didFinishLaunching(isTesting: false).name == "didFinishLaunching")
+        #expect(AppEvent.didBecomeActive.name == "didBecomeActive")
+    }
+
+}
+
+@MainActor
 @Suite("Critical alert pixel")
 final class CriticalAlertPixelTests {
 

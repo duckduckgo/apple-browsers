@@ -30,6 +30,19 @@ enum AppEvent {
     case willEnterForeground
     case willConnectToWindow(window: UIWindow)
 
+    /// The case name without associated values, for pixels. `String(describing:)` would include the window's
+    /// description: a memory address and the screen size.
+    var name: String {
+        switch self {
+        case .didFinishLaunching: return "didFinishLaunching"
+        case .didBecomeActive: return "didBecomeActive"
+        case .didEnterBackground: return "didEnterBackground"
+        case .willResignActive: return "willResignActive"
+        case .willEnterForeground: return "willEnterForeground"
+        case .willConnectToWindow: return "willConnectToWindow"
+        }
+    }
+
 }
 
 enum AppAction {
@@ -335,7 +348,7 @@ final class AppStateMachine {
         PixelKit.fire(Pixel.Event.appDidTransitionToUnexpectedState,
                       frequency: .dailyAndCount,
                       options: .parameters([PixelParameters.appState: state.name,
-                                                                PixelParameters.appEvent: String(describing: event)]))
+                                                                PixelParameters.appEvent: event.name]))
     }
 
 }

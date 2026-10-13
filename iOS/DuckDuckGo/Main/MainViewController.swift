@@ -5833,6 +5833,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
+        currentTab?.userDidRequestNavigation()
         // A search submission IS search mode — commit directly (see onPromptSubmitted).
         commitToggleMode(.search)
         if !daxDialogsManager.shouldShowFireButtonPulse {

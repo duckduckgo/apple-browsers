@@ -1725,7 +1725,6 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
-        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1983,6 +1982,7 @@ class TabViewController: UIViewController {
     }
 
     private func handlePullToRefresh() {
+        userDidRequestNavigation()
         reload()
         delegate?.tabDidRequestRefresh(tab: self)
         PixelKit.fire(Pixel.Event.pullToRefresh)
@@ -1998,7 +1998,6 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
-        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -4787,6 +4786,11 @@ extension TabViewController: WKUIDelegate {
         freezeMonitor.end(.recovered)
     }
 
+    /// The user asked to reload or leave the page; counted as an escape attempt while it is frozen.
+    func userDidRequestNavigation() {
+        freezeMonitor.didAttemptNavigation()
+    }
+
     private var freezePageContext: WebContentHealthPixel.PageContext {
         let url = webView.url
         var hasWebExtension = false
@@ -4933,6 +4937,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func refresh() {
+        userDidRequestNavigation()
         let url: URL?
         if isError || webView.url == nil {
             url = self.url

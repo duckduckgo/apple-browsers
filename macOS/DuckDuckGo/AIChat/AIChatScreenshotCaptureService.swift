@@ -56,19 +56,10 @@ final class AIChatScreenshotCaptureService {
             restoreFocus(to: focusWindow)
         }
 
-        // Both modes need Screen Recording: without it the picker opens, but its pick can't be captured.
-        switch permission.resolve() {
-        case .granted:
-            break
-        case .requestedSystemPrompt:
-            return .permissionDenied(showExplainer: false)
-        case .deniedShowExplainer:
-            return .permissionDenied(showExplainer: true)
-        }
-
         let windowIDs = windows.map { CGWindowID($0.windowNumber) }
         switch mode {
         case .selectWindowOrDisplay:
+            // The pick in the system picker is the consent, so this mode needs no Screen Recording.
             switch await AIChatScreenshotWindowPicker().capture(excludingWindowIDs: windowIDs.map(Int.init)) {
             case .cancelled:
                 return .cancelled
@@ -79,6 +70,14 @@ final class AIChatScreenshotCaptureService {
             }
 
         case .dragToSelect:
+            switch permission.resolve() {
+            case .granted:
+                break
+            case .requestedSystemPrompt:
+                return .permissionDenied(showExplainer: false)
+            case .deniedShowExplainer:
+                return .permissionDenied(showExplainer: true)
+            }
             switch await AIChatScreenshotRegionCapturer().capture(excludingWindowIDs: windowIDs) {
             case .cancelled:
                 return .cancelled

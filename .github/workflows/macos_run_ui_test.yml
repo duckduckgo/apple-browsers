@@ -404,7 +404,6 @@ jobs:
     # earlier attempt, so a re-run that fixes the job is reported as passing.
     - name: Download earlier failure markers for this job
       if: always() && github.run_attempt > 1 && job.status == 'success'
-      continue-on-error: true
       uses: actions/download-artifact@v7
       with:
         pattern: ${{ env.result-marker-job }}-attempt*-fail

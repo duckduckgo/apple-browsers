@@ -22,6 +22,7 @@ import Common
 import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
+import WebKit
 @testable import DuckDuckGo
 
 final class SafariRedirectHandlerTests: XCTestCase {
@@ -88,17 +89,103 @@ final class SafariRedirectHandlerTests: XCTestCase {
         XCTAssertEqual(delegate.loopErrorURLs.first?.host, "example.com")
     }
 
-    func testAdditionalRedirectsAfterMaximumAttemptsKeepRequestingLoopError() {
+    func testWhenRedirectsContinueAfterMaximumAttemptsThenLoopErrorIsRequestedOnce() {
         for _ in 0..<3 {
             _ = handler.handleRedirect(to: xSafariHTTPSURL)
         }
 
+        for _ in 0..<1_000 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
+
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
+    }
+
+    func testWhenSubframeRedirectsOccurThenTheyAreConsumedWithoutLoadingOrUsingRetryBudget() {
+        for _ in 0..<10 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL, isMainFrame: false))
+        }
+
+        XCTAssertTrue(delegate.loadedURLs.isEmpty)
+        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
+        XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
+
+        for _ in 0..<3 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
+    }
+
+    func testWhenSubframeRedirectsOccurAfterLoopDetectionThenNoAdditionalErrorIsRequested() {
+        for _ in 0..<4 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
+
+        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL, isMainFrame: false))
+
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
+    }
+
+    func testWhenNewMainFrameNavigationStartsThenRetryBudgetAndLoopErrorAreReset() {
+        let navigationTypes: [WKNavigationType] = [.linkActivated, .formSubmitted, .backForward, .reload, .formResubmitted]
+        for navigationType in navigationTypes {
+            handler.reset()
+            delegate.loadedURLs.removeAll()
+            delegate.loopErrorURLs.removeAll()
+            for _ in 0..<4 {
+                _ = handler.handleRedirect(to: xSafariHTTPSURL)
+            }
+
+            handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL), navigationType: navigationType),
+                                 isUserInitiated: false)
+
+            XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
+            for _ in 0..<4 {
+                _ = handler.handleRedirect(to: xSafariHTTPSURL)
+            }
+            XCTAssertEqual(delegate.loadedURLs.count, 6, "\(navigationType)")
+            XCTAssertEqual(delegate.loopErrorURLs.count, 2, "\(navigationType)")
+        }
+    }
+
+    func testWhenUserInitiatedOtherNavigationStartsThenRetryBudgetIsReset() {
+        for _ in 0..<4 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
+
+        handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL)), isUserInitiated: true)
         XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
-        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+
+        XCTAssertEqual(delegate.loadedURLs.count, 4)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
+    }
+
+    func testWhenAutomaticMainFrameNavigationsOccurThenLoopDetectionIsPreserved() {
+        for _ in 0..<10 {
+            handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL)), isUserInitiated: false)
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
+
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
+    }
+
+    func testWhenUserInitiatedSubframeNavigationOccursThenMainFrameLoopStateIsPreserved() {
+        for _ in 0..<4 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
+
+        handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL),
+                                                  isTargetingMainFrame: false,
+                                                  navigationType: .linkActivated),
+                             isUserInitiated: true)
         XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
 
         XCTAssertEqual(delegate.loadedURLs.count, 3)
-        XCTAssertEqual(delegate.loopErrorURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
     }
 
     // MARK: - Per-host scoping
@@ -217,6 +304,12 @@ final class SafariRedirectHandlerTests: XCTestCase {
 }
 
 // MARK: - Mock Delegate
+
+private struct TestNavigationAction: NavigationActionProtocol {
+    let request: URLRequest
+    var isTargetingMainFrame = true
+    var navigationType: WKNavigationType = .other
+}
 
 private final class MockSafariRedirectHandlerDelegate: SafariRedirectHandlerDelegate {
 

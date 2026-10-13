@@ -81,6 +81,13 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
     public func replaceAllEntries(_ entries: [String: Any]) throws {
         settingsLock.lock()
         defer { settingsLock.unlock() }
+        var entries = entries
+        // The web's one-time entries migration replaces everything with its localStorage, which can predate
+        // a Terms of Service acceptance native recorded, e.g. for chats synced from another device.
+        let termsKey = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        if entries[termsKey] == nil, let acceptance = (try? loadSettingsBlob())?[termsKey] {
+            entries[termsKey] = acceptance
+        }
         try saveSettingsBlob(entries)
     }
 

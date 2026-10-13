@@ -18,14 +18,21 @@ appId: com.duckduckgo.mobile.ios
         text: "All debug options"
     direction: DOWN
     centerElement: false
-- tapOn: "All debug options"
 
-# The debug screen is pushed asynchronously. Without this wait the scroll below can start while
-# Settings is still up, walk it to the bottom looking for a row it does not have, and fail with
-# `No visible element found: "AI Chat"`. Deliberately not anchored on a row: the first row sits
-# under the search bar, and asserting it failed on the second seed in a flow that seeds twice.
-- waitForAnimationToEnd:
-    timeout: 5000
+# Maestro doesn't retry a tap that changes nothing, so a dropped tap leaves Settings up and the scroll
+# below fails with `No visible element found: "AI Chat"`. Wait for the debug screen, re-tapping if not.
+- retry:
+    maxRetries: 2
+    commands:
+        - runFlow:
+            when:
+                visible: "All debug options"
+            commands:
+                - tapOn: "All debug options"
+        - extendedWaitUntil:
+            visible:
+                id: "Settings.Debug.InternalUser.identifier"
+            timeout: 5000
 
 - scrollUntilVisible:
     element:

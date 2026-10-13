@@ -108,6 +108,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             guard oldValue != usesRedesignedNewTabPageLayout else { return }
             unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
             if isViewLoaded {
+                view.setNeedsLayout()
                 applyRequestedContentInset()
             }
         }
@@ -523,7 +524,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.isLandscapeOrientation = isHorizontallyCompactLayoutEnabled
         unifiedSuggestionsHost?.setLandscape(isHorizontallyCompactLayoutEnabled)
 
-        let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Metrics.horizontalMarginForCompactLayout : 0
+        // The redesigned modules align with the NTP's safe area. The landscape
+        // inset would squeeze their favorites grid and message cards into a narrow strip.
+        let usesLandscapeInset = isHorizontallyCompactLayoutEnabled && !usesRedesignedNewTabPageLayout
+        let horizontalMargin: CGFloat = usesLandscapeInset ? Metrics.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
         self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
         guard isContentActive else {
@@ -608,7 +612,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             loader: loader,
             // Empty when "Search Suggestions" is off, else `effectiveTopHits` falls back to a phrase row.
             query: { [weak self] in self?.appSettings.autocomplete == true ? (self?.switchBarHandler.currentText ?? "") : "" },
-            showAskAIChat: aiChatSettings.isAIChatEnabled
+            aiChatSettings: aiChatSettings
         )
 
         let customizationStore = NewTabPageCustomizationStore()
@@ -706,6 +710,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         host.start(in: containerView,
                    parentViewController: self,
+                   isFloatingUIEnabled: isFloatingUIEnabled,
                    textPublisher: searchTextPublisher)
         // The top offset rides the container constraint (UIKit glide); the hosting view keeps no
         // top safe-area inset of its own.

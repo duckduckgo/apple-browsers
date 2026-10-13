@@ -18,6 +18,7 @@
 
 import Foundation
 import os.log
+import Persistence
 import WebKit
 
 /// Manages web extensions including installation, loading, and lifecycle.
@@ -103,6 +104,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
+    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
+    let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
 
@@ -126,6 +130,22 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
+
+    /// Receives the API compatibility reports of extension pages.
+    private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
+
+#if os(macOS)
+    /// The keyboard shortcuts the user picked for extension commands. `nil` without a key-value store.
+    public let commandShortcuts: WebExtensionCommandShortcutStore?
+#endif
+
+    /// Records the Chrome pages extensions try to open, which the browser doesn't have.
+    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+
+#if os(macOS)
+    /// Answers `chrome.idle.queryState` for extension pages.
+    private let idleHandler = WebExtensionIdleMessageHandler()
+#endif
 
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
@@ -166,10 +186,24 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
+                nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
+                keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
+
+        // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
+        // reports which unsupported APIs the extension touches, for the API compatibility log.
+        controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
+                                                                                name: WebExtensionAPICompatibilityScript.messageHandlerName)
+
+#if os(macOS)
+        // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
+#endif
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -189,10 +223,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
+        self.nativeMessagingHandler = nativeMessagingHandler
+#if os(macOS)
+        self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
+#endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        apiCompatibilityHandler.resolveExtension = { [weak self] url in
+            guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }
+            return (WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                    WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version))
+        }
+
+#if os(macOS)
+        idleHandler.isLoadedExtension = { [weak self] url in
+            self?.extensionContext(for: url) != nil
+        }
+#endif
 
         if let scriptletConfiguration {
             let coordinator = WebExtensionScriptletCoordinator(
@@ -298,6 +348,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         do {
             if let oldIdentifier {
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
+#if os(macOS)
+                commandShortcuts?.copyShortcutsForUpdate(from: oldIdentifier, to: identifier)
+#endif
             }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
@@ -327,6 +380,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             } catch {
                 Logger.webExtensions.error("Failed to remove extension consent after installation failure: \(error.localizedDescription)")
             }
+#if os(macOS)
+            commandShortcuts?.removeShortcuts(for: identifier)
+#endif
             try? storageProvider.removeExtension(identifier: identifier)
 
             if let preparationError = error as? WebExtensionLoader.PermissionPreparationError,
@@ -373,6 +429,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             // Consent cleanup must not leave an unloaded extension installed.
             Logger.webExtensions.error("Could not remove extension permissions during uninstall: \(error.localizedDescription)")
         }
+#if os(macOS)
+        commandShortcuts?.removeShortcuts(for: identifier)
+#endif
         installationStore.remove(uniqueIdentifier: identifier)
         unloadedExtensionsCache.removeValue(forKey: identifier)
         dataClearingReloadIdentifiers.remove(identifier)
@@ -766,12 +825,32 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
-        contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
+        contexts.first { Self.url(url, isWithin: $0.baseURL) }
+    }
+
+    /// Hosts are case-insensitive, and a security origin's host does not always keep the case the
+    /// extension's base URL was created with, so the prefix is compared without regard to case.
+    static func url(_ url: URL, isWithin baseURL: URL) -> Bool {
+        url.absoluteString.range(of: baseURL.absoluteString, options: [.anchored, .caseInsensitive]) != nil
     }
 
     public func context(for identifier: String) -> WKWebExtensionContext? {
         contexts.first { $0.uniqueIdentifier == identifier }
     }
+
+    /// Hands a script message from an extension page in a tab, where the controller's own message
+    /// handlers are not installed, to the API compatibility log.
+    public func handleAPICompatibilityMessage(_ message: WKScriptMessage) {
+        apiCompatibilityHandler.handle(message)
+    }
+
+#if os(macOS)
+    /// Answers an idle state request from an extension page in a tab, where the controller's own
+    /// message handlers are not installed.
+    public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        idleHandler.reply(to: message, replyHandler: replyHandler)
+    }
+#endif
 
     @MainActor
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
@@ -817,12 +896,22 @@ public extension Notification.Name {
     /// this notification reaches every observer. Per-window UI needs that, because each
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
+
+    /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
+    /// from JavaScript. The object is the extension's `WKWebExtensionContext`.
+    static let webExtensionActionDidChange = Notification.Name("webExtensionActionDidChange")
 }
 
 // MARK: - WKWebExtensionControllerDelegate
 
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager: WKWebExtensionControllerDelegate {
+
+    public func webExtensionController(_ controller: WKWebExtensionController,
+                                       didUpdate action: WKWebExtension.Action,
+                                       forExtensionContext context: WKWebExtensionContext) {
+        NotificationCenter.default.post(name: .webExtensionActionDidChange, object: context)
+    }
 
     @objc(_webExtensionController:didCreateBackgroundWebView:forExtensionContext:)
     public func webExtensionController(_ controller: WKWebExtensionController,
@@ -853,7 +942,19 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
+        // A Chrome page such as `chrome://password-manager/settings` opens the browser's counterpart.
+        // Without one, it opens nothing and goes to the compatibility log instead.
+        if let url = configuration.url, url.scheme == "chrome" {
+            if windowTabProvider.openChromePage(url, for: extensionContext) {
+                return nil
+            }
+            compatibilityReporter.report(kind: .unsupportedURL,
+                                         api: "chrome://" + (url.host ?? "") + url.path,
+                                         extensionName: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.displayName),
+                                         version: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.version))
+            return nil
+        }
+        return try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,

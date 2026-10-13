@@ -160,11 +160,11 @@ A cluster with 1 event in `<TIME_RANGE>` but multiple historical events is a *re
 
 Existing tracking tasks still get updated when the cluster is 1-event-total (open task → capture link; reopened regression → run 6 and 8 as usual). The carve-out is specifically the "no existing task + exactly 1 event total" path.
 
-**Low user count alone is NOT a skip reason for MEDIUM.** A MEDIUM with 1 user but ≥2 events still gets a tracking task and RCA. The carve-out above is keyed on event count == 1, not user count, not "low-volume". Do not invent broader thresholds like "1-user threshold = no tracking" or "<5 events = monitor only". The legitimate skips are the five in step 8 (the 1-event carve-out being #5), full stop.
+The carve-out is keyed on a total event count of exactly 1. A MEDIUM with one user but two or more events gets a tracking task and RCA like any other, because user count and low volume are not skip reasons; the only skips are the five listed in step 8.
 
 ## Step 5: Pre-flight — existing tracking-task lookup (gates the rest)
 
-Runs BEFORE culprit investigation. For each new-in-version cluster (after culprit-grouping in step 9), look up the matching tracking task in `Sentry Crash Reports` keyed on the **Sentry Crash Group ID** custom field:
+Runs before culprit investigation. First group the new-in-version short-IDs into clusters by culprit symbol (rules in step 9). For each cluster, look up the matching tracking task in `Sentry Crash Reports` keyed on the **Sentry Crash Group ID** custom field:
 
 ```
 asana_search_tasks(workspace="137249556945",
@@ -244,7 +244,7 @@ For each new issue with an informative stacktrace that survived step 5's gate. E
 4. Step 5 routed the issue to "fix already shipped in vX.Y.Z".
 5. Cluster has exactly 1 event total (sum of Sentry's `count` across every short-ID, all-time) AND step 5 returned "no existing task" (step 4's 1-event carve-out). Step 9 doesn't create a tracking task in this case, so there's no triage doc for the RCA to feed. A cluster with 1 event in `<TIME_RANGE>` but ≥2 events historically does NOT qualify — those are recurring crashes, run RCA. If a 1-event-total cluster *does* have an existing open or reopened-regression task, RCA still runs normally — the carve-out is keyed on the no-task path.
 
-Dispatch one **general-purpose** subagent per qualifying issue **in parallel** (single message, multiple Agent tool calls). Brief each subagent with: short-ID, exception class + message, full stacktrace from `get_sentry_resource`, suspect PR(s) from step 6, and a concrete instruction to (a) trace the call chain backward to its origin in this repo, (b) identify the invariant being violated *or* explicitly rule out an app-code root cause if evidence points elsewhere, (c) return a short structured report (root-cause summary, numbered call chain 4–8 steps, likely category, optional fix sketch). Cap responses ("under 250 words"). A "we investigated and concluded this is OS-runtime / hardware noise — not actionable" finding is a valid result; **an empty Root Cause Analysis section in the tracking task is not.** Use the analyses to populate the per-issue tracking tasks in step 9.
+Dispatch one **general-purpose** subagent per qualifying issue **in parallel** (single message, multiple Agent tool calls). Brief each subagent with: short-ID, exception class + message, full stacktrace from `get_sentry_resource`, suspect PR(s) from step 6, and a concrete instruction to (a) trace the call chain backward to its origin in this repo, (b) identify the invariant being violated *or* explicitly rule out an app-code root cause if evidence points elsewhere, (c) return a short structured report (root-cause summary, numbered call chain 4–8 steps, likely category, optional fix sketch) and nothing else, since it is pasted into the tracking task as written. A "we investigated and concluded this is OS-runtime / hardware noise — not actionable" finding is a valid result; **an empty Root Cause Analysis section in the tracking task is not.** Use the analyses to populate the per-issue tracking tasks in step 9.
 
 ## Step 9: Per-issue tracking task (create-if-missing, with sibling merging)
 
@@ -254,7 +254,7 @@ Pick `<PLATFORM_SECTION>` for the run: macOS → `1214291024165659`, iOS → `12
 
 The lookup itself was done in step 5. Outcomes:
 
-- **Found in step 5 (open or future-fix-tag):** capture `permalink_url`; reference it in the main report's per-issue line as `· <a href="...">tracking</a>`. If the existing task lacks one of the new sibling short-IDs you would otherwise file under it, you may extend its custom field with the missing IDs (`asana_update_task` with `custom_fields={"1214294661819893": "<existing>,<new1>,<new2>"}`); otherwise leave it alone. Do **not** rewrite the body of an existing task.
+- **Found in step 5 (open or future-fix-tag):** capture `permalink_url`; the main report's per-issue line leads with it as `<a href="...">Tracking</a> ·` (step 10). If the existing task lacks one of the new sibling short-IDs you would otherwise file under it, you may extend its custom field with the missing IDs (`asana_update_task` with `custom_fields={"1214294661819893": "<existing>,<new1>,<new2>"}`); otherwise leave it alone. Do **not** rewrite the body of an existing task.
 - **Found in step 5 (reopened regression):** the task already has a body; append a regression note via `asana_update_task` with `html_notes` that preserves the existing content and adds a "Regression seen in <version>" section with the fresh RCA from step 8 (read existing `html_notes` first via `asana_get_task` so you can preserve it). Capture `permalink_url`.
 - **Not found in step 5, cluster has exactly 1 event total** (sum of Sentry's `count` across every short-ID in the cluster, all-time): do NOT create a tracking task (step 4's 1-event carve-out). The cluster is listed in the main report's MEDIUM section with the Sentry short-ID + link only — no `permalink_url` to capture, no RCA. The first run on which the cluster's total event count rises above 1, this gate releases and that run creates the task.
 - **Not found in step 5, cluster has ≥2 events total:** create one task with `asana_create_task`. **Always create in the platform section, never the fallback:**
@@ -329,9 +329,6 @@ Top-bite rows. See [`references/common-mistakes-extended.md`](references/common-
 
 | Mistake | Fix |
 |---|---|
-| Creating a tracking task for a new-in-version cluster with exactly 1 event total | Don't. Step 4's 1-event carve-out gates this: when a new cluster has 1 event total (sum of `count` across every short-ID, all-time — NOT just within `<TIME_RANGE>`) AND step 5 finds no existing task, skip git blame + RCA + tracking task. List in the main report's MEDIUM section with Sentry short-ID + link + minimal stats only. One-off crashes don't justify a triage doc until they recur. |
-| Applying the 1-event carve-out to clusters with 1 event in `<TIME_RANGE>` but multiple historical events | The gate is keyed on **total** event count, not windowed count. A cluster firing once in the last 24h with 50 historical events is a recurring crash that just resurfaced — full MEDIUM path (git blame + RCA + tracking task). Read each short-ID's all-time `count` field and sum across the cluster, not the windowed slice. |
-| Skipping tracking-task creation for MEDIUM with ≥2 events because it's "low-volume" or "single-user" | The event-count carve-out is exactly 1. A MEDIUM with 1 user but 2+ events, or any cluster with 2+ events, still gets a tracking task + RCA. Do not generalise the 1-event rule to broader low-volume thresholds. The legitimate skips are the five in step 8, full stop. |
 | Substituting a different version when the requested one returns no events | The user-supplied version is authoritative. Take the step 2 short-circuit and write the "Crash-free release" report. Do NOT silently retarget to a previously-shipped version. |
 | Writing full employee names to Asana | Hook blocks it. Use initials + PR links. If the hook blocks even initials, fall back to PR-number-only. |
 

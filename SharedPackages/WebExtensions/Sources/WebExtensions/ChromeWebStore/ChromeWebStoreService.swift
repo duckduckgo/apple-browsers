@@ -22,6 +22,8 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public protocol ChromeWebStoreManaging: AnyObject {
+    /// Identifiers of the extensions the store may offer for install.
+    var catalogExtensionIDs: [String] { get }
     func status(for identifier: String) -> ChromeWebStoreStatus
     func install(identifier: String, downloadURL: URL) async -> Bool
     func remove(identifier: String) async -> Bool
@@ -42,15 +44,26 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private let catalog: ChromeWebStoreCatalogProviding
     private let downloader: ChromeWebStoreDownloading
     private let presenter: ChromeWebStorePresenting
+    private let verifier: ChromeWebStorePackageVerifier
     // The service is shared by all tabs. Only one install/removal can own the browser's UI at a time.
     private var isPerformingOperation = false
 
-    public init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
-                downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting) {
+    public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
+                            downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting) {
+        self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter, verifier: ChromeWebStorePackageVerifier())
+    }
+
+    init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
+         downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier) {
         self.manager = manager
         self.catalog = catalog
         self.downloader = downloader
         self.presenter = presenter
+        self.verifier = verifier
+    }
+
+    public var catalogExtensionIDs: [String] {
+        catalog.extensionIDs
     }
 
     public func status(for identifier: String) -> ChromeWebStoreStatus {
@@ -75,8 +88,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                 download.cancel()
             }
             try Task.checkCancellation()
-            let archive = try await Task.detached {
-                try ChromeWebStorePackageVerifier().verifiedArchive(in: package, extensionID: identifier)
+            let archive = try await Task.detached { [verifier] in
+                try verifier.verifiedArchive(in: package, extensionID: identifier)
             }.value
             try Task.checkCancellation()
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)

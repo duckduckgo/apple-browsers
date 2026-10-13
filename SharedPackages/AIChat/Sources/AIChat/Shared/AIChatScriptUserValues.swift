@@ -158,6 +158,8 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when native owns how often the file-upload privacy disclosure is shown, so the web
     /// app asks before displaying it. Absent on builds that predate the handler.
     public let supportsAttachmentPrivacyDisplay: Bool
+    /// `true` when the duckduckgo.com homepage may request the user's chats via `getAIChats`.
+    public let supportsHomePageChatSuggestions: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -234,7 +236,8 @@ public struct AIChatNativeConfigValues: Codable {
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
                 supportsBrowserTools: Bool = false,
-                supportsAttachmentPrivacyDisplay: Bool = false) {
+                supportsAttachmentPrivacyDisplay: Bool = false,
+                supportsHomePageChatSuggestions: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -266,6 +269,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.attachmentLimits = attachmentLimits
         self.supportsBrowserTools = supportsBrowserTools
         self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
+        self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

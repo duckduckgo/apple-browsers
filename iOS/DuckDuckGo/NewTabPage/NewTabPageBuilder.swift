@@ -133,7 +133,12 @@ struct NewTabPageBuilder {
                                              contextChanges: daxGreetingChanges,
                                              updateAppearance: updateDaxGreetingAppearance))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
-            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)),
+            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(
+                favoritesModel: favoritesModel,
+                onAddFavorite: {
+                    guard let newTabPage else { return }
+                    newTabPage.delegate?.newTabPageDidRequestAddFavorite(newTabPage)
+                })),
             NewTabPageSwiftUIBlock(id: .escapeHatch,
                                   rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
             NewTabPageSwiftUIBlock(id: .messages,

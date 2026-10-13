@@ -33,6 +33,8 @@ These steps cover the usual case. For anything they don't, the Swift API referen
    - `.withRetry` or `.withATB`: stop and ask the user for privacy triage first.
 5. **Define it** in `{iOS,macOS}/PixelDefinitions/pixels/definitions/`, starting from the
    `TEMPLATE.json5` in that folder.
+   - Set `triggers` from the event that fires the pixel, using the procedure in the "Triggers"
+     section of `REVIEW-pixels.md`. Don't default to `["other"]`.
    - List every parameter the pixel sends: `appVersion` unless the call opts out, `errorCode` and
      `errorDomain` (plus the underlying pair) when the event carries an error, and `pixelSource`
      when the event declares it.

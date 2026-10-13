@@ -60,6 +60,7 @@ import PixelKit
 import WideEvent
 import SERPSettings
 import PrivacyConfig
+import PrivacyDashboard
 import PrivacyStats
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -143,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var passwordsMenuBarCancellable: AnyCancellable?
     private var promptBarMenuBarController: PromptBarMenuBarController?
     private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarLauncherIntroductionCancellable: AnyCancellable?
     private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -186,6 +188,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
     }()
+
+    private(set) lazy var syncSetupBookmarksPromoManager = makeSyncSetupPromoManager(.bookmarks) { [bookmarkManager] in
+        bookmarkManager.bookmarksCount()
+    }
+
+    private(set) lazy var syncSetupAutofillPromoManager = makeSyncSetupPromoManager(.autofill) {
+        guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return 0 }
+        return ((try? vault.accountsCount()) ?? 0) + ((try? vault.creditCardsCount()) ?? 0) + ((try? vault.identitiesCount()) ?? 0)
+    }
+
+    private func makeSyncSetupPromoManager(_ content: SyncPromoContent, contentCount: @escaping () -> Int) -> SyncPromoManager {
+        SyncPromoManager(
+            content: content,
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            syncService: syncService,
+            contentCountProvider: contentCount,
+            // App Store builds only offer DuckDuckGo; skipping the getter there avoids its main-thread web extension check.
+            isDuckDuckGoPasswordManager: { AppVersion.isAppStoreBuild || AutofillPreferences().passwordManager == .duckduckgo },
+            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            openSyncSettings: { [weak self] in
+                self?.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
+            },
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }
 
     @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
         tabAndWindowCountProvider: windowControllersManager,
@@ -248,8 +278,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
     let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring = AttachmentPrivacyDisclosureStore()
+    private let duckAiTermsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
 
     private var updateProgressCancellable: AnyCancellable?
+
+    @MainActor
+    private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
@@ -390,6 +424,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - VPN
 
     public let vpnSettings = VPNSettings(defaults: .netP)
+    let networkSignalsProvider: NetworkSignalsProviding
+    let memoryPressureProvider: MemoryPressureProviding
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
         featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
@@ -423,6 +459,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visibilityManager: vpnUpsellVisibilityManager,
         persistor: vpnUpsellUserDefaultsPersistor
     )
+
+    lazy var bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksBarSyncPromoDelegate(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            isBookmarksBarSettingOn: { [keyValueStore] in
+                AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore).showBookmarksBar
+            },
+            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -722,6 +772,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
+        // Created at launch so the VPN issues observer catches notifications before the first report
+        networkSignalsProvider = NetworkSignalsProvider(
+            pathProvider: NetworkPathMonitor(),
+            vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
+            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
+            isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+
+        memoryPressureProvider = MemoryPressureMonitor(isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
             webExtensionManagerProvider: { [webExtensionManagerHolder] in
@@ -987,6 +1046,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             burnerDuckAiStorageRegistry = nil
         }
 
+        duckAiTermsOfServiceChatsObserver = DuckAiTermsOfServiceChatsObserver(storageHandler: duckAiNativeStorageHandler,
+                                                                              featureFlagger: featureFlagger)
+        duckAiTermsOfServiceChatsObserver?.start()
+
         // Runs independently of `aiChatNativeStorage`. The native-storage handler is an optional
         // dependency used to clear the legacy in-app voice-mode consent for users who had a
         // persisted `.deny`; the cleanup nil-checks it internally. The override is already
@@ -1186,7 +1249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
                 await MainActor.run {
                     if hasEntitlement {
-                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                        windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
                     } else {
                         let url = subscriptionManagerForPIR.url(for: .purchase)
                         windowControllersManager.showTab(with: .subscription(url))
@@ -1568,7 +1631,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             quitSurveyPromoObserver: quitSurveyPromoObserver,
             vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
             vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
-            autofillImportPromoObserver: autofillImportPromoObserver
+            autofillImportPromoObserver: autofillImportPromoObserver,
+            syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
+            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
+            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2387,6 +2453,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 canUseExchangeV2Point1: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
                 },
+                canSendExchangeChannelSecret: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanSendExchangeChannelSecret)
+                },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
                 },
@@ -2642,10 +2711,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                           aiChatTabOpener: aiChatTabOpener,
                                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                           preferences: aiChatPreferencesPersistor)
+        let positionStore = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: content)
+            presenter: PromptBarPresenter(content: content,
+                                          presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) },
+                                          isDragEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatDragPromptBar) },
+                                          loadRelativePosition: { positionStore.relativePosition },
+                                          saveRelativePosition: { positionStore.relativePosition = $0 })
         )
         coordinator.start()
         promptBarCoordinator = coordinator
@@ -2669,6 +2744,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     self?.promptBarMenuBarController?.hide()
                 }
+            }
+        promptBarLauncherIntroductionCancellable = promptBarPreferences.$pendingLauncherIntroduction
+            .receive(on: DispatchQueue.main)
+            .filter { $0 }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                promptBarPreferences.pendingLauncherIntroduction = false
+                promptBarCoordinator?.showPromptBarForLauncherPromo()
             }
     }
 

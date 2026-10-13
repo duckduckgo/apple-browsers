@@ -70,8 +70,17 @@ public enum ChromeWebStoreURL {
 
 @MainActor
 public protocol ChromeWebStoreCatalogProviding {
+    /// Identifiers of all web extensions supported by the browser, in catalog order.
+    var extensionIDs: [String] { get }
+
     /// Checks if the web extension with a given `identifier` is supported by the browser.
     func contains(_ identifier: String) -> Bool
+}
+
+public extension ChromeWebStoreCatalogProviding {
+    func contains(_ identifier: String) -> Bool {
+        ChromeWebStoreURL.isValidExtensionID(identifier) && extensionIDs.contains(identifier)
+    }
 }
 
 /// This class uses configuration from Privacy Config to decide about supported extensions.
@@ -84,25 +93,34 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         self.configurationManager = configurationManager
     }
 
-    public func contains(_ identifier: String) -> Bool {
+    public var extensionIDs: [String] {
         let config = configurationManager.privacyConfig
 
         // Store integration remains available when site privacy protections are off,
         // matching C-S-S platformSpecificFeatures. Explicit feature exceptions still apply.
-        guard ChromeWebStoreURL.isValidExtensionID(identifier),
-              config.isEnabled(featureKey: .chromeWebstorePatching),
+        guard config.isEnabled(featureKey: .chromeWebstorePatching),
               !config.isInExceptionList(domain: ChromeWebStoreURL.host, forFeature: .chromeWebstorePatching),
-              config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions),
-              config.isSubfeatureEnabled(ExtensionManagementSubfeature.curatedExtensions),
-              let settingsJSON = config.settings(for: ExtensionManagementSubfeature.curatedExtensions),
-              let data = settingsJSON.data(using: .utf8),
-              let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+              config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) else { return [] }
 
-        let internalCatalog = configurationManager.internalUserDecider.isInternalUser ? settings["catalogInternal"] as? [[String: Any]] : nil
-        let catalog = internalCatalog ?? settings["catalog"] as? [[String: Any]] ?? []
         let featureSettings = config.settings(for: .extensionManagement)
-        let hidden = featureSettings["hiddenExtensionIds"] as? [String] ?? []
-        let disabled = featureSettings["disabledExtensionIds"] as? [String] ?? []
-        return !hidden.contains(identifier) && !disabled.contains(identifier) && catalog.contains { $0["id"] as? String == identifier }
+        let excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])
+            .union(featureSettings["disabledExtensionIds"] as? [String] ?? [])
+
+        // Each extension is its own subfeature, so Privacy Config evaluates its state,
+        // rollout and minimum version. Subfeatures this build doesn't know are ignored.
+        let entries: [(id: String, order: Double)] = ExtensionsCatalogSubfeature.allCases.compactMap { subfeature in
+            guard config.isSubfeatureEnabled(subfeature),
+                  let settingsJSON = config.settings(for: subfeature),
+                  let data = settingsJSON.data(using: .utf8),
+                  let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let id = settings["id"] as? String,
+                  ChromeWebStoreURL.isValidExtensionID(id), !excluded.contains(id) else { return nil }
+            return (id, (settings["order"] as? NSNumber)?.doubleValue ?? .infinity)
+        }
+
+        // Ascending `order`; entries without one sort last, ties keep declaration order.
+        return entries.enumerated()
+            .sorted { ($0.element.order, $0.offset) < ($1.element.order, $1.offset) }
+            .map(\.element.id)
     }
 }

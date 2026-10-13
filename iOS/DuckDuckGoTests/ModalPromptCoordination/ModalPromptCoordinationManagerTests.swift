@@ -22,6 +22,14 @@ import Foundation
 import Testing
 @testable import DuckDuckGo
 
+/// A presenter UIKit refuses: it never calls the completion.
+@MainActor
+private final class NonCompletingModalPromptPresenter: ModalPromptPresenter {
+    var presentedViewController: UIViewController?
+
+    func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?) {}
+}
+
 @MainActor
 @Suite("Modal Prompt Coordination - Coordination Manager")
 final class ModalPromptCoordinationManagerTests {
@@ -339,6 +347,114 @@ final class ModalPromptCoordinationManagerTests {
         #expect(sut.didActuallyPresentModalPromptThisSession)
         #expect(sut.didPresentModalPromptThisSession)
         #expect(provider.didCallDidPresentModal)
+    }
+
+    // MARK: - Close Handler
+
+    private func makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker,
+                                      closeChecks: MockModalPromptScheduler,
+                                      hasEligiblePrompt: Bool = true) -> ModalPromptCoordinationManager {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        return ModalPromptCoordinationManager(
+            providers: [MockModalPromptProvider(shouldReturnPrompt: hasEligiblePrompt)],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker,
+            closeCheckScheduling: closeChecks
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check The Close Handler Runs Once The Legacy Prompt Leaves The Screen", .timeLimit(.minutes(1)))
+    func whenLegacyPromptLeavesTheScreenThenCloseHandlerRunsOnce() throws {
+        // GIVEN
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: attachmentChecker, closeChecks: closeChecks)
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // WHEN
+        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
+
+        // THEN it waits while the prompt is on its way
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        // and while it's on screen
+        schedulerMock.executeScheduledBlock()
+        let root = try #require(presenterMock.capturedViewController)
+        attachmentChecker.markAttached(root)
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        // and runs once it has left
+        attachmentChecker.attachedRoots.removeAll()
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 1)
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check No Close Handler Is Kept When No Prompt Is Pending", .timeLimit(.minutes(1)))
+    func whenNoPromptIsPendingThenCloseHandlerIsNotKept() {
+        // GIVEN
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(),
+                                   closeChecks: closeChecks,
+                                   hasEligiblePrompt: false)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // WHEN
+        let waits = sut.runOnceModalPromptCloses {}
+
+        // THEN
+        #expect(!waits)
+        #expect(!closeChecks.didCallSchedule)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check No Close Handler Is Kept For A Prompt UIKit Refused", .timeLimit(.minutes(1)))
+    func whenEarlierPromptWasRefusedThenCloseHandlerIsNotKept() {
+        // GIVEN a legacy attempt whose presentation never completes, so its ID stays behind
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(), closeChecks: closeChecks)
+        sut.presentModalPromptIfNeeded(from: NonCompletingModalPromptPresenter())
+        schedulerMock.executeScheduledBlock()
+        #expect(sut.hasActiveOrPendingModalAttempt)
+
+        // WHEN
+        let waits = sut.runOnceModalPromptCloses {}
+
+        // THEN
+        #expect(!waits)
+        #expect(!closeChecks.didCallSchedule)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Invalidating a pending keyboard request stops checking for prompt closure", .timeLimit(.minutes(1)))
+    func invalidatedKeyboardRequestStopsChecking() {
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(), closeChecks: closeChecks)
+        var isValid = true
+        var validityChecks = 0
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        #expect(sut.runOnceModalPromptCloses(while: {
+            validityChecks += 1
+            return isValid
+        }, { handlerRunCount += 1 }))
+
+        isValid = false
+        closeChecks.executeScheduledBlock()
+        let checksAfterCancellation = validityChecks
+        schedulerMock.executeScheduledBlock()
+        closeChecks.executeScheduledBlock()
+
+        #expect(validityChecks == checksAfterCancellation)
+        #expect(handlerRunCount == 0)
     }
 
     @available(iOS 16, *)

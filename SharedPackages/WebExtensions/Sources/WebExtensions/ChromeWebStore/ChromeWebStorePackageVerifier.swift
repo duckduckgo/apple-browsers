@@ -23,14 +23,29 @@ import ZIPFoundation
 
 /// CRX3 signs a domain separator, the signed protobuf header, and the complete ZIP payload.
 /// See Chromium's components/crx_file/crx3.proto and crx_verifier.cc.
-public struct ChromeWebStorePackageVerifier {
+public struct ChromeWebStorePackageVerifier: Sendable {
     public struct VerifiedArchive: Sendable {
         public let data: Data
         /// Best-effort version for the archive filename; unavailable or unsafe values are omitted.
         public let version: String?
     }
 
-    public init() {}
+    /// SHA-256 of the Chrome Web Store publisher key (Chromium's `kPublisherKeyHash`).
+    static let publisherKeyHash = Data([
+        0x61, 0xf7, 0xf2, 0xa6, 0xbf, 0xcf, 0x74, 0xcd, 0x0b, 0xc1, 0xfe,
+        0x24, 0x97, 0xcc, 0x9b, 0x04, 0x25, 0x4c, 0x65, 0x8f, 0x79, 0xf2,
+        0x14, 0x53, 0x92, 0x86, 0x7e, 0xa8, 0x36, 0x63, 0x67, 0xcf
+    ])
+
+    private let publisherKeyHash: Data
+
+    public init() {
+        self.init(publisherKeyHash: Self.publisherKeyHash)
+    }
+
+    init(publisherKeyHash: Data) {
+        self.publisherKeyHash = publisherKeyHash
+    }
 
     public func verifiedArchive(in package: Data, extensionID: String) throws -> VerifiedArchive {
         guard package.count >= 12,
@@ -53,20 +68,23 @@ public struct ChromeWebStorePackageVerifier {
         signedData.append(contentsOf: (0..<4).map { UInt8(truncatingIfNeeded: size >> ($0 * 8)) })
         signedData.append(signedHeader)
         signedData.append(archive)
+        // Like Chromium's CRX3_WITH_PUBLISHER_PROOF: every proof must be valid, and both the developer
+        // and the Chrome Web Store publisher must have signed the package.
         var hasDeveloperSignature = false
+        var hasPublisherSignature = false
         for field in [2, 3] {
             for proof in fields[field] ?? [] {
                 let parts = try protobufFields(proof)
-                guard let publicKey = parts[1]?.only, let signature = parts[2]?.only else {
+                guard let publicKey = parts[1]?.only, let signature = parts[2]?.only,
+                      try verifySignature(signature, publicKey: publicKey, data: signedData, isRSA: field == 2) else {
                     throw ChromeWebStoreError.invalidSignature
                 }
-                let keyIdentifier = Data(SHA256.hash(data: publicKey).prefix(16))
-                guard keyIdentifier == identifier else { continue }
-                hasDeveloperSignature = try verifySignature(signature, publicKey: publicKey, data: signedData, isRSA: field == 2)
-                guard hasDeveloperSignature else { throw ChromeWebStoreError.invalidSignature }
+                let keyHash = Data(SHA256.hash(data: publicKey))
+                hasDeveloperSignature = hasDeveloperSignature || keyHash.prefix(16) == identifier
+                hasPublisherSignature = hasPublisherSignature || keyHash == publisherKeyHash
             }
         }
-        guard hasDeveloperSignature else { throw ChromeWebStoreError.invalidSignature }
+        guard hasDeveloperSignature, hasPublisherSignature else { throw ChromeWebStoreError.invalidSignature }
         let version = try validateArchive(archive)
         return VerifiedArchive(data: archive, version: version)
     }

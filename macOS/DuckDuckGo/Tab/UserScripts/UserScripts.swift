@@ -67,6 +67,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
+    /// `nil` when web extensions are unavailable or the user is not an internal user.
+    let webExtensionPageStubUserScript: UserScript?
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -91,9 +94,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage)
             && duckAiNativeStorageHandler != nil
             && duckAiNativeStorageHandler?.setupSucceeded != false
+        let homepageAiChatsProvider = HomepageAiChatsProvider(
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: sourceProvider.featureFlagger)
+        )
         let aiChatMessageHandler = AIChatMessageHandler(
             featureFlagger: sourceProvider.featureFlagger,
-            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
@@ -103,7 +110,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             statisticsLoader: StatisticsLoader.shared,
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
@@ -144,6 +152,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         } else {
             duckAiNativeStorageUserScript = nil
         }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -229,8 +238,22 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
+        // A tab opened from an extension's web view configuration (the pop-out of a popup, for
+        // instance) gets the standard user content controller, which replaces the extension
+        // controller's, so its extension pages get the API stubs from here.
+        if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
+            webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+        } else {
+            webExtensionPageStubUserScript = nil
+        }
+
         if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
             userScripts.append(autoconsentUserScript)
+        }
+
+        if let webExtensionPageStubUserScript {
+            userScripts.append(webExtensionPageStubUserScript)
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)

@@ -43,6 +43,17 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let url: URL
     }
 
+    struct PickerCallbacks {
+        var onExpandIfNeeded: (() -> Void)?
+        var onImagePicked: ((UIImage, String) -> Void)?
+        var onFilePicked: ((AIChatFileAttachment, FileMetadata) -> Void)?
+        var onFileValidationFailed: ((String, FileMetadata) -> Void)?
+        var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
+    }
+
+    var pickerCallbacksProvider: (() -> PickerCallbacks)?
+    private var pickerCallbacks: [ObjectIdentifier: PickerCallbacks] = [:]
+
     var tabPickerPixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface?)?
     var onTabPickerEvent: ((MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void)?
 
@@ -349,10 +360,21 @@ private final class MultiTabAttachmentPickerHostingController: UIHostingControll
 
 private extension UnifiedToggleInputAttachmentPresenter {
 
+    func takeCallbacks(for picker: UIViewController) -> PickerCallbacks {
+        pickerCallbacks.removeValue(forKey: ObjectIdentifier(picker)) ?? PickerCallbacks(
+            onExpandIfNeeded: onExpandIfNeeded,
+            onImagePicked: onImagePicked,
+            onFilePicked: onFilePicked,
+            onFileValidationFailed: onFileValidationFailed,
+            fileMetadataValidationMessage: fileMetadataValidationMessage
+        )
+    }
+
     func presentCamera(from presenter: UIViewController) {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.delegate = self
+        pickerCallbacks[ObjectIdentifier(picker)] = pickerCallbacksProvider?()
         presenter.present(picker, animated: true)
     }
 
@@ -362,6 +384,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
         config.selectionLimit = selectionLimit
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = self
+        pickerCallbacks[ObjectIdentifier(picker)] = pickerCallbacksProvider?()
         presenter.present(picker, animated: true)
     }
 
@@ -369,6 +392,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: true)
         picker.allowsMultipleSelection = false
         picker.delegate = self
+        pickerCallbacks[ObjectIdentifier(picker)] = pickerCallbacksProvider?()
         presenter.present(picker, animated: true)
     }
 
@@ -426,8 +450,9 @@ private extension UnifiedToggleInputAttachmentPresenter {
 extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate {
 
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
-        onExpandIfNeeded?()
+        callbacks.onExpandIfNeeded?()
 
         for result in results {
             let provider = result.itemProvider
@@ -442,7 +467,7 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                     PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                                   frequency: .dailyAndCount,
                                   options: .parameters(["source": "photo_library", "surface": surface.rawValue]))
-                    self?.onImagePicked?(image, suggestedName)
+                    callbacks.onImagePicked?(image, suggestedName)
                 }
             }
         }
@@ -452,40 +477,42 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
 extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
-        onExpandIfNeeded?()
+        callbacks.onExpandIfNeeded?()
         guard let image = info[.originalImage] as? UIImage else { return }
         PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                       frequency: .dailyAndCount,
                       options: .parameters(["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]))
-        onImagePicked?(image, "photo")
+        callbacks.onImagePicked?(image, "photo")
     }
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
-        onExpandIfNeeded?()
+        callbacks.onExpandIfNeeded?()
     }
 }
 
 extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        let callbacks = takeCallbacks(for: controller)
         controller.dismiss(animated: true)
-        onExpandIfNeeded?()
+        callbacks.onExpandIfNeeded?()
         guard let url = urls.first else { return }
 
-        Task { [weak self, url] in
-            guard let self else { return }
+        Task { [url] in
             let metadata = await Task.detached(priority: .userInitiated) {
                 Self.fileMetadata(from: url)
             }.value
             guard let metadata else {
-                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, Self.fallbackFileMetadata(from: url))
+                callbacks.onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, Self.fallbackFileMetadata(from: url))
                 return
             }
 
-            if let validationMessage = fileMetadataValidationMessage?(metadata) {
-                onFileValidationFailed?(validationMessage, metadata)
+            if let validationMessage = callbacks.fileMetadataValidationMessage?(metadata) {
+                callbacks.onFileValidationFailed?(validationMessage, metadata)
                 return
             }
 
@@ -493,16 +520,17 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
                 Self.fileAttachment(from: metadata)
             }.value
             guard let fileAttachment else {
-                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, metadata)
+                callbacks.onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, metadata)
                 return
             }
 
-            onFilePicked?(fileAttachment, metadata)
+            callbacks.onFilePicked?(fileAttachment, metadata)
         }
     }
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        let callbacks = takeCallbacks(for: controller)
         controller.dismiss(animated: true)
-        onExpandIfNeeded?()
+        callbacks.onExpandIfNeeded?()
     }
 }

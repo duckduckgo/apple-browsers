@@ -195,6 +195,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -230,6 +232,19 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
+    private let attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore
+    private let attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling?
+
+    private var isAttachmentPrivacyEnabled: Bool {
+        !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
+    }
+
+    @MainActor private lazy var attachmentPrivacyDisclosure = AttachmentPrivacyDisclosure(
+        store: attachmentPrivacyDisplayStore,
+        webKeySource: attachmentPrivacyWebKeySource,
+        isEnabled: { [weak self] in self?.isAttachmentPrivacyEnabled == true }
+    )
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -256,10 +271,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
          aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
          isNativeStorageBridgeAvailable: Bool = false,
+         attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore = AttachmentPrivacyDisclosureStore(),
+         attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
-         }) {
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -271,9 +289,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.attachmentPrivacyDisplayStore = attachmentPrivacyDisplayStore
+        self.attachmentPrivacyWebKeySource = attachmentPrivacyWebKeySource
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
         setUpSyncStatusObserver()
+    }
+
+    @MainActor
+    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
+        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosure.claim())
     }
 
     enum AIChatKeys {
@@ -375,12 +401,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return termsAccepted
     }
 
-    /// iPhone only. iPad's address bar and contextual sheet show the disclaimer too, but duck.ai on iPad
-    /// keeps its own Terms of Service, so its prompts carry no marker.
+    /// iPhone shows the disclaimer in its native chat input; iPad shows it in the address bar and the
+    /// contextual sheet whenever the flag is on, including over a full-tab chat.
     private var sendsTermsAcceptedMarker: Bool {
-        featureFlagger.isFeatureOn(.duckAINativeTermsOfService)
-            && devicePlatform.isIphone
-            && nativeModeSupport.supportsNativeChatInput
+        guard featureFlagger.isFeatureOn(.duckAINativeTermsOfService) else { return false }
+        return devicePlatform.isIphone ? nativeModeSupport.supportsNativeChatInput : true
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -454,9 +479,27 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
-            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
+            supportsAttachmentPrivacyDisplay: isAttachmentPrivacyEnabled,
+            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message)
         )
         return config
+    }
+
+    // MARK: - Homepage chat suggestions
+
+    private func supportsHomePageChatSuggestions(for message: UserScriptMessage) -> Bool {
+        HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost) && homepageAiChatsProvider?.isSupported == true
+    }
+
+    @MainActor
+    func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
     }
 
     @MainActor

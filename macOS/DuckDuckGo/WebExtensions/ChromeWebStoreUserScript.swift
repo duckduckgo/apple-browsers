@@ -84,6 +84,10 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         let enabled: Bool
     }
 
+    struct CatalogResponse: Encodable {
+        let extensionIds: [String]
+    }
+
     struct StatusResponse: Encodable {
         let status: ChromeWebStoreStatus
     }
@@ -93,7 +97,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     }
 
     enum Method: String {
-        case initialSetup, getExtensionStatus, installExtension, removeExtension, extensionChanged
+        case initialSetup, getCatalogExtensionIds, getExtensionStatus, installExtension, removeExtension, extensionChanged
     }
 
     func handler(forMethodNamed methodName: String) -> Handler? {
@@ -121,6 +125,13 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
 
         guard isEnabled else { throw ChromeWebStoreError.unavailable }
 
+        // The catalog takes no extension ID. Without a service, web extensions are off and
+        // nothing is installable, so reply with an empty list. C-S-S hides the button on
+        // an error instead of showing the unsupported pill.
+        if method == .getCatalogExtensionIds {
+            return CatalogResponse(extensionIds: serviceProvider()?.catalogExtensionIDs ?? [])
+        }
+
         guard let request: ExtensionRequest = DecodableHelper.decode(from: params),
               ChromeWebStoreURL.isValidExtensionID(request.extensionId) else { throw ChromeWebStoreError.invalidRequest }
 
@@ -140,7 +151,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false
             return OperationResponse(success: success)
-        case .initialSetup, .extensionChanged:
+        case .initialSetup, .getCatalogExtensionIds, .extensionChanged:
             return nil
         }
     }

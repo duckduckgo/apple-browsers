@@ -23,7 +23,7 @@ import ZIPFoundation
 @testable import WebExtensions
 
 final class ChromeWebStorePackageVerifierTests: XCTestCase {
-    private let verifier = ChromeWebStorePackageVerifier()
+    private let verifier = ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash)
 
     func testValidECDSAPackage() throws {
         let fixture = try ChromeWebStoreFixture()
@@ -107,6 +107,32 @@ final class ChromeWebStorePackageVerifierTests: XCTestCase {
         XCTAssertThrowsError(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier))
     }
 
+    func testMissingPublisherProofIsRejected() throws {
+        let fixture = try ChromeWebStoreFixture(publisher: nil)
+        XCTAssertThrowsError(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier))
+    }
+
+    func testInvalidPublisherSignatureIsRejected() throws {
+        let fixture = try ChromeWebStoreFixture(publisher: .invalidSignature)
+        XCTAssertThrowsError(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier))
+    }
+
+    func testPackageWithoutProductionPublisherProofIsRejectedByDefault() throws {
+        let fixture = try ChromeWebStoreFixture()
+        XCTAssertThrowsError(try ChromeWebStorePackageVerifier().verifiedArchive(in: fixture.package, extensionID: fixture.identifier))
+    }
+
+    func testAdditionalValidProofIsAccepted() throws {
+        let fixture = try ChromeWebStoreFixture(additionalProof: .valid)
+        let archive = try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier)
+        XCTAssertEqual(archive.data, fixture.archive)
+    }
+
+    func testAdditionalInvalidProofIsRejected() throws {
+        let fixture = try ChromeWebStoreFixture(additionalProof: .invalidSignature)
+        XCTAssertThrowsError(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier))
+    }
+
     func testSignedInvalidManifestIsRejected() throws {
         for manifest: [String: Any] in [[:], ["name": "Missing version"], ["manifest_version": 7, "name": "Future", "version": "1"]] {
             let fixture = try ChromeWebStoreFixture(manifest: manifest)
@@ -117,11 +143,22 @@ final class ChromeWebStorePackageVerifierTests: XCTestCase {
 
 /// Creates real signed CRX3 files without network access or checked-in signing secrets.
 struct ChromeWebStoreFixture {
+    enum Proof {
+        case valid
+        case invalidSignature
+    }
+
+    /// Stands in for the Chrome Web Store publisher key. Inject `publisherKeyHash` into the verifier under test.
+    private static let publisherKey = P256.Signing.PrivateKey()
+    static let publisherKeyHash = Data(SHA256.hash(data: publisherKey.publicKey.derRepresentation))
+
     let package: Data
     let archive: Data
     let identifier: String
 
     init(rsa: Bool = false,
+         publisher: Proof? = .valid,
+         additionalProof: Proof? = nil,
          manifest: [String: Any] = ["manifest_version": 3, "name": "Store Test", "description": "Store fixture",
                                     "version": "1.0", "permissions": ["tabs"]],
          extraEntry: (String, Entry.EntryType)? = nil) throws {
@@ -157,7 +194,13 @@ struct ChromeWebStoreFixture {
         let signedHeader = Self.field(1, id)
         let signedData = Data("CRX3 SignedData\0".utf8) + Self.littleEndian(signedHeader.count) + signedHeader + archive
         let proof = Self.field(1, publicKey) + Self.field(2, try sign(signedData))
-        let header = Self.field(rsa ? 2 : 3, proof) + Self.field(10000, signedHeader)
+        var header = Self.field(rsa ? 2 : 3, proof)
+        for (key, validity) in [(Self.publisherKey, publisher), (P256.Signing.PrivateKey(), additionalProof)] {
+            guard let validity else { continue }
+            let data = validity == .valid ? signedData : signedData + Data([0])
+            header += Self.field(3, Self.field(1, key.publicKey.derRepresentation) + Self.field(2, try key.signature(for: data).derRepresentation))
+        }
+        header += Self.field(10000, signedHeader)
         package = Data("Cr24".utf8) + Self.littleEndian(3) + Self.littleEndian(header.count) + header + archive
     }
 

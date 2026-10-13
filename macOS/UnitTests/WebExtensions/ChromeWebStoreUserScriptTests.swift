@@ -40,7 +40,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     func testContractAndUnknownMethods() {
         let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service }, buildType: makeBuildType())
         XCTAssertEqual(subfeature.featureName, "chromeWebstorePatching")
-        for method in ["initialSetup", "getExtensionStatus", "installExtension", "removeExtension"] {
+        for method in ["initialSetup", "getCatalogExtensionIds", "getExtensionStatus", "installExtension", "removeExtension"] {
             XCTAssertNotNil(subfeature.handler(forMethodNamed: method))
         }
         XCTAssertNil(subfeature.handler(forMethodNamed: "unknown"))
@@ -63,7 +63,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
             XCTFail("App Store operations must not resolve the extension service")
             return self.service
         }, buildType: makeBuildType(isAppStore: true))
-        for method in ["getExtensionStatus", "installExtension", "removeExtension"] {
+        for method in ["getCatalogExtensionIds", "getExtensionStatus", "installExtension", "removeExtension"] {
             let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: method))
             do {
                 _ = try await handler([
@@ -110,6 +110,37 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
         let result = try await handler(["extensionId": identifier], message())
         let response = try dictionary(result)
         XCTAssertEqual(response["status"] as? String, "unknown")
+    }
+
+    func testCatalogResponseNeedsNoExtensionIDAndIsEmptyWithoutService() async throws {
+        let otherIdentifier = String(repeating: "b", count: 32)
+        for catalog in [[identifier, otherIdentifier], []] {
+            service.catalogExtensionIDs = catalog
+            let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service }, buildType: makeBuildType())
+            let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getCatalogExtensionIds"))
+            let response = try dictionary(await handler([String: String](), message()))
+            XCTAssertEqual(response["extensionIds"] as? [String], catalog)
+        }
+
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil }, buildType: makeBuildType())
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getCatalogExtensionIds"))
+        let response = try dictionary(await handler([String: String](), message()))
+        XCTAssertEqual(response["extensionIds"] as? [String], [])
+    }
+
+    func testUntrustedOriginsSubframesAndStalePagesCannotReadCatalog() async throws {
+        service.catalogExtensionIDs = [identifier]
+        for message in [
+            message(origin: "http://chromewebstore.google.com/"),
+            message(origin: "https://chromewebstore.google.com.evil.example/"),
+            message(isMain: false),
+            message(page: "https://evil.example/")
+        ] {
+            do {
+                _ = try await request("getCatalogExtensionIds", message: message)
+                XCTFail("Untrusted catalog request accepted")
+            } catch ChromeWebStoreError.invalidRequest {}
+        }
     }
 
     func testInstallAndRemovalReturnFinalResult() async throws {
@@ -180,6 +211,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
 @available(macOS 15.4, *)
 @MainActor
 private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
+    var catalogExtensionIDs: [String] = []
     var currentStatus = ChromeWebStoreStatus.installable
     var success = true
     var statusRequests = 0

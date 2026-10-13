@@ -1,0 +1,36 @@
+// Duck.ai input outcome pixel - what each opening of a native Duck.ai input led to, on every
+// platform, so the prompt rate and the bounce rate can be read with and without the Terms of
+// Service disclaimer.
+//
+// Only inputs that start a new chat count: the iPhone address bar, Duck.ai tab and contextual sheet
+// (before their chat has a prompt), the iPad address bar, and the basic input in the contextual
+// sheet. Follow-up prompts in an existing chat are not counted.
+{
+    "aichat_input_outcome": {
+        "description": "Fires once per opening of a Duck.ai input: on its first prompt, when it starts a voice chat, or when the input closes, switches to search or the app goes to the background without either. Collapsing closes the address bar and Duck.ai tab input, but not the contextual sheet's, whose suggested prompts stay tappable.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "tos_disclaimer_shown",
+                "description": "Whether the Terms of Service disclaimer was on screen at any point while the input was open.",
+                "type": "boolean"
+            },
+            {
+                "key": "outcome",
+                "description": "What the input led to. `suggested_prompt` is a suggested prompt tapped in the contextual sheet. While the disclaimer shows, a disabled Ask replaces the voice button, so `voice_started` needs it off screen.",
+                "type": "string",
+                "enum": ["prompt_submitted", "suggested_prompt", "voice_started", "abandoned"]
+            },
+            {
+                "key": "submit_method",
+                "description": "Only with `prompt_submitted`. `button` is the send button (Ask while the disclaimer shows), `enter` is Return, which can't send while the disclaimer shows, and `other` is a quick action, Paste & Go or dictation.",
+                "type": "string",
+                "enum": ["button", "enter", "other"]
+            }
+        ]
+    }
+}

@@ -58,6 +58,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case getMigrationInfo
     case clearMigrationData
 
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    case getAIChats
+
     case voiceSessionStarted
     case voiceSessionEnded
 

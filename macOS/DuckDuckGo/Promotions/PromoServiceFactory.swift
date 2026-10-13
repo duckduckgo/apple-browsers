@@ -82,7 +82,10 @@ struct PromoServiceFactory {
             vpnUpsellToolbarButton(delegate: dependencies.vpnUpsellToolbarButtonPromoDelegate),
             vpnUpsellDotBadge(delegate: dependencies.vpnUpsellDotBadgePromoDelegate),
             duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver),
-            autofillImport(observer: dependencies.autofillImportPromoObserver)
+            autofillImport(observer: dependencies.autofillImportPromoObserver),
+            syncSetupBookmarks(dependencies: dependencies),
+            syncSetupAutofill(dependencies: dependencies),
+            bookmarksBarSync(dependencies: dependencies)
         ]
 
         if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {

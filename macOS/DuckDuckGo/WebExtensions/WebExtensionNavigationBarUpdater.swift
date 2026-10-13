@@ -35,7 +35,7 @@ import WebKit
 /// it turns back on. When the closure returns `nil`, the updater removes every button.
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
+final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NSMenuDelegate {
 
     private enum Constants {
         static let buttonSize: CGFloat = 28
@@ -48,8 +48,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private let container: NSStackView
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
     private let isPrivateWindow: Bool
+    private let selectedTabProvider: () -> WKWebExtensionTab?
     private var buttons = Set<MouseOverButton>()
     private var updateCancellable: AnyCancellable?
+    private var actionCancellable: AnyCancellable?
 
     /// Whether the toolbar buttons are shown. The navigation bar sets it from the selected tab's
     /// content, because an extension popup makes no sense on a tab without a web page.
@@ -65,8 +67,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     init(webExtensionManagerProvider: @escaping () -> WebExtensionManaging?,
          themeManager: ThemeManaging,
          container: NSStackView,
-         isPrivateWindow: Bool = false) {
+         isPrivateWindow: Bool = false,
+         selectedTabProvider: @escaping () -> WKWebExtensionTab? = { nil }) {
          self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.selectedTabProvider = selectedTabProvider
         self.themeManager = themeManager
         self.container = container
         self.isPrivateWindow = isPrivateWindow
@@ -87,6 +91,26 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             .sink { [weak self] _ in
                 self?.updateLoadedExtensions()
             }
+
+        actionCancellable = NotificationCenter.default
+            .publisher(for: .webExtensionActionDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self, let context = notification.object as? WKWebExtensionContext else { return }
+                for button in self.buttons where button.identifier?.rawValue == context.uniqueIdentifier {
+                    self.applyAction(of: context, to: button)
+                }
+            }
+    }
+
+    /// Shows each extension's action for the selected tab, since an extension can set a different
+    /// icon on every tab.
+    func refreshActions() {
+        let loaded = webExtensionManagerProvider()?.loadedExtensions ?? []
+        for button in buttons {
+            guard let context = loaded.first(where: { $0.uniqueIdentifier == button.identifier?.rawValue }) else { continue }
+            applyAction(of: context, to: button)
+        }
     }
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -169,6 +193,18 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         }
     }
 
+    /// Shows the extension's current action for the selected tab, which its JavaScript can change,
+    /// falling back to its manifest.
+    /// The extension supplies its own artwork, so the button keeps no tint color.
+    private func applyAction(of context: WKWebExtensionContext, to button: NSButton) {
+        let action = selectedTabProvider().flatMap { context.action(for: $0) } ?? context.action(for: nil)
+        button.image = action?.icon(for: Constants.iconSize)
+            ?? context.webExtension.actionIcon(for: Constants.iconSize)
+            ?? context.webExtension.icon(for: Constants.iconSize)
+        let label = action?.label ?? ""
+        button.toolTip = !label.isEmpty ? label : (context.webExtension.displayActionLabel ?? context.webExtension.displayName)
+    }
+
     private func toolbarButton(for context: WKWebExtensionContext) -> MouseOverButton {
         let button = MouseOverButton(frame: NSRect(x: 0, y: 0, width: Constants.buttonSize, height: Constants.buttonSize))
 
@@ -180,13 +216,11 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.isHidden = !buttonsAreVisible
-        button.toolTip = context.webExtension.displayActionLabel ?? context.webExtension.displayName
         button.target = self
         button.action = #selector(toolbarButtonClicked)
+        button.menu = ExtensionButtonMenu(button: button, context: context, delegate: self)
 
-        // The extension supplies its own artwork, so the button keeps no tint color.
-        button.image = context.webExtension.actionIcon(for: Constants.iconSize)
-            ?? context.webExtension.icon(for: Constants.iconSize)
+        applyAction(of: context, to: button)
 
         applyThemeStyle(theme: theme, to: button)
 
@@ -201,6 +235,27 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.cornerRadius = theme.toolbarButtonsCornerRadius
+    }
+
+    /// The right-click menu of an extension button: the toolbar's own menu, plus, for internal users, the
+    /// extension's API compatibility log. A button with a menu of its own would otherwise hide the toolbar's.
+    private final class ExtensionButtonMenu: NSMenu {
+        weak var button: NSView?
+        /// The extension's name and version as the API compatibility log records them.
+        let extensionName: String
+        let version: String
+
+        init(button: NSView, context: WKWebExtensionContext, delegate: NSMenuDelegate) {
+            self.button = button
+            self.extensionName = WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.displayName)
+            self.version = WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.version)
+            super.init(title: "")
+            self.delegate = delegate
+        }
+
+        required init(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
     }
 
     // MARK: - Actions
@@ -237,5 +292,44 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         """)
 
         context.performAction(for: nil)
+    }
+
+    @objc private func showAPICompatibilityLog(sender: NSMenuItem) {
+        guard let menu = sender.menu as? ExtensionButtonMenu else { return }
+        WebExtensionAPICompatibilityLogWindowPresenter.show(extensionName: menu.extensionName, version: menu.version)
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard let menu = menu as? ExtensionButtonMenu else { return }
+        menu.removeAllItems()
+
+        // The toolbar fills in its own items, whose actions reach it through the responder chain.
+        if let toolbarMenu = menu.button?.enclosingMenu {
+            toolbarMenu.delegate?.menuNeedsUpdate?(menu)
+        }
+
+        guard NSApp.delegateTyped.internalUserDecider.isInternalUser else { return }
+        if !menu.items.isEmpty {
+            menu.addItem(.separator())
+        }
+        let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
+        item.target = self
+        menu.addItem(item)
+    }
+}
+
+private extension NSView {
+    /// The menu of the nearest ancestor that has one.
+    var enclosingMenu: NSMenu? {
+        var view = superview
+        while let current = view {
+            if let menu = current.menu {
+                return menu
+            }
+            view = current.superview
+        }
+        return nil
     }
 }

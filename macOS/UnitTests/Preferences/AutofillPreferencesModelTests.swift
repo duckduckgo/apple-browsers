@@ -121,4 +121,29 @@ final class AutofillPreferencesModelTests: XCTestCase {
         XCTAssertNotEqual(model.autoLockThreshold, .oneHour)
         XCTAssertEqual(persistor.autoLockThreshold, model.autoLockThreshold)
     }
+
+    @MainActor
+    func testWhenDuckDuckGoIsThePasswordManagerThenActivePromoIsShown() throws {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = try AutofillPreferencesModel(persistor: AutofillPreferencesPersistorMock(), userAuthenticator: UserAuthenticatorMock(),
+                                                 neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
+        XCTAssertFalse(model.showSyncPromo)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertTrue(model.showSyncPromo)
+    }
+
+    @MainActor
+    func testWhenBitwardenIsThePasswordManagerThenActivePromoIsNotShown() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.passwordManager = .bitwarden
+        let syncPromoManager = MockSyncPromoManager()
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
+                                                 neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
+
+        XCTAssertFalse(model.showSyncPromo)
+    }
 }

@@ -135,3 +135,4 @@
 
 /* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
 "sitePermissions.voice-search.settings-reminder.body" = "Ak chceš používať naše súkromné hlasové funkcie, je potrebné udeliť povolenia pre mikrofón.";
+

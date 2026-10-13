@@ -296,6 +296,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowScan)
+        XCTAssertEqual(mockFreemiumDBPPresenter.lastEntryPoint, .appMenuPreScan)
     }
 
     @MainActor
@@ -317,6 +318,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowResults)
+        XCTAssertEqual(mockFreemiumDBPPresenter.lastEntryPoint, .appMenuPostScan)
     }
 
     @MainActor
@@ -671,7 +673,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .bookmarks,
             .anyHistoryPane,
             .onboarding,
-            .dataBrokerProtection
+            .dataBrokerProtection(.subscribed)
         ]
         for tabContent in tabContentsNotSupportingFindInPage {
             let tab = Tab(content: tabContent)
@@ -1049,9 +1051,12 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 
 final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
     var didCallShowFreemium = false
+    var lastEntryPoint: FreemiumDBPEntryPoint?
 
-    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(entryPoint: FreemiumDBPEntryPoint,
+                                        windowControllersManager: WindowControllersManagerProtocol? = nil) {
         didCallShowFreemium = true
+        lastEntryPoint = entryPoint
     }
 }
 

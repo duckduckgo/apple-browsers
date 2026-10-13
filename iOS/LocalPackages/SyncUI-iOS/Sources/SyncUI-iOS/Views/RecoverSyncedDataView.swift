@@ -54,7 +54,7 @@ public struct RecoverSyncedDataView: View {
             } foregroundContent: {
                 Button {
                     model.delegate?.fireSyncSetupPixel(event: .recoveryConfirmedTapped)
-                    model.continueRecoverFlow()
+                    Task { await model.continueRecoverFlow() }
                 } label: {
                     Text(UserText.recoverSyncedDataButton)
                 }
@@ -76,6 +76,7 @@ public struct RecoverSyncedDataView: View {
         .onAppear {
             model.autoRestoreManualRecoveryShown()
         }
+        .syncPasscodeRequiredAlert(isPresented: $model.shouldShowPasscodeRequiredAlert)
         .background(
             GeometryReader { geometry in
                 Color.clear

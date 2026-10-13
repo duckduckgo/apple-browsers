@@ -85,6 +85,7 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     case thisDeviceDetailsTurnOffSyncTapped
     case otherDeviceDetailsScreenShown
     case otherDeviceDetailsRemoveDeviceTapped
+    case otherDeviceDetailsRemoveDeviceConfirmed
 
     var name: String {
         switch self {
@@ -108,6 +109,7 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
         case .thisDeviceDetailsTurnOffSyncTapped: return "sync_settings_this_device_details_turn_off_sync_tapped_mac"
         case .otherDeviceDetailsScreenShown: return "sync_settings_other_device_details_screen_shown_mac"
         case .otherDeviceDetailsRemoveDeviceTapped: return "sync_settings_other_device_details_remove_device_tapped_mac"
+        case .otherDeviceDetailsRemoveDeviceConfirmed: return "sync_settings_other_device_details_remove_device_confirmed_mac"
         }
     }
 
@@ -203,6 +205,7 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
         static let linking = "linking"
         static let v1 = "v1"
         static let v2 = "v2"
+        static let v2Point1 = "v2.1"
         static let alreadyPaired = "already_paired"
         static let scanningCancelled = "scanning_cancelled"
         static let syncConfirmationDenied = "sync_confirmation_denied"
@@ -378,6 +381,27 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
             return [.pixelSource]
         }
     }
+}
+
+struct SyncJoinReportPixel: PixelKit.Event {
+    let report: PairingV2JoinReport
+
+    var name: String {
+        let outcome = report.didSucceed ? "success" : "failed"
+        return "sync_setup_joiner_recovery_code_done_\(outcome)_mac"
+    }
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var parameters: [String: String]? {
+        ["host_has_account": String(report.hostHasAccount),
+         "host_kind": report.hostKind.rawValue,
+         "joiner_has_account": String(report.joinerHasAccount),
+         "joiner_kind": report.joinerKind.rawValue,
+         "protocol_version": report.protocolVersion]
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
 
 private extension SyncSetupSource {

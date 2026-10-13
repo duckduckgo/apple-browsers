@@ -37,6 +37,14 @@ private enum ChromeExtensionIdentity {
     static let identifierHashByteCount = 16
 }
 
+/// Why an extension can't present a Chrome origin to a native messaging host.
+public enum ChromeExtensionOriginError: Error, Equatable {
+
+    /// The manifest `key` names a different extension than the Web Store package the extension
+    /// was installed from.
+    case manifestKeyMismatch(manifestOrigin: String, webStoreOrigin: String)
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 extension WKWebExtension {
 
@@ -84,5 +92,24 @@ extension WKWebExtension {
     public var chromeExtensionOrigin: String? {
         guard let chromeExtensionIdentifier else { return nil }
         return "\(ChromeExtensionIdentity.extensionScheme)://\(chromeExtensionIdentifier)/"
+    }
+
+    /// The Chrome origin to present to a native messaging host, given the Web Store identifier
+    /// the extension was installed with, if any.
+    ///
+    /// Any extension can copy another's manifest `key`, but a Web Store identifier was checked
+    /// against the package signatures at install. So a Web Store install presents that identifier,
+    /// and one whose manifest `key` names a different extension is refused. Other installs fall
+    /// back to the manifest `key`, as Chrome does for unpacked extensions.
+    ///
+    /// Returns `nil` when the extension has neither.
+    public func chromeOrigin(webStoreIdentifier: String?) throws -> String? {
+        guard let webStoreIdentifier else { return chromeExtensionOrigin }
+
+        let webStoreOrigin = "\(ChromeExtensionIdentity.extensionScheme)://\(webStoreIdentifier)/"
+        if let manifestOrigin = chromeExtensionOrigin, manifestOrigin != webStoreOrigin {
+            throw ChromeExtensionOriginError.manifestKeyMismatch(manifestOrigin: manifestOrigin, webStoreOrigin: webStoreOrigin)
+        }
+        return webStoreOrigin
     }
 }

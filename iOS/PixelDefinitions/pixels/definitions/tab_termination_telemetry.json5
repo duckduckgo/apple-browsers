@@ -121,7 +121,7 @@
         ]
     },
     "web-content_unresponsive": {
-        "description": "Fires when WebKit reports that a tab's web content process stopped responding (private WKNavigationDelegate callback _webViewWebProcessDidBecomeUnresponsive:), e.g. a JavaScript busy loop or a long layout. Detects pages that are alive but hung.",
+        "description": "Fires when WebKit reports that a tab's web content process stopped responding (private WKNavigationDelegate callback _webViewWebProcessDidBecomeUnresponsive:), e.g. a JavaScript busy loop or a long layout. Detects pages that are alive but hung. WebKit only checks after a reload or navigation, so this counts freezes the user tried to get out of. The yes/no context tells whether our own pages, scripts or desktop mode are involved; web-content_unresponsive-result reports how the freeze ended.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -130,6 +130,109 @@
             {
                 "key": "app_state",
                 "description": "App state when WebKit reported the hang",
+                "enum": ["foreground", "background"]
+            },
+            {
+                "key": "surface",
+                "description": "search: DuckDuckGo search results. duckai: Duck.ai. other: any other page",
+                "enum": ["search", "duckai", "other"]
+            },
+            {
+                "key": "loading",
+                "description": "Whether the page was still loading",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "desktop_mode",
+                "description": "Whether the tab requested the desktop site",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "protections",
+                "description": "Whether privacy protections were enabled for the site",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "web_extension",
+                "description": "Whether a web extension was loaded (iOS 18.4 and later)",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "web-content_unresponsive-result": {
+        "description": "Fires once per web-content_unresponsive when the freeze ends: the process answers again (recovered), the tab is closed, evicted or burned (closed), the process dies (terminated), or the app exited during the freeze and the next launch reports it (app-ended). Duration is the time since WebKit reported the hang, which is about 3 seconds after the page stopped answering; for app-ended it runs until the app went to the background, or is unknown if it never did. Attempts counts the reloads and navigations the user tried after the hang was reported. The page context is the same as on web-content_unresponsive, as recorded when the hang was reported.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "description": "How the freeze ended",
+                "enum": ["recovered", "closed", "terminated", "app-ended"]
+            },
+            {
+                "key": "duration",
+                "description": "Seconds from WebKit reporting the hang to the freeze ending",
+                "enum": ["0-2", "2-5", "5-15", "15-30", "30-60", "60-plus", "unknown"]
+            },
+            {
+                "key": "attempts",
+                "description": "Reloads and navigations the user tried while the page was frozen",
+                "enum": ["0", "1", "2", "3-5", "6-plus"]
+            },
+            {
+                "key": "app_state",
+                "description": "App state when the freeze ended",
+                "enum": ["foreground", "background"]
+            },
+            {
+                "key": "surface",
+                "description": "search: DuckDuckGo search results. duckai: Duck.ai. other: any other page",
+                "enum": ["search", "duckai", "other"]
+            },
+            {
+                "key": "loading",
+                "description": "Whether the page was still loading",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "desktop_mode",
+                "description": "Whether the tab requested the desktop site",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "protections",
+                "description": "Whether privacy protections were enabled for the site",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "web_extension",
+                "description": "Whether a web extension was loaded (iOS 18.4 and later)",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "web-content_preview-snapshot-timeout": {
+        "description": "Fires when opening the tab switcher waited longer than the timeout for the current web page's preview snapshot, which a frozen page never draws. Counts users stuck on a frozen page whether or not WebKit reported it (unresponsive), including those who never reloaded. Retry tells how the fallback snapshot without waiting for screen updates ended.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "retry",
+                "description": "image: the fallback snapshot returned an image. no-image: it returned without one. timeout: it also timed out",
+                "enum": ["image", "no-image", "timeout"]
+            },
+            {
+                "key": "unresponsive",
+                "description": "Whether WebKit had already reported the page as unresponsive",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "app_state",
+                "description": "App state when the snapshot timed out",
                 "enum": ["foreground", "background"]
             }
         ]

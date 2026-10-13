@@ -855,6 +855,7 @@ class TabViewController: UIViewController {
     private let pixelFiring: (any PixelKitFiring)?
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
     private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
+    private lazy var freezeMonitor = WebContentFreezeMonitor(pixelFiring: pixelFiring, featureFlagger: featureFlagger)
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -1724,6 +1725,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1996,6 +1998,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -2014,6 +2017,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -2088,6 +2092,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -3082,9 +3087,21 @@ extension TabViewController: WKNavigationDelegate {
             }
 
             // The retry doesn't wait for the page to draw, which a frozen page never does.
-            let attempts = [snapshot(afterScreenUpdates: true), snapshot(afterScreenUpdates: false)]
-            WebViewPreviewSnapshotPolicy.capture(attempts: attempts,
-                                                 completion: completion)
+            var retry: WebContentHealthPixel.SnapshotRetry?
+            let retrySnapshot = snapshot(afterScreenUpdates: false)
+            let attempts = [snapshot(afterScreenUpdates: true), { finish in
+                retry = .timeout
+                retrySnapshot { image in
+                    retry = image == nil ? .noImage : .image
+                    finish(image)
+                }
+            }]
+            WebViewPreviewSnapshotPolicy.capture(attempts: attempts) { [weak self] image in
+                if let retry {
+                    self?.freezeMonitor.previewSnapshotTimedOut(retry: retry)
+                }
+                completion(image)
+            }
         }
     }
 
@@ -4717,6 +4734,7 @@ extension TabViewController: WKUIDelegate {
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()
+        freezeMonitor.end(.terminated)
 
         if webView === self.webView {
             cancelWebExtensionNavigationWait()
@@ -4761,8 +4779,25 @@ extension TabViewController: WKUIDelegate {
     // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
     @objc(_webViewWebProcessDidBecomeUnresponsive:)
     func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
-        let appState = UIApplication.shared.applicationState == .background ? "background" : "foreground"
-        pixelFiring?.fire(WebContentHealthPixel.unresponsive(appState: appState), frequency: .dailyAndCount)
+        freezeMonitor.didBecomeUnresponsive(freezePageContext)
+    }
+
+    @objc(_webViewWebProcessDidBecomeResponsive:)
+    func webViewWebProcessDidBecomeResponsive(_ webView: WKWebView) {
+        freezeMonitor.end(.recovered)
+    }
+
+    private var freezePageContext: WebContentHealthPixel.PageContext {
+        let url = webView.url
+        var hasWebExtension = false
+        if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+            hasWebExtension = !webExtensionManager.loadedExtensions.isEmpty
+        }
+        return .init(surface: .init(url: url),
+                     isLoading: isLoading,
+                     isDesktopMode: tabModel.isDesktop,
+                     isProtected: privacyConfigurationManager.privacyConfig.isProtected(domain: url?.host),
+                     hasWebExtension: hasWebExtension)
     }
     
     func webView(_ webView: WKWebView,

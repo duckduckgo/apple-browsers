@@ -238,9 +238,183 @@ final class TabTerminationTelemetryTests: XCTestCase {
     }
 
     func testUnresponsivePixelNameAndParameters() {
-        let pixel = WebContentHealthPixel.unresponsive(appState: "foreground")
+        let context = WebContentHealthPixel.PageContext(surface: .search, isLoading: true, isDesktopMode: false, isProtected: true, hasWebExtension: false)
+        let pixel = WebContentHealthPixel.unresponsive(context: context, appState: "foreground")
         XCTAssertEqual(pixel.name, "web-content_unresponsive")
-        XCTAssertEqual(pixel.parameters, ["app_state": "foreground"])
+        XCTAssertEqual(pixel.parameters, ["app_state": "foreground",
+                                          "surface": "search",
+                                          "loading": "true",
+                                          "desktop_mode": "false",
+                                          "protections": "true",
+                                          "web_extension": "false"])
+    }
+
+    // MARK: - Web content freezes
+
+    func testTabViewControllerRespondsToWebKitResponsivenessCallbacks() {
+        XCTAssertTrue(TabViewController.instancesRespond(to: Selector(("_webViewWebProcessDidBecomeUnresponsive:"))))
+        XCTAssertTrue(TabViewController.instancesRespond(to: Selector(("_webViewWebProcessDidBecomeResponsive:"))))
+    }
+
+    func testWhenFrozenPageRecoversThenDurationAndAttemptsAreReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didAttemptNavigation() // Not frozen yet, so not counted.
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.didBecomeUnresponsive(makeContext()) // Same freeze.
+        date += 1
+        monitor.didAttemptNavigation()
+        date += 6
+        monitor.didAttemptNavigation()
+        monitor.end(.recovered)
+        monitor.end(.recovered) // Nothing left to end.
+
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive", "web-content_unresponsive-result"])
+        XCTAssertEqual(pixelFiring.calls[1].event.parameters,
+                       ["outcome": "recovered", "duration": "5-15", "attempts": "2", "app_state": "foreground",
+                        "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
+        XCTAssertEqual(pixelFiring.calls.map { $0.frequency }, [.dailyAndCount, .dailyAndCount])
+        XCTAssertFalse(monitor.isFrozen)
+    }
+
+    func testWhenProcessTerminatesDuringFreezeThenOutcomeIsTerminated() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, applicationState: .background)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.end(.terminated)
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters,
+                       ["outcome": "terminated", "duration": "0-2", "attempts": "0", "app_state": "background",
+                        "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
+    }
+
+    func testWhenFrozenTabIsReleasedThenOutcomeIsClosedAndRecordIsCleared() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let store = MockKeyValueStore()
+        var monitor: WebContentFreezeMonitor? = makeFreezeMonitor(pixelFiring: pixelFiring, store: store)
+
+        monitor?.didBecomeUnresponsive(makeContext())
+        XCTAssertNotNil(store.object(forKey: "web-content-freeze.start-date"))
+        date += 3
+        monitor = nil
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["outcome"], "closed")
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["duration"], "2-5")
+        XCTAssertNil(store.object(forKey: "web-content-freeze.start-date"))
+    }
+
+    func testWhenTelemetryIsDisabledThenFreezesAreNotReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(featureEnabled: false, pixelFiring: pixelFiring)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.didAttemptNavigation()
+        monitor.previewSnapshotTimedOut(retry: .timeout)
+        monitor.end(.recovered)
+
+        XCTAssertTrue(pixelFiring.calls.isEmpty)
+        XCTAssertFalse(monitor.isFrozen)
+    }
+
+    func testWhenAppExitsInBackgroundDuringFreezeThenNextLaunchReportsItWithDurationUntilBackground() {
+        let store = MockKeyValueStore()
+        let notificationCenter = NotificationCenter()
+        let monitor = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store, notificationCenter: notificationCenter)
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.didAttemptNavigation()
+        date += 20
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        date += 100
+
+        let launchPixelFiring = MockTabTerminationPixelFiring()
+        let report = { WebContentFreezeMonitor.reportFreezeEndedWithApp(record: .init(store: store),
+                                                                        pixelFiring: launchPixelFiring,
+                                                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabTerminationTelemetry])) }
+        report()
+        report() // Already reported.
+
+        XCTAssertEqual(launchPixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive-result"])
+        XCTAssertEqual(launchPixelFiring.calls[0].event.parameters,
+                       ["outcome": "app-ended", "duration": "15-30", "attempts": "1", "app_state": "background",
+                        "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
+    }
+
+    func testWhenAppExitsInForegroundDuringFreezeThenNextLaunchReportsUnknownDuration() {
+        let store = MockKeyValueStore()
+        let notificationCenter = NotificationCenter()
+        let monitor = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store, notificationCenter: notificationCenter)
+        monitor.didBecomeUnresponsive(makeContext())
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        let launchPixelFiring = MockTabTerminationPixelFiring()
+        WebContentFreezeMonitor.reportFreezeEndedWithApp(record: .init(store: store),
+                                                         pixelFiring: launchPixelFiring,
+                                                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabTerminationTelemetry]))
+
+        XCTAssertEqual(launchPixelFiring.calls.last?.event.parameters,
+                       ["outcome": "app-ended", "duration": "unknown", "attempts": "0", "app_state": "foreground",
+                        "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
+    }
+
+    func testWhenNoFreezeWasInterruptedThenLaunchReportsNothing() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        WebContentFreezeMonitor.reportFreezeEndedWithApp(record: .init(store: MockKeyValueStore()),
+                                                         pixelFiring: pixelFiring,
+                                                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabTerminationTelemetry]))
+        XCTAssertTrue(pixelFiring.calls.isEmpty)
+    }
+
+    func testWhenPreviewSnapshotTimesOutThenRetryResultAndFreezeStateAreReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.previewSnapshotTimedOut(retry: .timeout)
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.previewSnapshotTimedOut(retry: .image)
+
+        let calls = pixelFiring.calls.filter { $0.event.name == "web-content_preview-snapshot-timeout" }
+        XCTAssertEqual(calls.map { $0.event.parameters },
+                       [["retry": "timeout", "unresponsive": "false", "app_state": "foreground"],
+                        ["retry": "image", "unresponsive": "true", "app_state": "foreground"]])
+        XCTAssertEqual(calls.map { $0.frequency }, [.dailyAndCount, .dailyAndCount])
+    }
+
+    func testFreezeDurationBuckets() {
+        let buckets = [0, 1.9, 2, 4.9, 5, 14.9, 15, 29.9, 30, 59.9, 60, 3600].map { WebContentFreezeMonitor.DurationBucket(seconds: $0).rawValue }
+        XCTAssertEqual(buckets, ["0-2", "0-2", "2-5", "2-5", "5-15", "5-15", "15-30", "15-30", "30-60", "30-60", "60-plus", "60-plus"])
+    }
+
+    func testFreezeAttemptsBuckets() {
+        let buckets = [0, 1, 2, 3, 5, 6, 40].map { WebContentFreezeMonitor.AttemptsBucket($0).rawValue }
+        XCTAssertEqual(buckets, ["0", "1", "2", "3-5", "3-5", "6-plus", "6-plus"])
+    }
+
+    func testSurfaceIsDerivedFromURL() {
+        XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duckduckgo.com/?q=test")), .search)
+        XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duckduckgo.com/?q=test&ia=chat&duckai=1")), .duckai)
+        XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duck.ai/")), .duckai)
+        XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://example.com/")), .other)
+        XCTAssertEqual(WebContentHealthPixel.Surface(url: nil), .other)
+    }
+
+    private func makeFreezeMonitor(featureEnabled: Bool = true,
+                                   pixelFiring: MockTabTerminationPixelFiring,
+                                   store: KeyValueStoring = MockKeyValueStore(),
+                                   applicationState: UIApplication.State = .active,
+                                   notificationCenter: NotificationCenter = NotificationCenter()) -> WebContentFreezeMonitor {
+        WebContentFreezeMonitor(pixelFiring: pixelFiring,
+                                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.tabTerminationTelemetry] : []),
+                                record: .init(store: store),
+                                applicationState: { applicationState },
+                                notificationCenter: notificationCenter,
+                                date: { self.date })
+    }
+
+    private func makeContext() -> WebContentHealthPixel.PageContext {
+        .init(surface: .other, isLoading: false, isDesktopMode: false, isProtected: true, hasWebExtension: false)
     }
 
     private func makeTelemetry(featureEnabled: Bool = true,

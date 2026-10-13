@@ -3142,6 +3142,26 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(delegate.requestsVoiceSessionCalled)
         XCTAssertFalse(mockTabOpener.openVoiceSessionCalled, "The host resolves the window first for this surface")
     }
+
+    // MARK: - Screenshots
+
+    func testIsOmnibarScreenshotEnabledFollowsTheFlag() throws {
+        guard AIChatScreenshotCaptureService.isAvailable else { throw XCTSkip("Needs macOS 14") }
+        XCTAssertFalse(controller.isOmnibarScreenshotEnabled)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatTabAttachmentLimit, .aiChatOmnibarScreenshot]
+        XCTAssertTrue(controller.isOmnibarScreenshotEnabled)
+    }
+
+    /// A screenshot that lands after the cap filled up mid-capture is refused, not added past the display cap.
+    func testAddImageAttachmentRefusesAtDisplayCap() {
+        for _ in 0..<controller.imageAttachmentsDisplayCap {
+            XCTAssertTrue(controller.addImageAttachmentToActiveTab(makeAttachment()))
+        }
+
+        XCTAssertFalse(controller.addImageAttachmentToActiveTab(makeAttachment()))
+        XCTAssertEqual(controller.activeImageAttachments.count, controller.imageAttachmentsDisplayCap)
+    }
 }
 
 @MainActor

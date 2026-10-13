@@ -4952,6 +4952,8 @@
 		FB07BAE10000000000000003 /* NSRangeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE10000000000000001 /* NSRangeExtension.swift */; };
 		FB07BAE20000000000000002 /* DuckAIPromptPixelFiringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */; };
 		FB07BAE20000000000000003 /* DuckAIPromptPixelFiringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */; };
+		95A15E674A32F1E116919030 /* AIChatScreenshotCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE614AA0383E5E55E43218C /* AIChatScreenshotCaptureTests.swift */; };
+		F9479BEFA264968C844D0B60 /* AIChatScreenshotCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE614AA0383E5E55E43218C /* AIChatScreenshotCaptureTests.swift */; };
 		FB0C0800000000000000CE02 /* PageContextExtractionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0C0800000000000000CE01 /* PageContextExtractionPixelHandler.swift */; };
 		FB0C0800000000000000CE03 /* PageContextExtractionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0C0800000000000000CE01 /* PageContextExtractionPixelHandler.swift */; };
 		FB0C0800000000000000CE05 /* PageContextExtractionPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0C0800000000000000CE04 /* PageContextExtractionPixelHandlerTests.swift */; };
@@ -7594,6 +7596,7 @@
 		FB07BAD20000000000000405 /* AIChatOmnibarDuckAILogoLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarDuckAILogoLayoutTests.swift; sourceTree = "<group>"; };
 		FB07BAE10000000000000001 /* NSRangeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSRangeExtension.swift; sourceTree = "<group>"; };
 		FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptPixelFiringTests.swift; sourceTree = "<group>"; };
+		EAE614AA0383E5E55E43218C /* AIChatScreenshotCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotCaptureTests.swift; sourceTree = "<group>"; };
 		FB0C0800000000000000CE01 /* PageContextExtractionPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContextExtractionPixelHandler.swift; sourceTree = "<group>"; };
 		FB0C0800000000000000CE04 /* PageContextExtractionPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContextExtractionPixelHandlerTests.swift; sourceTree = "<group>"; };
 		FB1380633D7A4C9CA3AD18CD /* AutoplayPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPreferencesTests.swift; sourceTree = "<group>"; };
@@ -8626,6 +8629,7 @@
 				7BAA26BE7A6F97E8A5F4692F /* DuckAiUsageWarningPixelTests.swift */,
 				FB07BAD20000000000000405 /* AIChatOmnibarDuckAILogoLayoutTests.swift */,
 				FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */,
+				EAE614AA0383E5E55E43218C /* AIChatScreenshotCaptureTests.swift */,
 				BB027E8B2FBB4D3A009B4FE4 /* DuckAiVoiceChatShieldScopeTests.swift */,
 				BBC277902FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift */,
 				BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */,
@@ -17260,6 +17264,7 @@
 				49A10CDD2CD3A472F861351E /* DuckAiUsageWarningPixelTests.swift in Sources */,
 				FB07BAD20000000000000505 /* AIChatOmnibarDuckAILogoLayoutTests.swift in Sources */,
 				FB07BAE20000000000000002 /* DuckAIPromptPixelFiringTests.swift in Sources */,
+				95A15E674A32F1E116919030 /* AIChatScreenshotCaptureTests.swift in Sources */,
 				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */,
 				FB07BAD10000000000000020 /* PromptBarCoordinatorTests.swift in Sources */,
 				FB07BAD1000000000000001D /* PromptBarPlacementTests.swift in Sources */,
@@ -19700,6 +19705,7 @@
 				BB12AF2B7F40A5B073A0BF34 /* DuckAiUsageWarningPixelTests.swift in Sources */,
 				FB07BAD20000000000000605 /* AIChatOmnibarDuckAILogoLayoutTests.swift in Sources */,
 				FB07BAE20000000000000003 /* DuckAIPromptPixelFiringTests.swift in Sources */,
+				F9479BEFA264968C844D0B60 /* AIChatScreenshotCaptureTests.swift in Sources */,
 				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */,
 				FB07BAD1000000000000001F /* PromptBarCoordinatorTests.swift in Sources */,
 				FB07BAD1000000000000001C /* PromptBarPlacementTests.swift in Sources */,

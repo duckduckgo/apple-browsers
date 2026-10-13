@@ -5168,15 +5168,17 @@ extension MainViewController: BrowserChromeDelegate {
                 percent,
                 fullTraversalDuration: animationDuration.map(Double.init),
                 onProgress: { [weak self] progress in
-                    guard let self, let view = self.viewIfLoaded, view.window != nil else { return }
+                    guard let self, self.viewIfLoaded?.window != nil else { return }
+                    // Constraint changes schedule their own layout. Alpha and capsule-frame
+                    // changes need no root layout pass; UIKit can coalesce the remaining work.
                     self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
-                    view.layoutIfNeeded()
                 },
                 onComplete: { [weak self] in
                     guard let self, let view = self.viewIfLoaded, view.window != nil else { return }
                     let settled = self.lastChromeVisibilityPercent
-                    self.applyBarsVisibilityState(settled, postChromeVisibilityNotification: settled == 0 || settled == 1)
+                    // onProgress already applied the endpoint, including WebKit's final insets.
                     view.layoutIfNeeded()
+                    self.postChromeVisibilityNotification(for: settled)
                 })
         } else if animated {
             chromeMorphAnimator.jump(to: percent)
@@ -5252,12 +5254,17 @@ extension MainViewController: BrowserChromeDelegate {
         updateFloatingDomainCapsuleVisibility(for: percent)
 
         if postChromeVisibilityNotification {
-            NotificationCenter.default.post(
-                name: .browserChromeVisibilityChanged,
-                object: nil,
-                userInfo: ["isHidden": percent == 0]
-            )
+            self.postChromeVisibilityNotification(for: percent)
         }
+    }
+
+    private func postChromeVisibilityNotification(for percent: CGFloat) {
+        guard percent == 0 || percent == 1 else { return }
+        NotificationCenter.default.post(
+            name: .browserChromeVisibilityChanged,
+            object: nil,
+            userInfo: ["isHidden": percent == 0]
+        )
     }
 
     func setNavigationBarHidden(_ hidden: Bool) {
@@ -7677,7 +7684,6 @@ extension MainViewController: TabDelegate {
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
-        tabManager.webContentProcessDidTerminate()
 
         // Only reload current if the app is not in the background - need to ensure we reload in
         //  in inactive state in case we're coming to the foreground

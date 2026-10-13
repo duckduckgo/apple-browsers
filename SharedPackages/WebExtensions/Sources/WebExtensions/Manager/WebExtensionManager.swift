@@ -103,6 +103,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
+    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
+    let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
 
@@ -174,6 +177,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
+                nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
@@ -209,6 +213,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
+        self.nativeMessagingHandler = nativeMessagingHandler
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
 

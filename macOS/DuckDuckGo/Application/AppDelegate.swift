@@ -74,6 +74,10 @@ import VPNAppState
 import WebExtensions
 import WebKit
 
+#if !DEBUG
+// Deliberate Release-only compile error to check that a failing release build blocks the merge
+private let requiredChecksReleaseBuildFailure: Int = "not an int"
+#endif
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG

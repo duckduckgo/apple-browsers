@@ -24,3 +24,4 @@ jobs:
         uses: docker://rhysd/actionlint:latest
         with:
           args: -color -shellcheck=
+# This is a test comment to trigger all required checks

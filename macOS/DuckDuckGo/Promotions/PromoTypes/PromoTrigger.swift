@@ -46,6 +46,7 @@ enum PromoTrigger {
     /// Posted when the Add Bookmark popover or the Add/Edit Bookmark dialog opens.
     case bookmarkPanelShown
     case bookmarksBecameEmpty
+    case passwordsPanelEmptyStateShown
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -69,7 +70,8 @@ enum PromoTrigger {
                 publisher(for: .autofillSettingsOpened, trigger: .autofillSettingsOpened),
                 publisher(for: .bookmarksBarShown, trigger: .bookmarksBarShown),
                 publisher(for: .bookmarkPanelShown, trigger: .bookmarkPanelShown),
-                publisher(for: .bookmarksBecameEmpty, trigger: .bookmarksBecameEmpty)
+                publisher(for: .bookmarksBecameEmpty, trigger: .bookmarksBecameEmpty),
+                publisher(for: .passwordsPanelEmptyStateShown, trigger: .passwordsPanelEmptyStateShown)
             ]
 
             if PromoServiceFactory.includeTestPromos {
@@ -105,4 +107,5 @@ extension Notification.Name {
     static let bookmarksBarShown = Notification.Name("com.duckduckgo.app.bookmarksBarShown")
     static let bookmarkPanelShown = Notification.Name("com.duckduckgo.app.bookmarkPanelShown")
     static let bookmarksBecameEmpty = Notification.Name("com.duckduckgo.app.bookmarksBecameEmpty")
+    static let passwordsPanelEmptyStateShown = Notification.Name("com.duckduckgo.app.passwordsPanelEmptyStateShown")
 }

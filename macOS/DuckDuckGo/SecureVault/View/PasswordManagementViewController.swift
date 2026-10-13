@@ -170,6 +170,7 @@ final class PasswordManagementViewController: NSViewController {
 
     private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
     private let syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
+    private let emptyStatePromo: AutofillEmptyStatePromoPresenting = Application.appDelegate.autofillEmptyStatePromoDelegate
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
@@ -532,6 +533,13 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateTitle.attributedStringValue = NSAttributedString.make(emptyStateTitle.stringValue, lineHeight: 1.14, kern: -0.23)
 
         setUpEmptyStateMessageView()
+
+        emptyStatePromo.isPromoActivePublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.updateEmptyState(state: self?.listModel?.emptyState)
+            }
+            .store(in: &cancellables)
 
         addVaultItemButton.toolTip = UserText.addItemTooltip
         moreButton.toolTip = UserText.moreOptionsTooltip
@@ -1598,6 +1606,10 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
+        if emptyState.isHidden {
+            NotificationCenter.default.post(name: .passwordsPanelEmptyStateShown, object: nil)
+        }
+
         let passwordsAddImage: NSImage = NSImage(resource: .passwordsAdd128)
 
         switch category {
@@ -1625,8 +1637,9 @@ final class PasswordManagementViewController: NSViewController {
         if !hideMessage {
             setUpEmptyStateMessageView()
         }
+        let hideImportButton = hideImportButton || !emptyStatePromo.isPromoActive
         emptyStateImportButton.isHidden = hideImportButton
-        emptyStateSyncButton.isHidden = hideSyncButton || !syncButtonModel.shouldShowSyncButton
+        emptyStateSyncButton.isHidden = hideSyncButton || !emptyStatePromo.isPromoActive || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
 
         // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons

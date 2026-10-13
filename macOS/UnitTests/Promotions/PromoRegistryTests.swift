@@ -125,6 +125,10 @@ final class PromoRegistryTests: XCTestCase {
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,
                 recordResult: { _, _ in }
+            ),
+            autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                isAnyCategoryEmptyProvider: { true }
             )
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)

@@ -279,6 +279,10 @@ extension PromoServiceFactoryTests {
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,
                 recordResult: { _, _ in }
+            ),
+            autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                isAnyCategoryEmptyProvider: { true }
             )
         )
     }

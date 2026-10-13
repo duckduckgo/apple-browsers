@@ -246,11 +246,22 @@ enum AIChatPixel: PixelKit.Event {
 
     // MARK: - Image Attachments
 
-    /// Event Trigger: User attaches an image via the file picker in the duck.ai omnibar
-    case aiChatAddressBarImageAttached
+    /// Event Trigger: An image chip is added to the duck.ai omnibar: picked, dropped, or captured with Add Screenshot
+    case aiChatAddressBarImageAttached(source: AIChatImageAttachmentSource)
 
-    /// Event Trigger: User removes an attached image in the duck.ai omnibar
-    case aiChatAddressBarImageRemoved
+    /// Event Trigger: User removes an attached image in the duck.ai omnibar with its ×
+    case aiChatAddressBarImageRemoved(source: AIChatImageAttachmentSource)
+
+    // MARK: - Screenshot Attachments
+
+    /// Event Trigger: A screenshot from the attach menu's Add Screenshot is added to the duck.ai omnibar
+    case aiChatAddressBarScreenshotTaken(kind: AIChatScreenshotKind)
+
+    /// Event Trigger: User removes a screenshot chip from the duck.ai omnibar with its ×
+    case aiChatAddressBarScreenshotRemoved
+
+    /// Event Trigger: An Add Screenshot capture in the duck.ai omnibar failed or Screen Recording was denied. Never on cancel
+    case aiChatAddressBarScreenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: User submits a prompt that includes one or more image attachments
     case aiChatAddressBarSubmitWithImage(imageCount: Int)
@@ -730,6 +741,12 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_addressbar_image_attached"
         case .aiChatAddressBarImageRemoved:
             return "aichat_addressbar_image_removed"
+        case .aiChatAddressBarScreenshotTaken:
+            return "aichat_addressbar_screenshot_taken"
+        case .aiChatAddressBarScreenshotRemoved:
+            return "aichat_addressbar_screenshot_removed"
+        case .aiChatAddressBarScreenshotFailed:
+            return "aichat_addressbar_screenshot_failed"
         case .aiChatAddressBarSubmitWithImage:
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarSubmitWithTabs:
@@ -970,8 +987,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
                 .aiChatOnboardingFinishedToggleOff,
-                .aiChatAddressBarImageAttached,
-                .aiChatAddressBarImageRemoved,
+                .aiChatAddressBarScreenshotRemoved,
                 .aiChatAddressBarFileAttached,
                 .aiChatAddressBarFileRemoved,
                 .aiChatAddressBarAttachTabsPickerShown,
@@ -1100,6 +1116,13 @@ enum AIChatPixel: PixelKit.Event {
                 "hide_ai_images": hideAIImages ? "on" : "off",
                 "no_ai": noAI ? "true" : "false"
             ]
+        case .aiChatAddressBarImageAttached(let source),
+             .aiChatAddressBarImageRemoved(let source):
+            return ["source": source.rawValue]
+        case .aiChatAddressBarScreenshotTaken(let kind):
+            return ["kind": kind.rawValue]
+        case .aiChatAddressBarScreenshotFailed(let reason):
+            return ["reason": reason.rawValue]
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
@@ -1231,6 +1254,9 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatOnboardingFinishedToggleOff,
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
+                .aiChatAddressBarScreenshotTaken,
+                .aiChatAddressBarScreenshotRemoved,
+                .aiChatAddressBarScreenshotFailed,
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarSubmitWithTabs,
                 .aiChatAddressBarFileAttached,

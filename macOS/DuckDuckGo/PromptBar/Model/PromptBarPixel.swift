@@ -41,11 +41,20 @@ enum PromptBarPixel: PixelKit.Event {
     /// Event Trigger: User submits a prompt that includes one or more file attachments
     case submitWithFiles(fileCount: Int)
 
-    /// Event Trigger: User attaches an image via the file picker
-    case imageAttached
+    /// Event Trigger: An image chip is added: picked, dropped, or captured with Add Screenshot
+    case imageAttached(source: AIChatImageAttachmentSource)
 
-    /// Event Trigger: User removes an attached image
-    case imageRemoved
+    /// Event Trigger: User removes an attached image with its ×
+    case imageRemoved(source: AIChatImageAttachmentSource)
+
+    /// Event Trigger: A screenshot from Add Screenshot is added to the Prompt Bar
+    case screenshotTaken(kind: AIChatScreenshotKind)
+
+    /// Event Trigger: User removes a screenshot chip with its ×
+    case screenshotRemoved
+
+    /// Event Trigger: An Add Screenshot capture failed or Screen Recording was denied. Never on cancel
+    case screenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: User attaches a file (PDF etc.) via the file picker
     case fileAttached
@@ -167,6 +176,12 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_image_attached"
         case .imageRemoved:
             return "aichat_promptbar_image_removed"
+        case .screenshotTaken:
+            return "aichat_promptbar_screenshot_taken"
+        case .screenshotRemoved:
+            return "aichat_promptbar_screenshot_removed"
+        case .screenshotFailed:
+            return "aichat_promptbar_screenshot_failed"
         case .fileAttached:
             return "aichat_promptbar_file_attached"
         case .fileRemoved:
@@ -238,8 +253,7 @@ enum PromptBarPixel: PixelKit.Event {
         switch self {
         case .submitPrompt,
                 .submitURL,
-                .imageAttached,
-                .imageRemoved,
+                .screenshotRemoved,
                 .fileAttached,
                 .fileRemoved,
                 .imageGenerationActivated,
@@ -262,6 +276,12 @@ enum PromptBarPixel: PixelKit.Event {
                 .settingsMenuBarIconTurnedOff,
                 .settingsShortcutChanged:
             return nil
+        case .imageAttached(let source), .imageRemoved(let source):
+            return ["source": source.rawValue]
+        case .screenshotTaken(let kind):
+            return ["kind": kind.rawValue]
+        case .screenshotFailed(let reason):
+            return ["reason": reason.rawValue]
         case .submitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
         case .submitWithFiles(let fileCount):

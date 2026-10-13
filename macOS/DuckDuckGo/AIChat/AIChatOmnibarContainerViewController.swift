@@ -1020,7 +1020,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // of truth for the order; the carousel itself never mutates its own state.
         attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
             guard let self else { return }
-            omnibarController.pixelHandler.fire(.imageRemoved)
+            omnibarController.pixelHandler.fire(.imageRemoved(source: .file))
             self.lastAttachmentError = nil
             self.resizeTasks[id]?.cancel()
             self.resizeTasks.removeValue(forKey: id)
@@ -2282,7 +2282,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         setScreenRecordingNotice(visible: false)
-        omnibarController.pixelHandler.fire(.imageAttached)
+        omnibarController.pixelHandler.fire(.imageAttached(source: .screenshot))
         updateAttachmentsLayout()
     }
 
@@ -2379,7 +2379,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             skipResize: true
         )
         omnibarController.addImageAttachmentToActiveTab(placeholder)
-        omnibarController.pixelHandler.fire(.imageAttached)
+        omnibarController.pixelHandler.fire(.imageAttached(source: .file))
 
         resizeTasks[placeholderId] = makeResizeTask(for: url, placeholderId: placeholderId)
     }

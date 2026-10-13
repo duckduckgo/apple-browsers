@@ -100,37 +100,27 @@ private func backgroundPreview(state: SubscriptionOnboardingOrderConfirmationVie
 }
 
 #Preview("Loading — thumbs-up hidden") {
-    RebrandedPreview {
-        backgroundPreview(state: .loading)
-    }
+    backgroundPreview(state: .loading)
 }
 
 #Preview("Paid — thumbs-up always shows") {
-    RebrandedPreview {
-        backgroundPreview(state: .paid)
-    }
+    backgroundPreview(state: .paid)
 }
 
 #Preview("Enough height — thumbs-up shows low, left") {
-    RebrandedPreview {
-        // A calendar card ending well above the bottom of the screen.
-        backgroundPreview(state: .previewFreeTrial(), calendarFrame: CGRect(x: 24, y: 200, width: 342, height: 220))
-    }
+    // A calendar card ending well above the bottom of the screen.
+    backgroundPreview(state: .previewFreeTrial(), calendarFrame: CGRect(x: 24, y: 200, width: 342, height: 220))
 }
 
 #Preview("Not enough height, enough width (iPad-style)") {
-    RebrandedPreview {
-        // A narrower, centered card (as on a wide/iPad screen) that reaches close to the bottom but
-        // leaves room to its left.
-        backgroundPreview(state: .previewFreeTrial(), calendarFrame: CGRect(x: 220, y: 500, width: 354, height: 260))
-    }
+    // A narrower, centered card (as on a wide/iPad screen) that reaches close to the bottom but
+    // leaves room to its left.
+    backgroundPreview(state: .previewFreeTrial(), calendarFrame: CGRect(x: 220, y: 500, width: 354, height: 260))
 }
 
 #Preview("No room — thumbs-up hidden") {
-    RebrandedPreview {
-        // A full-width card that both reaches close to the bottom and leaves no room to its left.
-        backgroundPreview(state: .previewFreeTrial(), calendarFrame: CGRect(x: 24, y: 500, width: 342, height: 260))
-    }
+    // A full-width card that both reaches close to the bottom and leaves no room to its left.
+    backgroundPreview(state: .previewFreeTrial(), calendarFrame: CGRect(x: 24, y: 500, width: 342, height: 260))
 }
 
 #endif

@@ -24,7 +24,6 @@ import SwiftUI
 
 #if DEBUG
 import PreviewSnapshots
-import UIComponents
 #endif
 
 struct SyncSuccessView: View {
@@ -217,7 +216,6 @@ struct SyncSuccessView_Previews: PreviewProvider {
                     SyncSuccessView(model: .syncSuccessPreview(), isRecovery: true)
                 }
             }
-            .applyRebranding()
         }
     )
 }

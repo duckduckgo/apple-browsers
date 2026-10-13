@@ -231,23 +231,17 @@ private struct SubscriptionOnboardingFreeTrialCalendarCardPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingFreeTrialCalendarCardPreview()
-    }
+    SubscriptionOnboardingFreeTrialCalendarCardPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingFreeTrialCalendarCardPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingFreeTrialCalendarCardPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingFreeTrialCalendarCardPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingFreeTrialCalendarCardPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

@@ -277,7 +277,6 @@ protocol InternalFeedbackTabCounting: AnyObject {
     /// Tabs across both normal and fire mode, whether or not they are currently loaded.
     var openTabCount: Int { get }
     /// Tabs holding a live web view, which is the count that bears on memory pressure.
-    /// Matches the `activeTabCount` reported by `TabTerminationTelemetry`.
     var activeTabCount: Int { get }
 }
 
@@ -322,6 +321,18 @@ private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDevic
         return identifier.isEmpty ? nil : identifier
     }
 
+    private static func currentMemoryFootprint() -> UInt64? {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size) / 4
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        return UInt64(info.phys_footprint)
+    }
+
     private static func string(fromByteCount byteCount: Int64, countStyle: ByteCountFormatter.CountStyle) -> String {
         let formatter = ByteCountFormatter()
         formatter.countStyle = countStyle
@@ -337,7 +348,7 @@ private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDevic
             diagnostics["Active Tabs"] = String(counter.activeTabCount)
         }
 
-        if let memoryFootprint = DefaultTabTerminationTelemetry.currentMemoryFootprint() {
+        if let memoryFootprint = Self.currentMemoryFootprint() {
             let used = Self.string(fromByteCount: Int64(memoryFootprint), countStyle: .memory)
             let total = Self.string(fromByteCount: Int64(ProcessInfo.processInfo.physicalMemory), countStyle: .memory)
             diagnostics["Memory"] = "\(used) used, \(total) total"

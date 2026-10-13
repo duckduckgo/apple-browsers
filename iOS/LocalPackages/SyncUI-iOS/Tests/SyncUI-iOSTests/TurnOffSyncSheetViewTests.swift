@@ -1,8 +1,8 @@
 //
-//  NetworkProtectionTermsAndConditionsStore.swift
+//  TurnOffSyncSheetViewTests.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,16 +17,21 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
+import SnapshotTestingSupport
+import Testing
+@testable import SyncUI_iOS
 
-protocol NetworkProtectionTermsAndConditionsStore {
-    var networkProtectionWaitlistTermsAndConditionsAccepted: Bool { get set }
-}
+@MainActor
+@Suite("Turn Off Sync Sheet View Tests")
+final class TurnOffSyncSheetViewTests {
 
-struct NetworkProtectionTermsAndConditionsUserDefaultsStore: NetworkProtectionTermsAndConditionsStore {
-
-    @UserDefaultsWrapper(key: .networkProtectionWaitlistTermsAndConditionsAccepted, defaultValue: false)
-    var networkProtectionWaitlistTermsAndConditionsAccepted: Bool
-
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testTurnOffSyncSheetViewSnapshots() {
+        assertImageSnapshots(
+            TurnOffSyncSheetView_Previews.snapshots,
+            strategy: .iPhoneAllAppearances,
+            size: .sheet
+        )
+    }
 }

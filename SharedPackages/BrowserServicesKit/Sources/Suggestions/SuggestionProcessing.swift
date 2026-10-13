@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+// This is a test comment to trigger BSK required checks
 import Foundation
 import Common
 import FoundationExtensions

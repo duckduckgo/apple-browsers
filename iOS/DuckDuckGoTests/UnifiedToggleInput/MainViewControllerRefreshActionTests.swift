@@ -40,7 +40,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             coordinatorIsOmnibarSession: false,
             isAITabChatHeaderContainerHidden: true
         )
-        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .unbindInactiveNonAITab)
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .unbindInactiveNonAITab(needsLayoutRefresh: true))
     }
 
     func test_nonAITab_coordinatorActive_notOmnibarSession_refreshesNonAITab() {
@@ -158,7 +158,10 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             coordinatorIsOmnibarSession: coordinatorIsOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinatorHasSubmittedPrompt,
             isAITabChatHeaderContainerHidden: isAITabChatHeaderContainerHidden,
-            isNavigationChromeHidden: isNavigationChromeHidden
+            isNavigationChromeHidden: isNavigationChromeHidden,
+            isFloatingUIEnabled: false,
+            isRefreshingCurrentTab: false,
+            isAddressBarPositionCurrent: true
         )
     }
 }

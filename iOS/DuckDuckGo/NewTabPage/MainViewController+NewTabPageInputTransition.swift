@@ -176,8 +176,7 @@ extension MainViewController {
 
     func captureRestingNewTabPageSnapshot() {
         restingNewTabPageSnapshot = nil
-        guard let page = newTabPageViewController,
-              (page as? NewTabPageInputTransitionSource)?.canAnimateSearchInput == true else { return }
+        guard let page = newTabPageViewController, page.hasInlineSearchInput else { return }
         (page as? RedesignedNewTabPageViewController)?.finishEntranceAnimation()
         view.layoutIfNeeded()
         let bounds = page.view.bounds

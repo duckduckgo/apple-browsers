@@ -1252,7 +1252,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onAction = { [weak self] in
             guard let self else { return }
             if isShowingScreenRecordingNotice {
-                NSWorkspace.shared.open(.screenRecordingSystemSettings)
+                AIChatScreenRecordingPermission().openSystemSettings()
                 setScreenRecordingNotice(visible: false)
                 return
             }

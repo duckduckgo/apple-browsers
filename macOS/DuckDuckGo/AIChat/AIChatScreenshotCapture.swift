@@ -114,7 +114,7 @@ enum AIChatScreenshotImageProcessor {
     }
 }
 
-/// Checked before either mode, since both need Screen Recording.
+/// Drag to Select needs Screen Recording; Select Window or Display goes through the system picker and doesn't.
 struct AIChatScreenRecordingPermission {
 
     enum Decision: Equatable {
@@ -129,7 +129,15 @@ struct AIChatScreenRecordingPermission {
 
     var isGranted: () -> Bool = { CGPreflightScreenCaptureAccess() }
     var requestAccess: () -> Void = { _ = CGRequestScreenCaptureAccess() }
+    var openURL: (URL) -> Void = { NSWorkspace.shared.open($0) }
     var userDefaults: UserDefaults = .standard
+
+    /// Asks macOS first, so DuckDuckGo is listed in the Screen Recording pane even after it was removed
+    /// from it; once the user has decided, asking is a no-op.
+    func openSystemSettings() {
+        requestAccess()
+        openURL(.screenRecordingSystemSettings)
+    }
 
     func resolve() -> Decision {
         if isGranted() { return .granted }

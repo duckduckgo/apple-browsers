@@ -180,7 +180,14 @@ class SettingsLegacyViewProvider: ObservableObject {
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
-    var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
+    var keyboard: UIViewController {
+        guard AppDependencyProvider.shared.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
+            return instantiate("Keyboard", fromStoryboard: StoryboardName.settings)
+        }
+        let controller = UIHostingController(rootView: KeyboardSettingsView())
+        controller.title = UserText.settingsKeyboard
+        return controller
+    }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }
     var debug: UIViewController { instantiateDebugController() }
 

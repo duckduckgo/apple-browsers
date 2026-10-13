@@ -159,7 +159,7 @@
         ]
     },
     "aichat_duck_ai_direct_navigation_macos": {
-        "description": "Fired when a tab loads Duck.ai through a navigation the user started toward it, rather than from a Duck.ai surface: typed in the address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link from another app, or a link on a web page. A page that redirects to Duck.ai, such as a search engine's link wrapper, counts as the navigation that led to it. Not fired in the sidebar, for links from Duck.ai or duckduckgo.com, for chats the duckduckgo.com homepage hands over, for restored or reloaded loads, or again when Duck.ai redirects within itself.",
+        "description": "Fired when a tab loads Duck.ai through a navigation the user started toward it, rather than from a Duck.ai surface: typed in the address bar or picked from its suggestions, typed in the New Tab Page search box, a bookmark or favorite, a history entry, a link from another app, or a link on a web page. A page that redirects to Duck.ai, such as a search engine's link wrapper, counts as the navigation that led to it. Not fired in the sidebar, for links from Duck.ai or duckduckgo.com, for chats the duckduckgo.com homepage hands over, for restored or reloaded loads, or again when Duck.ai redirects within itself.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -169,9 +169,9 @@
             "channel",
             {
                 "key": "via",
-                "description": "How the navigation started. 'typed' includes AI bang searches; 'suggestion' is a bookmark, history or website suggestion picked in the address bar, including inline autocomplete; 'favorite' is a bookmark that is also a favorite, wherever it's opened from; 'external' is a link from another app.",
+                "description": "How the navigation started. 'typed' includes AI bang searches; 'suggestion' is a bookmark, history or website suggestion picked in the address bar, including inline autocomplete; 'favorite' is a bookmark that is also a favorite, wherever it's opened from; 'external' is a link from another app; 'new_tab_page' is a Duck.ai URL typed in, or picked from the suggestions of, the New Tab Page search box.",
                 "type": "string",
-                "enum": ["typed", "suggestion", "bookmark", "favorite", "history", "external", "link"]
+                "enum": ["typed", "suggestion", "bookmark", "favorite", "history", "external", "link", "new_tab_page"]
             },
             {
                 "key": "duckai_enabled",

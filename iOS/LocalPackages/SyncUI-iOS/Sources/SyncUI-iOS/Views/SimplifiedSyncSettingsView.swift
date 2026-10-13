@@ -68,6 +68,11 @@ public struct SimplifiedSyncSettingsView: View {
             SimplifiedConnectingSheetView(model: model)
                 .interactiveDismissDisabled()
         })
+        .sheet(isPresented: $model.isTurnOffSyncSheetVisible, onDismiss: {
+            model.turnOffSyncSheetDidDismiss()
+        }, content: {
+            TurnOffSyncSheetView(model: model)
+        })
     }
 }
 
@@ -427,7 +432,7 @@ extension SimplifiedSyncSettingsView {
                 }
             } label: {
                 HStack {
-                    deviceTypeImage(device)
+                    SyncDeviceTypeImage(device: device)
                         .foregroundColor(.primary)
                     Text(device.name)
                         .foregroundColor(.primary)
@@ -466,22 +471,6 @@ extension SimplifiedSyncSettingsView {
         Image(systemName: "chevron.forward")
             .font(Font.system(.footnote).weight(.bold))
             .foregroundColor(Color(UIColor.tertiaryLabel))
-    }
-
-    @ViewBuilder
-    func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
-        if device.isThirdParty {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceAll)
-        } else {
-            switch device.type {
-            case "desktop":
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
-            case "tablet":
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
-            default:
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
-            }
-        }
     }
 
     // MARK: Bookmarks
@@ -591,9 +580,9 @@ extension SimplifiedSyncSettingsView {
     var deleteSection: some View {
         Section {
             Button(role: .destructive) {
-                model.deleteAllData(requireAuthentication: true)
+                model.turnOffSyncTapped()
             } label: {
-                Text(UserText.simplifiedDeleteSyncDataButton)
+                Text(model.isImprovedPairingFlowEnabled ? UserText.simplifiedTurnOffSyncButton : UserText.simplifiedDeleteSyncDataButton)
             }
         }
         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))

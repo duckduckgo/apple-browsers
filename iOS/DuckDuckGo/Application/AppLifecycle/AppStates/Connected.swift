@@ -145,6 +145,7 @@ struct Connected: ConnectedHandling {
     private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
+        sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
         mainCoordinator.start()
     }

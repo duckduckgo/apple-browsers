@@ -225,9 +225,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let conversationSourceHandler: AIChatConversationSourceHandler
     private let homepageAiChatsProvider: HomepageAiChatsProvider?
 
-    /// How this document was reached when it was a direct navigation to Duck.ai; used only when no
-    /// surface stamped the chat. The navigation can commit after the chat already loaded, so a late
-    /// value is still adopted.
+    /// How this document was reached, such as a direct navigation to Duck.ai or a link from a
+    /// DuckDuckGo page; used only when no surface stamped the chat. The navigation can commit after
+    /// the chat already loaded, so a late value is still adopted.
     var directNavigationFallback: AIChatConversationSource? {
         didSet {
             if didConsumeConversationSource, conversationSource == nil {
@@ -514,12 +514,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         else { return nil }
 
         let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+        // Duck.ai linking to itself isn't a direct navigation; the chat it opens is attributed to the link.
+        let duckAILinkSource: TabContent.URLSource? = url.isDuckAIURL ? .attributedUI(.duckAILink) : nil
 
         switch openLinkParams.target {
         case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
-            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
+            windowControllersManager.show(url: url, source: duckAILinkSource ?? .switchToOpenTab, newTab: true, selected: true)
         default:
-            windowControllersManager.open(url, source: .link, target: nil, with: NSApp.currentEvent)
+            windowControllersManager.open(url, source: duckAILinkSource ?? .link, target: nil, with: NSApp.currentEvent)
         }
 
         // Fire appropriate pixel based on the name parameter

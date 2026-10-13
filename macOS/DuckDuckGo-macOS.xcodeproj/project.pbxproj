@@ -3033,6 +3033,7 @@
 		A1B2C3D42F16000000000001 /* AIChatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D32F16000000000001 /* AIChatSession.swift */; };
 		A1B2C3D52F16000000000001 /* AIChatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D32F16000000000001 /* AIChatSession.swift */; };
 		A1C2E3013B6F000100000002 /* AIChatCreateImageModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */; };
+		935AA7C8AD0C7CAEEA7BF325 /* AIChatScreenshotRegionCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */; };
 		AD04AF5568F53F0B9F25CDC7 /* AIChatScreenshotWindowPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */; };
 		AEC7006A6165D3BDACB9AE30 /* AIChatScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */; };
 		A1C2E3013B71000100000002 /* AttachmentPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */; };
@@ -3042,6 +3043,7 @@
 		90F3350976633CABE2A473BF /* DuckAiTermsOfServiceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363B9EE9C21F04D2628F00C6 /* DuckAiTermsOfServiceStore.swift */; };
 		A1C2E3013B73000100000002 /* AttachmentPrivacyDisclosurePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B73000100000001 /* AttachmentPrivacyDisclosurePixel.swift */; };
 		A1C2E3013B6F000100000003 /* AIChatCreateImageModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */; };
+		D5F051229ECCC1FAD13DB793 /* AIChatScreenshotRegionCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */; };
 		0DDCE0295D8BA457D9CAF0C6 /* AIChatScreenshotWindowPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */; };
 		A6FC911EE08DBCB2331FFD1E /* AIChatScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */; };
 		A1C2E3013B71000100000003 /* AttachmentPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */; };
@@ -6547,6 +6549,7 @@
 		A1B2C3D42E5F600700000007 /* PromoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoService.swift; sourceTree = "<group>"; };
 		A1B2C3D42E5F600800000008 /* TimedFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedFlag.swift; sourceTree = "<group>"; };
 		A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatCreateImageModelSwitchNotice.swift; sourceTree = "<group>"; };
+		35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotRegionCapturer.swift; sourceTree = "<group>"; };
 		2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotWindowPicker.swift; sourceTree = "<group>"; };
 		4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotCapture.swift; sourceTree = "<group>"; };
 		A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosure.swift; sourceTree = "<group>"; };
@@ -8430,6 +8433,7 @@
 				BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */,
 				31224EF02F9F9922008E0118 /* BurnerDuckAiStorageRegistry.swift */,
 				A1C2E3013B6F000100000001 /* AIChatCreateImageModelSwitchNotice.swift */,
+				35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */,
 				2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */,
 				4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */,
 				A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */,
@@ -16078,6 +16082,7 @@
 				C1935A1C2C88F9ED001AD72D /* SyncPromoViewModel.swift in Sources */,
 				31BFDB7A2ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */,
 				A1C2E3013B6F000100000002 /* AIChatCreateImageModelSwitchNotice.swift in Sources */,
+				935AA7C8AD0C7CAEEA7BF325 /* AIChatScreenshotRegionCapturer.swift in Sources */,
 				AD04AF5568F53F0B9F25CDC7 /* AIChatScreenshotWindowPicker.swift in Sources */,
 				AEC7006A6165D3BDACB9AE30 /* AIChatScreenshotCapture.swift in Sources */,
 				A1C2E3013B71000100000002 /* AttachmentPrivacyDisclosure.swift in Sources */,
@@ -18792,6 +18797,7 @@
 				566B73692BECBF8400FF1959 /* SyncAlertsPresenter.swift in Sources */,
 				31BFDB792ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */,
 				A1C2E3013B6F000100000003 /* AIChatCreateImageModelSwitchNotice.swift in Sources */,
+				D5F051229ECCC1FAD13DB793 /* AIChatScreenshotRegionCapturer.swift in Sources */,
 				0DDCE0295D8BA457D9CAF0C6 /* AIChatScreenshotWindowPicker.swift in Sources */,
 				A6FC911EE08DBCB2331FFD1E /* AIChatScreenshotCapture.swift in Sources */,
 				A1C2E3013B71000100000003 /* AttachmentPrivacyDisclosure.swift in Sources */,

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import BrowserServicesKit
 import Common
@@ -79,6 +80,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
     private let dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let aiChatURL: URL
+    private let aiChatTabOpener: AIChatTabOpening
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let requestValidator: any ScriptRequestValidator
 
     // Wide Event
@@ -102,6 +105,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = PixelKit.shared.map { DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS) },
                 aiChatURL: URL,
+                aiChatTabOpener: AIChatTabOpening = Application.appDelegate.aiChatTabOpener,
+                aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
                 wideEvent: WideEventManaging,
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 pendingTransactionHandler: PendingTransactionHandling,
@@ -113,6 +118,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.uiHandler = uiHandler
         self.aiChatURL = aiChatURL
+        self.aiChatTabOpener = aiChatTabOpener
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
@@ -615,7 +622,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
             PixelKit.fire(SubscriptionPixel.subscriptionWelcomeAIChat, frequency: .uniqueByName)
-            await uiHandler.showTab(with: .aiChat(aiChatURL))
+            await openPaidAIChat()
         case .unknown:
             break
         }
@@ -744,6 +751,12 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
+    }
+
+    @MainActor
+    private func openPaidAIChat() {
+        aiChatConversationSourceHandler.setData(.subscriptionPage)
+        aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
     }
 
     @MainActor

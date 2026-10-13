@@ -1212,19 +1212,27 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func test_WhenControlTextDidChange_ThenReporterMeasureAddressBarTypedInCalled() {
-        // GIVEN
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
-        window = WindowsManager.openNewWindow(with: viewModel)!
-        let textField = mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField
-        XCTAssertNotNil(textField?.onboardingDelegate)
-        let reporter = CapturingOnboardingAddressBarReporting()
-        textField?.onboardingDelegate = reporter
+        // Drain objects autoreleased during UI creation before the deallocation checks.
+        autoreleasepool {
+            defer {
+                window?.close()
+                window = nil
+            }
 
-        // WHEN
-        textField?.controlTextDidChange(.init(name: .PasswordManagerChanged))
+            // GIVEN
+            let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
+            window = WindowsManager.openNewWindow(with: viewModel)!
+            let textField = mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField
+            XCTAssertNotNil(textField?.onboardingDelegate)
+            let reporter = CapturingOnboardingAddressBarReporting()
+            textField?.onboardingDelegate = reporter
 
-        // THEN
-        XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
+            // WHEN
+            textField?.controlTextDidChange(.init(name: .PasswordManagerChanged))
+
+            // THEN
+            XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
+        }
     }
 }
 

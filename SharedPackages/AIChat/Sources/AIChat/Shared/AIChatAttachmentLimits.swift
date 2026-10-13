@@ -17,6 +17,7 @@
 //
 
 import Foundation
+// This is a test comment to trigger shared package required checks
 
 public struct AIChatAttachmentFileLimits: Decodable, Equatable {
     public let maxPerConversation: Int

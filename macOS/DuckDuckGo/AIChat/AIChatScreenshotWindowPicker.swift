@@ -39,7 +39,8 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
 
     private var continuation: CheckedContinuation<Pick, Never>?
 
-    /// Captures while the picker is still active: the pick is what may authorize the capture.
+    /// The pick doesn't authorize `SCScreenshotManager`: without Screen Recording the capture fails
+    /// with `SCStreamError.userDeclined`, so callers check the permission first.
     @MainActor
     func capture(excludingWindowIDs windowIDs: [Int]) async -> Outcome {
         let picker = SCContentSharingPicker.shared

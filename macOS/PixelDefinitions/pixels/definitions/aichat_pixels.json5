@@ -10,7 +10,7 @@
             "pixelSource",
             {
                 "key": "source",
-                "description": "What triggered the sidebar to open",
+                "description": "What triggered the sidebar to open. 'ask-about-page' and 'open-sidebar' are the same item in the tab-bar Ask Duck.ai menu: 'ask-about-page' on a web page that can be attached, 'open-sidebar' on a page that can't, such as the New Tab Page, where the item reads Open Sidebar.",
                 "type": "string",
                 "enum": [
                     "address-bar-button",
@@ -21,6 +21,7 @@
                     "attach-selection",
                     "tabbar-button",
                     "ask-about-page",
+                    "open-sidebar",
                     "main-menu-ask-about-page"
                 ]
             },

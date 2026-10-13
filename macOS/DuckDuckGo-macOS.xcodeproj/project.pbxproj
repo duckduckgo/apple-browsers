@@ -3920,12 +3920,14 @@
 		470D826707379A58EB863F27 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */; };
 		5BB2E889890B37F356D52FA5 /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */; };
 		A1C2E3013B74000100000002 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */; };
+		E39AF67DE4B634BFF9782966 /* AIChatMenuButtonPixelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1452C224DB2A93945269C654 /* AIChatMenuButtonPixelsTests.swift */; };
 		BBC277A22FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */; };
 		A1C2E3013B72000100000003 /* AttachmentPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */; };
 		1B6DCD57A72F1D27524CD7FD /* DuckAiTermsOfServiceChatsObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D53E655499DE991A5C79118 /* DuckAiTermsOfServiceChatsObserverTests.swift */; };
 		2EB8012D7E6328C4633C02F4 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */; };
 		79CC894C86D2E351DDBEABBF /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */; };
 		A1C2E3013B74000100000003 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */; };
+		81721EC2B97D441177401BDD /* AIChatMenuButtonPixelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1452C224DB2A93945269C654 /* AIChatMenuButtonPixelsTests.swift */; };
 		BBC386832DE5E6EA0004583A /* SuggestionsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */; };
 		BBC386842DE5E6EA0004583A /* SuggestionsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */; };
 		BBC7BDA92D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */; };
@@ -7106,6 +7108,7 @@
 		EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceDisclaimerTests.swift; sourceTree = "<group>"; };
 		C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceStoreTests.swift; sourceTree = "<group>"; };
 		A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosurePixelTests.swift; sourceTree = "<group>"; };
+		1452C224DB2A93945269C654 /* AIChatMenuButtonPixelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuButtonPixelsTests.swift; sourceTree = "<group>"; };
 		BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsIconsProviding.swift; sourceTree = "<group>"; };
 		BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
 		BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
@@ -8575,6 +8578,7 @@
 				EB3AB21F0EBE6195886C206C /* DuckAiTermsOfServiceDisclaimerTests.swift */,
 				C353D6F632C04D788E8847DB /* DuckAiTermsOfServiceStoreTests.swift */,
 				A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */,
+				1452C224DB2A93945269C654 /* AIChatMenuButtonPixelsTests.swift */,
 				BBF17D1F2F7B4D33004AFCF4 /* AIChatMenuTests.swift */,
 				37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */,
 				A48D5BA91CC64E616E0172CA /* AIChatSettingsStatePixelSenderTests.swift */,
@@ -17708,6 +17712,7 @@
 				470D826707379A58EB863F27 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */,
 				5BB2E889890B37F356D52FA5 /* DuckAiTermsOfServiceStoreTests.swift in Sources */,
 				A1C2E3013B74000100000002 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */,
+				E39AF67DE4B634BFF9782966 /* AIChatMenuButtonPixelsTests.swift in Sources */,
 				1D2EE7092E267D6B00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift in Sources */,
 				2D049148878D2C851AEBE85D /* NewTabPageOmnibarActionsHandlerTests.swift in Sources */,
 				8434D9572F23713000B4796F /* WarnBeforeQuitManagerTests.swift in Sources */,
@@ -20082,6 +20087,7 @@
 				2EB8012D7E6328C4633C02F4 /* DuckAiTermsOfServiceDisclaimerTests.swift in Sources */,
 				79CC894C86D2E351DDBEABBF /* DuckAiTermsOfServiceStoreTests.swift in Sources */,
 				A1C2E3013B74000100000003 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */,
+				81721EC2B97D441177401BDD /* AIChatMenuButtonPixelsTests.swift in Sources */,
 				56A054162C1C37B0007D8FAB /* CapturingOnboardingNavigation.swift in Sources */,
 				84C1007B2ECC6F3C0083AB11 /* PopupHandlingTabExtensionTests.swift in Sources */,
 				9BF66A3171D59EB4B55171ED /* AutoplayPolicyTabExtensionTests.swift in Sources */,

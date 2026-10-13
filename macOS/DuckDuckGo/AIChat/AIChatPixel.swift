@@ -1399,7 +1399,40 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
     case askAboutPage = "ask-about-page"
+    /// The tab-bar menu's sidebar item on a page that can't be attached, where it reads "Open Sidebar".
+    case openSidebar = "open-sidebar"
     case mainMenuAskAboutPage = "main-menu-ask-about-page"
+}
+
+/// The sidebar item the tab-bar Duck.ai menu offers. Resolved once per menu, so the item's title and
+/// its action can't disagree.
+enum AIChatMenuButtonSidebarEntry: String, CaseIterable {
+    case askAboutPage = "ask-about-page"
+    case openSidebar = "open-sidebar"
+    case closeSidebar = "close-sidebar"
+
+    enum Action: Equatable {
+        case open(AIChatSidebarOpenSource)
+        case close
+    }
+
+    /// A presented chat, docked or floating, can only be closed. Otherwise "Ask About Page" needs a
+    /// page to attach; without one the same item just opens the sidebar.
+    init(isChatPresented: Bool, isPageAttachable: Bool) {
+        if isChatPresented {
+            self = .closeSidebar
+        } else {
+            self = isPageAttachable ? .askAboutPage : .openSidebar
+        }
+    }
+
+    var action: Action {
+        switch self {
+        case .askAboutPage: .open(.askAboutPage)
+        case .openSidebar: .open(.openSidebar)
+        case .closeSidebar: .close
+        }
+    }
 }
 
 /// Where an entry point opened Duck.ai, as `aiChatEntryPoint` reports it.

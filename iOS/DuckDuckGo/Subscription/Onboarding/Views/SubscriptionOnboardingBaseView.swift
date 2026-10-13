@@ -35,7 +35,7 @@ private enum Metrics {
     static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
     static let sectionSpacing: CGFloat = 16
     static let footerSpacing: CGFloat = 8
-    static let footerMaxWidth: CGFloat = 480
+    static let footerMaxWidth: CGFloat = 360
     static let footerBlurFadeHeight: CGFloat = 20
 }
 

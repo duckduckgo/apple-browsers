@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let syncCredentialsAdapter: SyncCredentialsAdapter
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    weak var scanCodeNavigationController: UINavigationController?
     var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
@@ -101,6 +102,9 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
     var pairingV2JoinerCodeSource: SyncCodeSource?
+    var pairingV2ConfirmationAlert: UIAlertController?
+    var pairingV2ConfirmationContinuation: CheckedContinuation<Bool, Never>?
+    var pairingV2ConfirmationWasDismissedByController = false
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
 
@@ -591,6 +595,18 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await dismissPresentedViewController()
         viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
     }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+        guard isPresentingConnectingSheet else { return }
+        switch status {
+        case .waiting:
+            if case .waitingForOtherDevice = viewModel.connectingSheetPhase {
+                viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+            }
+        case .unknown:
+            viewModel.connectingSheetPhase = .waitingForOtherDevice
+        }
+    }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
         viewModel.$devices
@@ -639,12 +655,17 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await performDeferredPreservedAccountCleanupIfNeeded()
     }
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole, shouldPromptBeforeSwitchingAccounts: Bool) async {
+    @discardableResult
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
+                                                    setupRole: SyncSetupRole,
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow _: Bool = false) async -> Bool {
         // The connecting sheet owns the completion prompt.
         if shouldPromptBeforeSwitchingAccounts && viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
+            return false
         } else {
-            await switchAccounts(recoveryKey: recoveryKey)
+            return await switchAccounts(recoveryKey: recoveryKey)
         }
     }
     
@@ -695,6 +716,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
+            await dismissPairingV2Setup()
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey,
                 .failedToFetchConnectRecoveryKey,

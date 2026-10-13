@@ -31,6 +31,9 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerWillPerformServerSyncOperation(setupRole: SyncSetupRole) async -> Bool
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    func controllerDismissPairingV2Confirmation() async
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus)
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
@@ -38,9 +41,12 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole)
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole)
 
+    @discardableResult
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow: Bool) async -> Bool
+    func controllerDidFinishReportingAccountSwitch(didSucceed: Bool)
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
@@ -92,6 +98,7 @@ public enum SyncSetupTimeoutStage: String, Equatable {
     case waitingForPeerStatus = "waiting_for_peer_status"
     case waitingForConfirmation = "waiting_for_confirmation"
     case waitingForRecoveryCode = "waiting_for_recovery_code"
+    case waitingForJoinStatus = "waiting_for_join_status"
     case loggingIn = "logging_in"
 }
 
@@ -560,6 +567,22 @@ public class SyncConnectionController: SyncConnectionControlling {
             let completion = try await pollPairingV2UntilFinished(coordinator)
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
+        } catch SyncError.accountAlreadyExists where coordinator.supportsRecoveryCodeDone {
+            let shouldEndFlowAfterReporting = coordinator.pendingRecoveryKey != nil
+            let didSwitchAccounts = await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
+            do {
+                try await coordinator.completeAccountSwitch(didSucceed: didSwitchAccounts)
+            } catch {
+                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                if shouldEndFlowAfterReporting {
+                    await delegate?.controllerDidFinishReportingAccountSwitch(didSucceed: false)
+                }
+                return false
+            }
+            if shouldEndFlowAfterReporting {
+                await delegate?.controllerDidFinishReportingAccountSwitch(didSucceed: didSwitchAccounts)
+            }
+            return didSwitchAccounts
         } catch {
             await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
             return false
@@ -604,10 +627,19 @@ public class SyncConnectionController: SyncConnectionControlling {
             return
         }
 
+        let timeoutStage: SyncSetupTimeoutStage?
+        if let syncError = error as? SyncError, syncError == .pollingDidTimeOut {
+            timeoutStage = self.timeoutStage(for: coordinator.state)
+        } else {
+            timeoutStage = nil
+        }
+
+        await coordinator.closeAfterLocalError()
+
         if let operationFailure = error as? PairingV2OperationFailure {
             await delegate?.controllerDidError(.pairingV2OperationFailure(operationFailure.context), underlyingError: operationFailure.underlyingError, setupRole: setupRole)
         } else if let syncError = error as? SyncError {
-            await handlePairingV2SyncError(syncError, coordinator: coordinator, setupRole: setupRole)
+            await handlePairingV2SyncError(syncError, timeoutStage: timeoutStage, coordinator: coordinator, setupRole: setupRole)
         } else if let pairingV2Error = error as? PairingV2Error {
             await delegate?.controllerDidError(pairingV2ConnectionError(for: pairingV2Error), underlyingError: nil, setupRole: setupRole)
         } else if let cryptoError = error as? PairingV2MessageCryptoError {
@@ -615,16 +647,17 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else {
             await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
         }
-
-        await coordinator.cancel()
     }
 
-    private func handlePairingV2SyncError(_ error: SyncError, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+    private func handlePairingV2SyncError(_ error: SyncError,
+                                          timeoutStage: SyncSetupTimeoutStage?,
+                                          coordinator: PairingV2Coordinator,
+                                          setupRole: SyncSetupRole) async {
         switch error {
         case .pollingDidTimeOut:
-            await delegate?.controllerDidError(.pairingV2SessionTimedOut(timeoutStage: timeoutStage(for: coordinator.state)), underlyingError: nil, setupRole: setupRole)
+            await delegate?.controllerDidError(.pairingV2SessionTimedOut(timeoutStage: timeoutStage), underlyingError: nil, setupRole: setupRole)
         case .accountAlreadyExists:
-            await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
+            _ = await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
         default:
             await delegate?.controllerDidError(.transportFailure, underlyingError: error, setupRole: setupRole)
         }
@@ -643,6 +676,9 @@ public class SyncConnectionController: SyncConnectionControlling {
                 .hostSendingRecoveryCode,
                 .joinerWaitingForRecoveryCode:
             return .waitingForRecoveryCode
+        case .hostWaitingForJoinStatus,
+                .hostJoinOutcomeUnknown:
+            return .waitingForJoinStatus
         case .joinerLoggingIn:
             return .loggingIn
         case .idle,
@@ -652,14 +688,17 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func handlePairingV2AccountAlreadyExists(_ coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+    private func handlePairingV2AccountAlreadyExists(_ coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async -> Bool {
         if let recoveryKey = coordinator.pendingRecoveryKey {
-            await delegate?.controllerDidFindTwoAccountsDuringRecovery(
+            return await delegate?.controllerDidFindTwoAccountsDuringRecovery(
                 recoveryKey,
                 setupRole: setupRole,
-                shouldPromptBeforeSwitchingAccounts: false)
+                shouldPromptBeforeSwitchingAccounts: false,
+                shouldDeferEndingFlow: coordinator.supportsRecoveryCodeDone
+            ) ?? false
         } else {
             await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
+            return false
         }
     }
 
@@ -674,10 +713,16 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func pollPairingV2UntilFinished(_ coordinator: PairingV2Coordinator,
                                             onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
-        try await coordinator.pollUntilFinished(
+        var lastReportedJoinStatus: PairingV2JoinStatus?
+        return try await coordinator.pollUntilFinished(
             timeout: pairingV2PollingTimeout,
-            pollInterval: pairingV2PollIntervalNanoseconds,
-            onDidPoll: onDidPoll)
+            pollInterval: pairingV2PollIntervalNanoseconds) { state in
+            if let status = coordinator.joinStatus, status != lastReportedJoinStatus {
+                lastReportedJoinStatus = status
+                await self.delegate?.controllerDidUpdatePairingV2JoinStatus(status)
+            }
+            await onDidPoll?(state)
+        }
     }
 
     private func handlePairingV2Completion(_ completion: PairingV2State.Completion,
@@ -687,7 +732,8 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .loggedIn:
             await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [], isRecovery: false, setupRole: setupRole)
         case .recoveryCodeSent(let credentialKind):
-            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: credentialKind == .ddg)
+            let shouldWaitForDevicesToChange = credentialKind == .ddg && !coordinator.supportsRecoveryCodeDone
+            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange)
         case .alreadyConnected:
             await delegate?.controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: setupRole)
         }
@@ -695,15 +741,22 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func shouldDismissPairingV2PresenterCode(for state: PairingV2State) -> Bool {
         switch state {
-        case .waitingForPeerStatus,
-             .hostWaitingForConfirmation,
-             .hostPreparingRecoveryCode,
+        case .hostPreparingRecoveryCode,
              .hostSendingRecoveryCode,
-             .joinerWaitingForConfirmation,
+             .hostWaitingForJoinStatus,
+             .hostJoinOutcomeUnknown,
              .joinerWaitingForRecoveryCode,
-             .joinerLoggingIn:
+             .joinerLoggingIn,
+             .completed(.recoveryCodeSent),
+             .completed(.loggedIn):
             return true
-        case .idle, .waitingForPeerHello, .completed, .failed:
+        case .idle,
+             .waitingForPeerHello,
+             .waitingForPeerStatus,
+             .hostWaitingForConfirmation,
+             .joinerWaitingForConfirmation,
+             .completed(.alreadyConnected),
+             .failed:
             return false
         }
     }
@@ -877,7 +930,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             await delegate?.controllerDidFindTwoAccountsDuringRecovery(
                 recoveryKey,
                 setupRole: setupRole,
-                shouldPromptBeforeSwitchingAccounts: true)
+                shouldPromptBeforeSwitchingAccounts: true,
+                shouldDeferEndingFlow: false)
         } else {
             await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: setupRole)
         }
@@ -888,6 +942,10 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     private func makePairingV2Coordinator() -> PairingV2Coordinator {
+        let canUseExchangeV2Point1 = dependencies.syncFeatureFlags.canUseExchangeV2Point1()
+        let joinStatusDeadline = PairingV2PollingDefaults.resolvedJoinStatusDeadline(
+            from: dependencies.privacyConfigurationManager.privacyConfig.settings(for: .sync)
+        )
         return PairingV2Coordinator(
             syncService: syncService,
             messageExchanger: dependencies.createPairingV2MessageExchanger(),
@@ -895,7 +953,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             deviceType: deviceType,
             flags: PairingV2RolloutFlags(isV2ScanningEnabled: isPairingV2ScanningEnabled,
                                          isV2CodeEnabled: isPairingV2PresentationEnabled),
+            canSendExchangeChannelSecret: dependencies.syncFeatureFlags.canSendExchangeChannelSecret(),
+            advertisedVersion: canUseExchangeV2Point1 ? .v2Point1 : .v2,
             confirmationDelegate: self,
+            joinStatusDeadline: joinStatusDeadline,
             makeKeyPair: makePairingV2KeyPair
         )
     }
@@ -922,6 +983,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             return .invalidCredentials
         case .loginFailed:
             return .transportFailure
+        case .peerDisconnected:
+            return .transportFailure
+        case .peerCancelled:
+            return .syncCancelledFromOtherDevice
         case .upgradeFailed:
             return .accountUpgradeFailed
         case .nativeCredentialAlreadyPresent:
@@ -1014,7 +1079,16 @@ public extension SyncConnectionControllerDelegate {
         false
     }
 
+    func controllerDismissPairingV2Confirmation() async {
+    }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+    }
+
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
+    }
+
+    func controllerDidFinishReportingAccountSwitch(didSucceed _: Bool) {
     }
 }
 
@@ -1026,6 +1100,10 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
 
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
         await delegate?.controllerShouldJoinPairingV2Peer(peerName: peerName, peerKind: peerKind) ?? false
+    }
+
+    func pairingV2CoordinatorDismissConfirmation() async {
+        await delegate?.controllerDismissPairingV2Confirmation()
     }
 
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {

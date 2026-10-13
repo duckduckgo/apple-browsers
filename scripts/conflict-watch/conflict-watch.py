@@ -201,7 +201,7 @@ DEFAULT_ALWAYS_IGNORE = (
     "iOS/Core/PixelEvent.swift,"
     "iOS/Core/FeatureFlag.swift,"
     # Localized strings and localization bundles
-    "iOS/DuckDuckGo/UserText.swift,"
+    "iOS/DuckDuckGo/UserInterface/UserText.swift,"
     "iOS/DuckDuckGo/en.lproj/Localizable.strings,"
     # Design system asset catalog
     "SharedPackages/Infrastructure/DesignResourcesKitIcons/**,"

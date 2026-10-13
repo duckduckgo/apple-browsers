@@ -47,7 +47,7 @@ final class SettingsDeepLinkSectionTests: XCTestCase {
 
     func testIsNotOnboardingSubscriptionFlow_forNonSubscriptionFlowSections() {
         XCTAssertFalse(DeepLink.subscriptionSettings.isOnboardingSubscriptionFlow)
-        XCTAssertFalse(DeepLink.dbp.isOnboardingSubscriptionFlow)
+        XCTAssertFalse(DeepLink.dbp().isOnboardingSubscriptionFlow)
         XCTAssertFalse(DeepLink.general.isOnboardingSubscriptionFlow)
     }
 

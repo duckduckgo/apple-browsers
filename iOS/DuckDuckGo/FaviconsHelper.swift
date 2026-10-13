@@ -34,7 +34,6 @@ struct FaviconsHelper {
 
     private struct Constants {
         static let duckPlayerDomain = "player"
-        static let duckDuckGoDomain = "duckduckgo.com"
         static let duckPlayerImageName = "DuckPlayerURLIcon"
         static let duckDuckGoImageName = "duckduckgo-favicon-128x128"
     }
@@ -180,12 +179,14 @@ struct FaviconsHelper {
     }
 
     private static func customImage(for domain: String?) -> UIImage? {
-        let customFavicons: [String: String] = [
-            Constants.duckPlayerDomain: Constants.duckPlayerImageName,
-            Constants.duckDuckGoDomain: Constants.duckDuckGoImageName
-        ]
-
-        guard let domain = domain, let imageName = customFavicons[domain] else { return nil }
+        let imageName: String
+        if URL.isDuckDuckGo(domain: domain) {
+            imageName = Constants.duckDuckGoImageName
+        } else if domain == Constants.duckPlayerDomain {
+            imageName = Constants.duckPlayerImageName
+        } else {
+            return nil
+        }
 
         let image = UIImage(rebrandable: imageName)
         image?.accessibilityIdentifier = imageName

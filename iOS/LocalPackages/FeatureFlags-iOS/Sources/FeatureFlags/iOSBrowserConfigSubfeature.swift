@@ -29,6 +29,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case widgetReporting
 
+    /// Remotely control daily Duo usage reporting with delayed sending and randomized timestamps.
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
+    case iPhoneDuoLaunchReporting
+
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
@@ -54,9 +58,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
-    case tabTerminationTelemetry
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
     case tabTerminationErrorPage
@@ -147,4 +148,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
+    case fastTrackingParameterFilter
 }

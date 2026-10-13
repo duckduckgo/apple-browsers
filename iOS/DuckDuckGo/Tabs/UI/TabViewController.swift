@@ -628,7 +628,8 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents)
+                       errorReporting: Self.debugEvents,
+                       isFastTrackingParameterFilterEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.fastTrackingParameterFilter) })
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -829,6 +830,7 @@ class TabViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
+    private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -2509,7 +2511,8 @@ class TabViewController: UIViewController {
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                                      cpmExtensionLoaded: cpmExtensionLoaded,
-                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks)
+                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks,
+                                                                     pageSignals: pageSignalsMonitor.pageSignals)
     }
 
     public func print() {
@@ -2895,6 +2898,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
@@ -3379,6 +3383,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        terminationReloadMonitor.didFail(with: error)
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3433,6 +3438,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        terminationReloadMonitor.didFail(with: error)
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -4675,6 +4681,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        // Before the delegate call below, which can start the next termination reload.
+        terminationReloadMonitor.didTerminate()
+
         if webView === self.webView {
             cancelWebExtensionNavigationWait()
         }
@@ -4708,6 +4717,18 @@ extension TabViewController: WKUIDelegate {
         }
 
         delegate?.tabContentProcessDidTerminate(tab: self)
+    }
+
+    /// Call right before reloading after a web content process termination, to report how that reload ends.
+    func beginTerminationReload(_ recovery: TerminationReloadMonitor.Recovery) {
+        terminationReloadMonitor.begin(recovery)
+    }
+
+    // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
+    @objc(_webViewWebProcessDidBecomeUnresponsive:)
+    func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
+        let appState = UIApplication.shared.applicationState == .background ? "background" : "foreground"
+        pixelFiring?.fire(WebContentHealthPixel.unresponsive(appState: appState), frequency: .dailyAndCount)
     }
     
     func webView(_ webView: WKWebView,
@@ -6017,8 +6038,8 @@ private extension TabViewController {
                 preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
-                pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestore, frequency: .standard)
-                pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestoreDaily, frequency: .legacyDailyNoSuffix)
+                pixelFiring?.fire(TabInteractionStatePixel.interactionStateFailedToRestore, frequency: .standard)
+                pixelFiring?.fire(TabInteractionStatePixel.interactionStateFailedToRestoreDaily, frequency: .legacyDailyNoSuffix)
             }
 
             let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime

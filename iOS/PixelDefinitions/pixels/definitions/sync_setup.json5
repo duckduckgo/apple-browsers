@@ -575,6 +575,42 @@
             }
         ]
     },
+    "sync_turn_off_sheet_shown": {
+        "description": "Fired when the Turn Off Sync & Backup sheet is shown after the user taps 'Turn Off Sync & Backup' in Sync settings and authenticates.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_turn_off_option_selected": {
+        "description": "Fired when the user picks how to turn off Sync on the Turn Off Sync & Backup sheet, by tapping 'Remove Device' or 'Turn Off and Delete Server Data'.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "option",
+                "type": "string",
+                "description": "Which option the user chose: remove only this device, or turn off Sync for all devices and delete the server data.",
+                "enum": ["this_device", "all_devices_and_server_data"]
+            }
+        ]
+    },
+    "sync_delete_server_data_confirmation_confirmed": {
+        "description": "Fired when the user confirms 'Permanently Delete' on the final confirmation to turn off Sync and delete the server data. The result is reported by sync_disabledanddeleted.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "sync_delete_server_data_confirmation_dismissed": {
+        "description": "Fired when the user cancels the final confirmation to turn off Sync and delete the server data.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "sync_setup_deep_link_flow_started": {
         "description": "Fired when a Sync setup flow starts from a deep link.",
         "owners": ["amddg44"],

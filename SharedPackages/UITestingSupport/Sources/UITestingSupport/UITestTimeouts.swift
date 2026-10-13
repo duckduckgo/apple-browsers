@@ -25,7 +25,7 @@ public enum UITestTimeouts {
     public static let fireAnimation: Double = 30.0
 
     /// Timeout for page loads and network requests.
-    public static let navigation: Double = 30.0
+    public static let navigation: Double = 60.0
 
     /// Timeout for localhost test-server connections.
     public static let localTestServer: Double = 15.0

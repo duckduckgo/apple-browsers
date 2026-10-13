@@ -20,12 +20,12 @@ import AppKit
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 13, *)
 @Suite("Duck.ai screenshot capture")
 struct AIChatScreenshotCaptureTests {
 
     // MARK: - Image processing
 
+    @available(macOS 13, *)
     @Test("The long side is capped at 1024 px and the aspect ratio kept", .timeLimit(.minutes(1)))
     func scaledSizeCapsLongSide() {
         let wide = AIChatScreenshotImageProcessor.scaledSize(width: 2048, height: 1000)
@@ -37,6 +37,7 @@ struct AIChatScreenshotCaptureTests {
         #expect(tall.height == 1024)
     }
 
+    @available(macOS 13, *)
     @Test("A capture already within 1024 px is never upscaled", .timeLimit(.minutes(1)))
     func scaledSizeNeverUpscales() {
         let size = AIChatScreenshotImageProcessor.scaledSize(width: 800, height: 600)
@@ -44,6 +45,7 @@ struct AIChatScreenshotCaptureTests {
         #expect(size.height == 600)
     }
 
+    @available(macOS 13, *)
     @Test("A plain capture is sent as PNG at its own size", .timeLimit(.minutes(1)))
     func smallCaptureStaysPNG() throws {
         let image = try makeImage(width: 640, height: 480, noise: false)
@@ -54,6 +56,7 @@ struct AIChatScreenshotCaptureTests {
         #expect(processed.kind == .window)
     }
 
+    @available(macOS 13, *)
     @Test("A capture whose PNG exceeds 2 MiB falls back to JPEG", .timeLimit(.minutes(1)))
     func largePNGFallsBackToJPEG() throws {
         // Noise doesn't compress: 1024×1024 RGB is ~3 MB as PNG.
@@ -65,6 +68,7 @@ struct AIChatScreenshotCaptureTests {
 
     // MARK: - Region selection
 
+    @available(macOS 13, *)
     @Test("A drag past the screen edge is clamped to the screen it started on", .timeLimit(.minutes(1)))
     func regionRectClampsToBounds() throws {
         let bounds = CGRect(x: 0, y: 0, width: 1440, height: 900)
@@ -72,12 +76,14 @@ struct AIChatScreenshotCaptureTests {
         #expect(rect == CGRect(x: 100, y: 0, width: 1340, height: 100))
     }
 
+    @available(macOS 13, *)
     @Test("A drag smaller than 4 pt is a click, not a selection", .timeLimit(.minutes(1)))
     func tinyDragIsNotASelection() {
         let bounds = CGRect(x: 0, y: 0, width: 1440, height: 900)
         #expect(AIChatRegionSelection.rect(from: CGPoint(x: 10, y: 10), to: CGPoint(x: 13, y: 40), in: bounds) == nil)
     }
 
+    @available(macOS 13, *)
     @Test("At 2× the crop is the selection in pixels, flipped to a top-left origin", .timeLimit(.minutes(1)))
     func pixelRectAt2x() {
         let pixels = AIChatRegionSelection.pixelRect(for: CGRect(x: 10, y: 20, width: 100, height: 50),
@@ -87,6 +93,7 @@ struct AIChatScreenshotCaptureTests {
         #expect(pixels == CGRect(x: 20, y: 1660, width: 200, height: 100))
     }
 
+    @available(macOS 13, *)
     @Test("At a scaled 1.5× display the crop still matches the selection", .timeLimit(.minutes(1)))
     func pixelRectAtFractionalScale() {
         let pixels = AIChatRegionSelection.pixelRect(for: CGRect(x: 10, y: 10, width: 100, height: 100),
@@ -98,6 +105,7 @@ struct AIChatScreenshotCaptureTests {
 
     // MARK: - Screen Recording permission
 
+    @available(macOS 13, *)
     @Test("The system prompt is raised once; every later denial shows the explainer", .timeLimit(.minutes(1)))
     func permissionPromptsOnceThenExplains() throws {
         let defaults = try #require(UserDefaults(suiteName: "AIChatScreenshotCaptureTests.\(UUID().uuidString)"))
@@ -110,6 +118,7 @@ struct AIChatScreenshotCaptureTests {
         #expect(requests == 1)
     }
 
+    @available(macOS 13, *)
     @Test("Open System Settings asks macOS first, so the app is listed in the pane", .timeLimit(.minutes(1)))
     func openSystemSettingsRequestsThenOpensPane() {
         var events: [String] = []
@@ -120,6 +129,7 @@ struct AIChatScreenshotCaptureTests {
         #expect(events == ["request", URL.screenRecordingSystemSettings.absoluteString])
     }
 
+    @available(macOS 13, *)
     @Test("Granted permission never prompts", .timeLimit(.minutes(1)))
     func grantedPermissionNeverPrompts() throws {
         let defaults = try #require(UserDefaults(suiteName: "AIChatScreenshotCaptureTests.\(UUID().uuidString)"))

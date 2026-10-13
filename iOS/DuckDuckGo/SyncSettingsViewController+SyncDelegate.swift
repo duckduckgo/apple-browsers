@@ -1028,12 +1028,14 @@ private enum SyncSetupPixelInfo {
         static let ddg = "ddg"
         static let v1 = "v1"
         static let v2 = "v2"
+        static let v2Point1 = "v2.1"
     }
 }
 
 extension SyncSettingsViewController {
 
     var syncSetupPixelFlowVersion: String {
-        featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) ? SyncSetupPixelInfo.Value.v2 : SyncSetupPixelInfo.Value.v1
+        guard featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) else { return SyncSetupPixelInfo.Value.v1 }
+        return featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1) ? SyncSetupPixelInfo.Value.v2Point1 : SyncSetupPixelInfo.Value.v2
     }
 }

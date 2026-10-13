@@ -137,7 +137,7 @@
             "appVersion",
             {
                 "key": "step",
-                "description": "Last launch step the previous launch reached, in launch order",
+                "description": "Last launch step the previous launch reached, in launch order. ui-attached: the scene connected but never started entering the foreground (usually a scene connected in the background). entering-foreground: the app was coming to the foreground but never became active",
                 "enum": [
                     "launching-started",
                     "key-value-store",
@@ -148,6 +148,7 @@
                     "launched",
                     "window-connected",
                     "ui-attached",
+                    "entering-foreground",
                     "terminating"
                 ]
             }

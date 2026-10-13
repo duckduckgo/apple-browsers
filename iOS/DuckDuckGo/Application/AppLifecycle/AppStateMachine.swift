@@ -262,7 +262,7 @@ final class AppStateMachine {
             // This has been fixed on Apple side for scenes and is always called after the scene connects.
             // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
             // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
-            break
+            launchBreadcrumb.mark(.enteringForeground)
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)
@@ -372,6 +372,7 @@ struct LaunchBreadcrumb {
         case launched
         case windowConnected = "window-connected"
         case uiAttached = "ui-attached"
+        case enteringForeground = "entering-foreground"
         case terminating
     }
 

@@ -580,6 +580,21 @@ final class LaunchBreadcrumbTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Entering the foreground is recorded until the app becomes active", .timeLimit(.minutes(1)))
+    func enteringForegroundIsRecorded() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.willEnterForeground)
+
+        #expect(launchBreadcrumb.current == ["step": "entering-foreground"])
+        #expect(stateMachine.currentState.name == "connected")
+
+        stateMachine.handle(.didBecomeActive)
+
+        #expect(launchBreadcrumb.current == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A launch that reaches Background leaves no breadcrumb", .timeLimit(.minutes(1)))
     func backgroundLaunchClearsBreadcrumb() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))

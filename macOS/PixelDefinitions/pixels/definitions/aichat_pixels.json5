@@ -118,9 +118,10 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_start_new_conversation": {
-        "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
+        "description": "Fired when user submits their first prompt in a new Duck.ai conversation. The _daily copy fires once a day, for the day's first new chat, with that chat's params.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": [
             "appVersion",
             "pixelSource",

@@ -460,6 +460,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         persistor: vpnUpsellUserDefaultsPersistor
     )
 
+    lazy var bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksBarSyncPromoDelegate(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            isBookmarksBarSettingOn: { [keyValueStore] in
+                AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore).showBookmarksBar
+            },
+            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -1619,7 +1633,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
             autofillImportPromoObserver: autofillImportPromoObserver,
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
-            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager
+            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
+            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

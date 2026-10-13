@@ -50,7 +50,14 @@ enum NewTabLongPressMenu {
     }
 
     static func items(source: Source, actions: Actions, pixelFiring: PixelFiring?) -> [UIAction] {
-        var items = [
+        var items: [UIAction] = []
+        if actions.isNewChatAvailable() {
+            items.append(UIAction(title: UserText.actionNewAIChat, image: DesignSystemImages.Glyphs.Size16.aiChat) { _ in
+                pixelFiring?.fire(NewTabLongPressMenuPixel.newChat(source: source))
+                actions.onNewChat()
+            })
+        }
+        items.append(contentsOf: [
             UIAction(title: UserText.actionNewFireTab, image: DesignSystemImages.Glyphs.Size16.fireWindow) { _ in
                 pixelFiring?.fire(NewTabLongPressMenuPixel.newFireTab(source: source))
                 actions.onNewFireTab()
@@ -59,13 +66,7 @@ enum NewTabLongPressMenu {
                 pixelFiring?.fire(NewTabLongPressMenuPixel.newNormalTab(source: source))
                 actions.onNewTab()
             }
-        ]
-        if actions.isNewChatAvailable() {
-            items.append(UIAction(title: UserText.actionNewAIChat, image: DesignSystemImages.Glyphs.Size16.aiChat) { _ in
-                pixelFiring?.fire(NewTabLongPressMenuPixel.newChat(source: source))
-                actions.onNewChat()
-            })
-        }
+        ])
         return items
     }
 }

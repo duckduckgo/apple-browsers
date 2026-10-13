@@ -62,9 +62,9 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         XCTAssertEqual("99", button.text)
     }
 
-    func testWhenNewChatAvailableThenLongPressMenuEndsWithNewChat() {
+    func testWhenNewChatAvailableThenLongPressMenuStartsWithNewChat() {
         XCTAssertEqual(newTabLongPressMenuTitles(isNewChatAvailable: true),
-                       [UserText.actionNewFireTab, UserText.actionNewTab, UserText.actionNewAIChat])
+                       [UserText.actionNewAIChat, UserText.actionNewFireTab, UserText.actionNewTab])
     }
 
     func testWhenNewChatUnavailableThenLongPressMenuHasOnlyTabItems() {

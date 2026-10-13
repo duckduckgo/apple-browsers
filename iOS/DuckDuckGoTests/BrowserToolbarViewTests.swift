@@ -25,6 +25,21 @@ final class BrowserToolbarViewTests: XCTestCase {
 
     private let omnibarHeight: CGFloat = 60
 
+    func testWhenCollapsedOmnibarIsRefreshedThenExpandedButtonsBecomeVisibleAgain() throws {
+        let sut = makeSUT(embeddedOmnibar: true)
+        let button = UIView()
+        sut.setToolbarButtons([button])
+        let stack = try XCTUnwrap(button.superview as? UIStackView)
+        sut.setButtonRowCollapseProgress(1, reduceMotion: false)
+        XCTAssertEqual(stack.alpha, 0)
+
+        sut.setOmnibarView(UIView(), height: omnibarHeight)
+        sut.setButtonRowCollapseProgress(0, reduceMotion: false)
+
+        XCTAssertEqual(stack.alpha, 1)
+        XCTAssertEqual(stack.transform, .identity)
+    }
+
     private final class SuperviewTrackingView: UIView {
         private(set) var superviewChangeCount = 0
 

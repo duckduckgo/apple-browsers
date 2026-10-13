@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Näppäimistö";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Sovelluksen käynnistys";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Uusi välilehti";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Näytä näppäimistö kun";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Näyttää linkin viimeksi käytettyyn välilehteen palaamista varten, kun avaat sovelluksen käyttämättömyyden jälkeen.";
 

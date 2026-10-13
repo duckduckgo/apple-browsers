@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnica";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Spustenie aplikácie";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nová karta";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Zobraziť klávesnicu v";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Zobrazí odkaz na návrat na naposledy použitú kartu pri spustení aplikácie po nečinnosti.";
 

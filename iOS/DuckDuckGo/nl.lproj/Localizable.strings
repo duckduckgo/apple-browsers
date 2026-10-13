@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Toetsenbord";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Starten van app";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nieuw tabblad";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Toetsenbord weergeven bij";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Toont een link om terug te keren naar het laatst gebruikte tabblad wanneer je de app opent na inactiviteit.";
 

@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatūra";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Lietotnes palaišana";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Jauna cilne";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Rādīt tastatūru";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Rāda saiti, lai atgrieztos pēdējā izmantotajā cilnē, kad atver lietotni pēc neaktivitātes perioda.";
 

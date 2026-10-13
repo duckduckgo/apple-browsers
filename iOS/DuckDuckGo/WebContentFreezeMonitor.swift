@@ -143,12 +143,6 @@ final class WebContentFreezeMonitor: NSObject {
         self.notificationCenter = notificationCenter
         self.date = date
         super.init()
-        notificationCenter.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
-        notificationCenter.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
-    }
-
-    deinit {
-        notificationCenter.removeObserver(self)
     }
 
     var isFrozen: Bool { startDate != nil }
@@ -163,6 +157,8 @@ final class WebContentFreezeMonitor: NSObject {
         record.backgroundDate = applicationState() == .background ? now : nil
         record.attempts = 0
         record.context = context
+        notificationCenter.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
         pixelFiring?.fire(WebContentHealthPixel.unresponsive(context: context, appState: appState), frequency: .dailyAndCount)
     }
 
@@ -180,6 +176,7 @@ final class WebContentFreezeMonitor: NSObject {
             record.clear()
         }
         self.startDate = nil
+        notificationCenter.removeObserver(self)
         let duration = DurationBucket(seconds: date().timeIntervalSince(startDate))
         pixelFiring?.fire(WebContentHealthPixel.unresponsiveResult(outcome: outcome,
                                                                    duration: duration,
@@ -219,7 +216,6 @@ final class WebContentFreezeMonitor: NSObject {
     }
 
     @objc private func appDidEnterBackground() {
-        guard isFrozen else { return }
         record.backgroundDate = date()
     }
 

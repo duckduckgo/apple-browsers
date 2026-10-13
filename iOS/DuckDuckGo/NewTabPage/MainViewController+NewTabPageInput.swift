@@ -150,6 +150,12 @@ extension MainViewController {
         onExperimentalAddressBarTapped()
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
+        // The inline field must not depend on the hidden legacy text field becoming first responder.
+        if controller.hasInlineSearchInput,
+           activateFromOmnibarIfNeeded(currentText: nil, tapped: false, textEntryMode: textEntryMode,
+                                      isRequestValid: { true }, onFocus: nil) == .intercept {
+            return
+        }
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
     }
 }

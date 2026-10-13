@@ -67,8 +67,9 @@ struct WebContentFreezeRecord {
 }
 
 /// Follows one tab's web content process freeze from WebKit's unresponsive callback to its end, and reports how long
-/// it lasted and how often the user tried to get out. Releasing the monitor ends the freeze as `closed`. Main thread.
-final class WebContentFreezeMonitor {
+/// it lasted and how often the user tried to get out. The owner ends the freeze as `closed` when the tab goes away.
+@MainActor
+final class WebContentFreezeMonitor: NSObject {
 
     enum Outcome: String {
         case recovered
@@ -122,10 +123,9 @@ final class WebContentFreezeMonitor {
     // One record for every tab, so a second frozen tab overwrites the first.
     // Deferred improvement: Key it by tab.
     private let record: WebContentFreezeRecord
-    private let applicationState: () -> UIApplication.State
+    private let applicationState: @MainActor () -> UIApplication.State
     private let notificationCenter: NotificationCenter
     private let date: () -> Date
-    private var observers = [any NSObjectProtocol]()
     private var startDate: Date?
     private var context: WebContentHealthPixel.PageContext?
     private var attempts = 0
@@ -133,7 +133,7 @@ final class WebContentFreezeMonitor {
     init(pixelFiring: (any PixelKitFiring)?,
          featureFlagger: FeatureFlagger,
          record: WebContentFreezeRecord = .init(),
-         applicationState: @escaping () -> UIApplication.State = { UIApplication.shared.applicationState },
+         applicationState: @escaping @MainActor () -> UIApplication.State = { UIApplication.shared.applicationState },
          notificationCenter: NotificationCenter = .default,
          date: @escaping () -> Date = Date.init) {
         self.pixelFiring = pixelFiring
@@ -142,20 +142,13 @@ final class WebContentFreezeMonitor {
         self.applicationState = applicationState
         self.notificationCenter = notificationCenter
         self.date = date
-        observers = [
-            notificationCenter.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { [weak self] _ in
-                guard let self, isFrozen else { return }
-                record.backgroundDate = date()
-            },
-            notificationCenter.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: nil) { [weak self] _ in
-                self?.record.backgroundDate = nil
-            }
-        ]
+        super.init()
+        notificationCenter.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
     deinit {
-        observers.forEach { notificationCenter.removeObserver($0) }
-        end(.closed)
+        notificationCenter.removeObserver(self)
     }
 
     var isFrozen: Bool { startDate != nil }
@@ -223,6 +216,15 @@ final class WebContentFreezeMonitor {
                                                                    appState: backgroundDate == nil ? "foreground" : "background",
                                                                    context: context),
                           frequency: .dailyAndCount)
+    }
+
+    @objc private func appDidEnterBackground() {
+        guard isFrozen else { return }
+        record.backgroundDate = date()
+    }
+
+    @objc private func appWillEnterForeground() {
+        record.backgroundDate = nil
     }
 
     private var appState: String {

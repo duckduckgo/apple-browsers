@@ -855,7 +855,7 @@ class TabViewController: UIViewController {
     private let pixelFiring: (any PixelKitFiring)?
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
     private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
-    private lazy var freezeMonitor = WebContentFreezeMonitor(pixelFiring: pixelFiring, featureFlagger: featureFlagger)
+    private let freezeMonitor: WebContentFreezeMonitor
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -1036,6 +1036,7 @@ class TabViewController: UIViewController {
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
         self.pixelFiring = pixelFiring
+        self.freezeMonitor = WebContentFreezeMonitor(pixelFiring: pixelFiring, featureFlagger: featureFlagger)
         self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
             ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
@@ -2606,8 +2607,9 @@ class TabViewController: UIViewController {
             }
         }
         // Tab removal closes synchronously; this also covers controllers released outside the tab cache.
-        Task { @MainActor [sitePermissionsState] in
+        Task { @MainActor [sitePermissionsState, freezeMonitor] in
             sitePermissionsState.close()
+            freezeMonitor.end(.closed)
         }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
         eventHub.onTabClosed(tabID: eventHubTabID)

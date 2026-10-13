@@ -290,15 +290,15 @@ final class TabTerminationTelemetryTests: XCTestCase {
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
     }
 
-    func testWhenFrozenTabIsReleasedThenOutcomeIsClosedAndRecordIsCleared() {
+    func testWhenFrozenTabIsClosedThenOutcomeIsClosedAndRecordIsCleared() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let store = MockKeyValueStore()
-        var monitor: WebContentFreezeMonitor? = makeFreezeMonitor(pixelFiring: pixelFiring, store: store)
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, store: store)
 
-        monitor?.didBecomeUnresponsive(makeContext())
+        monitor.didBecomeUnresponsive(makeContext())
         XCTAssertNotNil(store.object(forKey: "web-content-freeze.start-date"))
         date += 3
-        monitor = nil
+        monitor.end(.closed)
 
         XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["outcome"], "closed")
         XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["duration"], "2-5")

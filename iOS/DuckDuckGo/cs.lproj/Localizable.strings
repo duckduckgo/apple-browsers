@@ -514,6 +514,21 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Poslouchám…";
 
+/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.ask.button" = "Zeptat se";
+
+/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.create.button" = "Vytvořit";
+
+/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer" = "DuckDuckGo anonymizuje tvoje chaty. Kliknutím na „Zeptat se“ odsouhlasíš naše %@.";
+
+/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer.create" = "DuckDuckGo anonymizuje tvoje chaty. Kliknutím na „Vytvořit“ odsouhlasíš naše %@.";
+
+/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
+"aichat.termsOfService.disclaimer.link" = "Zásady ochrany osobních údajů a Podmínky služby";
+
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Nastavení tónu, délky a chování";
 
@@ -4520,25 +4535,25 @@
 "settings.complete.setup" = "Dokonči své nastavení";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Budeme se snažit vybírat pro tebe jen ty možnosti cookies, které nejlépe chrání soukromí, a pak tato vyskakovací okna zavřeme.";
+"settings.cookie.auto-manage.explanation" = "Budeme se snažit odmítat za tebe co nejvíce cookies a pak zavírat vyskakovací okna.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Automaticky spravovat vyskakovací okna o cookies";
+"settings.cookie.auto-manage.title" = "Odmítat nepovinné cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrana před vyskakovacími okny ohledně cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo může automaticky spravovat předvolby cookies tak, aby zajistilo maximální ochranu soukromí, co nejméně cookies a zavíralo vyskakovací okna.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo může automaticky spravovat vyskakovací okna o cookies, aby zajistilo maximální ochranu soukromí a co nejméně cookies, ještě než je vůbec uvidíš.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa vyskakovacích oken ohledně cookies";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Nech DuckDuckGo, ať ti také šetří klikání přijímáním cookies za tebe a zavírá vyskakovací okna, kde není možnost cookies odmítnout.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Pokud možnost odmítnutí není k dispozici, ušetříme ti klikání, tyto cookies za tebe přijmeme a vyskakovací okna zavřeme.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Vyskakovací okna bez možnosti odmítnutí";
+"settings.cookie.popups-without-opt-outs.title" = "Přijímat cookies, které nelze odmítnout";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Vymazat karty a data";

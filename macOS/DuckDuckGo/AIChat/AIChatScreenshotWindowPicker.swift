@@ -18,8 +18,10 @@
 
 import AIChat
 import AppKit
+import CoreMedia
 import os.log
 import ScreenCaptureKit
+import VideoToolbox
 
 /// Select Window or Display through the system's content-sharing picker.
 @available(macOS 14.0, *)
@@ -39,8 +41,7 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
 
     private var continuation: CheckedContinuation<Pick, Never>?
 
-    /// The pick doesn't authorize `SCScreenshotManager`: without Screen Recording the capture fails
-    /// with `SCStreamError.userDeclined`, so callers check the permission first.
+    /// The capture runs while the picker is still active, since the pick is what authorizes it.
     @MainActor
     func capture(excludingWindowIDs windowIDs: [Int]) async -> Outcome {
         let picker = SCContentSharingPicker.shared
@@ -84,7 +85,9 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
         configuration.height = Int(filter.contentRect.height * CGFloat(filter.pointPixelScale))
         configuration.showsCursor = false
         do {
-            let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+            // A stream, not `SCScreenshotManager`: the screenshot API ignores the pick and fails with
+            // `SCStreamError.userDeclined` without Screen Recording.
+            let image = try await AIChatScreenshotSingleFrameStream().capture(filter: filter, configuration: configuration)
             return .captured(image: image, kind: kind)
         } catch {
             let error = error as NSError
@@ -115,5 +118,65 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
             self?.continuation?.resume(returning: outcome)
             self?.continuation = nil
         }
+    }
+}
+
+/// Starts a stream on the picked content, keeps its first complete frame and stops.
+@available(macOS 14.0, *)
+private final class AIChatScreenshotSingleFrameStream: NSObject, SCStreamOutput {
+
+    private enum FrameError: Error {
+        case timedOut
+    }
+
+    private static let timeout: TimeInterval = 5
+
+    /// Every continuation access happens on this queue, so it resumes exactly once.
+    private let queue = DispatchQueue(label: "com.duckduckgo.aichat.screenshot-frame")
+    private var continuation: CheckedContinuation<CGImage, Error>?
+
+    func capture(filter: SCContentFilter, configuration: SCStreamConfiguration) async throws -> CGImage {
+        let stream = SCStream(filter: filter, configuration: configuration, delegate: nil)
+        try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: queue)
+
+        let result: Result<CGImage, Error>
+        do {
+            let image = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CGImage, Error>) in
+                queue.async {
+                    self.continuation = continuation
+                    self.queue.asyncAfter(deadline: .now() + Self.timeout) {
+                        self.finish(.failure(FrameError.timedOut))
+                    }
+                }
+                stream.startCapture { [weak self] error in
+                    guard let error else { return }
+                    self?.queue.async { self?.finish(.failure(error)) }
+                }
+            }
+            result = .success(image)
+        } catch {
+            result = .failure(error)
+        }
+        try? await stream.stopCapture()
+        return try result.get()
+    }
+
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+        guard type == .screen,
+              let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
+              let status = (attachments.first?[.status] as? Int).flatMap(SCFrameStatus.init(rawValue:)),
+              status == .complete,
+              let pixelBuffer = sampleBuffer.imageBuffer else { return }
+
+        var image: CGImage?
+        VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &image)
+        guard let image else { return }
+        finish(.success(image))
+    }
+
+    private func finish(_ result: Result<CGImage, Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        continuation.resume(with: result)
     }
 }

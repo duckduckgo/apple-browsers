@@ -1214,6 +1214,11 @@ class MainViewController: UIViewController {
                                                     hasInlineSearchInput: { [weak self] tab in
                                                         guard let self, tab?.isAITab != true, tab?.link == nil,
                                                               !(tab?.fireTab ?? self.isCurrentTabFireTab()) else { return false }
+                                                        if let tab, tab === self.tabManager.currentTabsModel.currentTab,
+                                                           let page = self.newTabPageViewController, page.parent === self,
+                                                           page.hasInlineSearchInput, page.isPresentingOnboardingDialog {
+                                                            return false
+                                                        }
                                                         return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
                                                     }) { [weak self] tab in
 

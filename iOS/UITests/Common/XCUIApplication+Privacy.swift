@@ -64,7 +64,19 @@ extension XCUIApplication {
             file: file,
             line: line)
 
-        buttons["Close"].tapWhenHittable(file: file, line: line)
+        // Expanded browsing menus report this visible Close button as non-hittable, though its semantic tap dismisses the menu.
+        let closeButton = buttons["Close"]
+        XCTAssertTrue(
+            closeButton.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Browsing menu Close button did not appear.",
+            file: file,
+            line: line)
+        XCTAssertTrue(
+            closeButton.wait(for: NSPredicate(format: "isEnabled == true"), timeout: UITestTimeouts.elementExistence),
+            "Browsing menu Close button was not enabled.",
+            file: file,
+            line: line)
+        closeButton.tap()
         XCTAssertTrue(
             menu.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
             "Browsing menu did not close.",

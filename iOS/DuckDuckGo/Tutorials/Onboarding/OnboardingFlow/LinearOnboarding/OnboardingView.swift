@@ -22,6 +22,7 @@ import Onboarding
 import SwiftUI
 import MetricBuilder
 
+// This is a test comment to trigger iOS required checks
 private enum BubbleBackedDialogMetrics {
     /// Extra top margin for the intro step; all other steps use 0.
     static let introAdditionalTopMargin: CGFloat = 40

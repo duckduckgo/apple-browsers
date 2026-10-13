@@ -650,6 +650,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToThemeChanges()
         subscribeToTabRemovals()
         subscribeToAIChatVoiceChatPermissionRequests()
+        subscribeToAIChatScreenRecordingPermissionRequests()
 
         applyThemeStyle()
 
@@ -947,6 +948,29 @@ final class AddressBarButtonsViewController: NSViewController {
         if source == .voiceChat {
             PixelKit.fire(AIChatPixel.aiChatVoiceChatStartFailed(reason: .micOsDenied), frequency: .dailyAndCount)
         }
+    }
+
+    /// Drag to Select was denied Screen Recording from this window (the Duck.ai omnibar or the New Tab
+    /// Page). Same anchor and dedupe as the Duck.ai microphone popover.
+    private func subscribeToAIChatScreenRecordingPermissionRequests() {
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(handleAIChatScreenRecordingPermissionRequested(_:)),
+            name: .aiChatScreenRecordingPermissionRequested,
+            object: nil
+        )
+    }
+
+    @objc private func handleAIChatScreenRecordingPermissionRequested(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === view.window else { return }
+        if let existing = systemDisabledInfoPopover, existing.isShown {
+            return
+        }
+        // The shield is the anchor, and Duck.ai mode hides it; show it before anchoring.
+        updateButtons()
+        permissionCenterButton.isShown = true
+        view.layoutSubtreeIfNeeded()
+        showSystemDisabledInfoPopover(content: ScreenRecordingPermissionInfoView())
     }
 
     private func subscribeToUrl() {
@@ -2206,12 +2230,17 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType, micPromptSource: DuckAiMicPermissionSource = .voiceChat) {
+        showSystemDisabledInfoPopover(content: SystemDisabledPermissionInfoView(domain: domain,
+                                                                                permissionType: permissionType,
+                                                                                micPromptSource: micPromptSource))
+    }
+
+    private func showSystemDisabledInfoPopover<Content: View>(content: Content) {
         guard permissionCenterButton.isVisible else { return }
 
         // Auto-layout-pinned NSHostingView (like PermissionCenterViewController) so NSPopover reads a stable
         // fitting size; a bare NSHostingController left contentSize at the 320×320 default and mis-positioned it.
-        let swiftUIView = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType, micPromptSource: micPromptSource)
-        let hostingView = NSHostingView(rootView: swiftUIView)
+        let hostingView = NSHostingView(rootView: content)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         let controller = NSViewController()
         controller.view = NSView()

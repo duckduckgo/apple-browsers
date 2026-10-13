@@ -224,6 +224,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// required messages stack.
     private var usageWarningReservation: CGFloat = 0
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
+    private var isShowingScreenRecordingNotice = false
 
     /// Widens the send button while it reads "Ask" in place of its arrow.
     private lazy var submitButtonWidthConstraint = submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize)
@@ -1202,6 +1203,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Usage Warning Card
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func setupUsageWarningCard() {
         usageWarningCardView.translatesAutoresizingMaskIntoConstraints = false
         usageWarningCardView.isHidden = true
@@ -1249,6 +1251,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         usageWarningCardView.onAction = { [weak self] in
             guard let self else { return }
+            if isShowingScreenRecordingNotice {
+                NSWorkspace.shared.open(.screenRecordingSystemSettings)
+                setScreenRecordingNotice(visible: false)
+                return
+            }
             if isShowingLauncherPromo {
                 launcherPromo?.tryNow(on: .addressBar)
                 return
@@ -1268,6 +1275,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             if isShowingLauncherPromo {
                 launcherPromo?.dismiss(on: .addressBar)
                 refreshUsageCard()
+                return
+            }
+            if isShowingScreenRecordingNotice {
+                setScreenRecordingNotice(visible: false)
                 return
             }
             // Ahead of the pixel: this card is not a usage message, so closing it must not report
@@ -1368,6 +1379,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         if shouldShowAttachmentPrivacyDisclosure {
             usageWarningCardView.updateForAttachmentPrivacy()
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
+        if isShowingScreenRecordingNotice {
+            usageWarningCardView.updateForScreenRecordingPermission()
             currentUsageWarningExposure = nil
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
@@ -1489,6 +1506,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func clearCreateImageModelSwitchNotice() {
         guard createImageModelSwitchNotice != nil else { return }
         createImageModelSwitchNotice = nil
+        refreshUsageCard()
+    }
+
+    private func setScreenRecordingNotice(visible: Bool) {
+        guard isShowingScreenRecordingNotice != visible else { return }
+        isShowingScreenRecordingNotice = visible
         refreshUsageCard()
     }
 
@@ -1635,6 +1658,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // letting it resurface when the panel is reopened.
         lastAttachmentError = nil
         createImageModelSwitchNotice = nil
+        isShowingScreenRecordingNotice = false
 
         // Restore model picker to persisted value
         modelPickerButton.modelName = persistedModelShortName
@@ -2234,12 +2258,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             updateAttachmentsLayout()
             return
         }
+        setScreenRecordingNotice(visible: false)
         omnibarController.pixelHandler.fire(.imageAttached)
         updateAttachmentsLayout()
     }
 
-    /// Filled in by the permission UI task.
-    private func presentScreenRecordingPermissionExplainer() {}
+    /// The address bar explains from the shield, like the Duck.ai microphone; the prompt bar has no
+    /// address bar, so it explains in its own drawer.
+    private func presentScreenRecordingPermissionExplainer() {
+        switch omnibarController.surface {
+        case .addressBar:
+            NotificationCenter.default.post(name: .aiChatScreenRecordingPermissionRequested, object: view.window)
+        case .promptBar:
+            setScreenRecordingNotice(visible: true)
+        }
+    }
 
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
         // Confirming is a fresh pick action; a rejection from last time no longer applies.
@@ -2371,6 +2404,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.cancelAllImageResizeTasks()
             // Submit clears all attachments, so a leftover pick-time rejection no longer applies.
             self?.lastAttachmentError = nil
+            self?.setScreenRecordingNotice(visible: false)
             self?.updateAttachmentsLayout()
         }
         // Submit-time validation rejection: surface it where pick-time rejections show up.

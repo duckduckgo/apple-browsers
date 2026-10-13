@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Masquer le raccourci « Retour à »";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Retourner au dernier onglet utilisé";
+"escapeHatch.menu.lastUsedTab" = "Dernier onglet utilisé";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Plus d'options";

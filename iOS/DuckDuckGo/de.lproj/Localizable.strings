@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Verknüpfung „Zurück zu“ ausblenden";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Zurück zum zuletzt verwendeten Tab";
+"escapeHatch.menu.lastUsedTab" = "Zuletzt verwendeter Tab";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Weitere Optionen";

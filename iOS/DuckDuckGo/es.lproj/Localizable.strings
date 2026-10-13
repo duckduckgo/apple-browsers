@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Ocultar acceso directo a «Volver a»";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Volver a la última pestaña utilizada";
+"escapeHatch.menu.lastUsedTab" = "Última pestaña utilizada";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Más opciones";

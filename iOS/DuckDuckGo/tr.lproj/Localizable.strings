@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "‘Geri Dön’ Kısayolunu Gizle";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Son Kullanılan Sekmeye Dön";
+"escapeHatch.menu.lastUsedTab" = "Son Kullanılan Sekme";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Diğer seçenekler";

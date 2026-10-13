@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "「戻る」ショートカットを非表示にする";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "最後に使用したタブに戻る";
+"escapeHatch.menu.lastUsedTab" = "最後に使用したタブ";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "その他のオプション";

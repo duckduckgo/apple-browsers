@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Скрыть ярлык «Вернуться к»";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Вернуться к последней использованной вкладке";
+"escapeHatch.menu.lastUsedTab" = "Последняя использованная вкладка";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Другие параметры";

@@ -2693,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Ocultar atalho de \"Regressar a\"";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Regressar ao último separador utilizado";
+"escapeHatch.menu.lastUsedTab" = "Último separador utilizado";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Mais opções";

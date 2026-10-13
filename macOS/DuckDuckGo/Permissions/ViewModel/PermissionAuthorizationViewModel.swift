@@ -217,36 +217,47 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             return
         }
         // Resolve blocked permissions before asking for another device, and never grant a combined request partially.
-        let blockedPermission = systemPermissions.first {
-            states[$0] == .denied || states[$0] == .restricted || states[$0] == .systemDisabled
+        if let blockedPermission = systemPermissions.first(where: { states[$0]?.isBlocked == true }) {
+            showOpenSettingsStep(for: blockedPermission)
+            return
         }
         let permissionsToRequest = systemPermissions.filter { states[$0] != .authorized }
-        guard let permission = blockedPermission ?? permissionsToRequest.first else {
+        guard let nextPermission = permissionsToRequest.first else {
             submitPendingDecision()
             return
         }
-        let isWaiting = viewState.systemPermissionStep?.phase == .waiting
-        if isRequestingSystemPermissions, blockedPermission == nil, let currentSystemPermission, states[currentSystemPermission] == .authorized {
-            // The same click asks for the next device: the microphone alert follows the camera one.
-            if !isWaiting {
-                showSystemPermissionPhase(.waiting)
-            }
-            requestSystemAuthorization(for: permission)
+        if isRequestingSystemPermissions, let currentSystemPermission, states[currentSystemPermission] == .authorized {
+            requestNextSystemPermission(nextPermission)
             return
         }
-        let wasWaiting = currentSystemPermission == permission && isWaiting
+        let isWaitingForNextPermission = currentSystemPermission == nextPermission && viewState.systemPermissionStep?.phase == .waiting
+        // A status refresh while macOS shows the alert keeps "Waiting for request…".
+        guard !isWaitingForNextPermission || requestCompleted else { return }
+        showRequestStep(for: permissionsToRequest, requestCompleted: requestCompleted)
+    }
+
+    private func showOpenSettingsStep(for permission: PermissionType) {
         currentSystemPermission = permission
-        if blockedPermission != nil {
-            isRequestingSystemPermissions = false
-            saveAlwaysAllowWhileSystemPermissionIsBlocked()
-            showSystemPermissionPhase(.openSettings)
-        } else if !wasWaiting || requestCompleted {
-            if requestCompleted {
-                isRequestingSystemPermissions = false
-            }
-            systemPermissionsToRequest = permissionsToRequest
-            showSystemPermissionPhase(.request)
+        isRequestingSystemPermissions = false
+        saveAlwaysAllowWhileSystemPermissionIsBlocked()
+        showSystemPermissionPhase(.openSettings)
+    }
+
+    /// The same click asks for the next device: the microphone alert follows the camera one.
+    private func requestNextSystemPermission(_ permission: PermissionType) {
+        if viewState.systemPermissionStep?.phase != .waiting {
+            showSystemPermissionPhase(.waiting)
         }
+        requestSystemAuthorization(for: permission)
+    }
+
+    private func showRequestStep(for permissions: [PermissionType], requestCompleted: Bool) {
+        currentSystemPermission = permissions.first
+        if requestCompleted {
+            isRequestingSystemPermissions = false
+        }
+        systemPermissionsToRequest = permissions
+        showSystemPermissionPhase(.request)
     }
 
     /// Saves Always allow right away, as Never allow is, although macOS blocks access for now.
@@ -438,5 +449,17 @@ extension PermissionAuthorizationViewModel {
         case openSystemSettings
         case dismiss
         case learnMore
+    }
+}
+
+private extension SystemPermissionAuthorizationState {
+    /// macOS won't show its alert: only System Settings can grant access.
+    var isBlocked: Bool {
+        switch self {
+        case .denied, .restricted, .systemDisabled:
+            return true
+        case .notDetermined, .authorized:
+            return false
+        }
     }
 }

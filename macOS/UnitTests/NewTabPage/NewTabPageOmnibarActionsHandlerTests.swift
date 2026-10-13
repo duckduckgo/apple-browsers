@@ -57,6 +57,19 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         )
     }
 
+    // MARK: - submitSearch
+
+    func testThatDuckAITypedInTheSearchBoxLoadsAsTheWebViewReportsIt() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "Duck.AI")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai/chat?q=hi")?.absoluteString, "https://duck.ai/chat?q=hi")
+    }
+
+    func testThatOtherURLsTypedInTheSearchBoxKeepTheirScheme() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "wikipedia.org")?.absoluteString, "http://wikipedia.org")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duckduckgo")?.absoluteString, "https://duckduckgo.com/?q=duckduckgo")
+    }
+
     // MARK: - viewAllAiChats
 
     func testViewAllAiChatsOpensDuckAIWithSidebarVisible() {

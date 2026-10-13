@@ -61,6 +61,13 @@ final class NewTabPageOnboardingCoordinator {
     private var chromeDelegate: BrowserChromeDelegate? { page?.chromeDelegate }
     private var parent: UIViewController? { page?.parent }
 
+    private var activeUnifiedInputSession: (main: MainViewController, coordinator: UnifiedToggleInputCoordinator)? {
+        guard let main = parent as? MainViewController,
+              let coordinator = main.unifiedToggleInputCoordinator,
+              coordinator.isOmnibarSession else { return nil }
+        return (main, coordinator)
+    }
+
     init(newTabDialogFactory: any NewTabDaxDialogProviding,
          daxDialogsManager: DaxDialogsManaging,
          onboardingFlowProvider: OnboardingFlowProviding,
@@ -127,9 +134,7 @@ final class NewTabPageOnboardingCoordinator {
     private func launchNewSearch() {
         // If we are displaying a Subscription promotion on a new tab, do not activate search
         guard !daxDialogsManager.isShowingSubscriptionPromotion else { return }
-        if let mainVC = parent as? MainViewController,
-           let coordinator = mainVC.unifiedToggleInputCoordinator,
-           coordinator.isOmnibarSession {
+        if let (_, coordinator) = activeUnifiedInputSession {
             // UTI mode: expand the UTI pill so the address bar is ready for a new search.
             coordinator.activateInput()
         } else {
@@ -213,9 +218,7 @@ final class NewTabPageOnboardingCoordinator {
         dismissHostingController(didFinishNTPOnboarding: false)
         hideOnboardingContent(for: .duckAICompletion)
 
-        guard let mainVC = parent as? MainViewController,
-              let coordinator = mainVC.unifiedToggleInputCoordinator,
-              coordinator.isOmnibarSession else {
+        guard let (mainVC, coordinator) = activeUnifiedInputSession else {
             isShowingDuckAICompletionDialog = false
             restoreRedesignedContentIfNeeded()
             setLogoHidden(false)
@@ -480,9 +483,7 @@ final class NewTabPageOnboardingCoordinator {
     /// active because `omniBar.endEditing()` only resigns the legacy text field and does not
     /// drive the UTI state machine.
     private func dismissAddressBarEditingForSubscriptionPromo(completion: @escaping () -> Void) {
-        if let mainVC = parent as? MainViewController,
-           let coordinator = mainVC.unifiedToggleInputCoordinator,
-           coordinator.isOmnibarSession {
+        if let (mainVC, coordinator) = activeUnifiedInputSession {
             mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
         } else {
             chromeDelegate?.omniBar.endEditing()

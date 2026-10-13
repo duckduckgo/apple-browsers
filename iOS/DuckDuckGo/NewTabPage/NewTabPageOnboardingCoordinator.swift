@@ -347,8 +347,19 @@ final class NewTabPageOnboardingCoordinator {
                 return
             }
 
-            dialogProvider.dismiss()
-            self.dismissHostingController(didFinishNTPOnboarding: true)
+            let dismissDialog = {
+                dialogProvider.dismiss()
+                self.dismissHostingController(didFinishNTPOnboarding: true)
+            }
+            if spec == .subscriptionPromotion, activateSearch,
+               let page = self.page,
+               let mainVC = self.parent as? MainViewController,
+               mainVC.performOnboardingInputHandoff(for: page,
+                                                    dismissDialog: dismissDialog,
+                                                    activateInput: { self.launchNewSearch() }) {
+                return
+            }
+            dismissDialog()
             if activateSearch {
                 // Make the address bar first responder after closing the new tab page final dialog.
                 self.launchNewSearch()

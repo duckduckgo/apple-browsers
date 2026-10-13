@@ -29,7 +29,7 @@ extension MainViewController {
             usesUnifiedInput: unifiedToggleInputCoordinator != nil,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
-            isHandingOff: isAddressBarHandOffInProgress,
+            isHandingOff: isAddressBarHandOffInProgress || isPerformingOnboardingInputHandoff,
             isDismissing: viewCoordinator.isInlineInputDismissInProgress,
             isPresentingOnboardingDialog: newTabPageViewController?.isPresentingOnboardingDialog == true)
     }
@@ -38,6 +38,30 @@ extension MainViewController {
         guard controller === newTabPageViewController else { return }
         updateAddressBarSuppressionForNewTabPage()
         controller.refreshContextualOnboardingDialogLayout()
+    }
+
+    /// Dismisses the onboarding dialog and activates inline input without the resting-to-focused animation.
+    func performOnboardingInputHandoff(for page: any NewTabPage,
+                                       dismissDialog: () -> Void,
+                                       activateInput: () -> Void) -> Bool {
+        guard page === newTabPageViewController,
+              page.parent === self,
+              page.hasInlineSearchInput,
+              let coordinator = unifiedToggleInputCoordinator,
+              !coordinator.isOmnibarSession,
+              currentTab?.isAITab != true else { return false }
+
+        // Keep editing chrome selected while dismissal restores the modules so they cannot flash before focus.
+        let wasPerformingHandoff = isPerformingOnboardingInputHandoff
+        isPerformingOnboardingInputHandoff = true
+        restingNewTabPageSnapshot = nil
+        defer {
+            isPerformingOnboardingInputHandoff = wasPerformingHandoff
+            updateAddressBarSuppressionForNewTabPage()
+        }
+        dismissDialog()
+        activateInput()
+        return true
     }
 
     func updateAddressBarSuppressionForNewTabPage() {

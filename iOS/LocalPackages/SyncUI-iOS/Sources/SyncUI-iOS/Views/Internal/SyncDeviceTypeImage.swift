@@ -30,6 +30,8 @@ struct SyncDeviceTypeImage: View {
 
     private var image: UIImage {
         if device.isThirdParty {
+            return DesignSystemImages.Glyphs.Size24.globe
+        } else if device.isUnknownType {
             return DesignSystemImages.Glyphs.Size24.deviceAll
         }
         switch device.type {

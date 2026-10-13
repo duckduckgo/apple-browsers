@@ -514,6 +514,21 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Klausomasi...";
 
+/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.ask.button" = "Klausti";
+
+/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.create.button" = "Kurti";
+
+/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer" = "„DuckDuckGo“ anonimina tavo pokalbius. Jei spusteli „Klausti“, sutinki su mūsų %@.";
+
+/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer.create" = "„DuckDuckGo“ anonimina tavo pokalbius. Jei spusteli „Kurti“, sutinki su mūsų %@.";
+
+/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
+"aichat.termsOfService.disclaimer.link" = "Privatumo politika ir paslaugų teikimo sąlygos";
+
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Nustatykite toną, ilgį ir elgseną";
 
@@ -2678,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Slėpti nuorodą „Grįžti į“";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Grįžti į paskutinę naudotą kortelę";
+"escapeHatch.menu.lastUsedTab" = "Paskiausiai naudotas skirtukas";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Daugiau parinkčių";
@@ -4520,25 +4535,25 @@
 "settings.complete.setup" = "Užbaik savo sąranką";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Stengsimės parinkti tik didžiausią privatumą užtikrinančias slapukų parinktis ir uždaryti šiuos iškylančiuosius langus.";
+"settings.cookie.auto-manage.explanation" = "Pasistengsime atmesti kuo daugiau slapukų, o tada uždarysime iškylančiuosius langus.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Automatiškai valdyti slapukų iššokančiuosius langus";
+"settings.cookie.auto-manage.title" = "Atmesti neprivalomus slapukus";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Apsauga nuo slapukų iškylančiųjų langų";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "„DuckDuckGo“ gali automatiškai tvarkyti slapukų nuostatas, kad maksimaliai padidintų privatumą, sumažintų slapukų skaičių ir uždarytų šiuos iškylančiuosius langus.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "„DuckDuckGo“ gali automatiškai tvarkyti slapukų iškylančiuosius langus, kad užtikrintų maksimalų privatumą ir sumažintų slapukų skaičių jums jų net nepamačius.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Valdyti slapukų iššokančiuosius langus";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Taip pat leisti „DuckDuckGo“ išlaisvinti jus nuo paspaudimo priimant slapukus jūsų vardu, kad būtų uždaromi iškylantieji langai, kurie neleidžia jų atsisakyti.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Jei nėra galimybės atmesti, sutaupysime paspaudimą – priimsime šiuos slapukus už jus ir uždarysime iškylančiuosius langus.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Iššokantieji langai be atsisakymo galimybės";
+"settings.cookie.popups-without-opt-outs.title" = "Priimti slapukus, kurių negalima atmesti";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Ištrinti skirtukus ir duomenis";
@@ -5361,9 +5376,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Išjungti „Sync & Backup“ ir ištrinti serverio duomenis?";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Pridėtas naujas įrenginys!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atkūrimo kodas nukopijuotas";

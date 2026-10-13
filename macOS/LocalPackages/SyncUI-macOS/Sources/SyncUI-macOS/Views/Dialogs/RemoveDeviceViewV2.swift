@@ -32,7 +32,7 @@ struct RemoveDeviceViewV2: View {
         switch device.kind {
         case .current, .desktop:
             return Image(.syncRemoveDeviceDesktop)
-        case .mobile, .thirdParty:
+        case .mobile, .thirdParty, .unknown:
             return Image(.syncRemoveDeviceMobile)
         }
     }

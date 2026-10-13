@@ -21,7 +21,7 @@ import DesignResourcesKit
 
 public extension Color {
 
-    /// Link / accent-text foreground color that follows the app-rebrand state, resolved against `palette`.
+    /// Link / accent-text foreground color, resolved against `palette`.
     ///
     static func rebrandableLink(palette: ColorPalette) -> Color {
         Color(designSystemColor: .accentTextPrimary, palette: palette)

@@ -26,6 +26,7 @@ import Networking
 class APIHeadersTests: XCTestCase {
 
     func testWhenHeadersRequestedThenHeadersContainUserAgent() {
+        XCTFail("Deliberate failure to check that a failing iOS unit test blocks the merge")
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckduckGoUserAgent(for: makeAppVersion()))
         let testee = APIRequest.Headers()
         let expected = "ddg_ios/7.0.4.5 (com.duckduckgo.mobile.ios; iOS \(UIDevice.current.systemVersion))"

@@ -16,10 +16,27 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+/// The names and `sidebarEntry` values are a contract with the pixel definitions.
 final class AIChatMenuButtonPixelsTests: XCTestCase {
+
+    private var pixelFiring: PixelKitMock!
+    private var firer: AIChatMenuButtonPixelFirer!
+
+    override func setUp() {
+        super.setUp()
+        pixelFiring = PixelKitMock()
+        firer = AIChatMenuButtonPixelFirer(pixelFiring: pixelFiring)
+    }
+
+    override func tearDown() {
+        firer = nil
+        pixelFiring = nil
+        super.tearDown()
+    }
 
     // MARK: - Sidebar entry
 
@@ -46,5 +63,22 @@ final class AIChatMenuButtonPixelsTests: XCTestCase {
         }
 
         XCTAssertEqual(sources, ["ask-about-page", "open-sidebar"])
+    }
+
+    // MARK: - Menu shown
+
+    func testMenuShownFiresOncePerOpenWithTheOfferedEntry() {
+        for entry in AIChatMenuButtonSidebarEntry.allCases {
+            firer.fireMenuShown(sidebarEntry: entry)
+        }
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), Array(repeating: "aichat_title_bar_menu_shown_macos", count: 3))
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters), [
+            ["sidebarEntry": "ask-about-page"],
+            ["sidebarEntry": "open-sidebar"],
+            ["sidebarEntry": "close-sidebar"]
+        ])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.frequency), Array(repeating: .dailyAndCount, count: 3))
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == PixelKitNamePrefix.none })
     }
 }

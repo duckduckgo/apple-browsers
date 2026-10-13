@@ -131,6 +131,10 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User picks "Chats" from the tab-bar Duck.ai menu button.
     case aiChatChatsTitleBarMenu
 
+    /// Event Trigger: User clicks the tab-bar Duck.ai menu button and its menu opens.
+    /// `sidebarEntry` is the sidebar item the menu offers.
+    case aiChatTitleBarMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry)
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -635,6 +639,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_new_chat_title_bar_menu"
         case .aiChatChatsTitleBarMenu:
             return "aichat_chats_title_bar_menu"
+        case .aiChatTitleBarMenuShown:
+            return "aichat_title_bar_menu_shown_macos"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -1136,6 +1142,8 @@ enum AIChatPixel: PixelKit.Event {
             return params
         case .aiChatSidebarClosed(let source):
             return ["source": source.rawValue]
+        case .aiChatTitleBarMenuShown(let sidebarEntry):
+            return ["sidebarEntry": sidebarEntry.rawValue]
         case .aiChatSidebarResized(let width):
             return ["width": String(width)]
         case .aiChatSummarizeText(let source):
@@ -1190,6 +1198,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
                 .aiChatChatsTitleBarMenu,
+                .aiChatTitleBarMenuShown,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -1336,7 +1345,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpGatedRowClick,
                 .aiChatDuckAIDirectNavigation,
                 .aiChatEntryPoint,
-                .aiChatSettingsState:
+                .aiChatSettingsState,
+                .aiChatTitleBarMenuShown:
             return .none
         default:
             return .platformDefault
@@ -1404,8 +1414,8 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case mainMenuAskAboutPage = "main-menu-ask-about-page"
 }
 
-/// The sidebar item the tab-bar Duck.ai menu offers. Resolved once per menu, so the item's title and
-/// its action can't disagree.
+/// The sidebar item the tab-bar Duck.ai menu offers. Resolved once per menu, so the item's title, its
+/// action and `aiChatTitleBarMenuShown` can't disagree.
 enum AIChatMenuButtonSidebarEntry: String, CaseIterable {
     case askAboutPage = "ask-about-page"
     case openSidebar = "open-sidebar"

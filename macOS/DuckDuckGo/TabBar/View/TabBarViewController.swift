@@ -100,8 +100,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var tabContentCancellable: AnyCancellable?
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private let duckAIMenuButtonPixelFirer = AIChatMenuButtonPixelFirer()
     /// The sidebar entry the menu last offered. The item's action reads it rather than the tab's state,
-    /// so it does what the item said.
+    /// so it does what the item said and what the menu-shown pixel reported.
     private var duckAIMenuSidebarEntry: AIChatMenuButtonSidebarEntry?
     private lazy var duckAIChromeContextMenu: NSMenu = {
         let menu = NSMenu()
@@ -1354,6 +1355,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let menu = makeDuckAIMenuButtonMenu(sidebarEntry: sidebarEntry)
         // Right-align: anchor the menu's top-right corner to the button's bottom-right.
         let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
+        duckAIMenuButtonPixelFirer.fireMenuShown(sidebarEntry: sidebarEntry)
         menu.popUp(positioning: nil, at: origin, in: sender)
     }
 

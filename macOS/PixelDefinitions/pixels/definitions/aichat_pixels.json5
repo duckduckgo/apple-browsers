@@ -387,6 +387,23 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "aichat_title_bar_menu_shown_macos": {
+        "description": "Fired when the user clicks the tab-bar Ask Duck.ai button and its menu opens, once per open, whether or not the user then picks an item. Not fired for middle-click or ⌘-click, which skip the menu, nor in the older split-button layout.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "sidebarEntry",
+                "description": "The sidebar item the menu offered, decided by whether a chat is open and whether the page can be attached: 'close-sidebar' when a chat is open, docked or floating; otherwise 'ask-about-page' on a web page that can be attached, or 'open-sidebar' on a page that can't, such as the New Tab Page.",
+                "type": "string",
+                "enum": ["ask-about-page", "open-sidebar", "close-sidebar"]
+            }
+        ]
+    },
     "m_mac_aichat_tab_did_terminate": {
         "description": "Fired when a Duck.ai tab's WebKit web content process terminates",
         "owners": ["aataraxiaa", "Bunn", "samsymons"],

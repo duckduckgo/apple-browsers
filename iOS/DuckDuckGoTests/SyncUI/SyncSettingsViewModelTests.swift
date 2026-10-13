@@ -933,6 +933,29 @@ final class SyncSettingsViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncTappedTwiceThenAuthenticatesOnlyOnce() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        let sheetShown = expectation(description: "Turn off sheet shown")
+        let cancellable = sut.$isTurnOffSyncSheetVisible
+            .dropFirst()
+            .sink { isVisible in
+                if isVisible {
+                    sheetShown.fulfill()
+                }
+            }
+
+        sut.turnOffSyncTapped()
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [sheetShown], timeout: 5)
+        await Task.yield()
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.sheetShown])
+        XCTAssertFalse(sut.isBusy)
+        cancellable.cancel()
+    }
+
     func testWhenImprovedPairingFlowOnAndTurnOffSyncAuthenticationFailsThenTurnOffSheetIsNotShown() async {
         let delegate = MockSyncSettingsViewModelDelegate()
         delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed

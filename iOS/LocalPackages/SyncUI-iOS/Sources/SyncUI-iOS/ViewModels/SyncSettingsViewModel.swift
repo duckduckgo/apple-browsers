@@ -348,7 +348,9 @@ public class SyncSettingsViewModel: ObservableObject {
             return
         }
         guard !isBusy else { return }
+        isBusy = true
         Task { @MainActor in
+            defer { isBusy = false }
             guard await commonAuthenticate() else { return }
             isTurnOffSyncSheetVisible = true
             delegate?.fireTurnOffSyncSheetPixel(event: .sheetShown)

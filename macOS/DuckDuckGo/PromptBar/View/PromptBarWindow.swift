@@ -59,3 +59,28 @@ internal class PromptBarWindow: NSPanel {
         onCancel?()
     }
 }
+
+extension NSWindow {
+
+    func dragOrClick(onClick: () -> Void) {
+        let dragThreshold: CGFloat = 3
+        let startLocation = NSEvent.mouseLocation
+        let startOrigin = frame.origin
+        var isDragging = false
+
+        while let event = nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if event.type == .leftMouseUp {
+                if !isDragging {
+                    NSApp.postEvent(event, atStart: true)
+                    onClick()
+                }
+                return
+            }
+            let location = NSEvent.mouseLocation
+            let offset = CGPoint(x: location.x - startLocation.x, y: location.y - startLocation.y)
+            if !isDragging, hypot(offset.x, offset.y) < dragThreshold { continue }
+            isDragging = true
+            setFrameOrigin(CGPoint(x: startOrigin.x + offset.x, y: startOrigin.y + offset.y))
+        }
+    }
+}

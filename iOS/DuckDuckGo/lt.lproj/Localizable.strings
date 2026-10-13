@@ -4642,6 +4642,15 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
 
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Programos paleidimas";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Nauja kortelė";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Rodyti klaviatūrą";
+
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Rodo nuorodą grįžti į paskutinę naudotą kortelę, kai paleidžiate programą po neaktyvumo.";
 

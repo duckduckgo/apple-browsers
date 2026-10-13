@@ -96,7 +96,7 @@ final class TabContentCapabilityTests: XCTestCase {
 
     private let duckAIURL = URL(string: "https://duck.ai/chat")!
 
-    func testThatDuckAIContentKeepsOnlyTheSourcesItsPixelReads() {
+    func testThatDuckAIContentKeepsOnlyTheSourcesThatTellHowItWasReached() {
         let cases: [(Tab.TabContent.URLSource, Tab.TabContent.URLSource)] = [
             (.userEntered("duck.ai"), .userEntered("duck.ai")),
             (.userEntered("duck.ai", downloadRequested: true), .userEntered("duck.ai")),
@@ -104,6 +104,7 @@ final class TabContentCapabilityTests: XCTestCase {
             (.historyEntry, .historyEntry),
             (.appOpenUrl, .appOpenUrl),
             (.link, .link),
+            (.attributedUI(.duckAILink), .attributedUI(.duckAILink)),
             (.ui, .ui),
             (.pendingStateRestoration, .ui),
             (.loadedByStateRestoration, .ui),
@@ -147,6 +148,24 @@ final class TabContentCapabilityTests: XCTestCase {
 
         XCTAssertEqual(typed.loadedFromCache(), .aiChat(duckAIURL))
         XCTAssertEqual(typed.forceReload(), .aiChat(duckAIURL))
+    }
+
+    func testThatAnAttributedUISourceLoadsLikeUI() {
+        let attributed = Tab.TabContent.URLSource.attributedUI(.directNewTabPage)
+
+        XCTAssertEqual(attributed.navigationType, Tab.TabContent.URLSource.ui.navigationType)
+        XCTAssertEqual(attributed.cachePolicy, Tab.TabContent.URLSource.ui.cachePolicy)
+        XCTAssertEqual(Tab.TabContent.aiChat(duckAIURL, source: attributed).loadedFromCache(), .aiChat(duckAIURL))
+        XCTAssertEqual(Tab.TabContent.aiChat(duckAIURL, source: attributed).forceReload(), .aiChat(duckAIURL))
+    }
+
+    func testThatOnlyDuckAIsOwnLinksAmongAttributedSourcesSwitchToAnOpenTab() {
+        XCTAssertTrue(Tab.TabContent.URLSource.switchToOpenTab.switchesToOpenTab)
+        XCTAssertTrue(Tab.TabContent.URLSource.appOpenUrl.switchesToOpenTab)
+        XCTAssertTrue(Tab.TabContent.URLSource.attributedUI(.duckAILink).switchesToOpenTab)
+        XCTAssertFalse(Tab.TabContent.URLSource.attributedUI(.directNewTabPage).switchesToOpenTab)
+        XCTAssertFalse(Tab.TabContent.URLSource.ui.switchesToOpenTab)
+        XCTAssertFalse(Tab.TabContent.URLSource.link.switchesToOpenTab)
     }
 
     func testThatReopeningOrReloadingURLContentIsUnchanged() {

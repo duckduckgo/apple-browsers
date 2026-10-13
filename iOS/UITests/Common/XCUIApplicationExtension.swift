@@ -45,8 +45,7 @@ extension XCUIApplication {
         // Scope to web content so a tab card or autocomplete suggestion cannot satisfy the assertion.
         let content = webViews.staticTexts[text]
         let startedAt = ProcessInfo.processInfo.systemUptime
-        // Temporarily allow a longer page-content wait to measure CI delays.
-        let timeout = 60.0
+        let timeout = UITestTimeouts.navigation
         let exists = content.waitForExistence(timeout: timeout)
         let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
         let timing = """
@@ -54,7 +53,7 @@ extension XCUIApplication {
         timeout=\(timeout)s
         elapsed=\(String(format: "%.3f", elapsed))s
         exists=\(exists)
-        exceedsOriginalNavigationTimeout=\(elapsed > UITestTimeouts.navigation)
+        exceedsOriginalThirtySecondNavigationTimeout=\(elapsed > 30.0)
         """
         let attachment = XCTAttachment(string: timing)
         attachment.name = "Page content wait timing"

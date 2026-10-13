@@ -741,6 +741,9 @@ final class AppEventNameTests {
         #expect(AppEvent.willConnectToWindow(window: UIWindow()).name == "willConnectToWindow")
         #expect(AppEvent.didFinishLaunching(isTesting: false).name == "didFinishLaunching")
         #expect(AppEvent.didBecomeActive.name == "didBecomeActive")
+        #expect(AppEvent.didEnterBackground.name == "didEnterBackground")
+        #expect(AppEvent.willResignActive.name == "willResignActive")
+        #expect(AppEvent.willEnterForeground.name == "willEnterForeground")
     }
 
 }

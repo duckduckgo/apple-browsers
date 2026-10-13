@@ -344,7 +344,7 @@ final class AppStateMachine {
     }
 
     private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {
-        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.name))] state!")
+        Logger.lifecycle.error("🔴 Unexpected [\(event.name)] event while in [\(state.name)] state!")
         PixelKit.fire(Pixel.Event.appDidTransitionToUnexpectedState,
                       frequency: .dailyAndCount,
                       options: .parameters([PixelParameters.appState: state.name,
@@ -374,7 +374,7 @@ enum LaunchBreadcrumbPixel: PixelKit.Event {
     var parameters: [String: String]? {
         switch self {
         case .previousLaunchIncomplete(let breadcrumb): return breadcrumb
-        case .eventDroppedDuringLaunch(let event, let state, let step): return ["event": event, "state": state, "step": step]
+        case .eventDroppedDuringLaunch(let event, let state, let step): return [PixelParameters.appEvent: event, PixelParameters.appState: state, "step": step]
         }
     }
 

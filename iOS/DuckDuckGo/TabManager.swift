@@ -304,7 +304,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
             privacyConfigurationManager: privacyConfigurationManager)
-        WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
         self.contentScopeExperimentManager = contentScopeExperimentManager

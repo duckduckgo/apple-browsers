@@ -23,7 +23,6 @@ public extension Color {
 
     /// Link / accent-text foreground color that follows the app-rebrand state, resolved against `palette`.
     ///
-    /// Rebranded builds use the design-system `accentTextPrimary`; legacy builds keep `linkBlue`.
     static func rebrandableLink(palette: ColorPalette) -> Color {
         Color(designSystemColor: .accentTextPrimary, palette: palette)
     }

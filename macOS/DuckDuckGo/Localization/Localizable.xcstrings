@@ -79452,10 +79452,58 @@
       "comment" : "Permission prompt message shown after allowing a site when macOS hasn't asked for camera or microphone access yet",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo benötigt die Berechtigung deines Systems, um deine Kamera und dein Mikrofon mit Websites zu teilen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo needs your system's permission to share your camera and microphone with sites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo necesita el permiso del sistema para compartir tu cámara y micrófono con los sitios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo a besoin de l’autorisation de ton système pour partager ton appareil photo et ton micro avec les sites."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo ha bisogno dell’autorizzazione del sistema per condividere la fotocamera e il microfono con i siti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo heeft toestemming van je systeem nodig om je camera en microfoon met sites te delen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo potrzebuje zgody systemu na udostępnianie aparatu i mikrofonu witrynom internetowym."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo precisa da permissão do teu sistema para partilhar a tua câmara e o teu microfone com sites."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo требуется разрешение системы, чтобы предоставлять сайтам доступ к твоей камере и микрофону."
           }
         }
       }

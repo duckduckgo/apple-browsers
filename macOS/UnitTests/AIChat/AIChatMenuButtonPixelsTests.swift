@@ -23,6 +23,8 @@ import XCTest
 /// The names and `sidebarEntry` values are a contract with the pixel definitions.
 final class AIChatMenuButtonPixelsTests: XCTestCase {
 
+    private typealias NewChatGesture = AIChatMenuButtonPixelFirer.NewChatGesture
+
     private var pixelFiring: PixelKitMock!
     private var firer: AIChatMenuButtonPixelFirer!
 
@@ -80,5 +82,35 @@ final class AIChatMenuButtonPixelsTests: XCTestCase {
         ])
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.frequency), Array(repeating: .dailyAndCount, count: 3))
         XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == PixelKitNamePrefix.none })
+    }
+
+    // MARK: - New chat
+
+    func testAPlainClickOpensTheMenu() {
+        XCTAssertNil(NewChatGesture(clickEventType: .leftMouseUp, isCommandPressed: false))
+    }
+
+    func testMiddleClickAndCommandClickSkipTheMenu() {
+        XCTAssertEqual(NewChatGesture(clickEventType: .otherMouseUp, isCommandPressed: false), .middleClick)
+        XCTAssertEqual(NewChatGesture(clickEventType: .leftMouseUp, isCommandPressed: true), .middleClick)
+    }
+
+    func testMiddleClickFiresOnlyTheMiddleClickPixel() {
+        firer.fireNewChat(via: .middleClick)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            ExpectedFireCall(pixel: AIChatPixel.aiChatTitleBarMiddleClickNewChat, frequency: .dailyAndCount)
+        ])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.name, "aichat_title_bar_middle_click_new_chat_macos")
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.namePrefix, PixelKitNamePrefix.none)
+    }
+
+    func testTheMenusNewChatFiresOnlyTheMenuPixel() {
+        firer.fireNewChat(via: .menuItem)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            ExpectedFireCall(pixel: AIChatPixel.aiChatNewChatTitleBarMenu, frequency: .dailyAndStandard)
+        ])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.namePrefix, PixelKitNamePrefix.platformDefault)
     }
 }

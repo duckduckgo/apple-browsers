@@ -1329,8 +1329,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
         // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {
-            if NSApp.currentEvent?.type == .otherMouseUp || NSApp.isCommandPressed {
-                duckAIMenuNewChatAction()
+            if let gesture = AIChatMenuButtonPixelFirer.NewChatGesture(clickEventType: NSApp.currentEvent?.type,
+                                                                       isCommandPressed: NSApp.isCommandPressed) {
+                openNewDuckAIChatTabFromMenuButton(via: gesture)
             } else {
                 presentDuckAIMenuButtonMenu(from: sender)
             }
@@ -1467,7 +1468,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuNewChatAction() {
-        PixelKit.fire(AIChatPixel.aiChatNewChatTitleBarMenu, frequency: .dailyAndStandard)
+        openNewDuckAIChatTabFromMenuButton(via: .menuItem)
+    }
+
+    private func openNewDuckAIChatTabFromMenuButton(via gesture: AIChatMenuButtonPixelFirer.NewChatGesture) {
+        duckAIMenuButtonPixelFirer.fireNewChat(via: gesture)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
             return

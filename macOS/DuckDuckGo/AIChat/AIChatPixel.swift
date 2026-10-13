@@ -125,7 +125,7 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User clicks the Duck.ai button in the tab bar to open a new chat tab.
     case aiChatTabbarButtonClicked
 
-    /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button (or middle-clicks the pill).
+    /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button.
     case aiChatNewChatTitleBarMenu
 
     /// Event Trigger: User picks "Chats" from the tab-bar Duck.ai menu button.
@@ -134,6 +134,10 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User clicks the tab-bar Duck.ai menu button and its menu opens.
     /// `sidebarEntry` is the sidebar item the menu offers.
     case aiChatTitleBarMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry)
+
+    /// Event Trigger: User middle-clicks or ⌘-clicks the tab-bar Duck.ai menu button, which opens a new chat
+    /// tab without showing the menu.
+    case aiChatTitleBarMiddleClickNewChat
 
     // MARK: - Summarization
 
@@ -641,6 +645,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_chats_title_bar_menu"
         case .aiChatTitleBarMenuShown:
             return "aichat_title_bar_menu_shown_macos"
+        case .aiChatTitleBarMiddleClickNewChat:
+            return "aichat_title_bar_middle_click_new_chat_macos"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -946,6 +952,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
                 .aiChatChatsTitleBarMenu,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -1199,6 +1206,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNewChatTitleBarMenu,
                 .aiChatChatsTitleBarMenu,
                 .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -1346,7 +1354,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatDuckAIDirectNavigation,
                 .aiChatEntryPoint,
                 .aiChatSettingsState,
-                .aiChatTitleBarMenuShown:
+                .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMiddleClickNewChat:
             return .none
         default:
             return .platformDefault

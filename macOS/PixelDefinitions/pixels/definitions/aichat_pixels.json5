@@ -374,7 +374,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_new_chat_title_bar_menu": {
-        "description": "Fired when user picks New Chat from the tab-bar Ask Duck.ai menu (or middle-clicks the pill) to open a new chat tab",
+        "description": "Fired when user picks New Chat from the tab-bar Ask Duck.ai menu to open a new chat tab. Middle-click and ⌘-click on the button fire aichat_title_bar_middle_click_new_chat_macos instead.",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
@@ -403,6 +403,13 @@
                 "enum": ["ask-about-page", "open-sidebar", "close-sidebar"]
             }
         ]
+    },
+    "aichat_title_bar_middle_click_new_chat_macos": {
+        "description": "Fired when the user middle-clicks or ⌘-clicks the tab-bar Ask Duck.ai button, which opens a new chat tab without showing the menu. Picking New Chat from the menu fires m_mac_aichat_new_chat_title_bar_menu instead.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_tab_did_terminate": {
         "description": "Fired when a Duck.ai tab's WebKit web content process terminates",

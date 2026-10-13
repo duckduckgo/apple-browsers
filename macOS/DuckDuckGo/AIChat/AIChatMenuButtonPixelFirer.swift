@@ -16,11 +16,26 @@
 //  limitations under the License.
 //
 
+import AppKit
 import PixelKit
 
 /// The tab-bar Duck.ai menu button's own pixels. The sidebar pixels that a menu pick leads to are
 /// fired by the open and close paths it shares with the main menu.
 struct AIChatMenuButtonPixelFirer {
+
+    /// Kept apart so the menu's New Chat and the click that skips the menu each have their own daily
+    /// count.
+    enum NewChatGesture: Equatable {
+        case menuItem
+        /// Middle-click or ⌘-click on the button.
+        case middleClick
+
+        /// `nil` for a plain click, which opens the menu.
+        init?(clickEventType: NSEvent.EventType?, isCommandPressed: Bool) {
+            guard clickEventType == .otherMouseUp || isCommandPressed else { return nil }
+            self = .middleClick
+        }
+    }
 
     private let pixelFiring: PixelFiring?
 
@@ -30,5 +45,14 @@ struct AIChatMenuButtonPixelFirer {
 
     func fireMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry) {
         pixelFiring?.fire(AIChatPixel.aiChatTitleBarMenuShown(sidebarEntry: sidebarEntry), frequency: .dailyAndCount)
+    }
+
+    func fireNewChat(via gesture: NewChatGesture) {
+        switch gesture {
+        case .menuItem:
+            pixelFiring?.fire(AIChatPixel.aiChatNewChatTitleBarMenu, frequency: .dailyAndStandard)
+        case .middleClick:
+            pixelFiring?.fire(AIChatPixel.aiChatTitleBarMiddleClickNewChat, frequency: .dailyAndCount)
+        }
     }
 }

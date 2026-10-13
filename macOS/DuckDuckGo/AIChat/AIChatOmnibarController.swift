@@ -312,6 +312,11 @@ final class AIChatOmnibarController {
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
     }
 
+    /// "Add Screenshot" in the attach menu. ScreenCaptureKit's picker and one-shot capture need macOS 14.
+    var isOmnibarScreenshotEnabled: Bool {
+        AIChatScreenshotCaptureService.isAvailable && featureFlagger.isFeatureOn(.aiChatOmnibarScreenshot)
+    }
+
     @discardableResult
     func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
         guard !isImageGenerationMode else {
@@ -1093,14 +1098,18 @@ final class AIChatOmnibarController {
         activeImageAttachments.count > maxImageAttachments
     }
 
-    /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
-    /// with the same id is already present.
-    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
+    /// Adds an image attachment to the active tab. Refused at displayCap, for a duplicate id, or
+    /// with no active draft.
+    /// - Returns: whether the attachment was added.
+    @discardableResult
+    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) -> Bool {
         var current = activeImageAttachments
-        guard current.count < imageAttachmentsDisplayCap else { return }
-        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        guard current.count < imageAttachmentsDisplayCap,
+              !current.contains(where: { $0.id == attachment.id }),
+              let draftStore else { return false }
         current.append(attachment)
-        draftStore?.setAIChatAttachments(current)
+        draftStore.setAIChatAttachments(current)
+        return true
     }
 
     /// Removes an image attachment from the active tab, identified by `id`. No-op if not

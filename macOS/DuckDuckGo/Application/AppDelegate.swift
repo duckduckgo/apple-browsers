@@ -460,6 +460,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         persistor: vpnUpsellUserDefaultsPersistor
     )
 
+    lazy var bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksBarSyncPromoDelegate(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            isBookmarksBarSettingOn: { [keyValueStore] in
+                AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore).showBookmarksBar
+            },
+            legacyStorage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -1235,7 +1249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
                 await MainActor.run {
                     if hasEntitlement {
-                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                        windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
                     } else {
                         let url = subscriptionManagerForPIR.url(for: .purchase)
                         windowControllersManager.showTab(with: .subscription(url))
@@ -1619,7 +1633,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
             autofillImportPromoObserver: autofillImportPromoObserver,
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
-            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager
+            syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
+            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2437,6 +2452,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 canUseExchangeV2Point1: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
+                },
+                canSendExchangeChannelSecret: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanSendExchangeChannelSecret)
                 },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)

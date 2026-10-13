@@ -195,6 +195,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum ConnectingSheetPhase: Equatable, Identifiable {
         case connecting(isRecovery: Bool, isFinishing: Bool = false)
         case syncAnotherDevice(isConnecting: Bool)
+        case waitingForOtherDevice
         case success(isRecovery: Bool)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
@@ -515,9 +516,10 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func showSuccess(recoveryCode: String, isRecovery: Bool) {
         self.recoveryCode = recoveryCode
-        if case .connecting = connectingSheetPhase {
+        switch connectingSheetPhase {
+        case .connecting, .waitingForOtherDevice:
             connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
-        } else {
+        default:
             connectingSheetPhase = .success(isRecovery: isRecovery)
         }
     }

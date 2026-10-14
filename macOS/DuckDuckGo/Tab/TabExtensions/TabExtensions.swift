@@ -201,6 +201,12 @@ extension TabExtensionsBuilder {
                     permissionModel: args.permissionModel
                 )
             }
+        } else {
+            // `WebNotificationsTabExtension` above also handles passkey detection's messages. Without it, they need a
+            // handler of their own.
+            add {
+                PasskeyUsageTabExtension(contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript))
+            }
         }
 
         add {

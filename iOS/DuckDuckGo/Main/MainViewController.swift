@@ -3143,6 +3143,7 @@ class MainViewController: UIViewController {
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       images: [AIChatNativePrompt.NativePromptImage]? = nil,
                       files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil,
                       termsAccepted: Bool = false,
                       source: AIChatEntryPointSource) {
         guard let currentTab else {
@@ -3152,7 +3153,7 @@ class MainViewController: UIViewController {
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
-        let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
+        let hasAttachments = images?.isEmpty == false || files?.isEmpty == false || textPasted?.isEmpty == false
         if Self.hasAutoSubmittedDuckAIPrompt(query: query, autoSend: autoSend, hasAttachments: hasAttachments) {
             postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
         } else {
@@ -3169,6 +3170,7 @@ class MainViewController: UIViewController {
                 reasoningEffort: reasoningEffort,
                 images: images,
                 files: files,
+                textPasted: textPasted,
                 termsAccepted: termsAccepted
             )
         }
@@ -4851,6 +4853,7 @@ class MainViewController: UIViewController {
                     reasoningEffort: AIChatReasoningEffort? = nil,
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                    textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil,
                     reportsNewTab: Bool? = nil,
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
@@ -4871,6 +4874,7 @@ class MainViewController: UIViewController {
             reasoningEffort: reasoningEffort,
             images: images,
             files: files,
+            textPasted: textPasted,
             reportsNewTab: reportsNewTab,
             forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink,
@@ -4987,6 +4991,7 @@ class MainViewController: UIViewController {
                                  reasoningEffort: AIChatReasoningEffort? = nil,
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
                                  files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                                 textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil,
                                  reportsNewTab: Bool? = nil,
                                  forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false,
@@ -5018,7 +5023,7 @@ class MainViewController: UIViewController {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Mirror the in-place `.aiPromptSubmitted` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
-            let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
+            let hasAttachments = images?.isEmpty == false || files?.isEmpty == false || textPasted?.isEmpty == false
             if !fromDeepLink {
                 if Self.hasAutoSubmittedDuckAIPrompt(query: query, autoSend: autoSend, hasAttachments: hasAttachments) {
                     postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
@@ -5037,6 +5042,7 @@ class MainViewController: UIViewController {
                     toolChoice: tools?.map(\.rawValue),
                     images: images,
                     files: files,
+                    textPasted: textPasted,
                     modelId: modelId,
                     reasoningEffort: reasoningEffort
                 ).withTermsAccepted(termsAccepted)
@@ -5056,7 +5062,7 @@ class MainViewController: UIViewController {
 
         stampDuckAIEntrySourceOnCurrentTab(source)
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
-             termsAccepted: termsAccepted, source: source)
+             textPasted: textPasted, termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
         }

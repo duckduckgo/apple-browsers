@@ -135,6 +135,8 @@ public struct AIChatAttachmentValidator {
     public let usage: AIChatAttachmentUsageSnapshot
     public let pendingImageCount: Int
     public let pendingFiles: [FileDescriptor]
+    /// UTF-16 length of every pending pasted-text attachment, the unit the FE measures in.
+    public let pendingPastedTextLength: Int
     public let messages: Messages
 
     public init(
@@ -143,6 +145,7 @@ public struct AIChatAttachmentValidator {
         usage: AIChatAttachmentUsageSnapshot = .zero,
         pendingImageCount: Int = 0,
         pendingFiles: [FileDescriptor] = [],
+        pendingPastedTextLength: Int = 0,
         messages: Messages
     ) {
         self.limits = limits
@@ -150,6 +153,7 @@ public struct AIChatAttachmentValidator {
         self.usage = usage
         self.pendingImageCount = pendingImageCount
         self.pendingFiles = pendingFiles
+        self.pendingPastedTextLength = pendingPastedTextLength
         self.messages = messages
     }
 
@@ -348,7 +352,11 @@ public struct AIChatAttachmentValidator {
     }
 
     public func promptValidationMessage(for text: String) -> String? {
-        let promptLength = text.trimmingCharacters(in: .whitespacesAndNewlines).count
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if pendingPastedTextLength > 0, trimmed.utf16.count + pendingPastedTextLength > AIChatPastedText.maxInputCharacters {
+            return messages.promptTooLong
+        }
+        let promptLength = trimmed.count + pendingPastedTextLength
         guard !(pendingFiles.isEmpty && pendingImageCount == 0),
               let maxInputCharsWithAttachments,
               promptLength > maxInputCharsWithAttachments else {

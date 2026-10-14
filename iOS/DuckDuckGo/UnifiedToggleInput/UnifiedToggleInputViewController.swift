@@ -253,6 +253,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.attachmentMenu = newValue }
     }
 
+    var onAttachmentTapped: ((UUID) -> Void)? {
+        get { inputBarView.onAttachmentTapped }
+        set { inputBarView.onAttachmentTapped = newValue }
+    }
+
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
         get { inputBarView.attachmentPasteHandler }
         set { inputBarView.attachmentPasteHandler = newValue }

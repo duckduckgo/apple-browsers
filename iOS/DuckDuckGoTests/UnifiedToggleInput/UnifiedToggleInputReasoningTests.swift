@@ -573,7 +573,7 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, textPasted: [AIChatNativePrompt.NativePromptPastedText]?, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedReasoningEffort = reasoningEffort

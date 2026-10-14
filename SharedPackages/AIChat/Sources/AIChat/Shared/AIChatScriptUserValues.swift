@@ -372,6 +372,15 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
     }
 
+    /// A long plain-text paste the user kept as an attachment; the FE maps each to a `text-pasted` content part.
+    public struct NativePromptPastedText: Codable, Equatable {
+        public let content: String
+
+        public init(content: String) {
+            self.content = content
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
@@ -380,6 +389,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let toolChoice: [String]?
         public let images: [NativePromptImage]?
         public let files: [NativePromptFile]?
+        public let textPasted: [NativePromptPastedText]?
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
@@ -390,6 +400,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             case toolChoice
             case images
             case files
+            case textPasted
             case modelId
             case mode
             case reasoningEffort
@@ -401,6 +412,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             toolChoice: [String]?,
             images: [NativePromptImage]?,
             files: [NativePromptFile]?,
+            textPasted: [NativePromptPastedText]? = nil,
             modelId: String?,
             mode: String?,
             reasoningEffort: AIChatReasoningEffort?
@@ -410,6 +422,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.toolChoice = toolChoice
             self.images = images
             self.files = files
+            self.textPasted = textPasted
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
@@ -422,6 +435,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
             images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
             files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
+            textPasted = try container.decodeIfPresent([NativePromptPastedText].self, forKey: .textPasted)
             modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
@@ -555,8 +569,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(termsAccepted, forKey: .termsAccepted)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, textPasted: [NativePromptPastedText]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, textPasted: textPasted, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

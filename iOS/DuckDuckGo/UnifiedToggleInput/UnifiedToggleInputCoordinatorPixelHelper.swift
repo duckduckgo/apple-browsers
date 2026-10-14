@@ -182,12 +182,14 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             firing.fireDailyAndCount(.unifiedToggleInputImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputFileRemoved, surfaceParameters(surface))
+        case .pastedText:
+            break
         }
     }
 
     static func fireEditAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
         switch attachment {
-        case .tab:
+        case .tab, .pastedText:
             break
         case .image:
             firing.fireDailyAndCount(.unifiedToggleInputEditImageRemoved, surfaceParameters(surface))
@@ -345,7 +347,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         attachments.contains { attachment in
             switch attachment {
             case .file, .invalidFile: return true
-            case .image, .tab: return false
+            case .image, .tab, .pastedText: return false
             }
         }
     }

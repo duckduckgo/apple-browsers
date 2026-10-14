@@ -1400,14 +1400,14 @@ extension MainViewController: UnifiedToggleInputDelegate {
         recordDuckAISessionPromptSubmittedOnCurrentTab()
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, textPasted: [AIChatNativePrompt.NativePromptPastedText]?, termsAccepted: Bool) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
         if currentTab?.isAITab != true,
-           images?.isEmpty ?? true, files?.isEmpty ?? true,
+           images?.isEmpty ?? true, files?.isEmpty ?? true, textPasted?.isEmpty ?? true,
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
             unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()
@@ -1418,7 +1418,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
             return
         }
         openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
-                   termsAccepted: termsAccepted)
+                   textPasted: textPasted, termsAccepted: termsAccepted)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {

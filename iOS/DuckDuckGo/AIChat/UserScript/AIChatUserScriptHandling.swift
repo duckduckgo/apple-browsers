@@ -537,6 +537,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let prompt = promptHandler.consumeData() as? AIChatNativePrompt else { return nil }
+        UnifiedToggleInputPastedTextEncoder.debugDump(prompt, channel: "getAIChatNativePrompt")
         return prompt.withTermsAccepted(termsAcceptedMarker(for: prompt))
     }
 

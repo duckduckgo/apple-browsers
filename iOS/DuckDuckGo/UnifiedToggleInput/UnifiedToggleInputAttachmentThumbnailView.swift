@@ -48,6 +48,10 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
+    var onTap: ((UUID) -> Void)? {
+        didSet { tapRecognizer.isEnabled = onTap != nil }
+    }
+    private lazy var tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
     private let attachment: UnifiedToggleInputAttachment
     private let usesCompactLayout: Bool
     private var widthConstraint: NSLayoutConstraint!
@@ -118,6 +122,16 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.lineBreakMode = usesCompactLayout ? .byTruncatingTail : .byTruncatingMiddle
         label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private lazy var metadataLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.daxCaption()
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = UIColor(designSystemColor: .textSecondary)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.isHidden = true
         return label
     }()
 
@@ -201,7 +215,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.addLayoutGuide(iconLayoutGuide)
         chipView.addSubview(fileIconView)
         chipView.addSubview(fileNameLabel)
+        chipView.addSubview(metadataLabel)
         chipView.addSubview(removeButton)
+        tapRecognizer.isEnabled = false
+        chipView.addGestureRecognizer(tapRecognizer)
 
         fileNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         removeButton.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -250,7 +267,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             fileIconView.widthAnchor.constraint(equalToConstant: iconSize),
             fileIconView.heightAnchor.constraint(equalToConstant: iconSize),
 
-            fileNameLabel.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
+            fileNameLabel.centerYAnchor.constraint(equalTo: chipView.centerYAnchor, constant: attachment.pastedText == nil ? 0 : -8),
+            metadataLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor),
+            metadataLabel.leadingAnchor.constraint(equalTo: fileNameLabel.leadingAnchor),
+            metadataLabel.trailingAnchor.constraint(equalTo: fileNameLabel.trailingAnchor),
 
             removeButton.widthAnchor.constraint(equalToConstant: removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: removeButtonSize),
@@ -276,6 +296,8 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             configureFile(fileName: fileAttachment.fileName, validationMessage: fileAttachment.validationMessage)
         case .tab(let tabAttachment):
             configureTab(title: tabAttachment.title, favicon: tabAttachment.favicon)
+        case .pastedText(let pastedText):
+            configurePastedText(pastedText)
         }
         applyAppearance()
     }
@@ -307,6 +329,22 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         accessibilityValue = validationMessage
     }
 
+    func configurePastedText(_ pastedText: AIChatPastedText) {
+        imageView.image = nil
+        imageView.isHidden = true
+        fileIconView.image = usesCompactLayout ? DesignSystemImages.Glyphs.Size16.note : DesignSystemImages.Glyphs.Size24.note
+        fileIconView.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        fileNameLabel.text = pastedText.title
+        fileNameLabel.lineBreakMode = .byTruncatingTail
+        metadataLabel.text = UserText.aiChatPastedTextLabel
+        fileIconView.isHidden = false
+        fileNameLabel.isHidden = false
+        metadataLabel.isHidden = false
+        accessibilityLabel = UserText.aiChatPastedTextLabel
+        accessibilityValue = pastedText.title
+        accessibilityTraits = .button
+    }
+
     func applyAppearance() {
         chipView.backgroundColor = chipBackgroundColor
         chipView.layer.borderColor = borderColor.cgColor
@@ -322,6 +360,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
 
     @objc func removeTapped() {
         onRemove?(attachmentId)
+    }
+
+    @objc func chipTapped() {
+        onTap?(attachmentId)
     }
 }
 

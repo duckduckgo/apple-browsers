@@ -436,6 +436,18 @@
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "attachment";
 
+/* Footer of the pasted-text editor sheet showing how many characters the text has. Parameter is a formatted number */
+"aichat.pasted-text.character-count" = "%@ characters";
+
+/* Subtitle of the editor sheet for a long block of text the user pasted into AI chat */
+"aichat.pasted-text.formatting-note" = "Formatting may be inconsistent from source.";
+
+/* Label on an AI chat attachment chip, and title of its editor sheet, for a long block of text the user pasted */
+"aichat.pasted-text.label" = "Pasted text";
+
+/* Footer of the pasted-text editor sheet when the text is over the allowed length. Parameters are the current count and the limit, as formatted numbers */
+"aichat.pasted-text.over-limit" = "Max characters %1$@ / %2$@";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";
 

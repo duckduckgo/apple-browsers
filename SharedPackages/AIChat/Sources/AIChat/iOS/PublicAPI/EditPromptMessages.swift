@@ -23,15 +23,18 @@ public struct EditPromptRequest: Decodable {
     public let prompt: String
     public let images: [AIChatNativePrompt.NativePromptImage]?
     public let files: [AIChatNativePrompt.NativePromptFile]?
+    public let textPasted: [AIChatNativePrompt.NativePromptPastedText]?
     public let hasResponsesToLose: Bool
 
     public init(prompt: String,
                 images: [AIChatNativePrompt.NativePromptImage]?,
                 files: [AIChatNativePrompt.NativePromptFile]?,
+                textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil,
                 hasResponsesToLose: Bool) {
         self.prompt = prompt
         self.images = images
         self.files = files
+        self.textPasted = textPasted
         self.hasResponsesToLose = hasResponsesToLose
     }
 }
@@ -39,12 +42,13 @@ public struct EditPromptRequest: Decodable {
 public enum EditPromptReply: Encodable {
     case submit(prompt: String,
                 images: [AIChatNativePrompt.NativePromptImage]?,
-                files: [AIChatNativePrompt.NativePromptFile]?)
+                files: [AIChatNativePrompt.NativePromptFile]?,
+                textPasted: [AIChatNativePrompt.NativePromptPastedText]?)
 
     case cancelled
 
     private enum CodingKeys: String, CodingKey {
-        case cancelled, prompt, images, files
+        case cancelled, prompt, images, files, textPasted
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -52,10 +56,11 @@ public enum EditPromptReply: Encodable {
         switch self {
         case .cancelled:
             try container.encode(true, forKey: .cancelled)
-        case let .submit(prompt, images, files):
+        case let .submit(prompt, images, files, textPasted):
             try container.encode(prompt, forKey: .prompt)
             try container.encodeIfPresent(images, forKey: .images)
             try container.encodeIfPresent(files, forKey: .files)
+            try container.encodeIfPresent(textPasted, forKey: .textPasted)
         }
     }
 }

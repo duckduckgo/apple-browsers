@@ -39,7 +39,8 @@ final class EditPromptMessagesTests: XCTestCase {
         let reply = EditPromptReply.submit(
             prompt: "edited",
             images: [.init(data: "aW1hZ2U=", format: "png")],
-            files: [.init(data: "ZmlsZQ==", fileName: "a.pdf", mimeType: "application/pdf")]
+            files: [.init(data: "ZmlsZQ==", fileName: "a.pdf", mimeType: "application/pdf")],
+            textPasted: nil
         )
         let json = try jsonObject(reply)
         XCTAssertEqual(json["prompt"] as? String, "edited")
@@ -49,7 +50,7 @@ final class EditPromptMessagesTests: XCTestCase {
     }
 
     func testSubmitReplyOmitsNilAttachmentArrays() throws {
-        let json = try jsonObject(.submit(prompt: "edited", images: nil, files: nil))
+        let json = try jsonObject(.submit(prompt: "edited", images: nil, files: nil, textPasted: nil))
         XCTAssertEqual(json["prompt"] as? String, "edited")
         XCTAssertNil(json["images"], "nil means the model can't carry this type, so the key is omitted and the frontend keeps existing attachments")
         XCTAssertNil(json["files"], "nil means the model can't carry this type, so the key is omitted and the frontend keeps existing attachments")
@@ -57,7 +58,7 @@ final class EditPromptMessagesTests: XCTestCase {
     }
 
     func testSubmitReplyEncodesEmptyAttachmentArraysAsEmpty() throws {
-        let json = try jsonObject(.submit(prompt: "edited", images: [], files: []))
+        let json = try jsonObject(.submit(prompt: "edited", images: [], files: [], textPasted: []))
         XCTAssertEqual(json["prompt"] as? String, "edited")
         XCTAssertEqual((json["images"] as? [Any])?.count, 0, "[] must be preserved so the frontend can tell the user removed everything")
         XCTAssertEqual((json["files"] as? [Any])?.count, 0, "[] must be preserved so the frontend can tell the user removed everything")

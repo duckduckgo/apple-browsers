@@ -418,6 +418,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
@@ -438,6 +439,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                 toolChoice: tools?.map(\.rawValue),
                 images: images,
                 files: files,
+                textPasted: textPasted,
                 modelId: modelId,
                 pageContext: context,
                 selections: selections,
@@ -536,6 +538,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     @discardableResult
     private func pushPrompt(_ prompt: AIChatNativePrompt) -> Bool {
         let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker(for: prompt))
+        UnifiedToggleInputPastedTextEncoder.debugDump(payload, channel: "submitAIChatNativePrompt")
         guard push(.submitPrompt(payload)) else { return false }
         if let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty {
             onAttachedSelectionsConsumed?(selectionIDs)

@@ -266,6 +266,43 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         XCTAssertEqual(spy.readCount, 1)
     }
 
+    // MARK: - Pasted text
+
+    func testLongTextPasteBecomesPastedText() {
+        let delegate = MockPasteDelegate()
+        let handler = makeHandler(delegate)
+        let text = String(repeating: "a", count: AIChatPastedText.conversionThreshold)
+
+        XCTAssertTrue(handler.pasteTextAsAttachmentIfNeeded(text))
+        XCTAssertEqual(delegate.pastedTexts, [text])
+    }
+
+    func testShortTextPasteStaysInline() {
+        let delegate = MockPasteDelegate()
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.pasteTextAsAttachmentIfNeeded(String(repeating: "a", count: AIChatPastedText.conversionThreshold - 1)))
+        XCTAssertTrue(delegate.pastedTexts.isEmpty)
+    }
+
+    func testLongTextPasteStaysInlineOutsideDuckAIOrWhileGenerating() {
+        let delegate = MockPasteDelegate()
+        delegate.support = UnifiedToggleInputPasteSupport(isEnabled: false, acceptsImages: true, fileTypes: [])
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.pasteTextAsAttachmentIfNeeded(String(repeating: "a", count: 6_000)))
+        XCTAssertTrue(delegate.pastedTexts.isEmpty)
+    }
+
+    func testLongTextPasteStaysInlineWhenFlagOff() {
+        let delegate = MockPasteDelegate()
+        delegate.isPastedTextEnabled = false
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.pasteTextAsAttachmentIfNeeded(String(repeating: "a", count: 6_000)))
+        XCTAssertTrue(delegate.pastedTexts.isEmpty)
+    }
+
     // MARK: - Text control paste override
 
     func testTextViewAdvertisesPasteWhenHandlerAccepts() {
@@ -386,6 +423,13 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
     func presentPasteError(_ message: String) {
         presentedErrors.append(message)
     }
+
+    var isPastedTextEnabled = true
+    private(set) var pastedTexts: [String] = []
+
+    func addPastedText(_ text: String) {
+        pastedTexts.append(text)
+    }
 }
 
 @MainActor
@@ -395,6 +439,7 @@ private final class MockAttachmentPasteHandler: AttachmentPasteHandling {
 
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool { canPasteResult }
     func pasteAttachments(from pasteboard: UIPasteboard) { pasteCallCount += 1 }
+    func pasteTextAsAttachmentIfNeeded(_ text: String) -> Bool { false }
 }
 
 @MainActor

@@ -379,6 +379,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Attachment Callbacks
 
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
+    var onAttachmentTapped: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
     var onFooterPrimaryTapped: ((UTIFooterItem.ID) -> Void)?
@@ -1870,6 +1871,9 @@ private extension UnifiedToggleInputView {
         }
         attachmentsStrip.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
             self?.onAttachmentRemoved?(id, attachment, isUserInitiated)
+        }
+        attachmentsStrip.onAttachmentTapped = { [weak self] id in
+            self?.onAttachmentTapped?(id)
         }
         addSubview(attachmentsStrip)
 

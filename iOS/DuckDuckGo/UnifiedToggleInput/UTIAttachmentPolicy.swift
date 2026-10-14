@@ -61,6 +61,7 @@ struct UTIAttachmentPolicy {
             ),
             pendingImageCount: pendingAttachments.filter(\.isImage).count,
             pendingFiles: pendingAttachments.compactMap(\.fileAttachment).map(AIChatAttachmentValidator.FileDescriptor.init),
+            pendingPastedTextLength: pendingAttachments.compactMap(\.pastedText).reduce(0) { $0 + $1.length },
             messages: Self.messages
         )
     }
@@ -128,7 +129,7 @@ struct UTIAttachmentPolicy {
 
     func isAttachmentSupported(_ attachment: UnifiedToggleInputAttachment) -> Bool {
         switch attachment {
-        case .tab:
+        case .tab, .pastedText:
             return true
         case .image:
             return model?.supportsImageUpload == true

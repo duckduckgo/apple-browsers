@@ -2562,6 +2562,18 @@ public struct UserText {
     }
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
+    public static let aiChatPastedTextLabel = NSLocalizedString("aichat.pasted-text.label", value: "Pasted text", comment: "Label on an AI chat attachment chip, and title of its editor sheet, for a long block of text the user pasted")
+    public static let aiChatPastedTextFormattingNote = NSLocalizedString("aichat.pasted-text.formatting-note", value: "Formatting may be inconsistent from source.", comment: "Subtitle of the editor sheet for a long block of text the user pasted into AI chat")
+    public static func aiChatPastedTextCharacterCount(_ count: Int) -> String {
+        let format = NSLocalizedString("aichat.pasted-text.character-count", value: "%@ characters", comment: "Footer of the pasted-text editor sheet showing how many characters the text has. Parameter is a formatted number")
+        return String(format: format, NumberFormatter.localizedString(from: NSNumber(value: count), number: .decimal))
+    }
+    public static func aiChatPastedTextOverLimit(count: Int, limit: Int) -> String {
+        let format = NSLocalizedString("aichat.pasted-text.over-limit", value: "Max characters %1$@ / %2$@", comment: "Footer of the pasted-text editor sheet when the text is over the allowed length. Parameters are the current count and the limit, as formatted numbers")
+        return String(format: format,
+                      NumberFormatter.localizedString(from: NSNumber(value: count), number: .decimal),
+                      NumberFormatter.localizedString(from: NSNumber(value: limit), number: .decimal))
+    }
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")

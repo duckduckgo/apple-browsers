@@ -577,7 +577,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabAttachmentSource: { [weak self] in self?.tabAttachmentSource },
                 tabAttachmentFeatureState: { [weak self] in self?.tabAttachmentFeature?.state ?? .unavailable },
                 pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested },
-                isFireTab: { [weak self] in self?.viewController.handler.isFireTab ?? false }
+                isFireTab: { [weak self] in self?.viewController.handler.isFireTab ?? false },
+                isPastedTextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) ?? false },
+                currentText: { [weak self] in self?.currentText ?? "" }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -596,7 +598,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 }
             )
         )
-        viewController.attachmentPasteHandler = attachmentPasteEnabled ? attachmentController.pasteHandler : nil
+        attachmentController.pasteHandler.isAttachmentPasteEnabled = attachmentPasteEnabled
+        viewController.attachmentPasteHandler = attachmentController.pasteHandler
+        viewController.onAttachmentTapped = { [weak self] id in
+            self?.attachmentController.presentPastedTextEditor(id: id)
+        }
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
         }
@@ -1030,6 +1036,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             attachments.append(.file(UnifiedToggleInputAttachmentPresenter.makeFileAttachment(data: data,
                                                                                               fileName: file.fileName,
                                                                                               mimeType: file.mimeType)))
+        }
+        for pastedText in request.textPasted ?? [] {
+            attachments.append(.pastedText(AIChatPastedText(content: pastedText.content)))
         }
         return attachments
     }
@@ -2193,7 +2202,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             _ = acceptTermsOfServiceIfAskTapped(trigger)
             footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()
-            exitEditMode(reply: .submit(prompt: text, images: images, files: files))
+            let textPasted = UnifiedToggleInputPastedTextEncoder.encode(viewController.currentAttachments) ?? []
+            exitEditMode(reply: .submit(prompt: text, images: images, files: files, textPasted: textPasted))
             return
         }
 
@@ -2232,10 +2242,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let files = selectedModelSupportsFileUpload
             ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
             : nil
+        let textPasted = UnifiedToggleInputPastedTextEncoder.encode(viewController.currentAttachments)
 
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
-        deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools,
+        deliverAIChatPrompt(text: UnifiedToggleInputPastedTextEncoder.debugInlinedPrompt(text, textPasted: textPasted),
+                            images: images, files: files, textPasted: textPasted, configuration: configuration, tools: tools,
                             termsAccepted: termsAccepted, userScript: userScript)
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
@@ -2252,6 +2264,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     private func deliverAIChatPrompt(text: String,
                                      images: [AIChatNativePrompt.NativePromptImage]?,
                                      files: [AIChatNativePrompt.NativePromptFile]?,
+                                     textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
                                      configuration: PromptSubmissionConfiguration,
                                      tools: [AIChatRAGTool]?,
                                      termsAccepted: Bool,
@@ -2265,6 +2278,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 reasoningEffort: configuration.reasoningEffort,
                 images: images,
                 files: files,
+                textPasted: textPasted,
                 termsAccepted: termsAccepted
             )
             delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
@@ -2294,7 +2308,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
         if let userScript {
             let origin = pixelReporter.currentPromptOrigin()
-            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools,
+            userScript.submitPrompt(text, images: images, files: files, textPasted: textPasted, modelId: configuration.modelId, tools: tools,
                                     reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest,
                                     termsAccepted: termsAccepted,
                                     onPromptDispatched: { [weak self] in
@@ -2303,7 +2317,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             })
         } else {
             delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort,
-                                                        images: images, files: files, termsAccepted: termsAccepted)
+                                                        images: images, files: files, textPasted: textPasted, termsAccepted: termsAccepted)
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
         }
     }

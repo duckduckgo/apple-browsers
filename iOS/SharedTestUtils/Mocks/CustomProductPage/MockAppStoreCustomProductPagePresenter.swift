@@ -36,6 +36,7 @@ final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCu
         reasoningEffort: AIChat.AIChatReasoningEffort?,
         images: [AIChatNativePrompt.NativePromptImage]?,
         files: [AIChat.AIChatNativePrompt.NativePromptFile]?,
+        textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
         fromDeepLink: Bool,

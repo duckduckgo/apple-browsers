@@ -30,6 +30,9 @@ protocol AttachmentPasteHandling: AnyObject {
 
     /// Turns supported pasteboard items into attachments; loads asynchronously.
     func pasteAttachments(from pasteboard: UIPasteboard)
+
+    /// Takes a long plain-text paste as a pasted-text attachment; `false` leaves it to the default paste.
+    func pasteTextAsAttachmentIfNeeded(_ text: String) -> Bool
 }
 
 /// Shared `paste(_:)` / `canPerformAction(_:)` routing that keeps the paste-intercept logic in one place for the text control.
@@ -45,6 +48,12 @@ enum AttachmentPasteRouting {
         guard let handler, handler.canPasteAttachments(from: .general) else { return false }
         handler.pasteAttachments(from: .general)
         return true
+    }
+
+    /// Only reached when the pasteboard holds no attachable files, matching the FE's "plain text only" rule.
+    static func routeTextPaste(with handler: AttachmentPasteHandling?) -> Bool {
+        guard let handler, UIPasteboard.general.hasStrings, let text = UIPasteboard.general.string else { return false }
+        return handler.pasteTextAsAttachmentIfNeeded(text)
     }
 }
 
@@ -114,6 +123,8 @@ protocol UnifiedToggleInputPasteDelegate: AnyObject {
     /// Reports pasted images that couldn't be attached, for the limit that was actually hit.
     func reportRejectedPastedImages(reason: PasteImageRejectionReason)
     func presentPasteError(_ message: String)
+    var isPastedTextEnabled: Bool { get }
+    func addPastedText(_ text: String)
 }
 
 /// Owns the paste orchestration (gate → load → add → report) so the coordinator only supplies limits and add actions via `UnifiedToggleInputPasteDelegate`.
@@ -122,6 +133,9 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
 
     weak var delegate: UnifiedToggleInputPasteDelegate?
 
+    /// Image/file paste has its own kill switch; the handler is also installed for pasted text alone.
+    var isAttachmentPasteEnabled = true
+
     private let attachmentProbe: PasteboardAttachmentProbe
 
     init(attachmentProbe: PasteboardAttachmentProbe = PasteboardAttachmentProbe()) {
@@ -129,7 +143,7 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
     }
 
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool {
-        guard let support = delegate?.pasteAttachmentSupport, support.isEnabled, support.acceptsAnyAttachment else { return false }
+        guard isAttachmentPasteEnabled, let support = delegate?.pasteAttachmentSupport, support.isEnabled, support.acceptsAnyAttachment else { return false }
         return attachmentProbe.hasSupportedAttachments(
             in: pasteboard,
             allowsImages: support.acceptsImages,
@@ -137,8 +151,18 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
         )
     }
 
+    /// Duck.ai mode, not generating, and at least the FE's conversion length; typed text never converts.
+    func pasteTextAsAttachmentIfNeeded(_ text: String) -> Bool {
+        guard let delegate,
+              delegate.isPastedTextEnabled,
+              delegate.pasteAttachmentSupport.isEnabled,
+              AIChatPastedText.shouldConvert(text) else { return false }
+        delegate.addPastedText(text)
+        return true
+    }
+
     func pasteAttachments(from pasteboard: UIPasteboard) {
-        guard let delegate else { return }
+        guard isAttachmentPasteEnabled, let delegate else { return }
         let support = delegate.pasteAttachmentSupport
         guard support.isEnabled, support.acceptsAnyAttachment else { return }
         // Read on the main thread: `NSItemProvider` isn't `Sendable`, and this runs once per user-initiated paste rather than per menu build.

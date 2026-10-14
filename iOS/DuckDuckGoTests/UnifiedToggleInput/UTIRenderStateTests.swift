@@ -540,7 +540,7 @@ final class UTIRenderStateTests: XCTestCase {
 private final class RecordingPromptDelegate: UnifiedToggleInputDelegate {
     private(set) var submittedTermsAccepted: [Bool] = []
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, textPasted: [AIChatNativePrompt.NativePromptPastedText]?, termsAccepted: Bool) {
         submittedTermsAccepted.append(termsAccepted)
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}

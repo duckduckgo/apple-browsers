@@ -157,14 +157,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNotNil(coordinator.viewController.attachmentPasteHandler)
     }
 
-    func test_attachmentPasteHandlerNotWiredWhenDisabled() {
+    func test_attachmentPasteDeclinedWhenDisabled() {
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             attachmentPasteEnabled: false
         )
-        XCTAssertNil(coordinator.viewController.attachmentPasteHandler)
+        let handler = coordinator.viewController.attachmentPasteHandler
+        XCTAssertNotNil(handler, "Installed for pasted text even when image/file paste is off")
+        XCTAssertFalse(handler?.canPasteAttachments(from: .general) ?? true)
     }
 
     // MARK: - Initial State
@@ -570,7 +572,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
 
         let reply = await editTask.value
-        guard case let .submit(prompt, _, _) = reply else {
+        guard case let .submit(prompt, _, _, _) = reply else {
             return XCTFail("Expected .submit, got \(reply)")
         }
         XCTAssertEqual(prompt, "edited", "Submitting during an edit resolves the held reply with the edited content")
@@ -4014,7 +4016,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var didRequestAppMenuCount = 0
     var didRequestAppMenuLongPressCount = 0
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, textPasted: [AIChatNativePrompt.NativePromptPastedText]?, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools

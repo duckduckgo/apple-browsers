@@ -614,6 +614,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            reasoningEffort: AIChatReasoningEffort?,
                                            images: [AIChatNativePrompt.NativePromptImage]?,
                                            files: [AIChatNativePrompt.NativePromptFile]?,
+                                           textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
                                            termsAccepted: Bool) {
         onPromptSent?()
         guard claimFirstPromptSubmission() else { return }
@@ -621,6 +622,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         contextualChatViewController?.submitPrompt(prompt,
                                                    images: images,
                                                    files: files,
+                                                   textPasted: textPasted,
                                                    modelId: modelId,
                                                    tools: tools,
                                                    pageContext: chipViewModel.pendingAttachedContextData,

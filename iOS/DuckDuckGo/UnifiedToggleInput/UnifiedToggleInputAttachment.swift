@@ -92,6 +92,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
     case file(AIChatFileAttachment)
     case invalidFile(UnifiedToggleInputInvalidFileAttachment)
     case tab(UnifiedToggleInputTabAttachment)
+    case pastedText(AIChatPastedText)
 
     var id: UUID {
         switch self {
@@ -102,6 +103,8 @@ enum UnifiedToggleInputAttachment: Identifiable {
         case .invalidFile(let attachment):
             return attachment.id
         case .tab(let attachment):
+            return attachment.id
+        case .pastedText(let attachment):
             return attachment.id
         }
     }
@@ -115,6 +118,8 @@ enum UnifiedToggleInputAttachment: Identifiable {
         case .invalidFile(let attachment):
             return attachment.fileName
         case .tab(let attachment):
+            return attachment.title
+        case .pastedText(let attachment):
             return attachment.title
         }
     }
@@ -133,7 +138,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
 
     var fileSizeBytes: Int {
         switch self {
-        case .image, .tab:
+        case .image, .tab, .pastedText:
             return 0
         case .file(let attachment):
             return attachment.fileSizeBytes
@@ -153,7 +158,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
         switch self {
         case .file, .invalidFile:
             return true
-        case .image, .tab:
+        case .image, .tab, .pastedText:
             return false
         }
     }
@@ -177,13 +182,18 @@ enum UnifiedToggleInputAttachment: Identifiable {
 
     var mimeType: String? {
         switch self {
-        case .image, .tab:
+        case .image, .tab, .pastedText:
             return nil
         case .file(let attachment):
             return attachment.mimeType
         case .invalidFile(let attachment):
             return attachment.mimeType
         }
+    }
+
+    var pastedText: AIChatPastedText? {
+        guard case .pastedText(let attachment) = self else { return nil }
+        return attachment
     }
 
     var image: UIImage? {

@@ -929,6 +929,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,

@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
@@ -67,6 +68,8 @@ final class UTIAttachmentController {
         var tabAttachmentFeatureState: () -> AIChatContextualAttachMoreTabsState = { .unavailable }
         var pageContextRemoveHandler: () -> (() -> Void)? = { nil }
         var isFireTab: () -> Bool = { false }
+        var isPastedTextEnabled: () -> Bool = { false }
+        var currentText: () -> String = { "" }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -543,7 +546,7 @@ final class UTIAttachmentController {
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {
-            case .image, .file, .tab: return true
+            case .image, .file, .tab, .pastedText: return true
             case .invalidFile: return false
             }
         }.count
@@ -692,5 +695,79 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
 
     func presentPasteError(_ message: String) {
         presentTransientValidationError(message)
+    }
+
+    var isPastedTextEnabled: Bool {
+        environment.isPastedTextEnabled()
+    }
+
+    func addPastedText(_ text: String) {
+        callbacks.onExpandIfNeeded()
+        view.addAttachment(.pastedText(AIChatPastedText(content: text)))
+        callbacks.onDraftChanged()
+        updateAttachButtonPresentation()
+        callbacks.updateFloatingReturnKey()
+        presentPastedTextLimitErrorIfNeeded()
+    }
+}
+
+// MARK: - Pasted text
+
+extension UTIAttachmentController {
+
+    /// Warns as soon as the pasted text pushes the message over the limit, rather than only at send.
+    private func presentPastedTextLimitErrorIfNeeded() {
+        if let message = environment.policy().promptValidationMessage(for: environment.currentText()) {
+            presentTransientValidationError(message)
+        }
+    }
+
+    /// The FE's limit for this message: the with-attachments text limit once an image or file is attached, otherwise the model's input limit.
+    private var effectiveMaxInputCharacters: Int {
+        let hasUpload = view.currentAttachments().contains { $0.isImage || $0.fileAttachment != nil }
+        if hasUpload, let limit = environment.attachmentLimits()?.images.maxInputCharsWithAttachments {
+            return limit
+        }
+        return AIChatPastedText.maxInputCharacters
+    }
+
+    func presentPastedTextEditor(id: UUID) {
+        guard let pastedText = view.currentAttachments().first(where: { $0.id == id })?.pastedText,
+              let presenter = environment.presenterViewController() else { return }
+
+        let otherPastedLength = view.currentAttachments()
+            .compactMap(\.pastedText)
+            .filter { $0.id != id }
+            .reduce(0) { $0 + $1.length }
+        let promptLength = environment.currentText().trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
+
+        weak var hostingController: UIViewController?
+        let editor = PastedTextEditorView(
+            pastedText: pastedText,
+            otherContentLength: promptLength + otherPastedLength,
+            maxInputCharacters: effectiveMaxInputCharacters,
+            onSave: { [weak self] content in
+                self?.updatePastedText(id: id, content: content)
+                hostingController?.dismiss(animated: true)
+            },
+            onCancel: {
+                hostingController?.dismiss(animated: true)
+            }
+        )
+        let controller = UIHostingController(rootView: editor)
+        controller.modalPresentationStyle = .pageSheet
+        controller.sheetPresentationController?.detents = [.large()]
+        controller.sheetPresentationController?.prefersGrabberVisible = true
+        hostingController = controller
+        presenter.present(controller, animated: true)
+    }
+
+    private func updatePastedText(id: UUID, content: String) {
+        guard view.currentAttachments().contains(where: { $0.id == id }) else { return }
+        view.replaceAttachment(id, .pastedText(AIChatPastedText(id: id, content: content)))
+        transientValidationMessage = nil
+        callbacks.onDraftChanged()
+        syncValidationErrorForCurrentMode()
+        presentPastedTextLimitErrorIfNeeded()
     }
 }

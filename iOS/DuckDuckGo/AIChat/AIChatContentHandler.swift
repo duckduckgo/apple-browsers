@@ -47,6 +47,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -71,7 +72,7 @@ extension AIChatUserScriptProviding {
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
                       tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
-        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        submitPrompt(prompt, images: images, files: files, textPasted: nil, modelId: modelId, tools: tools,
                      pageContext: pageContext, reasoningEffort: reasoningEffort,
                      tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
     }
@@ -139,6 +140,7 @@ protocol AIChatContentHandling: AnyObject {
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -188,7 +190,7 @@ extension AIChatContentHandling {
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
                       tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
-        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        submitPrompt(prompt, images: images, files: files, textPasted: nil, modelId: modelId, tools: tools,
                      pageContext: pageContext, reasoningEffort: reasoningEffort,
                      tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
     }
@@ -362,6 +364,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -373,7 +376,7 @@ final class AIChatContentHandler: AIChatContentHandling {
             Task { @MainActor in tabAttachmentRequest?.cancel() }
             return
         }
-        userScript.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        userScript.submitPrompt(prompt, images: images, files: files, textPasted: textPasted, modelId: modelId, tools: tools,
                                 pageContext: pageContext, reasoningEffort: reasoningEffort,
                                 tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
                                 onPromptDispatched: onPromptDispatched)

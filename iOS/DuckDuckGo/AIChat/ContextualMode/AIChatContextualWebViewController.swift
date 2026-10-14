@@ -45,6 +45,7 @@ final class AIChatContextualWebViewController: UIViewController {
         let prompt: String
         let images: [AIChatNativePrompt.NativePromptImage]?
         let files: [AIChatNativePrompt.NativePromptFile]?
+        let textPasted: [AIChatNativePrompt.NativePromptPastedText]?
         let modelId: String?
         let tools: [AIChatRAGTool]?
         let pageContext: AIChatPageContextData?
@@ -254,6 +255,7 @@ final class AIChatContextualWebViewController: UIViewController {
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
+                      textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
@@ -262,7 +264,7 @@ final class AIChatContextualWebViewController: UIViewController {
                       termsAccepted: Bool = false) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if canDeliverPrompt {
-            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, textPasted: textPasted, modelId: modelId, tools: tools,
                                              pageContext: pageContext, reasoningEffort: reasoningEffort,
                                              tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
                                              onPromptDispatched: { [weak self] in
@@ -274,6 +276,7 @@ final class AIChatContextualWebViewController: UIViewController {
             pendingRichPrompt = PendingRichPrompt(prompt: prompt,
                                                   images: images,
                                                   files: files,
+                                                  textPasted: textPasted,
                                                   modelId: modelId,
                                                   tools: tools,
                                                   pageContext: pageContext,
@@ -482,6 +485,7 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.submitPrompt(richPrompt.prompt,
                                          images: richPrompt.images,
                                          files: richPrompt.files,
+                                         textPasted: richPrompt.textPasted,
                                          modelId: richPrompt.modelId,
                                          tools: richPrompt.tools,
                                          pageContext: richPrompt.pageContext,

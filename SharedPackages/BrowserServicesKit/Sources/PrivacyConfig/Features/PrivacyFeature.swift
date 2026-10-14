@@ -404,6 +404,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 
+    /// Turns a long plain-text paste in the native input into a pasted-text attachment.
+    case unifiedToggleInputPastedText
+
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 

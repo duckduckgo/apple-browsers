@@ -158,6 +158,17 @@ final class NewTabPageOnboardingCoordinator {
         presentNextDaxDialog(event: .linearOnboardingCompleted)
     }
 
+    func prepareForLinearOnboardingDismissal() {
+        guard tutorialSettings.hasSeenOnboarding else { return }
+        switch onboardingFlowProvider.currentOnboardingFlow {
+        case .default:
+            prepareOnboardingContent(for: .contextual)
+        case .duckAI:
+            guard !tutorialSettings.hasSkippedOnboarding else { return }
+            prepareOnboardingContent(for: .duckAICompletion)
+        }
+    }
+
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
         prepareOnboardingContent(for: .duckAICompletion)
         setLogoHidden(true)

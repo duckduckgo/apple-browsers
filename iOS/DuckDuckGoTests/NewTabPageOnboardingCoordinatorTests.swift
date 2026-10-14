@@ -70,13 +70,50 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
 
     func testWhenOnboardingCompletesThenDialogReplacesRestingContent() {
         dialogs.specToReturn = .initial
+        let input = MockOmniBar()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        chrome.omniBar = input
+        page.chromeDelegate = chrome
+        var didBeginEditing = false
+        input.onBeginEditing = { didBeginEditing = true }
+
+        page.prepareForLinearOnboardingDismissal()
+
+        XCTAssertFalse(page.canAnimateSearchInput)
+        XCTAssertTrue(page.children.isEmpty)
+        XCTAssertFalse(dialogs.nextHomeScreenMessageNewCalled)
+        XCTAssertFalse(didBeginEditing)
 
         page.onboardingCompleted()
 
+        XCTAssertTrue(didBeginEditing)
         XCTAssertEqual(factory.specs, [.initial])
         XCTAssertEqual(page.children.count, 1)
         XCTAssertFalse(page.canAnimateSearchInput)
         XCTAssertTrue(coordinator.isPresentingDialog)
+    }
+
+    func testWhenPreparedOnboardingHasNoDialogThenRestingContentIsRestored() {
+        dialogs.specToReturn = nil
+
+        page.prepareForLinearOnboardingDismissal()
+        XCTAssertFalse(page.canAnimateSearchInput)
+
+        page.onboardingCompleted()
+
+        XCTAssertFalse(coordinator.isPresentingDialog)
+        XCTAssertTrue(page.canAnimateSearchInput)
+    }
+
+    func testWhenTailoredOnboardingWasSkippedThenDismissalDoesNotHideContent() {
+        flow.currentOnboardingFlow = .duckAI
+        tutorial.hasSkippedOnboarding = true
+
+        page.prepareForLinearOnboardingDismissal()
+        page.onboardingCompleted()
+
+        XCTAssertFalse(coordinator.isPresentingDialog)
+        XCTAssertTrue(page.canAnimateSearchInput)
     }
 
     func testWhenDialogIsDismissedThenRestingContentIsRestored() {

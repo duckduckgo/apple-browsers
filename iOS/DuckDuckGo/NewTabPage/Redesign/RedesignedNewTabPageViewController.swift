@@ -404,6 +404,10 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
         onboardingCoordinator?.onboardingCompleted()
     }
 
+    func prepareForLinearOnboardingDismissal() {
+        onboardingCoordinator?.prepareForLinearOnboardingDismissal()
+    }
+
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode?) {
         onboardingCoordinator?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message, textEntryMode: textEntryMode)
     }

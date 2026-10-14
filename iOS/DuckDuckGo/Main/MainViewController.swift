@@ -8763,6 +8763,8 @@ extension MainViewController: OnboardingDelegate {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
 
+        // Hide redesigned resting content before the modal fades out; input still activates after dismissal.
+        (newTabPageViewController as? RedesignedNewTabPageViewController)?.prepareForLinearOnboardingDismissal()
         controller.modalTransitionStyle = .crossDissolve
         controller.dismiss(animated: true) { [weak self] in
             self?.newTabPageViewController?.onboardingCompleted()

@@ -17,29 +17,67 @@
 //
 
 import XCTest
+import ZIPFoundation
 @testable import WebExtensions
 
-/// The expected values come from the DDG extension: `tldts.getDomain()` and `@duckduckgo/jsbloom` with the same
-/// `cpm-top-sites-bloom.json`. They must stay the same, so that the legacy CPM and the embedded extension send the same buckets.
+/// Mirrors `unit-test/background/cpm-site-rank.js` in duckduckgo-privacy-extension, so that the legacy CPM and the
+/// embedded extension send the same buckets.
 final class CPMSiteRankLookupTests: XCTestCase {
 
-    private let lookup = CPMSiteRankLookup()
+    private let lookup = CPMSiteRankLookupTests.makeLookup(["google.com", "youtube.com", "wikipedia.org", "bbc.co.uk", "www.gov.uk"])
 
-    func testWhenSiteIsATopSiteThenRankIsTop10k() {
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://google.com/")), .top10k)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.google.com/search?q=test")), .top10k)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://m.youtube.com/watch")), .top10k)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://en.wikipedia.org/wiki/Main_Page")), .top10k)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.bbc.co.uk/news")), .top10k)
+    func testHashesAreTheSameAsInTheExtension() {
+        let cases: [(string: String, hash: UInt32)] = [
+            ("", 0x811c9dc5),
+            ("a", 0xe40c292c),
+            ("foobar", 0xbf9cf968),
+            ("example.com", 0x431ceb26),
+            ("www.example.com", 0x88469fcb),
+            ("bbc.co.uk", 0xe55ec88c),
+            ("xn--bcher-kva.de", 0x0d16ee2d),
+        ]
+        for testCase in cases {
+            XCTAssertEqual(CPMSiteRankLookup.fnv1a32(testCase.string.utf8), testCase.hash, testCase.string)
+        }
     }
 
-    func testWhenSiteIsUnknownOrInvalidThenRankIsOther() {
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.a8f3k2j9x7q1.example/")), .other)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://example.com/")), .other)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "http://192.168.1.1/")), .other)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "http://localhost:8080/")), .other)
-        XCTAssertEqual(lookup.siteRank(for: URL(string: "about:blank")), .other)
+    func testWhenSiteOrItsSubdomainIsATopSiteThenRankIsTop10k() {
+        let urls = [
+            "https://google.com/",
+            "https://www.google.com/search?q=test",
+            "https://WWW.GOOGLE.COM./",
+            "https://m.youtube.com/watch",
+            "https://en.wikipedia.org/wiki/Main_Page",
+            "https://www.bbc.co.uk/news",
+            "https://www.gov.uk/",
+            "https://assets.www.gov.uk/",
+        ]
+        for url in urls {
+            XCTAssertEqual(lookup.siteRank(for: URL(string: url)), .top10k, url)
+        }
+    }
+
+    func testWhenSiteIsNotATopSiteThenRankIsOther() {
+        let urls = [
+            "https://notgoogle.com/",
+            "https://google.com.example.net/",
+            "https://co.uk/",
+            "https://gov.uk/",
+            "http://localhost/",
+            "http://192.168.1.1/",
+            "http://[::1]/",
+            "about:blank",
+        ]
+        for url in urls {
+            XCTAssertEqual(lookup.siteRank(for: URL(string: url)), .other, url)
+        }
         XCTAssertEqual(lookup.siteRank(for: nil), .other)
+    }
+
+    func testWhenHostIsPunycodeThenItMatchesTheInternationalizedDomain() {
+        let lookup = Self.makeLookup(["xn--bcher-kva.de"])
+        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.xn--bcher-kva.de/")), .top10k)
+        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.bucher.de/")), .other)
     }
 
     func testWhenDataCannotBeLoadedThenRankIsNil() {
@@ -47,64 +85,57 @@ final class CPMSiteRankLookupTests: XCTestCase {
         XCTAssertNil(lookup.siteRank(for: URL(string: "https://www.google.com/")))
     }
 
-    func testRegistrableDomainIsTheSameAsInTheExtension() throws {
-        let publicSuffixList = try XCTUnwrap(CPMSiteRankLookup.loadPublicSuffixList())
-        let cases: [(host: String, domain: String?)] = [
-            ("www.google.com", "google.com"),
-            ("google.com", "google.com"),
-            ("www.bbc.co.uk", "bbc.co.uk"),
-            ("a.b.c.example.com.au", "example.com.au"),
-            ("WWW.Example.COM", "example.com"),
-            ("example.com.", "example.com"),
-            // private suffixes are not used
-            ("user.github.io", "github.io"),
-            ("shop.myshopify.com", "myshopify.com"),
-            ("foo.blogspot.com", "blogspot.com"),
-            // wildcard and exception rules: *.ck, !www.ck, *.kawasaki.jp, !city.kawasaki.jp
-            ("bar.ck", nil),
-            ("foo.bar.ck", "foo.bar.ck"),
-            ("www.ck", "www.ck"),
-            ("foo.www.ck", "www.ck"),
-            ("kawasaki.jp", "kawasaki.jp"),
-            ("bar.kawasaki.jp", nil),
-            ("foo.bar.kawasaki.jp", "foo.bar.kawasaki.jp"),
-            ("city.kawasaki.jp", "city.kawasaki.jp"),
-            ("www.city.kawasaki.jp", "city.kawasaki.jp"),
-            // IDN rules match punycode hosts
-            ("foo.xn--55qx5d.cn", "foo.xn--55qx5d.cn"),
-            ("xn--80aswg.xn--p1ai", "xn--80aswg.xn--p1ai"),
-            // unknown TLD: the public suffix is the last label
-            ("foo.unknowntld", "foo.unknowntld"),
-            ("co.uk", nil),
-            ("com", nil),
-            ("localhost", nil),
-            ("192.168.1.1", nil),
-            ("::1", nil),
-        ]
-        for testCase in cases {
-            XCTAssertEqual(publicSuffixList.registrableDomain(of: testCase.host), testCase.domain, testCase.host)
-        }
+    func testWhenDataIsEmptyOrMalformedThenDecodingFails() {
+        let (count, data) = Self.encode(["google.com", "youtube.com", "wikipedia.org"])
+        XCTAssertNotNil(CPMSiteRankLookup.decode(count: count, base64: data))
+        XCTAssertNil(CPMSiteRankLookup.decode(count: 0, base64: ""))
+        XCTAssertNil(CPMSiteRankLookup.decode(count: count + 1, base64: data))
+        XCTAssertNil(CPMSiteRankLookup.decode(count: count - 1, base64: data))
+        XCTAssertNil(CPMSiteRankLookup.decode(count: count, base64: String(data.dropLast(4))))
+        XCTAssertNil(CPMSiteRankLookup.decode(count: count, base64: "!not base64!"))
+        XCTAssertNil(CPMSiteRankLookup.decode(count: -1, base64: data))
     }
 
-    func testHashesAreTheSameAsInJSBloom() {
-        let cases: [(string: String, djb2: UInt32, sdbm: UInt32)] = [
-            ("", 5381, 0),
-            ("a", 177604, 97),
-            ("google.com", 2128662947, 1986441324),
-            ("bücher.de", 2760085576, 3309094019),
-            ("example.😀", 3371728894, 2327081767),
-            ("a-very-long-subdomain-name-to-overflow.example.co.uk", 3903400390, 2391304487),
-        ]
-        for testCase in cases {
-            let codeUnits = Array(testCase.string.utf16)
-            XCTAssertEqual(JSBloomFilter.djb2(codeUnits), testCase.djb2, testCase.string)
-            XCTAssertEqual(JSBloomFilter.sdbm(codeUnits), testCase.sdbm, testCase.string)
-        }
+    func testBundledDataLoads() throws {
+        let data = try XCTUnwrap(CPMSiteRankLookup.loadBundledData())
+        XCTAssertGreaterThan(data.hashes.count, 5000)
+        XCTAssertEqual(data.hashes, data.hashes.sorted())
+        XCTAssertEqual(CPMSiteRankLookup().siteRank(for: URL(string: "https://www.google.com/")), .top10k)
     }
 
-    func testFalseMatchesAreTheSameAsInJSBloom() throws {
-        let filter = try XCTUnwrap(CPMSiteRankLookup.loadBundledFilter())
-        let matches = (0..<20000).filter { filter.contains("fp-test-\($0).com") }
-        XCTAssertEqual(matches, [176, 2651, 5023, 5669, 8606, 9610, 9948, 10007, 10627, 10683, 12672, 14201, 14500, 17167, 17763, 19088])
+    /// `site-buckets.json` must be the list the bundled extension was built with, which esbuild inlines into its background script.
+    func testBundledDataMatchesTheBundledExtension() throws {
+        let file = try XCTUnwrap(CPMSiteRankLookup.loadBundledFile())
+        guard #available(macOS 15.4, iOS 18.4, *) else { throw XCTSkip("The embedded extension needs macOS 15.4 or iOS 18.4") }
+        let zipURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
+        let archive = try Archive(url: zipURL, accessMode: .read)
+        let entry = try XCTUnwrap(archive["public/js/background-embedded.js"])
+        var script = Data()
+        _ = try archive.extract(entry) { script.append($0) }
+        let source = try XCTUnwrap(String(data: script, encoding: .utf8))
+        XCTAssertTrue(source.contains("\"\(file.data)\""), "site-buckets.json differs from the list in the bundled extension")
+    }
+
+    private static func makeLookup(_ domains: [String]) -> CPMSiteRankLookup {
+        let (count, data) = encode(domains)
+        let hashes = CPMSiteRankLookup.decode(count: count, base64: data)
+        return CPMSiteRankLookup(data: { hashes.map { CPMSiteRankLookup.LookupData(hashes: $0) } })
+    }
+
+    /// Same encoding as `encodeTopSites` in the extension.
+    private static func encode(_ domains: [String]) -> (count: Int, data: String) {
+        let hashes = Array(Set(domains.map { CPMSiteRankLookup.fnv1a32($0.utf8) })).sorted()
+        var bytes = [UInt8]()
+        var previous: UInt32 = 0
+        for hash in hashes {
+            var gap = hash - previous
+            previous = hash
+            while gap >= 0x80 {
+                bytes.append(UInt8(gap & 0x7f) | 0x80)
+                gap >>= 7
+            }
+            bytes.append(UInt8(gap))
+        }
+        return (hashes.count, Data(bytes).base64EncodedString())
     }
 }

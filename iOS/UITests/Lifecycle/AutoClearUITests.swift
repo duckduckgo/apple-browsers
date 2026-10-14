@@ -23,6 +23,7 @@ import UITestingSupport
 final class AutoClearUITests: UITestCase {
 
     override var additionalLaunchArguments: [String] {
+        // This shortens the inactivity delay; the test still enables Auto Clear in Settings.
         ["autoclear-ui-test"]
     }
 

@@ -56,8 +56,8 @@ extension XCUIApplication {
 
     func assertStorageCountersEmpty(file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(
-            cookieCounter.waitForExistence(timeout: UITestTimeouts.navigation),
-            "Cookie counter did not appear.",
+            cookieCounter.wait(for: \.label, equals: "Cookie Counter:", timeout: UITestTimeouts.navigation),
+            "Cookie data was not empty; found '\(cookieCounter.label)'.",
             file: file,
             line: line)
         XCTAssertTrue(
@@ -65,7 +65,6 @@ extension XCUIApplication {
             "Local storage was not empty; found '\(storageCounter.label)'.",
             file: file,
             line: line)
-        XCTAssertNotEqual(cookieCounter.label, "Cookie Counter: 1", "Cookie data was not empty.", file: file, line: line)
     }
 
     func assertStorageCountersIncremented(file: StaticString = #filePath, line: UInt = #line) {

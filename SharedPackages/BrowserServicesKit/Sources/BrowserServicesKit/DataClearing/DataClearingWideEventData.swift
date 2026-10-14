@@ -43,7 +43,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.1.4"
+        version: "1.1.5"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)
@@ -181,6 +181,14 @@ public class DataClearingWideEventData: WideEventData {
     public var forgetTextZoomFireModeDuration: WideEvent.MeasuredInterval?
     public var forgetTextZoomFireModeStatus: ActionStatus?
     public var forgetTextZoomFireModeError: WideEventErrorData?
+
+    public var warmUpWebsiteDataStoreDuration: WideEvent.MeasuredInterval?
+    public var warmUpWebsiteDataStoreStatus: ActionStatus?
+    public var warmUpWebsiteDataStoreError: WideEventErrorData?
+
+    public var clearAppSwitcherSnapshotsDuration: WideEvent.MeasuredInterval?
+    public var clearAppSwitcherSnapshotsStatus: ActionStatus?
+    public var clearAppSwitcherSnapshotsError: WideEventErrorData?
 
     // macOS-only actions
     public var clearVisitedLinksDuration: WideEvent.MeasuredInterval?
@@ -371,6 +379,8 @@ extension DataClearingWideEventData {
         case clearWebsiteDataFireMode = "clear_website_data_fire_mode"
         case clearAutoconsentManagementCacheFireMode = "clear_autoconsent_management_cache_fire_mode"
         case forgetTextZoomFireMode = "forget_text_zoom_fire_mode"
+        case warmUpWebsiteDataStore = "warm_up_website_data_store"
+        case clearAppSwitcherSnapshots = "clear_app_switcher_snapshots"
 
         // macOS-only actions
         case clearVisitedLinks = "clear_visited_links"
@@ -406,6 +416,8 @@ extension DataClearingWideEventData {
             case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeDuration
             case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeDuration
             case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeDuration
+            case .warmUpWebsiteDataStore: return \.warmUpWebsiteDataStoreDuration
+            case .clearAppSwitcherSnapshots: return \.clearAppSwitcherSnapshotsDuration
             case .clearPermissions: return \.clearPermissionsDuration
             case .clearVisitedLinks: return \.clearVisitedLinksDuration
             case .clearRecentlyClosed: return \.clearRecentlyClosedDuration
@@ -442,6 +454,8 @@ extension DataClearingWideEventData {
             case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeStatus
             case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeStatus
             case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeStatus
+            case .warmUpWebsiteDataStore: return \.warmUpWebsiteDataStoreStatus
+            case .clearAppSwitcherSnapshots: return \.clearAppSwitcherSnapshotsStatus
             case .clearPermissions: return \.clearPermissionsStatus
             case .clearVisitedLinks: return \.clearVisitedLinksStatus
             case .clearRecentlyClosed: return \.clearRecentlyClosedStatus
@@ -478,6 +492,8 @@ extension DataClearingWideEventData {
             case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeError
             case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeError
             case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeError
+            case .warmUpWebsiteDataStore: return \.warmUpWebsiteDataStoreError
+            case .clearAppSwitcherSnapshots: return \.clearAppSwitcherSnapshotsError
             case .clearPermissions: return \.clearPermissionsError
             case .clearVisitedLinks: return \.clearVisitedLinksError
             case .clearRecentlyClosed: return \.clearRecentlyClosedError

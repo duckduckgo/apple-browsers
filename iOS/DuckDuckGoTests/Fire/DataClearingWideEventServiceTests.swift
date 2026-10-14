@@ -312,6 +312,17 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         XCTAssertNil(eventData.clearTabsError)
     }
 
+    func testFinishAction_completesTheStepWithoutAStatus() {
+        sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        sut.start(.warmUpWebsiteDataStore)
+
+        sut.finish(.warmUpWebsiteDataStore)
+
+        let eventData = wideEventMock.started.first as? DataClearingWideEventData
+        XCTAssertNotNil(eventData?.warmUpWebsiteDataStoreDuration?.end)
+        XCTAssertNil(eventData?.warmUpWebsiteDataStoreStatus)
+    }
+
     func testUpdateAction_withSkippingFailure_recordsSkippedStatusAndError() {
         sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
         sut.start(.clearAIChatHistory)

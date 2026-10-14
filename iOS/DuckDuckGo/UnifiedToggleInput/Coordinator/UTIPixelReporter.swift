@@ -199,7 +199,10 @@ final class UTIPixelReporter {
     }
 
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(
+                for: attachment, surface: $0.surface, pageType: $0.pageType, firing: firing)
+        }
     }
 
     // MARK: - Model / reasoning / tools

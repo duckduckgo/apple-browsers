@@ -14,18 +14,18 @@
         "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_picker_source"]
     },
     "aichat_unified_input_tab_attached": {
-        "description": "Fires when an additional tab is added to the draft through recent tabs, Add tabs picker, or a mention. Excludes the current page, duplicate choices, failed choices, and restored drafts. Attachment does not imply successful content extraction.",
+        "description": "Fires when a tab is added to the draft through recent tabs, Add tabs picker, or a mention. On the address bar, this can be the current tab; in contextual chat, the current page uses separate page-context pixels. Excludes duplicate choices, failed choices, and restored drafts. Attachment does not imply successful content extraction.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_attachment_source"]
+        "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_attachment_source"]
     },
     "aichat_unified_input_tab_removed": {
-        "description": "Fires when the user removes an additional tab via its chip, recent tabs, or Add tabs picker. Source is the original attachment source. Excludes automatic removal and the current page, which keeps its existing page-context pixels.",
+        "description": "Fires when the user removes a tab via its chip, recent tabs, or Add tabs picker. On the address bar, this can be the current tab; in contextual chat, the current page uses separate page-context pixels. Source is the original attachment source. Excludes automatic removal.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_attachment_source"]
+        "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_attachment_source"]
     },
     "aichat_unified_input_tabs_sent": {
         "description": "Fires after native dispatch of a prompt containing at least one validated additional tab context. Count includes the current page if included in the final payload. Excludes current-page-only prompts, empty results, canceled or rejected dispatches, and a disabled multi-tab feature. Dispatch is not a frontend or backend success acknowledgement.",

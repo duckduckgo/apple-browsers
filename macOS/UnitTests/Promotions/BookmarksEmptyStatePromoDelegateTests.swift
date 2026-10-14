@@ -28,14 +28,14 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
 
     private var featureFlagger: MockFeatureFlagger!
     private var bookmarksChanged: PassthroughSubject<Void, Never>!
-    private var bookmarksCount = 0
+    private var hasTopLevelEntities = false
 
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.promoQueueBookmarksEmptyStatePromo]
         bookmarksChanged = PassthroughSubject()
-        bookmarksCount = 0
+        hasTopLevelEntities = false
     }
 
     override func tearDown() {
@@ -48,7 +48,7 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
     private func makeSUT() -> BookmarksEmptyStatePromoDelegate {
         let sut = BookmarksEmptyStatePromoDelegate(
             featureFlagger: featureFlagger,
-            bookmarksCountProvider: { [unowned self] in bookmarksCount },
+            hasTopLevelEntitiesProvider: { [unowned self] in hasTopLevelEntities },
             bookmarksChangedPublisher: bookmarksChanged.eraseToAnyPublisher()
         )
         sut.refreshEligibility()
@@ -78,8 +78,8 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
         XCTAssertTrue(makeSUT().isEligible)
     }
 
-    func testWhenThereAreBookmarksThenNotEligible() {
-        bookmarksCount = 3
+    func testWhenThereAreTopLevelBookmarksOrFoldersThenNotEligible() {
+        hasTopLevelEntities = true
 
         XCTAssertFalse(makeSUT().isEligible)
     }
@@ -97,7 +97,7 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
             .first(where: { !$0 })
             .sink { _ in ineligibleExpectation.fulfill() }
 
-        bookmarksCount = 1
+        hasTopLevelEntities = true
         bookmarksChanged.send()
 
         await fulfillment(of: [ineligibleExpectation], timeout: 1)

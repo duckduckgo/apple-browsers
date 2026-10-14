@@ -141,6 +141,10 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore.bookmarksCount()
     }
 
+    func hasTopLevelEntities() -> Bool {
+        bookmarkStore.hasTopLevelEntities()
+    }
+
     func loadBookmarks() {
         bookmarkStore.loadAll(type: .topLevelEntities) { [weak self] (topLevelEntities, error) in
             guard error == nil, let topLevelEntities = topLevelEntities else {

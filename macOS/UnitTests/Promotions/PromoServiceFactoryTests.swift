@@ -274,7 +274,7 @@ extension PromoServiceFactoryTests {
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
-                bookmarksCountProvider: { 0 },
+                hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher()
             )
         )

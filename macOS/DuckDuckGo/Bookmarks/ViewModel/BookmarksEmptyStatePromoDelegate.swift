@@ -29,7 +29,7 @@ protocol BookmarksEmptyStatePromoPresenting: AnyObject {
 final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, BookmarksEmptyStatePromoPresenting {
 
     private let featureFlagger: FeatureFlagger
-    private let bookmarksCountProvider: () -> Int
+    private let hasTopLevelEntitiesProvider: () -> Bool
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
@@ -37,13 +37,13 @@ final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, BookmarksEm
     private var cancellables = Set<AnyCancellable>()
 
     /// - Parameters:
-    ///   - bookmarksCountProvider: Must be synchronous and safe to call off the main thread.
+    ///   - hasTopLevelEntitiesProvider: Must be synchronous and safe to call off the main thread.
     ///   - bookmarksChangedPublisher: Emits whenever bookmarks are added or removed.
     init(featureFlagger: FeatureFlagger,
-         bookmarksCountProvider: @escaping () -> Int,
+         hasTopLevelEntitiesProvider: @escaping () -> Bool,
          bookmarksChangedPublisher: AnyPublisher<Void, Never>) {
         self.featureFlagger = featureFlagger
-        self.bookmarksCountProvider = bookmarksCountProvider
+        self.hasTopLevelEntitiesProvider = hasTopLevelEntitiesProvider
 
         featureFlagger.updatesPublisher
             .merge(with: bookmarksChangedPublisher)
@@ -65,7 +65,7 @@ final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, BookmarksEm
     }
 
     func refreshEligibility() {
-        isEligibleSubject.send(featureFlagger.isFeatureOn(.promoQueueBookmarksEmptyStatePromo) && bookmarksCountProvider() == 0)
+        isEligibleSubject.send(featureFlagger.isFeatureOn(.promoQueueBookmarksEmptyStatePromo) && !hasTopLevelEntitiesProvider())
     }
 
     // MARK: - Promo queue display

@@ -120,7 +120,7 @@ final class PromoRegistryTests: XCTestCase {
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
-                bookmarksCountProvider: { 0 },
+                hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher()
             )
         )

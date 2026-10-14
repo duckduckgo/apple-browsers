@@ -232,7 +232,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                     : ["aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"]
                 XCTAssertEqual(calls.map(\.pixel.name), expectedNames)
                 for call in calls {
-                    XCTAssertEqual(call.pixel.parameters, ["surface": "contextual_chat", "source": "mention"])
+                    XCTAssertEqual(call.pixel.parameters, ["surface": "contextual_chat", "page_type": "contextual", "source": "mention"])
                     XCTAssertEqual(call.frequency, .dailyAndCount)
                 }
             }

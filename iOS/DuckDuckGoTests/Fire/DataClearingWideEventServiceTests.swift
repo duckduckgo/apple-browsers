@@ -312,6 +312,17 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         XCTAssertNil(eventData.clearTabsError)
     }
 
+    func testUpdateAction_withSkippingFailure_recordsSkippedStatusAndError() {
+        sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        sut.start(.clearAIChatHistory)
+
+        sut.update(.clearAIChatHistory, result: .failure(SkippingError()))
+
+        let eventData = wideEventMock.started.first as? DataClearingWideEventData
+        XCTAssertEqual(eventData?.clearAIChatHistoryStatus, .skipped)
+        XCTAssertNotNil(eventData?.clearAIChatHistoryError)
+    }
+
     func testUpdateAction_withFailure_recordsFailureStatusAndError() {
         // Given
         let request = FireRequest(
@@ -414,4 +425,8 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         // Then - should not crash
         XCTAssertEqual(wideEventMock.completions.count, 0)
     }
+}
+
+private struct SkippingError: DataClearingActionSkipping {
+    var skipsAction: Bool { true }
 }

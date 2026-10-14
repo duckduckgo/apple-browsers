@@ -241,6 +241,21 @@ final class DataClearingWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.clear_tabs_status"] as? String, "SUCCESS")
     }
 
+    func testJSONParameters_includesSkippedActionStatus() {
+        let eventData = DataClearingWideEventData(trigger: .manualFire, contextData: WideEventContextData(name: "test-context"))
+        eventData.clearAIChatHistoryStatus = .skipped
+
+        let params = eventData.jsonParameters()
+
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_status"] as? String, "SKIPPED")
+    }
+
+    func testActionStatus_whenFailureSaysTheActionWasSkippedThenStatusIsSkipped() {
+        XCTAssertEqual(DataClearingWideEventData.ActionStatus(failure: SkippingError(skipsAction: true)), .skipped)
+        XCTAssertEqual(DataClearingWideEventData.ActionStatus(failure: SkippingError(skipsAction: false)), .failure)
+        XCTAssertEqual(DataClearingWideEventData.ActionStatus(failure: NSError(domain: "TestDomain", code: 1)), .failure)
+    }
+
     func testJSONParameters_listsActionsThatStartedButNeverFinished() {
         // Given
         let eventData = DataClearingWideEventData(
@@ -928,7 +943,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         #elseif os(macOS)
         XCTAssertEqual(DataClearingWideEventData.metadata.type, "macos-data-clearing")
         #endif
-        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.3")
+        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.4")
     }
 
     func testClearingTimeout_is15Minutes() {
@@ -997,4 +1012,8 @@ final class DataClearingWideEventDataTests: XCTestCase {
         // Then
         XCTAssertNil(params["feature.data.ext.clear_tabs_latency_ms"])
     }
+}
+
+private struct SkippingError: DataClearingActionSkipping {
+    let skipsAction: Bool
 }

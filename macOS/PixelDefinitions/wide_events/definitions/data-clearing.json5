@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "macos-data-clearing",
-            "version": "1.3"
+            "version": "1.4"
         },
         "feature": {
             "name": "data-clearing",
@@ -68,8 +68,8 @@
                     "clear_all_history_error": "dataClearingActionError",
                     "clear_aiChat_history_status": {
                         "type": "string",
-                        "description": "Final status of the clear_aiChat_history action.",
-                        "enum": ["SUCCESS", "FAILURE"]
+                        "description": "Final status of the clear_aiChat_history action. SKIPPED = the page has IndexedDB turned off (Lockdown Mode), so it could not be cleared; the error says why.",
+                        "enum": ["SUCCESS", "FAILURE", "SKIPPED"]
                     },
                     "clear_aiChat_history_latency_ms": {
                         "type": "integer",

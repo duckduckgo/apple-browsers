@@ -29,6 +29,11 @@ import WideEvent
 ///
 /// The implementation follows the fire-and-forget pattern where overall status is either
 /// SUCCESS or UNKNOWN (no FAILURE status), while individual actions can still report failures.
+/// An action error that can mean the action had nothing it could do, rather than that it went wrong.
+public protocol DataClearingActionSkipping: Error {
+    var skipsAction: Bool { get }
+}
+
 public class DataClearingWideEventData: WideEventData {
 
     // MARK: - Metadata
@@ -38,7 +43,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.1.3"
+        version: "1.1.4"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)
@@ -332,6 +337,12 @@ extension DataClearingWideEventData {
     public enum ActionStatus: String, Codable, CaseIterable {
         case success = "SUCCESS"
         case failure = "FAILURE"
+        /// The action had nothing it could do on this device; its error says why.
+        case skipped = "SKIPPED"
+
+        public init(failure error: Error) {
+            self = (error as? DataClearingActionSkipping)?.skipsAction == true ? .skipped : .failure
+        }
     }
 
     /// All trackable data clearing actions.

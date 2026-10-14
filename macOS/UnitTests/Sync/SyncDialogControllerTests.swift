@@ -539,6 +539,75 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(authenticator.authenticateUserCallCount, 2)
     }
 
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_returnsToPromptWhileConnecting() async {
+        enableImprovedPairingFlow()
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        var dialogWhileCreatingAccount: ManagementDialogKind?
+        var isConnectingThisDeviceOnlyWhileCreatingAccount: Bool?
+        let accountCreated = expectation(description: "Account created after retry")
+        ddgSyncing.createAccountCallback = { [managementDialogModel] _, _ in
+            dialogWhileCreatingAccount = managementDialogModel?.currentDialog
+            isConnectingThisDeviceOnlyWhileCreatingAccount = managementDialogModel?.isConnectingThisDeviceOnly
+            accountCreated.fulfill()
+        }
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        await fulfillment(of: [accountCreated], timeout: 5)
+        XCTAssertEqual(dialogWhileCreatingAccount, .syncAnotherDevicePrompt)
+        XCTAssertEqual(isConnectingThisDeviceOnlyWhileCreatingAccount, true)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_returnsToPromptWhileConnecting() async {
+        enableImprovedPairingFlow()
+        ddgSyncing.account = nil
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        var isConnectingAnotherDeviceWhenPromptReturned: Bool?
+        managementDialogModel.$currentDialog
+            .dropFirst()
+            .filter { $0 == .syncAnotherDevicePrompt }
+            .sink { [managementDialogModel] _ in
+                isConnectingAnotherDeviceWhenPromptReturned = managementDialogModel?.isConnectingAnotherDevice
+            }
+            .store(in: &cancellables)
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(isConnectingAnotherDeviceWhenPromptReturned, true)
+    }
+
+    func testSyncAnotherDevicePromptDidAppear_whenReturningAfterRetry_doesNotFirePromptShownPixelAgain() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_another_device_prompt_shown_mac").count, 1)
+    }
+
+    func testSyncAnotherDevicePromptDidAppear_inNextFlowAfterReturningAfterRetry_firesPromptShownPixel() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+        managementDialogModel.endFlow()
+
+        await syncDialogController.syncWithServerPressed()
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_another_device_prompt_shown_mac").count, 1)
+    }
+
     func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndNoAuthAvailable_showsUnableToAuthenticateError() async {
         enableImprovedPairingFlow()
         await syncDialogController.syncWithServerPressed()
@@ -652,6 +721,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
         XCTAssertEqual(managementDialogModel.currentDialog, .recoverSyncedData)
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
     }
 
     func testRecoverDataPressed_whenImprovedPairingFlowDisabled_authenticatesBeforeShowingRecoverDialog() async {
@@ -662,6 +732,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
         XCTAssertEqual(managementDialogModel.currentDialog, .recoverSyncedData)
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
     }
 
     func testEnterRecoveryCodePressed_whenAuthenticationDeferred_authenticatesThenShowsRecoveryCode() async throws {

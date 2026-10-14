@@ -181,6 +181,7 @@ public enum DataBrokerProtectionSharedPixels {
     // Challenge baseline pixels
     case mainFrameChallengeDetected(dataBroker: String, brokerVersion: String)
     case challengeClearanceObserved(dataBroker: String, brokerVersion: String, resolution: ChallengeResolution)
+    case challengeSolved(dataBroker: String, brokerVersion: String, resolution: ChallengeResolution)
 
     // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -310,6 +311,7 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             // Challenge baseline pixels
         case .mainFrameChallengeDetected: return "dbp_challenge_main-frame_detected_macos"
         case .challengeClearanceObserved: return "dbp_challenge_clearance_observed_macos"
+        case .challengeSolved: return "dbp_challenge_solved_macos"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
@@ -565,7 +567,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion
             ]
-        case .challengeClearanceObserved(let dataBroker, let brokerVersion, let resolution):
+        case .challengeClearanceObserved(let dataBroker, let brokerVersion, let resolution),
+                .challengeSolved(let dataBroker, let brokerVersion, let resolution):
             return [
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion,
@@ -675,7 +678,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
     public var namePrefix: PixelKitNamePrefix {
         switch self {
         case .mainFrameChallengeDetected,
-                .challengeClearanceObserved:
+                .challengeClearanceObserved,
+                .challengeSolved:
             return .none
         default:
             return .platformDefault
@@ -730,6 +734,7 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .freemiumPIRMaintenanceScanSkipped,
                 .mainFrameChallengeDetected,
                 .challengeClearanceObserved,
+                .challengeSolved,
                 .weeklyReportBackgroundTaskSession,
                 .weeklyReportStalledScans,
                 .weeklyReportStalledOptOuts,
@@ -888,7 +893,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .freemiumPIRMaintenanceScanSkipped:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .mainFrameChallengeDetected,
-                    .challengeClearanceObserved:
+                    .challengeClearanceObserved,
+                    .challengeSolved:
                 pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)

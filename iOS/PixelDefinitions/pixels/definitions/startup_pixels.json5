@@ -108,28 +108,28 @@
         ]
     },
     "app-lifecycle_active-without-main-ui": {
-        "description": "Fires when a scene becomes active but none of its visible windows shows app UI (the MainViewController, or the authentication or blank snapshot overlay shown over it), meaning the user sees a black screen. Measures user impact of a scene reconnecting while the app is still in the Connected state during launch.",
+        "description": "Fires when a scene becomes active but no visible window shows app UI (main UI, app lock or blank snapshot), so the user sees a black screen.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "app-lifecycle_scene-did-disconnect": {
-        "description": "Fires when iOS disconnects the app's scene (sceneDidDisconnect). The state parameter tells which app state machine state the app was in, to find what triggers scene reconnects during launch.",
+        "description": "Fires when iOS disconnects the app's scene, with the app state at that moment.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "appLifecycleState"]
     },
     "app-lifecycle_previous-launch-incomplete": {
-        "description": "Fires at launch when the previous launch never reached the Foreground or Background state, e.g. a black screen the user had to force quit, a hang, or a kill or crash during launch. step tells the last launch step that launch reached. A background launch that finished without connecting a scene is not reported.",
+        "description": "Fires at launch when the previous launch never reached Foreground or Background, e.g. a force-quit black screen, a hang or a crash. Background launches without a scene are not reported.",
         "owners": ["hassaanelgarem"],
         "triggers": ["startup"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "appLifecycleLaunchStep"]
     },
     "app-lifecycle_event-dropped-during-launch": {
-        "description": "Fires when the app state machine drops a lifecycle event while initializing or launching. An event arriving while initializing means Launching.init spun the run loop; step tells which launch step it had reached, to find what spins it. A dropped willConnectToWindow leaves the app without UI until force quit (black screen).",
+        "description": "Fires when the app drops a lifecycle event while initializing or launching. step shows where launch was stuck; a dropped willConnectToWindow leaves a black screen.",
         "owners": ["hassaanelgarem"],
         "triggers": ["startup"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

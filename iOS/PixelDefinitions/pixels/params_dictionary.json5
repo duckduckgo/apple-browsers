@@ -671,7 +671,7 @@
     "appLifecycleLaunchStep": {
         "key": "step",
         "type": "string",
-        "description": "Last launch step reached, in launch order (LaunchBreadcrumb.Step). ui-attached: the scene connected but never started entering the foreground, usually a scene connected in the background. entering-foreground: the app was coming to the foreground but never became active. none: launch had not started",
+        "description": "Last launch step reached, in launch order. ui-attached: never started entering the foreground (usually a background launch). entering-foreground: never became active. none: launch had not started",
         "enum": [
             "none",
             "launching-started",

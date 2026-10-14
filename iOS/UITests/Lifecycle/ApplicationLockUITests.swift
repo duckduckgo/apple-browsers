@@ -58,31 +58,16 @@ final class ApplicationLockUITests: UITestCase {
     }
 
     func testWhenApplicationLockIsEnabledThenRelaunchRequiresAuthenticationUntilLockIsDisabled() throws {
-        XCTContext.runActivity(named: "Enable Application Lock") { _ in
-            app.openSettings()
-            app.openGeneralSettings()
-
-            let applicationLock = app.settingsToggle(withIdentifier: "Settings.General.ApplicationLock")
-            applicationLock.tapWhenHittable()
-            XCTAssertTrue(
-                applicationLock.wait(for: \XCUIElement.value, equals: "1", timeout: UITestTimeouts.elementExistence),
-                "Application Lock did not become enabled.")
-        }
+        enableApplicationLock()
 
         try XCTContext.runActivity(named: "Authenticate after relaunch") { _ in
             try relaunchAppPreservingState()
 
             let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
-            let authPromptOrAppStopped = NSPredicate { _, _ in
-                authenticationReason.exists || self.app.state == .notRunning
+            if waitForAuthenticationPromptOrRecovery(authenticationReason) {
+                requestAuthenticationFromRecoveryScreen()
+                waitForAuthenticationPrompt(authenticationReason)
             }
-            let authenticationExpectation = XCTNSPredicateExpectation(predicate: authPromptOrAppStopped, object: springboard)
-            let waitResult = XCTWaiter.wait(for: [authenticationExpectation], timeout: UITestTimeouts.navigation)
-            XCTAssertTrue(
-                authenticationReason.exists,
-                waitResult == .completed
-                    ? "Application Lock process stopped before the authentication prompt appeared."
-                    : "Timed out waiting for the automatic Application Lock authentication prompt.")
 
             let passcodeField = springboard.secureTextFields.firstMatch
             XCTAssertTrue(
@@ -114,6 +99,113 @@ final class ApplicationLockUITests: UITestCase {
             XCTAssertFalse(
                 springboard.staticTexts["Unlock DuckDuckGo."].exists,
                 "Application Lock appeared after it was disabled.")
+        }
+    }
+
+    func testWhenAuthenticationFailsThenUnlockInstructionsAllowRetry() throws {
+        enableApplicationLock()
+
+        try XCTContext.runActivity(named: "Wait for authentication or recovery screen") { _ in
+            try relaunchAppPreservingState()
+
+            let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
+            if !waitForAuthenticationPromptOrRecovery(authenticationReason) {
+                XCTContext.runActivity(named: "Cancel authentication prompt") { _ in
+                    springboard.buttons["Cancel"].tapWhenHittable()
+                }
+                waitForRecoveryInstructions(authenticationReason)
+            }
+        }
+
+        XCTContext.runActivity(named: "Retry authentication from the recovery screen") { _ in
+            requestAuthenticationFromRecoveryScreen()
+            let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
+            waitForAuthenticationPrompt(authenticationReason)
+
+            let passcodeField = springboard.secureTextFields.firstMatch
+            XCTAssertTrue(passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            passcodeField.typeText("password\n")
+            XCTAssertTrue(
+                app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+                "Browser did not unlock after retrying authentication.")
+        }
+    }
+
+    private func enableApplicationLock() {
+        XCTContext.runActivity(named: "Enable Application Lock") { _ in
+            app.openSettings()
+            app.openGeneralSettings()
+
+            let applicationLock = app.settingsToggle(withIdentifier: "Settings.General.ApplicationLock")
+            applicationLock.tapWhenHittable()
+            XCTAssertTrue(
+                applicationLock.wait(for: \XCUIElement.value, equals: "1", timeout: UITestTimeouts.elementExistence),
+                "Application Lock did not become enabled.")
+        }
+    }
+
+    private func waitForAuthenticationPromptOrRecovery(_ authenticationReason: XCUIElement,
+                                                       file: StaticString = #filePath,
+                                                       line: UInt = #line) -> Bool {
+        let recoveryInstructions = app.staticTexts["Tap anywhere to unlock"]
+        let authenticationStateReady = NSPredicate { _, _ in
+            authenticationReason.exists
+                || (self.app.state == .runningForeground && recoveryInstructions.exists)
+                || self.app.state == .notRunning
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: authenticationStateReady, object: springboard)
+        _ = XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation)
+
+        let isRecoveryScreen = app.state == .runningForeground && recoveryInstructions.exists
+        XCTAssertTrue(
+            authenticationReason.exists || isRecoveryScreen,
+            app.state == .notRunning
+                ? "Application Lock process stopped before authentication completed."
+                : "Timed out waiting for the authentication prompt or foreground recovery screen.",
+            file: file,
+            line: line)
+        return isRecoveryScreen && !authenticationReason.exists
+    }
+
+    private func waitForRecoveryInstructions(_ authenticationReason: XCUIElement,
+                                             file: StaticString = #filePath,
+                                             line: UInt = #line) {
+        let recoveryInstructions = app.staticTexts["Tap anywhere to unlock"]
+        let recoveryOrAppStopped = NSPredicate { _, _ in
+            (self.app.state == .runningForeground && recoveryInstructions.exists && !authenticationReason.exists)
+                || self.app.state == .notRunning
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: recoveryOrAppStopped, object: springboard)
+        _ = XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation)
+
+        XCTAssertTrue(
+            app.state == .runningForeground && recoveryInstructions.exists && !authenticationReason.exists,
+            "Authentication failure did not leave the foreground recovery instructions visible.",
+            file: file,
+            line: line)
+    }
+
+    private func waitForAuthenticationPrompt(_ authenticationReason: XCUIElement,
+                                             file: StaticString = #filePath,
+                                             line: UInt = #line) {
+        let promptOrAppStopped = NSPredicate { _, _ in
+            authenticationReason.exists || self.app.state == .notRunning
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: promptOrAppStopped, object: springboard)
+        _ = XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation)
+
+        XCTAssertTrue(authenticationReason.exists, "Authentication prompt did not appear after retrying.", file: file, line: line)
+    }
+
+    private func requestAuthenticationFromRecoveryScreen(file: StaticString = #filePath, line: UInt = #line) {
+        let recoveryInstructions = app.staticTexts["Tap anywhere to unlock"]
+        XCTAssertEqual(app.state, .runningForeground, "Application Lock recovery screen was not foregrounded.", file: file, line: line)
+        XCTAssertTrue(recoveryInstructions.exists, "Application Lock recovery instructions were not visible.", file: file, line: line)
+        XCTAssertFalse(app.searchEntry.exists, "Browser controls remained accessible while Application Lock was active.", file: file, line: line)
+        XCTAssertFalse(springboard.staticTexts["Unlock DuckDuckGo."].exists, "Authentication prompt is still visible.", file: file, line: line)
+
+        XCTContext.runActivity(named: "Request authentication from recovery screen") { _ in
+            app.images["AuthRequired"].tapWhenHittable(file: file, line: line)
         }
     }
 }

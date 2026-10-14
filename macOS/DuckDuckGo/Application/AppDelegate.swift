@@ -491,7 +491,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hasTopLevelEntitiesProvider: { [bookmarkManager] in
                 bookmarkManager.hasTopLevelEntities()
             },
-            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher()
+            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher(),
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
         )
     }()
 

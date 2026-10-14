@@ -275,7 +275,10 @@ extension PromoServiceFactoryTests {
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
-                bookmarksChangedPublisher: Empty().eraseToAnyPublisher()
+                bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
             )
         )
     }

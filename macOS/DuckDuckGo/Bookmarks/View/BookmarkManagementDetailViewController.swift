@@ -69,11 +69,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         let view = NSHostingView(rootView: BookmarksEmptyStateView(content: .noBookmarks,
                                                                    isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher,
                                                                    onImportClicked: { [weak self] in
-            self?.onImport()
-        }, onSyncClicked: {
-            let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+            self?.onEmptyStateImportClicked()
+        }, onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
         }))
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isHidden = true
@@ -447,11 +445,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         emptyStateHostingView.rootView = BookmarksEmptyStateView(content: mode,
                                                                  isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher,
                                                                  onImportClicked: { [weak self] in
-            self?.onImport()
-        }, onSyncClicked: {
-            let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+            self?.onEmptyStateImportClicked()
+        }, onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
         })
         emptyStateHostingView.isHidden = false
         searchBar.isEnabled = mode != .noBookmarks
@@ -464,6 +460,23 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func onImport() {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+    }
+
+    private func onEmptyStateImportClicked() {
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
+    }
+
+    private func onEmptyStateSyncClicked() {
+        let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {

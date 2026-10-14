@@ -65,11 +65,9 @@ final class BookmarkListViewController: NSViewController {
 
     private lazy var emptyStateHostingView: NSHostingView<BookmarksEmptyStateView> = {
         let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks, isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher) { [weak self] in
-            self?.onImportClicked()
-        } onSyncClicked: {
-            let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+            self?.onEmptyStateImportClicked()
+        } onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
         }
         return emptyStateView.embeddedInHostingView()
     }()
@@ -576,11 +574,9 @@ final class BookmarkListViewController: NSViewController {
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
         let emptyStateView = BookmarksEmptyStateView(content: mode, isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher) { [weak self] in
-            self?.onImportClicked()
-        } onSyncClicked: {
-            let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+            self?.onEmptyStateImportClicked()
+        } onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
         }
         emptyStateHostingView.rootView = emptyStateView
         emptyStateHostingView.isHidden = false
@@ -712,6 +708,23 @@ final class BookmarkListViewController: NSViewController {
 
     private func onImportClicked() {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+    }
+
+    private func onEmptyStateImportClicked() {
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
+    }
+
+    private func onEmptyStateSyncClicked() {
+        let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     private func showManageBookmarks() {

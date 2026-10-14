@@ -73,8 +73,11 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         let hostingController = NSHostingController(rootView: AIChatScreenshotSourcePickerView(model: model))
 
         // Non-activating so it takes key over the prompt bar without activating the app.
-        let panel = NSPanel(contentRect: .zero, styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
-        panel.title = UserText.aiChatScreenshotPickerTitle
+        let panel = NSPanel(contentRect: .zero, styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.title = UserText.aiChatScreenshotSelectWindowOrDisplay
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton].forEach { panel.standardWindowButton($0)?.isHidden = true }
         panel.contentViewController = hostingController
         panel.setContentSize(hostingController.view.fittingSize)
         panel.level = .modalPanel
@@ -132,22 +135,22 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         case failed
     }
 
-    static let previewMaxPixels: CGFloat = 960
+    /// Twice the 200 pt tile, for Retina.
+    static let thumbnailMaxPixels: CGFloat = 400
 
     @Published var tab: Tab = .window {
         didSet { if tab != oldValue { selectedID = nil } }
     }
-    @Published var selectedID: AIChatScreenshotSource.ID? {
-        didSet { if selectedID != oldValue { updatePreview() } }
-    }
+    @Published var selectedID: AIChatScreenshotSource.ID?
     @Published private(set) var windows: [AIChatScreenshotSource] = []
     @Published private(set) var screens: [AIChatScreenshotSource] = []
+    /// A `nil` value is a thumbnail that failed; a missing key is one still loading.
+    @Published private(set) var thumbnails: [AIChatScreenshotSource.ID: CGImage?] = [:]
     @Published private(set) var isLoading = true
-    @Published private(set) var preview: CGImage?
 
     var excludedWindowIDs: Set<CGWindowID>
     var onFinish: ((Finish) -> Void)?
-    private var previewTask: Task<Void, Never>?
+    private var thumbnailTask: Task<Void, Never>?
 
     init(excludedWindowIDs: Set<CGWindowID>) {
         self.excludedWindowIDs = excludedWindowIDs
@@ -174,20 +177,19 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
 
         windows = Self.windowSources(from: content.windows, excluding: excludedWindowIDs)
         let excludedWindows = content.windows.filter { excludedWindowIDs.contains($0.windowID) }
-        screens = content.displays.enumerated().map { index, display in
-            Self.screenSource(for: display, index: index, excluding: excludedWindows)
-        }
+        screens = content.displays.map { Self.screenSource(for: $0, excluding: excludedWindows) }
         isLoading = false
+        loadThumbnails()
     }
 
     func share(_ id: AIChatScreenshotSource.ID? = nil) {
         guard let source = sources.first(where: { $0.id == (id ?? selectedID) }) else { return }
-        previewTask?.cancel()
+        thumbnailTask?.cancel()
         onFinish?(.picked(source))
     }
 
     func cancel() {
-        previewTask?.cancel()
+        thumbnailTask?.cancel()
         onFinish?(.cancelled)
     }
 
@@ -201,15 +203,15 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         return try await AIChatScreenshotStill.capture(source.filter, width: max(1, Int(size.width)), height: max(1, Int(size.height)))
     }
 
-    private func updatePreview() {
-        previewTask?.cancel()
-        preview = nil
-        guard let source = selected else { return }
-
-        previewTask = Task { [weak self] in
-            let image = try? await Self.image(of: source, maxPixels: Self.previewMaxPixels)
-            guard !Task.isCancelled else { return }
-            self?.preview = image
+    /// ponytail: one at a time, windows first, front to back; a task group if the grid fills in too slowly.
+    private func loadThumbnails() {
+        let sources = windows + screens
+        thumbnailTask = Task { [weak self] in
+            for source in sources {
+                guard !Task.isCancelled else { return }
+                let image = try? await Self.image(of: source, maxPixels: Self.thumbnailMaxPixels)
+                self?.thumbnails.updateValue(image, forKey: source.id)
+            }
         }
     }
 
@@ -243,12 +245,12 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
             }
     }
 
-    private static func screenSource(for display: SCDisplay, index: Int, excluding excludedWindows: [SCWindow]) -> AIChatScreenshotSource {
+    private static func screenSource(for display: SCDisplay, excluding excludedWindows: [SCWindow]) -> AIChatScreenshotSource {
         let screen = NSScreen.screens.first { $0.displayID == display.displayID }
         let scale = screen?.backingScaleFactor ?? 2
         return AIChatScreenshotSource(id: "screen-\(display.displayID)",
-                                      title: screen?.localizedName ?? "\(UserText.aiChatScreenshotPickerScreenTab) \(index + 1)",
-                                      subtitle: "\(display.width) × \(display.height)",
+                                      title: screen?.localizedName ?? "\(display.width) × \(display.height)",
+                                      subtitle: nil,
                                       icon: nil,
                                       kind: .screen,
                                       filter: SCContentFilter(display: display, excludingWindows: excludedWindows),
@@ -256,102 +258,119 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
     }
 }
 
+/// Modelled on the Windows picker: tabs, a grid of thumbnails, Capture and Cancel.
 struct AIChatScreenshotSourcePickerView: View {
+
+    static let tileSize = CGSize(width: 200, height: 125)
 
     @ObservedObject var model: AIChatScreenshotSourcePickerModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(UserText.aiChatScreenshotPickerSubtitle)
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            Text(UserText.aiChatScreenshotSelectWindowOrDisplay)
+                .font(.title2.weight(.semibold))
+                .padding(.bottom, 16)
 
-            Picker("" as String, selection: $model.tab) {
-                Text(UserText.aiChatScreenshotPickerWindowTab).tag(AIChatScreenshotSourcePickerModel.Tab.window)
-                Text(UserText.aiChatScreenshotPickerScreenTab).tag(AIChatScreenshotSourcePickerModel.Tab.screen)
+            HStack(spacing: 20) {
+                tabButton(.window, title: UserText.aiChatScreenshotPickerWindowsTab)
+                tabButton(.screen, title: UserText.aiChatScreenshotPickerDisplaysTab)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            Divider()
 
-            HStack(spacing: 12) {
-                sourceList
-                    .frame(width: 260)
-                preview
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .frame(height: 300)
+            grid
+                .frame(height: 360)
 
+            Divider()
             HStack {
                 Spacer()
                 Button(UserText.cancel) { model.cancel() }
                     .keyboardShortcut(.cancelAction)
-                Button(UserText.aiChatScreenshotPickerShare) { model.share() }
+                Button(UserText.aiChatScreenshotPickerCapture) { model.share() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(model.selected == nil)
             }
+            .padding(.top, 16)
         }
         .padding(20)
-        .frame(width: 640)
+        .frame(width: 720)
+    }
+
+    private func tabButton(_ tab: AIChatScreenshotSourcePickerModel.Tab, title: String) -> some View {
+        let isSelected = model.tab == tab
+        return Button {
+            model.tab = tab
+        } label: {
+            Text(title)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundColor(isSelected ? .primary : .secondary)
+                .padding(.bottom, 8)
+                .overlay(Rectangle().fill(isSelected ? Color.accentColor : Color.clear).frame(height: 2), alignment: .bottom)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
-    private var sourceList: some View {
+    private var grid: some View {
         if model.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            let list = List(model.sources, selection: $model.selectedID) { source in
-                row(for: source)
-            }
-            if #available(macOS 13.0, *) {
-                // Double-click or Return shares the row.
-                list.contextMenu(forSelectionType: AIChatScreenshotSource.ID.self, menu: { _ in EmptyView() }, primaryAction: { ids in
-                    model.share(ids.first)
-                })
-            } else {
-                list
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: Self.tileSize.width), spacing: 16, alignment: .topLeading)], alignment: .leading, spacing: 16) {
+                    ForEach(model.sources) { source in
+                        tile(for: source)
+                    }
+                }
+                .padding(.vertical, 16)
             }
         }
     }
 
-    private func row(for source: AIChatScreenshotSource) -> some View {
-        HStack(spacing: 8) {
-            if let icon = source.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-            } else {
-                Image(systemName: "display")
-                    .frame(width: 16, height: 16)
-            }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(source.title)
-                    .lineLimit(1)
-                if let subtitle = source.subtitle {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
+    private func tile(for source: AIChatScreenshotSource) -> some View {
+        let isSelected = model.selectedID == source.id
+        return VStack(alignment: .leading, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(nsColor: .quaternaryLabelColor))
+                if let thumbnail = model.thumbnails[source.id] {
+                    if let thumbnail {
+                        Image(decorative: thumbnail, scale: 1)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(6)
+                    }
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
                 }
             }
+            .frame(width: Self.tileSize.width, height: Self.tileSize.height)
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 3))
+
+            HStack(spacing: 6) {
+                icon(for: source)
+                Text(source.title)
+                    .lineLimit(1)
+            }
+            .frame(width: Self.tileSize.width, alignment: .leading)
         }
-        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .help(source.subtitle.map { "\($0) — \(source.title)" } ?? source.title)
+        // The first click selects right away; the second click of a double-click captures.
+        .gesture(TapGesture(count: 2).onEnded { model.share(source.id) })
+        .simultaneousGesture(TapGesture().onEnded { model.selectedID = source.id })
     }
 
-    private var preview: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor))
-            if let preview = model.preview {
-                Image(decorative: preview, scale: 1)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .padding(8)
-            } else if model.selected != nil {
-                ProgressView()
-            } else {
-                Text(model.tab == .window ? UserText.aiChatScreenshotPickerSelectWindow : UserText.aiChatScreenshotPickerSelectScreen)
-                    .foregroundColor(.secondary)
-            }
+    @ViewBuilder
+    private func icon(for source: AIChatScreenshotSource) -> some View {
+        if let icon = source.icon {
+            Image(nsImage: icon)
+                .resizable()
+                .frame(width: 16, height: 16)
+        } else {
+            Image(systemName: "display")
+                .frame(width: 16, height: 16)
         }
     }
 }

@@ -84,6 +84,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     private let notificationService: WebNotificationService
     private let iconFetcher: NotificationIconFetching
     private let featureFlagger: FeatureFlagger
+    private let passkeyUsagePixelReporter: PasskeyUsagePixelReporter
 
     /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
     weak var webView: WKWebView?
@@ -100,11 +101,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     init(tabUUID: String,
          notificationService: WebNotificationService = UNUserNotificationCenter.current(),
          iconFetcher: NotificationIconFetching = NotificationIconFetcher(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         passkeyUsagePixelReporter: PasskeyUsagePixelReporter = PasskeyUsagePixelReporter()) {
         self.tabUUID = tabUUID
         self.notificationService = notificationService
         self.iconFetcher = iconFetcher
         self.featureFlagger = featureFlagger
+        self.passkeyUsagePixelReporter = passkeyUsagePixelReporter
         super.init()
     }
 
@@ -115,6 +118,10 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     // MARK: - Subfeature Handler
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        // The broker routes all webCompat messages here, including passkey detection's.
+        if let passkeyHandler = passkeyUsagePixelReporter.handler(forMethodNamed: methodName) {
+            return passkeyHandler
+        }
         switch MessageNames(rawValue: methodName) {
         case .showNotification:
             return { [weak self] params, original in

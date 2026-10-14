@@ -1,0 +1,76 @@
+// Passkey usage pixels (see PasskeyUsagePixel.swift)
+{
+    "autofill_passkey_use_success_macos": {
+        "description": "A WebAuthn get ceremony on a web page resolved with a public-key credential, as reported by the webCompat passkey detection script.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["web_detection"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "autofill_passkey_use_failure_macos": {
+        "description": "A WebAuthn get ceremony on a web page rejected, as reported by the webCompat passkey detection script.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["web_detection"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "error",
+                "description": "The sanitized DOMException name the get call rejected with. Unrecognized names are reported as Other.",
+                "enum": [
+                    "NotAllowedError",
+                    "SecurityError",
+                    "NotSupportedError",
+                    "InvalidStateError",
+                    "ConstraintError",
+                    "AbortError",
+                    "UnknownError",
+                    "EncodingError",
+                    "NotReadableError",
+                    "TypeError",
+                    "Other"
+                ]
+            }
+        ]
+    },
+    "autofill_passkey_create_success_macos": {
+        "description": "A WebAuthn create ceremony on a web page resolved with a public-key credential, as reported by the webCompat passkey detection script.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["web_detection"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "autofill_passkey_create_failure_macos": {
+        "description": "A WebAuthn create ceremony on a web page rejected, as reported by the webCompat passkey detection script.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["web_detection"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "error",
+                "description": "The sanitized DOMException name the create call rejected with. Unrecognized names are reported as Other.",
+                "enum": [
+                    "NotAllowedError",
+                    "SecurityError",
+                    "NotSupportedError",
+                    "InvalidStateError",
+                    "ConstraintError",
+                    "AbortError",
+                    "UnknownError",
+                    "EncodingError",
+                    "NotReadableError",
+                    "TypeError",
+                    "Other"
+                ]
+            }
+        ]
+    },
+    "autofill_passkey_unknown_event_macos": {
+        "description": "A passkeyUsed or passkeyFailed notification from the webCompat passkey detection script had a type the app couldn't parse.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["web_detection"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    }
+}

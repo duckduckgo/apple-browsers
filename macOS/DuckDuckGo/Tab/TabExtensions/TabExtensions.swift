@@ -201,6 +201,10 @@ extension TabExtensionsBuilder {
                     permissionModel: args.permissionModel
                 )
             }
+        } else {
+            add {
+                PasskeyUsageTabExtension(contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript))
+            }
         }
 
         add {

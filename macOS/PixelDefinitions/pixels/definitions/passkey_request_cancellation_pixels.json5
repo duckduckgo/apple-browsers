@@ -1,17 +1,10 @@
 // Passkey request cancellation pixels (see WebKitPasskeyRequestCanceller.swift)
 {
     "passkey_request_cancellation_install_failed_macos": {
-        "description": "At launch, the WebKit passkey request canceller couldn't install because WebKit's passkey delegate class or an ASAuthorizationController method it replaces is missing, so pending passkey requests aren't cancelled.",
+        "description": "At launch, the WebKit passkey request canceller couldn't install because WebKit's private passkey delegate class is missing, so pending passkey requests aren't cancelled.",
         "owners": ["diegoreymendez"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "reason",
-                "description": "What was missing.",
-                "enum": ["webkit_delegate_class", "perform_requests", "perform_autofill_assisted_requests", "cancel"]
-            }
-        ]
+        "parameters": ["appVersion"]
     }
 }

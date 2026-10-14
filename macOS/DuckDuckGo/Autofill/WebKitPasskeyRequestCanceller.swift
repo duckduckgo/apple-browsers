@@ -129,35 +129,25 @@ extension WebKitPasskeyRequestCanceller {
     /// run. Only WebKit's requests are affected; any other request passes straight through. Call once at launch, before
     /// any web view starts a passkey request.
     ///
-    /// If WebKit's delegate class or one of those methods is missing, for example because a macOS update changed
-    /// WebKit, nothing is installed, passkeys behave as they would without it, and a pixel reports why.
-    ///
-    /// - Parameter webKitDelegateClass: WebKit's private delegate class, which is how WebKit's requests are recognised.
-    static func install(webKitDelegateClass: AnyClass? = NSClassFromString("_WKASDelegate"),
-                        pixelFiring: PixelFiring? = PixelKit.shared) {
+    /// If WebKit's delegate class is missing, for example because a macOS update changed WebKit, nothing is installed,
+    /// passkeys behave as they would without it, and a pixel reports it.
+    static func install(pixelFiring: PixelFiring? = PixelKit.shared) {
         guard #available(macOS 13.0, *), installed == nil else { return }
 
-        let failure: PasskeyRequestCancellationPixel.InstallFailureReason?
-        if webKitDelegateClass == nil {
-            failure = .webKitDelegateClass
-        } else if class_getInstanceMethod(ASAuthorizationController.self, #selector(ASAuthorizationController.performRequests)) == nil {
-            failure = .performRequests
-        } else if class_getInstanceMethod(ASAuthorizationController.self, NSSelectorFromString("performAutoFillAssistedRequests")) == nil {
-            failure = .performAutoFillAssistedRequests
-        } else if class_getInstanceMethod(ASAuthorizationController.self, #selector(ASAuthorizationController.cancel)) == nil {
-            failure = .cancel
-        } else {
-            failure = nil
-        }
-        guard let webKitDelegateClass, failure == nil else {
-            Logger.general.error("WebKit passkey request canceller not installed: \(failure?.rawValue ?? "", privacy: .public) missing")
-            pixelFiring?.fire(PasskeyRequestCancellationPixel.installFailed(failure ?? .webKitDelegateClass), frequency: .dailyAndCount)
+        // The swizzled methods are public `ASAuthorizationController` API, so only WebKit's private delegate class can
+        // disappear without notice.
+        guard let webKitDelegateClass = NSClassFromString(webKitDelegateClassName) else {
+            Logger.general.error("WebKit passkey request canceller not installed: \(webKitDelegateClassName, privacy: .public) is missing")
+            pixelFiring?.fire(PasskeyRequestCancellationPixel.webKitDelegateClassMissing, frequency: .dailyAndCount)
             return
         }
 
         installed = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
         _ = ASAuthorizationController.swizzlePasskeyRequestMethodsOnce
     }
+
+    /// WebKit's private `ASAuthorizationController` delegate, which is how WebKit's passkey requests are recognised.
+    private static let webKitDelegateClassName = "_WKASDelegate"
 }
 
 @available(macOS 13.0, *)
@@ -200,32 +190,20 @@ extension ASAuthorizationController {
 /// Pixels for `WebKitPasskeyRequestCanceller`.
 enum PasskeyRequestCancellationPixel: PixelKit.Event {
 
-    /// What `install` found missing.
-    enum InstallFailureReason: String {
-        case webKitDelegateClass = "webkit_delegate_class"
-        case performRequests = "perform_requests"
-        case performAutoFillAssistedRequests = "perform_autofill_assisted_requests"
-        case cancel
-    }
-
-    /// The canceller couldn't install at launch, so WebKit's passkey requests aren't being cancelled.
-    case installFailed(InstallFailureReason)
+    /// WebKit's passkey delegate class is missing, so the canceller isn't installed and WebKit's passkey requests aren't
+    /// being cancelled.
+    case webKitDelegateClassMissing
 
     var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {
-        case .installFailed:
+        case .webKitDelegateClassMissing:
             return "passkey_request_cancellation_install_failed_macos"
         }
     }
 
-    var parameters: [String: String]? {
-        switch self {
-        case .installFailed(let reason):
-            return ["reason": reason.rawValue]
-        }
-    }
+    var parameters: [String: String]? { nil }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

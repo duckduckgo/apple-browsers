@@ -17,7 +17,6 @@
 //
 
 import AuthenticationServices
-@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -244,17 +243,5 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
         start(controller)
 
         XCTAssertTrue(canceller.willCancel(controller))
-    }
-
-    func testWhenWebKitDelegateClassIsMissing_ThenInstallFiresPixel() throws {
-        guard #available(macOS 13.0, *) else { throw XCTSkip("Requires macOS 13") }
-        let pixelFiring = PixelKitMock()
-
-        WebKitPasskeyRequestCanceller.install(webKitDelegateClass: nil, pixelFiring: pixelFiring)
-
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
-            ExpectedFireCall(pixel: PasskeyRequestCancellationPixel.installFailed(.webKitDelegateClass), frequency: .dailyAndCount)
-        ])
-        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.parameters, ["reason": "webkit_delegate_class"])
     }
 }

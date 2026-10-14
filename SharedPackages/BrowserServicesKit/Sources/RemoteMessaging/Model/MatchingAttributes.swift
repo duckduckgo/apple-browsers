@@ -277,7 +277,7 @@ struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
-/// Matches the `isReturnUser` RMF attribute: the app was installed on this device before.
+/// Matches the `isReturningUser` RMF attribute: the app was installed on this device before.
 struct IsReturningUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?

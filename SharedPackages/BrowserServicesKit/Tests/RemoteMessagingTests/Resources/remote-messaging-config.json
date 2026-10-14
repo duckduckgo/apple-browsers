@@ -342,7 +342,7 @@
     {
       "id": 12,
       "attributes": {
-          "isReturnUser": {
+          "isReturningUser": {
               "value": true
           },
           "isDuckAiEnabled": {

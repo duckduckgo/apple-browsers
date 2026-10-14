@@ -692,7 +692,7 @@ extension URL {
     }
 
     static var aiChatUploadFilesAndImagesPrivacy: URL {
-        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files")!
+        return URL(string: "\(aiChatPrivacy.absoluteString)#how-we-moderate-uploaded-images-and-files")!
     }
 
     static var aiChatPrivacyTerms: URL {

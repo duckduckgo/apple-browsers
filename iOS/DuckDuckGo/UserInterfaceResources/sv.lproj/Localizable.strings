@@ -4664,7 +4664,7 @@
 "settings.keyboard.new-tab" = "Ny flik";
 
 /* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Visa tangentbord på";
+"settings.keyboard.show-on" = "Visa tangentbordet när";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Visar en länk för att återgå till den senast använda fliken när du öppnar appen efter inaktivitet.";

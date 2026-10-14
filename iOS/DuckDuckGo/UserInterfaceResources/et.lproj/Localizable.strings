@@ -4661,7 +4661,7 @@
 "settings.keyboard.app-launch" = "Rakenduse käivitamine";
 
 /* Keyboard setting to show the keyboard on a New Tab page */
-"settings.keyboard.new-tab" = "Uus vaheleht";
+"settings.keyboard.new-tab" = "Uus vahekaart";
 
 /* Header for settings that control when to show the keyboard */
 "settings.keyboard.show-on" = "Näita klaviatuuri";

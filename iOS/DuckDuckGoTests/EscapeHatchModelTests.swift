@@ -32,7 +32,7 @@ struct EscapeHatchModelTests {
     private final class SpyRouter: EscapeHatchActionRouter {
         private(set) var burnImmediatelyCalls: [Tab] = []
         private(set) var closeCalls: [Tab] = []
-        private(set) var openingScreenOptionChanges: [AfterInactivityOption] = []
+        private(set) var settingsRequests = 0
 
         func escapeHatchDidRequestSwitch(to tab: Tab) {}
         func escapeHatchDidRequestClose(_ tab: Tab) { closeCalls.append(tab) }
@@ -43,8 +43,8 @@ struct EscapeHatchModelTests {
             burnImmediatelyCalls.append(tab)
         }
 
-        func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
-            openingScreenOptionChanges.append(option)
+        func escapeHatchDidRequestAfterInactivitySettings() {
+            settingsRequests += 1
         }
     }
 
@@ -62,7 +62,7 @@ struct EscapeHatchModelTests {
         func escapeHatchTabSwitcherTapped() {}
         func escapeHatchCloseTabTapped() {}
         func escapeHatchBurnTapped(requiredConfirmation: Bool) {}
-        func escapeHatchOptionChanged(to option: AfterInactivityOption) {}
+        func escapeHatchAfterInactivitySettingsTappedFromMenu() { firedEvents.append("afterInactivitySettingsFromMenu") }
         func escapeHatchHiddenFromMenu() {}
         func escapeHatchShown() { firedEvents.append("shown") }
         func escapeHatchMenuShown() { firedEvents.append("menuShown") }
@@ -261,5 +261,63 @@ struct EscapeHatchModelTests {
 
         #expect(spy.firedEvents == ["burnFromButton"])
         #expect(router.burnImmediatelyCalls.isEmpty) // regular tab → confirmation flow, not immediate
+    }
+
+    @available(iOS 16, *)
+    @Test("Opening after-inactivity settings from the menu fires the menu pixel and routes to settings", .timeLimit(.minutes(1)))
+    func openAfterInactivitySettingsFromMenuRoutesAndFiresPixel() {
+        let router = SpyRouter()
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(targetTab: Tab(uid: "target-tab"), router: router, instrumentation: spy)
+
+        sut.openAfterInactivitySettingsFromMenu()
+
+        #expect(router.settingsRequests == 1)
+        #expect(spy.firedEvents == ["afterInactivitySettingsFromMenu"])
+    }
+
+    @available(iOS 16, *)
+    @Test("Opening after-inactivity settings from a fire-tab hatch still routes to settings", .timeLimit(.minutes(1)))
+    func openAfterInactivitySettingsFromFireTabHatchRoutesToSettings() {
+        let router = SpyRouter()
+        let sut = makeSUT(targetTab: Tab(fireTab: true), router: router)
+
+        sut.openAfterInactivitySettingsFromMenu()
+
+        #expect(router.settingsRequests == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("Opening after-inactivity settings after the router is released is a no-op", .timeLimit(.minutes(1)))
+    func openAfterInactivitySettingsWithReleasedRouterIsNoop() {
+        var router: SpyRouter? = SpyRouter()
+        let sut = makeSUT(targetTab: Tab(uid: "target-tab"), router: router!)
+        router = nil
+
+        sut.openAfterInactivitySettingsFromMenu() // must not crash
+    }
+
+    @available(iOS 16, *)
+    @Test("afterInactivityOption reads through to the adapter's current value", .timeLimit(.minutes(1)))
+    func afterInactivityOptionReadsThroughAdapter() {
+        let router = SpyRouter()
+        let adapter = AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: MockKeyValueFileStore())
+        let targetTab = Tab(uid: "target-tab")
+        let sut = EscapeHatchModel(
+            title: "title",
+            subtitle: "subtitle",
+            tabType: .regular,
+            domain: nil,
+            targetTab: targetTab,
+            tabsSource: StaticEscapeHatchTabsSource(tabs: [targetTab]),
+            router: router,
+            afterInactivityOptionAdapter: adapter,
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        )
+        #expect(sut.afterInactivityOption == .lastUsedTab)
+
+        adapter.afterInactivityOption = .newTab // simulates a change made in Settings
+
+        #expect(sut.afterInactivityOption == .newTab)
     }
 }

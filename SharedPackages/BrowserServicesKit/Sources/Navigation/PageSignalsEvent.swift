@@ -1,6 +1,5 @@
 //
-//  RebrandedPreview.swift
-//  DuckDuckGo
+//  PageSignalsEvent.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,24 +16,10 @@
 //  limitations under the License.
 //
 
-#if DEBUG
-
-import SwiftUI
-
-/// Wraps SwiftUI preview content so the rebranded design-system palette is active, matching the runtime
-/// appearance of the post-subscription onboarding flow. Shared by the onboarding view previews.
-struct RebrandedPreview<Content: View>: View {
-    @StateObject private var rebrandOverride = RebrandPreviewOverride(isRebranded: true)
-    private let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .onAppear { rebrandOverride.apply() }
-    }
+#if PRIVATE_PAGE_SIGNALS_ENABLED
+/// Events reported by page signals collection, mapped to pixels by the apps.
+public enum PageSignalsEvent {
+    /// Attaching found another resource load delegate already set on the web view.
+    case resourceLoadDelegateAlreadySet
 }
-
 #endif

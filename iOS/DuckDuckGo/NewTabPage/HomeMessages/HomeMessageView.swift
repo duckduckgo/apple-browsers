@@ -356,18 +356,8 @@ private enum HomeMessagePreviewSamples {
     }
 }
 
-struct HomeMessageView_LegacyPreviews: PreviewProvider {
+struct HomeMessageView_Previews: PreviewProvider {
     static var previews: some View {
-        AppRebrand.isAppRebranded = { false }
-        return HomeMessagePreviewSamples.allMessages
-            .previewDisplayName("Legacy")
-    }
-}
-
-struct HomeMessageView_RebrandedPreviews: PreviewProvider {
-    static var previews: some View {
-        AppRebrand.isAppRebranded = { true }
-        return HomeMessagePreviewSamples.allMessages
-            .previewDisplayName("Rebranded")
+        HomeMessagePreviewSamples.allMessages
     }
 }

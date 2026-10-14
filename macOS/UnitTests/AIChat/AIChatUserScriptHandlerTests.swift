@@ -642,7 +642,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .dailyAndStandard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -675,7 +675,7 @@ struct AIChatUserScriptHandlerTests {
         sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .dailyAndStandard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,

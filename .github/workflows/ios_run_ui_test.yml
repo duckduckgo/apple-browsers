@@ -88,6 +88,31 @@ jobs:
           exit 1
         fi
 
+    - name: Resolve and configure selected simulator logging
+      id: simulator-logging
+      env:
+        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+      run: |
+        set -euo pipefail
+        selected_os="${DESTINATION##*,OS=}"
+        runtime_key="com.apple.CoreSimulator.SimRuntime.iOS-${selected_os//./-}"
+        devices_json=$(xcrun simctl list devices available --json)
+        simulator_udid=$(jq -r --arg runtime "$runtime_key" --arg name "$DEVICE_NAME" \
+          '[.devices[$runtime][]? | select(.name == $name) | .udid] | if length == 1 then .[0] else empty end' \
+          <<< "$devices_json")
+        if [[ -z "$simulator_udid" ]]; then
+          echo "::error::Could not resolve exactly one available '$DEVICE_NAME' simulator for iOS $selected_os."
+          exit 1
+        fi
+        state=$(jq -r --arg udid "$simulator_udid" '[.devices[][] | select(.udid == $udid) | .state][0] // ""' <<< "$devices_json")
+        if [[ "$state" != "Booted" ]]; then
+          xcrun simctl boot "$simulator_udid"
+        fi
+        xcrun simctl bootstatus "$simulator_udid" -b
+        echo "simulator-udid=$simulator_udid" >> "$GITHUB_OUTPUT"
+        xcrun simctl spawn "$simulator_udid" log config --subsystem General --mode level:debug,persist:debug
+        xcrun simctl spawn "$simulator_udid" log config --status --subsystem General
+
     - name: Record simulator runtime diagnostics
       continue-on-error: true
       run: |
@@ -133,10 +158,11 @@ jobs:
     - name: Run UI Tests
       id: run-ui-tests
       env:
-        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+        SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
       run: |
         : > ui-tests.log
         xctestrun_path=$(<xctestrun-path)
+        DESTINATION="platform=iOS Simulator,id=$SIMULATOR_UDID"
         set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
           xcodebuild test-without-building \
           -xctestrun "$xctestrun_path" \
@@ -148,6 +174,13 @@ jobs:
           "-only-testing:UI Tests/$TEST_CLASS" \
         2>&1 | tee ui-tests.log \
         | xcbeautify
+
+    - name: Restore simulator logging defaults
+      if: always() && steps.simulator-logging.outputs.simulator-udid != ''
+      env:
+        SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
+      run: |
+        xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default
 
     - name: Prepare test report
       if: always() && steps.checkout.outcome == 'success'

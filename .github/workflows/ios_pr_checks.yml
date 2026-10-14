@@ -289,7 +289,8 @@ jobs:
 
     - name: Upload logs if workflow failed
       uses: actions/upload-artifact@v6
-      if: failure() || cancelled()
+      # Temporary: retain successful PR #7340 results to investigate diagnostics requests.
+      if: failure() || cancelled() || (github.event_name == 'pull_request' && github.event.pull_request.number == 7340)
       with:
         name: BuildLogs
         path: |
@@ -317,7 +318,8 @@ jobs:
         job_summary: 'false'
 
     - name: Update Asana with failed unit tests
-      if: always() && steps.run-unit-tests.outcome == 'failure'
+      # Temporary: do not report PR #7340's deliberate failures to Asana. Remove before merging.
+      if: always() && steps.run-unit-tests.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.number != 7340)
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |

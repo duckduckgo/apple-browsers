@@ -57,10 +57,11 @@ public extension XCUIElement {
             return
         }
 
-        while Date() < deadline {
+        while true {
             if element.isHittable {
                 return
             }
+            guard Date() < deadline else { break }
             swipeUp()
         }
 

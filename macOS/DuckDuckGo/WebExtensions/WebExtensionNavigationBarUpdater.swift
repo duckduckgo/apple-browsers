@@ -307,9 +307,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         }
         alert.addButton(withTitle: UserText.webExtensionRemoveButton)
         alert.addButton(withTitle: UserText.cancel)
-        alert.buttons[0].hasDestructiveAction = true
-        alert.buttons[0].keyEquivalent = ""
-        alert.buttons[1].keyEquivalent = "\r"
 
         Task { @MainActor [weak self] in
             let response = await Self.present(alert, in: window)

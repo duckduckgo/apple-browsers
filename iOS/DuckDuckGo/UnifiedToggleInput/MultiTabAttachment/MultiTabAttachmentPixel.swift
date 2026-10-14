@@ -19,6 +19,11 @@
 
 import PixelKit
 
+struct MultiTabPixelAttribution {
+    let surface: UnifiedToggleInputPixelSurface
+    let pageType: UnifiedToggleInputPromptPageType
+}
+
 struct MultiTabAttachmentPixel: PixelKit.Event {
     enum Action: String {
         case pickerShown = "tab_picker_shown"
@@ -29,10 +34,12 @@ struct MultiTabAttachmentPixel: PixelKit.Event {
 
     let action: Action
     let source: TabAttachmentOrigin
-    let surface: UnifiedToggleInputPixelSurface
+    let attribution: MultiTabPixelAttribution
 
     var name: String { "aichat_unified_input_\(action.rawValue)" }
-    var parameters: [String: String]? { ["surface": surface.rawValue, "source": source.pixelValue] }
+    var parameters: [String: String]? {
+        ["surface": attribution.surface.rawValue, "page_type": attribution.pageType.rawValue, "source": source.pixelValue]
+    }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
@@ -75,10 +82,10 @@ struct MultiTabSubmissionIncompletePixel: PixelKit.Event {
 /// Both events use the surface captured when the picker becomes visible.
 @MainActor
 final class MultiTabPickerPixelSession {
-    private let surfaceProvider: () -> UnifiedToggleInputPixelSurface?
-    private let report: (MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void
+    private let attributionProvider: () -> MultiTabPixelAttribution?
+    private let report: (MultiTabAttachmentPixel.Action, MultiTabPixelAttribution) -> Void
     private var isShown = false
-    private var surface: UnifiedToggleInputPixelSurface?
+    private var attribution: MultiTabPixelAttribution?
 
     init(surfaceProvider: @escaping () -> UnifiedToggleInputPixelSurface?,
          report: @escaping (MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void) {
@@ -89,9 +96,9 @@ final class MultiTabPickerPixelSession {
     func show() {
         guard !isShown else { return }
         isShown = true
-        surface = surfaceProvider()
-        if let surface {
-            report(.pickerShown, surface)
+        attribution = attributionProvider()
+        if let attribution {
+            report(.pickerShown, attribution)
         }
     }
 

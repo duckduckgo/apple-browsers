@@ -174,9 +174,14 @@ final class UTIPixelReporter {
     }
 
     func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
-                             surface: UnifiedToggleInputPixelSurface? = nil) {
-        guard let surface = surface ?? context()?.surface else { return }
-        firing.fire(MultiTabAttachmentPixel(action: action, source: source, surface: surface), frequency: .dailyAndCount)
+                             attribution: MultiTabPixelAttribution? = nil) {
+        guard let attribution = attribution ?? currentTabPixelAttribution() else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, attribution: attribution), frequency: .dailyAndCount)
+    }
+
+    func currentTabPixelAttribution() -> MultiTabPixelAttribution? {
+        guard let context = context() else { return nil }
+        return MultiTabPixelAttribution(surface: context.surface, pageType: context.pageType)
     }
 
     /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.

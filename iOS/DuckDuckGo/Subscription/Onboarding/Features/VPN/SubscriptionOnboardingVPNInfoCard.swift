@@ -139,23 +139,17 @@ private struct SubscriptionOnboardingVPNInfoCardPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingVPNInfoCardPreview()
-    }
+    SubscriptionOnboardingVPNInfoCardPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingVPNInfoCardPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingVPNInfoCardPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingVPNInfoCardPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingVPNInfoCardPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

@@ -107,6 +107,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
 
+    /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
+    case webExtensionNativeMessaging
+
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
@@ -469,6 +472,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
     case promoQueueSyncSetupAutofillPromo
 
+    /// Enables the Bookmarks Bar "Sync Bookmarks" button promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598749?focus=true
+    case promoQueueBookmarksBarSyncPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -583,6 +590,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Shows the Duck.ai Terms of Service disclaimer under the native Duck.ai input, where clicking Ask accepts them.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
     case aiChatNativeTermsOfService
+
+    /// Lets the user drag the prompt bar and remembers where it was left.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
+    case aiChatDragPromptBar
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
@@ -732,6 +743,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
                    category: .webExtensions)
+        case .webExtensionNativeMessaging:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -835,11 +848,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webNotifications:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.webNotifications), category: .webNotifications)
         case .websitePermissionsSettings:
-            Config(defaultValue: .disabled,
+            Config(defaultValue: .enabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
                    supportsLocalOverriding: true)
         case .websitePermissionsPrompts:
-            Config(defaultValue: .disabled,
+            Config(defaultValue: .enabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsPrompts),
                    supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:
@@ -942,6 +955,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
+        case .promoQueueBookmarksBarSyncPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -988,7 +1003,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .syncCanUseExchangeV2Point1:
-            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
         case .syncCanSendExchangeChannelSecret:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret), category: .sync)
         case .syncCanWriteUnifiedDeviceList:
@@ -1011,6 +1026,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.launcherPromo), category: .duckAI)
         case .aiChatNativeTermsOfService:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
+        case .aiChatDragPromptBar:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

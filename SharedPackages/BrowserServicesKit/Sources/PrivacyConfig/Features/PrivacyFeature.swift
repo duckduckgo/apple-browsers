@@ -560,6 +560,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
+
+    case dragPromptBar
+
+    /// Enables the Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
+    case chatLimitExtensionPromo
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -876,6 +882,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmMessagingHangRecovery
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
+    /// Controls native messaging between web extensions and host apps on macOS.
+    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -942,6 +950,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the "Sync your autofill data" promo.
     case syncSetupAutofillPromo
+
+    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
+    case bookmarksBarSyncPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

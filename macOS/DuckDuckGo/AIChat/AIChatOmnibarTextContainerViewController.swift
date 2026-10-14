@@ -808,6 +808,16 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 1, let window, window.isMovableByWindowBackground else {
+            handleMouseDown(event)
+            return
+        }
+        window.dragOrClick {
+            handleMouseDown(event)
+        }
+    }
+
+    private func handleMouseDown(_ event: NSEvent) {
         if window?.firstResponder != self {
             /// Refocus click: make this the first responder so the refocus flow (via `becomeFirstResponder` →
             /// `onDidBecomeFirstResponder` callback → `focusTextViewRestoringCursorPosition`) can restore the

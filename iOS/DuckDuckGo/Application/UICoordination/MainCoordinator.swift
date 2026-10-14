@@ -699,10 +699,15 @@ final class MainCoordinator {
 
     func presentModalPromptIfNeeded() {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
+        _ = runOnceModalPromptCloses(while: { true }, {})
     }
 
-    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
-        promoCoordinationService.runOnceModalPromptCloses(while: shouldWait, handler)
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        // Presentation analytics still need the dismissal when the keyboard is disabled or cancelled.
+        promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
+            self?.controller.recordPendingNewTabPagePresentationIfVisible()
+            if shouldWait() { handler() }
+        }
     }
 
     func prepareHomePageMessagesForForegroundIfNeeded() {
@@ -946,30 +951,38 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             completion(.suppressed)
             return
         }
 
-        // Already on the NTP — no rebuild needed. This preserves any existing
-        // escape hatch state, avoids bouncing the omnibar/keyboard on idle return,
-        // and avoids surfacing a stale hatch when the user has already consumed
-        // the after-idle moment and returned to the NTP.
+        // Restore a cold-start NTP's hatch; warm returns preserve its existing or consumed state and input focus.
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-            completion(.keptCurrent)
+            guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
+                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+                completion(.keptCurrent)
+                return
+            }
+            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
+                guard let self else { return }
+                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                    startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+                }
+                completion(.keptCurrent)
+            }
             return
         }
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
-        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-        controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) { [weak self] in
+        controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
             completion(.openedNewTab)
@@ -977,8 +990,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut, focused: false)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut,
+                                                                 focused: controller.isInputFocused)
     }
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
@@ -987,9 +1002,12 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and
     /// the post-idle event — which only reports on treated returns — is not started.
+    /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.
     private func startUntreatedReturnSession(timeAwayMs: Int?) {
+        guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil,
+                                                                 focused: controller.isInputFocused)
     }
 
     private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {

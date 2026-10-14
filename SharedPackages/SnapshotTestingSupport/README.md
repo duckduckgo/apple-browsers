@@ -92,7 +92,7 @@ assertSnapshot(of: value, as: .json)
 | `.intrinsicContentSize` | Compact view sized by its content | none |
 | `.constrainedWidth` | Content-driven height, default iPhone width (390) | none |
 | `.screen` | Full-screen layout | iPhone + iPad on iOS |
-| `.sheet` | Sheet presentation; iPhone bottom-aligned, iPad centered with padding | iPhone + iPad on iOS |
+| `.sheet` | Sheet presentation; iPhone as a floating sheet (inset from the screen edges, rounded corners, grabber, home-indicator inset, dimmed backdrop), iPad centered with padding | iPhone + iPad on iOS |
 | `.fixed(CGSize)` | Explicit size (typical for macOS windows/panels) | none |
 
 Only `.sheet` adds a backdrop automatically (it simulates the sheet chrome). For every other mode the snapshot reflects the view as-is — call `.snapshotBackground()` on your view if you want `systemBackground` / `windowBackgroundColor` behind it.
@@ -181,7 +181,6 @@ The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI.
 - Function names that start with `test` keep `#function`-derived snapshot paths consistent with the legacy XCTest convention.
 - One `@Suite` per view test file; one `@Test` per view configuration.
 - `*_PreviewMocks.swift` under `#if DEBUG` for preview-only mocks.
-- This package doesn't know about the design system. To render the **rebranded** design, apply `.applyRebranding()` (from `UIComponents`) inside the `PreviewSnapshots` closure, so both previews and snapshots pick it up.
 
 ## Examples in the repo
 

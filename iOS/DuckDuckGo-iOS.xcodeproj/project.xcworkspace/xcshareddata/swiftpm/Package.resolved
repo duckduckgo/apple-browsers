@@ -1,5 +1,5 @@
 {
-  "originHash" : "39adae593f603cb91ae79541d11d9d39b80a83e17bb20dcfc798b2fc2cdd1f09",
+  "originHash" : "5e75f62ec42426b4229e0391dad5fa2b3b04ae72fa5c2b2ec593d520e3597b2c",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "88a028fe9e4aa53941cb49dfc93bbcf62bd46f3b",
-        "version" : "9.10.2"
+        "revision" : "756233c2d2d1b8abc0d3f7d47de0ea191a07fd79",
+        "version" : "9.11.0"
       }
     },
     {

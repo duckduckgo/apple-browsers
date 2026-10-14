@@ -351,19 +351,19 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: true, fallback: nil)), .fail)
     }
 
-    func testWhenIsAIChatEnabledMatchesThenReturnMatch() throws {
+    func testWhenIsDuckAIEnabledMatchesThenReturnMatch() throws {
         setUpUserAttributeMatcher(isAIChatEnabled: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatEnabledMatchingAttribute(value: true, fallback: nil)), .match)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: true, fallback: nil)), .match)
     }
 
-    func testWhenIsAIChatEnabledDoesNotMatchThenReturnFail() throws {
+    func testWhenIsDuckAIEnabledDoesNotMatchThenReturnFail() throws {
         setUpUserAttributeMatcher(isAIChatEnabled: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatEnabledMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .fail)
     }
 
-    func testWhenIsAIChatDisabledAndRuleExpectsDisabledThenReturnMatch() throws {
+    func testWhenIsDuckAIDisabledAndRuleExpectsDisabledThenReturnMatch() throws {
         setUpUserAttributeMatcher(isAIChatEnabled: false)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatEnabledMatchingAttribute(value: false, fallback: nil)), .match)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .match)
     }
 
     func testWhenTriedAIChatDuringOnboardingMatchesThenReturnMatch() throws {

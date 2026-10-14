@@ -283,8 +283,8 @@ struct IsReturningUserMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
-/// Matches the `isAIChatEnabled` RMF attribute: the user has Duck.ai turned on.
-struct IsAIChatEnabledMatchingAttribute: SingleValueMatching {
+/// Matches the `isDuckAiEnabled` RMF attribute: the user has Duck.ai turned on.
+struct IsDuckAIEnabledMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }

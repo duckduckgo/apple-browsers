@@ -67,7 +67,7 @@ private enum AttributesKey: String, CaseIterable {
     case shouldShowWinBackOfferUrgencyMessage
     case daysSinceDuckAiUsed
     case isReturnUser
-    case isAIChatEnabled
+    case isDuckAiEnabled
     case triedAIChatDuringOnboarding
     case isDuckAiBoostActive
 
@@ -120,7 +120,7 @@ private enum AttributesKey: String, CaseIterable {
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isReturnUser: return IsReturningUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .isAIChatEnabled: return IsAIChatEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isDuckAiEnabled: return IsDuckAIEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .triedAIChatDuringOnboarding: return TriedAIChatDuringOnboardingMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isDuckAiBoostActive: return IsDuckAIBoostActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }

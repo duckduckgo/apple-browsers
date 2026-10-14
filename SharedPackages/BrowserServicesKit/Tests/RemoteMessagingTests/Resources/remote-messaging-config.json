@@ -345,7 +345,7 @@
           "isReturnUser": {
               "value": true
           },
-          "isAIChatEnabled": {
+          "isDuckAiEnabled": {
               "value": true
           },
           "triedAIChatDuringOnboarding": {

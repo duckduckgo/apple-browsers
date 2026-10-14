@@ -30,6 +30,7 @@ import UIComponents
 struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
 
     @EnvironmentObject var model: ViewModel
+    @State private var isSyncWithAnotherDevicePending = false
 
     @State var isVisible = false
 
@@ -53,8 +54,10 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
             SyncedDevicesSeparatorV2()
 
             Button {
+                isSyncWithAnotherDevicePending = true
                 Task {
                     await model.syncWithAnotherDevicePressed()
+                    isSyncWithAnotherDevicePending = false
                 }
             } label: {
                 HStack(spacing: 6) {
@@ -65,7 +68,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
                 }
             }
             .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable))
-            .disabled(!model.isConnectingDevicesAvailable)
+            .disabled(!model.isConnectingDevicesAvailable || isSyncWithAnotherDevicePending)
             .padding(8)
         }
         .syncRoundedBorder(cornerRadius: 12)

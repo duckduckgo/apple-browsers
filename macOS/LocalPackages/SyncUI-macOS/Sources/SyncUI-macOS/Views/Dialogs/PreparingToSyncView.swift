@@ -67,9 +67,12 @@ struct RecoverSyncedDataView: View {
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.reciverSyncedDataDialogButton) {
-                model.delegate?.enterRecoveryCodePressed()
+                Task {
+                    await model.delegate?.enterRecoveryCodePressed()
+                }
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
+            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
+            .disabled(model.isAuthenticating)
         }
     }
 

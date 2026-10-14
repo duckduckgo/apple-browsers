@@ -1981,7 +1981,9 @@ class TabViewController: UIViewController {
         updateContentMode()
         cachedRuntimeConfigurationForDomain = [:]
         adBlockingNavigationHandler.handleReload()
-        duckPlayerNavigationHandler.handleReload(webView: webView)
+        if duckPlayerNavigationHandler.handleReload(webView: webView) == .reload {
+            webView.reload()
+        }
         delegate?.tabLoadingStateDidChange(tab: self)
         resetCreditCardPrompt()
     }

@@ -1,6 +1,5 @@
 //
-//  RebrandedPreview.swift
-//  DuckDuckGo
+//  AIChatBonusPixelFiring.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,24 +16,20 @@
 //  limitations under the License.
 //
 
-#if DEBUG
+import Foundation
 
-import SwiftUI
-
-/// Wraps SwiftUI preview content so the rebranded design-system palette is active, matching the runtime
-/// appearance of the post-subscription onboarding flow. Shared by the onboarding view previews.
-struct RebrandedPreview<Content: View>: View {
-    @StateObject private var rebrandOverride = RebrandPreviewOverride(isRebranded: true)
-    private let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .onAppear { rebrandOverride.apply() }
-    }
+/// Events the bonus offer reports. Each platform maps them to its own pixels.
+public enum AIChatBonusEvent {
+    /// The store couldn't read or write the record, e.g. a Keychain failure.
+    case storeFailed(Error)
 }
 
-#endif
+public protocol AIChatBonusPixelFiring {
+    func fire(_ event: AIChatBonusEvent)
+}
+
+// To remove as it will be injected by the client when implementing pixels
+public struct NullAIChatBonusPixelFiring: AIChatBonusPixelFiring {
+    public init() {}
+    public func fire(_ event: AIChatBonusEvent) {}
+}

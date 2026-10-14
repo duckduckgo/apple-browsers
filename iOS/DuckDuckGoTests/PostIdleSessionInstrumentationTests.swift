@@ -95,7 +95,7 @@ struct PostIdleSessionInstrumentationTests {
         sut.pageEngaged()
         sut.toggleUsed()
         sut.backPressed()
-        sut.openingScreenChanged()
+        sut.afterInactivitySettingsOpened()
         sut.closeTabTapped()
         sut.burnTabTapped()
         #expect(wideEvent.updates.isEmpty)
@@ -303,15 +303,17 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("openingScreenChanged sets flag and marks first interaction", .timeLimit(.minutes(1)))
-    func openingScreenChangedSetsFlagsAndFirstInteraction() {
+    @Test("afterInactivitySettingsOpened sets the flag and marks first interaction without ending the session", .timeLimit(.minutes(1)))
+    func afterInactivitySettingsOpenedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
         clock.advance(by: 0.75)
-        sut.openingScreenChanged()
+        sut.afterInactivitySettingsOpened()
 
-        #expect(lastUpdate(wideEvent)?.openingScreenChanged == true)
+        #expect(lastUpdate(wideEvent)?.afterInactivitySettingsOpened == true)
         #expect(lastUpdate(wideEvent)?.firstInteractionInterval.end == clock.now)
+        #expect(lastReturnUpdate(wideEvent)?.afterInactivitySettingsOpened == true)
+        #expect(wideEvent.completions.isEmpty)
     }
 
     @available(iOS 16, *)

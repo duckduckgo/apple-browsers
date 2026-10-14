@@ -514,6 +514,21 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Escuchando…";
 
+/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.ask.button" = "Solicitar";
+
+/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.create.button" = "Crear";
+
+/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer" = "DuckDuckGo anonimiza tus chats. Al hacer clic en «Preguntar», aceptas nuestra %@.";
+
+/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer.create" = "DuckDuckGo anonimiza tus chats. Al hacer clic en «Crear», aceptas nuestra %@.";
+
+/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
+"aichat.termsOfService.disclaimer.link" = "Política de privacidad y condiciones del servicio";
+
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Establecer tono, duración y comportamiento";
 
@@ -2678,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Ocultar acceso directo a «Volver a»";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Volver a la última pestaña utilizada";
+"escapeHatch.menu.lastUsedTab" = "Última pestaña utilizada";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Más opciones";
@@ -4520,25 +4535,25 @@
 "settings.complete.setup" = "Completa tu configuración";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Intentaremos seleccionar solo las opciones de cookies más privadas disponibles para ti y, a continuación, cerrar estas ventanas emergentes.";
+"settings.cookie.auto-manage.explanation" = "Intentaremos rechazar el mayor número de cookies posible por ti y, a continuación, cerrar las ventanas emergentes.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Administrar automáticamente las ventanas emergentes de cookies";
+"settings.cookie.auto-manage.title" = "Rechazar cookies opcionales";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Protección contra ventanas emergentes de cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo puede gestionar automáticamente tus preferencias de cookies para maximizar la privacidad, minimizar las cookies y cerrar estas ventanas emergentes.\n[Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo puede gestionar automáticamente las ventanas emergentes de cookies para maximizar la privacidad y minimizar las cookies antes incluso de que las veas.\n[Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrar ventanas emergentes de cookies";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Deja también que DuckDuckGo te ahorre un clic aceptando cookies en tu nombre para cerrar las ventanas emergentes que no te permiten rechazarlas.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Si no hay opción de rechazarlas, te ahorraremos un clic, aceptaremos estas cookies por ti y cerraremos las ventanas emergentes.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Ventanas emergentes sin opción de rechazarlas";
+"settings.cookie.popups-without-opt-outs.title" = "Aceptar cookies sin opción de rechazarlas";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Eliminar pestañas y datos";

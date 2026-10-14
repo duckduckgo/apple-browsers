@@ -91,4 +91,12 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     func testWebViewRespondsTo_isPlayingAudio() {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_isPlayingAudio")))
     }
+
+    /// `WebKitPasskeyRequestCanceller` recognises WebKit's passkey requests by this delegate class, and reports cancelled
+    /// requests to it through the error callback.
+    func test_WKASDelegateClassAvailable() {
+        let webKitDelegateClass: AnyClass? = NSClassFromString("_WKASDelegate")
+        XCTAssertNotNil(webKitDelegateClass)
+        XCTAssertTrue(webKitDelegateClass?.instancesRespond(to: NSSelectorFromString("authorizationController:didCompleteWithError:")) == true)
+    }
 }

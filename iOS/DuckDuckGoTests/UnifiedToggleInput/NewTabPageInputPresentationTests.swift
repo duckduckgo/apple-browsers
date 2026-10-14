@@ -105,6 +105,34 @@ final class NewTabPageInputPresentationTests: XCTestCase {
 @MainActor
 final class NewTabPageInputCoordinatorTests: XCTestCase {
 
+    func testOnboardingRevealsChromeInputAndRestoresInlinePresentationAfterDismissal() {
+        for usesUnifiedInput in [false, true] {
+            for position in [AddressBarPosition.top, .bottom] {
+                let coordinator = makeCoordinator(position: position)
+                let resting = NewTabPageInputPresentation.resting(usesUnifiedInput: usesUnifiedInput)
+                coordinator.setNewTabPageInputPresentation(resting)
+                XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
+
+                let dialogPresentation = NewTabPageInputPresentation.resolve(
+                    hasInlineInput: true,
+                    usesUnifiedInput: usesUnifiedInput,
+                    isLegacyInputEditing: false,
+                    isUnifiedInputEditing: false,
+                    isHandingOff: false,
+                    isPresentingOnboardingDialog: true)
+                coordinator.setNewTabPageInputPresentation(dialogPresentation)
+
+                XCTAssertFalse(coordinator.navigationBarContainer.isHidden)
+                XCTAssertFalse(coordinator.navigationBarCollectionView.isHidden)
+                XCTAssertTrue(dialogPresentation.reservesAddressBarSpace)
+                XCTAssertEqual(dialogPresentation.transition, .omnibar)
+
+                coordinator.setNewTabPageInputPresentation(resting)
+                XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
+            }
+        }
+    }
+
     func testBrowserReconciliationDoesNotTouchExistingChrome() {
         let coordinator = makeCoordinator()
         coordinator.navigationBarContainer.alpha = 0.4

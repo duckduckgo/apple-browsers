@@ -152,8 +152,6 @@ private extension Image {
 
 #if DEBUG
 #Preview {
-    RebrandedPreview {
-        EmailSignupPromptView(viewModel: EmailSignupPromptViewModel())
-    }
+    EmailSignupPromptView(viewModel: EmailSignupPromptViewModel())
 }
 #endif

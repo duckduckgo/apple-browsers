@@ -34,6 +34,7 @@ final class WinBackOfferModalPromptProvider: ModalPromptProvider {
         let winBackOfferPrompt = presenter.makeWinBackOfferPrompt()
 
         return ModalPromptConfiguration(
+            exposureID: .winBackOffer,
             viewController: winBackOfferPrompt,
             animated: true
         )

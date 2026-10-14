@@ -141,7 +141,8 @@ struct PromptCoordinationDebugViewModelTests {
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: policy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try #require(service.tryAcquireRemoteMessageLease(for: "message"))
         #expect(lease.markShown())

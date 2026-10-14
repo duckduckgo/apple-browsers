@@ -94,3 +94,18 @@ extension PromptCooldownInfo {
         nextPresentationDate: Date()
     )
 }
+
+@MainActor
+final class MockPromptExposureReporter: PromptExposureReporting {
+    private(set) var shownPrompts: [PromptExposureID] = []
+    private(set) var remoteMessageIDs: [String] = []
+    private(set) var finishedPrompts: [PromptExposurePromptType] = []
+    private(set) var foregroundCallCount = 0
+    private(set) var resetCallCount = 0
+
+    func reportPromptShown(_ id: PromptExposureID) { shownPrompts.append(id) }
+    func reportRemoteMessageCardShown(messageID: String) { remoteMessageIDs.append(messageID) }
+    func recordCoordinatedPromptFinished(_ type: PromptExposurePromptType) { finishedPrompts.append(type) }
+    func appDidEnterForeground() { foregroundCallCount += 1 }
+    func reset() { resetCallCount += 1 }
+}

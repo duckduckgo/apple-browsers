@@ -19,6 +19,7 @@
 
 import UIKit
 import SetDefaultBrowserUI
+import SetDefaultBrowserCore
 
 final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
     private let presenter: DefaultBrowserPromptPresenting
@@ -28,10 +29,12 @@ final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
     }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
-        guard let defaultBrowserPromptVC = presenter.makePresentDefaultModalPrompt() else { return nil }
+        guard let prompt = presenter.makePresentDefaultModalPrompt() else { return nil }
 
+        let exposureID: PromptExposureID = prompt.type == .inactiveUserModal ? .reEngagementPrompt : .additionalDefaultBrowserPrompts
         return ModalPromptConfiguration(
-            viewController: defaultBrowserPromptVC,
+            exposureID: exposureID,
+            viewController: prompt.viewController,
             animated: true
         )
     }

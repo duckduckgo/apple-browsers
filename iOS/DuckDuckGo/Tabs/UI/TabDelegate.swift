@@ -175,6 +175,8 @@ protocol TabDelegate: AnyObject {
 
     /// The rating dialog was requested, consuming one of the two per-install chances.
     func tabDidRequestAppRatingPrompt(_ tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didShowPrompt id: PromptExposureID)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 

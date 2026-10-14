@@ -271,6 +271,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "reasoning_effort": reasoningEffort,
             "has_image_attachment": hasImageAttachment(in: attachments) ? "true" : "false",
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
+            "has_tab_attachment": attachments.contains(where: \.isTab) ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
         ]

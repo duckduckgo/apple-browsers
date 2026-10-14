@@ -22,6 +22,7 @@ import BrowserServicesKitTestsUtils
 import Core
 import Persistence
 @_spi(Testing) import PixelKit
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -321,12 +322,29 @@ final class UTIPixelReporterTests: XCTestCase {
             "reasoning_effort": "none",
             "has_image_attachment": "false",
             "has_file_attachment": "false",
+            "has_tab_attachment": "false",
             "has_text": "true",
             "surface": "duck_ai",
             "page_type": "duck_ai",
             "origin": "address_bar_icon",
             "default_mode": "search"
         ])
+    }
+
+    func testPromptSubmittedTabAttachmentFlagReflectsComposerAtSubmit() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .website) }
+        let tab = UnifiedToggleInputAttachment.tab(.init(
+            tabId: "tab-id", title: "Page", url: URL(string: "https://example.com")!, source: .tabPicker))
+        let image = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "image.png"))
+        let file = UnifiedToggleInputAttachment.file(AIChatFileAttachment(
+            data: Data([1]), fileName: "file.pdf", mimeType: "application/pdf"))
+
+        for (attachments, expected) in [([tab], "true"), ([image, file], "false"), ([], "false")] {
+            reporter.reportPromptSubmitted(hasText: true, selectedTool: nil, attachments: attachments,
+                                           reasoningMode: nil, modelId: nil, defaultOmnibarMode: .search,
+                                           isFirstPromptNewInstall: false)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_tab_attachment"], expected)
+        }
     }
 
     func testWhenFirstPromptOnNewInstallSubmittedThenParamIsTrue() {

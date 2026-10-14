@@ -489,6 +489,11 @@
                 "type": "boolean"
             },
             {
+                "key": "has_tab_attachment",
+                "description": "Whether an explicitly selected tab attachment was present at submission time.",
+                "type": "boolean"
+            },
+            {
                 "key": "has_text",
                 "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
                 "type": "boolean"

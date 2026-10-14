@@ -256,8 +256,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(webExtensionPageStubUserScript)
         }
 
-        if sourceProvider.featureFlagger.isFeatureOn(.passkeyConditionalAbortOnPagehide) {
-            userScripts.append(PasskeyConditionalAbortUserScript())
+        if let passkeyConditionalAbortUserScript = PasskeyConditionalAbortUserScript.make(featureFlagger: sourceProvider.featureFlagger) {
+            userScripts.append(passkeyConditionalAbortUserScript)
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
@@ -386,56 +386,154 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 }
 
 /// Document-start, page-content-world script that keeps conditional-mediation passkey requests
-/// (`navigator.credentials.get({ mediation: "conditional" })`) from being orphaned in WebKit:
-/// - aborts them on `pagehide`, since WebKit doesn't cancel them when the page navigates away;
-/// - aborts them and waits for them to settle before a modal `get` or a `create` proceeds, since WebKit
-///   replaces the pending request without cancelling it.
-/// An orphaned request makes the system passkey agent reject every later passkey request from the app
-/// until the agent restarts. Safari isn't affected.
+/// (`navigator.credentials.get({ mediation: "conditional" })`) from being orphaned in WebKit, which makes the
+/// system passkey agent reject every later passkey request from the app until the agent restarts.
+/// WebKit orphans a pending conditional request in two cases, and the script handles both:
+/// - Navigation: WebKit doesn't cancel it when the page goes away. The script aborts it on `pagehide` and
+///   rejects new ones until `pageshow`.
+/// - Overlap: WebKit doesn't cancel it when another passkey request starts. Before a modal `get` or a `create`,
+///   the script aborts it and waits for it to settle (up to 1 s), and holds new conditional requests until the
+///   modal request settles. A second conditional request is rejected with `NotAllowedError` without reaching
+///   WebKit, as the system passkey agent would reject it anyway.
+/// Requests are tracked per frame; WebKit tracks one per page, so an iframe's request doesn't wait for the top
+/// frame's conditional request.
 final class PasskeyConditionalAbortUserScript: NSObject, UserScript {
+    static func make(featureFlagger: FeatureFlagger) -> PasskeyConditionalAbortUserScript? {
+        featureFlagger.isFeatureOn(.passkeyConditionalRequestGuard) ? PasskeyConditionalAbortUserScript() : nil
+    }
+
     var messageNames: [String] { [] }
     let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     let forMainFrameOnly: Bool = false
     let requiresRunInPageContentWorld: Bool = true
 
     let source = """
-        if (typeof CredentialsContainer === "undefined" || typeof AbortSignal.any !== "function") { return; }
+        if (typeof CredentialsContainer === "undefined" || typeof AbortController === "undefined") { return; }
         const originalGet = CredentialsContainer.prototype.get;
         const originalCreate = CredentialsContainer.prototype.create;
-        // Pending conditional requests: AbortController -> promise that settles when the request does.
-        const pending = new Map();
-        const abortPending = () => pending.forEach((_, controller) => controller.abort());
-        // Aborts pending conditional requests and waits (up to 1 s) for them to settle, so a modal
-        // request never overlaps one: WebKit replaces the pending request without cancelling it.
-        const drainPending = () => {
-            const settled = [...pending.values()];
-            abortPending();
-            return Promise.race([Promise.all(settled), new Promise((resolve) => setTimeout(resolve, 1000))]);
+        const waitLimit = 1000;
+        // The pending conditional request: { controller, settled }.
+        let current = null;
+        let hidden = false;
+        // Number of modal get/create calls in flight, and a promise that settles when it drops to zero.
+        let modalCount = 0;
+        let modalIdle = Promise.resolve();
+        let releaseModalIdle = () => {};
+
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        // Aborts the pending conditional request and waits for it to settle, giving up after `waitLimit`.
+        const abortCurrent = async () => {
+            const request = current;
+            request.controller.abort();
+            await Promise.race([request.settled, sleep(waitLimit)]);
+            if (current === request) { current = null; }
         };
-        const serialized = (originalFn) => function (options) {
-            const args = arguments;
-            if (!options || !options.publicKey || pending.size === 0) {
-                return originalFn.apply(this, args);
-            }
-            return drainPending().then(() => originalFn.apply(this, args));
-        };
-        const serializedGet = serialized(originalGet);
-        CredentialsContainer.prototype.get = function get(options) {
-            if (!options || options.mediation !== "conditional" || !options.publicKey) {
-                return serializedGet.apply(this, arguments);
-            }
+
+        const track = (container, options) => {
             const controller = new AbortController();
-            const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
-            const result = originalGet.call(this, { ...options, signal });
-            const settle = () => pending.delete(controller);
-            pending.set(controller, result.then(settle, settle));
+            const pageSignal = options.signal;
+            const forward = () => controller.abort(pageSignal.reason);
+            if (pageSignal) { pageSignal.addEventListener("abort", forward, { once: true }); }
+            const result = originalGet.call(container, Object.create(options, { signal: { value: controller.signal, enumerable: true } }));
+            const request = { controller };
+            const settle = () => {
+                if (pageSignal) { pageSignal.removeEventListener("abort", forward); }
+                if (current === request) { current = null; }
+            };
+            request.settled = result.then(settle, settle);
+            current = request;
             return result;
         };
-        CredentialsContainer.prototype.create = serialized(originalCreate);
+
+        const startConditionalLater = async (container, options) => {
+            const pageSignal = options.signal;
+            let onPageAbort;
+            // Settles when the page aborts this request, so a held request rejects right away.
+            const pageAborted = pageSignal ? new Promise((resolve) => {
+                onPageAbort = resolve;
+                pageSignal.addEventListener("abort", onPageAbort, { once: true });
+            }) : null;
+            const waitFor = (promise) => (pageAborted ? Promise.race([promise, pageAborted]) : promise);
+            // Pages that start a new request before aborting the old one do so within the same task, so the
+            // rejection waits one task for the page's own abort.
+            let yielded = false;
+            try {
+                for (;;) {
+                    if (pageSignal && pageSignal.aborted) { throw pageSignal.reason; }
+                    if (modalCount > 0) {
+                        await waitFor(modalIdle);
+                        continue;
+                    }
+                    if (hidden) { throw new DOMException("The page is hidden.", "AbortError"); }
+                    if (!current) { return track(container, options); }
+                    if (!current.controller.signal.aborted) {
+                        if (yielded) { throw new DOMException("Another passkey request is pending.", "NotAllowedError"); }
+                        yielded = true;
+                        await waitFor(sleep(0));
+                        continue;
+                    }
+                    await waitFor(abortCurrent());
+                }
+            } finally {
+                if (pageSignal) { pageSignal.removeEventListener("abort", onPageAbort); }
+            }
+        };
+
+        const startConditional = (container, options) => {
+            if (options.signal && options.signal.aborted) { return originalGet.call(container, options); }
+            if (hidden) { return Promise.reject(new DOMException("The page is hidden.", "AbortError")); }
+            if (modalCount === 0 && !current) { return track(container, options); }
+            return startConditionalLater(container, options);
+        };
+
+        const startModal = (originalFn, container, args) => {
+            if (modalCount++ === 0) { modalIdle = new Promise((resolve) => { releaseModalIdle = resolve; }); }
+            const endModal = () => { if (--modalCount === 0) { releaseModalIdle(); } };
+            let result;
+            try {
+                result = current ? abortCurrent().then(() => originalFn.apply(container, args)) : originalFn.apply(container, args);
+            } catch (error) {
+                endModal();
+                throw error;
+            }
+            Promise.resolve(result).then(endModal, endModal);
+            return result;
+        };
+
+        CredentialsContainer.prototype.get = function get() {
+            const options = arguments[0];
+            try {
+                if (!options || !options.publicKey || (options.signal && !(options.signal instanceof AbortSignal))) {
+                    return originalGet.apply(this, arguments);
+                }
+                if (options.mediation === "conditional") {
+                    return startConditional(this, options);
+                }
+                return startModal(originalGet, this, arguments);
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        };
+
+        CredentialsContainer.prototype.create = function create() {
+            const options = arguments[0];
+            try {
+                if (!options || !options.publicKey) {
+                    return originalCreate.apply(this, arguments);
+                }
+                return startModal(originalCreate, this, arguments);
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        };
+
         window.addEventListener("pagehide", () => {
-            abortPending();
-            pending.clear();
+            hidden = true;
+            if (current) { current.controller.abort(); }
+            current = null;
         });
+        window.addEventListener("pageshow", () => { hidden = false; });
         """
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}

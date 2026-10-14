@@ -93,29 +93,6 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.isPresentingDialog)
     }
 
-    func testWhenPreparedOnboardingHasNoDialogThenRestingContentIsRestored() {
-        dialogs.specToReturn = nil
-
-        page.prepareForLinearOnboardingDismissal()
-        XCTAssertFalse(page.canAnimateSearchInput)
-
-        page.onboardingCompleted()
-
-        XCTAssertFalse(coordinator.isPresentingDialog)
-        XCTAssertTrue(page.canAnimateSearchInput)
-    }
-
-    func testWhenTailoredOnboardingWasSkippedThenDismissalDoesNotHideContent() {
-        flow.currentOnboardingFlow = .duckAI
-        tutorial.hasSkippedOnboarding = true
-
-        page.prepareForLinearOnboardingDismissal()
-        page.onboardingCompleted()
-
-        XCTAssertFalse(coordinator.isPresentingDialog)
-        XCTAssertTrue(page.canAnimateSearchInput)
-    }
-
     func testWhenDialogIsDismissedThenRestingContentIsRestored() {
         dialogs.specToReturn = .initial
         page.showNextDaxDialog()

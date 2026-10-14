@@ -67,7 +67,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
                     Text(UserText.beginSyncButtonV2)
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable))
+            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable && !isSyncWithAnotherDevicePending))
             .disabled(!model.isConnectingDevicesAvailable || isSyncWithAnotherDevicePending)
             .padding(8)
         }

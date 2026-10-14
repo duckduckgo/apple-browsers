@@ -575,6 +575,10 @@ public class SyncSettingsViewModel: ObservableObject {
         devices.first(where: { $0.isThisDevice })?.name
     }
 
+    var isDeleteServerDataSelectedByDefault: Bool {
+        devices.count == 1
+    }
+
     public func anotherDevicePromptAppeared() {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptShown)
     }

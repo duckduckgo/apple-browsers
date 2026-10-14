@@ -1137,6 +1137,29 @@ final class SyncSettingsViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenOnlyThisDeviceIsSyncedThenDeleteServerDataIsSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        XCTAssertTrue(sut.isDeleteServerDataSelectedByDefault)
+    }
+
+    func testWhenOtherDevicesAreSyncedThenDeleteServerDataIsNotSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+        sut.devices = [
+            .init(id: "1", name: "iPhone", type: "phone", isThisDevice: true),
+            .init(id: "2", name: "Mac", type: "desktop", isThisDevice: false)
+        ]
+
+        XCTAssertFalse(sut.isDeleteServerDataSelectedByDefault)
+    }
+
+    func testWhenDevicesAreNotLoadedThenDeleteServerDataIsNotSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+
+        XCTAssertFalse(sut.isDeleteServerDataSelectedByDefault)
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil,
                          isImprovedPairingFlowEnabled: Bool = false) -> SyncSettingsViewModel {

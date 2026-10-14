@@ -168,6 +168,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var isAvailable = false
     }
 
+    /// Takes the sheet in as a child without loading its view, the way the iPad sidebar adopts it.
+    private final class RecordingSidebarHost: UIViewController, AIChatContextualSidebarHosting {
+        var canPresentContextualSidebar = true
+        var sidebarPresentations: [UIViewController] = []
+        var sidebarDismissals: [UIViewController] = []
+        var modalPresentationCount = 0
+
+        func presentContextualSidebar(_ viewController: UIViewController) {
+            sidebarPresentations.append(viewController)
+            addChild(viewController)
+            viewController.didMove(toParent: self)
+        }
+
+        func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
+            sidebarDismissals.append(viewController)
+            viewController.willMove(toParent: nil)
+            viewController.removeFromParent()
+            completion?()
+        }
+
+        override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+            modalPresentationCount += 1
+            completion?()
+        }
+    }
+
     @MainActor
     private final class MockSelectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting {
         var attachedCounts: [Int] = []
@@ -1204,6 +1230,117 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
+    }
+
+    // MARK: - iPad Sidebar Tests
+
+    @MainActor
+    func testWhenPresenterHasRoomForASidebarThenTheSheetOpensThereInsteadOfModally() async {
+        let host = RecordingSidebarHost()
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertTrue(host.sidebarPresentations.first === sut.sheetViewController)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(sut.isSheetInSidebar)
+        XCTAssertEqual(sut.sheetViewController?.surfaceStyle, .sidebar)
+    }
+
+    @MainActor
+    func testWhenPresenterHasNoRoomForASidebarThenTheSheetIsPresentedModally() async {
+        let host = RecordingSidebarHost()
+        host.canPresentContextualSidebar = false
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertTrue(host.sidebarPresentations.isEmpty)
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertFalse(sut.isSheetInSidebar)
+        XCTAssertEqual(sut.sheetViewController?.surfaceStyle, .sheet)
+    }
+
+    @MainActor
+    func testWhenSheetInTheSidebarIsDismissedThenItLeavesTheSidebarAndIsKeptForReopening() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        var didComplete = false
+
+        sut.dismissSheet { didComplete = true }
+
+        XCTAssertTrue(host.sidebarDismissals.first === sheet)
+        XCTAssertTrue(didComplete)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertFalse(sut.isSheetInSidebar)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+    }
+
+    @MainActor
+    func testWhenCloseIsTappedInTheSidebarThenTheSidebarDismissesTheSheet() async throws {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidRequestDismiss(sheet)
+
+        XCTAssertTrue(host.sidebarDismissals.first === sheet)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+        XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenChatIsClearedWhileInTheSidebarThenTheSidebarClosesAndTheSheetIsDiscarded() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+
+        sut.clearActiveChat()
+
+        XCTAssertTrue(host.sidebarDismissals.first === sheet)
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenChatIsClearedWhileInTheSidebarThenLeavingTheSidebarDoesNotWindDownASessionThatIsGone() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+
+        sut.clearActiveChat()
+
+        // A dismissal would report the surface closing and start the inactivity timer; a cleared chat does neither.
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.clearReasons, [.chatCleared])
+    }
+
+    @MainActor
+    func testWhenReopenedAfterLeavingTheSidebarThenTheSameSheetReturnsToIt() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        sut.dismissSheet()
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(host.sidebarPresentations.last === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenWindowNarrowsBetweenOpeningsThenTheSameSheetIsPresentedModally() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        sut.dismissSheet()
+        host.canPresentContextualSidebar = false
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertEqual(sut.sheetViewController?.surfaceStyle, .sheet)
     }
 
     // MARK: - originatingURLPublisher Tests

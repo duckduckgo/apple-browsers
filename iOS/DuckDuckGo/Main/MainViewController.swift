@@ -364,6 +364,8 @@ class MainViewController: UIViewController {
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
     var duckAIMenuAnchor: UIView?
+    /// iPad only: shows the contextual Duck.ai surface beside the page.
+    lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
     private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
@@ -1474,6 +1476,7 @@ class MainViewController: UIViewController {
 
     /// Driven by `refreshOmniBar` to cover every tab change, cold launch included. Idempotent.
     func bindAIChatChromeChipToCurrentTab() {
+        reconcileContextualSidebarWithCurrentTab()
         let coordinator = currentTab?.aiChatContextualSheetCoordinator
         guard coordinator !== boundAIChatChromeChipCoordinator || !hasBoundAIChatChromeChip else { return }
         hasBoundAIChatChromeChip = true
@@ -1607,6 +1610,7 @@ class MainViewController: UIViewController {
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
         guard let currentTab,
               currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              !isContextualSurfaceInSidebar,
               let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
             return
         }
@@ -3734,6 +3738,7 @@ class MainViewController: UIViewController {
         } else {
             applySmallWidth()
         }
+        closeContextualSidebarIfItNoLongerFits()
 
         updateNewTabPageLayoutForCurrentChromeMode()
 
@@ -6362,7 +6367,7 @@ extension MainViewController: OmniBarDelegate {
         guard !areSuggestionsVisible else { return }
 
         // Dismiss contextual AI chat sheet when omni bar becomes active
-        if let currentTab, tapped {
+        if let currentTab, tapped, !isContextualSurfaceInSidebar {
             currentTab.aiChatContextualSheetCoordinator.dismissSheet()
         }
 
@@ -6416,20 +6421,19 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc private func dismissContextualSheetOnBackgroundTap() {
+        guard !isContextualSurfaceInSidebar else { return }
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
     }
 
+    /// Clears a modal sheet out of the way of what is shown next. The sidebar is beside the page, so it stays.
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
-        guard let currentTab,
-              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
-              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+        guard let coordinator = currentTab?.aiChatContextualSheetCoordinator,
+              coordinator.isSheetPresented,
+              !coordinator.isSheetInSidebar else {
             completion()
             return
         }
-
-        sheetVC.dismiss(animated: true) {
-            completion()
-        }
+        coordinator.dismissSheet(completion: completion)
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {

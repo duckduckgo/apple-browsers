@@ -150,6 +150,7 @@ extension MainViewFactory {
     private func createViews() {
         createLogoBackground()
         createContentContainer()
+        createContextualSidebarContainer()
         createSuggestionTrayContainer()
         createFocusedStateBackground()
         createUnifiedInputContentContainer()
@@ -373,6 +374,16 @@ extension MainViewFactory {
         superview.addSubview(coordinator.contentContainer)
     }
 
+    /// Stacked right above the page and below every chrome overlay, so whatever covers the page covers it too.
+    final class ContextualSidebarContainer: UIView { }
+    private func createContextualSidebarContainer() {
+        guard isPad else { return }
+        let container = ContextualSidebarContainer()
+        container.isHidden = true
+        coordinator.contextualSidebarContainer = container
+        superview.addSubview(container)
+    }
+
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
         let view = StatusBackgroundView(effect: nil)
@@ -503,6 +514,7 @@ extension MainViewFactory {
         constrainTopSlideContainer()
         constrainWindowControlsRowBackground()
         constrainContentContainer()
+        constrainContextualSidebarContainer()
         constrainSuggestionTrayContainer()
         constrainFocusedStateBackground()
         constrainUnifiedInputContentContainer()
@@ -621,11 +633,36 @@ extension MainViewFactory {
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
         coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
 
+        // The page ends where the sidebar begins; with the sidebar off screen that is the window's edge.
+        let trailing = coordinator.contextualSidebarContainer.map { contentContainer.trailingAnchor.constraint(equalTo: $0.leadingAnchor) }
+            ?? contentContainer.constrainView(superview, by: .trailing)
+
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),
-            contentContainer.constrainView(superview, by: .trailing),
+            trailing,
             coordinator.constraints.contentContainerBottomToToolbarTop,
             coordinator.constraints.contentContainerTop,
+        ])
+    }
+
+    private func constrainContextualSidebarContainer() {
+        guard let sidebar = coordinator.contextualSidebarContainer else { return }
+        let contentContainer = coordinator.contentContainer!
+        typealias Constants = MainViewCoordinator.Constants
+
+        let proportionalWidth = sidebar.widthAnchor.constraint(equalTo: superview.widthAnchor, multiplier: Constants.contextualSidebarWidthFraction)
+        proportionalWidth.priority = .defaultHigh
+        let hidden = sidebar.leadingAnchor.constraint(equalTo: superview.trailingAnchor)
+        coordinator.constraints.contextualSidebarHidden = hidden
+        coordinator.constraints.contextualSidebarShown = sidebar.trailingAnchor.constraint(equalTo: superview.trailingAnchor)
+
+        NSLayoutConstraint.activate([
+            sidebar.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            sidebar.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor),
+            proportionalWidth,
+            sidebar.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.contextualSidebarMinWidth),
+            sidebar.widthAnchor.constraint(lessThanOrEqualToConstant: Constants.contextualSidebarMaxWidth),
+            hidden,
         ])
     }
 

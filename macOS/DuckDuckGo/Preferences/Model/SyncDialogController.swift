@@ -242,11 +242,6 @@ final class SyncDialogController {
         }
     }
 
-    @MainActor
-    private func showSyncSuccess() {
-        presentDialog(for: .saveRecoveryCode(recoveryCode ?? ""))
-    }
-
     private func completeHostFlow(shouldWaitForDevicesToChange: Bool) {
         let successDialog = successDialogForCurrentAccount()
         let complete: (SyncDialogController) -> Void = { controller in

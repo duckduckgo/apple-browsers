@@ -963,9 +963,8 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(syncDialogController.devices.map(\.id), ["1", "2"])
     }
 
-    func test_recoverDevice_accountAlreadyExists_oneDevice_endsFlow() async throws {
+    func test_recoverDevice_accountAlreadyExists_oneDevice_presentsRecoveryCode() async throws {
         setUpWithSingleDevice(id: "1")
-        // Removal of currentDialog indicates end of flow
         managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
 
         ddgSyncing.spyLogin = { _, _, _ in
@@ -977,7 +976,9 @@ final class SyncDialogControllerTests: XCTestCase {
             setupRole: .receiver(.recovery, .pastedCode),
             shouldPromptBeforeSwitchingAccounts: true)
 
-        XCTAssertNil(managementDialogModel.currentDialog)
+        guard case .saveRecoveryCode = managementDialogModel.currentDialog else {
+            return XCTFail("Expected saveRecoveryCode, got \(String(describing: managementDialogModel.currentDialog))")
+        }
     }
 
     func test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage() async throws {

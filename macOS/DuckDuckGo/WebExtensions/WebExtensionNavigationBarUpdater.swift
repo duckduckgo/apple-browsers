@@ -298,26 +298,27 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     /// extension adds with `contextMenus.create({ contexts: ["action"] })`, plus, for internal users, the
     /// extension's API compatibility log. WebKit can change the items at any time, so the menu is built on demand.
     private func contextMenu(for context: WKWebExtensionContext) -> NSMenu? {
-        var items = currentAction(of: context)?.menuItems ?? []
-
-        if NSApp.delegateTyped.internalUserDecider.isInternalUser {
-            if !items.isEmpty {
-                items.append(.separator())
-            }
-            let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
-            item.target = self
-            item.representedObject = context
-            items.append(item)
-        }
-
-        guard !items.isEmpty else { return nil }
+        let extensionItems = currentAction(of: context)?.menuItems ?? []
+        let isInternalUser = NSApp.delegateTyped.internalUserDecider.isInternalUser
+        guard !extensionItems.isEmpty || isInternalUser else { return nil }
 
         let menu = NSMenu()
         let name = context.webExtension.displayName ?? context.webExtension.displayShortName ?? ""
         if !name.isEmpty {
             menu.addItem(.sectionHeader(title: name))
         }
-        items.forEach(menu.addItem)
+        extensionItems.forEach(menu.addItem)
+
+        if isInternalUser {
+            if !menu.items.isEmpty {
+                menu.addItem(.separator())
+            }
+            let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
+            item.target = self
+            item.representedObject = context
+            menu.addItem(item)
+        }
+
         return menu
     }
 }

@@ -180,6 +180,7 @@ extension Preferences {
                         }
                     }.padding(.bottom, 16)
                 }
+                .accessibilityIdentifier("PreferencesSidebar.scrollView")
 
             }
             .padding(.top, 18)

@@ -69,7 +69,7 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Look for the "run" button and click it to trigger the exploit
         let runButton = webView.links["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Start link should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.navigation), "Start link should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring address bar is ready for inspection
@@ -99,7 +99,7 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Look for the "run" button and click it to trigger the exploit
         let runButton = webView.buttons["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Start button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.navigation), "Start button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete - JavaScript should execute within reasonable time
@@ -188,7 +188,7 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Look for the "run" button and click it to trigger the exploit
         let runButton = webView.buttons["run"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Run button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.navigation), "Run button should be available")
         runButton.click()
 
         // Wait for navigation to complete

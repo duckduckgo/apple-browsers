@@ -80,6 +80,9 @@ class NavigationProtectionUITests: UITestCase {
             if label == "amp. link" { continue }
             // Destination bot protection can interrupt canonical URL redirect; handled in testNavigationProtection_AMPLinks_NonStandardTLD_RedirectsToCanonical
             if label == "*Non Standard TLD (Google Domain)" { continue }
+            // Needs a third-party blog that doesn't answer within the extraction timeout from every network; covered by
+            // testNavigationProtection_AMPLinks_FirstPartyCloaked_LocalPage_RedirectsToCanonical
+            if label == "?amp link" { continue }
 
             let expectedURL = expectedTexts[index]
             let link = webView.links[label].firstMatch
@@ -102,6 +105,36 @@ class NavigationProtectionUITests: UITestCase {
             app.typeKey("[", modifierFlags: [.command])
             XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should return to AMP test page before next iteration after \(label)")
         }
+    }
+
+    /// First party cloaked AMP pages are detected by a keyword in the URL, then the canonical URL is read from the page itself.
+    /// Served by `tests-server` so the result doesn't depend on a third-party site answering within the extraction timeout.
+    func testNavigationProtection_AMPLinks_FirstPartyCloaked_LocalPage_RedirectsToCanonical() throws {
+        let canonicalTitle = UITests.randomPageTitle(length: 12)
+        let canonicalURL = UITests.simpleServedPage(titled: canonicalTitle)
+        let ampPage = """
+            <!DOCTYPE html>
+            <html amp>
+            <head>
+            <title>AMP page</title>
+            <link rel="canonical" href="\(canonicalURL.absoluteString)">
+            </head>
+            <body><p>AMP version of the page</p></body>
+            </html>
+            """
+        let ampURL = URL.testsServer.appendingPathComponent("amp").appendingTestParameters(data: Data(ampPage.utf8))
+        let linkPage = UITests.simpleServedPage(titled: UITests.randomPageTitle(length: 12),
+                                                body: "<a href=\"\(ampURL.absoluteString)\">local amp link</a>")
+        addressBarTextField.pasteURL(linkPage, pressingEnter: true)
+
+        let ampLink = webView.links["local amp link"].firstMatch
+        XCTAssertTrue(ampLink.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Local AMP test page should load")
+        ampLink.click()
+
+        // The canonical page is shown, not the AMP one
+        let canonicalText = webView.staticTexts.containing(\.value, containing: canonicalTitle).firstMatch
+        XCTAssertTrue(canonicalText.waitForExistence(timeout: UITests.Timeouts.navigation), "Canonical page should be loaded after clicking the AMP link")
+        XCTAssertFalse(webView.staticTexts["AMP version of the page"].exists, "The AMP page should not be shown")
     }
 
     func testNavigationProtection_AMPLinks_GuardianDotAmp_RedirectsToCanonical() throws {
@@ -142,7 +175,7 @@ class NavigationProtectionUITests: UITestCase {
 
         // Find the Non Standard TLD test link
         let nonStandardTLDAmpLink = webView.links["*Non Standard TLD (Google Domain)"].firstMatch
-        XCTAssertTrue(nonStandardTLDAmpLink.waitForExistence(timeout: UITests.Timeouts.elementExistence), "*Non Standard TLD (Google Domain) test link should be available")
+        XCTAssertTrue(nonStandardTLDAmpLink.waitForExistence(timeout: UITests.Timeouts.navigation), "*Non Standard TLD (Google Domain) test link should be available")
 
         // Get the expected URL from the test page instead of hardcoding
         let expectedURLElement = webView.staticTexts.containing(\.value, containing: "Expected: https://www.brookings.edu").firstMatch

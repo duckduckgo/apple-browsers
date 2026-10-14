@@ -1,6 +1,6 @@
 {
     "swipe-tabs_stuck_swipe_recovered": {
-        "description": "Fires when a swipe on the address bar to change tabs ends on a page edge without deceleration, for example dragged back to the start and released. Before the fix this left the swipe snapshot overlay on screen over the live UI; the app now tears it down. Counts how often users hit that path.",
+        "description": "Fires when a tab swipe on the address bar is released without deceleration, e.g. dragged back to the start. This used to leave the swipe overlay stuck on screen.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],

@@ -71,7 +71,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-ios-e2e-xcode26.6-spm-diag1-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-ios-e2e-xcode26.6-spm-diag2-${{ env.cache_key_hash }}
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
@@ -85,6 +85,8 @@ jobs:
         preferred-versions: "26.5"
 
     - name: Restore Xcode Compilation Cache
+      # Diagnostic branch: build without restored compilation results.
+      if: github.ref != 'refs/heads/anya/e2e-builds-fix'
       uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex

@@ -300,7 +300,6 @@ final class BookmarksBarViewController: NSViewController {
         syncDismissButton.imageScaling = .scaleProportionallyDown
         syncDismissButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         syncDismissButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
-        syncDismissButton.cornerRadius = Constants.mouseOverCornerRadius
         syncDismissButton.target = self
         syncDismissButton.action = #selector(dismissSyncClicked(_:))
         syncDismissButton.setAccessibilityLabel(UserText.close)
@@ -416,6 +415,7 @@ final class BookmarksBarViewController: NSViewController {
     private func setUpSyncButton() {
         syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
+        syncDismissButton.cornerRadius = theme.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = NSColor(resource: .textPrimary)

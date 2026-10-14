@@ -187,10 +187,10 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
     }
 
-    func testGetTokenContainer_UnknownAccount_WhenLogoutFails_ReportsLocalTokenStillPresent() async throws {
+    func testGetTokenContainer_UnknownAccount_WhenLocalRemovalFails_ReportsLocalTokenStillPresent() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
-        mockOAuthClient.logoutError = NSError(domain: "Logout", code: 1)
+        mockOAuthClient.removeLocalAccountError = NSError(domain: "Keychain", code: 1)
 
         do {
             _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -203,6 +203,38 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .unavailable)
         XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .unavailable)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .present)
+    }
+
+    func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_DoesNotCallServerLogout() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 0)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 1)
+        XCTAssertNil(mockOAuthClient.internalCurrentTokenContainer)
+    }
+
+    func testGetTokenContainer_UnknownAccount_DoesNotCallServerLogout() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 0)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 1)
+    }
+
+    func testSignOut_Explicit_StillCallsServerLogout() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        await subscriptionManager.signOut(notifyUI: false)
+        await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
+
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 2)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {

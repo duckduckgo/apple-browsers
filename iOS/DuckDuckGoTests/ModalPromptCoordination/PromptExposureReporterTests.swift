@@ -322,15 +322,21 @@ struct PromptExposureReporterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func resetClearsOnlyExposureState() throws {
+    func resetClearsExposureStateButKeepsTheProcessedBackgroundDate() throws {
         let context = Context()
         try context.store.set("kept", forKey: "unrelated-key")
         let reporter = context.makeReporter()
         reporter.reportRemoteMessageCardShown(messageID: "card")
+        context.backgroundDate = context.now
+        context.now.addTimeInterval(60)
+        reporter.appDidEnterForeground()
         reporter.reset()
-        #expect(try context.state == nil)
+        #expect(try context.state == PromptExposureState(lastProcessedBackgroundDate: context.backgroundDate))
         #expect(try context.store.object(forKey: "unrelated-key") as? String == "kept")
+
+        context.now.addTimeInterval(120)
         reporter.reportRemoteMessageCardShown(messageID: "card")
         #expect(try context.state?.nthInWeek == 1)
+        #expect(context.sessions.count == 1)
     }
 }

@@ -120,7 +120,8 @@ final class PromptExposureReporter: PromptExposureReporting {
 
     func reset() {
         do {
-            try storage.removeValue(for: \.state)
+            // Keep the processed background date, so a later report cannot count time already spent active as time away.
+            try storage.set(PromptExposureState(lastProcessedBackgroundDate: lastBackgroundDateProvider()), for: \.state)
         } catch {
             Logger.modalPrompt.error("Failed to reset prompt exposure state: \(error, privacy: .public)")
         }

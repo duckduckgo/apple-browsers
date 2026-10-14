@@ -193,6 +193,7 @@ final class FireTests: XCTestCase {
     @MainActor
     func testWhenBurnAll_ThenPinnedTabsArePersisted() async {
 
+        let schemeHandler = self.schemeHandler!
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -210,7 +211,12 @@ final class FireTests: XCTestCase {
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
                         isAppActiveProvider: { true }, // App is active - should manage windows
-                        aIChatHistoryCleaner: MockAIChatHistoryCleaner())
+                        aIChatHistoryCleaner: MockAIChatHistoryCleaner(),
+                        makeReplacementPinnedTab: { content in
+                            Tab(content: content,
+                                webViewConfiguration: schemeHandler.webViewConfiguration(),
+                                shouldLoadInBackground: true)
+                        })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
@@ -233,6 +239,10 @@ final class FireTests: XCTestCase {
         // Verify: No new tab is inserted because pinned tabs exist (window stays open with pinned tabs only)
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
         XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
+
+        for tab in tabCollectionViewModel.pinnedTabs {
+            XCTAssertTrue(tab.webView.configuration.urlSchemeHandler(forURLScheme: "https") === schemeHandler)
+        }
 
         let tabsToClean = (tabCollectionViewModel.pinnedTabs + pinnedTabs).reduce(into: [Tab]()) { tabs, tab in
             if !tabs.contains(where: { $0 === tab }) {

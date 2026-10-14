@@ -71,9 +71,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-ios-
+        key: ${{ runner.os }}-ios-e2e-xcode26.6-spm-diag1-${{ env.cache_key_hash }}
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
@@ -222,6 +220,8 @@ jobs:
 
   end-to-end-tests:
     name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
+    # Branch-only build diagnostic: keep the expensive Maestro legs off this branch.
+    if: github.ref != 'refs/heads/anya/e2e-builds-fix'
     needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
     timeout-minutes: 250

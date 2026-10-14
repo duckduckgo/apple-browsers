@@ -123,7 +123,7 @@ final class WebKitPasskeyRequestCanceller {
 extension WebKitPasskeyRequestCanceller {
 
     /// The canceller in use, kept so it's installed only once.
-    private static var installed: WebKitPasskeyRequestCanceller?
+    fileprivate static var installed: WebKitPasskeyRequestCanceller?
 
     /// Routes every start and cancel of an `ASAuthorizationController` through a canceller, for the rest of the app's
     /// run. Only WebKit's requests are affected; any other request passes straight through. Call once at launch, before
@@ -137,15 +137,15 @@ extension WebKitPasskeyRequestCanceller {
                         pixelFiring: PixelFiring? = PixelKit.shared) {
         guard #available(macOS 13.0, *), installed == nil else { return }
 
-        let performRequests = #selector(ASAuthorizationController.performRequests)
-        let performAutoFillAssistedRequests = NSSelectorFromString("performAutoFillAssistedRequests")
         let failure: PasskeyRequestCancellationPixel.InstallFailureReason?
         if webKitDelegateClass == nil {
             failure = .webKitDelegateClass
-        } else if class_getInstanceMethod(ASAuthorizationController.self, performRequests) == nil {
+        } else if class_getInstanceMethod(ASAuthorizationController.self, #selector(ASAuthorizationController.performRequests)) == nil {
             failure = .performRequests
-        } else if class_getInstanceMethod(ASAuthorizationController.self, performAutoFillAssistedRequests) == nil {
+        } else if class_getInstanceMethod(ASAuthorizationController.self, NSSelectorFromString("performAutoFillAssistedRequests")) == nil {
             failure = .performAutoFillAssistedRequests
+        } else if class_getInstanceMethod(ASAuthorizationController.self, #selector(ASAuthorizationController.cancel)) == nil {
+            failure = .cancel
         } else {
             failure = nil
         }
@@ -155,40 +155,45 @@ extension WebKitPasskeyRequestCanceller {
             return
         }
 
-        let canceller = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
-        installed = canceller
-        hook(performRequests, canceller: canceller)
-        hook(performAutoFillAssistedRequests, canceller: canceller)
-        hookCancel(canceller: canceller)
+        installed = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
+        _ = ASAuthorizationController.swizzlePasskeyRequestMethodsOnce
+    }
+}
+
+@available(macOS 13.0, *)
+extension ASAuthorizationController {
+
+    fileprivate static let swizzlePasskeyRequestMethodsOnce: Void = {
+        swizzle(#selector(performRequests), with: #selector(swizzled_performRequests))
+        swizzle(NSSelectorFromString("performAutoFillAssistedRequests"), with: #selector(swizzled_performAutoFillAssistedRequests))
+        swizzle(#selector(cancel), with: #selector(swizzled_cancel))
+    }()
+
+    private static func swizzle(_ originalSelector: Selector, with swizzledSelector: Selector) {
+        guard let originalMethod = class_getInstanceMethod(ASAuthorizationController.self, originalSelector),
+              let swizzledMethod = class_getInstanceMethod(ASAuthorizationController.self, swizzledSelector) else {
+            assertionFailure("Failed to swizzle \(originalSelector)")
+            return
+        }
+        method_exchangeImplementations(originalMethod, swizzledMethod)
     }
 
-    /// Replaces the controller method `selector`, so the canceller decides when Apple's original runs.
-    @available(macOS 13.0, *)
-    private static func hook(_ selector: Selector, canceller: WebKitPasskeyRequestCanceller) {
-        guard let method = class_getInstanceMethod(ASAuthorizationController.self, selector) else { return }
-
-        typealias Perform = @convention(c) (ASAuthorizationController, Selector) -> Void
-        let original = unsafeBitCast(method_getImplementation(method), to: Perform.self)
-        let replacement: @convention(block) (ASAuthorizationController) -> Void = { controller in
-            canceller.willPerform(controller) { original(controller, selector) }
-        }
-        method_setImplementation(method, imp_implementationWithBlock(replacement))
+    /// Lets the canceller decide when the request starts.
+    @objc dynamic fileprivate func swizzled_performRequests() {
+        guard let canceller = WebKitPasskeyRequestCanceller.installed else { return swizzled_performRequests() }
+        canceller.willPerform(self) { self.swizzled_performRequests() } // calls the original method
     }
 
-    /// Replaces the controller's `cancel`, so a held request can be answered without being sent to the agent.
-    @available(macOS 13.0, *)
-    private static func hookCancel(canceller: WebKitPasskeyRequestCanceller) {
-        let selector = #selector(ASAuthorizationController.cancel)
-        guard let method = class_getInstanceMethod(ASAuthorizationController.self, selector) else { return }
+    /// Lets the canceller decide when the AutoFill request starts.
+    @objc dynamic fileprivate func swizzled_performAutoFillAssistedRequests() {
+        guard let canceller = WebKitPasskeyRequestCanceller.installed else { return swizzled_performAutoFillAssistedRequests() }
+        canceller.willPerform(self) { self.swizzled_performAutoFillAssistedRequests() } // calls the original method
+    }
 
-        typealias Cancel = @convention(c) (ASAuthorizationController, Selector) -> Void
-        let original = unsafeBitCast(method_getImplementation(method), to: Cancel.self)
-        let replacement: @convention(block) (ASAuthorizationController) -> Void = { controller in
-            if canceller.willCancel(controller) {
-                original(controller, selector)
-            }
-        }
-        method_setImplementation(method, imp_implementationWithBlock(replacement))
+    /// Lets the canceller answer a held request without it being sent to the agent.
+    @objc dynamic fileprivate func swizzled_cancel() {
+        guard WebKitPasskeyRequestCanceller.installed?.willCancel(self) ?? true else { return }
+        swizzled_cancel() // calls the original method
     }
 }
 
@@ -200,6 +205,7 @@ enum PasskeyRequestCancellationPixel: PixelKit.Event {
         case webKitDelegateClass = "webkit_delegate_class"
         case performRequests = "perform_requests"
         case performAutoFillAssistedRequests = "perform_autofill_assisted_requests"
+        case cancel
     }
 
     /// The canceller couldn't install at launch, so WebKit's passkey requests aren't being cancelled.

@@ -101,9 +101,9 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(webKitDelegateClass?.instancesRespond(to: NSSelectorFromString("authorizationController:didCompleteWithError:")) == true)
     }
 
-    /// `WebKitPasskeyRequestCanceller` replaces these methods; they must be defined on `ASAuthorizationController` itself,
-    /// so replacing them doesn't change its superclass.
-    func testASAuthorizationControllerDefinesMethodsReplacedByPasskeyRequestCanceller() throws {
+    /// `WebKitPasskeyRequestCanceller` swizzles these methods; they must be defined on `ASAuthorizationController` itself,
+    /// so swizzling them doesn't change its superclass.
+    func testASAuthorizationControllerDefinesMethodsSwizzledByPasskeyRequestCanceller() throws {
         guard #available(macOS 13.0, *) else { throw XCTSkip("The canceller requires macOS 13") }
         var count: UInt32 = 0
         let methods = class_copyMethodList(ASAuthorizationController.self, &count)

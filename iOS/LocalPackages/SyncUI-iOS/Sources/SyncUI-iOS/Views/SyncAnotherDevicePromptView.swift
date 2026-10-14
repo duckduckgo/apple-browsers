@@ -121,9 +121,7 @@ private extension SyncSettingsViewModel {
 }
 
 #Preview("Improved Pairing Flow") {
-    RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptView(model: .previewModel(isImprovedPairingFlowEnabled: true))
-    }
+    SyncAnotherDevicePromptView(model: .previewModel(isImprovedPairingFlowEnabled: true))
 }
 
 #Preview("Connecting") {

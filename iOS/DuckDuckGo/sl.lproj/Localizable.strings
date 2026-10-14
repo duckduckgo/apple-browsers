@@ -514,21 +514,6 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Poslušanje …";
 
-/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.ask.button" = "Vprašaj";
-
-/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.create.button" = "Ustvari";
-
-/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer" = "DuckDuckGo anonimizira vaše klepete. S klikom »Vprašaj« se strinjate z našima dokumentoma %@.";
-
-/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer.create" = "DuckDuckGo anonimizira vaše klepete. S klikom »Ustvari« se strinjate z našima dokumentoma %@.";
-
-/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
-"aichat.termsOfService.disclaimer.link" = "Pravilnik o zasebnosti in pogoji storitve";
-
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Določite ton, dolžino in vedenje";
 
@@ -2692,9 +2677,6 @@
 /* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
 "escapeHatch.menu.hideReturnToShortcut" = "Skrij bližnjico »Nazaj na«";
 
-/* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.lastUsedTab" = "Nazadnje uporabljeni zavihek";
-
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Več možnosti";
 
@@ -4664,7 +4646,7 @@
 "settings.keyboard.new-tab" = "Nov zavihek";
 
 /* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Pokaži tipkovnico v/pri";
+"settings.keyboard.show-on" = "Pokaži tipkovnico v tem primeru";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Prikaže povezavo za vrnitev na nazadnje uporabljeni zavihek, ko zaženete aplikacijo po nedejavnosti.";

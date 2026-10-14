@@ -514,21 +514,6 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ακρόαση…";
 
-/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.ask.button" = "Ερώτηση";
-
-/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.create.button" = "Δημιουργία";
-
-/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer" = "Το DuckDuckGo ανωνυμοποιεί τις συνομιλίες σου. Κάνοντας κλικ στο κουμπί «Ερώτηση» συμφωνείς με «%@».";
-
-/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer.create" = "Το DuckDuckGo ανωνυμοποιεί τις συνομιλίες σου. Κάνοντας κλικ στο κουμπί «Δημιουργία» συμφωνείς με «%@».";
-
-/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
-"aichat.termsOfService.disclaimer.link" = "Πολιτική απορρήτου και Όροι χρήσης υπηρεσιών";
-
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Ορισμός τόνου, μήκους και συμπεριφοράς";
 
@@ -2691,9 +2676,6 @@
 
 /* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
 "escapeHatch.menu.hideReturnToShortcut" = "Απόκρυψη συντόμευσης «Επιστροφή σε»";
-
-/* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Περισσότερες επιλογές";

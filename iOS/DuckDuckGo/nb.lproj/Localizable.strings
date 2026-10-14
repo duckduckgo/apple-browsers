@@ -514,21 +514,6 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Listening…";
 
-/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.ask.button" = "Spør";
-
-/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.create.button" = "Opprett";
-
-/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer" = "DuckDuckGo anonymiserer chattene dine. Ved å klikke på «Spør» godtar du våre %@.";
-
-/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer.create" = "DuckDuckGo anonymiserer chattene dine. Ved å klikke på «Opprett» godtar du våre %@.";
-
-/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
-"aichat.termsOfService.disclaimer.link" = "Personvernerklæring og vilkår for bruk";
-
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Angi tone, lengde og atferd";
 
@@ -2692,9 +2677,6 @@
 /* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
 "escapeHatch.menu.hideReturnToShortcut" = "Skjul snarveien «Gå tilbake til»";
 
-/* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.lastUsedTab" = "Sist brukte fane";
-
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Flere alternativer";
 
@@ -4658,13 +4640,13 @@
 "settings.keyboard" = "Tastatur";
 
 /* Keyboard setting to show the keyboard on App Launch */
-"settings.keyboard.app-launch" = "Appoversikt";
+"settings.keyboard.app-launch" = "App-start";
 
 /* Keyboard setting to show the keyboard on a New Tab page */
 "settings.keyboard.new-tab" = "Ny fane";
 
 /* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Vis tastatur i";
+"settings.keyboard.show-on" = "Vis tastaturet ved";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Viser en lenke for å gå tilbake til den sist brukte fanen når du åpner appen igjen etter inaktivitet.";

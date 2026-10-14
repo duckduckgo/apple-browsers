@@ -514,21 +514,6 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Kuulan…";
 
-/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.ask.button" = "Küsi";
-
-/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
-"aichat.termsOfService.create.button" = "Loo";
-
-/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer" = "DuckDuckGo anonümiseerib sinu vestlused. Klõpsates nuppu „Küsi”, nõustud meie põhimõtetega %@.";
-
-/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
-"aichat.termsOfService.disclaimer.create" = "DuckDuckGo anonümiseerib sinu vestlused. Klõpsates nuppu „Loo”, nõustud meie põhimõtetega %@.";
-
-/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
-"aichat.termsOfService.disclaimer.link" = "Privaatsuspoliitika ja teenusetingimused";
-
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Määra toon, pikkus ja käitumine";
 
@@ -2692,9 +2677,6 @@
 /* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
 "escapeHatch.menu.hideReturnToShortcut" = "Peida otsetee „Tagasi”";
 
-/* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.lastUsedTab" = "Viimati kasutatud vahekaart";
-
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Veel valikuid";
 
@@ -4661,7 +4643,7 @@
 "settings.keyboard.app-launch" = "Rakenduse käivitamine";
 
 /* Keyboard setting to show the keyboard on a New Tab page */
-"settings.keyboard.new-tab" = "Uus vaheleht";
+"settings.keyboard.new-tab" = "Uus vahekaart";
 
 /* Header for settings that control when to show the keyboard */
 "settings.keyboard.show-on" = "Näita klaviatuuri";

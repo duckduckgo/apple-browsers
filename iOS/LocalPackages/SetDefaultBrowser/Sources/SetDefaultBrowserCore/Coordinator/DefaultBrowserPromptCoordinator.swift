@@ -21,7 +21,7 @@ import Foundation
 import class UIKit.UIApplication
 
 // Represent the type of the modal to display for active/inactive user.
-public enum DefaultBrowserPromptPresentationType {
+public enum DefaultBrowserPromptPresentationType: Sendable {
     case activeUserModal
     case inactiveUserModal
 

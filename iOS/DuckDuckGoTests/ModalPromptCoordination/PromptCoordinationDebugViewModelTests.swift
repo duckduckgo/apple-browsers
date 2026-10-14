@@ -169,6 +169,26 @@ struct PromptCoordinationDebugViewModelTests {
         #expect(reconstructedHistory.lastConfirmedAppearance == nil)
         _ = lease
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Prompt exposure reset clears the reporter state", .timeLimit(.minutes(1)))
+    func promptExposureReset() {
+        let reporter = MockPromptExposureReporter()
+        let service = PromoCoordinationService(
+            launchSourceManager: MockLaunchSourceManager(),
+            modalPromptCoordinationManager: MockModalPromptCoordinationManager(),
+            mode: .coordinated,
+            promoQueueLeaseArbiter: PromoQueueLeaseArbiter(),
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy(),
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: reporter
+        )
+        let viewModel = PromptCoordinationDebugViewModel(diagnosticsProvider: service, cooldownResetter: service)
+
+        viewModel.resetPromptExposureState()
+
+        #expect(reporter.resetCallCount == 1)
+    }
 }
 
 private struct FormattingScenario {

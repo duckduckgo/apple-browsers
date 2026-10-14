@@ -31,7 +31,10 @@ final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard let prompt = presenter.makePresentDefaultModalPrompt() else { return nil }
 
-        let exposureID: PromptExposureID = prompt.type == .inactiveUserModal ? .reEngagementPrompt : .additionalDefaultBrowserPrompts
+        let exposureID: PromptExposureID = switch prompt.type {
+        case .inactiveUserModal: .reEngagementPrompt
+        case .activeUserModal: .additionalDefaultBrowserPrompts
+        }
         return ModalPromptConfiguration(
             exposureID: exposureID,
             viewController: prompt.viewController,

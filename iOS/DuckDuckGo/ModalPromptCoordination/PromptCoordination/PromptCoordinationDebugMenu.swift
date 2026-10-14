@@ -77,7 +77,7 @@ struct PromptCoordinationDebugView: View {
                 }
                 .disabled(!viewModel.canResetCooldowns)
 
-                Button("Reset prompt exposure state", role: .destructive) {
+                Button("Reset Prompt Exposure State (Debug Only)", role: .destructive) {
                     viewModel.resetPromptExposureState()
                 }
                 .disabled(!viewModel.canResetCooldowns)

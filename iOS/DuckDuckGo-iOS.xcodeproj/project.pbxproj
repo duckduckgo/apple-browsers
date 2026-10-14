@@ -760,9 +760,13 @@
 		9F387DD82EA86CE3006861F8 /* PromptCooldownStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */; };
 		9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */; };
 		9F387DDD2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
+		054CDDAA1F3F283E6A157077 /* MockPromptExposureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B640A1258B4361ABF31E1CD /* MockPromptExposureReporter.swift */; };
 		9F387DDE2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
+		2BCECA4DC72CF38EFB3D48CC /* MockPromptExposureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B640A1258B4361ABF31E1CD /* MockPromptExposureReporter.swift */; };
 		9F387DDF2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
+		59FDF377E404F6C65D4AD7B3 /* MockPromptExposureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B640A1258B4361ABF31E1CD /* MockPromptExposureReporter.swift */; };
 		9F387DE02EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
+		991AEF4EB4DCEA4E7A8ECF5F /* MockPromptExposureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B640A1258B4361ABF31E1CD /* MockPromptExposureReporter.swift */; };
 		9F387DE62EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */; };
 		9779792DA0E1FBC83614599A /* PromptExposureReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D8842091A128B60F2A2F832 /* PromptExposureReporterTests.swift */; };
 		0DEF4580CDFED306C0BFCC93 /* PromptExposurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28860B1AE6C68B7AEA08496 /* PromptExposurePixelTests.swift */; };
@@ -1965,6 +1969,7 @@
 		9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStoreTests.swift; sourceTree = "<group>"; };
 		9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManagerTests.swift; sourceTree = "<group>"; };
 		9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownMocks.swift; sourceTree = "<group>"; };
+		0B640A1258B4361ABF31E1CD /* MockPromptExposureReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPromptExposureReporter.swift; sourceTree = "<group>"; };
 		9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerTests.swift; sourceTree = "<group>"; };
 		4D8842091A128B60F2A2F832 /* PromptExposureReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptExposureReporterTests.swift; sourceTree = "<group>"; };
 		B28860B1AE6C68B7AEA08496 /* PromptExposurePixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptExposurePixelTests.swift; sourceTree = "<group>"; };
@@ -4195,6 +4200,7 @@
 			children = (
 				9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */,
 				9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */,
+				0B640A1258B4361ABF31E1CD /* MockPromptExposureReporter.swift */,
 				9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */,
 				9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */,
 			);
@@ -6407,6 +6413,7 @@
 				6F81F61F2F1FB0790007CADD /* BrowsingMenuHeaderDataSourceTests.swift in Sources */,
 				80DD30382F281161006E1A78 /* ScopedFireConfirmationViewModelTests.swift in Sources */,
 				9F387DE02EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
+				991AEF4EB4DCEA4E7A8ECF5F /* MockPromptExposureReporter.swift in Sources */,
 				CBB4A84B2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift in Sources */,
 				971CC88E3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift in Sources */,
 				97C1A9E23045ACAA00AEE302 /* CreateImagePixelAdapterTests.swift in Sources */,
@@ -7111,6 +7118,7 @@
 				9FA0AF262EB844C800713387 /* MockParameterRandomiser.swift in Sources */,
 				98E5633B2DE8B04D00E6E75F /* XCTestCaseExtension.swift in Sources */,
 				9F387DDF2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
+				59FDF377E404F6C65D4AD7B3 /* MockPromptExposureReporter.swift in Sources */,
 				98E5633C2DE8B04D00E6E75F /* UserDefaultsExtension.swift in Sources */,
 				9F387DF32EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift in Sources */,
 				98E5633D2DE8B04D00E6E75F /* CombineTestUtilities.swift in Sources */,
@@ -7232,6 +7240,7 @@
 				98E563CB2DE8B32D00E6E75F /* MockVariantManager.swift in Sources */,
 				98E563CC2DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
 				9F387DDE2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
+				2BCECA4DC72CF38EFB3D48CC /* MockPromptExposureReporter.swift in Sources */,
 				986CD5542DE913EE00AFA98A /* MockFavoritesListInteracting.swift in Sources */,
 				98E564B62DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */,
 				9FA6E55C307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */,
@@ -7349,6 +7358,7 @@
 				98E564672DE8DDDC00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				9FDD65BA3012F29500CE8776 /* MockOnboardingPersonalizationManager.swift in Sources */,
 				9F387DDD2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
+				054CDDAA1F3F283E6A157077 /* MockPromptExposureReporter.swift in Sources */,
 				98E564682DE8DDDC00E6E75F /* MockDataExtensions.swift in Sources */,
 				98E564692DE8DDDC00E6E75F /* MockPrivacyConfiguration.swift in Sources */,
 				98E5646B2DE8DDDC00E6E75F /* DuckPlayerMocks.swift in Sources */,

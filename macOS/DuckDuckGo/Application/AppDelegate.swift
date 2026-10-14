@@ -1573,6 +1573,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // checking state – updating later would only take effect on next launch
         grammarFeaturesManager.manage()
 
+        // Must run before the first web view starts a passkey request
+        if featureFlagger.isFeatureOn(.passkeyRequestCancellation) {
+            WebKitPasskeyRequestCanceller.install()
+        }
+
         configurationManager.start()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil

@@ -27,6 +27,7 @@ final class ChallengeSolverTests: XCTestCase {
 
     private static let brokerURL = URL(string: "https://www.example.com/search")!
     private static let label = ChallengeLabel(frame: CGRect(x: 100, y: 200, width: 150, height: 20))
+    fileprivate static let attemptId = UUID()
 
     @MainActor
     func testWhenChallengeClearsDuringAutoPassWait_thenSolvesUnassistedWithoutClicking() async {
@@ -73,6 +74,20 @@ final class ChallengeSolverTests: XCTestCase {
         XCTAssertFalse(env.solver.isHoldingLoad)
         XCTAssertEqual(env.failures, [.challengeNotSolved])
         XCTAssertTrue(env.solvedResolutions.isEmpty)
+        XCTAssertEqual(env.failedStages, [.noClick])
+    }
+
+    @MainActor
+    func testWhenClickDoesNotClearChallenge_thenFailsAfterClickAtDeadline() async {
+        let env = Environment()
+        env.page.locate = { Self.label }
+
+        _ = env.solver.handleMainFrameResponse(Self.challengeResponse())
+        await env.solver.solveTask?.value
+
+        XCTAssertEqual(env.page.clickedPoints.count, 1)
+        XCTAssertEqual(env.failures, [.challengeNotSolved])
+        XCTAssertEqual(env.failedStages, [.afterClick])
     }
 
     @MainActor
@@ -107,6 +122,7 @@ final class ChallengeSolverTests: XCTestCase {
 
         XCTAssertEqual(env.failures, [.challengeNotSolved])
         XCTAssertTrue(env.solvedResolutions.isEmpty)
+        XCTAssertEqual(env.failedStages, [.noClick])
     }
 
     @MainActor
@@ -118,9 +134,10 @@ final class ChallengeSolverTests: XCTestCase {
         XCTAssertFalse(env.solver.isHoldingLoad)
         XCTAssertNil(env.solver.solveTask)
         XCTAssertEqual(env.mockPixelHandler?.firedEvents.count, 1)
-        guard case .mainFrameChallengeDetected = env.mockPixelHandler?.firedEvents.first else {
+        guard case .mainFrameChallengeDetected(_, _, _, let isSolverEnabled) = env.mockPixelHandler?.firedEvents.first else {
             return XCTFail("Expected the detection pixel")
         }
+        XCTAssertFalse(isSolverEnabled)
     }
 
     @MainActor
@@ -156,6 +173,8 @@ final class ChallengeSolverTests: XCTestCase {
         for parameters in firedPixelParameters {
             XCTAssertEqual(parameters["data_broker"], "example.com")
             XCTAssertEqual(parameters["broker_version"], "1.2.3")
+            XCTAssertEqual(parameters["attempt_id"], Self.attemptId.uuidString)
+            XCTAssertEqual(parameters["is_solver_enabled"], "false")
         }
         XCTAssertEqual(firedPixelParameters.last?["resolution"], "unassisted")
     }
@@ -189,8 +208,15 @@ private final class Environment {
 
     var solvedResolutions: [DataBrokerProtectionSharedPixels.ChallengeResolution] {
         mockPixelHandler?.firedEvents.compactMap { event in
-            guard case .challengeSolved(_, _, let resolution) = event else { return nil }
+            guard case .challengeSolved(_, _, _, let resolution) = event else { return nil }
             return resolution
+        } ?? []
+    }
+
+    var failedStages: [DataBrokerProtectionSharedPixels.ChallengeFailureStage] {
+        mockPixelHandler?.firedEvents.compactMap { event in
+            guard case .challengeFailed(_, _, _, let stage) = event else { return nil }
+            return stage
         } ?? []
     }
 
@@ -201,7 +227,7 @@ private final class Environment {
         solver = ChallengeSolver(
             isEnabled: isEnabled,
             settings: ChallengeSolverSettings(),
-            pixelContext: .init(dataBroker: "example.com", brokerVersion: "1.2.3"),
+            pixelContext: .init(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: ChallengeSolverTests.attemptId),
             pixelHandler: pixelHandler,
             reportEvent: { _, _ in },
             sleep: { try await fakeClock.sleep($0) },

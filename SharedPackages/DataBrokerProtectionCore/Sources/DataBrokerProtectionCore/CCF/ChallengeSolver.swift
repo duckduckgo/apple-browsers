@@ -96,6 +96,7 @@ final class ChallengeSolver {
     struct PixelContext {
         let dataBroker: String
         let brokerVersion: String
+        let attemptId: UUID
     }
 
     var page: ChallengePage?
@@ -176,6 +177,7 @@ final class ChallengeSolver {
         if let pixelContext {
             pixelHandler?.fire(.challengeSolved(dataBroker: pixelContext.dataBroker,
                                                 brokerVersion: pixelContext.brokerVersion,
+                                                attemptId: pixelContext.attemptId,
                                                 resolution: resolution))
         }
         return false
@@ -200,7 +202,9 @@ final class ChallengeSolver {
         guard let pixelContext else { return }
         pixelHandler?.fire(.challengeClearanceObserved(dataBroker: pixelContext.dataBroker,
                                                        brokerVersion: pixelContext.brokerVersion,
-                                                       resolution: resolution))
+                                                       attemptId: pixelContext.attemptId,
+                                                       resolution: resolution,
+                                                       isSolverEnabled: isEnabled))
     }
 
     func cancel() {
@@ -220,7 +224,9 @@ final class ChallengeSolver {
         guard let pixelContext else { return }
         Logger.action.log("Challenge: pixel detected fired for \(pixelContext.dataBroker, privacy: .public)")
         pixelHandler?.fire(.mainFrameChallengeDetected(dataBroker: pixelContext.dataBroker,
-                                                       brokerVersion: pixelContext.brokerVersion))
+                                                       brokerVersion: pixelContext.brokerVersion,
+                                                       attemptId: pixelContext.attemptId,
+                                                       isSolverEnabled: isEnabled))
     }
 
     private func startSolving() {
@@ -246,9 +252,16 @@ final class ChallengeSolver {
         }
 
         guard isHoldingLoad else { return }
-        let failureStage = didClick ? "after click" : "with no click delivered"
+        let failureStage: DataBrokerProtectionSharedPixels.ChallengeFailureStage = didClick ? .afterClick : .noClick
+        let failureDescription = didClick ? "after click" : "with no click delivered"
         cancel()
-        reportEvent("Failed challenge \(failureStage); broker destination did not arrive before the deadline", true)
+        reportEvent("Failed challenge \(failureDescription); broker destination did not arrive before the deadline", true)
+        if let pixelContext {
+            pixelHandler?.fire(.challengeFailed(dataBroker: pixelContext.dataBroker,
+                                                brokerVersion: pixelContext.brokerVersion,
+                                                attemptId: pixelContext.attemptId,
+                                                stage: failureStage))
+        }
         onFailure?(.challengeNotSolved)
     }
 

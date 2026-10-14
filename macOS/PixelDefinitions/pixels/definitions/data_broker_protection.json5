@@ -1103,10 +1103,22 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel", "dbpDataBroker", "dbpBrokerVersion"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            {
+                "key": "is_solver_enabled",
+                "type": "boolean",
+                "description": "Whether the challenge solver was enabled for the job"
+            }
+        ]
     },
     "dbp_challenge_clearance_observed_macos": {
-        "description": "Fires when PIR observes a successful challenge clearance cookie during a main-frame navigation.",
+        "description": "Fires when PIR sees the challenge clearance cookie change after a main-frame challenge.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -1116,11 +1128,17 @@
             "channel",
             "dbpDataBroker",
             "dbpBrokerVersion",
+            "dbpAttemptId",
             {
                 "key": "resolution",
                 "type": "string",
                 "description": "Whether the challenge cleared without intervention, required intervention, or could not be determined.",
                 "enum": ["unassisted", "assisted", "unknown"]
+            },
+            {
+                "key": "is_solver_enabled",
+                "type": "boolean",
+                "description": "Whether the challenge solver was enabled for the job"
             }
         ]
     },
@@ -1135,11 +1153,32 @@
             "channel",
             "dbpDataBroker",
             "dbpBrokerVersion",
+            "dbpAttemptId",
             {
                 "key": "resolution",
                 "type": "string",
                 "description": "Whether the challenge cleared without a solver click or after one.",
                 "enum": ["unassisted", "assisted"]
+            }
+        ]
+    },
+    "dbp_challenge_failed_macos": {
+        "description": "Fires when the PIR challenge solver does not reach the broker page before its deadline.",
+        "owners": ["quanganhdo"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            {
+                "key": "stage",
+                "type": "string",
+                "description": "Whether the solver gave up without clicking or after its click.",
+                "enum": ["no_click", "after_click"]
             }
         ]
     },

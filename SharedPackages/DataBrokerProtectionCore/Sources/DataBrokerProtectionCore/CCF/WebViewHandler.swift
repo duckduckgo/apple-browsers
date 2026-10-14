@@ -66,6 +66,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 executionConfig: BrokerJobExecutionConfig,
                 challengePixelDataBroker: String? = nil,
                 challengePixelBrokerVersion: String? = nil,
+                challengePixelAttemptId: UUID? = nil,
                 isChallengeSolverEnabled: Bool = false,
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
@@ -76,8 +77,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
 #if os(macOS)
-        let pixelContext = challengePixelDataBroker.flatMap { dataBroker in
-            challengePixelBrokerVersion.map { ChallengeSolver.PixelContext(dataBroker: dataBroker, brokerVersion: $0) }
+        var pixelContext: ChallengeSolver.PixelContext?
+        if let challengePixelDataBroker, let challengePixelBrokerVersion, let challengePixelAttemptId {
+            pixelContext = ChallengeSolver.PixelContext(dataBroker: challengePixelDataBroker,
+                                                        brokerVersion: challengePixelBrokerVersion,
+                                                        attemptId: challengePixelAttemptId)
         }
         self.challengeSolver = ChallengeSolver(
             isEnabled: isChallengeSolverEnabled,

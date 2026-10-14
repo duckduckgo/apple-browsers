@@ -282,8 +282,8 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         attribs = rule12?.attributes.filter { $0 is TriedAIChatDuringOnboardingMatchingAttribute }
         XCTAssertEqual(attribs?.first as? TriedAIChatDuringOnboardingMatchingAttribute, TriedAIChatDuringOnboardingMatchingAttribute(value: false, fallback: nil))
 
-        attribs = rule12?.attributes.filter { $0 is IsAIChatBoostActiveMatchingAttribute }
-        XCTAssertEqual(attribs?.first as? IsAIChatBoostActiveMatchingAttribute, IsAIChatBoostActiveMatchingAttribute(value: false, fallback: nil))
+        attribs = rule12?.attributes.filter { $0 is IsDuckAIBoostActiveMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsDuckAIBoostActiveMatchingAttribute, IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil))
     }
 
     func testWhenJsonMessagesHaveUnknownTypesThenMessagesNotMappedIntoConfig() throws {

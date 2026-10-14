@@ -69,7 +69,7 @@ private enum AttributesKey: String, CaseIterable {
     case isReturnUser
     case isAIChatEnabled
     case triedAIChatDuringOnboarding
-    case isAIChatBoostActive
+    case isDuckAiBoostActive
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
         switch self {
@@ -122,7 +122,7 @@ private enum AttributesKey: String, CaseIterable {
         case .isReturnUser: return IsReturningUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isAIChatEnabled: return IsAIChatEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .triedAIChatDuringOnboarding: return TriedAIChatDuringOnboardingMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .isAIChatBoostActive: return IsAIChatBoostActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isDuckAiBoostActive: return IsDuckAIBoostActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }
 }

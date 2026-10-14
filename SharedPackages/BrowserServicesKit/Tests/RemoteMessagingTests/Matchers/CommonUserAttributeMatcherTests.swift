@@ -381,20 +381,20 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedAIChatDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .match)
     }
 
-    func testWhenIsAIChatBoostActiveMatchesThenReturnMatch() throws {
+    func testWhenIsDuckAIBoostActiveMatchesThenReturnMatch() throws {
         setUpUserAttributeMatcher(isAIChatBoostActive: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatBoostActiveMatchingAttribute(value: true, fallback: nil)), .match)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: true, fallback: nil)), .match)
     }
 
-    func testWhenIsAIChatBoostActiveDoesNotMatchThenReturnFail() throws {
+    func testWhenIsDuckAIBoostActiveDoesNotMatchThenReturnFail() throws {
         setUpUserAttributeMatcher(isAIChatBoostActive: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
     }
 
-    func testWhenIsAIChatBoostActiveIsUnknownThenReturnFail() throws {
+    func testWhenIsDuckAIBoostActiveIsUnknownThenReturnFail() throws {
         setUpUserAttributeMatcher(isAIChatBoostActive: nil)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsAIChatBoostActiveMatchingAttribute(value: true, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: true, fallback: nil)), .fail)
     }
 
     // MARK: - Dismissed Messages

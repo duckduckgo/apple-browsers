@@ -423,7 +423,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isAIChatEnabled)
         case let matchingAttribute as TriedAIChatDuringOnboardingMatchingAttribute:
             return matchingAttribute.evaluate(for: triedAIChatDuringOnboarding)
-        case let matchingAttribute as IsAIChatBoostActiveMatchingAttribute:
+        case let matchingAttribute as IsDuckAIBoostActiveMatchingAttribute:
             return matchingAttribute.evaluate(for: isAIChatBoostActive)
         default:
             assertionFailure("Could not find matching attribute")

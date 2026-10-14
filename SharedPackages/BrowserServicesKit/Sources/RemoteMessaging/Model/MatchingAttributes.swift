@@ -295,8 +295,8 @@ struct TriedAIChatDuringOnboardingMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
-/// Matches the `isAIChatBoostActive` RMF attribute: the device has a Duck.ai boost that hasn't expired.
-struct IsAIChatBoostActiveMatchingAttribute: SingleValueMatching {
+/// Matches the `isDuckAiBoostActive` RMF attribute: the device has a Duck.ai boost that hasn't expired.
+struct IsDuckAIBoostActiveMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }

@@ -79,7 +79,7 @@ struct MultiTabSubmissionIncompletePixel: PixelKit.Event {
 }
 
 /// One visible picker session, independent of filtering updates and duplicate dismissal callbacks.
-/// Both events use the surface captured when the picker becomes visible.
+/// Both events use the attribution captured when the picker becomes visible.
 @MainActor
 final class MultiTabPickerPixelSession {
     private let attributionProvider: () -> MultiTabPixelAttribution?
@@ -87,9 +87,9 @@ final class MultiTabPickerPixelSession {
     private var isShown = false
     private var attribution: MultiTabPixelAttribution?
 
-    init(surfaceProvider: @escaping () -> UnifiedToggleInputPixelSurface?,
-         report: @escaping (MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void) {
-        self.surfaceProvider = surfaceProvider
+    init(attributionProvider: @escaping () -> MultiTabPixelAttribution?,
+         report: @escaping (MultiTabAttachmentPixel.Action, MultiTabPixelAttribution) -> Void) {
+        self.attributionProvider = attributionProvider
         self.report = report
     }
 
@@ -105,10 +105,10 @@ final class MultiTabPickerPixelSession {
     func finish(didChoose: Bool = false) {
         guard isShown else { return }
         isShown = false
-        let shownSurface = surface
-        surface = nil
-        if !didChoose, let shownSurface {
-            report(.pickerCanceled, shownSurface)
+        let shownAttribution = attribution
+        attribution = nil
+        if !didChoose, let shownAttribution {
+            report(.pickerCanceled, shownAttribution)
         }
     }
 }

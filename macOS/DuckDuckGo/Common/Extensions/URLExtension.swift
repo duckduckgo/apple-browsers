@@ -688,7 +688,7 @@ extension URL {
     }
 
     static var aiChatPrivacy: URL {
-        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy")!
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files")!
     }
 
     static var aiChatPrivacyTerms: URL {

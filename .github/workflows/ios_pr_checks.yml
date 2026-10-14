@@ -214,9 +214,8 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        # Xcode also collects verbose diagnostics for runtime warnings in passing tests.
-        # Keep runtime warnings and test results, and collect verbose diagnostics below
-        # only when this command fails.
+        # Avoid Xcode's verbose simulator collection for runtime warnings in passing tests.
+        # Keep the console log, result bundle, and crash reports for failed runs.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -232,37 +231,6 @@ jobs:
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
-
-    - name: Collect simulator diagnostics for failed tests
-      if: always() && steps.run-unit-tests.outcome == 'failure'
-      continue-on-error: true
-      timeout-minutes: 15
-      run: |
-        set -o pipefail
-        diagnostics_dir="$PWD/DerivedData/Logs/SimulatorDiagnostics"
-        mkdir -p "$diagnostics_dir"
-        diagnostics_args=(-b --timeout=600 --no-archive --output="$diagnostics_dir")
-        # xcodebuild shuts down its simulators before returning. Boot only the
-        # tested devices so diagnose can export their persisted unified logs.
-        simulator_ids=$(xcrun xcresulttool get test-results summary \
-          --path DerivedData/Logs/Test/iOS-UnitTests.xcresult --format json \
-          | jq -r '.devicesAndConfigurations[]?.device | select(.platform == "iOS Simulator") | .deviceId' \
-          | sort -u) || simulator_ids=""
-        while IFS= read -r simulator_id; do
-          [[ -n "$simulator_id" ]] || continue
-          xcrun simctl boot "$simulator_id" || true
-          xcrun simctl bootstatus "$simulator_id" -b || echo "::warning::Could not boot the tested simulator for diagnostics."
-          diagnostics_args+=(--udid="$simulator_id")
-        done <<< "$simulator_ids"
-        diagnostics_status=0
-        # simctl asks for ENTER before collecting; CI otherwise supplies EOF.
-        # Keep the original 600-second allowance and retain partial output.
-        printf '\n' | xcrun simctl diagnose "${diagnostics_args[@]}" || diagnostics_status=$?
-        if [[ -z "$(find "$diagnostics_dir" -type f -print -quit)" ]]; then
-          echo "::error::No simulator diagnostics were collected."
-          exit 1
-        fi
-        exit "$diagnostics_status"
 
     - name: Compute Compilation Cache hash
       if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
@@ -310,7 +278,6 @@ jobs:
         path: |
           iOS/xcodebuild.log
           iOS/DerivedData/Logs/Test/*.xcresult
-          iOS/DerivedData/Logs/SimulatorDiagnostics
         retention-days: 7
 
     - name: Upload crash reports

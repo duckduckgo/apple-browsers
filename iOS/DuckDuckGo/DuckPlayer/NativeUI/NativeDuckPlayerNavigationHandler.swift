@@ -454,12 +454,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
     ///
-    /// - Parameter webView: The `WKWebView` to reload.
+    /// - Parameter webView: The `WKWebView` about to be reloaded.
+    /// - Returns: Always `.reload`; the native UI never replaces the reload with a redirect.
     @MainActor
-    func handleReload(webView: WKWebView) {
-        webView.reload()
-
-        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
+    func handleReload(webView: WKWebView) -> DuckPlayerNavigationHandlerReloadResult {
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return .reload }
 
         // Reloading the same video keeps the pill; only dismiss/reset for a different page.
         let reloadedVideoID = webView.url?.youtubeVideoParams?.0
@@ -468,7 +467,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             dismissDuckPlayerPill(reset: true, animated: false, programatic: true)
         }
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url, isNavigationError: false)
-
+        return .reload
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.

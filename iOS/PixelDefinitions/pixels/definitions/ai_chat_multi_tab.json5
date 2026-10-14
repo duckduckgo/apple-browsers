@@ -11,7 +11,7 @@
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_picker_source"]
+        "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_picker_source"]
     },
     "aichat_unified_input_tab_attached": {
         "description": "Fires when an additional tab is added to the draft through recent tabs, Add tabs picker, or a mention. Excludes the current page, duplicate choices, failed choices, and restored drafts. Attachment does not imply successful content extraction.",

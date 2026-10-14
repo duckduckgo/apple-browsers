@@ -264,7 +264,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
             let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
             XCTAssertEqual(calls.map(\.pixel.name), ["aichat_unified_input_tab_picker_canceled"])
-            XCTAssertEqual(calls.first?.pixel.parameters, ["surface": "contextual_chat", "source": "tab_picker"])
+            XCTAssertEqual(calls.first?.pixel.parameters,
+                           ["surface": "contextual_chat", "page_type": "unknown", "source": "tab_picker"])
             XCTAssertEqual(calls.first?.frequency, .dailyAndCount)
             XCTAssertEqual(Set(view.attachments.compactMap { $0.tabAttachment?.tabId }), selectedTabIds)
             XCTAssertEqual(callbackSpy.onDraftChangedCount, draftChangeCount)
@@ -603,8 +604,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
             firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
             context: { UTIPixelContext(surface: .contextualChat, isDuckAISurfaceForAttribution: true,
                                       inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) })
-        return MultiTabPickerPixelSession(surfaceProvider: { .contextualChat }) {
-            reporter.reportTabAttachment($0, source: .tabPicker, surface: $1)
+        return MultiTabPickerPixelSession(attributionProvider: { reporter.currentTabPixelAttribution() }) {
+            reporter.reportTabAttachment($0, source: .tabPicker, attribution: $1)
         }
     }
 

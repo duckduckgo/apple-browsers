@@ -82,7 +82,7 @@
     "m_prompt_session": {
         "description": "Fires on the next foreground after at least 60 seconds in the background, once onboarding is complete. It reports the previous session, sampled at 5% of sessions. Install age is measured at backgrounding. A final session is not reported if the app is never opened again.",
         "owners": ["bkunat"],
-        "triggers": ["feature_lifecycle"],
+        "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "promptDaysSinceInstall",

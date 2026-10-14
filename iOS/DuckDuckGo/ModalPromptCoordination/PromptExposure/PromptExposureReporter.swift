@@ -58,6 +58,12 @@ struct PromptExposureState: Codable, Equatable {
 
 @MainActor
 final class PromptExposureReporter: PromptExposureReporting {
+    /// Time in the background that ends a session, so a quick app switch does not split one visit in two.
+    private static let minimumBackgroundDurationToEndSession: TimeInterval = 60
+    /// Share of ended sessions reported. Changing it requires bumping `PromptExposurePixel.version`.
+    private static let sessionSampleRate = 0.05
+    private static let secondsPerDay: TimeInterval = 86_400
+
     private let storage: any ThrowingKeyedStoring<PromptExposureKeys>
     private let pixel: PixelFiring?
     private let dateProvider: () -> Date
@@ -83,20 +89,20 @@ final class PromptExposureReporter: PromptExposureReporting {
     }
 
     func reportPromptShown(_ id: PromptExposureID) {
-        update { state, days, _, _ in
+        update { state, days, _ in
             self.exposure(id, state: &state, days: days)
         }
     }
 
     func reportRemoteMessageCardShown(messageID: String) {
-        update { state, days, _, _ in
+        update { state, days, _ in
             guard state.reportedRemoteMessageIDs.insert(messageID).inserted else { return [] }
             return self.exposure(.remoteMessageCard, state: &state, days: days)
         }
     }
 
     func recordCoordinatedPromptFinished(_ type: PromptExposurePromptType) {
-        update { state, days, _, now in
+        update { state, days, now in
             let elapsed = state.lastCoordinatedPromptFinishedAt.map { now.timeIntervalSince($0) }
             state.lastCoordinatedPromptFinishedAt = now
             guard let bucket = PromptExposureBuckets.gap(elapsed) else { return [] }
@@ -105,25 +111,10 @@ final class PromptExposureReporter: PromptExposureReporting {
     }
 
     func appDidEnterForeground() {
-        update { state, days, installDate, now in
-            var events: [PromptExposurePixel] = []
-            if let backgroundDate = self.lastBackgroundDateProvider(), backgroundDate != state.lastProcessedBackgroundDate {
-                // Consume short returns too: a repeated foreground must not turn time spent active into time away.
-                state.lastProcessedBackgroundDate = backgroundDate
-                if now.timeIntervalSince(backgroundDate) >= 60 {
-                    let promptShown = state.sessionPromptShown
-                    state.sessionPromptShown = false
-                    if self.randomSource() < 0.05, self.onboardingCompletedProvider() {
-                        let backgroundDays = Self.daysSinceInstall(installDate, at: backgroundDate)
-                        events.append(.session(daysSinceInstall: PromptExposureBuckets.daysSinceInstall(backgroundDays), promptShown: promptShown))
-                    }
-                }
-            }
-            if self.onboardingCompletedProvider(), state.userWeekReportedIndex != state.weekIndex {
-                state.userWeekReportedIndex = state.weekIndex
-                events.append(.userWeek(daysSinceInstall: PromptExposureBuckets.daysSinceInstall(days)))
-            }
-            return events
+        update(isForeground: true) { state, days, _ in
+            guard self.onboardingCompletedProvider(), state.userWeekReportedIndex != state.weekIndex else { return [] }
+            state.userWeekReportedIndex = state.weekIndex
+            return [.userWeek(daysSinceInstall: PromptExposureBuckets.daysSinceInstall(days))]
         }
     }
 
@@ -131,7 +122,7 @@ final class PromptExposureReporter: PromptExposureReporting {
         do {
             try storage.removeValue(for: \.state)
         } catch {
-            Logger.modalPrompt.error("Failed to reset prompt exposure state.")
+            Logger.modalPrompt.error("Failed to reset prompt exposure state: \(error, privacy: .public)")
         }
     }
 
@@ -145,15 +136,34 @@ final class PromptExposureReporter: PromptExposureReporting {
         ]
     }
 
-    private func update(_ change: (inout PromptExposureState, Int, Date, Date) -> [PromptExposurePixel]) {
+    /// Ends the previous session once the app has been away long enough. Every update runs this first, so a prompt reported
+    /// before the foreground callback on launch cannot mark the previous session. The processed date makes it idempotent.
+    private func endSessionIfAway(_ state: inout PromptExposureState, installDate: Date, now: Date, isForeground: Bool) -> [PromptExposurePixel] {
+        guard let backgroundDate = lastBackgroundDateProvider(), backgroundDate != state.lastProcessedBackgroundDate else { return [] }
+        guard now.timeIntervalSince(backgroundDate) >= Self.minimumBackgroundDurationToEndSession else {
+            // Only the foreground consumes a short return, so time spent active later is not counted as time away.
+            // A report while still in the background must not consume it, or the rest of that absence would be lost.
+            if isForeground { state.lastProcessedBackgroundDate = backgroundDate }
+            return []
+        }
+        state.lastProcessedBackgroundDate = backgroundDate
+        let promptShown = state.sessionPromptShown
+        state.sessionPromptShown = false
+        guard randomSource() < Self.sessionSampleRate, onboardingCompletedProvider() else { return [] }
+        let backgroundDays = Self.daysSinceInstall(installDate, at: backgroundDate)
+        return [.session(daysSinceInstall: PromptExposureBuckets.daysSinceInstall(backgroundDays), promptShown: promptShown)]
+    }
+
+    private func update(isForeground: Bool = false, _ change: (inout PromptExposureState, Int, Date) -> [PromptExposurePixel]) {
         guard let installDate = installDateProvider() else { return }
         let now = dateProvider()
         let days = Self.daysSinceInstall(installDate, at: now)
         do {
-            let previousState = try storage.value(for: \.state)
+            let previousState = try storedState()
             var state = previousState ?? PromptExposureState()
             state.rollIfNeeded(days / 7)
-            let events = change(&state, days, installDate, now)
+            let events = endSessionIfAway(&state, installDate: installDate, now: now, isForeground: isForeground)
+                + change(&state, days, now)
             if state != previousState {
                 try storage.set(state, for: \.state)
             }
@@ -161,11 +171,23 @@ final class PromptExposureReporter: PromptExposureReporting {
                 pixel?.fire(event, frequency: .standard)
             }
         } catch {
-            Logger.modalPrompt.error("Failed to update prompt exposure state.")
+            Logger.modalPrompt.error("Failed to update prompt exposure state: \(error, privacy: .public)")
+        }
+    }
+
+    /// Synthesized decoding ignores default values, so a schema change or a corrupt record would otherwise fail every update.
+    /// Start fresh on a decoding error; let storage errors propagate so the stored state is kept for the next attempt.
+    private func storedState() throws -> PromptExposureState? {
+        do {
+            return try storage.value(for: \.state)
+        } catch {
+            guard error is DecodingError else { throw error }
+            Logger.modalPrompt.error("Discarding undecodable prompt exposure state: \(error, privacy: .public)")
+            return nil
         }
     }
 
     private static func daysSinceInstall(_ installDate: Date, at date: Date) -> Int {
-        Int(floor(date.timeIntervalSince(installDate) / 86_400))
+        Int(floor(date.timeIntervalSince(installDate) / secondsPerDay))
     }
 }

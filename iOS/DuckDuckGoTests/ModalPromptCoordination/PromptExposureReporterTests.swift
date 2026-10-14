@@ -142,6 +142,17 @@ struct PromptExposureReporterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func exposuresAreNotGatedOnOnboarding() throws {
+        let context = Context()
+        context.onboardingCompleted = false
+        let reporter = context.makeReporter()
+        reporter.reportPromptShown(.appRatingPrompt)
+        reporter.reportRemoteMessageCardShown(messageID: "card")
+        #expect(context.pixel.actualFireCalls.map(\.pixel.name) == ["prompt_exposure", "prompt_shown", "prompt_exposure", "prompt_shown"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func userWeekWaitsForOnboardingAndFiresOncePerWeekAcrossLaunches() throws {
         let context = Context()
         context.onboardingCompleted = false
@@ -212,6 +223,39 @@ struct PromptExposureReporterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func reportBeforeForegroundEndsThePreviousSessionFirst() throws {
+        let context = Context()
+        context.backgroundDate = context.now
+        context.now.addTimeInterval(60)
+        let reporter = context.makeReporter()
+        reporter.reportRemoteMessageCardShown(messageID: "card")
+        reporter.appDidEnterForeground()
+        #expect(context.pixel.actualFireCalls.first?.pixel.name == "prompt_session")
+        #expect(context.sessions.map { $0.pixel.parameters?["prompt_shown"] } == ["false"])
+        #expect(try context.state?.sessionPromptShown == true)
+
+        context.backgroundDate = context.now
+        context.now.addTimeInterval(60)
+        reporter.appDidEnterForeground()
+        #expect(context.sessions.map { $0.pixel.parameters?["prompt_shown"] } == ["false", "true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func reportShortlyAfterBackgroundingDoesNotHideTheTimeAway() throws {
+        let context = Context()
+        let reporter = context.makeReporter()
+        context.backgroundDate = context.now
+        context.now.addTimeInterval(1)
+        reporter.reportPromptShown(.appRatingPrompt)
+        context.now.addTimeInterval(120)
+        reporter.appDidEnterForeground()
+        #expect(context.sessions.map { $0.pixel.parameters?["prompt_shown"] } == ["true"])
+        #expect(try context.state?.sessionPromptShown == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func duplicateCardDoesNotMarkANewSessionAsPrompted() throws {
         let context = Context()
         let reporter = context.makeReporter()
@@ -262,6 +306,18 @@ struct PromptExposureReporterTests {
         reporter.reportRemoteMessageCardShown(messageID: "card")
         #expect(context.pixel.actualFireCalls.count == 2)
         #expect(try context.state?.nthInWeek == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func undecodableStateStartsFreshAndReportingContinues() throws {
+        let context = Context()
+        try context.store.set(Data("{}".utf8), forKey: "prompt-exposure-state")
+        let reporter = context.makeReporter()
+        reporter.reportPromptShown(.appRatingPrompt)
+        reporter.reportPromptShown(.appRatingPrompt)
+        #expect(context.pixel.actualFireCalls.count == 4)
+        #expect(try context.state?.nthInWeek == 2)
     }
 
     @available(iOS 16, macOS 13, *)

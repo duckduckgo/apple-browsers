@@ -40,7 +40,7 @@ enum PromptExposurePromptType: String {
     case ntpCard = "NTP_CARD"
 }
 
-enum PromptExposurePixel: PixelKit.Event, Equatable {
+enum PromptExposurePixel: PixelKit.Event {
     case exposure(daysSinceInstall: String, nthInWeek: String)
     case shown(daysSinceInstall: String, promptID: PromptExposureID)
     case userWeek(daysSinceInstall: String)

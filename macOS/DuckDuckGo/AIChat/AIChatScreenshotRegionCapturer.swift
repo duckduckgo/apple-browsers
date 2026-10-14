@@ -53,7 +53,6 @@ enum AIChatRegionSelection {
 }
 
 /// Freezes every display, lets the user drag a rectangle on one of them, and returns the crop.
-@available(macOS 14.0, *)
 @MainActor
 final class AIChatScreenshotRegionCapturer {
 
@@ -94,11 +93,9 @@ final class AIChatScreenshotRegionCapturer {
                   let display = content.displays.first(where: { $0.displayID == displayID }) else { continue }
 
             let filter = SCContentFilter(display: display, excludingWindows: excludedWindows)
-            let configuration = SCStreamConfiguration()
-            configuration.width = Int(filter.contentRect.width * CGFloat(filter.pointPixelScale))
-            configuration.height = Int(filter.contentRect.height * CGFloat(filter.pointPixelScale))
-            configuration.showsCursor = false
-            let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+            let image = try await AIChatScreenshotStill.capture(filter,
+                                                                 width: Int(CGFloat(display.width) * screen.backingScaleFactor),
+                                                                 height: Int(CGFloat(display.height) * screen.backingScaleFactor))
             frames.append((screen, image))
         }
         return frames

@@ -312,9 +312,9 @@ final class AIChatOmnibarController {
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
     }
 
-    /// "Add Screenshot" in the attach menu. ScreenCaptureKit's picker and one-shot capture need macOS 14.
+    /// "Add Screenshot" in the attach menu.
     var isOmnibarScreenshotEnabled: Bool {
-        AIChatScreenshotCaptureService.isAvailable && featureFlagger.isFeatureOn(.aiChatOmnibarScreenshot)
+        featureFlagger.isFeatureOn(.aiChatOmnibarScreenshot)
     }
 
     @discardableResult

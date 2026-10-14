@@ -3145,8 +3145,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Screenshots
 
-    func testIsOmnibarScreenshotEnabledFollowsTheFlag() throws {
-        guard AIChatScreenshotCaptureService.isAvailable else { throw XCTSkip("Needs macOS 14") }
+    func testIsOmnibarScreenshotEnabledFollowsTheFlag() {
         XCTAssertFalse(controller.isOmnibarScreenshotEnabled)
 
         featureFlagger.enabledFeatureFlags = [.aiChatTabAttachmentLimit, .aiChatOmnibarScreenshot]

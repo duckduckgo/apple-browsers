@@ -24,7 +24,6 @@ import SwiftUI
 
 /// Select Window or Display through our own picker (the Windows approach). Listing windows needs
 /// Screen Recording, unlike the system picker.
-@available(macOS 14.0, *)
 @MainActor
 final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
 
@@ -51,10 +50,10 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         case .picked(let source):
             // ponytail: fixed wait so the closed picker is off screen; refetch content if it still shows up.
             if source.kind == .screen {
-                try? await Task.sleep(for: .milliseconds(100))
+                try? await Task.sleep(nanoseconds: 100_000_000)
             }
             do {
-                let image = try await AIChatScreenshotSourcePickerModel.image(of: source.filter, maxPixels: nil)
+                let image = try await AIChatScreenshotSourcePickerModel.image(of: source, maxPixels: nil)
                 return .captured(image: image, kind: source.kind)
             } catch {
                 let error = error as NSError
@@ -66,12 +65,12 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
 
     private func present() {
         let hostingController = NSHostingController(rootView: AIChatScreenshotSourcePickerView(model: model))
-        hostingController.sizingOptions = [.preferredContentSize]
 
         // Non-activating so it takes key over the prompt bar without activating the app.
         let panel = NSPanel(contentRect: .zero, styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = UserText.aiChatScreenshotPickerTitle
         panel.contentViewController = hostingController
+        panel.setContentSize(hostingController.view.fittingSize)
         panel.level = .modalPanel
         panel.hidesOnDeactivate = false
         panel.sharingType = .none
@@ -103,7 +102,6 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
     }
 }
 
-@available(macOS 14.0, *)
 struct AIChatScreenshotSource: Identifiable {
     let id: String
     let title: String
@@ -111,9 +109,9 @@ struct AIChatScreenshotSource: Identifiable {
     let icon: NSImage?
     let kind: AIChatScreenshotKind
     let filter: SCContentFilter
+    let pixelSize: CGSize
 }
 
-@available(macOS 14.0, *)
 @MainActor
 final class AIChatScreenshotSourcePickerModel: ObservableObject {
 
@@ -188,20 +186,13 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
     }
 
     /// `nil` keeps full size.
-    static func image(of filter: SCContentFilter, maxPixels: CGFloat?) async throws -> CGImage {
-        var width = filter.contentRect.width * CGFloat(filter.pointPixelScale)
-        var height = filter.contentRect.height * CGFloat(filter.pointPixelScale)
-        if let maxPixels, max(width, height) > maxPixels {
-            let scale = maxPixels / max(width, height)
-            width *= scale
-            height *= scale
+    static func image(of source: AIChatScreenshotSource, maxPixels: CGFloat?) async throws -> CGImage {
+        var size = source.pixelSize
+        if let maxPixels, max(size.width, size.height) > maxPixels {
+            let scale = maxPixels / max(size.width, size.height)
+            size = CGSize(width: size.width * scale, height: size.height * scale)
         }
-
-        let configuration = SCStreamConfiguration()
-        configuration.width = max(1, Int(width))
-        configuration.height = max(1, Int(height))
-        configuration.showsCursor = false
-        return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+        return try await AIChatScreenshotStill.capture(source.filter, width: max(1, Int(size.width)), height: max(1, Int(size.height)))
     }
 
     private func updatePreview() {
@@ -210,7 +201,7 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         guard let source = selected else { return }
 
         previewTask = Task { [weak self] in
-            let image = try? await Self.image(of: source.filter, maxPixels: Self.previewMaxPixels)
+            let image = try? await Self.image(of: source, maxPixels: Self.previewMaxPixels)
             guard !Task.isCancelled else { return }
             self?.preview = image
         }
@@ -221,6 +212,8 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         let frontToBack = (CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? [])
             .compactMap { $0[kCGWindowNumber as String] as? CGWindowID }
         let order = Dictionary(frontToBack.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        // ponytail: the largest backing scale for every window; a non-Retina window on a mixed setup is captured at 2x, harmless after the 1024 px downscale.
+        let scale = NSScreen.screens.map(\.backingScaleFactor).max() ?? 2
 
         return windows
             .filter { window in
@@ -239,22 +232,24 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
                                               subtitle: app?.applicationName,
                                               icon: app.flatMap { NSRunningApplication(processIdentifier: $0.processID)?.icon },
                                               kind: .window,
-                                              filter: SCContentFilter(desktopIndependentWindow: window))
+                                              filter: SCContentFilter(desktopIndependentWindow: window),
+                                              pixelSize: CGSize(width: window.frame.width * scale, height: window.frame.height * scale))
             }
     }
 
     private static func screenSource(for display: SCDisplay, index: Int, excluding excludedWindows: [SCWindow]) -> AIChatScreenshotSource {
         let screen = NSScreen.screens.first { $0.displayID == display.displayID }
+        let scale = screen?.backingScaleFactor ?? 2
         return AIChatScreenshotSource(id: "screen-\(display.displayID)",
                                       title: screen?.localizedName ?? "\(UserText.aiChatScreenshotPickerScreenTab) \(index + 1)",
                                       subtitle: "\(display.width) × \(display.height)",
                                       icon: nil,
                                       kind: .screen,
-                                      filter: SCContentFilter(display: display, excludingWindows: excludedWindows))
+                                      filter: SCContentFilter(display: display, excludingWindows: excludedWindows),
+                                      pixelSize: CGSize(width: CGFloat(display.width) * scale, height: CGFloat(display.height) * scale))
     }
 }
 
-@available(macOS 14.0, *)
 struct AIChatScreenshotSourcePickerView: View {
 
     @ObservedObject var model: AIChatScreenshotSourcePickerModel
@@ -298,13 +293,17 @@ struct AIChatScreenshotSourcePickerView: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            List(model.sources, selection: $model.selectedID) { source in
+            let list = List(model.sources, selection: $model.selectedID) { source in
                 row(for: source)
             }
-            // Double-click or Return shares the row.
-            .contextMenu(forSelectionType: AIChatScreenshotSource.ID.self, menu: { _ in EmptyView() }, primaryAction: { ids in
-                model.share(ids.first)
-            })
+            if #available(macOS 13.0, *) {
+                // Double-click or Return shares the row.
+                list.contextMenu(forSelectionType: AIChatScreenshotSource.ID.self, menu: { _ in EmptyView() }, primaryAction: { ids in
+                    model.share(ids.first)
+                })
+            } else {
+                list
+            }
         }
     }
 

@@ -25,14 +25,6 @@ final class AIChatScreenshotCaptureService {
 
     static let shared = AIChatScreenshotCaptureService()
 
-    /// The system picker and one-shot capture are macOS 14 APIs.
-    nonisolated static var isAvailable: Bool {
-        if #available(macOS 14.0, *) {
-            return true
-        }
-        return false
-    }
-
     private(set) var isCapturing = false
     private let permission: AIChatScreenRecordingPermission
 
@@ -46,7 +38,6 @@ final class AIChatScreenshotCaptureService {
     func capture(mode: AIChatScreenshotMode,
                  excluding windows: [NSWindow],
                  returningFocusTo focusWindow: NSWindow?) async -> AIChatScreenshotCaptureResult {
-        guard #available(macOS 14.0, *) else { return .failed(.unavailable) }
         // A second request while one is up (a double pick, or the NTP and the omnibar at once) is dropped.
         guard !isCapturing else { return .cancelled }
 

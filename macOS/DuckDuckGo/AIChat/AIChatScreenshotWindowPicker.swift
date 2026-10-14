@@ -121,9 +121,23 @@ final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserv
     }
 }
 
+/// One still of `filter`. `SCScreenshotManager` is macOS 14+; before it, a one-frame stream.
+enum AIChatScreenshotStill {
+
+    static func capture(_ filter: SCContentFilter, width: Int, height: Int) async throws -> CGImage {
+        let configuration = SCStreamConfiguration()
+        configuration.width = width
+        configuration.height = height
+        configuration.showsCursor = false
+        if #available(macOS 14.0, *) {
+            return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+        }
+        return try await AIChatScreenshotSingleFrameStream().capture(filter: filter, configuration: configuration)
+    }
+}
+
 /// Starts a stream on the picked content, keeps its first complete frame and stops.
-@available(macOS 14.0, *)
-private final class AIChatScreenshotSingleFrameStream: NSObject, SCStreamOutput {
+final class AIChatScreenshotSingleFrameStream: NSObject, SCStreamOutput {
 
     private enum FrameError: Error {
         case timedOut

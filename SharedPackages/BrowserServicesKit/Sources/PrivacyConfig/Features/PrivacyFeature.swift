@@ -735,13 +735,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
     /// change covers every platform.
     case partnershipsHub
-
-    /// Its settings carry `funnelOriginAllowlist`: subscription funnel origins not defined by the app that
-    /// subscription pixels may still report as-is. Any other origin not defined by the app is reported as unknown.
-    ///
-    /// Privacy note: the allowlist holds product funnel-step identifiers only — never add an ad-campaign or
-    /// marketing-attribution origin to it.
-    case subscriptionRemoteFunnelOrigins
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

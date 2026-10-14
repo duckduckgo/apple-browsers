@@ -404,15 +404,17 @@
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
     },
-    // Mirrors `SubscriptionFunnelOrigin` in iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift, plus the
-    // values in the remote `privacyPro.subscriptionRemoteFunnelOrigins` allowlist. Keep all three in sync.
+    // Mirrors iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift: the native section mirrors
+    // `SubscriptionFunnelOrigin` case for case, and the web-sourced section mirrors `SubscriptionWebFunnelOrigins`.
+    // Keep them in sync whenever a value is added, renamed, or removed.
     // Privacy note: this is a product funnel-step identifier, not an ad-attribution channel — never add
-    // an ad-campaign or marketing-attribution origin to this list or to the remote allowlist.
+    // an ad-campaign or marketing-attribution origin to this list.
     "subscriptionFunnelOrigin": {
         "key": "origin",
         "type": "string",
-        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` (iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift) or a value in the remote `subscriptionRemoteFunnelOrigins` allowlist; any other origin is sent as `funnel_unknown_ios`.",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` or a value in `SubscriptionWebFunnelOrigins` (iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift); any other origin fails validation (it will be sent as `funnel_unknown_ios` later).",
         "enum": [
+            // Native: `SubscriptionFunnelOrigin`.
             "funnel_onboarding_ios",
             "funnel_modal_ios__skippedonboardingupsell",
             "funnel_modal_ios__subscriptionnudge",
@@ -444,6 +446,7 @@
             "funnel_integration_ios_shortcut_subscriptionvpn",
             "funnel_notification_ios__subscriptionvpn",
             "funnel_unknown_ios"
+            // Web-sourced: `SubscriptionWebFunnelOrigins`.
         ]
     },
     "locale": {

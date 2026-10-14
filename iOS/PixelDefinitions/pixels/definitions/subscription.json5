@@ -499,7 +499,18 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_newtab_ios_intlannouncement"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
 
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
@@ -1056,7 +1067,7 @@
         "parameters": ["appVersion", "pixelSource"]
     },
     "subscription_origin_unknown": {
-        "description": "Fired when a subscription funnel origin from the subscription page URL is neither defined by the app nor in the remote subscriptionRemoteFunnelOrigins allowlist, so the funnel pixels report funnel_unknown_ios instead. Used to discover origins to add to the allowlist. Classified as an exception: the app detected an origin it does not recognise.",
+        "description": "Fired when a subscription funnel origin from the subscription page URL is neither a native nor a known web-sourced funnel origin in the app. Used to discover web-sourced origins to add to the app. Classified as an exception: the app detected an origin it does not recognise.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],

@@ -237,6 +237,9 @@ enum SubscriptionPartnershipsHubPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
 
+/// Discovery pixel for subscription funnel origins that are in neither `SubscriptionFunnelOrigin` nor
+/// `SubscriptionWebFunnelOrigins`. It carries the original value so it can be reviewed and added to
+/// `SubscriptionWebFunnelOrigins`.
 enum SubscriptionOriginPixel: PixelKit.Event {
 
     static let unknownOriginKey = "unknown_origin"

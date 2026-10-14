@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import XCTest
 import WebKit
 @_spi(Testing) import WideEvent
@@ -524,31 +523,29 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.unknown.rawValue), .unknown)
     }
 
-    func testWhenResolvingPixelOriginThenOnlyAppAndAllowlistedOriginsAreKept() {
+    func testWhenOriginIsNativeOrWebThenItIsKeptAndNoUnknownOriginPixelIsFired() {
         // Given
-        let provider = MockSubscriptionRemoteFunnelOriginsProvider()
-        provider.allowlistedOrigins = ["funnel_web_ios"]
+        let webOrigins: Set<String> = ["funnel_web_ios"]
         let pixelKitMock = PixelKitMock()
 
         // Then
-        XCTAssertNil(pixelOrigin(for: nil, provider: provider, pixelFiring: pixelKitMock))
-        XCTAssertNil(pixelOrigin(for: "", provider: provider, pixelFiring: pixelKitMock))
-        XCTAssertEqual(pixelOrigin(for: SubscriptionFunnelOrigin.appSettings.rawValue, provider: provider, pixelFiring: pixelKitMock),
+        XCTAssertNil(pixelOrigin(for: nil, webOrigins: webOrigins, pixelFiring: pixelKitMock))
+        XCTAssertNil(pixelOrigin(for: "", webOrigins: webOrigins, pixelFiring: pixelKitMock))
+        XCTAssertEqual(pixelOrigin(for: SubscriptionFunnelOrigin.appSettings.rawValue, webOrigins: webOrigins, pixelFiring: pixelKitMock),
                        SubscriptionFunnelOrigin.appSettings.rawValue)
-        XCTAssertEqual(pixelOrigin(for: "funnel_web_ios", provider: provider, pixelFiring: pixelKitMock), "funnel_web_ios")
+        XCTAssertEqual(pixelOrigin(for: "funnel_web_ios", webOrigins: webOrigins, pixelFiring: pixelKitMock), "funnel_web_ios")
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
-    func testWhenPixelOriginIsUnknownThenUnknownOriginPixelIsFiredDailyAndCount() throws {
+    func testWhenPixelOriginIsUnknownThenOriginIsKeptAndUnknownOriginPixelIsFired() throws {
         // Given
-        let provider = MockSubscriptionRemoteFunnelOriginsProvider()
         let pixelKitMock = PixelKitMock()
 
         // When
-        let origin = pixelOrigin(for: "funnel_other_ios", provider: provider, pixelFiring: pixelKitMock)
+        let origin = pixelOrigin(for: "funnel_other_ios", pixelFiring: pixelKitMock)
 
         // Then
-        XCTAssertEqual(origin, SubscriptionFunnelOrigin.unknown.rawValue)
+        XCTAssertEqual(origin, "funnel_other_ios")
         let fireCall = try XCTUnwrap(pixelKitMock.actualFireCalls.first)
         XCTAssertEqual(fireCall.pixel.name, SubscriptionOriginPixel.subscriptionOriginUnknown(origin: nil).name)
         XCTAssertEqual(fireCall.frequency, .dailyAndCount)
@@ -557,20 +554,19 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     func testWhenUnknownOriginIsNotFunnelShapedThenUnknownOriginPixelOmitsIt() throws {
         // Given
-        let provider = MockSubscriptionRemoteFunnelOriginsProvider()
         let pixelKitMock = PixelKitMock()
 
         // When
-        let origin = pixelOrigin(for: "https://example.com", provider: provider, pixelFiring: pixelKitMock)
+        let origin = pixelOrigin(for: "https://example.com", pixelFiring: pixelKitMock)
 
         // Then
-        XCTAssertEqual(origin, SubscriptionFunnelOrigin.unknown.rawValue)
+        XCTAssertEqual(origin, "https://example.com")
         let fireCall = try XCTUnwrap(pixelKitMock.actualFireCalls.first)
         XCTAssertNil(fireCall.pixel.parameters)
     }
 
-    private func pixelOrigin(for origin: String?, provider: SubscriptionRemoteFunnelOriginsProviding, pixelFiring: PixelKitMock) -> String? {
-        SubscriptionFunnelOrigin.pixelOrigin(for: origin, remoteFunnelOriginsProvider: provider, pixelFiring: pixelFiring)
+    private func pixelOrigin(for origin: String?, webOrigins: Set<String> = [], pixelFiring: PixelKitMock) -> String? {
+        SubscriptionFunnelOrigin.pixelOrigin(for: origin, webOrigins: webOrigins, pixelFiring: pixelFiring)
     }
 
     @MainActor
@@ -1581,10 +1577,6 @@ final class MockURLWebView: WKWebView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
-}
-
-final class MockSubscriptionRemoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding {
-    var allowlistedOrigins: Set<String> = []
 }
 
 final class MockPendingTransactionHandler: PendingTransactionHandling {

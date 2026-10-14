@@ -17,7 +17,6 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Common
 import FoundationExtensions
@@ -49,7 +48,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var mockWideEvent: WideEventMock!
     private var mockEventReporter: MockSubscriptionEventReporter!
     private var mockRequestValidator: ScriptRequestValidatorMock!
-    private var mockRemoteFunnelOriginsProvider: MockSubscriptionRemoteFunnelOriginsProvider!
+    private var mockStripePurchaseFlow: StripePurchaseFlowMock!
+    private var flowPerformer: DefaultSubscriptionFlowsExecuter!
     private var pixelKitMock: PixelKitMock!
     private var broker: UserScriptMessageBroker!
 
@@ -67,7 +67,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         subscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
         subscriptionSuccessPixelHandler = SubscriptionAttributionPixelHandler()
-        let mockStripePurchaseFlowV2 = StripePurchaseFlowMock(prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
+        mockStripePurchaseFlow = StripePurchaseFlowMock(prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
                                                                                   usesUnifiedFeedbackForm: false)
@@ -77,10 +77,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockWideEvent = WideEventMock()
         mockEventReporter = MockSubscriptionEventReporter()
         mockRequestValidator = ScriptRequestValidatorMock()
-        mockRemoteFunnelOriginsProvider = MockSubscriptionRemoteFunnelOriginsProvider()
         pixelKitMock = PixelKitMock()
 
-        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+        flowPerformer = DefaultSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             uiHandler: mockUIHandler,
             wideEvent: mockWideEvent,
@@ -89,25 +88,30 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         )
         mockAIChatTabOpener = MockAIChatTabOpener()
         aiChatSourceHandler = AIChatConversationSourceHandler()
-        sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                      subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
-                                                      stripePurchaseFlow: mockStripePurchaseFlowV2,
-                                                      uiHandler: mockUIHandler,
-                                                      subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
-                                                      freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                      notificationCenter: mockNotificationCenter,
-                                                      dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                      aiChatURL: URL.duckDuckGo,
-                                                      aiChatTabOpener: mockAIChatTabOpener,
-                                                      aiChatConversationSourceHandler: aiChatSourceHandler,
-                                                      wideEvent: mockWideEvent,
-                                                      subscriptionEventReporter: mockEventReporter,
-                                                      pendingTransactionHandler: MockPendingTransactionHandler(),
-                                                      flowPerformer: flowPerformer,
-                                                      requestValidator: mockRequestValidator,
-                                                      remoteFunnelOriginsProvider: mockRemoteFunnelOriginsProvider,
-                                                      pixelFiring: pixelKitMock)
+        sut = makeSUT()
         sut.with(broker: broker)
+    }
+
+    @MainActor
+    private func makeSUT(webFunnelOrigins: Set<String> = []) -> SubscriptionPagesUseSubscriptionFeature {
+        SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
+                                                stripePurchaseFlow: mockStripePurchaseFlow,
+                                                uiHandler: mockUIHandler,
+                                                subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+                                                freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
+                                                notificationCenter: mockNotificationCenter,
+                                                dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+                                                aiChatURL: URL.duckDuckGo,
+                                                aiChatTabOpener: mockAIChatTabOpener,
+                                                aiChatConversationSourceHandler: aiChatSourceHandler,
+                                                wideEvent: mockWideEvent,
+                                                subscriptionEventReporter: mockEventReporter,
+                                                pendingTransactionHandler: MockPendingTransactionHandler(),
+                                                flowPerformer: flowPerformer,
+                                                requestValidator: mockRequestValidator,
+                                                webFunnelOrigins: webFunnelOrigins,
+                                                pixelFiring: pixelKitMock)
     }
 
     override func tearDown() {
@@ -122,7 +126,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockWideEvent = nil
         mockEventReporter = nil
         mockRequestValidator = nil
-        mockRemoteFunnelOriginsProvider = nil
+        mockStripePurchaseFlow = nil
+        flowPerformer = nil
         pixelKitMock = nil
         subscriptionManager = nil
         subscriptionSuccessPixelHandler = nil
@@ -752,9 +757,10 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testGetSubscriptionTierOptions_WithAllowlistedOrigin_ReportsOrigin() async throws {
+    func testGetSubscriptionTierOptions_WithWebOrigin_ReportsOrigin() async throws {
         // Given
-        mockRemoteFunnelOriginsProvider.allowlistedOrigins = ["funnel_web_macos"]
+        sut = makeSUT(webFunnelOrigins: ["funnel_web_macos"])
+        sut.with(broker: broker)
         subscriptionManager.subscriptionTierOptionsResult = .success(SubscriptionTierOptions(platform: .macos, products: []))
         let message = tierOptionsMessage(origin: "funnel_web_macos")
 
@@ -767,7 +773,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testGetSubscriptionTierOptions_WithUnknownOrigin_ReportsUnknownOrigin() async throws {
+    func testGetSubscriptionTierOptions_WithUnknownOrigin_ReportsOriginAndFiresUnknownOriginPixel() async throws {
         // Given
         subscriptionManager.subscriptionTierOptionsResult = .success(SubscriptionTierOptions(platform: .macos, products: []))
         let message = tierOptionsMessage(origin: "funnel_web_macos")
@@ -776,7 +782,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         _ = try await sut.getSubscriptionTierOptions(params: "", original: message)
 
         // Then
-        XCTAssertEqual(reportedTierOptionsSuccessOrigin(), SubscriptionFunnelOrigin.unknown.rawValue)
+        XCTAssertEqual(reportedTierOptionsSuccessOrigin(), "funnel_web_macos")
         let unknownOriginPixel = try XCTUnwrap(firedUnknownOriginPixels().first)
         XCTAssertEqual(unknownOriginPixel.frequency, .dailyAndCount)
         XCTAssertEqual(unknownOriginPixel.pixel.parameters?[SubscriptionOriginPixel.unknownOriginKey], "funnel_web_macos")
@@ -1350,10 +1356,6 @@ final class MockURLWebView: WKWebView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
-}
-
-final class MockSubscriptionRemoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding {
-    var allowlistedOrigins: Set<String> = []
 }
 
 final class MockPendingTransactionHandler: PendingTransactionHandling {

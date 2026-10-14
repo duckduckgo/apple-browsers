@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Foundation
 import PixelKit
 import Subscription
@@ -157,23 +156,35 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1215398999855859
     case notificationVPN = "funnel_notification_ios__subscriptionvpn"
 
-    /// Reported instead of a funnel origin that is neither defined here nor in the remote allowlist
-    /// (`PrivacyProSubfeature.subscriptionRemoteFunnelOrigins`), e.g. an origin set by a link outside the app.
+    /// To be reported instead of a funnel origin that is neither defined here nor in `SubscriptionWebFunnelOrigins`,
+    /// e.g. an origin set by a link outside the app. Not sent yet: such origins are currently sent as-is so they
+    /// fail live validation; we will move to sending this value later.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1209784982258586?focus=true
     case unknown = "funnel_unknown_ios"
+}
+
+/// Subscription funnel origins set outside the app (e.g. website links) that subscription pixels may report as-is.
+///
+/// Every value must also appear in the web-sourced section of the `subscriptionFunnelOrigin` entry of
+/// `iOS/PixelDefinitions/pixels/params_dictionary.json5` — keep the two lists in sync.
+///
+/// Privacy note: never add an ad-campaign or marketing-attribution origin here.
+enum SubscriptionWebFunnelOrigins {
+    static let all: Set<String> = []
 }
 
 extension SubscriptionFunnelOrigin {
 
     static func pixelOrigin(for origin: String?,
-                            remoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding,
+                            webOrigins: Set<String> = SubscriptionWebFunnelOrigins.all,
                             pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> String? {
-        switch remoteFunnelOriginsProvider.resolveOrigin(origin, isAppOrigin: { Self(rawValue: $0) != nil }) {
-        case .app(let origin), .remote(let origin):
+        switch ResolvedFunnelOrigin.resolve(origin, isNativeOrigin: { Self(rawValue: $0) != nil }, webOrigins: webOrigins) {
+        case .native, .web:
             return origin
         case .unknown(let reportableOrigin):
             pixelFiring?.fire(SubscriptionOriginPixel.subscriptionOriginUnknown(origin: reportableOrigin), frequency: .dailyAndCount)
-            return Self.unknown.rawValue
+            #warning("Send-Unknown-Origin: unrecognised origins are sent as-is for now so they fail live validation; send `funnel_unknown_<platform>` instead.")
+            return origin
         case nil:
             return nil
         }

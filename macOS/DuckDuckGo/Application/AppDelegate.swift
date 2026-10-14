@@ -1575,9 +1575,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Must run before the first web view starts a passkey request
         if featureFlagger.isFeatureOn(.passkeyRequestCancellation) {
-            WebKitPasskeyRequestCanceller.install { [featureFlagger] in
-                featureFlagger.isFeatureOn(.passkeyRequestCancellation)
-            }
+            WebKitPasskeyRequestCanceller.install()
         }
 
         configurationManager.start()

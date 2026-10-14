@@ -21,11 +21,13 @@ import Foundation
 import os.log
 import PixelKit
 
-/// The parts of an authorization controller the canceller uses, so tests can use fakes.
+/// The parts of `ASAuthorizationController` that `WebKitPasskeyRequestCanceller` uses, as a protocol so tests can use
+/// fakes.
 protocol PasskeyAuthorizationController: AnyObject {
     var delegate: ASAuthorizationControllerDelegate? { get set }
     func cancel()
-    /// Reports the request as cancelled to its delegate without it ever reaching the agent.
+    /// Tells the delegate the request was cancelled, the same way AuthenticationServices would. Used for a request that
+    /// was held back and never started, so there's nothing to cancel in the agent.
     func completeAsCancelled()
 }
 
@@ -37,43 +39,39 @@ extension ASAuthorizationController: PasskeyAuthorizationController {
     }
 }
 
-/// Cancels WebKit's previous passkey request before WebKit starts the next one.
+/// Keeps passkeys working by making sure WebKit never leaves a passkey request open behind it.
 ///
-/// WebKit keeps one pending `ASAuthorizationController` per page and replaces it without cancelling it when the
-/// page navigates and later starts a request, or starts a second request while one is pending (for example an
-/// AutoFill request and a sign-in). The replaced request stays open in the system passkey agent, which then rejects
-/// every later passkey request from the app until it restarts. WebKit's passkey code runs in the app process, so
-/// its controllers pass through here before they perform, and the previous one is cancelled.
+/// The system passkey agent allows the app one open passkey request at a time. When a page starts a new request,
+/// WebKit can replace the previous one without cancelling it, and once replaced nothing can cancel it: the agent
+/// then refuses every later passkey request from the app until it restarts.
 ///
-/// A replaced controller no longer has WebKit's delegate (WebKit released it), so its cancellation reaches nobody.
-/// A request still open in another page keeps its delegate, so WebKit completes it as usual.
+/// Once installed, this cancels WebKit's previous request whenever WebKit starts a new one. When the previous
+/// request was still open in another page, the new one starts after a short delay, because the agent drops the
+/// app's open requests when it finishes winding down a cancelled one.
 final class WebKitPasskeyRequestCanceller {
 
     private let webKitDelegateClass: AnyClass
-    private let isEnabled: () -> Bool
-    /// Held strongly: once WebKit replaces it, nothing else keeps it reachable.
+    /// The latest WebKit request, cancelled when the next one starts. Held strongly because WebKit lets go of it as
+    /// soon as it replaces it.
     private var lastWebKitController: PasskeyAuthorizationController?
-    /// How long a new request waits after cancelling a request still open in another page. The agent winds the
-    /// cancelled request down (closing its sheet) for about 0.6 s, and when it finishes it also drops the app's
-    /// other open requests, so a request started sooner would be dropped.
+    /// How long a new request waits after cancelling one still open in another page, so it starts only after the agent
+    /// has finished winding down the cancelled one. The app gets no signal when that happens, so a fixed delay is the
+    /// only safe option found.
     private let delayAfterCancellingOpenRequest: TimeInterval
-    /// A WebKit request waiting for that delay before it starts.
+    /// A request WebKit asked to start that hasn't been sent to the agent yet, because it's waiting out
+    /// ``delayAfterCancellingOpenRequest``. Kept so it can be started once the delay passes, or reported to WebKit as
+    /// cancelled if WebKit cancels it or a newer request replaces it first.
     private var heldRequest: (controller: PasskeyAuthorizationController, perform: () -> Void)?
 
-    init(webKitDelegateClass: AnyClass, isEnabled: @escaping () -> Bool, delayAfterCancellingOpenRequest: TimeInterval = 1) {
+    init(webKitDelegateClass: AnyClass, delayAfterCancellingOpenRequest: TimeInterval = 1) {
         self.webKitDelegateClass = webKitDelegateClass
-        self.isEnabled = isEnabled
         self.delayAfterCancellingOpenRequest = delayAfterCancellingOpenRequest
     }
 
-    /// Called instead of a controller's `performRequests` or `performAutoFillAssistedRequests`; `perform` runs the
-    /// original method.
+    /// Decides when a WebKit request may start, cancelling the previous one first. Called in place of the controller's
+    /// `performRequests` and `performAutoFillAssistedRequests`; `perform` runs the original method, either right away or
+    /// after ``delayAfterCancellingOpenRequest``. Requests that don't come from WebKit start untouched.
     func willPerform(_ controller: PasskeyAuthorizationController, perform: @escaping () -> Void) {
-        guard isEnabled() else {
-            lastWebKitController = nil
-            perform()
-            return
-        }
         guard let delegate = controller.delegate,
               (delegate as AnyObject).isKind(of: webKitDelegateClass) else {
             perform()
@@ -88,9 +86,8 @@ final class WebKitPasskeyRequestCanceller {
             held.controller.completeAsCancelled()
             mustWait = true
         } else if let previous = lastWebKitController, previous !== controller {
-            // WebKit performs the same controller again when it resumes an AutoFill request it paused, so only a
-            // different controller is cancelled. A replaced request no longer has WebKit's delegate; one still open
-            // in another page does.
+            // A controller starting again is the same request resuming, so it isn't cancelled. A previous request
+            // that still has its delegate is open in another page, so the new one waits.
             mustWait = previous.delegate != nil
             Logger.general.log("Cancelling the previous WebKit passkey request")
             previous.cancel()
@@ -109,7 +106,12 @@ final class WebKitPasskeyRequestCanceller {
         }
     }
 
-    /// Called instead of a controller's `cancel`. Returns whether the original `cancel` should run.
+    /// Called in place of the controller's `cancel`. Returns whether the original `cancel` should run, which it should
+    /// for every request except one we're holding back (see ``heldRequest``).
+    ///
+    /// WebKit believes a held request has already started, but we haven't sent it to the agent yet, so there's nothing
+    /// for the original `cancel` to stop. Instead, the held request is dropped so it never starts, and WebKit is told it
+    /// was cancelled, because WebKit waits for that answer before it carries on.
     func willCancel(_ controller: PasskeyAuthorizationController) -> Bool {
         guard let held = heldRequest, held.controller === controller else { return true }
         heldRequest = nil
@@ -120,12 +122,18 @@ final class WebKitPasskeyRequestCanceller {
 
 extension WebKitPasskeyRequestCanceller {
 
+    /// The canceller in use, kept so it's installed only once.
     private static var installed: WebKitPasskeyRequestCanceller?
 
-    /// Runs `willPerform` before every `ASAuthorizationController` performs its requests. Installs nothing, and
-    /// fires a pixel, if WebKit's delegate class or a controller method isn't there.
-    static func install(isEnabled: @escaping () -> Bool,
-                        webKitDelegateClass: AnyClass? = NSClassFromString("_WKASDelegate"),
+    /// Routes every start and cancel of an `ASAuthorizationController` through a canceller, for the rest of the app's
+    /// run. Only WebKit's requests are affected; any other request passes straight through. Call once at launch, before
+    /// any web view starts a passkey request.
+    ///
+    /// If WebKit's delegate class or one of those methods is missing, for example because a macOS update changed
+    /// WebKit, nothing is installed, passkeys behave as they would without it, and a pixel reports why.
+    ///
+    /// - Parameter webKitDelegateClass: WebKit's private delegate class, which is how WebKit's requests are recognised.
+    static func install(webKitDelegateClass: AnyClass? = NSClassFromString("_WKASDelegate"),
                         pixelFiring: PixelFiring? = PixelKit.shared) {
         guard #available(macOS 13.0, *), installed == nil else { return }
 
@@ -147,13 +155,14 @@ extension WebKitPasskeyRequestCanceller {
             return
         }
 
-        let canceller = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass, isEnabled: isEnabled)
+        let canceller = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
         installed = canceller
         hook(performRequests, canceller: canceller)
         hook(performAutoFillAssistedRequests, canceller: canceller)
         hookCancel(canceller: canceller)
     }
 
+    /// Replaces the controller method `selector`, so the canceller decides when Apple's original runs.
     @available(macOS 13.0, *)
     private static func hook(_ selector: Selector, canceller: WebKitPasskeyRequestCanceller) {
         guard let method = class_getInstanceMethod(ASAuthorizationController.self, selector) else { return }
@@ -166,6 +175,7 @@ extension WebKitPasskeyRequestCanceller {
         method_setImplementation(method, imp_implementationWithBlock(replacement))
     }
 
+    /// Replaces the controller's `cancel`, so a held request can be answered without being sent to the agent.
     @available(macOS 13.0, *)
     private static func hookCancel(canceller: WebKitPasskeyRequestCanceller) {
         let selector = #selector(ASAuthorizationController.cancel)
@@ -182,14 +192,17 @@ extension WebKitPasskeyRequestCanceller {
     }
 }
 
+/// Pixels for `WebKitPasskeyRequestCanceller`.
 enum PasskeyRequestCancellationPixel: PixelKit.Event {
 
+    /// What `install` found missing.
     enum InstallFailureReason: String {
         case webKitDelegateClass = "webkit_delegate_class"
         case performRequests = "perform_requests"
         case performAutoFillAssistedRequests = "perform_autofill_assisted_requests"
     }
 
+    /// The canceller couldn't install at launch, so WebKit's passkey requests aren't being cancelled.
     case installFailed(InstallFailureReason)
 
     var namePrefix: PixelKitNamePrefix { .none }

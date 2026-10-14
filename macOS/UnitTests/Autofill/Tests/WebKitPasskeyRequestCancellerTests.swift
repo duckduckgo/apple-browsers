@@ -31,6 +31,8 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
         private(set) var cancelCount = 0
         private(set) var performCount = 0
         private(set) var completedAsCancelledCount = 0
+        /// Stands in for WebKit's reaction to being told the request was cancelled.
+        var onCompleteAsCancelled: (() -> Void)?
 
         init(delegate: ASAuthorizationControllerDelegate) {
             self.delegate = delegate
@@ -42,6 +44,7 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
 
         func completeAsCancelled() {
             completedAsCancelledCount += 1
+            onCompleteAsCancelled?()
         }
 
         func perform() {
@@ -50,15 +53,11 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
     }
 
     private let delay: TimeInterval = 0.05
-    private var isEnabled = true
     private var canceller: WebKitPasskeyRequestCanceller!
 
     override func setUp() {
         super.setUp()
-        isEnabled = true
-        canceller = WebKitPasskeyRequestCanceller(webKitDelegateClass: WebKitDelegate.self,
-                                                  isEnabled: { [unowned self] in isEnabled },
-                                                  delayAfterCancellingOpenRequest: delay)
+        canceller = WebKitPasskeyRequestCanceller(webKitDelegateClass: WebKitDelegate.self, delayAfterCancellingOpenRequest: delay)
     }
 
     override func tearDown() {
@@ -168,26 +167,6 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
         XCTAssertEqual(otherRequest.cancelCount, 0)
     }
 
-    func testWhenDisabled_ThenRequestsStartWithoutCancellingAndTrackingIsCleared() {
-        let tracked = webKitController()
-        let whileDisabled = webKitController()
-        let afterReenabling = webKitController()
-
-        start(tracked)
-        isEnabled = false
-        start(whileDisabled)
-
-        XCTAssertEqual(whileDisabled.performCount, 1)
-        XCTAssertEqual(tracked.cancelCount, 0)
-
-        isEnabled = true
-        start(afterReenabling)
-
-        XCTAssertEqual(afterReenabling.performCount, 1)
-        XCTAssertEqual(tracked.cancelCount, 0)
-        XCTAssertEqual(whileDisabled.cancelCount, 0)
-    }
-
     func testWhenWebKitCancelsAWaitingRequest_ThenItCompletesAsCancelledWithoutStarting() {
         let previous = webKitController()
         let waiting = webKitController()
@@ -222,6 +201,43 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
         XCTAssertEqual(newer.performCount, 1)
     }
 
+    func testWhenWebKitStartsAnotherRequestWhileBeingToldAWaitingOneWasCancelled_ThenBothAreHandled() {
+        let previous = webKitController()
+        let waiting = webKitController()
+        let resumed = webKitController()
+
+        start(previous)
+        start(waiting)
+        // When a window switch pauses the waiting request, WebKit resumes another page's request from inside the
+        // cancellation report.
+        waiting.onCompleteAsCancelled = { [unowned self] in start(resumed) }
+
+        XCTAssertFalse(canceller.willCancel(waiting))
+        XCTAssertEqual(resumed.performCount, 0)
+
+        waitPastDelay()
+
+        XCTAssertEqual(waiting.performCount, 0)
+        XCTAssertEqual(resumed.performCount, 1)
+    }
+
+    func testWhenAWaitingRequestIsReportedCancelled_ThenTheCancellerStillHoldsIt() {
+        let previous = webKitController()
+        weak var weakWaiting: FakeController?
+
+        start(previous)
+        autoreleasepool {
+            let waiting = webKitController()
+            weakWaiting = waiting
+            start(waiting)
+            XCTAssertFalse(canceller.willCancel(waiting))
+        }
+
+        // WebKit releases its reference while it's being told the request was cancelled, so the canceller's must keep
+        // the controller alive.
+        XCTAssertNotNil(weakWaiting)
+    }
+
     func testWhenRequestIsNotWaiting_ThenWebKitsCancelGoesThrough() {
         let controller = webKitController()
 
@@ -234,7 +250,7 @@ final class WebKitPasskeyRequestCancellerTests: XCTestCase {
         guard #available(macOS 13.0, *) else { throw XCTSkip("Requires macOS 13") }
         let pixelFiring = PixelKitMock()
 
-        WebKitPasskeyRequestCanceller.install(isEnabled: { true }, webKitDelegateClass: nil, pixelFiring: pixelFiring)
+        WebKitPasskeyRequestCanceller.install(webKitDelegateClass: nil, pixelFiring: pixelFiring)
 
         XCTAssertEqual(pixelFiring.actualFireCalls, [
             ExpectedFireCall(pixel: PasskeyRequestCancellationPixel.installFailed(.webKitDelegateClass), frequency: .dailyAndCount)

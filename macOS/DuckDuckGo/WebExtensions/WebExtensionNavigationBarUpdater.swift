@@ -294,24 +294,31 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
     // MARK: - Context Menu
 
-    /// The right-click menu of an extension button: the items the extension adds with
-    /// `contextMenus.create({ contexts: ["action"] })`, plus, for internal users, the extension's
-    /// API compatibility log. WebKit can change the items at any time, so the menu is built on demand.
+    /// The right-click menu of an extension button: a header with the extension's name, the items the
+    /// extension adds with `contextMenus.create({ contexts: ["action"] })`, plus, for internal users, the
+    /// extension's API compatibility log. WebKit can change the items at any time, so the menu is built on demand.
     private func contextMenu(for context: WKWebExtensionContext) -> NSMenu? {
-        let menu = NSMenu()
-        menu.items = currentAction(of: context)?.menuItems ?? []
+        var items = currentAction(of: context)?.menuItems ?? []
 
         if NSApp.delegateTyped.internalUserDecider.isInternalUser {
-            if !menu.items.isEmpty {
-                menu.addItem(.separator())
+            if !items.isEmpty {
+                items.append(.separator())
             }
             let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
             item.target = self
             item.representedObject = context
-            menu.addItem(item)
+            items.append(item)
         }
 
-        return menu.items.isEmpty ? nil : menu
+        guard !items.isEmpty else { return nil }
+
+        let menu = NSMenu()
+        let name = context.webExtension.displayName ?? context.webExtension.displayShortName ?? ""
+        if !name.isEmpty {
+            menu.addItem(.sectionHeader(title: name))
+        }
+        items.forEach(menu.addItem)
+        return menu
     }
 }
 

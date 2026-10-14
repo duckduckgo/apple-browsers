@@ -289,8 +289,8 @@ struct IsDuckAIEnabledMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
-/// Matches the `triedAIChatDuringOnboarding` RMF attribute: the user tried a Duck.ai chat during onboarding.
-struct TriedAIChatDuringOnboardingMatchingAttribute: SingleValueMatching {
+/// Matches the `triedDuckAiDuringOnboarding` RMF attribute: the user tried a Duck.ai chat during onboarding.
+struct TriedDuckAIDuringOnboardingMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }

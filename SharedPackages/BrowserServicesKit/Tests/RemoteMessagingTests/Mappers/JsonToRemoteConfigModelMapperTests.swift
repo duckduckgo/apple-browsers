@@ -279,8 +279,8 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         attribs = rule12?.attributes.filter { $0 is IsDuckAIEnabledMatchingAttribute }
         XCTAssertEqual(attribs?.first as? IsDuckAIEnabledMatchingAttribute, IsDuckAIEnabledMatchingAttribute(value: true, fallback: nil))
 
-        attribs = rule12?.attributes.filter { $0 is TriedAIChatDuringOnboardingMatchingAttribute }
-        XCTAssertEqual(attribs?.first as? TriedAIChatDuringOnboardingMatchingAttribute, TriedAIChatDuringOnboardingMatchingAttribute(value: false, fallback: nil))
+        attribs = rule12?.attributes.filter { $0 is TriedDuckAIDuringOnboardingMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? TriedDuckAIDuringOnboardingMatchingAttribute, TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil))
 
         attribs = rule12?.attributes.filter { $0 is IsDuckAIBoostActiveMatchingAttribute }
         XCTAssertEqual(attribs?.first as? IsDuckAIBoostActiveMatchingAttribute, IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil))

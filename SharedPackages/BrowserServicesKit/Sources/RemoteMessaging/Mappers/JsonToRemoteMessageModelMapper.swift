@@ -68,7 +68,7 @@ private enum AttributesKey: String, CaseIterable {
     case daysSinceDuckAiUsed
     case isReturnUser
     case isDuckAiEnabled
-    case triedAIChatDuringOnboarding
+    case triedDuckAiDuringOnboarding
     case isDuckAiBoostActive
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
@@ -121,7 +121,7 @@ private enum AttributesKey: String, CaseIterable {
         case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isReturnUser: return IsReturningUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isDuckAiEnabled: return IsDuckAIEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .triedAIChatDuringOnboarding: return TriedAIChatDuringOnboardingMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .triedDuckAiDuringOnboarding: return TriedDuckAIDuringOnboardingMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isDuckAiBoostActive: return IsDuckAIBoostActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }

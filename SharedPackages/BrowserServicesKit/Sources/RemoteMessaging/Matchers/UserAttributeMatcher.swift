@@ -421,7 +421,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isReturningUser)
         case let matchingAttribute as IsDuckAIEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isAIChatEnabled)
-        case let matchingAttribute as TriedAIChatDuringOnboardingMatchingAttribute:
+        case let matchingAttribute as TriedDuckAIDuringOnboardingMatchingAttribute:
             return matchingAttribute.evaluate(for: triedAIChatDuringOnboarding)
         case let matchingAttribute as IsDuckAIBoostActiveMatchingAttribute:
             return matchingAttribute.evaluate(for: isAIChatBoostActive)

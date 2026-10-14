@@ -348,7 +348,7 @@
           "isDuckAiEnabled": {
               "value": true
           },
-          "triedAIChatDuringOnboarding": {
+          "triedDuckAiDuringOnboarding": {
               "value": false
           },
           "isDuckAiBoostActive": {

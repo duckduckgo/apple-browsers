@@ -366,19 +366,19 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .match)
     }
 
-    func testWhenTriedAIChatDuringOnboardingMatchesThenReturnMatch() throws {
+    func testWhenTriedDuckAIDuringOnboardingMatchesThenReturnMatch() throws {
         setUpUserAttributeMatcher(triedAIChatDuringOnboarding: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedAIChatDuringOnboardingMatchingAttribute(value: true, fallback: nil)), .match)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: true, fallback: nil)), .match)
     }
 
-    func testWhenTriedAIChatDuringOnboardingDoesNotMatchThenReturnFail() throws {
+    func testWhenTriedDuckAIDuringOnboardingDoesNotMatchThenReturnFail() throws {
         setUpUserAttributeMatcher(triedAIChatDuringOnboarding: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedAIChatDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .fail)
     }
 
-    func testWhenDidNotTryAIChatDuringOnboardingAndRuleExpectsNotTriedThenReturnMatch() throws {
+    func testWhenDidNotTryDuckAIDuringOnboardingAndRuleExpectsNotTriedThenReturnMatch() throws {
         setUpUserAttributeMatcher(triedAIChatDuringOnboarding: false)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedAIChatDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .match)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .match)
     }
 
     func testWhenIsDuckAIBoostActiveMatchesThenReturnMatch() throws {

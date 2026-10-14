@@ -3036,6 +3036,7 @@
 		4CA15DBA30D97E3ECEBD1C8D /* AIChatScreenshotCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC59140CD0DA62FE60CBE8D /* AIChatScreenshotCaptureService.swift */; };
 		935AA7C8AD0C7CAEEA7BF325 /* AIChatScreenshotRegionCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */; };
 		AD04AF5568F53F0B9F25CDC7 /* AIChatScreenshotWindowPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */; };
+		8380786B4DE47DBAEDE81B8E /* AIChatScreenshotSourcePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71BA26113A7C55DC3856AE2D /* AIChatScreenshotSourcePicker.swift */; };
 		AEC7006A6165D3BDACB9AE30 /* AIChatScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */; };
 		A1C2E3013B71000100000002 /* AttachmentPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */; };
 		BCC2FB3B1200D51F9A678F78 /* DuckAiTermsOfServiceChatsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */; };
@@ -3047,6 +3048,7 @@
 		55B9D5046DAEBB1A867945F1 /* AIChatScreenshotCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC59140CD0DA62FE60CBE8D /* AIChatScreenshotCaptureService.swift */; };
 		D5F051229ECCC1FAD13DB793 /* AIChatScreenshotRegionCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */; };
 		0DDCE0295D8BA457D9CAF0C6 /* AIChatScreenshotWindowPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */; };
+		E5E58EE5D4BEE5A0AFCD780D /* AIChatScreenshotSourcePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71BA26113A7C55DC3856AE2D /* AIChatScreenshotSourcePicker.swift */; };
 		A6FC911EE08DBCB2331FFD1E /* AIChatScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */; };
 		A1C2E3013B71000100000003 /* AttachmentPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */; };
 		B2800276EDC88428C9F0B59F /* DuckAiTermsOfServiceChatsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */; };
@@ -6556,6 +6558,7 @@
 		0AC59140CD0DA62FE60CBE8D /* AIChatScreenshotCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotCaptureService.swift; sourceTree = "<group>"; };
 		35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotRegionCapturer.swift; sourceTree = "<group>"; };
 		2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotWindowPicker.swift; sourceTree = "<group>"; };
+		71BA26113A7C55DC3856AE2D /* AIChatScreenshotSourcePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotSourcePicker.swift; sourceTree = "<group>"; };
 		4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotCapture.swift; sourceTree = "<group>"; };
 		A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosure.swift; sourceTree = "<group>"; };
 		58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceChatsObserver.swift; sourceTree = "<group>"; };
@@ -8442,6 +8445,7 @@
 				0AC59140CD0DA62FE60CBE8D /* AIChatScreenshotCaptureService.swift */,
 				35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */,
 				2919CA2284B38E76BB705A28 /* AIChatScreenshotWindowPicker.swift */,
+				71BA26113A7C55DC3856AE2D /* AIChatScreenshotSourcePicker.swift */,
 				4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */,
 				A1C2E3013B71000100000001 /* AttachmentPrivacyDisclosure.swift */,
 				58953B6546C4B04D75853FCE /* DuckAiTermsOfServiceChatsObserver.swift */,
@@ -16093,6 +16097,7 @@
 				4CA15DBA30D97E3ECEBD1C8D /* AIChatScreenshotCaptureService.swift in Sources */,
 				935AA7C8AD0C7CAEEA7BF325 /* AIChatScreenshotRegionCapturer.swift in Sources */,
 				AD04AF5568F53F0B9F25CDC7 /* AIChatScreenshotWindowPicker.swift in Sources */,
+				8380786B4DE47DBAEDE81B8E /* AIChatScreenshotSourcePicker.swift in Sources */,
 				AEC7006A6165D3BDACB9AE30 /* AIChatScreenshotCapture.swift in Sources */,
 				A1C2E3013B71000100000002 /* AttachmentPrivacyDisclosure.swift in Sources */,
 				BCC2FB3B1200D51F9A678F78 /* DuckAiTermsOfServiceChatsObserver.swift in Sources */,
@@ -18810,6 +18815,7 @@
 				55B9D5046DAEBB1A867945F1 /* AIChatScreenshotCaptureService.swift in Sources */,
 				D5F051229ECCC1FAD13DB793 /* AIChatScreenshotRegionCapturer.swift in Sources */,
 				0DDCE0295D8BA457D9CAF0C6 /* AIChatScreenshotWindowPicker.swift in Sources */,
+				E5E58EE5D4BEE5A0AFCD780D /* AIChatScreenshotSourcePicker.swift in Sources */,
 				A6FC911EE08DBCB2331FFD1E /* AIChatScreenshotCapture.swift in Sources */,
 				A1C2E3013B71000100000003 /* AttachmentPrivacyDisclosure.swift in Sources */,
 				B2800276EDC88428C9F0B59F /* DuckAiTermsOfServiceChatsObserver.swift in Sources */,

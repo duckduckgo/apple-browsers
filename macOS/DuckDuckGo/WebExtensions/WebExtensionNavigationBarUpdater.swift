@@ -40,6 +40,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private enum Constants {
         static let buttonSize: CGFloat = 28
         static let iconSize = CGSize(width: 16, height: 16)
+        static let alertIconSize = CGSize(width: 64, height: 64)
     }
 
     let themeManager: ThemeManaging
@@ -292,27 +293,72 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         )
     }
 
+    /// Asks the user to confirm, then uninstalls the extension. Removing its button follows from
+    /// the manager's change notification.
+    @objc private func removeExtension(sender: NSMenuItem) {
+        guard let context = sender.representedObject as? WKWebExtensionContext else { return }
+        let identifier = context.uniqueIdentifier
+        let window = buttons.first { $0.identifier?.rawValue == identifier }?.window
+
+        let alert = NSAlert()
+        alert.messageText = String(format: UserText.chromeWebStoreRemoveTitle, Self.displayName(of: context))
+        alert.informativeText = UserText.chromeWebStoreRemoveMessage
+        if let icon = context.webExtension.icon(for: Constants.alertIconSize) {
+            alert.icon = icon
+        }
+        alert.addButton(withTitle: UserText.webExtensionRemoveButton)
+        alert.addButton(withTitle: UserText.cancel)
+        alert.buttons[0].hasDestructiveAction = true
+        alert.buttons[0].keyEquivalent = ""
+        alert.buttons[1].keyEquivalent = "\r"
+
+        Task { @MainActor [weak self] in
+            let response = await Self.present(alert, in: window)
+            guard response == .alertFirstButtonReturn, let manager = self?.webExtensionManagerProvider() else { return }
+
+            do {
+                try manager.uninstallExtension(identifier: identifier)
+            } catch {
+                Logger.webExtensions.error("❌ Failed to remove extension \(identifier, privacy: .public): \(error.localizedDescription)")
+                let errorAlert = NSAlert()
+                errorAlert.messageText = UserText.chromeWebStoreErrorTitle
+                errorAlert.informativeText = UserText.webExtensionRemoveErrorMessage
+                errorAlert.addButton(withTitle: UserText.ok)
+                _ = await Self.present(errorAlert, in: window)
+            }
+        }
+    }
+
+    private static func present(_ alert: NSAlert, in window: NSWindow?) async -> NSApplication.ModalResponse {
+        if let window, window.attachedSheet == nil {
+            return await alert.beginSheetModal(for: window)
+        }
+        return await alert.runModal()
+    }
+
+    private static func displayName(of context: WKWebExtensionContext) -> String {
+        context.webExtension.displayName ?? context.webExtension.displayShortName ?? UserText.webExtensionUnnamedExtension
+    }
+
     // MARK: - Context Menu
 
     /// The right-click menu of an extension button: a header with the extension's name, the items the
-    /// extension adds with `contextMenus.create({ contexts: ["action"] })`, plus, for internal users, the
-    /// extension's API compatibility log. WebKit can change the items at any time, so the menu is built on demand.
-    private func contextMenu(for context: WKWebExtensionContext) -> NSMenu? {
-        let extensionItems = currentAction(of: context)?.menuItems ?? []
-        let isInternalUser = NSApp.delegateTyped.internalUserDecider.isInternalUser
-        guard !extensionItems.isEmpty || isInternalUser else { return nil }
-
+    /// extension adds with `contextMenus.create({ contexts: ["action"] })`, the item that removes the extension,
+    /// plus, for internal users, the extension's API compatibility log.
+    /// WebKit can change the extension's items at any time, so the menu is built on demand.
+    private func contextMenu(for context: WKWebExtensionContext) -> NSMenu {
         let menu = NSMenu()
-        let name = context.webExtension.displayName ?? context.webExtension.displayShortName ?? ""
-        if !name.isEmpty {
-            menu.addItem(.sectionHeader(title: name))
-        }
-        extensionItems.forEach(menu.addItem)
+        menu.addItem(.sectionHeader(title: Self.displayName(of: context)))
+        (currentAction(of: context)?.menuItems ?? []).forEach(menu.addItem)
 
-        if isInternalUser {
-            if !menu.items.isEmpty {
-                menu.addItem(.separator())
-            }
+        menu.addItem(.separator())
+        let removeItem = NSMenuItem(title: UserText.webExtensionRemoveMenuItem, action: #selector(removeExtension))
+        removeItem.target = self
+        removeItem.representedObject = context
+        menu.addItem(removeItem)
+
+        if NSApp.delegateTyped.internalUserDecider.isInternalUser {
+            menu.addItem(.separator())
             let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
             item.target = self
             item.representedObject = context

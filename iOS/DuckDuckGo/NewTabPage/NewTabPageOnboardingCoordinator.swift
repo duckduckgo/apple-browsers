@@ -99,6 +99,10 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     func detach() {
+        if page?.hidesOnboardingContentBeforeInputActivation == true {
+            // Retained redesigned pages must restore their content before detachment clears the completion flag.
+            dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+        }
         notifyDuckAICompletionDismissedIfNeeded()
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         if didHideBarsForChatPathVisitSiteDialog {

@@ -95,8 +95,6 @@ public struct RecoverSyncedDataView: View {
         autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
     )
 
-    return RebrandedPreview(isRebranded: true) {
-        RecoverSyncedDataView(model: model, onCancel: {})
-    }
+    return RecoverSyncedDataView(model: model, onCancel: {})
 }
 #endif

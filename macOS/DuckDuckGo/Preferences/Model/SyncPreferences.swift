@@ -37,10 +37,15 @@ extension SyncDevice {
         self.init(kind: .current, name: account.deviceName, id: account.deviceId)
     }
 
+    // Keep aligned with the RegisteredDeviceMapper placeholder type for undecryptable devices.
+    private static let unknownDeviceType = "unknown"
+
     init(_ device: RegisteredDevice) {
         let kind: Kind
         if device.credentialId == SyncCredentialID.thirdParty {
             kind = .thirdParty
+        } else if device.type == Self.unknownDeviceType {
+            kind = .unknown
         } else {
             kind = device.type == "desktop" ? .desktop : .mobile
         }

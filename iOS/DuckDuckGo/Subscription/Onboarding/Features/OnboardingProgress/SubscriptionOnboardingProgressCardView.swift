@@ -201,23 +201,17 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
-    }
+    SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingProgressCardViewPreview(pirComplete: false)
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

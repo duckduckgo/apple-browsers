@@ -56,6 +56,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
     @MainActor
     func authenticate() async {
         guard shouldAuthenticate else {
+            overlayWindowManager.removeBlankSnapshotWindow(for: .authentication)
             hasCompletedAuthentication = true
             return
         }

@@ -1384,7 +1384,6 @@ public struct UserText {
     }
 
     // Simplified Sync
-    public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "New device added!", comment: "Toast message shown after sync is enabled by connecting with another device")
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
@@ -1781,7 +1780,7 @@ public struct UserText {
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
     public static let escapeHatchFireTabTitle = NSLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
     public static let escapeHatchMoreButtonAccessibilityLabel = NSLocalizedString("escapeHatch.moreButton.accessibility.label", value: "More options", comment: "Accessibility label for the more options button on the escape hatch card")
-    public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToLastUsedTab", value: "Return to Last Used Tab", comment: "Menu item that returns the user to the last used open tab from the escape hatch card")
+    public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.lastUsedTab", value: "Last Used Tab", comment: "Menu item that returns the user to the last used open tab from the escape hatch card")
     public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeLastUsedTab", value: "Close Last Used Tab", comment: "Menu item that closes the last used open tab referenced by the escape hatch card")
     public static let escapeHatchMenuDeleteTab = NSLocalizedString("escapeHatch.menu.deleteTab", value: "Delete Tab", comment: "Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card")
     public static let escapeHatchMenuHideTheseShortcuts = NSLocalizedString("escapeHatch.menu.hideReturnToShortcut", value: "Hide ‘Return to’ Shortcut", comment: "Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity")
@@ -2017,6 +2016,9 @@ public struct UserText {
     public static let newTabPageCustomizationAlwaysShowKeyboard = NotLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
     public static let newTabPageCustomizationAllSettings = NotLocalizedString("new-tab-page.customization.all-settings", value: "All Settings", comment: "Opens the app settings from the New Tab Page customization sheet")
     public static let settingsKeyboard = NSLocalizedString("settings.keyboard", value: "Keyboard", comment: "Settings screen cell for Keyboard")
+    public static let settingsKeyboardShowOn = NSLocalizedString("settings.keyboard.show-on", value: "Show keyboard on", comment: "Header for settings that control when to show the keyboard")
+    public static let settingsKeyboardNewTab = NSLocalizedString("settings.keyboard.new-tab", value: "New Tab", comment: "Keyboard setting to show the keyboard on a New Tab page")
+    public static let settingsKeyboardAppLaunch = NSLocalizedString("settings.keyboard.app-launch", value: "App Launch", comment: "Keyboard setting to show the keyboard on App Launch")
     public static let settingsPreviews = NSLocalizedString("settings.previews", value: "Long-Press Previews", comment: "Settings screen cell for long press previews")
     public static let settingsAutocompleteLabel = NSLocalizedString("settings.autocomplete", value: "Search Suggestions", comment: "Settings screen cell for autocomplete")
     public static let settingsAutocompleteSubtitle = NSLocalizedString("settings.autocomplete.subtitle", value: "Show search suggestions as you type, including your bookmarks. All searches are private.", comment: "Subtitle for Search Suggestions setting")
@@ -2592,11 +2594,11 @@ public struct UserText {
 
     // MARK: - Duck.ai Terms of Service (unified toggle input footer)
 
-    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By clicking 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
-    public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
-    public static let duckAIAskButtonTitle = NotLocalizedString("aichat.termsOfService.ask.button", value: "Ask", comment: "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
-    public static let duckAITermsOfServiceCreateDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer.create", value: "DuckDuckGo anonymizes your chats. By clicking 'Create' you agree to our %@.", comment: "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
-    public static let duckAICreateButtonTitle = NotLocalizedString("aichat.termsOfService.create.button", value: "Create", comment: "Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
+    public static let duckAITermsOfServiceDisclaimer = NSLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By clicking 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimerLink = NSLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
+    public static let duckAIAskButtonTitle = NSLocalizedString("aichat.termsOfService.ask.button", value: "Ask", comment: "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
+    public static let duckAITermsOfServiceCreateDisclaimer = NSLocalizedString("aichat.termsOfService.disclaimer.create", value: "DuckDuckGo anonymizes your chats. By clicking 'Create' you agree to our %@.", comment: "Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAICreateButtonTitle = NSLocalizedString("aichat.termsOfService.create.button", value: "Create", comment: "Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 

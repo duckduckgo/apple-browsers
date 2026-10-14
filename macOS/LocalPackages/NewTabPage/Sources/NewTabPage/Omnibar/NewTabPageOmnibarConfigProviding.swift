@@ -160,4 +160,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// Whether history-entry suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isSearchSuggestionDeletionEnabled: Bool { get }
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the Duck.ai tab shows the Terms of Service disclaimer. Published so every open NTP
+    /// drops it once the user accepts, wherever they accepted.
+    var requiresAiTermsAcceptance: Bool { get }
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { get }
 }

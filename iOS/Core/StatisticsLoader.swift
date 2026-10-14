@@ -86,8 +86,10 @@ public class StatisticsLoader {
         }
     }
 
-    // Temporary: per-download-reason d5-7 search retention for the onboarding-by-download-reason experiment.
+    // Per-download-reason d5-7 search retention for the onboarding-by-download-reason experiment.
     // No-op for users who haven't selected a reason or aren't enrolled (fireExperimentPixelIfThresholdReached guards both).
+    // Kept for the follow-up experiment; each reason's pixel token needs a matching
+    // `download_reason_search_retention_*` metric in native_experiments.json5.
     static func fireOnboardingByDownloadReasonSearchExperimentPixels() {
         guard let pixelToken = OnboardingDownloadReasonStore.currentPixelToken() else { return }
         let metric = "download_reason_search_retention_\(pixelToken)"

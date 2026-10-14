@@ -31,6 +31,7 @@ struct PromptBarPreferencesUserDefaultsPersistor: PromptBarPreferencesPersistor 
         case keyboardShortcutIsEnabled = "prompt-bar.keyboard-shortcut.is-enabled"
         case keyboardShortcut = "prompt-bar.keyboard-shortcut"
         case menuBarIconIsVisible = "prompt-bar.menu-bar-icon.is-visible"
+        case relativePosition = "prompt-bar.relative-position"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -61,5 +62,16 @@ struct PromptBarPreferencesUserDefaultsPersistor: PromptBarPreferencesPersistor 
     var isMenuBarIconVisible: Bool {
         get { (try? keyValueStore.object(forKey: Key.menuBarIconIsVisible.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.menuBarIconIsVisible.rawValue) }
+    }
+
+    var relativePosition: CGPoint? {
+        get {
+            guard let values = (try? keyValueStore.object(forKey: Key.relativePosition.rawValue)) as? [Double],
+                  values.count == 2 else { return nil }
+            return CGPoint(x: values[0], y: values[1])
+        }
+        nonmutating set {
+            try? keyValueStore.set(newValue.map { [Double($0.x), Double($0.y)] }, forKey: Key.relativePosition.rawValue)
+        }
     }
 }

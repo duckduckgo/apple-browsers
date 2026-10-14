@@ -264,6 +264,12 @@ extension PromoServiceFactoryTests {
                 notificationCenter: NotificationCenter(),
                 legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
                 recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
             )
         )
     }

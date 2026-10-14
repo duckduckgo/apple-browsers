@@ -123,6 +123,7 @@ enum WebExtensionManagerFactory {
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
             nativeMessagingHandler: nativeMessagingHandler,
+            keyValueStore: keyValueStore,
             scriptletConfiguration: scriptletConfiguration
         )
 

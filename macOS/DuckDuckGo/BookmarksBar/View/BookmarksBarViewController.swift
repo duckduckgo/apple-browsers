@@ -127,7 +127,7 @@ final class BookmarksBarViewController: NSViewController {
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
-        self.syncButtonModel = syncButtonModel ?? DismissableSyncDeviceButtonModel(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
+        self.syncButtonModel = syncButtonModel ?? DismissableSyncDeviceButtonModel(source: .bookmarksBar)
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,

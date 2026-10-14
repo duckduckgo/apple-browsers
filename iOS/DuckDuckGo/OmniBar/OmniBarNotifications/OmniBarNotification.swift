@@ -182,12 +182,7 @@ private enum Constants {
 
 #if DEBUG
 private struct OmniBarNotificationGallery: View {
-    @StateObject private var rebrandOverride: RebrandPreviewOverride
     @Environment(\.colorScheme) private var colorScheme
-
-    init(isRebranded: Bool) {
-        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-    }
 
     private static let samples: [(name: String, type: OmniBarNotificationType)] = [
         ("Cookies managed (animated cookie)", .cookiePopupManaged),
@@ -197,8 +192,7 @@ private struct OmniBarNotificationGallery: View {
     ]
 
     var body: some View {
-        rebrandOverride.apply()
-        return VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             ForEach(Self.samples, id: \.name) { sample in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(sample.name)
@@ -222,11 +216,7 @@ private struct OmniBarNotificationGallery: View {
     }
 }
 
-#Preview("Notifications / Legacy") {
-    OmniBarNotificationGallery(isRebranded: false)
-}
-
-#Preview("Notifications / Rebranded") {
-    OmniBarNotificationGallery(isRebranded: true)
+#Preview("Notifications") {
+    OmniBarNotificationGallery()
 }
 #endif

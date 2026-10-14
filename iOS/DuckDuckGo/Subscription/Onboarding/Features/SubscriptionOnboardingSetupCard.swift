@@ -127,23 +127,17 @@ private struct SubscriptionOnboardingSetupCardPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingSetupCardPreview()
-    }
+    SubscriptionOnboardingSetupCardPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingSetupCardPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingSetupCardPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingSetupCardPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingSetupCardPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

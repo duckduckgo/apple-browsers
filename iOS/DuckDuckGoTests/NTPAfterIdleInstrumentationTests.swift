@@ -35,7 +35,8 @@ struct NTPAfterIdleInstrumentationTests {
         let collector = PixelCollector()
         let sut = DefaultNTPAfterIdleInstrumentation(
             eligibilityManager: eligibility,
-            firePixel: { collector.firedPixelNames.append($0.name) })
+            firePixel: { collector.firedPixelNames.append($0.name) },
+            firePixelKitEvent: { collector.firedPixelNames.append($0.name) })
         return (sut, collector)
     }
 
@@ -255,22 +256,14 @@ struct NTPAfterIdleInstrumentationTests {
         #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnImmediatelyTapped.name])
     }
 
-    // MARK: - escapeHatchOptionChanged
+    // MARK: - escapeHatchAfterInactivitySettingsTappedFromMenu
 
     @available(iOS 16, *)
-    @Test("When escape hatch option changed to newTab then fires the new_tab pixel", .timeLimit(.minutes(1)))
-    func whenEscapeHatchOptionChangedToNewTabThenFiresCorrectPixel() {
+    @Test("When after-inactivity settings tapped from menu then fires the settings-tapped pixel once", .timeLimit(.minutes(1)))
+    func whenAfterInactivitySettingsTappedFromMenuThenFiresCorrectPixel() {
         let (sut, collector) = makeSUT()
-        sut.escapeHatchOptionChanged(to: .newTab)
-        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab.name])
-    }
-
-    @available(iOS 16, *)
-    @Test("When escape hatch option changed to lastUsedTab then fires the last_used_tab pixel", .timeLimit(.minutes(1)))
-    func whenEscapeHatchOptionChangedToLastUsedTabThenFiresCorrectPixel() {
-        let (sut, collector) = makeSUT()
-        sut.escapeHatchOptionChanged(to: .lastUsedTab)
-        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab.name])
+        sut.escapeHatchAfterInactivitySettingsTappedFromMenu()
+        #expect(collector.firedPixelNames == ["ntp_after_idle_escape_hatch_after_inactivity_settings_tapped_from_menu"])
     }
 
     // MARK: - escapeHatchShown / escapeHatchMenuShown

@@ -6030,7 +6030,14 @@ extension MainViewController: OmniBarDelegate {
         func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
             if context == .newTabPage {
                 if #available(iOS 16.0, *) {
-                    sheet.detents = [.custom { _ in contentHeight }]
+                    // Medium height capped at the content, so a short menu can't be dragged taller than itself.
+                    sheet.detents = [
+                        .custom { context in
+                            let mediumHeight = UISheetPresentationController.Detent.medium().resolvedValue(in: context) ?? contentHeight
+                            return min(contentHeight, mediumHeight)
+                        },
+                        .custom { _ in contentHeight }
+                    ]
                 } else {
                     sheet.detents = [.medium()]
                 }
@@ -7033,9 +7040,9 @@ extension MainViewController: EscapeHatchActionRouter {
         ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
     }
 
-    func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
-        ntpAfterIdleInstrumentation.escapeHatchOptionChanged(to: option)
-        postIdleSessionInstrumentation.openingScreenChanged()
+    func escapeHatchDidRequestAfterInactivitySettings() {
+        postIdleSessionInstrumentation.afterInactivitySettingsOpened()
+        segueToGeneralSettings()
     }
 
 }

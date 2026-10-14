@@ -100,6 +100,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var tabContentCancellable: AnyCancellable?
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private let duckAIMenuButtonPixelFirer = AIChatMenuButtonPixelFirer()
+    /// The sidebar entry the menu last offered. The item's action reads it rather than the tab's state,
+    /// so it does what the item said and what the menu-shown pixel reported.
+    private var duckAIMenuSidebarEntry: AIChatMenuButtonSidebarEntry?
     private lazy var duckAIChromeContextMenu: NSMenu = {
         let menu = NSMenu()
         menu.delegate = self
@@ -1325,8 +1329,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
         // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {
-            if NSApp.currentEvent?.type == .otherMouseUp || NSApp.isCommandPressed {
-                duckAIMenuNewChatAction()
+            if let gesture = AIChatMenuButtonPixelFirer.NewChatGesture(clickEventType: NSApp.currentEvent?.type,
+                                                                       isCommandPressed: NSApp.isCommandPressed) {
+                openNewDuckAIChatTabFromMenuButton(via: gesture)
             } else {
                 presentDuckAIMenuButtonMenu(from: sender)
             }
@@ -1345,9 +1350,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai menu button (single-pill layout)
 
     private func presentDuckAIMenuButtonMenu(from sender: NSButton) {
-        let menu = makeDuckAIMenuButtonMenu()
+        let sidebarEntry = AIChatMenuButtonSidebarEntry(isChatPresented: isDuckAIChatPresented,
+                                                        isPageAttachable: isCurrentPageAttachableForAIChat)
+        duckAIMenuSidebarEntry = sidebarEntry
+        let menu = makeDuckAIMenuButtonMenu(sidebarEntry: sidebarEntry)
         // Right-align: anchor the menu's top-right corner to the button's bottom-right.
         let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
+        duckAIMenuButtonPixelFirer.fireMenuShown(sidebarEntry: sidebarEntry)
         menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
@@ -1365,7 +1374,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     /// The pill's dropdown, rebuilt per press so the sidebar item's title/icon reflect the current
     /// tab and chat state.
-    private func makeDuckAIMenuButtonMenu() -> NSMenu {
+    private func makeDuckAIMenuButtonMenu(sidebarEntry: AIChatMenuButtonSidebarEntry) -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
@@ -1377,16 +1386,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         newChatItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(newChatItem)
 
-        // Chat presented → "Close Sidebar" (close icon); otherwise "Ask About Page" (attachable page)
-        // or "Open Sidebar" (nothing to attach), both with the sidebar-open icon.
         let sidebarItem = NSMenuItem(title: "", action: #selector(duckAIMenuSidebarAction), keyEquivalent: "")
         sidebarItem.target = self
-        if isDuckAIChatPresented {
+        switch sidebarEntry {
+        case .askAboutPage:
+            sidebarItem.title = UserText.aiChatMenuAskAboutPage
+            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
+        case .openSidebar:
+            sidebarItem.title = UserText.aiChatMenuOpenSidebar
+            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
+        case .closeSidebar:
             sidebarItem.title = UserText.aiChatMenuCloseSidebar
             sidebarItem.withImage(Self.closeSidebarMenuIcon(), visibleOnMacOS27: true)
-        } else {
-            sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
         }
         // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
         // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
@@ -1457,7 +1468,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuNewChatAction() {
-        PixelKit.fire(AIChatPixel.aiChatNewChatTitleBarMenu, frequency: .dailyAndStandard)
+        openNewDuckAIChatTabFromMenuButton(via: .menuItem)
+    }
+
+    private func openNewDuckAIChatTabFromMenuButton(via gesture: AIChatMenuButtonPixelFirer.NewChatGesture) {
+        duckAIMenuButtonPixelFirer.fireNewChat(via: gesture)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
             return
@@ -1474,13 +1489,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         mainViewController.openDuckAIChatHistory()
     }
 
-    /// Toggles the sidebar: closes an open chat (sidebar or floating), otherwise opens it with the
-    /// current page attached.
+    /// Closes an open chat (sidebar or floating), otherwise opens the sidebar with the current page
+    /// attached. Takes no sender: UI tests find the item by this selector's name.
     @objc private func duckAIMenuSidebarAction() {
-        if isDuckAIChatPresented {
+        guard let duckAIMenuSidebarEntry else {
+            assertionFailure("The Duck.ai menu's sidebar item was picked before the menu resolved its entry")
+            return
+        }
+        switch duckAIMenuSidebarEntry.action {
+        case .close:
             closeDuckAIChat()
-        } else {
-            openDuckAISidebarWithPageAttachment()
+        case .open(let sidebarOpenSource):
+            openDuckAISidebarWithPageAttachment(sidebarOpenSource: sidebarOpenSource)
         }
     }
 

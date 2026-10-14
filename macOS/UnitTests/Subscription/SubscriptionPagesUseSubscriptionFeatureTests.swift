@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Common
 import FoundationExtensions
@@ -48,6 +49,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var mockWideEvent: WideEventMock!
     private var mockEventReporter: MockSubscriptionEventReporter!
     private var mockRequestValidator: ScriptRequestValidatorMock!
+    private var mockRemoteFunnelOriginsProvider: MockSubscriptionRemoteFunnelOriginsProvider!
+    private var pixelKitMock: PixelKitMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -74,6 +77,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockWideEvent = WideEventMock()
         mockEventReporter = MockSubscriptionEventReporter()
         mockRequestValidator = ScriptRequestValidatorMock()
+        mockRemoteFunnelOriginsProvider = MockSubscriptionRemoteFunnelOriginsProvider()
+        pixelKitMock = PixelKitMock()
 
         let flowPerformer = DefaultSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
@@ -99,7 +104,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                       subscriptionEventReporter: mockEventReporter,
                                                       pendingTransactionHandler: MockPendingTransactionHandler(),
                                                       flowPerformer: flowPerformer,
-                                                      requestValidator: mockRequestValidator)
+                                                      requestValidator: mockRequestValidator,
+                                                      remoteFunnelOriginsProvider: mockRemoteFunnelOriginsProvider,
+                                                      pixelFiring: pixelKitMock)
         sut.with(broker: broker)
     }
 
@@ -115,6 +122,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockWideEvent = nil
         mockEventReporter = nil
         mockRequestValidator = nil
+        mockRemoteFunnelOriginsProvider = nil
+        pixelKitMock = nil
         subscriptionManager = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
@@ -728,6 +737,67 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
     }
 
+    @MainActor
+    func testGetSubscriptionTierOptions_WithAppOrigin_ReportsOrigin() async throws {
+        // Given
+        subscriptionManager.subscriptionTierOptionsResult = .success(SubscriptionTierOptions(platform: .macos, products: []))
+        let message = tierOptionsMessage(origin: SubscriptionFunnelOrigin.appSettings.rawValue)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: message)
+
+        // Then
+        XCTAssertEqual(reportedTierOptionsSuccessOrigin(), SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertTrue(firedUnknownOriginPixels().isEmpty)
+    }
+
+    @MainActor
+    func testGetSubscriptionTierOptions_WithAllowlistedOrigin_ReportsOrigin() async throws {
+        // Given
+        mockRemoteFunnelOriginsProvider.allowlistedOrigins = ["funnel_web_macos"]
+        subscriptionManager.subscriptionTierOptionsResult = .success(SubscriptionTierOptions(platform: .macos, products: []))
+        let message = tierOptionsMessage(origin: "funnel_web_macos")
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: message)
+
+        // Then
+        XCTAssertEqual(reportedTierOptionsSuccessOrigin(), "funnel_web_macos")
+        XCTAssertTrue(firedUnknownOriginPixels().isEmpty)
+    }
+
+    @MainActor
+    func testGetSubscriptionTierOptions_WithUnknownOrigin_ReportsUnknownOrigin() async throws {
+        // Given
+        subscriptionManager.subscriptionTierOptionsResult = .success(SubscriptionTierOptions(platform: .macos, products: []))
+        let message = tierOptionsMessage(origin: "funnel_web_macos")
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: message)
+
+        // Then
+        XCTAssertEqual(reportedTierOptionsSuccessOrigin(), SubscriptionFunnelOrigin.unknown.rawValue)
+        let unknownOriginPixel = try XCTUnwrap(firedUnknownOriginPixels().first)
+        XCTAssertEqual(unknownOriginPixel.frequency, .dailyAndCount)
+        XCTAssertEqual(unknownOriginPixel.pixel.parameters?[SubscriptionOriginPixel.unknownOriginKey], "funnel_web_macos")
+    }
+
+    @MainActor
+    private func tierOptionsMessage(origin: String) -> WKScriptMessage {
+        let url = URL(string: "https://duckduckgo.com/subscriptions?origin=\(origin)")!
+        return WKScriptMessage.mock(name: "getSubscriptionTierOptions", body: [:], webView: MockURLWebView(url: url))
+    }
+
+    private func firedUnknownOriginPixels() -> [ExpectedFireCall] {
+        let unknownOriginPixelName = SubscriptionOriginPixel.subscriptionOriginUnknown(origin: nil).name
+        return pixelKitMock.actualFireCalls.filter { $0.pixel.name == unknownOriginPixelName }
+    }
+
+    private func reportedTierOptionsSuccessOrigin() -> String? {
+        let successName = SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil).name
+        return mockEventReporter.reportedTierOptionEvents.first { $0.eventName == successName }?.parameters?[AttributionParameter.origin]
+    }
+
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
         // Given
         subscriptionManager.subscriptionTierOptionsResult = .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
@@ -1256,6 +1326,7 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
 
     struct TierOptionEventRecord {
         let eventName: String
+        let parameters: [String: String]?
     }
 
     var reportedActivationErrors: [SubscriptionError] = []
@@ -1266,7 +1337,8 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
     }
 
     func report(subscriptionTierOptionEvent: PixelKit.Event) {
-        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name))
+        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name,
+                                                              parameters: subscriptionTierOptionEvent.parameters))
     }
 }
 
@@ -1278,6 +1350,10 @@ final class MockURLWebView: WKWebView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
+}
+
+final class MockSubscriptionRemoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding {
+    var allowlistedOrigins: Set<String> = []
 }
 
 final class MockPendingTransactionHandler: PendingTransactionHandling {

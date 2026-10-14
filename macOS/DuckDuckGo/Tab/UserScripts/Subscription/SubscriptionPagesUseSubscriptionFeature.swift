@@ -93,6 +93,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     private let pendingTransactionHandler: PendingTransactionHandling
     private let flowPerformer: any SubscriptionFlowsExecuting
+    private let remoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding
+    private let pixelFiring: PixelFiring?
 
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
@@ -111,7 +113,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 pendingTransactionHandler: PendingTransactionHandling,
                 flowPerformer: any SubscriptionFlowsExecuting,
-                requestValidator: any ScriptRequestValidator) {
+                requestValidator: any ScriptRequestValidator,
+                remoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding = DefaultSubscriptionRemoteFunnelOriginsProvider(
+                    privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+                ),
+                pixelFiring: PixelFiring? = PixelKit.shared) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -130,6 +136,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.pendingTransactionHandler = pendingTransactionHandler
         self.flowPerformer = flowPerformer
         self.requestValidator = requestValidator
+        self.remoteFunnelOriginsProvider = remoteFunnelOriginsProvider
+        self.pixelFiring = pixelFiring
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -268,7 +276,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             }
 
             let origin = await originFrom(originalMessage: original)
-            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess(origin: origin))
+            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess(origin: pixelOrigin(for: origin)))
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
@@ -291,7 +299,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         let message = original
 
         let origin = await setPixelOrigin(from: message)
-        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: origin), frequency: .legacyDailyAndCount)
+        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: subscriptionSuccessPixelHandler.origin), frequency: .legacyDailyAndCount)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             // 1: Parse subscription selection from message object
@@ -773,7 +781,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let origin = await originFrom(originalMessage: originalMessage)
             let url = subscriptionManager.url(for: .purchase).appendingOriginParameterIfPresent(origin)
             await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))
+            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: pixelOrigin(for: origin)))
         default: return
         }
     }
@@ -861,8 +869,20 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     @discardableResult private func setPixelOrigin(from message: WKScriptMessage) async -> String? {
         // Extract the origin from the webview URL to use for attribution pixel.
         let origin = await originFrom(originalMessage: message)
-        subscriptionSuccessPixelHandler.origin = origin
+        subscriptionSuccessPixelHandler.origin = pixelOrigin(for: origin)
         return origin
+    }
+
+    private func pixelOrigin(for origin: String?) -> String? {
+        switch remoteFunnelOriginsProvider.resolveOrigin(origin, isAppOrigin: { SubscriptionFunnelOrigin(rawValue: $0) != nil }) {
+        case .app(let origin), .remote(let origin):
+            return origin
+        case .unknown(let reportableOrigin):
+            pixelFiring?.fire(SubscriptionOriginPixel.subscriptionOriginUnknown(origin: reportableOrigin), frequency: .dailyAndCount)
+            return SubscriptionFunnelOrigin.unknown.rawValue
+        case nil:
+            return nil
+        }
     }
 }
 

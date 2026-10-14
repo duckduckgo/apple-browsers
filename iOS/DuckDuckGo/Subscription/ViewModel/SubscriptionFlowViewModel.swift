@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import UserScript
 import Combine
@@ -498,8 +499,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 .queryItems?
                 .first(where: { $0.name == AttributionParameter.origin })?
                 .value
+            let remoteFunnelOriginsProvider = DefaultSubscriptionRemoteFunnelOriginsProvider(
+                privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager
+            )
+            let pixelOrigin = SubscriptionFunnelOrigin.pixelOrigin(for: origin, remoteFunnelOriginsProvider: remoteFunnelOriginsProvider)
             PixelKit.fire(pixel,
-                          options: .parameters(origin.map { [AttributionParameter.origin: $0] } ?? [:]))
+                          options: .parameters(pixelOrigin.map { [AttributionParameter.origin: $0] } ?? [:]))
         }
     }
 

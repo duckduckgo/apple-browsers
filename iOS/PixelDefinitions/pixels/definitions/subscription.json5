@@ -1054,5 +1054,20 @@
         "triggers": ["user_submitted"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_origin_unknown": {
+        "description": "Fired when a subscription funnel origin from the subscription page URL is neither defined by the app nor in the remote subscriptionRemoteFunnelOrigins allowlist, so the funnel pixels report funnel_unknown_ios instead. Used to discover origins to add to the allowlist. Classified as an exception: the app detected an origin it does not recognise.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "unknown_origin",
+                "type": "string",
+                "description": "The unrecognised origin, lowercased. Only sent when it matches the funnel origin shape; omitted otherwise.",
+                "pattern": "^funnel_[a-z0-9_]{1,64}$"
+            }
+        ]
     }
 }

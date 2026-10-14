@@ -174,6 +174,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let expirationReminderScheduler: SubscriptionExpirationReminderScheduling?
     private let isExpirationReminderFeatureEnabled: () -> Bool
     private let subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding
+    private let remoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -195,7 +196,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          expirationReminderScheduler: SubscriptionExpirationReminderScheduling? = nil,
          isExpirationReminderFeatureEnabled: @escaping () -> Bool = { false },
-         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding) {
+         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding,
+         remoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding = DefaultSubscriptionRemoteFunnelOriginsProvider(
+            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
+         )) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -213,6 +217,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.expirationReminderScheduler = expirationReminderScheduler
         self.isExpirationReminderFeatureEnabled = isExpirationReminderFeatureEnabled
         self.subscriptionExperimentAttributionProvider = subscriptionExperimentAttributionProvider
+        self.remoteFunnelOriginsProvider = remoteFunnelOriginsProvider
+    }
+
+    private var pixelOrigin: String? {
+        SubscriptionFunnelOrigin.pixelOrigin(for: subscriptionAttributionOrigin, remoteFunnelOriginsProvider: remoteFunnelOriginsProvider)
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -451,7 +460,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         PixelKit.fire(Pixel.Event.subscriptionPurchaseAttempt,
                       frequency: .legacyDailyAndCount,
-                      options: .parameters(subscriptionAttributionOrigin.map { [AttributionParameter.origin: $0] } ?? [:]))
+                      options: .parameters(pixelOrigin.map { [AttributionParameter.origin: $0] } ?? [:]))
         setTransactionError(nil)
         setTransactionStatus(.purchasing)
         resetSubscriptionFlow()
@@ -582,7 +591,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             PixelKit.fire(Pixel.Event.subscriptionPurchaseSuccess,
                           frequency: .legacyDailyAndCount)
             PixelKit.fire(Pixel.Event.subscriptionActivated, frequency: .uniqueByName)
-            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: freeTrialEligible, subscriptionDataReporter: subscriptionDataReporter)
+            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution,
+                                  origin: subscriptionAttributionOrigin,
+                                  pixelOrigin: pixelOrigin,
+                                  freeTrial: freeTrialEligible,
+                                  subscriptionDataReporter: subscriptionDataReporter)
             fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
             NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
@@ -987,11 +1000,11 @@ extension Pixel {
         static let freeTrial = "free_trial"
     }
 
-    static func fireAttribution(pixel: Pixel.Event, origin: String?, freeTrial: Bool? = nil, locale: Locale = .current, subscriptionDataReporter: SubscriptionDataReporting?) {
+    static func fireAttribution(pixel: Pixel.Event, origin: String?, pixelOrigin: String?, freeTrial: Bool? = nil, locale: Locale = .current, subscriptionDataReporter: SubscriptionDataReporting?) {
         var parameters: [String: String] = [:]
         parameters[AttributionParameters.locale] = locale.identifier
-        if let origin {
-            parameters[AttributionParameters.origin] = origin
+        if let pixelOrigin {
+            parameters[AttributionParameters.origin] = pixelOrigin
         }
         if let freeTrial {
             parameters[AttributionParameters.freeTrial] = String(freeTrial)

@@ -455,3 +455,29 @@ enum SubscriptionErrorPixel: PixelKit.Event {
     }
 
 }
+
+enum SubscriptionOriginPixel: PixelKit.Event {
+
+    static let unknownOriginKey = "unknown_origin"
+
+    case subscriptionOriginUnknown(origin: String?)
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .subscriptionOriginUnknown: return "subscription_origin_unknown_macos"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .subscriptionOriginUnknown(let origin):
+            return origin.map { [Self.unknownOriginKey: $0] }
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        nil
+    }
+}

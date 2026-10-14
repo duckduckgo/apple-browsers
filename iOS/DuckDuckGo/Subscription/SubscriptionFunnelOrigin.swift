@@ -17,10 +17,20 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
+import PixelKit
 import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the iOS app.
+///
+/// Every case's raw value must also appear in the `subscriptionFunnelOrigin` entry of
+/// `iOS/PixelDefinitions/pixels/params_dictionary.json5` — keep the two lists in sync when adding,
+/// renaming, or removing a case here.
+///
+/// Privacy note: this is a product funnel-step identifier, not an ad-attribution channel — never add
+/// an ad-campaign or marketing-attribution origin as a case here (those are a distinct concept,
+/// handled by AttributedMetric's install-origin parsing).
 enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the onboarding dialog screen.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388385
@@ -146,9 +156,28 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel by tapping the VPN push notification without an active VPN entitlement.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1215398999855859
     case notificationVPN = "funnel_notification_ios__subscriptionvpn"
+
+    /// Reported instead of a funnel origin that is neither defined here nor in the remote allowlist
+    /// (`PrivacyProSubfeature.subscriptionRemoteFunnelOrigins`), e.g. an origin set by a link outside the app.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1209784982258586?focus=true
+    case unknown = "funnel_unknown_ios"
 }
 
 extension SubscriptionFunnelOrigin {
+
+    static func pixelOrigin(for origin: String?,
+                            remoteFunnelOriginsProvider: SubscriptionRemoteFunnelOriginsProviding,
+                            pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> String? {
+        switch remoteFunnelOriginsProvider.resolveOrigin(origin, isAppOrigin: { Self(rawValue: $0) != nil }) {
+        case .app(let origin), .remote(let origin):
+            return origin
+        case .unknown(let reportableOrigin):
+            pixelFiring?.fire(SubscriptionOriginPixel.subscriptionOriginUnknown(origin: reportableOrigin), frequency: .dailyAndCount)
+            return Self.unknown.rawValue
+        case nil:
+            return nil
+        }
+    }
 
     static func purchaseWideEventEntryPoint(for origin: String?) -> SubscriptionPurchaseWideEventData.EntryPoint {
         guard let origin else { return .web }
@@ -194,6 +223,8 @@ extension SubscriptionFunnelOrigin {
                 .shortcutVPN,
                 .notificationVPN:
             return .vpn
+        case .unknown:
+            return .unknown
         }
     }
 }

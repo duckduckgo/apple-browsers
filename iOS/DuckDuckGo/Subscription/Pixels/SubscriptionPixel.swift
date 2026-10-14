@@ -236,3 +236,27 @@ enum SubscriptionPartnershipsHubPixel: PixelKit.Event {
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
+
+enum SubscriptionOriginPixel: PixelKit.Event {
+
+    static let unknownOriginKey = "unknown_origin"
+
+    case subscriptionOriginUnknown(origin: String?)
+
+    var name: String {
+        switch self {
+        case .subscriptionOriginUnknown: return "subscription_origin_unknown"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .subscriptionOriginUnknown(let origin):
+            return origin.map { [Self.unknownOriginKey: $0] }
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        nil
+    }
+}

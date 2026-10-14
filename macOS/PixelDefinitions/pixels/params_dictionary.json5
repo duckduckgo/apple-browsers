@@ -419,10 +419,11 @@
         "enum": ["churned", "free-eligible", "free-ineligible"]
     },
     // Mirrors `SubscriptionFunnelOrigin` in macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift
-    // case for case. Keep the two lists in sync whenever a case is added, renamed, or removed there.
+    // case for case, plus the values in the remote `privacyPro.subscriptionRemoteFunnelOrigins` allowlist.
+    // Keep all three in sync whenever a value is added, renamed, or removed.
     // Privacy note: this is a product funnel-step identifier, not an ad-attribution channel — never
-    // add an ad-campaign or marketing-attribution origin to this list (those are a distinct concept,
-    // handled by AttributedMetric's install-origin parsing).
+    // add an ad-campaign or marketing-attribution origin to this list or to the remote allowlist (those
+    // are a distinct concept, handled by AttributedMetric's install-origin parsing).
     "subscriptionFunnelOrigin": {
         "key": "origin",
         "type": "string",
@@ -465,7 +466,8 @@
             "funnel_duckai_macos__modelpicker",
             "funnel_duckai_macos__reasoningdropdown",
             "funnel_duckai_macos__switchmodel",
-            "funnel_duckai_macos__unknown"
+            "funnel_duckai_macos__unknown",
+            "funnel_unknown_macos"
         ]
     },
     "onboardingEventType": {

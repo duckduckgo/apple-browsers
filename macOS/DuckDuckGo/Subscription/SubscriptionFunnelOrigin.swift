@@ -141,6 +141,11 @@ enum SubscriptionFunnelOrigin: String {
 
     /// The frontend opened a modal without attributing it to an entry point.
     case duckAIUnknown = "funnel_duckai_macos__unknown"
+
+    /// Reported instead of a funnel origin that is neither defined here nor in the remote allowlist
+    /// (`PrivacyProSubfeature.subscriptionRemoteFunnelOrigins`), e.g. an origin set by a link outside the app.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1209784982258586?focus=true
+    case unknown = "funnel_unknown_macos"
 }
 
 extension SubscriptionFunnelOrigin {
@@ -199,6 +204,8 @@ extension SubscriptionFunnelOrigin {
             return .vpn
         case .freeScan:
             return .personalInformationRemoval
+        case .unknown:
+            return .unknown
         }
     }
 }

@@ -864,6 +864,10 @@
 		9FA0AF272EB844C800713387 /* MockParameterRandomiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */; };
 		9FA0AF282EB844C800713387 /* MockParameterRandomiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */; };
 		9FA0AF292EB844C800713387 /* MockParameterRandomiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */; };
+		9FA6E55C307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA6E55B307F057800C2BB4E /* MockAIChatBonusStateProvider.swift */; };
+		9FA6E55D307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA6E55B307F057800C2BB4E /* MockAIChatBonusStateProvider.swift */; };
+		9FA6E55E307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA6E55B307F057800C2BB4E /* MockAIChatBonusStateProvider.swift */; };
+		9FA6E55F307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA6E55B307F057800C2BB4E /* MockAIChatBonusStateProvider.swift */; };
 		9FA8A625300EF678000DF5DE /* WebExtensionsTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9FA8A624300EF678000DF5DE /* WebExtensionsTestSupport */; };
 		9FA8A627300EF680000DF5DE /* WebExtensionsTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9FA8A626300EF680000DF5DE /* WebExtensionsTestSupport */; };
 		9FA8A629300EFDA3000DF5DE /* OnboardingPersonalizationAdBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA8A628300EFDA3000DF5DE /* OnboardingPersonalizationAdBlockingTests.swift */; };
@@ -2094,6 +2098,7 @@
 		9FA0AF1D2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingPixelReporterTests.swift; sourceTree = "<group>"; };
 		9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWhatsNewDisplayModelMapper.swift; sourceTree = "<group>"; };
 		9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockParameterRandomiser.swift; sourceTree = "<group>"; };
+		9FA6E55B307F057800C2BB4E /* MockAIChatBonusStateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIChatBonusStateProvider.swift; sourceTree = "<group>"; };
 		9FA8A628300EFDA3000DF5DE /* OnboardingPersonalizationAdBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPersonalizationAdBlockingTests.swift; sourceTree = "<group>"; };
 		9FA8A62E300F1DD9000DF5DE /* OnboardingPersonalizationSERPSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPersonalizationSERPSettingsTests.swift; sourceTree = "<group>"; };
 		9FA8A630300F240A000DF5DE /* OnboardingPersonalizationAITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPersonalizationAITests.swift; sourceTree = "<group>"; };
@@ -3257,6 +3262,7 @@
 		362E3EBA2E7184AB00E4C762 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				9FA6E55B307F057800C2BB4E /* MockAIChatBonusStateProvider.swift */,
 				97FCCDD62F60ACA200EDB025 /* MockAIChatContentHandlingDelegate.swift */,
 				9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */,
 				9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */,
@@ -7216,6 +7222,7 @@
 				BE83A575896316C700B212FA /* DuckAISubscriptionUpsellPresenterTests.swift in Sources */,
 				E6B11AC3844012B6E947B7AA /* IPadOmnibarReasoningPickerControllerTests.swift in Sources */,
 				7A11B0C0D0E0F00102030407 /* IPadOmnibarToolPickerControllerTests.swift in Sources */,
+				9FA6E55D307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */,
 				7C728F7CD1A6080BA2CF4C3E /* IPadOmnibarAttachmentControllerTests.swift in Sources */,
 				45865446DBAA91F852E4AEA1 /* SearchTokenExperimentTests.swift in Sources */,
 				E7BE23F1F67AF41F9871BC6F /* LaunchTimeMetricsProcessorTests.swift in Sources */,
@@ -7301,6 +7308,7 @@
 				97770B792EC1ED7D00CACA68 /* OnboardingStepsHelper.swift in Sources */,
 				98E5640D2DE8B32D00E6E75F /* MockDataExtensions.swift in Sources */,
 				98E5640E2DE8B32D00E6E75F /* MockBundle.swift in Sources */,
+				9FA6E55F307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */,
 				97FCCDD82F60ACA200EDB025 /* MockAIChatContentHandlingDelegate.swift in Sources */,
 				98E5640F2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				F1A83D862E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
@@ -7489,6 +7497,7 @@
 				9F387DDE2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
 				986CD5542DE913EE00AFA98A /* MockFavoritesListInteracting.swift in Sources */,
 				98E564B62DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */,
+				9FA6E55C307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */,
 				98E564B72DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
 				98E564B82DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */,
 				98E563CF2DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
@@ -7609,6 +7618,7 @@
 				98E5646B2DE8DDDC00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E5646C2DE8DDDC00E6E75F /* MockSecureVault.swift in Sources */,
 				98E564762DE8DDE200E6E75F /* JsonTestDataLoader.swift in Sources */,
+				9FA6E55E307F057F00C2BB4E /* MockAIChatBonusStateProvider.swift in Sources */,
 				80E8D5D52EEA659300820EB0 /* MockTabManager.swift in Sources */,
 				98E564772DE8DDE200E6E75F /* WebViewWarmupHelper.swift in Sources */,
 				98E564782DE8DDE200E6E75F /* CombineTestUtilities.swift in Sources */,

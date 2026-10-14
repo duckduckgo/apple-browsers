@@ -33,6 +33,7 @@ import Common
 @testable import DuckDuckGo
 @testable import Core
 import PrivacyConfig
+import AIChat
 
 // swiftlint:disable force_try
 
@@ -97,7 +98,8 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             ),
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             profileStateManager: profileStateManager,
-            idleReturnEligibilityManager: MockIdleReturnEligibilityManager()
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManager(),
+            aiChatBonusStateProvider: MockAIChatBonusStateProvider()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)

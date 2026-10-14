@@ -5,19 +5,6 @@ defaults:
     working-directory: iOS
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: "Commit or branch to test (defaults to the selected workflow ref)"
-        required: false
-        type: string
-      collect-test-diagnostics:
-        description: "Verbose simulator diagnostics after failed tests (never is a runtime experiment)"
-        type: choice
-        options:
-          - on-failure
-          - never
-        default: on-failure
   push:
     branches: [ main, "release/ios/**" ]
     paths:
@@ -36,10 +23,6 @@ on:
         description: "Branch name"
         required: false
         type: string
-      collect-test-diagnostics:
-        description: "Verbose simulator diagnostics after failed tests: on-failure or never"
-        type: string
-        default: on-failure
       skip-release:
         description: "Skip release build"
         default: false
@@ -223,7 +206,6 @@ jobs:
     - name: Build and test
       id: run-unit-tests
       env:
-        TEST_DIAGNOSTICS: ${{ inputs.collect-test-diagnostics || 'on-failure' }}
         # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
         # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
         # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
@@ -232,14 +214,9 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        case "$TEST_DIAGNOSTICS" in
-          on-failure|never) ;;
-          *) echo "::error::Unsupported diagnostics policy: $TEST_DIAGNOSTICS"; exit 1 ;;
-        esac
-
         # Xcode also collects verbose diagnostics for runtime warnings in passing tests.
         # Keep runtime warnings and test results, and collect verbose diagnostics below
-        # only when this command fails. The workflow policy remains on-failure.
+        # only when this command fails.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -257,7 +234,7 @@ jobs:
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
     - name: Collect simulator diagnostics for failed tests
-      if: always() && steps.run-unit-tests.outcome == 'failure' && (inputs.collect-test-diagnostics || 'on-failure') == 'on-failure'
+      if: always() && steps.run-unit-tests.outcome == 'failure'
       continue-on-error: true
       timeout-minutes: 15
       run: |

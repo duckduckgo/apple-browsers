@@ -21,8 +21,11 @@ import Combine
 import Foundation
 import UserScript
 
-/// Receives webCompat's passkey detection messages in tabs where `WebNotificationsTabExtension` doesn't own
-/// the webCompat feature. The message broker keeps one handler per feature name.
+/// Handles passkey detection's messages in tabs without web notifications.
+///
+/// Passkey detection's messages belong to content-scope-scripts' `webCompat` feature, and a tab takes one handler per
+/// feature. With web notifications on, `WebNotificationsHandler` is that handler and passes passkey messages on, so
+/// this extension is only added when they're off.
 final class PasskeyUsageTabExtension {
 
     let subfeature: PasskeyUsageSubfeature
@@ -39,6 +42,7 @@ final class PasskeyUsageTabExtension {
     }
 }
 
+/// The `webCompat` handler this extension registers. It only handles passkey detection's messages.
 final class PasskeyUsageSubfeature: NSObject, Subfeature {
 
     let messageOriginPolicy: MessageOriginPolicy = .all

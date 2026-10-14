@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 import UserScript
 
-/// Passkey ceremony outcomes reported by ContentScopeScripts' webCompat passkey detection.
+/// Pixels for passkey sign-ins and passkey creations on web pages.
 enum PasskeyUsagePixel: PixelKit.Event {
     var namePrefix: PixelKitNamePrefix { .none }
 
@@ -28,6 +28,7 @@ enum PasskeyUsagePixel: PixelKit.Event {
     case useFailure(error: String)
     case createSuccess
     case createFailure(error: String)
+    /// A passkey detection message the reporter didn't recognise.
     case unknownEvent
 
     var name: String {
@@ -52,15 +53,18 @@ enum PasskeyUsagePixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
-/// Fires `PasskeyUsagePixel`s for the webCompat `passkeyUsed` and `passkeyFailed` notifications.
+/// Reports passkey sign-in and creation outcomes from web pages as pixels, so we can see how often they succeed or fail.
+/// The outcomes come from content-scope-scripts' `passkeyDetection`, which only runs when remote config enables it.
 struct PasskeyUsagePixelReporter {
 
+    /// The messages passkey detection sends.
     enum MessageName: String {
         case passkeyUsed
         case passkeyFailed
     }
 
-    /// The sanitized DOMException names ContentScopeScripts sends. Anything else is reported as `Other`.
+    /// The error names a failure pixel may carry. Anything else is reported as `Other`, so a page can't put arbitrary
+    /// text into a pixel.
     private static let knownErrors: Set<String> = [
         "NotAllowedError", "SecurityError", "NotSupportedError", "InvalidStateError", "ConstraintError", "AbortError",
         "UnknownError", "EncodingError", "NotReadableError", "TypeError", "Other"
@@ -72,7 +76,8 @@ struct PasskeyUsagePixelReporter {
         self.pixelFiring = pixelFiring
     }
 
-    /// Returns a handler for webCompat's passkey detection messages, or nil for any other method.
+    /// A handler for passkey detection's messages, or `nil` for any other `webCompat` message. Lets whichever object
+    /// receives a tab's `webCompat` messages pass these on.
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         guard let message = MessageName(rawValue: methodName) else { return nil }
         return { params, _ in
@@ -81,6 +86,8 @@ struct PasskeyUsagePixelReporter {
         }
     }
 
+    /// Fires the pixel for one reported outcome. Messages that don't match a sign-in or a creation fire the unknown-event
+    /// pixel instead, so changes to what the page script sends show up in the data.
     func report(_ message: MessageName, params: Any) {
         let params = params as? [String: Any]
         let type = params?["type"] as? String

@@ -118,7 +118,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     // MARK: - Subfeature Handler
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        // The broker routes all webCompat messages here, including passkey detection's.
+        // This handler receives all of the tab's `webCompat` messages, so it also passes on passkey detection's.
         if let passkeyHandler = passkeyUsagePixelReporter.handler(forMethodNamed: methodName) {
             return passkeyHandler
         }

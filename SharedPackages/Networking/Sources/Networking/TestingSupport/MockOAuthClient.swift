@@ -109,7 +109,7 @@ public class MockOAuthClient: OAuthClient {
         if let logoutError {
             throw logoutError
         }
-        internalCurrentTokenContainer = nil
+        try removeLocalAccount()
     }
 
     public private(set) var removeLocalAccountCallCount = 0

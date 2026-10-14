@@ -225,6 +225,7 @@ class SubscriptionManagerTests: XCTestCase {
 
         XCTAssertEqual(mockOAuthClient.logoutCallCount, 0)
         XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 1)
+        XCTAssertNil(mockOAuthClient.internalCurrentTokenContainer)
     }
 
     func testSignOut_Explicit_StillCallsServerLogout() async throws {
@@ -234,7 +235,6 @@ class SubscriptionManagerTests: XCTestCase {
         await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
 
         XCTAssertEqual(mockOAuthClient.logoutCallCount, 2)
-        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {

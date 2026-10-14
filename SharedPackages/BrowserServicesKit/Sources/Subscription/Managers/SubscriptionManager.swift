@@ -813,7 +813,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     ///   - revokeOnServer: Whether to also call `/logout`, which revokes every token issued from the same login,
     ///     including the ones held by other processes. When `false`, only the local tokens are removed.
     private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool) async {
-        Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false"), Revoke on server: \(revokeOnServer ? "true" : "false")")
+        Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
 
         if revokeOnServer {
             try? await oAuthClient.logout()

@@ -109,6 +109,7 @@ final class SyncDialogController {
     private var syncPromoSource: String?
     private var authenticationCancelledPromptContinuation: (@MainActor () -> Void)?
     private var isFlowAuthenticationDeferred = false
+    private var isReturningToAnotherDevicePrompt = false
     private var pairingV2PeerKind: PairingV2DeviceKind?
     private var pairingV2ConfirmationRequest: PendingPairingConfirmation?
     private var pairingV2ConfirmationWasDismissedByController = false
@@ -687,6 +688,10 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func syncAnotherDevicePromptDidAppear() {
+        guard !isReturningToAnotherDevicePrompt else {
+            isReturningToAnotherDevicePrompt = false
+            return
+        }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptShown)
     }
 
@@ -713,7 +718,10 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         guard !managementDialogModel.isBusy else { return }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptOptionTapped(option: .thisDeviceOnly))
         guard await authenticateDeferredFlowIfNeeded(continueAfterPromptRetry: { [weak self] in
-            Task { await self?.createAccountForThisDeviceOnly() }
+            guard let self else { return }
+            managementDialogModel.isConnectingThisDeviceOnly = true
+            returnToAnotherDevicePrompt()
+            Task { await self.createAccountForThisDeviceOnly() }
         }) else {
             return
         }
@@ -739,11 +747,19 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         guard !managementDialogModel.isBusy else { return }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptOptionTapped(option: .syncAnotherDevice))
         guard await authenticateDeferredFlowIfNeeded(continueAfterPromptRetry: { [weak self] in
-            self?.startSyncWithAnotherDeviceFromPrompt()
+            guard let self else { return }
+            managementDialogModel.isConnectingAnotherDevice = true
+            returnToAnotherDevicePrompt()
+            startSyncWithAnotherDeviceFromPrompt()
         }) else {
             return
         }
         startSyncWithAnotherDeviceFromPrompt()
+    }
+
+    private func returnToAnotherDevicePrompt() {
+        isReturningToAnotherDevicePrompt = true
+        presentDialog(for: .syncAnotherDevicePrompt)
     }
 
     private func startSyncWithAnotherDeviceFromPrompt() {
@@ -837,6 +853,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     func didEndFlow() {
         cancelHostDeviceWait()
         isFlowAuthenticationDeferred = false
+        isReturningToAnotherDevicePrompt = false
         pendingSyncSuccessDialog = nil
         managementDialogModel.isPreparingToSyncAnimationPaused = false
         let controller = self.connectionController
@@ -944,6 +961,8 @@ extension SyncDialogController: SyncSettingsViewHandling {
     @MainActor
     func recoverDataPressed() async {
         pixelFiring?.fire(SyncSettingsPixelKitEvent.recoverSyncedDataTapped)
+        let isImprovedPairingFlowEnabled = self.isImprovedPairingFlowEnabled
+        managementDialogModel.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
         isFlowAuthenticationDeferred = isImprovedPairingFlowEnabled
         guard !isFlowAuthenticationDeferred else {
             presentDialog(for: .recoverSyncedData)

@@ -127,6 +127,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
 
+    /// Remote kill switch for the script that keeps conditional-mediation passkey requests from being orphaned.
+    case passkeyConditionalRequestGuard
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
     case unifiedURLPredictor
 

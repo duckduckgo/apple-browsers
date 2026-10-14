@@ -205,6 +205,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215330116840129?focus=true
     case osSupportWarning
 
+    /// Remote kill switch for the script that keeps pending conditional-mediation passkey requests from being
+    /// orphaned in WebKit (on navigation, or when another passkey request starts). An orphaned request makes
+    /// the system passkey agent reject every later passkey request from the app. Disable via privacy config
+    /// (`macOSBrowserConfig.passkeyConditionalRequestGuard`).
+    case passkeyConditionalRequestGuard
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -799,6 +805,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.osSupportWarning), category: .osSupportWarnings)
+        case .passkeyConditionalRequestGuard:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.passkeyConditionalRequestGuard))
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:

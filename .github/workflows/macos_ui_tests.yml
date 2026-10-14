@@ -81,8 +81,6 @@ concurrency:
 jobs:
   should-run-checks:
     name: Determine if checks should run
-    # Temporary for PR #7340 while validating iOS diagnostics. Remove before merging.
-    if: github.event_name != 'pull_request' || github.event.pull_request.number != 7340
     uses: ./.github/workflows/should_run_pr_checks.yml
 
   create-notarized-app:

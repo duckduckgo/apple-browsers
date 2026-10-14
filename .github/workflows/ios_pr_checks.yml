@@ -12,7 +12,7 @@ on:
         required: false
         type: string
       collect-test-diagnostics:
-        description: "Simulator diagnostics collection (never is for runtime experiments)"
+        description: "Verbose simulator diagnostics after failed tests (never is a runtime experiment)"
         type: choice
         options:
           - on-failure
@@ -37,7 +37,7 @@ on:
         required: false
         type: string
       collect-test-diagnostics:
-        description: "Simulator diagnostics collection: on-failure or never"
+        description: "Verbose simulator diagnostics after failed tests: on-failure or never"
         type: string
         default: on-failure
       skip-release:
@@ -232,7 +232,14 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        # Keep verbose diagnostics for failures; never is an explicit runtime experiment.
+        case "$TEST_DIAGNOSTICS" in
+          on-failure|never) ;;
+          *) echo "::error::Unsupported diagnostics policy: $TEST_DIAGNOSTICS"; exit 1 ;;
+        esac
+
+        # Xcode also collects verbose diagnostics for runtime warnings in passing tests.
+        # Keep runtime warnings and test results, and collect verbose diagnostics below
+        # only when this command fails. The workflow policy remains on-failure.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -242,12 +249,21 @@ jobs:
           -skipMacroValidation \
           -test-iterations 3 \
           -retry-tests-on-failure \
-          -collect-test-diagnostics "$TEST_DIAGNOSTICS" \
+          -collect-test-diagnostics never \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
+
+    - name: Collect simulator diagnostics for failed tests
+      if: always() && steps.run-unit-tests.outcome == 'failure' && (inputs.collect-test-diagnostics || 'on-failure') == 'on-failure'
+      continue-on-error: true
+      timeout-minutes: 3
+      run: |
+        mkdir -p DerivedData/Logs/SimulatorDiagnostics
+        # Keep partial output if a simulator diagnostic task does not finish.
+        xcrun simctl diagnose -b --timeout=120 --no-archive --output=DerivedData/Logs/SimulatorDiagnostics
 
     - name: Compute Compilation Cache hash
       if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
@@ -296,6 +312,7 @@ jobs:
         path: |
           iOS/xcodebuild.log
           iOS/DerivedData/Logs/Test/*.xcresult
+          iOS/DerivedData/Logs/SimulatorDiagnostics
         retention-days: 7
 
     - name: Upload crash reports
@@ -318,7 +335,8 @@ jobs:
         job_summary: 'false'
 
     - name: Update Asana with failed unit tests
-      if: always() && steps.run-unit-tests.outcome == 'failure'
+      # Temporary: do not report PR #7340's deliberate failures to Asana. Remove before merging.
+      if: always() && steps.run-unit-tests.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.number != 7340)
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |

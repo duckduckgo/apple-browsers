@@ -151,11 +151,14 @@ def _parse_ips(path: Path) -> dict | None:
             body = json.loads(f.read())
     except (OSError, json.JSONDecodeError):
         return None
+    # Report generation can lag behind the crash, especially when diagnostics
+    # are collected after xcodebuild exits. Match the run using the crash time.
+    capture_epoch = _parse_ips_timestamp(body.get("captureTime") or "")
     return {
         "path": path,
         "process": header.get("app_name") or body.get("procName", ""),
         "timestamp": header.get("timestamp", ""),
-        "epoch": _parse_ips_timestamp(header.get("timestamp", "")),
+        "epoch": capture_epoch if capture_epoch is not None else _parse_ips_timestamp(header.get("timestamp", "")),
         "signal": body.get("exception", {}).get("signal", ""),
         "exception_type": body.get("exception", {}).get("type", ""),
         "image_names": [image.get("name", "").lower() for image in body.get("usedImages", [])],

@@ -34,6 +34,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDismissPairingV2Confirmation() async
 
     func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus)
+    func controllerDidSendPairingV2JoinReport(_ report: PairingV2JoinReport)
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
@@ -1085,6 +1086,9 @@ public extension SyncConnectionControllerDelegate {
     func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
     }
 
+    func controllerDidSendPairingV2JoinReport(_ report: PairingV2JoinReport) {
+    }
+
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
     }
 
@@ -1108,5 +1112,9 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
 
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
         await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: credentialKind == .ddg)
+    }
+
+    func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async {
+        await delegate?.controllerDidSendPairingV2JoinReport(report)
     }
 }

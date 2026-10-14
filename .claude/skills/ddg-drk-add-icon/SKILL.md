@@ -99,9 +99,9 @@ Run steps 1–6 **for each input icon in the list** (they're independent — fet
 
 7. **Verify (once, after all icons are processed)**: `git status` should show, per icon, one new imageset/symbolset directory with two files (the SVG and `Contents.json`), plus modifications to the `DesignSystemImages+*.swift` file(s) for each category touched. The number of modified Swift files equals the number of distinct categories in the batch (1–3). Build the package in Xcode (or rely on the user's next build) — if any accessor still red-underlines, the corresponding imageset folder name is mistyped.
 
-## Worked example (this just happened on `dominik/macos-26-menu-icons`)
+## Worked example
 
-Input: `/Users/ayoy/Downloads/Pin-Remove-12.svg`
+Input: `~/Downloads/Pin-Remove-12.svg`
 
 - Category: Glyph (no `-Color-` / `-Recolorable-`). Size: 12. Base: `Pin-Remove`. Accessor: `pinRemove`.
 - New dir: `.../Glyphs/12px/Pin-Remove-12.imageset/` with `Pin-Remove-12.svg` and the Glyph `Contents.json` (template intent).
@@ -109,8 +109,6 @@ Input: `/Users/ayoy/Downloads/Pin-Remove-12.svg`
   ```swift
   public static var pinRemove: DesignSystemImage { .init(resource: .pinRemove12) }
   ```
-
-Commit landed as `41d4ea6e95 Add Pin-Remove and Window-Duplicate 12px icons` — five files: two SVGs, two `Contents.json`, one Swift edit.
 
 ## Common mistakes
 

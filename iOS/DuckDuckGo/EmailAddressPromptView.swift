@@ -165,8 +165,6 @@ private extension Image {
 
 #if DEBUG
 #Preview {
-    RebrandedPreview {
-        EmailAddressPromptView(viewModel: EmailAddressPromptViewModel(userEmail: "dax@duck.com"))
-    }
+    EmailAddressPromptView(viewModel: EmailAddressPromptViewModel(userEmail: "dax@duck.com"))
 }
 #endif

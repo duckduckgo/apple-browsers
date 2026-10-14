@@ -253,7 +253,6 @@ extension MainViewController {
         
         guard let tab = currentTab else { return }
         closeTab(tab.tabModel)
-        showKeyboardOnNewTabPageIfAllowed()
     }
     
     @objc func keyboardNextTab() {
@@ -274,8 +273,12 @@ extension MainViewController {
         guard let input = command.input, let number = Int(input), (1...9).contains(number),
               let targetTab = tabManager.currentTabsModel.get(tabAt: number - 1) else { return }
 
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageIfAllowed()
+        }
     }
     
     @objc func keyboardPreviousTab() {

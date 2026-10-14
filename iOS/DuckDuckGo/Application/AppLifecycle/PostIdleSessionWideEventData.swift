@@ -33,7 +33,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         mobileMetaType: "ios-post-idle-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-post-idle-session",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     enum Surface: String, Codable, CaseIterable {
@@ -62,7 +62,7 @@ final class PostIdleSessionWideEventData: WideEventData {
     var pageEngaged: Bool
     var toggleUsed: Bool
     var backPressed: Bool
-    var openingScreenChanged: Bool
+    var afterInactivitySettingsOpened: Bool
     var closeTabTapped: Bool
     var burnTabTapped: Bool
 
@@ -72,7 +72,7 @@ final class PostIdleSessionWideEventData: WideEventData {
          pageEngaged: Bool = false,
          toggleUsed: Bool = false,
          backPressed: Bool = false,
-         openingScreenChanged: Bool = false,
+         afterInactivitySettingsOpened: Bool = false,
          closeTabTapped: Bool = false,
          burnTabTapped: Bool = false,
          contextData: WideEventContextData = WideEventContextData(),
@@ -85,7 +85,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         self.pageEngaged = pageEngaged
         self.toggleUsed = toggleUsed
         self.backPressed = backPressed
-        self.openingScreenChanged = openingScreenChanged
+        self.afterInactivitySettingsOpened = afterInactivitySettingsOpened
         self.closeTabTapped = closeTabTapped
         self.burnTabTapped = burnTabTapped
         self.contextData = contextData
@@ -121,7 +121,7 @@ extension PostIdleSessionWideEventData {
             (WideEventParameter.PostIdleSessionFeature.pageEngaged, pageEngaged),
             (WideEventParameter.PostIdleSessionFeature.toggleUsed, toggleUsed),
             (WideEventParameter.PostIdleSessionFeature.backPressed, backPressed),
-            (WideEventParameter.PostIdleSessionFeature.openingScreenChanged, openingScreenChanged),
+            (WideEventParameter.PostIdleSessionFeature.afterInactivitySettingsOpened, afterInactivitySettingsOpened),
             (WideEventParameter.PostIdleSessionFeature.closeTabTapped, closeTabTapped),
             (WideEventParameter.PostIdleSessionFeature.burnTabTapped, burnTabTapped),
         ])
@@ -137,7 +137,7 @@ extension WideEventParameter {
         static let pageEngaged = "feature.data.ext.page_engaged"
         static let toggleUsed = "feature.data.ext.toggle_used"
         static let backPressed = "feature.data.ext.back_pressed"
-        static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
+        static let afterInactivitySettingsOpened = "feature.data.ext.after_inactivity_settings_opened"
         static let closeTabTapped = "feature.data.ext.close_tab_tapped"
         static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
     }

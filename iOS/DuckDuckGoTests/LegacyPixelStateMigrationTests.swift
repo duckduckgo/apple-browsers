@@ -25,17 +25,33 @@ final class LegacyPixelStateMigrationTests: XCTestCase {
 
     /// In-memory `ThrowingKeyValueStoring`, so the tests touch neither UserDefaults nor the disk.
     final class Store: ThrowingKeyValueStoring {
+        enum Operation: Equatable {
+            case read(String)
+            case write(String)
+        }
+
         var values: [String: Any]
         var throwOnRead = false
+        var keysThatThrowOnRead: Set<String> = []
+        /// Every `object(forKey:)` and `set(_:forKey:)` call, in order.
+        private(set) var operations: [Operation] = []
 
         init(_ values: [String: Any] = [:]) { self.values = values }
 
         func object(forKey defaultName: String) throws -> Any? {
-            if throwOnRead { throw NSError(domain: "Store", code: 1) }
+            operations.append(.read(defaultName))
+            if throwOnRead || keysThatThrowOnRead.contains(defaultName) { throw NSError(domain: "Store", code: 1) }
             return values[defaultName]
         }
-        func set(_ value: Any?, forKey defaultName: String) throws { values[defaultName] = value }
+        func set(_ value: Any?, forKey defaultName: String) throws {
+            operations.append(.write(defaultName))
+            values[defaultName] = value
+        }
         func removeObject(forKey defaultName: String) throws { values.removeValue(forKey: defaultName) }
+
+        var writtenKeys: [String] {
+            operations.compactMap { if case .write(let key) = $0 { return key } else { return nil } }
+        }
     }
 
     private let date = Date(timeIntervalSince1970: 1_700_000_000)
@@ -180,6 +196,55 @@ final class LegacyPixelStateMigrationTests: XCTestCase {
 
         XCTAssertEqual(destination.values[key("m_example_u")] as? [String: Date],
                        ["uniqueByName": date])
+    }
+
+    func testReadsEveryDestinationEntryBeforeWritingAny() throws {
+        // A write invalidates a UserDefaults suite's cache, so a read after it rebuilds the whole
+        // suite. Interleaving the two per pixel made the launch-time migration trip the watchdog.
+        let destination = Store()
+        migration(destination: destination,
+                  daily: Store(["m_a": date, "m_b": date]),
+                  unique: Store(["m_c": date]),
+                  debounce: Store(["m_d": date])).run()
+
+        let firstWrite = try XCTUnwrap(destination.operations.firstIndex { if case .write = $0 { return true } else { return false } })
+        let readsAfterFirstWrite = destination.operations[firstWrite...].filter { if case .read = $0 { return true } else { return false } }
+        XCTAssertTrue(readsAfterFirstWrite.isEmpty, "Destination was read after a write: \(destination.operations)")
+        XCTAssertEqual(Set(destination.writtenKeys), Set(["m_a", "m_b", "m_c", "m_d"].map(key)))
+    }
+
+    func testWritesAnEntryOnceWhenItsNameIsInEveryLegacyStore() throws {
+        let destination = Store()
+        migration(destination: destination,
+                  daily: Store(["m_example": date]),
+                  unique: Store(["m_example": date]),
+                  debounce: Store(["m_example": date])).run()
+
+        XCTAssertEqual(destination.writtenKeys, [key("m_example")])
+        XCTAssertEqual(destination.operations.filter { $0 == .read(key("m_example")) }.count, 1)
+        XCTAssertEqual(destination.values[key("m_example")] as? [String: Date],
+                       ["daily": date, "uniqueByName": date, "debounce": date])
+    }
+
+    func testDoesNotRewriteAnEntryThatIsAlreadyUpToDate() throws {
+        // A re-run on a new version finds most entries unchanged; rewriting them would bring back
+        // the per-write cost the migration exists to avoid.
+        let destination = Store([key("m_same"): ["daily": date],
+                                 key("m_newer"): ["daily": date.addingTimeInterval(60)]])
+        migration(destination: destination, daily: Store(["m_same": date, "m_newer": date])).run()
+
+        XCTAssertTrue(destination.writtenKeys.isEmpty)
+    }
+
+    func testAFailingDestinationReadSkipsOnlyThatEntry() throws {
+        // Overwriting an entry we could not read could walk a newer PixelKit date backwards, so the
+        // entry is left alone; the rest still migrate.
+        let destination = Store()
+        destination.keysThatThrowOnRead = [key("m_broken")]
+        migration(destination: destination, daily: Store(["m_broken": date, "m_example": date])).run()
+
+        XCTAssertEqual(destination.writtenKeys, [key("m_example")])
+        XCTAssertEqual(destination.values[key("m_example")] as? [String: Date], ["daily": date])
     }
 
     func testDistinctCompletionFlagKeysDoNotShareARun() throws {

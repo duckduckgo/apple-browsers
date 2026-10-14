@@ -102,7 +102,7 @@ final class ChallengeSolver {
     var page: ChallengePage?
     var onFailure: ((DataBrokerProtectionError) -> Void)?
 
-    private(set) var isHoldingLoad = false
+    private(set) var isAwaitingSolve = false
     private(set) var solveTask: Task<Void, Never>?
 
     private let isEnabled: Bool
@@ -146,7 +146,7 @@ final class ChallengeSolver {
         didReportClearance = false
     }
 
-    /// Returns `true` when the solver holds the load for this response, so the caller must not fail it on its status code.
+    /// Returns `true` while the solver is awaiting a solve for this response, so the caller must not fail the load on its status code.
     func handleMainFrameResponse(_ response: HTTPURLResponse) -> Bool {
         let isChallenge = response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame
         isChallengeResponse = isChallenge
@@ -155,21 +155,21 @@ final class ChallengeSolver {
             didDetectChallenge = true
             fireDetectionPixel()
             guard isEnabled else { return false }
-            if !isHoldingLoad {
-                isHoldingLoad = true
+            if !isAwaitingSolve {
+                isAwaitingSolve = true
                 reportEvent("Detected: main response has cf-mitigated=challenge; HTTP \(response.statusCode)", false)
                 startSolving()
             }
             return true
         }
 
-        guard isHoldingLoad else { return false }
+        guard isAwaitingSolve else { return false }
         guard isExpectedBrokerDestination(response.url) else {
             Logger.action.log("Challenge: non-challenge response did not reach the expected broker host")
             return false
         }
 
-        isHoldingLoad = false
+        isAwaitingSolve = false
         solveTask?.cancel()
         solveTask = nil
         let resolution = currentResolution
@@ -211,13 +211,13 @@ final class ChallengeSolver {
         solveTask?.cancel()
         solveTask = nil
         isChallengeResponse = false
-        isHoldingLoad = false
+        isAwaitingSolve = false
         didClick = false
     }
 
     private var currentResolution: DataBrokerProtectionSharedPixels.ChallengeResolution {
         if didClick { return .assisted }
-        return isHoldingLoad ? .unknown : .unassisted
+        return isAwaitingSolve ? .unknown : .unassisted
     }
 
     private func fireDetectionPixel() {
@@ -241,7 +241,7 @@ final class ChallengeSolver {
         let deadline = now().addingTimeInterval(settings.deadline)
         do {
             try await sleep(settings.autoPassWait)
-            while isHoldingLoad, now() < deadline {
+            while isAwaitingSolve, now() < deadline {
                 if isChallengeResponse, !didClick, let page, let point = try await stableCheckboxPoint(on: page) {
                     try await click(at: point, on: page)
                 }
@@ -251,7 +251,7 @@ final class ChallengeSolver {
             return
         }
 
-        guard isHoldingLoad else { return }
+        guard isAwaitingSolve else { return }
         let failureStage: DataBrokerProtectionSharedPixels.ChallengeFailureStage = didClick ? .afterClick : .noClick
         let failureDescription = didClick ? "after click" : "with no click delivered"
         cancel()
@@ -287,7 +287,7 @@ final class ChallengeSolver {
     }
 
     private func click(at point: CGPoint, on page: ChallengePage) async throws {
-        guard isHoldingLoad, isChallengeResponse else { return }
+        guard isAwaitingSolve, isChallengeResponse else { return }
         try await page.click(at: point) {
             didClick = true
         }

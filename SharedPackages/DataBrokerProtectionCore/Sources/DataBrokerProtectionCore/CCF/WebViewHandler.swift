@@ -366,6 +366,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
 #if os(macOS)
 private extension DataBrokerProtectionWebViewHandler {
+    var shouldDeferLoadCompletion: Bool {
+        challengeSolver.isAwaitingSolve
+    }
+
     static func reportChallengeEvent(_ message: String, isError: Bool, actionLogContext: PIRActionLogContext?) {
         let logMessage = "Challenge: \(message)"
         switch (actionLogContext, isError) {
@@ -477,8 +481,8 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.log("WebViewHandler didFinish")
 #if os(macOS)
         updateAddressBar(with: webView.url)
-        guard !challengeSolver.isHoldingLoad else {
-            Logger.action.log("Challenge: holding the broker load continuation")
+        guard !shouldDeferLoadCompletion else {
+            Logger.action.log("Challenge: deferring load completion until the challenge is solved")
             return
         }
 #endif
@@ -517,13 +521,13 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
 #if os(macOS)
         if navigationResponse.isForMainFrame {
-            let isHeldForChallenge = challengeSolver.handleMainFrameResponse(response)
+            let isAwaitingSolve = challengeSolver.handleMainFrameResponse(response)
             webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
                 Task { @MainActor in
                     self?.challengeSolver.handleCookies(cookies)
                 }
             }
-            if isHeldForChallenge {
+            if isAwaitingSolve {
                 return .allow
             }
         }

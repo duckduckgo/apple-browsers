@@ -39,7 +39,7 @@ final class ChallengeSolverTests: XCTestCase {
         await env.solver.solveTask?.value
 
         XCTAssertTrue(env.page.clickedPoints.isEmpty)
-        XCTAssertFalse(env.solver.isHoldingLoad)
+        XCTAssertFalse(env.solver.isAwaitingSolve)
         XCTAssertTrue(env.failures.isEmpty)
         XCTAssertEqual(env.solvedResolutions, [.unassisted])
     }
@@ -71,7 +71,7 @@ final class ChallengeSolverTests: XCTestCase {
         await env.solver.solveTask?.value
 
         XCTAssertTrue(env.page.clickedPoints.isEmpty)
-        XCTAssertFalse(env.solver.isHoldingLoad)
+        XCTAssertFalse(env.solver.isAwaitingSolve)
         XCTAssertEqual(env.failures, [.challengeNotSolved])
         XCTAssertTrue(env.solvedResolutions.isEmpty)
         XCTAssertEqual(env.failedStages, [.noClick])
@@ -110,7 +110,7 @@ final class ChallengeSolverTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenNonChallengeResponseComesFromAnotherHost_thenKeepsHoldingTheLoad() async {
+    func testWhenNonChallengeResponseComesFromAnotherHost_thenKeepsAwaitingSolve() async {
         let env = Environment()
         env.page.locate = { nil }
         env.clock.onSleep = { _ in
@@ -126,12 +126,12 @@ final class ChallengeSolverTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSolverIsDisabled_thenDoesNotHoldTheLoadButFiresDetectionPixel() {
+    func testWhenSolverIsDisabled_thenDoesNotAwaitSolveButFiresDetectionPixel() {
         let env = Environment(isEnabled: false)
 
         XCTAssertFalse(env.solver.handleMainFrameResponse(Self.challengeResponse()))
 
-        XCTAssertFalse(env.solver.isHoldingLoad)
+        XCTAssertFalse(env.solver.isAwaitingSolve)
         XCTAssertNil(env.solver.solveTask)
         XCTAssertEqual(env.mockPixelHandler?.firedEvents.count, 1)
         guard case .mainFrameChallengeDetected(_, _, _, let isSolverEnabled) = env.mockPixelHandler?.firedEvents.first else {

@@ -357,8 +357,7 @@ jobs:
         job_summary: 'false'
 
     - name: Update Asana with failed unit tests
-      # Temporary: do not report PR #7340's deliberate failures to Asana. Remove before merging.
-      if: always() && steps.run-unit-tests.outcome == 'failure' && (github.event_name != 'pull_request' || github.event.pull_request.number != 7340)
+      if: always() && steps.run-unit-tests.outcome == 'failure'
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |

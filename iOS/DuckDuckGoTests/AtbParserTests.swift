@@ -63,12 +63,4 @@ class AtbParserTests: XCTestCase {
         XCTAssertEqual(result?.updateVersion, "v20-1")
     }
 
-    func testCIDiagnosticsAssertionProbe() {
-        XCTFail("Temporary PR #7340 diagnostics assertion probe")
-    }
-
-    func testCIDiagnosticsCrashProbe() {
-        fatalError("Temporary PR #7340 diagnostics crash probe")
-    }
-
 }

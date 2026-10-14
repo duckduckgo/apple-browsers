@@ -534,7 +534,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                 case nil: totalTabCount = 0
                 }
                 request?.didDispatch(.init(totalTabCount: totalTabCount,
-                                           additionalTabCount: validatedContexts.filter { $0.tabId != nil }.count))
+                                           deliveredAttachmentCount: validatedContexts.count))
                 request?.didConsume()
                 didSubmit?()
             }

@@ -186,14 +186,14 @@ final class UTIPixelReporter {
 
     /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.
     func makeTabSubmissionReporter(requestedTabCount: Int) -> (MultiTabAttachmentRequest.SubmissionResult) -> Void {
-        guard requestedTabCount > 0, let surface = context()?.surface else { return { _ in } }
+        guard requestedTabCount > 0, let attribution = currentTabPixelAttribution() else { return { _ in } }
         return { [firing] result in
-            if result.additionalTabCount > 0 {
-                firing.fire(MultiTabSentPixel(count: result.totalTabCount, surface: surface), frequency: .dailyAndCount)
+            if result.deliveredAttachmentCount > 0 {
+                firing.fire(MultiTabSentPixel(count: result.totalTabCount, attribution: attribution), frequency: .dailyAndCount)
             }
-            if result.additionalTabCount < requestedTabCount {
-                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.additionalTabCount == 0 ? .all : .partial
-                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, surface: surface), frequency: .dailyAndCount)
+            if result.deliveredAttachmentCount < requestedTabCount {
+                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.deliveredAttachmentCount == 0 ? .all : .partial
+                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, attribution: attribution), frequency: .dailyAndCount)
             }
         }
     }

@@ -443,6 +443,29 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertTrue(webView.prompts.isEmpty)
     }
 
+    func testPreparedCurrentOmnibarTabCountsAsDeliveredAttachmentWithoutTabID() async throws {
+        let currentTab = context()
+        var submissions: [MultiTabAttachmentRequest.SubmissionResult] = []
+        let prepared = expectation(description: "Current tab context prepared")
+        var preparedDelivery: AIChatInitialPromptDelivery?
+        let request = MultiTabAttachmentRequest(contexts: { [currentTab] }, didConsume: {},
+                                                didDispatch: { submissions.append($0) })
+        let preparation = AIChatInitialPromptPreparation(prompt: .queryPrompt("hello", autoSubmit: true), request: request) {
+            preparedDelivery = $0
+            prepared.fulfill()
+        }
+        defer { preparation.cancel() }
+        await fulfillment(of: [prepared], timeout: 1)
+        let delivery = try XCTUnwrap(preparedDelivery)
+        defer { delivery.cancel() }
+        XCTAssertTrue(submissions.isEmpty)
+
+        XCTAssertEqual(delivery.consume()?.pageContext, .multiple([currentTab]))
+        XCTAssertEqual(submissions.count, 1)
+        XCTAssertEqual(submissions.first?.totalTabCount, 1)
+        XCTAssertEqual(submissions.first?.deliveredAttachmentCount, 1)
+    }
+
     func testReplacementAfterFrontendRequestDoesNotDeliverInitialPromptTwice() async throws {
         let prompt = AIChatNativePrompt.queryPrompt("captured", autoSubmit: true, pageContext: .multiple([context(tabId: "submitted")]))
         var consumptionCount = 0

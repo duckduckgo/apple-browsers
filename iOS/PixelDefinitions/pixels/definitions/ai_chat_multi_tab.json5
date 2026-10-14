@@ -28,13 +28,14 @@
         "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_attachment_source"]
     },
     "aichat_unified_input_tabs_sent": {
-        "description": "Fires after native dispatch of a prompt containing at least one validated additional tab context. Count includes the current page if included in the final payload. Excludes current-page-only prompts, empty results, canceled or rejected dispatches, and a disabled multi-tab feature. Dispatch is not a frontend or backend success acknowledgement.",
+        "description": "Fires after native dispatch of a prompt containing at least one validated tab attachment context, including the current tab when explicitly attached from the address bar. Count includes the contextual current page if included in the final payload. Excludes contextual current-page-only prompts, empty results, canceled or rejected dispatches, and a disabled multi-tab feature. Dispatch is not a frontend or backend success acknowledgement.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             "unified_input_surface",
+            "unified_input_page_type",
             {
                 "key": "payload_tab_count",
                 "description": "Number of tab contexts in the dispatched payload: one is 1, some is 2–3, many is 4 or more.",

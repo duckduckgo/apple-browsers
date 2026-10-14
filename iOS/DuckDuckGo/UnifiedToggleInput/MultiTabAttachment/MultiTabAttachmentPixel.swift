@@ -55,11 +55,12 @@ private extension TabAttachmentOrigin {
 
 struct MultiTabSentPixel: PixelKit.Event {
     let count: Int
-    let surface: UnifiedToggleInputPixelSurface
+    let attribution: MultiTabPixelAttribution
 
     var name: String { "aichat_unified_input_tabs_sent" }
     var parameters: [String: String]? {
-        ["surface": surface.rawValue, "payload_tab_count": count == 1 ? "one" : count < 4 ? "some" : "many"]
+        ["surface": attribution.surface.rawValue, "page_type": attribution.pageType.rawValue,
+         "payload_tab_count": count == 1 ? "one" : count < 4 ? "some" : "many"]
     }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

@@ -2083,7 +2083,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(imageItem)
         }
 
-        if omnibarController.isOmnibarScreenshotEnabled {
+        // Hidden like the image item when the model takes no more images.
+        if omnibarController.isOmnibarScreenshotEnabled && canPickAdditionalImages {
             menu.addItem(makeScreenshotMenuItem())
         }
 

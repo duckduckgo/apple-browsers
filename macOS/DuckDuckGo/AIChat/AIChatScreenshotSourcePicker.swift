@@ -27,6 +27,12 @@ import SwiftUI
 @MainActor
 final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
 
+    enum Outcome {
+        case captured(image: CGImage, kind: AIChatScreenshotKind)
+        case cancelled
+        case failed(AIChatScreenshotFailureReason)
+    }
+
     private let model: AIChatScreenshotSourcePickerModel
     private var panel: NSPanel?
     private var continuation: CheckedContinuation<AIChatScreenshotSourcePickerModel.Finish, Never>?
@@ -35,7 +41,7 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         model = AIChatScreenshotSourcePickerModel(excludedWindowIDs: Set(windowIDs))
     }
 
-    func capture() async -> AIChatScreenshotWindowPicker.Outcome {
+    func capture() async -> Outcome {
         let finish = await withCheckedContinuation { continuation in
             self.continuation = continuation
             model.onFinish = { [weak self] in self?.finish($0) }

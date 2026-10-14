@@ -302,7 +302,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
         let alert = NSAlert()
         alert.messageText = String(format: UserText.chromeWebStoreRemoveTitle, Self.displayName(of: context))
-        alert.informativeText = UserText.chromeWebStoreRemoveMessage
         if let icon = context.webExtension.icon(for: Constants.alertIconSize) {
             alert.icon = icon
         }

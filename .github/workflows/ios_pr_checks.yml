@@ -5,6 +5,19 @@ defaults:
     working-directory: iOS
 
 on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Commit or branch to test (defaults to the selected workflow ref)"
+        required: false
+        type: string
+      collect-test-diagnostics:
+        description: "Simulator diagnostics collection (never is for runtime experiments)"
+        type: choice
+        options:
+          - on-failure
+          - never
+        default: on-failure
   push:
     branches: [ main, "release/ios/**" ]
     paths:
@@ -23,6 +36,10 @@ on:
         description: "Branch name"
         required: false
         type: string
+      collect-test-diagnostics:
+        description: "Simulator diagnostics collection: on-failure or never"
+        type: string
+        default: on-failure
       skip-release:
         description: "Skip release build"
         default: false
@@ -206,6 +223,7 @@ jobs:
     - name: Build and test
       id: run-unit-tests
       env:
+        TEST_DIAGNOSTICS: ${{ inputs.collect-test-diagnostics || 'on-failure' }}
         # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
         # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
         # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
@@ -214,7 +232,7 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        # Simulator diagnostic collection can stall completed test runs for ten minutes.
+        # Keep verbose diagnostics for failures; never is an explicit runtime experiment.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -224,7 +242,7 @@ jobs:
           -skipMacroValidation \
           -test-iterations 3 \
           -retry-tests-on-failure \
-          -collect-test-diagnostics never \
+          -collect-test-diagnostics "$TEST_DIAGNOSTICS" \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \

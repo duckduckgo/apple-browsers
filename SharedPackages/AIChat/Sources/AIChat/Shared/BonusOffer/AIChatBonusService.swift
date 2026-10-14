@@ -160,7 +160,7 @@ extension AIChatBonusService: AIChatBonusStateProviding {
     public func isBoostActive(at date: Date) throws -> Bool {
         try record()?.isBoostActive(at: date) ?? false
     }
-    
+
 }
 
 // MARK: - Private

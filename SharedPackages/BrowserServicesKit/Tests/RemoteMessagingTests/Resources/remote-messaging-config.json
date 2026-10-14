@@ -338,6 +338,23 @@
               "value": true
           }
       }
+    },
+    {
+      "id": 12,
+      "attributes": {
+          "isReturnUser": {
+              "value": true
+          },
+          "isAIChatEnabled": {
+              "value": true
+          },
+          "triedAIChatDuringOnboarding": {
+              "value": false
+          },
+          "isAIChatBoostActive": {
+              "value": false
+          }
+      }
     }
   ]
 }

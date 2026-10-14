@@ -277,6 +277,30 @@ struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+/// Matches the `isReturnUser` RMF attribute: the app was installed on this device before.
+struct IsReturningUserMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `isAIChatEnabled` RMF attribute: the user has Duck.ai turned on.
+struct IsAIChatEnabledMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `triedAIChatDuringOnboarding` RMF attribute: the user tried a Duck.ai chat during onboarding.
+struct TriedAIChatDuringOnboardingMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `isAIChatBoostActive` RMF attribute: the device has a Duck.ai boost that hasn't expired.
+struct IsAIChatBoostActiveMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct DaysSinceDuckAIUsedMatchingAttribute: NumericRangeMatching {
     var min: Int = MatchingAttributeDefaults.intDefaultValue
     var max: Int = MatchingAttributeDefaults.intDefaultMaxValue

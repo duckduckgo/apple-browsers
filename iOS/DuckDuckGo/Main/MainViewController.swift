@@ -5728,6 +5728,7 @@ extension MainViewController: OmniBarDelegate {
                    reasoningEffort: controlValues.selectedReasoningEffort,
                    images: controlValues.selectedImages,
                    files: controlValues.selectedFiles,
+                   textPasted: controlValues.selectedPastedText,
                    termsAccepted: termsAccepted)
     }
 

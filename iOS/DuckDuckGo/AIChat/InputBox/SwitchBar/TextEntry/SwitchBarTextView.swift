@@ -39,9 +39,7 @@ final class SwitchBarTextView: UITextView {
 
     override func paste(_ sender: Any?) {
         guard AttachmentPasteRouting.routePaste(with: attachmentPasteHandler) else {
-            if !AttachmentPasteRouting.routeTextPaste(with: attachmentPasteHandler) {
-                super.paste(sender)
-            }
+            super.paste(sender)
             return
         }
         if let text = UIPasteboard.general.string, !text.isEmpty {

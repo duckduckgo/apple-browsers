@@ -303,6 +303,27 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         XCTAssertTrue(delegate.pastedTexts.isEmpty)
     }
 
+    func testTextEntryRefusesInsertionTheHandlerTakesAsPastedText() throws {
+        let handler = MockAttachmentPasteHandler()
+        handler.takesTextPaste = true
+        let sut = SwitchBarTextEntryView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.attachmentPasteHandler = handler
+        let textView = try XCTUnwrap(firstTextView(in: sut))
+        let pasted = String(repeating: "a", count: AIChatPastedText.conversionThreshold)
+
+        XCTAssertFalse(sut.textView(textView, shouldChangeTextIn: NSRange(location: 0, length: 0), replacementText: pasted))
+        XCTAssertEqual(handler.offeredTexts, [pasted])
+    }
+
+    func testTextEntryInsertsTextTheHandlerDeclines() throws {
+        let handler = MockAttachmentPasteHandler()
+        let sut = SwitchBarTextEntryView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.attachmentPasteHandler = handler
+        let textView = try XCTUnwrap(firstTextView(in: sut))
+
+        XCTAssertTrue(sut.textView(textView, shouldChangeTextIn: NSRange(location: 0, length: 0), replacementText: "hello"))
+    }
+
     // MARK: - Text control paste override
 
     func testTextViewAdvertisesPasteWhenHandlerAccepts() {
@@ -337,6 +358,11 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func firstTextView(in view: UIView) -> UITextView? {
+        if let textView = view as? UITextView { return textView }
+        return view.subviews.lazy.compactMap { self.firstTextView(in: $0) }.first
+    }
 
     private func makeHandler(_ delegate: MockPasteDelegate, probe: PasteboardAttachmentProbe = PasteboardAttachmentProbe()) -> UnifiedToggleInputPasteHandler {
         let handler = UnifiedToggleInputPasteHandler(attachmentProbe: probe)
@@ -439,7 +465,12 @@ private final class MockAttachmentPasteHandler: AttachmentPasteHandling {
 
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool { canPasteResult }
     func pasteAttachments(from pasteboard: UIPasteboard) { pasteCallCount += 1 }
-    func pasteTextAsAttachmentIfNeeded(_ text: String) -> Bool { false }
+    var takesTextPaste = false
+    private(set) var offeredTexts: [String] = []
+    func pasteTextAsAttachmentIfNeeded(_ text: String) -> Bool {
+        offeredTexts.append(text)
+        return takesTextPaste
+    }
 }
 
 @MainActor

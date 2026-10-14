@@ -643,6 +643,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// The strip of pending attachments shown above the toolbar row when attachments are present.
     let attachmentsStripView: UnifiedToggleInputAttachmentsStripView
 
+    /// Set when prompt plus pasted text is over the input limit; Send is disabled, as on the FE.
+    var isAIChatSubmitBlockedByInputLimit = false
+
     private let footerCard: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -2506,7 +2509,7 @@ extension DefaultOmniBarView {
         let attachments = attachmentsStripView.attachments
         let hasValidAttachment = attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = attachments.contains(where: \.isInvalid)
-        let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
+        let canSubmit = !hasInvalidAttachment && !isAIChatSubmitBlockedByInputLimit && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
             setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall)

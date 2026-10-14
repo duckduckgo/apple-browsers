@@ -44,7 +44,7 @@ enum UnifiedToggleInputPastedTextEncoder {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         guard let data = try? encoder.encode(prompt) else { return }
-        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("pasted-text-poc-\(channel).json")
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("pasted-text-poc-\(channel)-\(Int(Date().timeIntervalSince1970 * 1000)).json")
         try? data.write(to: url)
 #endif
     }

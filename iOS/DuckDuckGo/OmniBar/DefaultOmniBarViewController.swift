@@ -87,7 +87,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort,
             selectedTools: toolPickerController?.selectedToolsForSubmission,
             selectedImages: attachmentController?.encodedImages,
-            selectedFiles: attachmentController?.encodedFiles
+            selectedFiles: attachmentController?.encodedFiles,
+            selectedPastedText: attachmentController?.encodedPastedText
         )
     }
 
@@ -568,6 +569,7 @@ extension DefaultOmniBarViewController {
         // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
         // blocked while any attachment is invalid.
         guard !hasInvalidAttachment, !query.isEmpty || hasValidAttachment else { return }
+        guard attachmentController?.isOverInputLimit(prompt: query) != true else { return }
 
         if selectedTextEntryMode == .aiChat {
             textView.text = ""
@@ -575,7 +577,7 @@ extension DefaultOmniBarViewController {
             omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
             omniBarView.updateAIChatSendButton(hasText: false)
 
-            if URL.isValidAddressBarURLInput(query) {
+            if URL.isValidAddressBarURLInput(query), attachmentController?.hasPastedText != true {
                 PixelKit.fire(Pixel.Event.aiChatIPadToggleURLSubmitted, frequency: .dailyAndCount)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
@@ -753,6 +755,12 @@ extension DefaultOmniBarViewController {
         }
         attachmentControllerInstance.onExpandRequested = { [weak self] in
             self?.expandAIChatAfterAttachmentPicker()
+        }
+        attachmentControllerInstance.currentPromptProvider = { [weak self] in
+            self?.omniBarView.aiChatTextView.text ?? ""
+        }
+        attachmentControllerInstance.onPastedTextEdited = { [weak self] in
+            self?.refreshAIChatSendButton()
         }
 
         controller.onModelsUpdated = { [weak self] in
@@ -957,9 +965,18 @@ extension DefaultOmniBarViewController {
         refreshAttachButton()
         omniBarView.updateAttachmentsLayout(animated: true)
         refreshFooterMessage(animated: true)
-        let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        omniBarView.updateAIChatSendButton(hasText: hasText)
+        refreshAIChatSendButton()
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
+    }
+
+    fileprivate func refreshAIChatSendButton() {
+        let text = omniBarView.aiChatTextView.text ?? ""
+        omniBarView.isAIChatSubmitBlockedByInputLimit = attachmentController?.isOverInputLimit(prompt: text) ?? false
+        omniBarView.updateAIChatSendButton(hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    private var isPastedTextEnabled: Bool {
+        dependencies.featureFlagger.isFeatureOn(.unifiedToggleInputPastedText)
     }
 }
 
@@ -979,6 +996,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
             }
             guard !isTermsOfServiceDisclaimerShown else { return true }
             submitIPadDuckAIText(from: textView, sentWithAsk: false)
+            return false
+        }
+        if isPastedTextEnabled, selectedTextEntryMode == .aiChat, AIChatPastedText.shouldConvert(text) {
+            attachmentController?.addPastedText(text)
             return false
         }
         return true
@@ -1012,6 +1033,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         }
 
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
+        omniBarView.isAIChatSubmitBlockedByInputLimit = attachmentController?.isOverInputLimit(prompt: newQuery) ?? false
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
     }
 

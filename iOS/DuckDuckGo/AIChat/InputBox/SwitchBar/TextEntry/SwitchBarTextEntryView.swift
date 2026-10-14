@@ -1191,6 +1191,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             }
             return false
         }
+        if AttachmentPasteRouting.routeInsertedText(text, with: attachmentPasteHandler) {
+            return false
+        }
         return true
     }
 

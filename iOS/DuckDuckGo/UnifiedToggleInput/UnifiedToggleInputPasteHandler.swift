@@ -50,10 +50,11 @@ enum AttachmentPasteRouting {
         return true
     }
 
-    /// Only reached when the pasteboard holds no attachable files, matching the FE's "plain text only" rule.
-    static func routeTextPaste(with handler: AttachmentPasteHandling?) -> Bool {
-        guard let handler, UIPasteboard.general.hasStrings, let text = UIPasteboard.general.string else { return false }
-        return handler.pasteTextAsAttachmentIfNeeded(text)
+    /// Called with text UIKit is about to insert. Typing never inserts 5,000 units in one edit, so only a paste,
+    /// drop or keyboard paste suggestion reaches the threshold; UIKit has already read the pasteboard, so a read we
+    /// aren't authorised for can't swallow the paste.
+    static func routeInsertedText(_ text: String, with handler: AttachmentPasteHandling?) -> Bool {
+        handler?.pasteTextAsAttachmentIfNeeded(text) ?? false
     }
 }
 

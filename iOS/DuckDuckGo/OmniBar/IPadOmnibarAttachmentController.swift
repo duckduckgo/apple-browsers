@@ -19,6 +19,7 @@
 
 import AIChat
 import Core
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 import PixelKit
@@ -59,6 +60,9 @@ final class IPadOmnibarAttachmentController {
             attachmentsStripView?.onAttachmentRemoved = { _, attachment, isUserInitiated in
                 guard isUserInitiated else { return }
                 UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: .addressBar)
+            }
+            attachmentsStripView?.onAttachmentTapped = { [weak self] id in
+                self?.presentPastedTextEditor(id: id)
             }
         }
     }
@@ -207,6 +211,63 @@ final class IPadOmnibarAttachmentController {
 
     var encodedFiles: [AIChatNativePrompt.NativePromptFile]? {
         UnifiedToggleInputFileEncoder.encode(currentAttachments)
+    }
+
+    var encodedPastedText: [AIChatNativePrompt.NativePromptPastedText]? {
+        UnifiedToggleInputPastedTextEncoder.encode(currentAttachments)
+    }
+
+    var hasPastedText: Bool {
+        currentAttachments.contains { $0.pastedText != nil }
+    }
+
+    // MARK: - Pasted text
+
+    func addPastedText(_ text: String) {
+        addAttachment(.pastedText(AIChatPastedText(content: text)), to: currentDraft)
+        onExpandRequested?()
+    }
+
+    /// The iPad bar has no validation banner, so the caller disables Send instead, which is what the FE does.
+    func isOverInputLimit(prompt: String) -> Bool {
+        attachmentPolicy.promptValidationMessage(for: prompt) != nil
+    }
+
+    /// Prompt text the editor counts against the chip, supplied by the omnibar that owns the text view.
+    var currentPromptProvider: (() -> String)?
+
+    /// Called after a chip edit so the omnibar can refresh the Send button.
+    var onPastedTextEdited: (() -> Void)?
+
+    func presentPastedTextEditor(id: UUID) {
+        guard let pastedText = currentAttachments.first(where: { $0.id == id })?.pastedText,
+              let presenter = presenterProvider?() else { return }
+        let others = currentAttachments.compactMap(\.pastedText).filter { $0.id != id }.reduce(0) { $0 + $1.length }
+        let prompt = (currentPromptProvider?() ?? "").trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
+        let hasUpload = currentAttachments.contains { $0.isImage || $0.fileAttachment != nil }
+        let maxInput = hasUpload ? (store.attachmentLimits?.images.maxInputCharsWithAttachments ?? AIChatPastedText.maxInputCharacters)
+                                 : AIChatPastedText.maxInputCharacters
+
+        weak var hostingController: UIViewController?
+        let editor = PastedTextEditorView(
+            pastedText: pastedText,
+            otherContentLength: prompt + others,
+            maxInputCharacters: maxInput,
+            onSave: { [weak self] content in
+                self?.attachmentsStripView?.replaceAttachment(id: id, with: .pastedText(AIChatPastedText(id: id, content: content)))
+                self?.onPastedTextEdited?()
+                hostingController?.dismiss(animated: true) { self?.onExpandRequested?() }
+            },
+            onCancel: { [weak self] in
+                hostingController?.dismiss(animated: true) { self?.onExpandRequested?() }
+            }
+        )
+        let controller = UIHostingController(rootView: editor)
+        controller.modalPresentationStyle = .formSheet
+        // The omnibar falls back to Search while the sheet holds focus; only Save/Cancel restore Duck.ai mode.
+        controller.isModalInPresentation = true
+        hostingController = controller
+        presenter.present(controller, animated: true)
     }
 
     func resetSelection() {

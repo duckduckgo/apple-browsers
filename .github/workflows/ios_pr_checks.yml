@@ -259,11 +259,20 @@ jobs:
     - name: Collect simulator diagnostics for failed tests
       if: always() && steps.run-unit-tests.outcome == 'failure' && (inputs.collect-test-diagnostics || 'on-failure') == 'on-failure'
       continue-on-error: true
-      timeout-minutes: 3
+      timeout-minutes: 12
       run: |
-        mkdir -p DerivedData/Logs/SimulatorDiagnostics
-        # Keep partial output if a simulator diagnostic task does not finish.
-        xcrun simctl diagnose -b --timeout=120 --no-archive --output=DerivedData/Logs/SimulatorDiagnostics
+        set -o pipefail
+        diagnostics_dir="$PWD/DerivedData/Logs/SimulatorDiagnostics"
+        mkdir -p "$diagnostics_dir"
+        diagnostics_status=0
+        # simctl asks for ENTER before collecting; CI otherwise supplies EOF.
+        # Keep the original 600-second allowance and retain partial output.
+        printf '\n' | xcrun simctl diagnose -b --timeout=600 --no-archive --output="$diagnostics_dir" || diagnostics_status=$?
+        if [[ -z "$(find "$diagnostics_dir" -type f -print -quit)" ]]; then
+          echo "::error::No simulator diagnostics were collected."
+          exit 1
+        fi
+        exit "$diagnostics_status"
 
     - name: Compute Compilation Cache hash
       if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'

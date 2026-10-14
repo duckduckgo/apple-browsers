@@ -397,10 +397,81 @@ extension PrivacyConfigurationData {
     /// - Parameters:
     ///   - excludeFeatures: defines a list of keys from the `features` sub-object
     ///                      that will be skipped and not present in the resulting dictionary.
+    ///   - settingsSource: the configuration this one was parsed from. When given, each feature's and
+    ///                     sub-feature's `settings` are copied from it as downloaded, so their keys keep
+    ///                     the downloaded order, which `JSONSerialization` does not. If the source cannot
+    ///                     be read, the result is the same as without it.
     ///
-    public func toJSONData(excludeFeatures: [String] = []) throws -> Data {
+    public func toJSONData(excludeFeatures: [String] = [], settingsSource: Data? = nil) throws -> Data {
         let jsonDict = self.toJSONDictionary(excludeFeatures: excludeFeatures)
+        if let settingsSource, let data = try jsonData(from: jsonDict, copyingSettingsFrom: settingsSource) {
+            return data
+        }
         return try JSONSerialization.data(withJSONObject: jsonDict, options: [])
+    }
+
+    /// Serialises `jsonDict` with a placeholder string in place of each `settings` value found in `source`,
+    /// then replaces each placeholder with the bytes of that value. Returns `nil` if any step does not match.
+    private func jsonData(from jsonDict: [String: Any], copyingSettingsFrom source: Data) throws -> Data? {
+        let locator = RawJSONSettingsLocator(data: source)
+        guard let located = locator.locate(),
+              var featuresDict = jsonDict[CodingKeys.features.rawValue] as? [String: Any] else { return nil }
+
+        let marker = "ddg-raw-settings-\(UUID().uuidString)-"
+        var sourceRanges = [Range<Int>]()
+        func placeholder(for range: Range<Int>) -> String {
+            sourceRanges.append(range)
+            return marker + String(sourceRanges.count - 1)
+        }
+
+        let settingsKey = PrivacyFeature.CodingKeys.settings.rawValue
+        let subfeaturesKey = PrivacyFeature.CodingKeys.features.rawValue
+        // The allowlist's settings are rebuilt from its parsed entries, so they are left as serialised.
+        for (name, ranges) in located where name != CodingKeys.trackerAllowlist.rawValue {
+            guard var featureDict = featuresDict[name] as? [String: Any] else { continue }
+
+            if featureDict[settingsKey] != nil, let range = ranges.settings {
+                featureDict[settingsKey] = placeholder(for: range)
+            }
+            if var subfeaturesDict = featureDict[subfeaturesKey] as? [String: Any] {
+                for (subfeatureName, range) in ranges.subfeatureSettings {
+                    guard var subfeatureDict = subfeaturesDict[subfeatureName] as? [String: Any],
+                          subfeatureDict[settingsKey] != nil else { continue }
+                    subfeatureDict[settingsKey] = placeholder(for: range)
+                    subfeaturesDict[subfeatureName] = subfeatureDict
+                }
+                featureDict[subfeaturesKey] = subfeaturesDict
+            }
+            featuresDict[name] = featureDict
+        }
+
+        var json = jsonDict
+        json[CodingKeys.features.rawValue] = featuresDict
+        let serialized = try JSONSerialization.data(withJSONObject: json, options: [])
+        return Self.replacingPlaceholders(in: serialized, marker: marker, with: sourceRanges, of: locator.bytes)
+    }
+
+    private static func replacingPlaceholders(in serialized: Data, marker: String, with sourceRanges: [Range<Int>], of source: [UInt8]) -> Data? {
+        let quote = UInt8(ascii: "\"")
+        let opening = Data([quote] + Array(marker.utf8))
+        var output = Data(capacity: serialized.count + sourceRanges.reduce(0) { $0 + $1.count })
+        var replaced = 0
+        var index = serialized.startIndex
+
+        while let found = serialized.range(of: opening, in: index..<serialized.endIndex) {
+            guard let closingQuote = serialized[found.upperBound...].firstIndex(of: quote),
+                  let number = Int(String(decoding: serialized[found.upperBound..<closingQuote], as: UTF8.self)),
+                  sourceRanges.indices.contains(number) else { return nil }
+
+            output.append(serialized[index..<found.lowerBound])
+            output.append(contentsOf: source[sourceRanges[number]])
+            index = closingQuote + 1
+            replaced += 1
+        }
+        guard replaced == sourceRanges.count else { return nil }
+
+        output.append(serialized[index..<serialized.endIndex])
+        return output
     }
 }
 

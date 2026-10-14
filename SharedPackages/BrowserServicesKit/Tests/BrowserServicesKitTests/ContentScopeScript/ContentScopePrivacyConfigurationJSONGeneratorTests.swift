@@ -89,6 +89,49 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertNil(outputFeatures["autoconsent"])
     }
 
+    // MARK: - Settings key order
+
+    /// The generated config for a downloaded config holding `webDetection` as written.
+    private func generatedString(webDetection: String) -> String? {
+        let manager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
+        manager.currentConfigString = #"{"version": 1, "unprotectedTemporary": [], "features": {"webDetection": \#(webDetection)}}"#
+
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        return generator.privacyConfiguration.map { String(decoding: $0, as: UTF8.self) }
+    }
+
+    func testWhenSettingsAreNestedThenTheyKeepTheirKeyOrder() throws {
+        let settings = #"{"zulu": {"yankee": 1, "alpha": 2}, "mike": [{"xray": 1, "bravo": 2}], "bravo": 3}"#
+
+        let generated = try XCTUnwrap(generatedString(webDetection: #"{"state": "enabled", "settings": \#(settings)}"#))
+
+        XCTAssertTrue(generated.contains(#""settings":\#(settings)"#), generated)
+    }
+
+    func testWhenSubfeatureHasSettingsThenTheyKeepTheirKeyOrder() throws {
+        let settings = #"{"zulu": 1, "alpha": {"yankee": 1, "bravo": 2}}"#
+
+        let generated = try XCTUnwrap(generatedString(webDetection: #"{"state": "enabled", "features": {"exampleSubFeature": {"state": "enabled", "settings": \#(settings)}}}"#))
+
+        XCTAssertTrue(generated.contains(#""settings":\#(settings)"#), generated)
+    }
+
+    func testWhenSettingsHoldAPatchValueThenItKeepsItsKeyOrder() throws {
+        let settings = #"{"zulu": 1, "conditionalChanges": [{"condition": {"domain": "example.com"}, "patchSettings": [{"op": "replace", "path": "/zulu", "value": {"yankee": 1, "alpha": 2}}]}]}"#
+
+        let generated = try XCTUnwrap(generatedString(webDetection: #"{"state": "enabled", "settings": \#(settings)}"#))
+
+        XCTAssertTrue(generated.contains(#""settings":\#(settings)"#), generated)
+    }
+
+    func testWhenSettingsHaveIntegerLikeKeysThenTheOtherKeysKeepTheirOrder() throws {
+        let settings = #"{"loading": 1, "0": 2, "zulu": 3}"#
+
+        let generated = try XCTUnwrap(generatedString(webDetection: #"{"state": "enabled", "settings": \#(settings)}"#))
+
+        XCTAssertTrue(generated.contains(#""settings":\#(settings)"#), generated)
+    }
+
     // MARK: - Nil on bad input
 
     func testWhenConfigIsInvalidThenReturnsNil() {

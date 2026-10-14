@@ -47,10 +47,12 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
     }
 
     public var privacyConfiguration: Data? {
-        guard let config = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else { return nil }
+        let currentConfig = privacyConfigurationManager.currentConfig
+        guard let config = try? PrivacyConfigurationData(data: currentConfig) else { return nil }
 
         let newConfig = PrivacyConfigurationData(features: config.features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
-        return try? newConfig.toJSONData(excludeFeatures: excludedFeatures)
+        // Settings are copied from the downloaded config so that C-S-S reads their keys in the order the config lists them.
+        return try? newConfig.toJSONData(excludeFeatures: excludedFeatures, settingsSource: currentConfig)
     }
 
 }

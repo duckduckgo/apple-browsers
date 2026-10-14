@@ -221,4 +221,48 @@ class PrivacyConfigurationDataTests: XCTestCase {
         XCTAssertTrue(roundTrippedConfigWithExcludedFeatures.trackerAllowlist.entries.isEmpty)
         XCTAssertFalse(roundTrippedConfigWithExcludedFeatures.features.keys.contains("duckPlayer"))
     }
+
+    // MARK: - Settings source
+
+    private func jsonObject(_ data: Data) throws -> NSDictionary {
+        try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? NSDictionary)
+    }
+
+    func testWhenEncodedWithSettingsSourceThenTheConfigIsTheSameAsWithout() throws {
+        let jsonData = data.fromJsonFile("Resources/privacy-config-example.json")
+        let config = try PrivacyConfigurationData(data: jsonData)
+
+        let withSource = try config.toJSONData(excludeFeatures: ["duckPlayer"], settingsSource: jsonData)
+        let withoutSource = try config.toJSONData(excludeFeatures: ["duckPlayer"])
+
+        XCTAssertEqual(try jsonObject(withSource), try jsonObject(withoutSource))
+    }
+
+    func testWhenEncodedWithSettingsSourceThenFeatureAndSubfeatureSettingsAreCopiedAsWritten() throws {
+        let featureSettings = #"{"zulu": {"yankee": 1, "alpha": 2}, "mike": [{"xray": 1, "bravo": 2}], "bravo": "a/b"}"#
+        let subfeatureSettings = #"{"zulu": 1, "alpha": {"yankee": 1, "bravo": 2}}"#
+        let source = Data(#"""
+        {"version": 1, "unprotectedTemporary": [], "features": {
+            "orderedFeature": {"state": "enabled", "exceptions": [], "settings": \#(featureSettings),
+                "features": {"orderedSubfeature": {"state": "enabled", "settings": \#(subfeatureSettings)}}}
+        }}
+        """#.utf8)
+        let config = try PrivacyConfigurationData(data: source)
+
+        let encoded = String(decoding: try config.toJSONData(settingsSource: source), as: UTF8.self)
+
+        XCTAssertTrue(encoded.contains(#""settings":\#(featureSettings)"#), encoded)
+        XCTAssertTrue(encoded.contains(#""settings":\#(subfeatureSettings)"#), encoded)
+        XCTAssertFalse(encoded.contains("ddg-raw-settings-"), encoded)
+    }
+
+    func testWhenSettingsSourceCannotBeReadThenTheConfigIsTheSameAsWithout() throws {
+        let jsonData = data.fromJsonFile("Resources/privacy-config-example.json")
+        let config = try PrivacyConfigurationData(data: jsonData)
+
+        for source in ["{}", "not json", #"{"features": []}"#] {
+            let withSource = try config.toJSONData(settingsSource: Data(source.utf8))
+            XCTAssertEqual(try jsonObject(withSource), try jsonObject(try config.toJSONData()), source)
+        }
+    }
 }

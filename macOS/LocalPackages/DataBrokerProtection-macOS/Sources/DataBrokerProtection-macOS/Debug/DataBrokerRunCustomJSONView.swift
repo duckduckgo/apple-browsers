@@ -139,6 +139,7 @@ struct DataBrokerRunCustomJSONView: View {
         [
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
             (FeatureFlag.dbpExtractedProfileRefresh.rawValue, viewModel.featureFlagger.isExtractedProfileRefreshOn.description),
+            (FeatureFlag.dbpChallengeSolver.rawValue, viewModel.featureFlagger.isChallengeSolverOn.description),
         ]
     }
 

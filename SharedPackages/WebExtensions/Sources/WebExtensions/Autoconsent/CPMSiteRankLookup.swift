@@ -18,7 +18,6 @@
 
 import Foundation
 import os.log
-import URLPredictor
 
 /// Coarse popularity bucket of a site, sent as the `siteRank` parameter of the CPM summary pixel.
 public enum CPMSiteRank: String, CaseIterable, Sendable {
@@ -27,25 +26,37 @@ public enum CPMSiteRank: String, CaseIterable, Sendable {
     case other
 }
 
-/// Finds the `CPMSiteRank` of a top-level URL on the device, from the bundled Bloom filter of top sites.
-/// The URL and its domain are only used for the lookup, and are never sent.
+/// Finds the `CPMSiteRank` of a top-level URL on the device. The URL and its domain are only used for the lookup,
+/// and are never sent.
 ///
-/// It gives the same result as `cpm-site-rank.js` in the DDG extension, which the embedded web extension uses:
-/// - `cpm-top-sites-bloom.json` is a copy of `shared/data/bundled/cpm-top-sites-bloom.json` from duckduckgo-privacy-extension.
-///   Update both files together.
-/// - The registrable domain comes from the ICANN section of the Public Suffix List only, as in `tldts`.
+/// It is a port of `cpm-site-rank.js` in duckduckgo-privacy-extension, which the embedded web extension uses, and must
+/// give the same results. `site-buckets.json` is a copy of the extension's `shared/data/bundled/site-buckets.json`, and a
+/// test checks that it matches the bundled extension.
 public final class CPMSiteRankLookup: Sendable {
 
+    /// Sorted 32-bit FNV-1a hashes of the top sites' registrable domains.
     struct LookupData: Sendable {
-        let filter: JSBloomFilter
-        let publicSuffixList: ICANNPublicSuffixList
+        let hashes: [UInt32]
+
+        func contains(_ hash: UInt32) -> Bool {
+            var low = 0
+            var high = hashes.count - 1
+            while low <= high {
+                let mid = (low + high) / 2
+                if hashes[mid] < hash {
+                    low = mid + 1
+                } else if hashes[mid] > hash {
+                    high = mid - 1
+                } else {
+                    return true
+                }
+            }
+            return false
+        }
     }
 
     /// Loaded on the first lookup, once for all instances that use the bundled data.
-    private static let bundledData: LookupData? = {
-        guard let filter = loadBundledFilter(), let publicSuffixList = loadPublicSuffixList() else { return nil }
-        return LookupData(filter: filter, publicSuffixList: publicSuffixList)
-    }()
+    private static let bundledData: LookupData? = loadBundledData()
 
     private let data: @Sendable () -> LookupData?
 
@@ -58,40 +69,85 @@ public final class CPMSiteRankLookup: Sendable {
         self.data = data
     }
 
+    /// Checks every suffix of the hostname with at least two labels, shortest first, so `www.example.co.uk` matches
+    /// when `example.co.uk` is a top site. This avoids the Public Suffix List.
     /// - Returns: the bucket of the URL, or `nil` if the bundled data could not be loaded.
     public func siteRank(for url: URL?) -> CPMSiteRank? {
         guard let data = data() else { return nil }
-        guard let host = url?.host, let domain = data.publicSuffixList.registrableDomain(of: host) else {
-            return .other
+        guard var host = url?.host?.lowercased() else { return .other }
+        if host.hasSuffix(".") {
+            host.removeLast()
         }
-        return data.filter.contains(domain) ? .top10k : .other
+        let bytes = Array(host.utf8)
+        let dot = UInt8(ascii: ".")
+        guard let last = bytes.lastIndex(of: dot), last > 0 else { return .other }
+        var start = bytes[..<last].lastIndex(of: dot) ?? -1
+        while true {
+            if data.contains(Self.fnv1a32(bytes[(start + 1)...])) {
+                return .top10k
+            }
+            if start <= 0 {
+                return .other
+            }
+            start = bytes[..<start].lastIndex(of: dot) ?? -1
+        }
     }
 
-    private struct BloomFilterData: Decodable {
-        let totalEntries: Int
-        /// base64 encoded filter bits
+    /// Hostnames are ASCII (IDNs are punycode), so hashing UTF-8 bytes equals hashing UTF-16 code units in the extension.
+    static func fnv1a32<Bytes: Sequence>(_ bytes: Bytes) -> UInt32 where Bytes.Element == UInt8 {
+        var hash: UInt32 = 0x811c9dc5
+        for byte in bytes {
+            hash ^= UInt32(byte)
+            hash = hash &* 0x01000193
+        }
+        return hash
+    }
+
+    /// Decodes base64 LEB128 varints of the gaps between consecutive hashes.
+    /// - Returns: `nil` if the data is empty or malformed.
+    static func decode(count: Int, base64: String) -> [UInt32]? {
+        guard count > 0, let data = Data(base64Encoded: base64) else { return nil }
+        let bytes = [UInt8](data)
+        var hashes = [UInt32]()
+        hashes.reserveCapacity(count)
+        var position = 0
+        var previous: UInt64 = 0
+        for _ in 0..<count {
+            var gap: UInt64 = 0
+            var shift: UInt64 = 0
+            while true {
+                guard position < bytes.count, shift <= 28 else { return nil }
+                let byte = bytes[position]
+                position += 1
+                gap |= UInt64(byte & 0x7f) << shift
+                shift += 7
+                if byte & 0x80 == 0 { break }
+            }
+            previous += gap
+            guard previous <= UInt64(UInt32.max) else { return nil }
+            hashes.append(UInt32(previous))
+        }
+        guard position == bytes.count else { return nil }
+        return hashes
+    }
+
+    struct BundledFile: Decodable {
+        let count: Int
         let data: String
     }
 
-    static func loadBundledFilter() -> JSBloomFilter? {
-        guard let url = Bundle.module.url(forResource: "cpm-top-sites-bloom", withExtension: "json"),
-              let json = try? Data(contentsOf: url),
-              let filterData = try? JSONDecoder().decode(BloomFilterData.self, from: json),
-              let bits = Data(base64Encoded: filterData.data),
-              let filter = JSBloomFilter(totalEntries: filterData.totalEntries, bits: [UInt8](bits)) else {
-            Logger.webExtensions.error("[CPM] Cannot load the top sites filter, the summary pixel has no siteRank")
-            assertionFailure("Cannot load cpm-top-sites-bloom.json")
-            return nil
-        }
-        return filter
+    static func loadBundledFile() -> BundledFile? {
+        guard let url = Bundle.module.url(forResource: "site-buckets", withExtension: "json"),
+              let json = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(BundledFile.self, from: json)
     }
 
-    static func loadPublicSuffixList() -> ICANNPublicSuffixList? {
-        guard let pslData = try? Classifier.getPSLData() else {
-            Logger.webExtensions.error("[CPM] Cannot load the Public Suffix List, the summary pixel has no siteRank")
-            assertionFailure("Cannot load the Public Suffix List")
+    static func loadBundledData() -> LookupData? {
+        guard let file = loadBundledFile(), let hashes = decode(count: file.count, base64: file.data) else {
+            Logger.webExtensions.error("[CPM] Cannot load the top sites data, the summary pixel has no siteRank")
+            assertionFailure("Cannot load site-buckets.json")
             return nil
         }
-        return ICANNPublicSuffixList(pslData: pslData)
+        return LookupData(hashes: hashes)
     }
 }

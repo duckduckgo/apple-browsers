@@ -64,6 +64,7 @@ final class BookmarksBarViewController: NSViewController {
     private(set) var syncMouseOverView: MouseOverView!
     private(set) var syncButtonIcon: NSImageView!
     private(set) var syncButtonLabel: NSTextField!
+    private(set) var syncButtonDivider: NSBox!
     private(set) var syncDismissButton: MouseOverButton!
     private(set) var bookmarksBarScrollView: NSScrollView!
 
@@ -286,7 +287,7 @@ final class BookmarksBarViewController: NSViewController {
         importBookmarksMouseOverView = importBookmarks.mouseOverView
 
         // Taller than wide so AppKit treats it as a vertical separator.
-        let syncButtonDivider = NSBox(frame: NSRect(x: 0, y: 0, width: Constants.syncDividerWidth, height: Constants.syncDividerHeight))
+        syncButtonDivider = NSBox(frame: NSRect(x: 0, y: 0, width: Constants.syncDividerWidth, height: Constants.syncDividerHeight))
         syncButtonDivider.boxType = .separator
         syncButtonDivider.setContentHuggingPriority(.init(750), for: .horizontal)
 
@@ -363,6 +364,7 @@ final class BookmarksBarViewController: NSViewController {
             syncButton.centerYAnchor.constraint(equalTo: bookmarksBarScrollView.centerYAnchor),
             syncButtonZeroWidthConstraint,
 
+            syncButtonDivider.widthAnchor.constraint(equalToConstant: Constants.syncDividerWidth),
             syncButtonDivider.heightAnchor.constraint(equalToConstant: Constants.syncDividerHeight),
             syncDismissButton.widthAnchor.constraint(equalToConstant: Constants.syncDismissButtonSize),
             syncDismissButton.heightAnchor.constraint(equalToConstant: Constants.syncDismissButtonSize),
@@ -421,6 +423,13 @@ final class BookmarksBarViewController: NSViewController {
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
         syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
         syncDismissButton.normalTintColor = NSColor(resource: .textPrimary)
+        setSyncDismissButtonHidden(true)
+    }
+
+    /// Hides the arranged views rather than the stack: the stack then detaches them and collapses.
+    private func setSyncDismissButtonHidden(_ hidden: Bool) {
+        syncButtonDivider.isHidden = hidden
+        syncDismissButton.isHidden = hidden
     }
 
     private func setUpImportBookmarksButton() {
@@ -541,6 +550,7 @@ final class BookmarksBarViewController: NSViewController {
                 if self?.bookmarkManager.list != nil {
                     self?.importBookmarksButton.isHidden = !items.isEmpty
                 }
+                self?.setSyncDismissButtonHidden(items.isEmpty)
             }
             .store(in: &cancellables)
 

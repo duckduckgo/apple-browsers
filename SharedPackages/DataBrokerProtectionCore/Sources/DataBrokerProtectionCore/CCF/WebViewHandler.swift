@@ -42,9 +42,6 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private let isFakeBroker: Bool
     private let executionConfig: BrokerJobExecutionConfig
-    private let challengePixelDataBroker: String?
-    private let challengePixelBrokerVersion: String?
-    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
@@ -55,16 +52,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var window: NSWindow?
     private var addressBarTextField: NSTextField?
     private var toolbar: NSToolbar?
-    private var didDetectChallenge = false
-    private var didReportChallengeClearance = false
-    private var challengeTask: Task<Void, Never>?
-    private var challengePanel: ChallengeOffscreenPanel?
-    private var expectedBrokerURL: URL?
-    private var isChallengeResponse = false
-    private var isAwaitingChallengeDestination = false
-    private var didClickChallenge = false
-    private let actionLogContext: PIRActionLogContext?
-    private let challengeEventHandler: ((String) -> Void)?
+    private let challengeSolver: ChallengeSolver
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -78,6 +66,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 executionConfig: BrokerJobExecutionConfig,
                 challengePixelDataBroker: String? = nil,
                 challengePixelBrokerVersion: String? = nil,
+                isChallengeSolverEnabled: Bool = false,
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
@@ -86,12 +75,19 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 challengeEventHandler: ((String) -> Void)? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
-        self.challengePixelDataBroker = challengePixelDataBroker
-        self.challengePixelBrokerVersion = challengePixelBrokerVersion
-        self.pixelHandler = pixelHandler
 #if os(macOS)
-        self.actionLogContext = actionLogContext
-        self.challengeEventHandler = challengeEventHandler
+        let pixelContext = challengePixelDataBroker.flatMap { dataBroker in
+            challengePixelBrokerVersion.map { ChallengeSolver.PixelContext(dataBroker: dataBroker, brokerVersion: $0) }
+        }
+        self.challengeSolver = ChallengeSolver(
+            isEnabled: isChallengeSolverEnabled,
+            settings: ChallengeSolverSettings(privacyConfig: privacyConfig.privacyConfig),
+            pixelContext: pixelContext,
+            pixelHandler: pixelHandler,
+            reportEvent: { message, isError in
+                DataBrokerProtectionWebViewHandler.reportChallengeEvent(message, isError: isError, actionLogContext: actionLogContext)
+                challengeEventHandler?(message)
+            })
 #endif
         let configuration = WKWebViewConfiguration()
         try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
@@ -111,6 +107,12 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         let userContentController = configuration.userContentController as? DataBrokerUserContentController
         assert(userContentController != nil)
         self.userContentController = userContentController
+        super.init()
+#if os(macOS)
+        challengeSolver.onFailure = { [weak self] error in
+            self?.resumeActiveContinuation(with: .failure(error))
+        }
+#endif
     }
 
     public func initializeWebView(showWebView: Bool) async {
@@ -120,10 +122,12 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
-
 #if os(macOS)
-        webView?.appearance = NSAppearance(named: .aqua)
+        challengeSolver.page = webView.map { WebViewChallengePage(webView: $0) }
+#endif
+
         if showWebView {
+#if os(macOS)
             urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
                 let url = change.newValue ?? nil
                 Task { @MainActor in
@@ -147,9 +151,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             window?.contentView = webView
 
             window?.makeKeyAndOrderFront(nil)
-        }
 #elseif os(iOS)
-        if showWebView {
             cleanupExistingPIRDebugWindow()
 
             if #available(iOS 16.4, *) {
@@ -168,8 +170,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             } else {
                 assertionFailure("Could not find window scene")
             }
-        }
 #endif
+
+        }
 
         installTimer()
 
@@ -178,14 +181,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func load(url: URL) async throws {
 #if os(macOS)
-        didDetectChallenge = false
-        didReportChallengeClearance = false
-        resetChallengeState()
-        expectedBrokerURL = url
-        webView?.load(url, additionalHTTPHeaders: ["Accept-Language": "en-US,en;q=0.9"])
-#else
-        webView?.load(url)
+        challengeSolver.beginLoad(of: url)
 #endif
+        webView?.load(url)
         Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
     }
@@ -211,15 +209,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         webView?.navigationDelegate = nil
         webView = nil
 #if os(macOS)
-        challengeTask?.cancel()
-        challengeTask = nil
-        closeChallengePanel()
-        isChallengeResponse = false
-        isAwaitingChallengeDestination = false
+        challengeSolver.cancel()
+        challengeSolver.page = nil
         urlObservation?.invalidate()
         urlObservation = nil
-        window?.orderOut(nil)
-        window = nil
 #endif
     }
 
@@ -235,7 +228,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         } onCancel: {
             Task { @MainActor in
 #if os(macOS)
-                self.resetChallengeState()
+                self.challengeSolver.cancel()
 #endif
                 self.resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
             }
@@ -369,198 +362,18 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
 #if os(macOS)
 private extension DataBrokerProtectionWebViewHandler {
-    var challengeResolution: DataBrokerProtectionSharedPixels.ChallengeResolution {
-        if didClickChallenge { return .assisted }
-        return isAwaitingChallengeDestination ? .unknown : .unassisted
-    }
-
-    func updateChallengeState(isChallenge: Bool, responseURL: URL?, statusCode: Int) {
-        isChallengeResponse = isChallenge
-        if isChallenge {
-            guard !isAwaitingChallengeDestination else { return }
-            isAwaitingChallengeDestination = true
-            reportChallengeEvent("Detected: main response has cf-mitigated=challenge; HTTP \(statusCode)")
-            startChallengeSolver()
-            return
-        }
-
-        guard isAwaitingChallengeDestination else { return }
-        guard isExpectedBrokerDestination(responseURL) else {
-            Logger.action.log("Challenge: non-challenge response did not reach the expected broker host")
-            return
-        }
-
-        isAwaitingChallengeDestination = false
-        challengeTask?.cancel()
-        challengeTask = nil
-        closeChallengePanel()
-        reportChallengeEvent("Solved challenge \(challengeResolution.rawValue); expected broker destination reached")
-        logChallengeClearanceCookie()
-    }
-
-    func startChallengeSolver() {
-        challengeTask?.cancel()
-        closeChallengePanel()
-        challengeTask = Task { [weak self] in
-            await self?.solveChallenge()
-        }
-    }
-
-    func solveChallenge() async {
-        guard let webView else { return }
-        defer { closeChallengePanel() }
-        let deadline = Date().addingTimeInterval(45)
-        var nextSnapshotAttempt = Date.distantPast
-        didClickChallenge = false
-
-        try? await Task.sleep(nanoseconds: 5_000_000_000)
-        while isAwaitingChallengeDestination, Date() < deadline, !Task.isCancelled {
-            guard isChallengeResponse else {
-                try? await Task.sleep(nanoseconds: 250_000_000)
-                continue
-            }
-
-            if !didClickChallenge, Date() >= nextSnapshotAttempt {
-                nextSnapshotAttempt = Date().addingTimeInterval(2)
-                if let point = await stableSnapshotCheckboxPoint(in: webView) {
-                    attachChallengePanelIfNeeded(to: webView)
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                    let result = await ChallengeClick.checkbox(at: point, in: webView)
-                    closeChallengePanel()
-                    reportChallengeEvent("Sent snapshot checkbox click; \(result)")
-                    didClickChallenge = true
-                }
-            }
-
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-        }
-
-        guard isAwaitingChallengeDestination, !Task.isCancelled else { return }
-        isChallengeResponse = false
-        isAwaitingChallengeDestination = false
-        let failureStage = didClickChallenge ? "after click" : "with no click delivered"
-        reportChallengeEvent(
-            "Failed challenge \(failureStage); expected broker destination did not arrive before the 45-second deadline",
-            isError: true)
-        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.unknown("Challenge did not reach the broker destination")))
-    }
-
-    func stableSnapshotCheckboxPoint(in webView: WKWebView) async -> NSPoint? {
-        let snapshotRect = webView.bounds
-        guard let firstImage = await challengeSnapshot(of: webView, rect: snapshotRect),
-              let firstLabel = await ChallengeVision.findChallengeLabel(in: firstImage),
-              isChallengeResponse else {
-            Logger.action.log("Challenge: first snapshot did not contain the verification label")
-            return nil
-        }
-        guard isChallengeResponse, !Task.isCancelled else { return nil }
-
-        try? await Task.sleep(nanoseconds: 400_000_000)
-        guard let secondImage = await challengeSnapshot(of: webView, rect: snapshotRect), isChallengeResponse else {
-            Logger.action.log("Challenge: second snapshot failed")
-            return nil
-        }
-        guard let secondLabel = await ChallengeVision.findChallengeLabel(in: secondImage) else {
-            Logger.action.log("Challenge: second snapshot did not contain the verification label")
-            return nil
-        }
-        guard isChallengeResponse, !Task.isCancelled else { return nil }
-        guard firstLabel.isStable(comparedTo: secondLabel, in: snapshotRect.size) else {
-            Logger.action.log("Challenge: snapshot rejected because the verification label was not stable")
-            return nil
-        }
-        Logger.action.log("Challenge: stable verification label found")
-        let pointInSnapshot = secondLabel.checkboxPoint(in: snapshotRect.size)
-        return NSPoint(x: snapshotRect.minX + pointInSnapshot.x, y: snapshotRect.minY + pointInSnapshot.y)
-    }
-
-    func challengeSnapshot(of webView: WKWebView, rect: CGRect) async -> CGImage? {
-        await withCheckedContinuation { continuation in
-            let request = ChallengeSnapshotRequest(continuation: continuation)
-            let configuration = WKSnapshotConfiguration()
-            configuration.rect = rect
-            webView.takeSnapshot(with: configuration) { image, _ in
-                Task { @MainActor in
-                    request.finish(with: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
-                }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                request.finish(with: nil)
-            }
-        }
-    }
-
-    func isExpectedBrokerDestination(_ url: URL?) -> Bool {
-        guard let expectedHost = normalizedHost(expectedBrokerURL?.host),
-              let responseHost = normalizedHost(url?.host) else { return false }
-        return responseHost == expectedHost || responseHost.hasSuffix(".\(expectedHost)") || expectedHost.hasSuffix(".\(responseHost)")
-    }
-
-    func normalizedHost(_ host: String?) -> String? {
-        guard let host else { return nil }
-        return host.lowercased().hasPrefix("www.") ? String(host.dropFirst(4)).lowercased() : host.lowercased()
-    }
-
-    func logChallengeClearanceCookie() {
-        guard let webView else { return }
-        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
-            let hasClearance = cookies.contains { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }
-            Task { @MainActor in
-                self?.reportChallengeEvent("Supporting evidence: cf_clearance=\(hasClearance)")
-            }
-        }
-    }
-
-    func reportChallengeEvent(_ message: String, isError: Bool = false) {
+    static func reportChallengeEvent(_ message: String, isError: Bool, actionLogContext: PIRActionLogContext?) {
         let logMessage = "Challenge: \(message)"
-        if let actionLogContext {
-            if isError {
-                Logger.action.error(actionLogContext, message: logMessage)
-            } else {
-                Logger.action.log(actionLogContext, message: logMessage)
-            }
-        } else if isError {
+        switch (actionLogContext, isError) {
+        case (let context?, true):
+            Logger.action.error(context, message: logMessage)
+        case (let context?, false):
+            Logger.action.log(context, message: logMessage)
+        case (nil, true):
             Logger.action.error("\(logMessage, privacy: .public)")
-        } else {
+        case (nil, false):
             Logger.action.log("\(logMessage, privacy: .public)")
         }
-        challengeEventHandler?(message)
-    }
-
-    func resetChallengeState() {
-        didClickChallenge = false
-        challengeTask?.cancel()
-        challengeTask = nil
-        closeChallengePanel()
-        isChallengeResponse = false
-        isAwaitingChallengeDestination = false
-    }
-
-    func attachChallengePanelIfNeeded(to webView: WKWebView) {
-        guard webView.window == nil else { return }
-        let panel = ChallengeOffscreenPanel(
-            contentRect: NSRect(origin: .zero, size: webView.frame.size),
-            styleMask: [.nonactivatingPanel, .borderless],
-            backing: .buffered,
-            defer: false)
-        panel.becomesKeyOnlyIfNeeded = true
-        panel.hidesOnDeactivate = false
-        panel.isFloatingPanel = false
-        panel.isReleasedWhenClosed = false
-        panel.collectionBehavior = [.stationary, .ignoresCycle]
-        panel.isExcludedFromWindowsMenu = true
-        panel.backgroundColor = .white
-        panel.acceptsMouseMovedEvents = false
-        panel.ignoresMouseEvents = true
-        panel.sharingType = .none
-        panel.contentView = webView
-        challengePanel = panel
-        panel.presentOffscreen()
-    }
-
-    func closeChallengePanel() {
-        challengePanel?.dismissOffscreen()
-        challengePanel = nil
     }
 
     @objc func copyURLFromAddressBar() {
@@ -660,7 +473,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.log("WebViewHandler didFinish")
 #if os(macOS)
         updateAddressBar(with: webView.url)
-        guard !isAwaitingChallengeDestination else {
+        guard !challengeSolver.isHoldingLoad else {
             Logger.action.log("Challenge: holding the broker load continuation")
             return
         }
@@ -672,7 +485,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFail: \(error.localizedDescription, privacy: .public)")
 #if os(macOS)
-        resetChallengeState()
+        challengeSolver.cancel()
 #endif
         resumeActiveContinuation(with: .failure(error))
     }
@@ -680,7 +493,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
 #if os(macOS)
-        resetChallengeState()
+        challengeSolver.cancel()
 #endif
         resumeActiveContinuation(with: .failure(error))
     }
@@ -692,13 +505,6 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
-#if os(macOS)
-        recordChallengeDetectionIfPresent(in: navigationResponse.response, isForMainFrame: navigationResponse.isForMainFrame)
-        if navigationResponse.isForMainFrame {
-            observeChallengeClearance(in: webView)
-        }
-#endif
-
         guard let response = navigationResponse.response as? HTTPURLResponse else {
             // if there's no http status code to act on, exit and allow navigation
             return .allow
@@ -707,9 +513,15 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
 #if os(macOS)
         if navigationResponse.isForMainFrame {
-            let mitigatedHeader = response.value(forHTTPHeaderField: "cf-mitigated")
-            let isChallenge = mitigatedHeader?.caseInsensitiveCompare("challenge") == .orderedSame
-            updateChallengeState(isChallenge: isChallenge, responseURL: response.url, statusCode: statusCode)
+            let isHeldForChallenge = challengeSolver.handleMainFrameResponse(response)
+            webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
+                Task { @MainActor in
+                    self?.challengeSolver.handleCookies(cookies)
+                }
+            }
+            if isHeldForChallenge {
+                return .allow
+            }
         }
 #endif
 
@@ -727,7 +539,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         Logger.action.error("WebViewHandler web content process terminated")
 #if os(macOS)
-        resetChallengeState()
+        challengeSolver.cancel()
 #endif
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.webContentProcessTerminated))
     }
@@ -759,52 +571,6 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         }
     }
 }
-
-#if os(macOS)
-extension DataBrokerProtectionWebViewHandler {
-
-    func recordChallengeDetectionIfPresent(in response: URLResponse, isForMainFrame: Bool) {
-        guard isForMainFrame,
-              let response = response as? HTTPURLResponse,
-              response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame else {
-            return
-        }
-
-        didDetectChallenge = true
-
-        guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
-        Logger.action.log("Challenge: pixel detected fired for \(challengePixelDataBroker, privacy: .public)")
-        pixelHandler?.fire(.mainFrameChallengeDetected(
-            dataBroker: challengePixelDataBroker,
-            brokerVersion: challengePixelBrokerVersion))
-    }
-
-    func recordChallengeClearanceIfPresent(in cookies: [HTTPCookie]) {
-        guard didDetectChallenge,
-              !didReportChallengeClearance,
-              cookies.contains(where: { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }) else {
-            return
-        }
-
-        guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
-        didReportChallengeClearance = true
-        let resolution = challengeResolution
-        Logger.action.log("Challenge: pixel clearance fired for \(challengePixelDataBroker, privacy: .public) resolution=\(resolution.rawValue, privacy: .public)")
-        pixelHandler?.fire(.challengeClearanceObserved(
-            dataBroker: challengePixelDataBroker,
-            brokerVersion: challengePixelBrokerVersion,
-            resolution: resolution))
-    }
-
-    private func observeChallengeClearance(in webView: WKWebView) {
-        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
-            Task { @MainActor in
-                self?.recordChallengeClearanceIfPresent(in: cookies)
-            }
-        }
-    }
-}
-#endif
 
 private class WebView: WKWebView {
 

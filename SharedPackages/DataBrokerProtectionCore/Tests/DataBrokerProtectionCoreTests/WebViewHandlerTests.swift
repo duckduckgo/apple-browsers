@@ -91,47 +91,6 @@ final class WebViewHandlerTests: XCTestCase {
         XCTAssertEqual(sut.webViewConfiguration?.applicationNameForUserAgent, expectedApplicationName)
     }
 
-#if os(macOS)
-    @MainActor
-    func testWhenChallengeSignalsAreObservedMultipleTimes_thenFiresDailyAndCountPixelsOnce() throws {
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)"))
-        var firedPixelNames: [String] = []
-        var firedPixelParameters: [[String: String]] = []
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.0.0",
-                                source: PixelKit.Source.macDMG.rawValue,
-                                defaultHeaders: [:],
-                                defaults: defaults) { pixelName, _, parameters, _, _, _ in
-            firedPixelNames.append(pixelName)
-            firedPixelParameters.append(parameters)
-        }
-        let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        let sut = try makeWebViewHandler(pixelHandler: pixelHandler)
-        let response = try XCTUnwrap(HTTPURLResponse(url: URL(string: "https://example.com")!,
-                                                     statusCode: 403,
-                                                     httpVersion: nil,
-                                                     headerFields: ["cf-mitigated": "challenge"]))
-        let cookie = try makeCookie(name: "cf_clearance", value: "opaque-token")
-
-        sut.recordChallengeDetectionIfPresent(in: response, isForMainFrame: true)
-        sut.recordChallengeClearanceIfPresent(in: [cookie])
-        let pixelCountAfterFirstClearance = firedPixelNames.count
-        sut.recordChallengeClearanceIfPresent(in: [cookie])
-
-        XCTAssertEqual(firedPixelNames.count, pixelCountAfterFirstClearance)
-        XCTAssertEqual(firedPixelNames, [
-            "dbp_challenge_main-frame_detected_macos_daily",
-            "dbp_challenge_main-frame_detected_macos_count",
-            "dbp_challenge_clearance_observed_macos_daily",
-            "dbp_challenge_clearance_observed_macos_count"
-        ])
-        for parameters in firedPixelParameters {
-            XCTAssertEqual(parameters["data_broker"], "example.com")
-            XCTAssertEqual(parameters["broker_version"], "1.2.3")
-        }
-    }
-#endif
-
     @MainActor
     private func makeWebViewHandler(
         applicationNameForUserAgentProvider: @escaping () -> String? = { nil },
@@ -149,17 +108,6 @@ final class WebViewHandlerTests: XCTestCase {
             pixelHandler: pixelHandler
         )
     }
-
-#if os(macOS)
-    private func makeCookie(name: String, value: String) throws -> HTTPCookie {
-        try XCTUnwrap(HTTPCookie(properties: [
-            .name: name,
-            .value: value,
-            .domain: "example.com",
-            .path: "/"
-        ]))
-    }
-#endif
 }
 
 private final class MockWebViewCommunicationDelegate: CCFCommunicationDelegate {

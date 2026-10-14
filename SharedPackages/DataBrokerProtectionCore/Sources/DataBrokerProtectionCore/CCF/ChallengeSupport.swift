@@ -126,77 +126,111 @@ final class ChallengeSnapshotRequest {
 }
 
 @MainActor
-enum ChallengeClick {
-    static func checkbox(at point: NSPoint, in webView: WKWebView) async -> String {
-        let windowPoint = windowPoint(fromCSS: point, in: webView)
-        try? await Task.sleep(nanoseconds: 100_000_000)
-        let clickResult = deliverClick(at: windowPoint, in: webView)
-        try? await Task.sleep(nanoseconds: 100_000_000)
-        return "css=\(Int(point.x)),\(Int(point.y)) \(clickResult)"
+final class WebViewChallengePage: ChallengePage {
+    private weak var webView: WKWebView?
+    private var panel: ChallengeOffscreenPanel?
+
+    init(webView: WKWebView) {
+        self.webView = webView
     }
 
-    private static func windowPoint(fromCSS point: NSPoint, in webView: WKWebView) -> NSPoint {
+    func locateLabel(matching text: String) async -> ChallengeLabel? {
+        guard let webView else { return nil }
+        let snapshotRect = webView.bounds
+        guard let image = await snapshot(of: webView, rect: snapshotRect) else { return nil }
+        return await ChallengeVision.findLabel(matching: text, in: image, viewSize: snapshotRect.size)
+    }
+
+    func click(at point: CGPoint, onMouseDown: () -> Void) async throws {
+        guard let webView else { return }
+        attachPanelIfNeeded(to: webView)
+        defer { dismissPanel() }
+
+        try await Task.sleep(nanoseconds: 200_000_000)
+        guard let window = webView.window else { return }
+        let windowPoint = windowPoint(fromCSS: point, in: webView)
+        guard let downEvent = mouseEvent(.leftMouseDown, at: windowPoint, in: window),
+              let upEvent = mouseEvent(.leftMouseUp, at: windowPoint, in: window) else {
+            return
+        }
+
+        window.sendEvent(downEvent)
+        onMouseDown()
+        try? await Task.sleep(nanoseconds: 80_000_000)
+        guard webView.window === window else { return }
+        window.sendEvent(upEvent)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+    }
+
+    private func snapshot(of webView: WKWebView, rect: CGRect) async -> CGImage? {
+        await withCheckedContinuation { continuation in
+            let request = ChallengeSnapshotRequest(continuation: continuation)
+            let configuration = WKSnapshotConfiguration()
+            configuration.rect = rect
+            webView.takeSnapshot(with: configuration) { image, _ in
+                Task { @MainActor in
+                    request.finish(with: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                request.finish(with: nil)
+            }
+        }
+    }
+
+    private func windowPoint(fromCSS point: CGPoint, in webView: WKWebView) -> NSPoint {
         let viewPoint = webView.isFlipped
             ? point
             : NSPoint(x: point.x, y: webView.bounds.height - point.y)
         return webView.convert(viewPoint, to: nil)
     }
 
-    private static func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, in webView: WKWebView) -> NSEvent? {
+    private func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, in window: NSWindow) -> NSEvent? {
         NSEvent.mouseEvent(
             with: type,
             location: point,
             modifierFlags: [],
             timestamp: ProcessInfo.processInfo.systemUptime,
-            windowNumber: webView.window?.windowNumber ?? 0,
+            windowNumber: window.windowNumber,
             context: nil,
             eventNumber: Int.random(in: 1..<10_000),
-            clickCount: type == .leftMouseDown || type == .leftMouseUp ? 1 : 0,
+            clickCount: 1,
             pressure: type == .leftMouseDown ? 1 : 0)
     }
 
-    private static func deliverClick(at point: NSPoint, in webView: WKWebView) -> String {
-        guard let downEvent = mouseEvent(.leftMouseDown, at: point, in: webView),
-              let upEvent = mouseEvent(.leftMouseUp, at: point, in: webView) else {
-            return "event=nil"
-        }
-        webView.window?.sendEvent(downEvent)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.08))
-        webView.window?.sendEvent(upEvent)
-        return "window=\(webView.window != nil)"
-    }
-}
-
-struct ChallengeLabel: Equatable, Sendable {
-    let boundingBox: CGRect
-
-    func checkboxPoint(in imageSize: NSSize) -> NSPoint {
-        let labelFrame = frame(in: imageSize)
-        return NSPoint(x: labelFrame.minX - 20, y: labelFrame.midY)
-    }
-
-    func isStable(comparedTo other: ChallengeLabel, in imageSize: NSSize) -> Bool {
-        let frame = frame(in: imageSize)
-        let otherFrame = other.frame(in: imageSize)
-        return abs(frame.minX - otherFrame.minX) < 8
-            && abs(frame.minY - otherFrame.minY) < 8
-            && abs(frame.width - otherFrame.width) < 8
-            && abs(frame.height - otherFrame.height) < 8
+    /// A `WKWebView` outside a window ignores synthetic mouse events, so the hidden web view joins an off-screen panel for the click only.
+    private func attachPanelIfNeeded(to webView: WKWebView) {
+        guard webView.window == nil else { return }
+        let panel = ChallengeOffscreenPanel(
+            contentRect: NSRect(origin: .zero, size: webView.frame.size),
+            styleMask: [.nonactivatingPanel, .borderless],
+            backing: .buffered,
+            defer: false)
+        panel.becomesKeyOnlyIfNeeded = true
+        panel.hidesOnDeactivate = false
+        panel.isFloatingPanel = false
+        panel.isReleasedWhenClosed = false
+        panel.collectionBehavior = [.stationary, .ignoresCycle]
+        panel.isExcludedFromWindowsMenu = true
+        panel.backgroundColor = .white
+        panel.acceptsMouseMovedEvents = false
+        panel.ignoresMouseEvents = true
+        panel.sharingType = .none
+        panel.contentView = webView
+        self.panel = panel
+        panel.presentOffscreen()
     }
 
-    private func frame(in imageSize: NSSize) -> CGRect {
-        CGRect(
-            x: boundingBox.minX * imageSize.width,
-            y: (1 - boundingBox.maxY) * imageSize.height,
-            width: boundingBox.width * imageSize.width,
-            height: boundingBox.height * imageSize.height)
+    private func dismissPanel() {
+        panel?.dismissOffscreen()
+        panel = nil
     }
 }
 
 enum ChallengeVision {
-    nonisolated static func findChallengeLabel(in image: CGImage) async -> ChallengeLabel? {
+    nonisolated static func findLabel(matching text: String, in image: CGImage, viewSize: CGSize) async -> ChallengeLabel? {
         let task = Task.detached(priority: .utility) {
-            recognizeChallengeLabel(in: image)
+            recognizeLabel(matching: text, in: image, viewSize: viewSize)
         }
         return await withTaskCancellationHandler {
             await task.value
@@ -205,23 +239,28 @@ enum ChallengeVision {
         }
     }
 
-    private nonisolated static func recognizeChallengeLabel(in image: CGImage) -> ChallengeLabel? {
+    /// Prefers the shortest line containing the text, so the widget label wins over a page heading that starts with the same words.
+    private nonisolated static func recognizeLabel(matching text: String, in image: CGImage, viewSize: CGSize) -> ChallengeLabel? {
         guard !Task.isCancelled else { return nil }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
         let handler = VNImageRequestHandler(cgImage: image)
         guard (try? handler.perform([request])) != nil else { return nil }
-        for observation in request.results ?? [] {
-            guard let candidate = observation.topCandidates(1).first else { continue }
-            guard let labelRange = candidate.string.range(
-                of: "Verify you are human",
-                options: [.caseInsensitive]) else { continue }
-            guard let labelObservation = try? candidate.boundingBox(for: labelRange) else { continue }
-            return ChallengeLabel(boundingBox: labelObservation.boundingBox)
-        }
-        return nil
-    }
 
+        let matches = (request.results ?? []).compactMap { observation -> (length: Int, boundingBox: CGRect)? in
+            guard let candidate = observation.topCandidates(1).first,
+                  let range = candidate.string.range(of: text, options: [.caseInsensitive]),
+                  let box = try? candidate.boundingBox(for: range) else { return nil }
+            return (candidate.string.count, box.boundingBox)
+        }
+        guard let boundingBox = matches.min(by: { $0.length < $1.length })?.boundingBox else { return nil }
+
+        return ChallengeLabel(frame: CGRect(
+            x: boundingBox.minX * viewSize.width,
+            y: (1 - boundingBox.maxY) * viewSize.height,
+            width: boundingBox.width * viewSize.width,
+            height: boundingBox.height * viewSize.height))
+    }
 }
 #endif

@@ -400,6 +400,7 @@ public extension SubJobWebRunning {
                                                                                executionConfig: executionConfig,
                                                                                challengePixelDataBroker: context.dataBroker.url,
                                                                                challengePixelBrokerVersion: context.dataBroker.version,
+                                                                               isChallengeSolverEnabled: featureFlagger.isChallengeSolverOn,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
                                                                                contentBlocking: contentBlocking,

@@ -193,15 +193,12 @@ extension WKWebViewConfiguration {
 }
 
 public extension WKWebView {
-    func load(_ url: URL, additionalHTTPHeaders: [String: String] = [:]) {
+    func load(_ url: URL) {
         // Occasionally, the web view will try to load a URL but will find itself with no cookies, even if they've been restored.
         // The consumeCookies call is finishing before this line executes, but if you're fast enough it can happen that WKWebView still hasn't
         // processed the cookies that have been set. Pushing the load to the next iteration of the run loops seems to fix this most of the time.
         DispatchQueue.main.async {
-            var request = URLRequest(url: url)
-            for (header, value) in additionalHTTPHeaders {
-                request.setValue(value, forHTTPHeaderField: header)
-            }
+            let request = URLRequest(url: url)
             self.load(request)
         }
     }

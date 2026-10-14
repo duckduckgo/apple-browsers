@@ -60,16 +60,17 @@
         ]
     },
     "aichat_unified_input_tabs_submission_incomplete": {
-        "description": "Fires once after native dispatch of a prompt when at least one additional tab captured in its submission request is absent from the final payload, including collection failure, empty content, or validation rejection. Partial loss also fires tabs_sent for the contexts that survived. Excludes cancellation, disabled feature, rejected dispatch, tabs removed before submission, and frontend/backend errors.",
+        "description": "Fires once after native dispatch of a prompt when at least one selected tab attachment captured in its submission request is absent from the final payload, including collection failure, empty content, or validation rejection. Partial loss also fires tabs_sent for the contexts that survived. Excludes cancellation, disabled feature, rejected dispatch, tabs removed before submission, and frontend/backend errors.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             "unified_input_surface",
+            "unified_input_page_type",
             {
                 "key": "outcome",
-                "description": "Whether some (partial) or all requested additional tab contexts are missing. Current page context does not affect this classification.",
+                "description": "Whether some (partial) or all requested tab attachment contexts are missing. Contextual current page context does not affect this classification.",
                 "type": "string",
                 "enum": ["partial", "all"]
             }

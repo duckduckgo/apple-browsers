@@ -72,10 +72,12 @@ struct MultiTabSubmissionIncompletePixel: PixelKit.Event {
     }
 
     let outcome: Outcome
-    let surface: UnifiedToggleInputPixelSurface
+    let attribution: MultiTabPixelAttribution
 
     var name: String { "aichat_unified_input_tabs_submission_incomplete" }
-    var parameters: [String: String]? { ["surface": surface.rawValue, "outcome": outcome.rawValue] }
+    var parameters: [String: String]? {
+        ["surface": attribution.surface.rawValue, "page_type": attribution.pageType.rawValue, "outcome": outcome.rawValue]
+    }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 

@@ -61,7 +61,13 @@ final class WebKitPasskeyRequestCanceller {
     /// A request WebKit asked to start that hasn't been sent to the agent yet, because it's waiting out
     /// ``delayAfterCancellingOpenRequest``. Kept so it can be started once the delay passes, or reported to WebKit as
     /// cancelled if WebKit cancels it or a newer request replaces it first.
-    private var heldRequest: (controller: PasskeyAuthorizationController, perform: () -> Void)?
+    private var heldRequest: HeldRequest?
+
+    private struct HeldRequest {
+        let controller: PasskeyAuthorizationController
+        /// Runs the original method that starts the request.
+        let perform: () -> Void
+    }
 
     init(webKitDelegateClass: AnyClass, delayAfterCancellingOpenRequest: TimeInterval = 1) {
         self.webKitDelegateClass = webKitDelegateClass
@@ -72,33 +78,48 @@ final class WebKitPasskeyRequestCanceller {
     /// `performRequests` and `performAutoFillAssistedRequests`; `perform` runs the original method, either right away or
     /// after ``delayAfterCancellingOpenRequest``. Requests that don't come from WebKit start untouched.
     func willPerform(_ controller: PasskeyAuthorizationController, perform: @escaping () -> Void) {
-        guard let delegate = controller.delegate,
-              (delegate as AnyObject).isKind(of: webKitDelegateClass) else {
-            perform()
-            return
-        }
+        guard isWebKitRequest(controller) else { return perform() }
 
-        var mustWait = false
-        if let held = heldRequest, held.controller !== controller {
-            // A newer request replaces the one still waiting, which never reached the agent. The earlier
-            // cancellation's wind-down is still running, so the newer one waits too.
-            heldRequest = nil
-            held.controller.completeAsCancelled()
-            mustWait = true
-        } else if let previous = lastWebKitController, previous !== controller {
-            // A controller starting again is the same request resuming, so it isn't cancelled. A previous request
-            // that still has its delegate is open in another page, so the new one waits.
-            mustWait = previous.delegate != nil
-            Logger.general.log("Cancelling the previous WebKit passkey request")
-            previous.cancel()
-        }
+        let mustWait = endHeldRequest() || cancelPreviousRequest(before: controller)
         lastWebKitController = controller
 
-        guard mustWait else {
+        if mustWait {
+            hold(controller, perform: perform)
+        } else {
             perform()
-            return
         }
-        heldRequest = (controller, perform)
+    }
+
+    private func isWebKitRequest(_ controller: PasskeyAuthorizationController) -> Bool {
+        guard let delegate = controller.delegate else { return false }
+        return (delegate as AnyObject).isKind(of: webKitDelegateClass)
+    }
+
+    /// Ends the request still held from an earlier cancellation; it never reached the agent, so WebKit is told it was
+    /// cancelled. Returns whether one was held: that cancellation is still winding down, so the new request waits too.
+    private func endHeldRequest() -> Bool {
+        guard let held = heldRequest else { return false }
+        heldRequest = nil
+        held.controller.completeAsCancelled()
+        return true
+    }
+
+    /// Cancels the previous request. Returns whether the new request has to wait: a previous request that still has
+    /// WebKit's delegate is open in another page or paused, and its wind-down would drop the new one. One without it was
+    /// replaced or has finished.
+    private func cancelPreviousRequest(before controller: PasskeyAuthorizationController) -> Bool {
+        // A controller starting again is the same request resuming, so there's nothing to cancel.
+        guard let previous = lastWebKitController, previous !== controller else { return false }
+        let isStillOpen = previous.delegate != nil
+        Logger.general.log("Cancelling the previous WebKit passkey request")
+        previous.cancel()
+        return isStillOpen
+    }
+
+    /// Starts the request once ``delayAfterCancellingOpenRequest`` has passed, unless WebKit cancels it or a newer
+    /// request replaces it first.
+    private func hold(_ controller: PasskeyAuthorizationController, perform: @escaping () -> Void) {
+        heldRequest = HeldRequest(controller: controller, perform: perform)
         DispatchQueue.main.asyncAfter(deadline: .now() + delayAfterCancellingOpenRequest) { [weak self, weak controller] in
             guard let self, let held = heldRequest, held.controller === controller else { return }
             heldRequest = nil

@@ -1,0 +1,99 @@
+{
+    "m_prompt_exposure": {
+        "description": "Fires each time an app-originated prompt is shown. The New Tab Page remote message card counts once per message per install-week. App rating counts requests because iOS decides whether to display the dialog. nth_in_week is the exposure ordinal across all prompts in that install-week.",
+        "owners": ["bkunat"],
+        "triggers": ["impression"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "promptDaysSinceInstall",
+            {
+                "key": "nth_in_week",
+                "type": "string",
+                "description": "Ordinal of this exposure within the current install-week, exact up to 10 and bucketed above.",
+                "enum": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11_15", "16_20", "21_plus"]
+            },
+            "petal",
+            "promptExposureVersion",
+            "appVersion"
+        ]
+    },
+    "m_prompt_shown": {
+        "description": "Fires immediately after m_prompt_exposure, identifying the kind of prompt shown. App rating counts requests because iOS decides whether to display the dialog.",
+        "owners": ["bkunat"],
+        "triggers": ["impression"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "promptDaysSinceInstall",
+            {
+                "key": "prompt_id",
+                "type": "string",
+                "description": "The kind of app-originated prompt shown. No message or user identifiers are sent.",
+                "enum": [
+                    "app_rating_prompt",
+                    "win_back_offer",
+                    "subscription_promo_modal",
+                    "new_address_bar_picker",
+                    "re_engagement_prompt",
+                    "additional_default_browser_prompts",
+                    "remote_message_modal",
+                    "cookie_popup_opt_in",
+                    "remote_message_card",
+                    "import_passwords_google",
+                    "autofill_extension_prompt",
+                    "add_to_dock_reminder"
+                ]
+            },
+            "petal",
+            "promptExposureVersion",
+            "appVersion"
+        ]
+    },
+    "m_prompt_user_week": {
+        "description": "Fires once per install-week on the first app foreground after onboarding is complete, providing the denominator for prompt exposures.",
+        "owners": ["bkunat"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["promptDaysSinceInstall", "promptExposureVersion", "appVersion"]
+    },
+    "m_prompt_gap": {
+        "description": "Fires when a coordinated prompt finishes, measuring the time since the previous coordinated prompt finished. Modals finish on presentation, app rating on redemption of its reserved slot, and the New Tab Page card on removal after a confirmed appearance. Only fires in coordinated mode.",
+        "owners": ["bkunat"],
+        "triggers": ["impression", "user_interaction", "feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "promptDaysSinceInstall",
+            {
+                "key": "gap_bucket",
+                "type": "string",
+                "description": "Time since the previous coordinated prompt finished, with inclusive lower bounds. first means there is no previous timestamp. Clock rollback skips this pixel but updates the timestamp.",
+                "enum": ["first", "lt_1m", "1_5m", "5_10m", "10_30m", "30_60m", "1_4h", "4_12h", "12_24h", "24_48h", "gt_48h"]
+            },
+            {
+                "key": "prompt_type",
+                "type": "string",
+                "description": "The kind of coordinated prompt that finished.",
+                "enum": ["MODAL", "NTP_CARD"]
+            },
+            "petal",
+            "promptExposureVersion",
+            "appVersion"
+        ]
+    },
+    "m_prompt_session": {
+        "description": "Fires on the next foreground after at least 60 seconds in the background, once onboarding is complete. It reports the previous session, sampled at 5% of sessions. Install age is measured at backgrounding. A final session is not reported if the app is never opened again.",
+        "owners": ["bkunat"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "promptDaysSinceInstall",
+            {
+                "key": "prompt_shown",
+                "type": "boolean",
+                "description": "Whether an app-originated prompt was reported during the session. A remote message card only counts in the session where it first survives install-week deduplication."
+            },
+            "petal",
+            "promptExposureVersion",
+            "appVersion"
+        ]
+    }
+}

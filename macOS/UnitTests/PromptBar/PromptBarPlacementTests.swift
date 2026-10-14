@@ -69,4 +69,21 @@ final class PromptBarPlacementTests: XCTestCase {
 
         XCTAssertGreaterThanOrEqual(frame.minY, screen.minY)
     }
+
+    func testWhenRelativePositionIsAppliedToAnotherScreenThenItKeepsTheSameProportions() {
+        let moved = NSRect(x: 144, y: 500, width: PromptBarPlacement.preferredWidth, height: 56)
+        let relativePosition = PromptBarPlacement.relativePosition(of: moved, in: screen)
+        let secondScreen = NSRect(x: 1440, y: 200, width: 2880, height: 1800)
+
+        let frame = PromptBarPlacement.frame(forContentHeight: 56, in: secondScreen, relativePosition: relativePosition)
+
+        XCTAssertEqual(frame.minX, secondScreen.minX + 288)
+        XCTAssertEqual(frame.maxY, secondScreen.maxY - 688)
+    }
+
+    func testWhenRelativePositionWouldLeaveTheScreenThenFrameIsClampedOnScreen() {
+        let frame = PromptBarPlacement.frame(forContentHeight: 56, in: screen, relativePosition: CGPoint(x: 0.9, y: 0.99))
+
+        XCTAssertTrue(screen.contains(frame))
+    }
 }

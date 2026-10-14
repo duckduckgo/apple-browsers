@@ -2723,12 +2723,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                           aiChatTabOpener: aiChatTabOpener,
                                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                           preferences: aiChatPreferencesPersistor)
+        let positionStore = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
             presenter: PromptBarPresenter(content: content,
                                           presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
-                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) },
+                                          isDragEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatDragPromptBar) },
+                                          loadRelativePosition: { positionStore.relativePosition },
+                                          saveRelativePosition: { positionStore.relativePosition = $0 })
         )
         coordinator.start()
         promptBarCoordinator = coordinator

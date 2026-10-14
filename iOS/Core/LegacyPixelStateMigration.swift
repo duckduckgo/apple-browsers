@@ -109,10 +109,35 @@ public struct LegacyPixelStateMigration {
         self.migrationVersion = migrationVersion
     }
 
+    /// Reads every destination entry before writing any of them, and writes each changed entry once.
+    ///
+    /// This runs on the main thread during launch, against a `UserDefaults` suite. A write
+    /// invalidates the suite's cached dictionary, so a read that follows a write rebuilds it from
+    /// scratch. Alternating read and write per pixel pays that rebuild once per pixel, which on
+    /// installs with many legacy keys was enough to trip the launch watchdog.
     public func run() {
         guard !hasAlreadyRun else { return }
 
+        let legacyDates = legacyDatesByPixelName()
+        let updatedMaps = mergedMapsNeedingWrite(for: legacyDates)
+
         var migrated = 0
+        for (pixelName, map) in updatedMaps {
+            do {
+                try destination.set(map, forKey: Self.pixelKitKeyPrefix + pixelName)
+                migrated += 1
+            } catch {
+                logger.error("Could not migrate \(pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        logger.log("Migrated \(migrated, privacy: .public) of \(legacyDates.count, privacy: .public) legacy pixels into PixelKit")
+        try? completionFlagStore.set(migrationVersion, forKey: completionFlagKey)
+    }
+
+    /// Every legacy last-fire date, grouped by pixel name into the `[mapKey: Date]` shape PixelKit stores.
+    private func legacyDatesByPixelName() -> [String: [String: Date]] {
+        var datesByPixelName: [String: [String: Date]] = [:]
         for source in sources {
             guard let store = source.store else {
                 // e.g. the VPN tunnel has no debounceStore - normal, so debug not error.
@@ -130,17 +155,34 @@ public struct LegacyPixelStateMigration {
             }
 
             for (pixelName, date) in dates {
-                do {
-                    try merge(date: date, mapKey: source.mapKey, pixelName: pixelName)
-                    migrated += 1
-                } catch {
-                    logger.error("Could not migrate \(pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                }
+                datesByPixelName[pixelName, default: [:]][source.mapKey] = date
             }
         }
+        return datesByPixelName
+    }
 
-        logger.log("Migrated \(migrated, privacy: .public) legacy pixel last-fire dates into PixelKit")
-        try? completionFlagStore.set(migrationVersion, forKey: completionFlagKey)
+    /// Merges the legacy dates into PixelKit's current entries and returns only the entries that
+    /// changed. Performs reads only, so the destination's cache stays valid throughout.
+    private func mergedMapsNeedingWrite(for legacyDates: [String: [String: Date]]) -> [String: [String: Date]] {
+        var updatedMaps: [String: [String: Date]] = [:]
+        for (pixelName, dates) in legacyDates {
+            let existing: [String: Date]
+            do {
+                existing = (try destination.object(forKey: Self.pixelKitKeyPrefix + pixelName) as? [String: Date]) ?? [:]
+            } catch {
+                logger.error("Could not migrate \(pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                continue
+            }
+            // Keep whichever date is later. Before the call sites move, the legacy store is the one
+            // still being written and PixelKit's entry is the stale copy an earlier run made;
+            // afterwards PixelKit's own entry is the newer one. Only ever moving a date forward means
+            // a re-run can suppress a duplicate fire but never cause one.
+            let merged = existing.merging(dates) { max($0, $1) }
+            if merged != existing {
+                updatedMaps[pixelName] = merged
+            }
+        }
+        return updatedMaps
     }
 
     private var hasAlreadyRun: Bool {
@@ -161,18 +203,6 @@ public struct LegacyPixelStateMigration {
             logger.error("Could not read the legacy pixel state migration completion flag: \(error.localizedDescription, privacy: .public); skipping this run")
             return true
         }
-    }
-
-    private func merge(date: Date, mapKey: String, pixelName: String) throws {
-        let key = Self.pixelKitKeyPrefix + pixelName
-        var map = (try destination.object(forKey: key) as? [String: Date]) ?? [:]
-        // Keep whichever date is later. Before the call sites move, the legacy store is the one still
-        // being written and PixelKit's entry is the stale copy an earlier run made; afterwards
-        // PixelKit's own entry is the newer one. Only ever moving a date forward means a re-run can
-        // suppress a duplicate fire but never cause one.
-        if let existing = map[mapKey], existing >= date { return }
-        map[mapKey] = date
-        try destination.set(map, forKey: key)
     }
 }
 

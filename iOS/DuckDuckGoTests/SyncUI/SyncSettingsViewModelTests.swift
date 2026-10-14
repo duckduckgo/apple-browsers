@@ -457,9 +457,9 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .connecting(isRecovery: false)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+        sut.showSuccess(recoveryCode: "code", destination: .newlySyncing)
 
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .newlySyncing))
         XCTAssertEqual(sut.recoveryCode, "code")
     }
 
@@ -467,18 +467,18 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .connecting(isRecovery: true)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: true)
+        sut.showSuccess(recoveryCode: "code", destination: .recovery)
 
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: true, isFinishing: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: true, successDestination: .recovery))
     }
 
     func testWhenShowSuccessOutsideConnectingThenNavigatesToSuccessImmediately() {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+        sut.showSuccess(recoveryCode: "code", destination: .newlySyncing)
 
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.newlySyncing))
         XCTAssertEqual(sut.recoveryCode, "code")
     }
 
@@ -486,18 +486,18 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = nil
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: true)
+        sut.showSuccess(recoveryCode: "code", destination: .recovery)
 
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.recovery))
     }
 
     func testWhenConnectingAnimationFinishesWhileFinishingThenNavigatesToSuccess() {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
-        sut.connectingSheetPhase = .connecting(isRecovery: true, isFinishing: true)
+        sut.connectingSheetPhase = .connecting(isRecovery: true, successDestination: .recovery)
 
         sut.connectingAnimationDidFinish()
 
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.recovery))
     }
 
     func testWhenConnectingAnimationFinishesWhileNotFinishingThenPhaseIsUnchanged() {
@@ -506,7 +506,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
 
         sut.connectingAnimationDidFinish()
 
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false))
     }
 
     func testWhenConnectingAnimationFinishesOutsideConnectingThenPhaseIsUnchanged() {
@@ -522,11 +522,11 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .connecting(isRecovery: false)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: false)
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        sut.showSuccess(recoveryCode: "code", destination: .newlySyncing)
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .newlySyncing))
 
         sut.connectingAnimationDidFinish()
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.newlySyncing))
     }
 
     func testWhenAnotherDevicePromptAppearedThenFiresPromptShownPixel() {
@@ -910,6 +910,192 @@ final class SyncSettingsViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncTappedThenAuthenticatesAndShowsTurnOffSheet() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        var isDeleteAllDataAlertShown = false
+        delegate.onConfirmAndDeleteAllData = { isDeleteAllDataAlertShown = true }
+        let sheetShown = expectation(description: "Turn off sheet shown")
+        let cancellable = sut.$isTurnOffSyncSheetVisible
+            .dropFirst()
+            .sink { isVisible in
+                if isVisible {
+                    sheetShown.fulfill()
+                }
+            }
+
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [sheetShown], timeout: 5)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertFalse(isDeleteAllDataAlertShown)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.sheetShown])
+        cancellable.cancel()
+    }
+
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncTappedTwiceThenAuthenticatesOnlyOnce() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        let sheetShown = expectation(description: "Turn off sheet shown")
+        let cancellable = sut.$isTurnOffSyncSheetVisible
+            .dropFirst()
+            .sink { isVisible in
+                if isVisible {
+                    sheetShown.fulfill()
+                }
+            }
+
+        sut.turnOffSyncTapped()
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [sheetShown], timeout: 5)
+        await Task.yield()
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.sheetShown])
+        XCTAssertFalse(sut.isBusy)
+        cancellable.cancel()
+    }
+
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncAuthenticationFailsThenTurnOffSheetIsNotShown() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        let authenticationFinished = expectation(description: "Authentication finished")
+        delegate.onAuthenticateUserFinished = { authenticationFinished.fulfill() }
+
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [authenticationFinished], timeout: 5)
+        await Task.yield()
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertTrue(delegate.firedTurnOffSyncSheetPixelEvents.isEmpty)
+    }
+
+    func testWhenImprovedPairingFlowOffAndTurnOffSyncTappedThenShowsDeleteAllDataAlertInsteadOfSheet() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: false)
+        let deleteAllDataAlertShown = expectation(description: "Delete all data alert shown")
+        delegate.onConfirmAndDeleteAllData = { deleteAllDataAlertShown.fulfill() }
+
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [deleteAllDataAlertShown], timeout: 5)
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+    }
+
+    func testWhenTurnOffSheetRemoveDeviceConfirmedThenDisablesSyncAfterSheetDismisses() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        sut.isTurnOffSyncSheetVisible = true
+        var isSyncDisabledByDelegate = false
+        var isServerDataDeleted = false
+        delegate.onDisableSync = { isSyncDisabledByDelegate = true }
+        delegate.onDeleteAllData = { isServerDataDeleted = true }
+        let syncDisabled = expectation(description: "Sync disabled")
+        let cancellable = sut.$isSyncEnabled
+            .dropFirst()
+            .sink { isEnabled in
+                if !isEnabled {
+                    syncDisabled.fulfill()
+                }
+            }
+
+        sut.turnOffSyncSheetRemoveDeviceConfirmed()
+
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertFalse(isSyncDisabledByDelegate)
+
+        sut.turnOffSyncSheetDidDismiss()
+
+        await fulfillment(of: [syncDisabled], timeout: 5)
+        XCTAssertTrue(isSyncDisabledByDelegate)
+        XCTAssertFalse(isServerDataDeleted)
+        cancellable.cancel()
+    }
+
+    func testWhenTurnOffSheetDeleteServerDataConfirmedThenDeletesServerDataAfterSheetDismisses() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        sut.isTurnOffSyncSheetVisible = true
+        var isSyncDisabledByDelegate = false
+        var isServerDataDeleted = false
+        delegate.onDisableSync = { isSyncDisabledByDelegate = true }
+        delegate.onDeleteAllData = { isServerDataDeleted = true }
+        let syncDisabled = expectation(description: "Sync disabled")
+        let cancellable = sut.$isSyncEnabled
+            .dropFirst()
+            .sink { isEnabled in
+                if !isEnabled {
+                    syncDisabled.fulfill()
+                }
+            }
+
+        sut.turnOffSyncSheetDeleteServerDataConfirmed()
+
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertFalse(isServerDataDeleted)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.deleteServerDataConfirmationConfirmed])
+
+        sut.turnOffSyncSheetDidDismiss()
+
+        await fulfillment(of: [syncDisabled], timeout: 5)
+        XCTAssertTrue(isServerDataDeleted)
+        XCTAssertFalse(isSyncDisabledByDelegate)
+        cancellable.cancel()
+    }
+
+    func testWhenTurnOffSheetClosedThenSyncStaysOn() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        sut.isTurnOffSyncSheetVisible = true
+        var isSyncDisabledByDelegate = false
+        var isServerDataDeleted = false
+        delegate.onDisableSync = { isSyncDisabledByDelegate = true }
+        delegate.onDeleteAllData = { isServerDataDeleted = true }
+
+        sut.dismissTurnOffSyncSheet()
+        sut.turnOffSyncSheetDidDismiss()
+        await Task.yield()
+
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertTrue(sut.isSyncEnabled)
+        XCTAssertFalse(isSyncDisabledByDelegate)
+        XCTAssertFalse(isServerDataDeleted)
+        XCTAssertTrue(delegate.firedTurnOffSyncSheetPixelEvents.isEmpty)
+    }
+
+    func testWhenTurnOffSheetRemoveDeviceTappedThenFiresThisDeviceOptionSelected() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+
+        sut.turnOffSyncSheetRemoveDeviceTapped()
+
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.optionSelected(.thisDevice)])
+    }
+
+    func testWhenTurnOffSheetDeleteServerDataTappedThenFiresAllDevicesAndServerDataOptionSelected() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+
+        sut.turnOffSyncSheetDeleteServerDataTapped()
+
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.optionSelected(.allDevicesAndServerData)])
+    }
+
+    func testWhenTurnOffSheetDeleteServerDataCancelledThenFiresConfirmationDismissedAndKeepsSheetOpen() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isTurnOffSyncSheetVisible = true
+
+        sut.turnOffSyncSheetDeleteServerDataCancelled()
+
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.deleteServerDataConfirmationDismissed])
+        XCTAssertTrue(sut.isTurnOffSyncSheetVisible)
+    }
+
     func testWhenOtherDeviceDetailsRemoveDeviceTappedThenFiresRemoveDevicePixel() {
         let delegate = MockSyncSettingsViewModelDelegate()
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
@@ -951,6 +1137,29 @@ final class SyncSettingsViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenOnlyThisDeviceIsSyncedThenDeleteServerDataIsSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        XCTAssertTrue(sut.isDeleteServerDataSelectedByDefault)
+    }
+
+    func testWhenOtherDevicesAreSyncedThenDeleteServerDataIsNotSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+        sut.devices = [
+            .init(id: "1", name: "iPhone", type: "phone", isThisDevice: true),
+            .init(id: "2", name: "Mac", type: "desktop", isThisDevice: false)
+        ]
+
+        XCTAssertFalse(sut.isDeleteServerDataSelectedByDefault)
+    }
+
+    func testWhenDevicesAreNotLoadedThenDeleteServerDataIsNotSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+
+        XCTAssertFalse(sut.isDeleteServerDataSelectedByDefault)
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil,
                          isImprovedPairingFlowEnabled: Bool = false) -> SyncSettingsViewModel {
@@ -984,8 +1193,11 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var onShowSyncWithAnotherDevice: (() -> Void)?
     var firedSyncSetupPixelEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] = []
     var firedDeviceDetailsPixelEvents: [SyncSettingsViewModel.DeviceDetailsPixelEvent] = []
+    var firedTurnOffSyncSheetPixelEvents: [SyncSettingsViewModel.TurnOffSyncSheetPixelEvent] = []
     var onSimplifiedConfirmAndDisableSync: (() -> Void)?
     var onDisableSync: (() -> Void)?
+    var onConfirmAndDeleteAllData: (() -> Void)?
+    var onDeleteAllData: (() -> Void)?
 
     var syncBookmarksPausedTitle: String?
     var syncCredentialsPausedTitle: String?
@@ -1042,7 +1254,14 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
         onDisableSync?()
         return true
     }
-    func confirmAndDeleteAllData() async -> Bool { true }
+    func confirmAndDeleteAllData() async -> Bool {
+        onConfirmAndDeleteAllData?()
+        return true
+    }
+    func deleteAllData() async -> Bool {
+        onDeleteAllData?()
+        return true
+    }
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool { true }
     func removeDevice(_ device: SyncSettingsViewModel.Device) {}
     func updateDeviceName(_ name: String) {}
@@ -1059,6 +1278,9 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     }
     func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent) {
         firedDeviceDetailsPixelEvents.append(event)
+    }
+    func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent) {
+        firedTurnOffSyncSheetPixelEvents.append(event)
     }
 }
 

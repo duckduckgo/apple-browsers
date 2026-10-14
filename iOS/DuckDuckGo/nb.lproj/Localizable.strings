@@ -514,6 +514,21 @@
 /* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
 "aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Listening…";
 
+/* Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.ask.button" = "Spør";
+
+/* Title of the Duck.ai input's send button while Create Image is selected and the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms */
+"aichat.termsOfService.create.button" = "Opprett";
+
+/* Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer" = "DuckDuckGo anonymiserer chattene dine. Ved å klikke på «Spør» godtar du våre %@.";
+
+/* Disclaimer below the Duck.ai input while Create Image is selected, for users who haven't accepted the terms yet; tapping the input's 'Create' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service' */
+"aichat.termsOfService.disclaimer.create" = "DuckDuckGo anonymiserer chattene dine. Ved å klikke på «Opprett» godtar du våre %@.";
+
+/* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
+"aichat.termsOfService.disclaimer.link" = "Personvernerklæring og vilkår for bruk";
+
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Angi tone, lengde og atferd";
 
@@ -2678,7 +2693,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Skjul snarveien «Gå tilbake til»";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Gå tilbake til fanen du brukte sist";
+"escapeHatch.menu.lastUsedTab" = "Sist brukte fane";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Flere alternativer";
@@ -4520,25 +4535,25 @@
 "settings.complete.setup" = "Fullfør oppsettet";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Vi prøver å velge de mest private alternativene for informasjonskapsler som er tilgjengelige, og så lukker vi disse popup-vinduene.";
+"settings.cookie.auto-manage.explanation" = "Vi prøver å avvise så mange informasjonskapsler som mulig for deg, og lukker deretter popup-vinduene.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Administrer popup-vinduer om informasjonskapsler automatisk";
+"settings.cookie.auto-manage.title" = "Avvis valgfrie informasjonskapsler";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mot popup-vinduer om informasjonskapsler";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan administrere innstillinger for informasjonskapsler automatisk for å maksimere personvernet, minimere informasjonskapsler og lukke disse popup-vinduene.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan automatisk håndtere popup-vinduer om informasjonskapsler. Vi ivaretar personvernet ditt og fjerner forespørsler om informasjonskapsler før du i det hele tatt ser dem.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer vinduer om informasjonskapsler";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Du kan også la DuckDuckGo spare deg for et klikk ved å godta informasjonskapsler på dine vegne, og dermed lukke popup-vinduer som ikke gir deg muligheten til å reservere deg.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Hvis det ikke finnes noe alternativ for å avvise dem, sparer vi deg for et klikk, godtar disse informasjonskapslene for deg og lukker popup-vinduene.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Popup-vinduer uten mulighet til å reservere seg";
+"settings.cookie.popups-without-opt-outs.title" = "Godta informasjonskapsler som ikke kan avvises";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Slett faner og data";
@@ -4641,6 +4656,15 @@
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
+
+/* Keyboard setting to show the keyboard on App Launch */
+"settings.keyboard.app-launch" = "Appoversikt";
+
+/* Keyboard setting to show the keyboard on a New Tab page */
+"settings.keyboard.new-tab" = "Ny fane";
+
+/* Header for settings that control when to show the keyboard */
+"settings.keyboard.show-on" = "Vis tastatur i";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Viser en lenke for å gå tilbake til den sist brukte fanen når du åpner appen igjen etter inaktivitet.";
@@ -5352,9 +5376,6 @@
 
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Vil du slå av Sync & Backup og slette serverdata?";
-
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "En ny enhet er lagt til!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Gjenopprettingskoden er kopiert";

@@ -1059,8 +1059,17 @@ extension AppDelegate {
 
 extension MainViewController {
 
+    private var isWindowClosingAndBurning: Bool {
+        (view.window?.windowController as? MainWindowController)?.isClosingAndBurning == true
+    }
+
     /// Finds currently active Tab even if it's playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
+        // A Fire Window can remain key during its closing animation after its last tab is removed.
+        guard !isWindowClosingAndBurning else {
+            return nil
+        }
+
         var tab: Tab? {
             // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly from a key window
             if let window = self.view.window,
@@ -1939,6 +1948,10 @@ extension MainViewController {
 extension MainViewController: NSMenuItemValidation {
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard !isWindowClosingAndBurning else {
+            return false
+        }
+
         guard fireViewController.fireViewModel.fire.burningData == nil else {
             return true
         }

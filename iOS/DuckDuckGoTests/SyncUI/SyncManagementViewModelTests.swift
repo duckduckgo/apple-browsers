@@ -203,6 +203,11 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         return true
     }
 
+    func deleteAllData() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
     func copyCode() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }

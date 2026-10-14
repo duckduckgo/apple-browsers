@@ -187,7 +187,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
+                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, destination: .newlySyncing)
             } catch {
                 optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
@@ -198,6 +198,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) async {
+        await dismissPairingV2Scanner()
         await withCheckedContinuation { continuation in
             if type.shouldSendPixel, let event = event {
                 firePixelIfNeededFor(event: event, error: error)
@@ -477,6 +478,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         pixelFiring?.fire(pixel)
     }
 
+    func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent) {
+        let pixel: SyncTurnOffPixel
+        switch event {
+        case .sheetShown: pixel = .sheetShown
+        case .optionSelected(let option): pixel = .optionSelected(option)
+        case .deleteServerDataConfirmationConfirmed: pixel = .deleteServerDataConfirmationConfirmed
+        case .deleteServerDataConfirmationDismissed: pixel = .deleteServerDataConfirmationDismissed
+        }
+        pixelFiring?.fire(pixel)
+    }
+
     @MainActor
     func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {
         guard needsPreservedAccountCleanupBeforeServerOperation else {
@@ -551,6 +563,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func collectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
         codeCollectionIntent = intent
+        captureStartingSyncAccount()
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(intent: intent)
             return
@@ -771,6 +784,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func dismissPairingV2Setup() async {
+        await dismissPairingV2Scanner()
+        viewModel.dismissConnectingSheet()
+    }
+
+    private func dismissPairingV2Scanner() async {
         // Dismiss from the presenter so both the scanner and its nested QR sheet are removed.
         if let scanner = scanCodeNavigationController,
            let presenter = scanner.presentingViewController,
@@ -781,7 +799,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 }
             }
         }
-        viewModel.dismissConnectingSheet()
     }
 
     func simplifiedConfirmAndDisableSync() async -> Bool {
@@ -817,8 +834,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func confirmAndDeleteAllData() async -> Bool {
-        let deviceCount = viewModel.devices.count
-        let pixelParameters = uiVersionParameters
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.simplifiedSyncDeleteAllConfirmTitle,
                                           message: UserText.simplifiedSyncDeleteAllConfirmMessage,
@@ -828,25 +843,30 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             self.onConfirmAndDeleteAllData = { [weak self] in
                 Task { @MainActor in
-                    do {
-                        try await self?.syncService.deleteAccount()
-                        var parameters = pixelParameters
-                        parameters[PixelParameters.connectedDevices] = "\(deviceCount)"
-                        self?.pixelFiring?.fire(Pixel.Event.syncDisabledAndDeleted, options: .parameters(parameters))
-                        self?.viewModel.isSyncEnabled = false
-                        self?.syncPausedStateManager.syncDidTurnOff()
-                        ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
-                        continuation.resume(returning: true)
-                    } catch {
-                        await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
-                        continuation.resume(returning: false)
-                    }
+                    continuation.resume(returning: await self?.deleteAllData() ?? false)
                 }
             }
             alert.addAction(title: UserText.syncDeleteAllConfirmAction, style: .destructive) {
                 self.onConfirmAndDeleteAllData?()
             }
             self.present(alert, animated: true)
+        }
+    }
+
+    @MainActor
+    func deleteAllData() async -> Bool {
+        var parameters = uiVersionParameters
+        parameters[PixelParameters.connectedDevices] = "\(viewModel.devices.count)"
+        do {
+            try await syncService.deleteAccount()
+            pixelFiring?.fire(Pixel.Event.syncDisabledAndDeleted, options: .parameters(parameters))
+            viewModel.isSyncEnabled = false
+            syncPausedStateManager.syncDidTurnOff()
+            ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
+            return true
+        } catch {
+            await handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
+            return false
         }
     }
 
@@ -1022,12 +1042,14 @@ private enum SyncSetupPixelInfo {
         static let ddg = "ddg"
         static let v1 = "v1"
         static let v2 = "v2"
+        static let v2Point1 = "v2.1"
     }
 }
 
 extension SyncSettingsViewController {
 
     var syncSetupPixelFlowVersion: String {
-        featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) ? SyncSetupPixelInfo.Value.v2 : SyncSetupPixelInfo.Value.v1
+        guard featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) else { return SyncSetupPixelInfo.Value.v1 }
+        return featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1) ? SyncSetupPixelInfo.Value.v2Point1 : SyncSetupPixelInfo.Value.v2
     }
 }

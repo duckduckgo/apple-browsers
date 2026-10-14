@@ -342,7 +342,8 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
-                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
+                                                                  eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
@@ -628,7 +629,8 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents)
+                       errorReporting: Self.debugEvents,
+                       isFastTrackingParameterFilterEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.fastTrackingParameterFilter) })
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -1217,11 +1219,10 @@ class TabViewController: UIViewController {
     }
 
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
-        updateWebViewBottomConstraint(for: barsVisibilityPercent)
-
         if floatingUIManager.isFloatingUIEnabled {
             updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent)
         } else {
+            updateWebViewBottomConstraint(for: barsVisibilityPercent)
             updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
         }
     }
@@ -1341,8 +1342,10 @@ class TabViewController: UIViewController {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
                                                isFloatingUIEnabled: true, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
+            // Keep WebKit's viewport stable too. Changing it on every display-link tick can
+            // relayout page-fixed content while the glass is morphing over a full-bleed web view.
+            setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
         }
-        setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
         // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
         hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
@@ -6037,8 +6040,8 @@ private extension TabViewController {
                 preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
-                pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestore, frequency: .standard)
-                pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestoreDaily, frequency: .legacyDailyNoSuffix)
+                pixelFiring?.fire(TabInteractionStatePixel.interactionStateFailedToRestore, frequency: .standard)
+                pixelFiring?.fire(TabInteractionStatePixel.interactionStateFailedToRestoreDaily, frequency: .legacyDailyNoSuffix)
             }
 
             let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime

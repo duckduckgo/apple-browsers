@@ -953,6 +953,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
     case bookmarksBarSyncPromo
+
+    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
+    case bookmarkAddedSyncPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

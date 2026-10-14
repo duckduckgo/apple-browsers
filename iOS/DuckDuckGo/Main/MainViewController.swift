@@ -175,6 +175,7 @@ class MainViewController: UIViewController {
 
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
+    var isPerformingOnboardingInputHandoff = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private var daxGreetingAppearance: DaxGreetingContext.Appearance?
@@ -1234,6 +1235,11 @@ class MainViewController: UIViewController {
                                                     hasInlineSearchInput: { [weak self] tab in
                                                         guard let self, tab?.isAITab != true, tab?.link == nil,
                                                               !(tab?.fireTab ?? self.isCurrentTabFireTab()) else { return false }
+                                                        if let tab, tab === self.tabManager.currentTabsModel.currentTab,
+                                                           let page = self.newTabPageViewController, page.parent === self,
+                                                           page.hasInlineSearchInput, page.isPresentingOnboardingDialog {
+                                                            return false
+                                                        }
                                                         return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
                                                     }) { [weak self] tab in
 
@@ -2571,7 +2577,7 @@ class MainViewController: UIViewController {
 
         // Suppress the NTP before it enters the view hierarchy so the Dax logo can't flash
         // on the one frame between addToContentContainer and the async alpha-0 set inside
-        // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageViewController
+        // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageOnboardingCoordinator
         // on every dismissal path.
         if daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled {
             controller.view.alpha = 0
@@ -7377,7 +7383,7 @@ extension MainViewController: TabDelegate {
               aiChatSettings.isAIChatEnabled else { return }
         let message = UserText.Onboarding.DuckAIQuery.completionOnboardingMessage
         // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
-        // flash before the editing-state transition begins. Restored by NewTabPageViewController
+        // flash before the editing-state transition begins. Restored by NewTabPageOnboardingCoordinator
         // on every dismissal path.
         newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in
@@ -8764,6 +8770,8 @@ extension MainViewController: OnboardingDelegate {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
 
+        // Hide redesigned resting content before the modal fades out; input still activates after dismissal.
+        (newTabPageViewController as? RedesignedNewTabPageViewController)?.prepareForLinearOnboardingDismissal()
         controller.modalTransitionStyle = .crossDissolve
         controller.dismiss(animated: true) { [weak self] in
             self?.newTabPageViewController?.onboardingCompleted()

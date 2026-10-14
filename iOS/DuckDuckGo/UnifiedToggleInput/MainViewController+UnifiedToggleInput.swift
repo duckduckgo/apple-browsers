@@ -1338,6 +1338,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .intercept
         }
         guard let coordinator = unifiedToggleInputCoordinator, currentTab?.isAITab != true else { return .allowDefault }
+        if coordinator.isTabAttachmentFeatureAvailable, let tab = tabManager.currentTabsModel.currentTab {
+            activateUnifiedToggleInput(for: tab)
+        }
         if coordinator.isOmnibarSession {
             coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
             return .intercept

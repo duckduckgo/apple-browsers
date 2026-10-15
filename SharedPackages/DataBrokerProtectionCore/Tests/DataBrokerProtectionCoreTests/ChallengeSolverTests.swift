@@ -17,7 +17,9 @@
 //
 
 #if os(macOS)
+import BrowserServicesKitTestsUtils
 import Common
+import ConcurrencyExtensions
 import DataBrokerProtectionCoreTestsUtils
 import PixelKit
 import XCTest
@@ -230,8 +232,8 @@ private final class Environment {
             pixelContext: .init(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: ChallengeSolverTests.attemptId),
             pixelHandler: pixelHandler,
             reportEvent: { _, _ in },
-            sleep: { try await fakeClock.sleep($0) },
-            now: { fakeClock.now })
+            sleeper: Sleeper { try await fakeClock.sleep($0) },
+            dateProvider: fakeClock.dateProvider)
         solver.page = page
         solver.onFailure = { [weak self] in self?.failures.append($0) }
         solver.beginLoad()
@@ -240,11 +242,11 @@ private final class Environment {
 
 @MainActor
 private final class FakeClock {
-    private(set) var now = Date(timeIntervalSince1970: 0)
+    let dateProvider = MockCurrentDateProvider(currentDate: Date(timeIntervalSince1970: 0))
     var onSleep: ((TimeInterval) -> Void)?
 
     func sleep(_ interval: TimeInterval) async throws {
-        now += interval
+        dateProvider.currentDate += interval
         onSleep?(interval)
         try Task.checkCancellation()
         await Task.yield()

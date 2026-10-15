@@ -42,6 +42,7 @@ let package = Package(
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Networking"),
         .package(path: "../DebugServer"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
@@ -56,6 +57,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
                 "TrackerRadarKit",
@@ -103,6 +105,7 @@ let package = Package(
                 .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             resources: [
                 .copy("BundleResources")

@@ -18,6 +18,7 @@
 
 #if os(macOS)
 import Common
+import ConcurrencyExtensions
 import Foundation
 import os.log
 import PrivacyConfig
@@ -82,8 +83,6 @@ protocol ChallengePage: AnyObject {
 
 @MainActor
 final class ChallengeSolver {
-    typealias Sleep = @MainActor (TimeInterval) async throws -> Void
-
     struct PixelContext {
         let dataBroker: String
         let brokerVersion: String
@@ -109,8 +108,8 @@ final class ChallengeSolver {
     private let pixelContext: PixelContext?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let reportEvent: (String, Bool) -> Void
-    private let sleep: Sleep
-    private let now: () -> Date
+    private let sleeper: Sleeper
+    private let dateProvider: CurrentDateProviding
 
     private var isChallengeResponse = false
     private var didClick = false
@@ -124,15 +123,15 @@ final class ChallengeSolver {
          pixelContext: PixelContext?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?,
          reportEvent: @escaping (String, Bool) -> Void,
-         sleep: @escaping Sleep = { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
-         now: @escaping () -> Date = Date.init) {
+         sleeper: Sleeper = .default,
+         dateProvider: CurrentDateProviding = DefaultCurrentDateProvider()) {
         self.isEnabled = isEnabled
         self.settings = settings
         self.pixelContext = pixelContext
         self.pixelHandler = pixelHandler
         self.reportEvent = reportEvent
-        self.sleep = sleep
-        self.now = now
+        self.sleeper = sleeper
+        self.dateProvider = dateProvider
     }
 
     func beginLoad() {
@@ -231,14 +230,14 @@ final class ChallengeSolver {
     }
 
     private func solve() async {
-        let deadline = now().addingTimeInterval(settings.deadline)
+        let deadline = dateProvider.currentDate.addingTimeInterval(settings.deadline)
         do {
-            try await sleep(settings.autoPassWait)
-            while isAwaitingSolve, now() < deadline {
+            try await sleep(for: settings.autoPassWait)
+            while isAwaitingSolve, dateProvider.currentDate < deadline {
                 if isChallengeResponse, !didClick, let page, let point = try await stableCheckboxPoint(on: page) {
                     try await click(at: point, on: page)
                 }
-                try await sleep(min(Constants.retryInterval, max(0, deadline.timeIntervalSince(now()))))
+                try await sleep(for: min(Constants.retryInterval, deadline.timeIntervalSince(dateProvider.currentDate)))
             }
         } catch {
             return
@@ -258,6 +257,15 @@ final class ChallengeSolver {
         onFailure?(.challengeNotSolved)
     }
 
+    /// `Sleeper.default` asserts on a non-positive interval, which the remote auto-pass wait or the time left before the deadline can be.
+    private func sleep(for interval: TimeInterval) async throws {
+        guard interval > 0 else {
+            try Task.checkCancellation()
+            return
+        }
+        try await sleeper.sleep(for: interval)
+    }
+
     private func stableCheckboxPoint(on page: ChallengePage) async throws -> CGPoint? {
         guard let firstLabel = await page.locateLabel(matching: settings.labelText) else {
             Logger.action.log("Challenge: first snapshot did not contain the verification label")
@@ -265,7 +273,7 @@ final class ChallengeSolver {
         }
         try Task.checkCancellation()
 
-        try await sleep(Constants.stabilityCheckDelay)
+        try await sleep(for: Constants.stabilityCheckDelay)
         guard isChallengeResponse, let secondLabel = await page.locateLabel(matching: settings.labelText) else {
             Logger.action.log("Challenge: second snapshot did not contain the verification label")
             return nil

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Core
 import BrowserServicesKit
@@ -76,6 +77,8 @@ protocol DependencyProvider {
     var internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProvider { get }
     var internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider { get }
     var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
+    /// The app's single owner of the Duck.ai bonus record, shared by launch and every Duck.ai tab.
+    var aiChatBonusService: AIChatBonusService { get }
 }
 
 /// Captures launch time and version change once per app session.
@@ -140,6 +143,7 @@ final class AppDependencyProvider: DependencyProvider {
     let configurationStore = ConfigurationStore()
 
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
+    let aiChatBonusService = AIChatBonusService()
 
     // Subscription
     var subscriptionManager: any SubscriptionManager

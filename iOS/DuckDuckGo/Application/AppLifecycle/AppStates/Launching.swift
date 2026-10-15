@@ -79,9 +79,9 @@ struct Launching: LaunchingHandling {
         launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
-        // The app's single owner of the Duck.ai bonus record. Shared instance between consumers.
-        // Created before the configuration, which deletes a previous install's record on a new install.
-        let aiChatBonusService = AIChatBonusService()
+        // The app's single owner of the Duck.ai bonus record, also used by every Duck.ai tab's user script.
+        // Needed by the configuration, which deletes a previous install's record on a new install.
+        let aiChatBonusService = AppDependencyProvider.shared.aiChatBonusService
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(

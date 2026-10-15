@@ -197,7 +197,7 @@ class AddressBarSpoofingUITests: UITestCase {
         XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to DuckDuckGo should complete")
 
         // Verify address bar shows correct destination after form submission
-        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded(waitingForPageLoad: true) ?? ""
 
         // The form should navigate to duckduckgo.com (duck.co redirects there)
         XCTAssertEqual(addressBarValue, "https://duckduckgo.com/",

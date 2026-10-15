@@ -297,21 +297,25 @@ extension XCUIApplication {
     }
 
     /// Activates the address bar if needed and returns its current value
+    /// - Parameter waitingForPageLoad: wait for the page to stop loading before activating the address bar. Use it for pages that
+    ///   take focus when they finish loading. Leave it off in tests that inspect the address bar while a navigation is still in flight.
     /// - Returns: The current value of the address bar as a string
-    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
+    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true, waitingForPageLoad: Bool = false) -> String? {
         if shouldActivate {
-            activateAddressBarRetryingIfFocusIsLost()
+            activateAddressBarRetryingIfFocusIsLost(waitingForPageLoad: waitingForPageLoad)
         }
         XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Address bar should be editable")
         return addressBar.value as? String
     }
 
-    /// Focuses the address bar with Cmd+L once the page has stopped loading, retrying when something else takes the focus back.
+    /// Focuses the address bar with Cmd+L, optionally once the page has stopped loading, retrying when something else takes the focus back.
     ///
     /// A page that autofocuses an input when it finishes loading (e.g. duckduckgo.com) or that handles Cmd+L itself
     /// leaves the address bar in its passive, non-editable state, so activating it while the page is still loading can lose a race.
-    private func activateAddressBarRetryingIfFocusIsLost(attempts: Int = 3) {
-        waitForPageToFinishLoading()
+    private func activateAddressBarRetryingIfFocusIsLost(waitingForPageLoad: Bool, attempts: Int = 3) {
+        if waitingForPageLoad {
+            waitForPageToFinishLoading()
+        }
         let passiveAddressBar = windows.firstMatch.staticTexts[AccessibilityIdentifiers.addressBarPassiveTextField]
         for _ in 0..<attempts {
             activateAddressBar()
@@ -325,7 +329,7 @@ extension XCUIApplication {
     }
 
     /// Waits (best effort) for the Reload/Stop button to go back to "Reload Page", i.e. for the current tab to stop loading.
-    /// Some tests load pages that never finish on purpose, so a timeout is not a failure.
+    /// A timeout is not a failure, because some pages never finish loading.
     private func waitForPageToFinishLoading(timeout: TimeInterval = UITests.Timeouts.elementExistence) {
         let notLoading = NSPredicate(format: "title != %@", "Stop")
         _ = reloadButton.wait(for: notLoading, timeout: timeout)

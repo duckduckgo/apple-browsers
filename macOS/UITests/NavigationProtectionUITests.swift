@@ -193,7 +193,7 @@ class NavigationProtectionUITests: UITestCase {
 
         // Verify AMP protection redirected to the expected canonical URL.
         // Skip test if bot protection is triggered, as the canonical URL cannot be verified in that case.
-        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
+        let finalURL = app.addressBarValueActivatingIfNeeded(waitingForPageLoad: true) ?? ""
         guard finalURL == expectedURL else {
             XCTAssertTrue(app.staticTexts["Performing security verification"].exists,
                           "Should be redirected to exact canonical URL \(expectedURL) or bot detection page; actual: \(finalURL)")

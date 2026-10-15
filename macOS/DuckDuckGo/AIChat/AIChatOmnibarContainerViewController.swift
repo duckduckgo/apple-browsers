@@ -2750,11 +2750,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSubmitButtonState(for: omnibarController.currentText)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
-        // Focus-ring colour follows the active theme's primary accent, the same source the
-        // search/AI toggle uses, so all controls in the duck.ai address bar agree on the glow.
+
+        // Focus-ring colour matches the search/AI toggle, including the Fire Window accent.
         // (The submit button is excluded — it uses AppKit's native focus ring, which can't
         // be themed without a deeper rewrite.)
-        let focusRingColor = colorsProvider.accentPrimaryColor
+        let focusRingColor = colorsProvider.addressBarActiveBorderColor(isBurner: burnerMode.isBurner)
+
         toolsButton.tintColor = toolButtonTintColor
         toolsButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
         toolsButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)

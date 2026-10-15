@@ -768,6 +768,12 @@
         "description": "Time bucket since the device or app last resumed: the system woke (macOS) or the app became active (iOS). Omitted when it has not resumed since the app started.",
         "enum": ["under_30s", "30s_to_2m", "2m_to_10m", "over_10m"]
     },
+    "cpm_init_stage": {
+        "key": "init_stage",
+        "type": "string",
+        "description": "How far the CPM extension's background got with the failing navigation's init message, as the extension reported it: none (the extension reports progress, yet reported none for this navigation, so init did not reach the background), received (the background received init), response_sent (its reply reached the page's content script) or response_failed (the content script was gone). Omitted when the extension does not report progress or the navigation cannot be told apart from another.",
+        "enum": ["none", "received", "response_sent", "response_failed"]
+    },
     "background_graveyard_enabled": {
         "key": "background_graveyard_enabled",
         "type": "boolean",

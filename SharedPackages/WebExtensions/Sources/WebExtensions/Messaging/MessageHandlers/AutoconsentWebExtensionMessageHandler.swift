@@ -30,6 +30,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     enum Method: String {
         case sendPixel
         case refreshCpmDashboardState
+        case cpmInitProgress
         case showCpmAnimation
         case cookiePopupHandled
         case isFeatureEnabled
@@ -73,6 +74,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return handleSendPixel(message.params)
         case .refreshCpmDashboardState:
             return await handleRefreshCpmDashboardState(message.params)
+        case .cpmInitProgress:
+            return await handleCpmInitProgress(message.params)
         case .showCpmAnimation:
             return handleShowCpmAnimation(message.params)
         case .cookiePopupHandled:
@@ -126,6 +129,24 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
         await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url))
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
+
+        return .success(Self.successResponse)
+    }
+
+    /// Passes a progress mark for a main frame's `init` message to the health monitor, which only keeps it.
+    private func handleCpmInitProgress(_ params: [String: Any]?) async -> WebExtensionMessageResult {
+        guard
+            let urlString = params?["url"] as? String,
+            let url = URL(string: urlString),
+            url.host != nil,
+            let stageName = params?["stage"] as? String,
+            let stage = CPMInitProgressStage(rawValue: stageName)
+        else {
+            return .failure(WebExtensionMessageHandlerError.missingParameter("url or stage"))
+        }
+
+        let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
+        await cpmMessagingHealthMonitor?.handle(.initProgress(extensionTabIdentifier: extensionTabIdentifier, url: url, stage: stage))
 
         return .success(Self.successResponse)
     }

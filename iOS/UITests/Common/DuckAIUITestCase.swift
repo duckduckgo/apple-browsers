@@ -24,7 +24,6 @@ class DuckAIUITestCase: UITestCase {
     var duckAIFeatureFlagLaunchArguments: [String] {
         [
             "-ff.aiChatChromeShortcutIPad", "false",
-            "-ff.iPadDuckAIBarControls", "false",
         ]
     }
 

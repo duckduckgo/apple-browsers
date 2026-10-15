@@ -183,6 +183,7 @@ final class AIChatContextualWebViewController: UIViewController {
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
+            pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: ContextualChatPromptPixelContext()),
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,

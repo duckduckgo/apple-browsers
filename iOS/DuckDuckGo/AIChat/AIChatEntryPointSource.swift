@@ -88,6 +88,14 @@ public enum AIChatEntryPointSource: String {
 
 extension AIChatEntryPointSource {
 
+    /// Doors where the address bar hands a typed prompt to the Duck.ai page, which reports it as its own.
+    var handsOverAddressBarPrompt: Bool {
+        switch self {
+        case .addressBarPrompt, .addressBarEditingState, .suggestionAskAI, .ipadTogglePrompt: return true
+        default: return false
+        }
+    }
+
     /// Resolves the `source` parameter a Duck.ai deep link carries. Falls back to `.deepLinkOther`
     /// for links with no recognised source, e.g. the URL scheme invoked from outside the app.
     static func forDeepLink(_ url: URL) -> AIChatEntryPointSource {

@@ -5063,6 +5063,8 @@ class MainViewController: UIViewController {
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] tab in
                 tab.duckAIEntrySource = source
+                self?.markAddressBarPromptHandoverIfNeeded(source: source, query: query, autoSend: autoSend,
+                                                           hasAttachments: hasAttachments)
                 if let modelId {
                     self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
                 }
@@ -5074,11 +5076,20 @@ class MainViewController: UIViewController {
         }
 
         stampDuckAIEntrySourceOnCurrentTab(source)
+        markAddressBarPromptHandoverIfNeeded(source: source, query: query, autoSend: autoSend,
+                                             hasAttachments: images?.isEmpty == false || files?.isEmpty == false)
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
         }
+    }
+
+    /// The page reports the handed-over prompt as its own, so its prompt pixels need to know it came from the address bar.
+    private func markAddressBarPromptHandoverIfNeeded(source: AIChatEntryPointSource, query: String?, autoSend: Bool, hasAttachments: Bool) {
+        guard source.handsOverAddressBarPrompt,
+              Self.hasAutoSubmittedDuckAIPrompt(query: query, autoSend: autoSend, hasAttachments: hasAttachments) else { return }
+        currentTab?.duckAIPromptAttribution.addressBarWillHandOverPrompt()
     }
 
     /// Executes the closure if the current tab is an AI tab

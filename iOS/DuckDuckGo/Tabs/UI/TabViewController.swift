@@ -593,6 +593,7 @@ class TabViewController: UIViewController {
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
     /// Seeded from the stored link so a recreated controller's reload isn't a chat change.
     private lazy var lastCommittedDuckAIChatID: String? = viewModel.currentAIChatId
+    let duckAIPromptAttribution: DuckAIPromptAttribution
 
     var emailManager: EmailManager? {
         return (parent as? MainViewController)?.emailManager
@@ -1025,7 +1026,10 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
+        let duckAIPromptAttribution = DuckAIPromptAttribution()
+        self.duckAIPromptAttribution = duckAIPromptAttribution
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: duckAIPromptAttribution),
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
                                                          onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
@@ -2668,6 +2672,8 @@ extension TabViewController: WKNavigationDelegate {
 
         // Before `url = webView.url` — its didSet rewrites `tabModel.link`, poisoning the lazy seed.
         let committedChatID = webView.url?.duckAIChatID
+        duckAIPromptAttribution.pageDidCommit(isDuckAI: webView.url?.isDuckAIURL == true,
+                                              entrySource: tabModel.takeDuckAIEntrySourceForPageLoad())
         let didChangeDuckAIChat = committedChatID != lastCommittedDuckAIChatID
         lastCommittedDuckAIChatID = committedChatID
 
@@ -3462,6 +3468,10 @@ extension TabViewController: WKNavigationDelegate {
         lastError = error
         let error = error as NSError
         pageSignalsMonitor.didFailProvisionalNavigation(to: error.failedUrl, with: error)
+        // A cancellation is usually the next load replacing this one, which may already carry its own door.
+        if error.code != NSURLErrorCancelled {
+            tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
+        }
 
         // Ignore Frame Load Interrupted that will be caused when a download starts
         if error.code == 102 && error.domain == "WebKitErrorDomain" {

@@ -17,6 +17,9 @@
 //
 
 import AppKit
+import Combine
+import FeatureFlags_macOS
+import PrivacyConfig
 import WebExtensions
 
 /// A kind of autofill data an extension can take over from DuckDuckGo.
@@ -56,33 +59,42 @@ struct AutofillManagingExtension: Equatable {
 /// setting, is uninstalled, or the user gives the kind back to DuckDuckGo in Settings.
 ///
 /// The kinds an extension manages are saved in the autofill preferences, where every autofill
-/// decision reads them, from any thread. Being saved, they also apply to tabs restored at launch,
-/// before extensions finish loading. A change posts `.autofillUserSettingsDidChange`, which
+/// decision reads them, from any thread. A change posts `.autofillUserSettingsDidChange`, which
 /// rebuilds the autofill scripts, so open tabs follow on their next navigation.
 ///
-/// The app delegate owns the one instance, and refreshes it when extensions load or unload, when the
-/// extension manager goes away, and when the Bitwarden flag changes.
+/// The kinds are read again when:
+/// - extensions load or unload, or an extension changes its setting (`.webExtensionPrivacySettingsDidChange`);
+/// - the `webExtensionBitwarden` flag changes;
+/// - web extensions become unavailable (`extensionsDidBecomeUnavailable()`).
+///
+/// Handing it a new extension manager doesn't read them: its extensions haven't loaded yet, and
+/// reading now would clear the saved kinds that tabs restored at launch rely on. The first read
+/// comes once they've loaded.
 final class WebExtensionAutofillTakeover {
 
     typealias ManagingExtensions = [ExtensionManagedAutofillKind: AutofillManagingExtension]
 
+    /// The app's extension manager. The app delegate sets it when it creates one.
+    @MainActor weak var manager: WebExtensionManaging?
+
     private var preferences: AutofillPreferencesPersistor
     private var managingExtensions: ManagingExtensions = [:]
-    private let readManagingExtensions: @MainActor () -> ManagingExtensions
-    private let clearSetting: @MainActor (ExtensionManagedAutofillKind) -> Void
+    private let readManagingExtensions: (@MainActor () -> ManagingExtensions)?
+    private let clearSetting: (@MainActor (ExtensionManagedAutofillKind) -> Void)?
     private let notificationCenter: NotificationCenter
     private var observer: NSObjectProtocol?
+    private var flagCancellable: AnyCancellable?
 
     /// - Parameters:
     ///   - preferences: Where the managed kinds are saved for autofill to read.
-    ///   - readManagingExtensions: Which loaded extension manages each kind. Reads the app's extension
-    ///     manager by default.
-    ///   - clearSetting: Removes every extension's control of a kind. Uses the app's extension manager
-    ///     by default.
+    ///   - featureFlagger: Decides whether an extension may take autofill over.
+    ///   - readManagingExtensions: Which loaded extension manages each kind. Reads `manager` when `nil`.
+    ///   - clearSetting: Removes every extension's control of a kind. Uses `manager` when `nil`.
     init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
-         readManagingExtensions: @escaping @MainActor () -> ManagingExtensions = WebExtensionAutofillTakeover.managingExtensionsOfLoadedExtensions,
-         clearSetting: @escaping @MainActor (ExtensionManagedAutofillKind) -> Void = WebExtensionAutofillTakeover.clearSettingForEveryExtension,
-         notificationCenter: NotificationCenter = .default) {
+         featureFlagger: FeatureFlagger,
+         notificationCenter: NotificationCenter = .default,
+         readManagingExtensions: (@MainActor () -> ManagingExtensions)? = nil,
+         clearSetting: (@MainActor (ExtensionManagedAutofillKind) -> Void)? = nil) {
         self.preferences = preferences
         self.readManagingExtensions = readManagingExtensions
         self.clearSetting = clearSetting
@@ -94,6 +106,20 @@ final class WebExtensionAutofillTakeover {
                 }
             }
         }
+        // Starts from the flag's current value, so only an actual change reads the kinds again.
+        flagCancellable = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.webExtensionBitwarden)
+            }
+            .prepend(featureFlagger.isFeatureOn(.webExtensionBitwarden))
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeMainThread {
+                    self?.refresh()
+                }
+            }
     }
 
     deinit {
@@ -109,7 +135,7 @@ final class WebExtensionAutofillTakeover {
     /// Reads again which extensions manage which kinds, and saves the kinds for autofill.
     @MainActor
     func refresh() {
-        let updated = readManagingExtensions()
+        let updated = readManagingExtensions?() ?? managingExtensionsOfLoadedExtensions()
         let kinds = Set(updated.keys)
         guard updated != managingExtensions || kinds != preferences.kindsManagedByExtension else { return }
 
@@ -118,19 +144,30 @@ final class WebExtensionAutofillTakeover {
         notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
     }
 
+    /// Web extensions are off: no extension manages anything, so DuckDuckGo autofill takes every kind back.
+    @MainActor
+    func extensionsDidBecomeUnavailable() {
+        manager = nil
+        refresh()
+    }
+
     /// Gives `kind` back to DuckDuckGo: no extension controls the setting any more, not even one that
     /// set it before the one managing it now. The extensions see that they aren't in control, as in Chrome.
     @MainActor
     func giveBackToDuckDuckGo(_ kind: ExtensionManagedAutofillKind) {
-        clearSetting(kind)
+        if let clearSetting {
+            clearSetting(kind)
+        } else {
+            clearSettingForEveryExtension(kind)
+        }
     }
 
-    // MARK: - App Extension Manager
+    // MARK: - Extension Manager
 
     @MainActor
-    static func managingExtensionsOfLoadedExtensions() -> ManagingExtensions {
+    private func managingExtensionsOfLoadedExtensions() -> ManagingExtensions {
         guard #available(macOS 15.4, *),
-              let manager = NSApp.delegateTyped.webExtensionManager as? WebExtensionManager,
+              let manager = manager as? WebExtensionManager,
               let store = manager.privacySettings else { return [:] }
 
         var result: ManagingExtensions = [:]
@@ -145,9 +182,9 @@ final class WebExtensionAutofillTakeover {
     }
 
     @MainActor
-    static func clearSettingForEveryExtension(_ kind: ExtensionManagedAutofillKind) {
+    private func clearSettingForEveryExtension(_ kind: ExtensionManagedAutofillKind) {
         guard #available(macOS 15.4, *),
-              let store = (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.privacySettings else { return }
+              let store = (manager as? WebExtensionManager)?.privacySettings else { return }
         store.clearAll(kind.privacySetting)
     }
 }

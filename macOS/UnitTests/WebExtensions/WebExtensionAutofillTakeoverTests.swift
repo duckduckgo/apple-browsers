@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
+import PrivacyConfig
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,6 +29,7 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private var notificationCenter: NotificationCenter!
     private var preferences: AutofillPreferencesPersistorMock!
+    private var featureFlagger: MockFeatureFlagger!
     private var managingExtensions: WebExtensionAutofillTakeover.ManagingExtensions = [:]
     private var clearedKinds: [ExtensionManagedAutofillKind] = []
 
@@ -34,11 +37,13 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         super.setUp()
         notificationCenter = NotificationCenter()
         preferences = AutofillPreferencesPersistorMock()
+        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionBitwarden.rawValue: true])
     }
 
     override func tearDown() {
         notificationCenter = nil
         preferences = nil
+        featureFlagger = nil
         managingExtensions = [:]
         clearedKinds = []
         super.tearDown()
@@ -46,9 +51,10 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private func makeTakeover() -> WebExtensionAutofillTakeover {
         WebExtensionAutofillTakeover(preferences: preferences,
+                                     featureFlagger: featureFlagger,
+                                     notificationCenter: notificationCenter,
                                      readManagingExtensions: { [unowned self] in self.managingExtensions },
-                                     clearSetting: { [unowned self] in self.clearedKinds.append($0) },
-                                     notificationCenter: notificationCenter)
+                                     clearSetting: { [unowned self] in self.clearedKinds.append($0) })
     }
 
     // MARK: - Refresh
@@ -104,6 +110,48 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
         XCTAssertEqual(takeover.managingExtension(for: .cards), Self.bitwarden)
         XCTAssertEqual(preferences.kindsManagedByExtension, [.cards])
+    }
+
+    /// The flag's first change after launch must apply: the flag can change remotely at any time.
+    func testWhenTheBitwardenFlagChangesForTheFirstTime_ThenTheTakeoverIsReadAgain() {
+        let takeover = makeTakeover()
+        managingExtensions = [.passwords: Self.bitwarden]
+
+        featureFlagger.featuresStub[FeatureFlag.webExtensionBitwarden.rawValue] = false
+        featureFlagger.triggerUpdate()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertEqual(takeover.managingExtension(for: .passwords), Self.bitwarden)
+    }
+
+    func testWhenAFlagUpdateLeavesTheBitwardenFlagAsItWas_ThenNothingIsReadAgain() {
+        let takeover = makeTakeover()
+        managingExtensions = [.passwords: Self.bitwarden]
+
+        featureFlagger.triggerUpdate()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertNil(takeover.managingExtension(for: .passwords))
+    }
+
+    func testWhenWebExtensionsBecomeUnavailable_ThenDuckDuckGoAutofillTakesEveryKindBack() {
+        preferences.kindsManagedByExtension = [.passwords]
+        let takeover = makeTakeover()
+        let rebuilt = expectation(forNotification: .autofillUserSettingsDidChange, object: nil, notificationCenter: notificationCenter)
+
+        takeover.extensionsDidBecomeUnavailable()
+
+        wait(for: [rebuilt], timeout: 1)
+        XCTAssertEqual(preferences.kindsManagedByExtension, [])
+    }
+
+    /// Tabs restored at launch rely on the saved kinds until extensions finish loading.
+    func testWhenTheTakeoverIsCreated_ThenTheSavedKindsAreKept() {
+        preferences.kindsManagedByExtension = [.passwords]
+
+        _ = makeTakeover()
+
+        XCTAssertEqual(preferences.kindsManagedByExtension, [.passwords])
     }
 
     func testWhenAKindIsGivenBack_ThenItsSettingIsCleared() {

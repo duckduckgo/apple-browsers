@@ -179,7 +179,9 @@ struct PasskeyRequestOutcomePixel: PixelKit.Event {
     var parameters: [String: String]? {
         [
             "style": outcome.style.rawValue,
-            "type": outcome.type.rawValue
+            "type": outcome.type.rawValue,
+            // Routes the pixel through the PETAL (timestamp-randomization) pipeline.
+            "petal": "randomize"
         ]
     }
 

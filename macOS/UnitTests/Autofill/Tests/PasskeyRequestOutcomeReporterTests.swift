@@ -211,12 +211,12 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     // MARK: - Parameters
 
     func test_successAndCancellationParameters_haveNoError() {
-        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.success)).parameters, ["style": "modal", "type": "get"])
-        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.canceled)).parameters, ["style": "modal", "type": "get"])
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.success)).parameters, ["style": "modal", "type": "get", "petal": "randomize"])
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.canceled)).parameters, ["style": "modal", "type": "get", "petal": "randomize"])
     }
 
     func test_failure_carriesError() {
-        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.failure(failedError), style: .autofill)).parameters, ["style": "autofill", "type": "get"])
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.failure(failedError), style: .autofill)).parameters, ["style": "autofill", "type": "get", "petal": "randomize"])
         XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.failure(failedError))).error, failedError)
         XCTAssertNil(PasskeyRequestOutcomePixel(outcome(.success)).error)
     }

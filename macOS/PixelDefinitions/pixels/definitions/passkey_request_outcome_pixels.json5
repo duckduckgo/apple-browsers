@@ -18,6 +18,11 @@
                 "type": "string",
                 "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
                 "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
             }
         ]
     },
@@ -39,6 +44,11 @@
                 "type": "string",
                 "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
                 "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
             }
         ]
     },
@@ -60,6 +70,11 @@
                 "type": "string",
                 "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
                 "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
             },
             "errorDomain",
             "errorCode",

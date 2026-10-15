@@ -1,0 +1,90 @@
+// Passkey request outcome pixels (see PasskeyRequestOutcomeReporter.swift)
+{
+    "passkey_request_success_macos": {
+        "description": "A passkey sign-in or creation started by a web page finished successfully.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "style",
+                "type": "string",
+                "description": "How the request was shown: `modal` for the passkey sheet, `autofill` for passkey suggestions in a sign-in field, `unknown` if it couldn't be told.",
+                "enum": ["modal", "autofill", "unknown"]
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
+                "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "duration",
+                "type": "string",
+                "description": "Time from the request reaching the system passkey service to its outcome, bucketed.",
+                "enum": ["under100ms", "under1s", "under10s", "under1m", "over1m"]
+            }
+        ]
+    },
+    "passkey_request_cancel_macos": {
+        "description": "The user closed the passkey sheet of a sign-in or creation started by a web page. Cancellations by WebKit or the app don't fire.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "style",
+                "type": "string",
+                "description": "How the request was shown: `modal` for the passkey sheet, `autofill` for passkey suggestions in a sign-in field, `unknown` if it couldn't be told.",
+                "enum": ["modal", "autofill", "unknown"]
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
+                "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "duration",
+                "type": "string",
+                "description": "Time from the request reaching the system passkey service to its outcome, bucketed.",
+                "enum": ["under100ms", "under1s", "under10s", "under1m", "over1m"]
+            }
+        ]
+    },
+    "passkey_request_failure_macos": {
+        "description": "A passkey sign-in or creation started by a web page failed. When failures follow each other within a few seconds only the last one fires, and none fires if a request succeeds or the user cancels one in that time. Failures of requests WebKit or the app cancelled don't fire.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "style",
+                "type": "string",
+                "description": "How the request was shown: `modal` for the passkey sheet, `autofill` for passkey suggestions in a sign-in field, `unknown` if it couldn't be told.",
+                "enum": ["modal", "autofill", "unknown"]
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
+                "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "duration",
+                "type": "string",
+                "description": "Time from the request reaching the system passkey service to its outcome, bucketed.",
+                "enum": ["under100ms", "under1s", "under10s", "under1m", "over1m"]
+            },
+            {
+                "key": "error",
+                "type": "string",
+                "description": "`requestInProgress` when the system passkey service refused the request because the app already has one open (passkeys are stuck), `failed` for other failures, `other_<code>` for any other AuthenticationServices error code.",
+                "pattern": "^(requestInProgress|failed|other_-?[0-9]+)$"
+            }
+        ]
+    }
+}

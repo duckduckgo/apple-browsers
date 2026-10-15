@@ -165,6 +165,7 @@ extension WebKitPasskeyRequestCanceller {
 
         installed = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
         _ = ASAuthorizationController.swizzlePasskeyRequestMethodsOnce
+        reportOutcomes(of: webKitDelegateClass, to: PasskeyRequestOutcomeReporter(pixelFiring: pixelFiring))
     }
 
     /// WebKit's private `ASAuthorizationController` delegate, which is how WebKit's passkey requests are recognised.
@@ -192,19 +193,107 @@ extension ASAuthorizationController {
     /// Lets the canceller decide when the request starts.
     @objc dynamic fileprivate func swizzled_performRequests() {
         guard let canceller = WebKitPasskeyRequestCanceller.installed else { return swizzled_performRequests() }
-        canceller.willPerform(self) { self.swizzled_performRequests() } // calls the original method
+        canceller.willPerform(self) {
+            self.passkeyRequestStart = PasskeyRequestStart(style: .modal)
+            self.swizzled_performRequests() // calls the original method
+        }
     }
 
     /// Lets the canceller decide when the AutoFill request starts.
     @objc dynamic fileprivate func swizzled_performAutoFillAssistedRequests() {
         guard let canceller = WebKitPasskeyRequestCanceller.installed else { return swizzled_performAutoFillAssistedRequests() }
-        canceller.willPerform(self) { self.swizzled_performAutoFillAssistedRequests() } // calls the original method
+        canceller.willPerform(self) {
+            self.passkeyRequestStart = PasskeyRequestStart(style: .autofill)
+            self.swizzled_performAutoFillAssistedRequests() // calls the original method
+        }
     }
 
     /// Lets the canceller answer a held request without it being sent to the agent.
     @objc dynamic fileprivate func swizzled_cancel() {
+        passkeyRequestStart?.wasCancelled = true
         guard WebKitPasskeyRequestCanceller.installed?.willCancel(self) ?? true else { return }
         swizzled_cancel() // calls the original method
+    }
+
+    private static let passkeyRequestStartKey = UnsafeRawPointer(bitPattern: "passkeyRequestStartKey".hashValue)!
+
+    /// When and how the request was sent to the agent, so its outcome can be reported with it. `nil` for a request that
+    /// never reached the agent.
+    fileprivate var passkeyRequestStart: PasskeyRequestStart? {
+        get {
+            objc_getAssociatedObject(self, Self.passkeyRequestStartKey) as? PasskeyRequestStart
+        }
+        set {
+            objc_setAssociatedObject(self, Self.passkeyRequestStartKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+}
+
+/// When and how a WebKit passkey request was sent to the agent.
+private final class PasskeyRequestStart: NSObject {
+    let style: PasskeyRequestOutcome.Style
+    let date = Date()
+    /// Whether WebKit or the canceller cancelled the request, so its failure isn't something the user did or saw.
+    var wasCancelled = false
+
+    init(style: PasskeyRequestOutcome.Style) {
+        self.style = style
+    }
+}
+
+extension WebKitPasskeyRequestCanceller {
+
+    /// Reports how WebKit's passkey requests end, kept so it's created only once.
+    fileprivate static var outcomeReporter: PasskeyRequestOutcomeReporter?
+
+    private typealias CompletionMethod = @convention(c) (AnyObject, Selector, ASAuthorizationController, AnyObject) -> Void
+
+    /// Reports how each WebKit passkey request ends, with the error WebKit hides from the page, by running before
+    /// WebKit's delegate methods.
+    @available(macOS 13.0, *)
+    fileprivate static func reportOutcomes(of webKitDelegateClass: AnyClass, to reporter: PasskeyRequestOutcomeReporter) {
+        outcomeReporter = reporter
+        runBefore(#selector(ASAuthorizationControllerDelegate.authorizationController(controller:didCompleteWithAuthorization:)),
+                  of: webKitDelegateClass) { controller, _ in
+            reportOutcome(of: controller, error: nil)
+        }
+        runBefore(#selector(ASAuthorizationControllerDelegate.authorizationController(controller:didCompleteWithError:)),
+                  of: webKitDelegateClass) { controller, error in
+            reportOutcome(of: controller, error: error as? NSError)
+        }
+    }
+
+    /// Replaces the delegate class's method with one that runs `action` and then the original method.
+    private static func runBefore(_ selector: Selector, of delegateClass: AnyClass, action: @escaping (ASAuthorizationController, AnyObject) -> Void) {
+        guard let method = class_getInstanceMethod(delegateClass, selector) else { return }
+        let original = unsafeBitCast(method_getImplementation(method), to: CompletionMethod.self)
+        let replacement: @convention(block) (AnyObject, ASAuthorizationController, AnyObject) -> Void = { delegate, controller, result in
+            action(controller, result)
+            original(delegate, selector, controller, result)
+        }
+        method_setImplementation(method, imp_implementationWithBlock(replacement))
+    }
+
+    /// Reports the outcome of a request the user saw end. Requests that never reached the agent, and failures of
+    /// requests WebKit or the canceller cancelled, aren't reported.
+    @available(macOS 13.0, *)
+    private static func reportOutcome(of controller: ASAuthorizationController, error: NSError?) {
+        guard let start = controller.passkeyRequestStart else { return }
+        controller.passkeyRequestStart = nil
+        if error != nil && start.wasCancelled { return }
+
+        let request = controller.authorizationRequests.first
+        let type: PasskeyRequestOutcome.RequestType
+        switch request {
+        case is ASAuthorizationPublicKeyCredentialAssertionRequest: type = .get
+        case is ASAuthorizationPublicKeyCredentialRegistrationRequest: type = .create
+        default: type = .other
+        }
+
+        outcomeReporter?.report(PasskeyRequestOutcome(style: start.style,
+                                                      type: type,
+                                                      result: .init(error: error),
+                                                      duration: .init(Date().timeIntervalSince(start.date))))
     }
 }
 

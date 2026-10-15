@@ -4678,8 +4678,10 @@
 		EEB674AA4DB3CA34C17F48ED /* QuickFeedbackTipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76403F87E9F53E2C9FFA007 /* QuickFeedbackTipController.swift */; };
 		EEBBEF362CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBBEF352CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift */; };
 		474BFF0A8F19B75B7A423E49 /* WebKitPasskeyRequestCancellerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D0AB55AF8A1C35E9E89A02 /* WebKitPasskeyRequestCancellerTests.swift */; };
+		2C4844957F58F9A7961192B5 /* PasskeyRequestOutcomeReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C38372219F34D7CDD8C85E /* PasskeyRequestOutcomeReporterTests.swift */; };
 		EEBBEF372CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBBEF352CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift */; };
 		E1CFE752C0F329EB771BFFDB /* WebKitPasskeyRequestCancellerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D0AB55AF8A1C35E9E89A02 /* WebKitPasskeyRequestCancellerTests.swift */; };
+		FD2E099F9DFE79B35716321E /* PasskeyRequestOutcomeReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C38372219F34D7CDD8C85E /* PasskeyRequestOutcomeReporterTests.swift */; };
 		EEBCA0C62BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBCA0C52BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift */; };
 		EEBCA0C72BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBCA0C52BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift */; };
 		EEBCE6822BA444FA00B9DF00 /* XCUIElementExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */; };
@@ -4715,8 +4717,10 @@
 		EED4D3D92C874AE200C79EEA /* PopoverInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED4D3D72C874AE200C79EEA /* PopoverInfoViewController.swift */; };
 		EED4D3DF2C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED4D3DE2C8A298D00C79EEA /* AutofillPixelEvent.swift */; };
 		1B14AF5EAA9AEB8F9C2BC586 /* WebKitPasskeyRequestCanceller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4D60846219327B6C5FDB74 /* WebKitPasskeyRequestCanceller.swift */; };
+		8F92A5D1576FFF42AF6BD0F7 /* PasskeyRequestOutcomeReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADFBD82D2B7C9B3C06727BEF /* PasskeyRequestOutcomeReporter.swift */; };
 		EED4D3E02C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED4D3DE2C8A298D00C79EEA /* AutofillPixelEvent.swift */; };
 		82A120F06FC36CA95BF213EF /* WebKitPasskeyRequestCanceller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4D60846219327B6C5FDB74 /* WebKitPasskeyRequestCanceller.swift */; };
+		5CCE22AE00801032663D4245 /* PasskeyRequestOutcomeReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADFBD82D2B7C9B3C06727BEF /* PasskeyRequestOutcomeReporter.swift */; };
 		EED735362BB46B6000F173D6 /* AutocompleteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED735352BB46B6000F173D6 /* AutocompleteTests.swift */; };
 		EED9A6752C37FE6900E0FAB9 /* login_deduplication_test_data.csv in Resources */ = {isa = PBXBuildFile; fileRef = EED9A6732C37FE6800E0FAB9 /* login_deduplication_test_data.csv */; };
 		EED9A6762C37FE6900E0FAB9 /* login_deduplication_test_data.csv in Resources */ = {isa = PBXBuildFile; fileRef = EED9A6732C37FE6800E0FAB9 /* login_deduplication_test_data.csv */; };
@@ -7501,6 +7505,7 @@
 		EEA3EEB22B24EC0600E8333A /* VPNLocationViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNLocationViewModel.swift; sourceTree = "<group>"; };
 		EEBBEF352CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsImportManagerTests.swift; sourceTree = "<group>"; };
 		B7D0AB55AF8A1C35E9E89A02 /* WebKitPasskeyRequestCancellerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebKitPasskeyRequestCancellerTests.swift; sourceTree = "<group>"; };
+		53C38372219F34D7CDD8C85E /* PasskeyRequestOutcomeReporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PasskeyRequestOutcomeReporterTests.swift; sourceTree = "<group>"; };
 		EEBCA0C52BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNFailureRecoveryPixel.swift; sourceTree = "<group>"; };
 		EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCUIElementExtension.swift; sourceTree = "<group>"; };
 		EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateView.swift; sourceTree = "<group>"; };
@@ -7515,6 +7520,7 @@
 		EED4D3D72C874AE200C79EEA /* PopoverInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverInfoViewController.swift; sourceTree = "<group>"; };
 		EED4D3DE2C8A298D00C79EEA /* AutofillPixelEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillPixelEvent.swift; sourceTree = "<group>"; };
 		2C4D60846219327B6C5FDB74 /* WebKitPasskeyRequestCanceller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitPasskeyRequestCanceller.swift; sourceTree = "<group>"; };
+		ADFBD82D2B7C9B3C06727BEF /* PasskeyRequestOutcomeReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyRequestOutcomeReporter.swift; sourceTree = "<group>"; };
 		EED735352BB46B6000F173D6 /* AutocompleteTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutocompleteTests.swift; sourceTree = "<group>"; };
 		EED9A6732C37FE6800E0FAB9 /* login_deduplication_test_data.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = login_deduplication_test_data.csv; sourceTree = "<group>"; };
 		EED9A6742C37FE6900E0FAB9 /* login_deduplication_starting_data.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = login_deduplication_starting_data.csv; sourceTree = "<group>"; };
@@ -10317,6 +10323,7 @@
 				C13909FA2B861039001626ED /* AutofillActionPresenter.swift */,
 				EED4D3DE2C8A298D00C79EEA /* AutofillPixelEvent.swift */,
 				2C4D60846219327B6C5FDB74 /* WebKitPasskeyRequestCanceller.swift */,
+				ADFBD82D2B7C9B3C06727BEF /* PasskeyRequestOutcomeReporter.swift */,
 				EE098E762C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift */,
 				43452C4A8781E1C0A9AB70CF /* AutofillImportPromoObserver.swift */,
 			);
@@ -13459,6 +13466,7 @@
 			children = (
 				EEBBEF352CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift */,
 				B7D0AB55AF8A1C35E9E89A02 /* WebKitPasskeyRequestCancellerTests.swift */,
+				53C38372219F34D7CDD8C85E /* PasskeyRequestOutcomeReporterTests.swift */,
 				2B414CBCACD5AC7C1532D04D /* ContentOverlayViewControllerImportPromoTests.swift */,
 				C13909F32B85FD79001626ED /* AutofillDeleteAllPasswordsExecutorTests.swift */,
 			);
@@ -16754,6 +16762,7 @@
 				3173072C2CD2490700C492AB /* AutofillToolbarOnboardingView.swift in Sources */,
 				EED4D3E02C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */,
 				82A120F06FC36CA95BF213EF /* WebKitPasskeyRequestCanceller.swift in Sources */,
+				5CCE22AE00801032663D4245 /* PasskeyRequestOutcomeReporter.swift in Sources */,
 				3706FBE3293F65D500E42796 /* WindowControllersManager.swift in Sources */,
 				37197EAA2942443D00394917 /* ModalSheetCancellable.swift in Sources */,
 				7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */,
@@ -17755,6 +17764,7 @@
 				1D9FDEBE2B9B5F0F0040B78C /* CookiePopupProtectionPreferencesTests.swift in Sources */,
 				EEBBEF372CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */,
 				E1CFE752C0F329EB771BFFDB /* WebKitPasskeyRequestCancellerTests.swift in Sources */,
+				FD2E099F9DFE79B35716321E /* PasskeyRequestOutcomeReporterTests.swift in Sources */,
 				723137B61AEB31E418C19FCC /* ContentOverlayViewControllerImportPromoTests.swift in Sources */,
 				028904212A7B25770028369C /* AppConfigurationURLProviderTests.swift in Sources */,
 				3706FE6F293F661700E42796 /* LocalStatisticsStoreTests.swift in Sources */,
@@ -19512,6 +19522,7 @@
 				C1E961EF2B87AA29001760E1 /* AutofillActionBuilder.swift in Sources */,
 				EED4D3DF2C8A298D00C79EEA /* AutofillPixelEvent.swift in Sources */,
 				1B14AF5EAA9AEB8F9C2BC586 /* WebKitPasskeyRequestCanceller.swift in Sources */,
+				8F92A5D1576FFF42AF6BD0F7 /* PasskeyRequestOutcomeReporter.swift in Sources */,
 				9F1556752DDC0E0C00A35DBA /* DefaultBrowserAndDockPromptFeatureFlagger.swift in Sources */,
 				4B9292AF26670F5300AD2C21 /* NSOutlineViewExtensions.swift in Sources */,
 				9F56CFAD2B84326C00BB7F11 /* AddEditBookmarkDialogViewModel.swift in Sources */,
@@ -19883,6 +19894,7 @@
 				B67C6C3D2654B897006C872E /* WebViewExtensionTests.swift in Sources */,
 				EEBBEF362CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */,
 				474BFF0A8F19B75B7A423E49 /* WebKitPasskeyRequestCancellerTests.swift in Sources */,
+				2C4844957F58F9A7961192B5 /* PasskeyRequestOutcomeReporterTests.swift in Sources */,
 				9735776FD51EFFA9CFE67DFC /* ContentOverlayViewControllerImportPromoTests.swift in Sources */,
 				4BA1A6DE258C100A00F6F690 /* FileStoreTests.swift in Sources */,
 				84AECC522DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */,

@@ -381,6 +381,9 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         XCTAssertEqual(recorder.snapshot().pixelParameters[Name.applicationState], "inactive")
     }
 
+    /// Checks the tab counts the snapshot reports against tabs registered with a real controller: `open_tabs`
+    /// counts every tab WebKit knows for the context (even one without a web view), `loading_tabs` only those
+    /// whose web view is loading.
     func testOpenAndLoadingTabsAreCounted() async throws {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
         let context = try await makeContext()
@@ -407,9 +410,16 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         XCTAssertEqual(parameters[Name.loadingTabs], "1")
     }
 
-    /// A snapshot is taken while CPM is failing, so it must only read: the apps' tabs return a stored web
-    /// view from `webView(for:)`, and anything else the recorder asked a tab for could create state or
-    /// work in the middle of a failure. Anything WebKit itself asks for when listing `openTabs` is not ours.
+    /// Pins the recorder's side of a contract: a snapshot is taken while CPM is failing, so the only thing it
+    /// may ask a tab for is its web view, once per snapshot (`WKWebExtensionTab.webView(for:)`). Anything
+    /// else it asked a tab could create state or do work in the middle of a failure. Whatever WebKit itself
+    /// asks for when listing `openTabs` is not the recorder's and is subtracted as a baseline.
+    ///
+    /// This only checks WHICH tab methods the recorder calls, against a test tab. It does not check that the
+    /// apps' own `webView(for:)` is harmless (returns a stored web view and creates or loads nothing): that
+    /// is the app side of the contract, tested on the real `Tab` in `macOS/UnitTests/WebExtensions/
+    /// TabWebExtensionTabTests.swift` and on the real `TabViewController` in
+    /// `iOS/DuckDuckGoTests/TabViewControllerWebExtensionTabTests.swift`.
     func testSnapshotOnlyReadsTheWebViewOfEachOpenTab() async throws {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
         let context = try await makeContext()

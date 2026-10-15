@@ -22,7 +22,38 @@ import UITestingSupport
 
 final class EmailProtectionUITests: UITestCase {
 
-    func testEnablingEmailProtectionFromSettingsOpensSignupPage() {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
+        XCTAssertTrue(
+            menuButton.wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.navigation),
+            "Toolbar menu button did not become available.")
+        menuButton.press(forDuration: 1)
+
+        let debugList = app.descendants(matching: .any)["Debug.List"]
+        XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.navigation), "Debug screen did not appear.")
+        let filter = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@", "Filter")).firstMatch
+        filter.tapWhenHittable()
+        filter.typeText("Autofill")
+        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable()
+
+        let clearSignInState = app.cells["Debug.Autofill.ClearEmailProtectionSignInState"]
+        app.tables.firstMatch.swipeUpToReveal(clearSignInState, timeout: UITestTimeouts.navigation)
+        clearSignInState.tapWhenHittable()
+        app.assertActionMessage(contains: "Email Protection sign-in state cleared")
+
+        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable()
+        XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not reappear.")
+        if app.keyboards.firstMatch.exists {
+            app.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable()
+            XCTAssertTrue(
+                app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+                "Keyboard did not dismiss after clearing Email Protection sign-in state.")
+        }
+        app.buttons["Debug.Close"].tapWhenHittable()
+        XCTAssertTrue(debugList.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not close.")
+
         app.openSettings()
 
         let settingsList = app.descendants(matching: .any)["Settings.List.Main"]
@@ -35,7 +66,14 @@ final class EmailProtectionUITests: UITestCase {
                 .waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Email Protection settings did not appear.")
 
-        app.buttons["Settings.EmailProtection.Enable"].tapWhenHittable()
+        XCTAssertTrue(
+            app.buttons["Settings.EmailProtection.Enable"].waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Email Protection did not reach the signed-out state after clearing sign-in state.")
+    }
+
+    func testEnablingEmailProtectionFromSettingsOpensSignupPage() {
+        let enableEmailProtection = app.buttons["Settings.EmailProtection.Enable"]
+        enableEmailProtection.tapWhenHittable()
         app.assertPageContains("Email protection, simplified.")
 
         XCTAssertTrue(

@@ -56,6 +56,23 @@ enum AttachmentPasteRouting {
     static func routeInsertedText(_ text: String, with handler: AttachmentPasteHandling?) -> Bool {
         handler?.pasteTextAsAttachmentIfNeeded(text) ?? false
     }
+
+    /// The chip takes the pasted text, but the paste still replaces whatever was selected. Goes through
+    /// `UITextInput.replace` so the delegate's change callbacks keep the text model in sync. UIKit's paste
+    /// moves the caret again after the delegate declines the insertion, so the caret is put back where the
+    /// selection began on the next turn of the run loop.
+    static func removeText(replacedByPasteIn textView: UITextView, range: NSRange) {
+        guard range.length > 0,
+              let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
+              let end = textView.position(from: start, offset: range.length),
+              let textRange = textView.textRange(from: start, to: end) else { return }
+        textView.replace(textRange, withText: "")
+        let caret = NSRange(location: range.location, length: 0)
+        DispatchQueue.main.async { [weak textView] in
+            guard let textView, caret.location <= (textView.text as NSString).length else { return }
+            textView.selectedRange = caret
+        }
+    }
 }
 
 /// Why a pasted file couldn't be attached, carried from the loader so the error is reported for the actual reason (not recomputed against later state).

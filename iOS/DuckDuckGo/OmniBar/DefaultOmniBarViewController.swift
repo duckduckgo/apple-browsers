@@ -570,9 +570,9 @@ extension DefaultOmniBarViewController {
         // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
         // blocked while any attachment is invalid.
         guard !hasInvalidAttachment, !query.isEmpty || hasValidAttachment else { return }
-        guard attachmentController?.pastedTextLimitViolation(prompt: query) == nil else { return }
 
         if selectedTextEntryMode == .aiChat {
+            guard attachmentController?.pastedTextLimitViolation(prompt: query) == nil else { return }
             textView.text = ""
             modeToggleTextModel.updateText("")
             omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
@@ -622,6 +622,7 @@ extension DefaultOmniBarViewController {
 
     /// Handles the duck.ai ↔ search mode transition on iPad, preserving text and keyboard state.
     fileprivate func handleIPadModeToggleTransition(to mode: TextEntryMode) {
+        defer { refreshPastedTextLimit(prompt: omniBarView.aiChatTextView.text ?? "") }
         saveIPadDraftText()
         if omniBarView.isSearchAreaExpanded {
             modeToggleTextModel.updateText(omniBarView.aiChatTextView.text ?? "")
@@ -985,8 +986,9 @@ extension DefaultOmniBarViewController {
     }
 
     /// Footer and Send follow the pasted-text limit; the footer is only rebuilt when the reason changes.
+    /// Search mode hides and never sends attachments, so the limit only applies in Duck.ai mode.
     fileprivate func refreshPastedTextLimit(prompt: String) {
-        let violation = attachmentController?.pastedTextLimitViolation(prompt: prompt)
+        let violation = selectedTextEntryMode == .aiChat ? attachmentController?.pastedTextLimitViolation(prompt: prompt) : nil
         omniBarView.isAIChatSubmitBlockedByInputLimit = violation != nil
         guard violation != pastedTextLimitViolation else { return }
         pastedTextLimitViolation = violation
@@ -1018,6 +1020,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         }
         if isPastedTextEnabled, selectedTextEntryMode == .aiChat, AIChatPastedText.shouldConvert(text) {
             attachmentController?.addPastedText(text)
+            AttachmentPasteRouting.removeText(replacedByPasteIn: textView, range: range)
             return false
         }
         return true

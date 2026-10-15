@@ -352,6 +352,37 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(delegate.submittedFiles?.count, 3)
     }
 
+    // MARK: - Pasted text limit
+
+    func testWhenPastedTextIsOverTheLimitThenSendIsBlockedOnlyInDuckAIMode() {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(sut.viewController.attachmentPasteHandler?.pasteTextAsAttachmentIfNeeded(String(repeating: "a", count: 16_001)), true)
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByInputLimit)
+
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByInputLimit, "Search hides and never sends attachments")
+
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByInputLimit, "Back in Duck.ai the draft is still over the limit")
+    }
+
+    func testWhenPastedTextIsOverTheLimitThenSearchStillSubmits() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        _ = sut.viewController.attachmentPasteHandler?.pasteTextAsAttachmentIfNeeded(String(repeating: "a", count: 16_001))
+        sut.updateInputMode(.search, animated: false)
+        sut.setText("weather")
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedQuery, "weather")
+    }
+
     func testWhenSubmittingFileAttachmentWithoutTextThenFileIsSubmitted() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
@@ -760,6 +791,16 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         return coordinator
     }
 
+    private func makePastedTextCoordinator() -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: StubAIChatPreferences(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputPastedText]))
+        coordinator.modelStore.attachmentLimits = makeLimits()
+        return coordinator
+    }
+
     private func makeModel(id: String, supportsImageUpload: Bool, supportedFileTypes: [String] = []) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, supportedFileTypes: supportedFileTypes, entityHasAccess: true)
     }
@@ -856,7 +897,10 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
         submittedFiles = files
     }
-    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    var submittedQuery: String?
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {
+        submittedQuery = query
+    }
     func unifiedToggleInputDidRequestVoiceSearch() {}
     func unifiedToggleInputDidRequestAIVoiceChat() {}
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}

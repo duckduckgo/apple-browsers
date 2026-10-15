@@ -315,6 +315,25 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         XCTAssertEqual(handler.offeredTexts, [pasted])
     }
 
+    func testTextEntryRemovesTheSelectionALongPasteReplaces() throws {
+        let handler = MockAttachmentPasteHandler()
+        handler.takesTextPaste = true
+        let inputHandler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: inputHandler)
+        sut.attachmentPasteHandler = handler
+        sut.setQueryText("keep this, drop that")
+        let textView = try XCTUnwrap(firstTextView(in: sut))
+        let selection = NSRange(location: 10, length: 10)
+
+        XCTAssertFalse(sut.textView(textView, shouldChangeTextIn: selection, replacementText: String(repeating: "a", count: 5_000)))
+
+        XCTAssertEqual(textView.text, "keep this,")
+        textView.selectedRange = NSRange(location: 3, length: 0)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(textView.selectedRange, NSRange(location: 10, length: 0), "Caret goes back where the selection began after UIKit's paste moves it")
+        XCTAssertEqual(inputHandler.currentText, "keep this,", "The text model follows the removal")
+    }
+
     func testTextEntryInsertsTextTheHandlerDeclines() throws {
         let handler = MockAttachmentPasteHandler()
         let sut = SwitchBarTextEntryView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))

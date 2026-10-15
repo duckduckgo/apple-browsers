@@ -714,9 +714,11 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
 
 extension UTIAttachmentController {
 
-    /// Why the current draft can't be sent because of its pasted text; `nil` when it fits or has none.
+    /// Why the current draft can't be sent because of its pasted text; `nil` when it fits, has none, or the
+    /// input is in Search mode, where attachments are hidden and never sent.
     var pastedTextLimitViolation: AIChatPastedTextLimitViolation? {
-        pastedTextMessage(excluding: nil).violation
+        guard environment.inputMode() == .aiChat else { return nil }
+        return pastedTextMessage(excluding: nil).violation
     }
 
     private func pastedTextMessage(excluding excludedID: UUID?) -> AIChatPastedTextMessage {

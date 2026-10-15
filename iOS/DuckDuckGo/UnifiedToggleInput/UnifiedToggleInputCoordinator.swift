@@ -590,6 +590,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     persistDraftToStore()
                     onAttachmentsChanged?()
                     footerController?.refresh()
+                    refreshPastedTextLimit()
                 },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
@@ -1439,6 +1440,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         inputMode = effectiveMode
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
+        refreshPastedTextLimit()
 
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
@@ -1481,6 +1483,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         inputMode = effectiveMode
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
+        refreshPastedTextLimit()
         if needsViewSync {
             viewController.setInputMode(effectiveMode, animated: false)
         }

@@ -278,6 +278,64 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertFalse(monitor.isFrozen)
     }
 
+    func testWhenWebKitReportsResponsiveButPageDoesNotAnswerThenFreezeStaysOpen() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+        var probeCompletion: ((Bool) -> Void)?
+
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.processDidBecomeResponsive { probeCompletion = $0 }
+        probeCompletion?(false) // The script errored, so the page did not answer.
+
+        XCTAssertTrue(monitor.isFrozen)
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive"])
+
+        date += 3
+        monitor.end(.closed)
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["outcome"], "closed")
+    }
+
+    func testWhenPageAnswersProbeThenOutcomeIsRecovered() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 4
+        monitor.processDidBecomeResponsive { $0(true) }
+
+        XCTAssertFalse(monitor.isFrozen)
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["outcome"], "recovered")
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["duration"], "2-5")
+    }
+
+    func testWhenProbeAnswersAfterFreezeEndedThenAnswerIsIgnored() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+        var probeCompletion: ((Bool) -> Void)?
+
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.processDidBecomeResponsive { probeCompletion = $0 }
+        monitor.end(.terminated)
+        date += 1
+        monitor.didBecomeUnresponsive(makeContext()) // A new freeze.
+        probeCompletion?(true) // Late answer for the old one.
+
+        XCTAssertTrue(monitor.isFrozen)
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] ?? $0.event.name },
+                       ["web-content_unresponsive", "terminated", "web-content_unresponsive"])
+    }
+
+    func testWhenNotFrozenThenResponsiveReportIsIgnored() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+        var probed = false
+
+        monitor.processDidBecomeResponsive { _ in probed = true }
+
+        XCTAssertFalse(probed)
+        XCTAssertTrue(pixelFiring.calls.isEmpty)
+    }
+
     func testWhenProcessTerminatesDuringFreezeThenOutcomeIsTerminated() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, applicationState: .background)

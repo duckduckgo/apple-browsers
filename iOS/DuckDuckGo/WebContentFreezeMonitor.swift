@@ -169,6 +169,17 @@ final class WebContentFreezeMonitor: NSObject {
         record.attempts = attempts
     }
 
+    /// WebKit also reports "responsive" when it merely stops waiting, for example on tab teardown or when the app
+    /// goes to the background, so recovery counts only once the page answers a trivial script.
+    func processDidBecomeResponsive(probe: (@escaping (Bool) -> Void) -> Void) {
+        guard isFrozen else { return }
+        let probedFreeze = startDate
+        probe { [weak self] answered in
+            guard answered, let self, startDate == probedFreeze else { return }
+            end(.recovered)
+        }
+    }
+
     func end(_ outcome: Outcome) {
         guard let startDate, let context else { return }
         // Another tab's freeze may have taken the record since.

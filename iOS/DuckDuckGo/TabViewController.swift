@@ -4787,7 +4787,9 @@ extension TabViewController: WKUIDelegate {
     @objc(_webViewWebProcessDidBecomeResponsive:)
     func webViewWebProcessDidBecomeResponsive(_ webView: WKWebView) {
         guard webView === self.webView else { return }
-        freezeMonitor.end(.recovered)
+        freezeMonitor.processDidBecomeResponsive { completion in
+            webView.evaluateJavaScript("1") { _, error in completion(error == nil) }
+        }
     }
 
     /// The user asked to reload or leave the page; counted as an escape attempt while it is frozen.

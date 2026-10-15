@@ -43,9 +43,7 @@ public enum FeatureGridLayoutConstants {
     }
     public static let cornerRadius: CGFloat = Self.isiOS26 ? 24 : 8
 #elseif os(macOS)
-    public static var cornerRadius: CGFloat {
-        DesignSystemRebrand.isAppRebranded() ? 12 : 8
-    }
+    public static let cornerRadius: CGFloat = 12
 #endif
 }
 

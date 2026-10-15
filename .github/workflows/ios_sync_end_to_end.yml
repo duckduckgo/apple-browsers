@@ -192,7 +192,7 @@ jobs:
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: sync_${{ github.sha }}
+        name: sync_${{ inputs.branch || github.sha }}
         timeout: 240
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro

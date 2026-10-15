@@ -125,16 +125,6 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         return label
     }()
 
-    private lazy var metadataLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.daxCaption()
-        label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textSecondary)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.isHidden = true
-        return label
-    }()
-
     private lazy var removeButton: UIButton = {
         let button = usesCompactLayout ? AttachmentRemoveButton(type: .system) : UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
@@ -215,7 +205,6 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.addLayoutGuide(iconLayoutGuide)
         chipView.addSubview(fileIconView)
         chipView.addSubview(fileNameLabel)
-        chipView.addSubview(metadataLabel)
         chipView.addSubview(removeButton)
         tapRecognizer.isEnabled = false
         chipView.addGestureRecognizer(tapRecognizer)
@@ -267,10 +256,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             fileIconView.widthAnchor.constraint(equalToConstant: iconSize),
             fileIconView.heightAnchor.constraint(equalToConstant: iconSize),
 
-            fileNameLabel.centerYAnchor.constraint(equalTo: chipView.centerYAnchor, constant: attachment.pastedText == nil ? 0 : -8),
-            metadataLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor),
-            metadataLabel.leadingAnchor.constraint(equalTo: fileNameLabel.leadingAnchor),
-            metadataLabel.trailingAnchor.constraint(equalTo: fileNameLabel.trailingAnchor),
+            fileNameLabel.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
 
             removeButton.widthAnchor.constraint(equalToConstant: removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: removeButtonSize),
@@ -332,14 +318,13 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     func configurePastedText(_ pastedText: AIChatPastedText) {
         imageView.image = nil
         imageView.isHidden = true
+        // Same layout as the tab chip's glyph fallback: a tinted glyph, since the colour icon set has no text document.
         fileIconView.image = usesCompactLayout ? DesignSystemImages.Glyphs.Size16.note : DesignSystemImages.Glyphs.Size24.note
-        fileIconView.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
         fileNameLabel.text = pastedText.title
         fileNameLabel.lineBreakMode = .byTruncatingTail
-        metadataLabel.text = UserText.aiChatPastedTextLabel
         fileIconView.isHidden = false
         fileNameLabel.isHidden = false
-        metadataLabel.isHidden = false
         accessibilityLabel = UserText.aiChatPastedTextLabel
         accessibilityValue = pastedText.title
         accessibilityTraits = .button

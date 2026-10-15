@@ -61,7 +61,6 @@ struct UTIAttachmentPolicy {
             ),
             pendingImageCount: pendingAttachments.filter(\.isImage).count,
             pendingFiles: pendingAttachments.compactMap(\.fileAttachment).map(AIChatAttachmentValidator.FileDescriptor.init),
-            pendingPastedTextLength: pendingAttachments.compactMap(\.pastedText).reduce(0) { $0 + $1.length },
             messages: Self.messages
         )
     }

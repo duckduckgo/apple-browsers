@@ -19,7 +19,6 @@
 
 import AIChat
 import Core
-import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 import PixelKit
@@ -228,46 +227,48 @@ final class IPadOmnibarAttachmentController {
         onExpandRequested?()
     }
 
-    /// The iPad bar has no validation banner, so the caller disables Send instead, which is what the FE does.
-    func isOverInputLimit(prompt: String) -> Bool {
-        attachmentPolicy.promptValidationMessage(for: prompt) != nil
+    /// Why the draft can't be sent because of its pasted text; the omnibar shows it in its footer and disables Send.
+    func pastedTextLimitViolation(prompt: String) -> AIChatPastedTextLimitViolation? {
+        pastedTextMessage(prompt: prompt, excluding: nil).violation
     }
 
     /// Prompt text the editor counts against the chip, supplied by the omnibar that owns the text view.
     var currentPromptProvider: (() -> String)?
 
-    /// Called after a chip edit so the omnibar can refresh the Send button.
+    /// Called after a chip edit so the omnibar can refresh its footer and Send button.
     var onPastedTextEdited: (() -> Void)?
+
+    /// Called once the editor has gone, however it was closed, so the omnibar can take focus back.
+    var onPastedTextEditorDismissed: (() -> Void)?
 
     func presentPastedTextEditor(id: UUID) {
         guard let pastedText = currentAttachments.first(where: { $0.id == id })?.pastedText,
               let presenter = presenterProvider?() else { return }
-        let others = currentAttachments.compactMap(\.pastedText).filter { $0.id != id }.reduce(0) { $0 + $1.length }
-        let prompt = (currentPromptProvider?() ?? "").trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
-        let hasUpload = currentAttachments.contains { $0.isImage || $0.fileAttachment != nil }
-        let maxInput = hasUpload ? (store.attachmentLimits?.images.maxInputCharsWithAttachments ?? AIChatPastedText.maxInputCharacters)
-                                 : AIChatPastedText.maxInputCharacters
-
-        weak var hostingController: UIViewController?
-        let editor = PastedTextEditorView(
-            pastedText: pastedText,
-            otherContentLength: prompt + others,
-            maxInputCharacters: maxInput,
+        let others = pastedTextMessage(prompt: currentPromptProvider?() ?? "", excluding: id)
+        PastedTextEditorPresenter.present(
+            pastedText,
+            otherContentLength: others.totalLength,
+            maxInputCharacters: others.effectiveLimit,
+            from: presenter,
             onSave: { [weak self] content in
                 self?.attachmentsStripView?.replaceAttachment(id: id, with: .pastedText(AIChatPastedText(id: id, content: content)))
                 self?.onPastedTextEdited?()
-                hostingController?.dismiss(animated: true) { self?.onExpandRequested?() }
             },
-            onCancel: { [weak self] in
-                hostingController?.dismiss(animated: true) { self?.onExpandRequested?() }
+            onDismiss: { [weak self] in
+                self?.onPastedTextEditorDismissed?()
             }
         )
-        let controller = UIHostingController(rootView: editor)
-        controller.modalPresentationStyle = .formSheet
-        // The omnibar falls back to Search while the sheet holds focus; only Save/Cancel restore Duck.ai mode.
-        controller.isModalInPresentation = true
-        hostingController = controller
-        presenter.present(controller, animated: true)
+    }
+
+    private func pastedTextMessage(prompt: String, excluding excludedID: UUID?) -> AIChatPastedTextMessage {
+        let attachments = currentAttachments
+        return AIChatPastedTextMessage(
+            prompt: prompt,
+            pastedTextLengths: attachments.compactMap(\.pastedText).filter { $0.id != excludedID }.map(\.length),
+            hasImage: attachments.contains(where: \.isImage),
+            hasFile: attachments.contains { $0.fileAttachment != nil },
+            maxInputCharsWithAttachments: store.attachmentLimits?.images.maxInputCharsWithAttachments
+        )
     }
 
     func resetSelection() {

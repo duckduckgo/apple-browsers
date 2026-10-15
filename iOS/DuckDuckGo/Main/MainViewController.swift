@@ -1605,11 +1605,14 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Check if first responder is within the sheet's view hierarchy
-        if let firstResponder = UIResponder.currentFirstResponder(),
-           firstResponder.isInViewHierarchy(of: sheetVC.view) {
-            // Keyboard is for the sheet, don't dismiss
-            return
+        // Keyboard is for the sheet, or for something the sheet presents (such as the pasted-text
+        // editor), so don't dismiss: dismissing the sheet here would close that presented controller.
+        if let firstResponder = UIResponder.currentFirstResponder() {
+            var owner: UIViewController? = sheetVC
+            while let viewController = owner {
+                if firstResponder.isInViewHierarchy(of: viewController.view) { return }
+                owner = viewController.presentedViewController
+            }
         }
 
         // Keyboard is for background content (web view), dismiss the sheet

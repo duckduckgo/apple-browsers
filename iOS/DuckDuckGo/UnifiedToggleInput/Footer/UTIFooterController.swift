@@ -55,6 +55,7 @@ final class UTIFooterController {
     private var isInputBlocked = false
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
+    private var pastedTextLimitViolation: AIChatPastedTextLimitViolation?
     private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
     private var visibleIDs: Set<UTIFooterItem.ID> = [] {
         didSet {
@@ -148,6 +149,13 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+    func setPastedTextLimitViolation(_ violation: AIChatPastedTextLimitViolation?) {
+        guard pastedTextLimitViolation != violation else { return }
+        releaseWaitingMessages()
+        pastedTextLimitViolation = violation
+        applyCurrentState()
+    }
+
     func clearModelSwitchNotice() {
         guard modelSwitchNotice != nil else { return }
         modelSwitchNotice = nil
@@ -167,7 +175,7 @@ final class UTIFooterController {
         beginDismissal()
         defer { finishDismissal() }
         switch id {
-        case .termsConsent: return
+        case .inputLimit, .termsConsent: return
         case .outOfUsage, .attachmentPrivacy: return
         case .modelSwitch:
             modelSwitchNotice = nil
@@ -318,6 +326,9 @@ final class UTIFooterController {
 
     private func applicableMessages() -> [UTIFooterItem] {
         var items: [UTIFooterItem] = []
+        if let pastedTextLimitViolation {
+            items.append(.init(id: .inputLimit, message: mapper.message(for: pastedTextLimitViolation)))
+        }
         if let termsOfServiceStore, !termsOfServiceStore.hasAccepted, viewModel?.warning?.blocksInput != true {
             items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage(sendButton: termsOfServiceSendButton)))
         }

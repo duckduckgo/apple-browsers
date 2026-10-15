@@ -86,39 +86,53 @@ struct AIChatPastedTextTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func titleIsFirstNonEmptyLineTrimmedAndTruncated() {
-        #expect(AIChatPastedText(content: "\n\n   Hello world  \nsecond").title == "Hello world")
-        let long = String(repeating: "x", count: 61)
-        #expect(AIChatPastedText(content: long).title == String(repeating: "x", count: 60) + "…")
-        #expect(AIChatPastedText(content: String(repeating: "y", count: 60)).title == String(repeating: "y", count: 60))
+    func blankPasteNeverConverts() {
+        #expect(!AIChatPastedText.shouldConvert(String(repeating: " \n", count: 3_000)))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func editLimitCountsEverythingElseButNeverDropsBelowOwnLength() {
+    func titleIsFirstNonBlankLineTrimmed() {
+        #expect(AIChatPastedText(content: "\n\n   Hello world  \nsecond").title == "Hello world")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func editLimitCountsEverythingElseButNeverDropsBelowOwnLengthOrAboveThePerPasteCap() {
         #expect(AIChatPastedText.editLimit(ownLength: 6_000, otherContentLength: 4_000) == 12_000)
         #expect(AIChatPastedText.editLimit(ownLength: 9_000, otherContentLength: 10_000) == 9_000)
+        #expect(AIChatPastedText.editLimit(ownLength: 20_000, otherContentLength: 0) == 16_000)
     }
 
     // MARK: - Limits
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func pastedTextCountsTowardTheInputLimit() {
-        #expect(validator(pastedLength: 15_000).promptValidationMessage(for: String(repeating: "a", count: 1_000)) == nil)
-        #expect(validator(pastedLength: 15_000).promptValidationMessage(for: String(repeating: "a", count: 1_001)) == "promptTooLong")
+    func promptPlusPastedTextOverTheInputLimitIsTooLong() {
+        #expect(AIChatPastedTextMessage(prompt: String(repeating: "a", count: 1_000), pastedTextLengths: [15_000]).violation == nil)
+        #expect(AIChatPastedTextMessage(prompt: String(repeating: "a", count: 1_001), pastedTextLengths: [15_000]).violation == .tooLong(limit: 16_000))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func typedPromptAloneIsNotCappedAtTheInputLimit() {
-        #expect(validator(pastedLength: 0).promptValidationMessage(for: String(repeating: "a", count: 20_000)) == nil)
+    func singlePasteOverTheBackendCapWinsOverEveryOtherReason() {
+        let message = AIChatPastedTextMessage(prompt: "", pastedTextLengths: [16_001], hasImage: true, maxInputCharsWithAttachments: 4_500)
+        #expect(message.violation == .pastedTextTooLong(limit: 16_000))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func imagePlusPastedTextAlwaysExceedsTheWithAttachmentsLimit() {
-        #expect(validator(pastedLength: 5_000, pendingImageCount: 1).promptValidationMessage(for: "") == "promptTooLong")
+    func pastedTextWithAnImageOrFileUsesTheWithAttachmentsLimit() {
+        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [5_000], hasImage: true, maxInputCharsWithAttachments: 4_500).violation
+                == .tooLongWithImages(limit: 4_500))
+        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [5_000], hasFile: true, maxInputCharsWithAttachments: 4_500).violation
+                == .tooLongWithFiles(limit: 4_500))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func typedPromptAloneIsNeverEvaluated() {
+        #expect(AIChatPastedTextMessage(prompt: String(repeating: "a", count: 20_000), pastedTextLengths: []).violation == nil)
     }
 
     // MARK: - Helpers
@@ -126,22 +140,5 @@ struct AIChatPastedTextTests {
     private func jsonObject(_ prompt: AIChatNativePrompt) throws -> [String: Any] {
         let data = try JSONEncoder().encode(prompt)
         return try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
-    }
-
-    private func validator(pastedLength: Int, pendingImageCount: Int = 0) -> AIChatAttachmentValidator {
-        AIChatAttachmentValidator(
-            limits: AIChatAttachmentTierLimits(
-                files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 15),
-                images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4_500)
-            ),
-            model: nil,
-            pendingImageCount: pendingImageCount,
-            pendingPastedTextLength: pastedLength,
-            messages: AIChatAttachmentValidator.Messages(
-                unsupportedFileType: "", unavailable: "", fileEncrypted: "", fileUnreadable: "", promptTooLong: "promptTooLong",
-                unsupportedFileTypeWithAccepted: { _ in "" }, fileCountLimit: { _ in "" }, fileTooLarge: { _ in "" },
-                filesExceedTotalSizeLimit: { _ in "" }, fileTooManyPages: { _ in "" }, imageTurnLimit: { _ in "" }, imageCountLimit: { _ in "" }
-            )
-        )
     }
 }

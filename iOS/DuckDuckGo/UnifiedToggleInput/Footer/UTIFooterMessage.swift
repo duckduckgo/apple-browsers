@@ -34,6 +34,8 @@ struct CreateImageModelSwitchNotice: Equatable {
 
 struct UTIFooterItem: Equatable, Identifiable {
     enum ID: Int, CaseIterable {
+        /// First so a message that blocks sending outranks everything else.
+        case inputLimit
         case termsConsent
         case outOfUsage
         case attachmentPrivacy
@@ -51,7 +53,7 @@ struct UTIFooterItem: Equatable, Identifiable {
 
     var type: MessageType {
         switch id {
-        case .termsConsent: return .required
+        case .inputLimit, .termsConsent: return .required
         case .outOfUsage, .attachmentPrivacy: return .required
         case .modelSwitch: return .action
         case .usageWarning, .highUsage, .multiTabPromotion: return .informational
@@ -62,7 +64,8 @@ struct UTIFooterItem: Equatable, Identifiable {
     let message: UTIFooterMessage
 
     static func visible(from items: [Self], isEditing: Bool) -> [Self] {
-        guard !isEditing else { return [] }
+        // Editing a sent prompt hides the footer, but a reason Send is disabled must still show.
+        guard !isEditing else { return items.filter { $0.id == .inputLimit } }
         let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
         let required = ordered.filter { $0.type == .required }
         return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))

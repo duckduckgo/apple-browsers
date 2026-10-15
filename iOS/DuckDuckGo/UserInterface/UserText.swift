@@ -2562,18 +2562,31 @@ public struct UserText {
     }
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
-    public static let aiChatPastedTextLabel = NSLocalizedString("aichat.pasted-text.label", value: "Pasted text", comment: "Label on an AI chat attachment chip, and title of its editor sheet, for a long block of text the user pasted")
+    public static let aiChatPastedTextLabel = NSLocalizedString("aichat.pasted-text.label", value: "Pasted text", comment: "Accessibility label of an AI chat attachment chip for a long block of text the user pasted")
+    public static let aiChatPastedTextSheetTitle = NSLocalizedString("aichat.pasted-text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows and edits a long block of text the user pasted into AI chat")
     public static let aiChatPastedTextFormattingNote = NSLocalizedString("aichat.pasted-text.formatting-note", value: "Formatting may be inconsistent from source.", comment: "Subtitle of the editor sheet for a long block of text the user pasted into AI chat")
     public static func aiChatPastedTextCharacterCount(_ count: Int) -> String {
-        let format = NSLocalizedString("aichat.pasted-text.character-count", value: "%@ characters", comment: "Footer of the pasted-text editor sheet showing how many characters the text has. Parameter is a formatted number")
-        return String(format: format, NumberFormatter.localizedString(from: NSNumber(value: count), number: .decimal))
+        if count == 1 {
+            return NSLocalizedString("aichat.pasted-text.character-count.one", value: "1 character", comment: "Footer of the pasted-text editor sheet when the text is one character long")
+        }
+        let format = NSLocalizedString("aichat.pasted-text.character-count.other", value: "%d characters", comment: "Footer of the pasted-text editor sheet showing how many characters the text has. Parameter is the count, without thousands separators")
+        return String(format: format, count)
     }
     public static func aiChatPastedTextOverLimit(count: Int, limit: Int) -> String {
-        let format = NSLocalizedString("aichat.pasted-text.over-limit", value: "Max characters %1$@ / %2$@", comment: "Footer of the pasted-text editor sheet when the text is over the allowed length. Parameters are the current count and the limit, as formatted numbers")
-        return String(format: format,
-                      NumberFormatter.localizedString(from: NSNumber(value: count), number: .decimal),
-                      NumberFormatter.localizedString(from: NSNumber(value: limit), number: .decimal))
+        let format = NSLocalizedString("aichat.pasted-text.over-limit", value: "Max characters %1$d / %2$d", comment: "Footer of the pasted-text editor sheet when the text is over the allowed length. Parameters are the current count and the limit, without thousands separators")
+        return String(format: format, count, limit)
     }
+    public static let aiChatPastedTextTooLongTitle = NSLocalizedString("aichat.pasted-text.footer.too-long.title", value: "Text is too long", comment: "Footer message title in the AI chat input when the message plus pasted text is over the length limit")
+    public static let aiChatPastedTextTooLongSubtitle = NSLocalizedString("aichat.pasted-text.footer.too-long.subtitle", value: "Shorten your message or remove some pasted text.", comment: "Footer message subtitle in the AI chat input when the message plus pasted text is over the length limit")
+    public static let aiChatPastedTextSingleTooLongTitle = NSLocalizedString("aichat.pasted-text.footer.single-too-long.title", value: "Pasted text is too long", comment: "Footer message title in the AI chat input when one pasted text is over the per-paste limit")
+    public static func aiChatPastedTextSingleTooLongSubtitle(limit: Int) -> String {
+        let format = NSLocalizedString("aichat.pasted-text.footer.single-too-long.subtitle", value: "Tap it to shorten it to %d characters or fewer.", comment: "Footer message subtitle in the AI chat input when one pasted text is over the per-paste limit. Parameter is the limit, without thousands separators")
+        return String(format: format, limit)
+    }
+    public static let aiChatPastedTextTooLongWithImageTitle = NSLocalizedString("aichat.pasted-text.footer.with-image.title", value: "Text is too long to send with an image", comment: "Footer message title in the AI chat input when pasted text and an attached image together exceed the text limit for messages with images")
+    public static let aiChatPastedTextTooLongWithImageSubtitle = NSLocalizedString("aichat.pasted-text.footer.with-image.subtitle", value: "Remove the image or the pasted text.", comment: "Footer message subtitle in the AI chat input when pasted text and an attached image together exceed the text limit")
+    public static let aiChatPastedTextTooLongWithFileTitle = NSLocalizedString("aichat.pasted-text.footer.with-file.title", value: "Text is too long to send with a file", comment: "Footer message title in the AI chat input when pasted text and an attached file together exceed the text limit for messages with files")
+    public static let aiChatPastedTextTooLongWithFileSubtitle = NSLocalizedString("aichat.pasted-text.footer.with-file.subtitle", value: "Remove the file or the pasted text.", comment: "Footer message subtitle in the AI chat input when pasted text and an attached file together exceed the text limit")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")

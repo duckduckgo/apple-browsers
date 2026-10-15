@@ -67,6 +67,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// Pasted text puts the draft over a length limit; the footer says why.
+    var isSubmitBlockedByInputLimit: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
     /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
     var isInputBlockedByUsageLimit: Bool = false {
         didSet {
@@ -801,7 +806,7 @@ private extension UnifiedToggleInputToolbarView {
         submitButtonWidthConstraint.constant = labelTitle.map {
             AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.toolButtonSize)
         } ?? Constants.toolButtonSize
-        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
+        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard && !isSubmitBlockedByInputLimit
         let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
         // The blocked button and a disabled "Ask" take the inactive submit fill: the voice and

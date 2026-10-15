@@ -58,6 +58,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
+    private var pastedTextLimitViolation: AIChatPastedTextLimitViolation?
     private var isUpdatedCreateImageEnabled = false
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private lazy var termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(
@@ -569,7 +570,7 @@ extension DefaultOmniBarViewController {
         // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
         // blocked while any attachment is invalid.
         guard !hasInvalidAttachment, !query.isEmpty || hasValidAttachment else { return }
-        guard attachmentController?.isOverInputLimit(prompt: query) != true else { return }
+        guard attachmentController?.pastedTextLimitViolation(prompt: query) == nil else { return }
 
         if selectedTextEntryMode == .aiChat {
             textView.text = ""
@@ -762,6 +763,11 @@ extension DefaultOmniBarViewController {
         attachmentControllerInstance.onPastedTextEdited = { [weak self] in
             self?.refreshAIChatSendButton()
         }
+        attachmentControllerInstance.onPastedTextEditorDismissed = { [weak self] in
+            // iOS 27 drops the bar to Search while the sheet holds focus; put it back where the user was.
+            self?.expandAIChatAfterAttachmentPicker()
+            self?.omniBarView.aiChatTextView.becomeFirstResponder()
+        }
 
         controller.onModelsUpdated = { [weak self] in
             guard let self else { return }
@@ -829,6 +835,9 @@ extension DefaultOmniBarViewController {
         attachmentPrivacyNotice.refresh()
         let sendButton = DuckAiTermsOfServiceSendButton(selectedTool: toolPickerController?.selectedTool)
         var messages: [UTIFooterItem] = []
+        if let pastedTextLimitViolation {
+            messages.append(.init(id: .inputLimit, message: UTIFooterMessageMapper().message(for: pastedTextLimitViolation)))
+        }
         if let message = termsOfServiceDisclaimer.message(sendButton: sendButton) {
             messages.append(.init(id: .termsConsent, message: message))
         }
@@ -971,8 +980,17 @@ extension DefaultOmniBarViewController {
 
     fileprivate func refreshAIChatSendButton() {
         let text = omniBarView.aiChatTextView.text ?? ""
-        omniBarView.isAIChatSubmitBlockedByInputLimit = attachmentController?.isOverInputLimit(prompt: text) ?? false
+        refreshPastedTextLimit(prompt: text)
         omniBarView.updateAIChatSendButton(hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    /// Footer and Send follow the pasted-text limit; the footer is only rebuilt when the reason changes.
+    fileprivate func refreshPastedTextLimit(prompt: String) {
+        let violation = attachmentController?.pastedTextLimitViolation(prompt: prompt)
+        omniBarView.isAIChatSubmitBlockedByInputLimit = violation != nil
+        guard violation != pastedTextLimitViolation else { return }
+        pastedTextLimitViolation = violation
+        refreshFooterMessage(animated: true)
     }
 
     private var isPastedTextEnabled: Bool {
@@ -1033,7 +1051,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         }
 
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
-        omniBarView.isAIChatSubmitBlockedByInputLimit = attachmentController?.isOverInputLimit(prompt: newQuery) ?? false
+        refreshPastedTextLimit(prompt: newQuery)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
     }
 

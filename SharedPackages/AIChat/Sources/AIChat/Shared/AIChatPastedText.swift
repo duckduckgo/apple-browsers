@@ -28,7 +28,8 @@ public struct AIChatPastedText: Identifiable, Equatable, Sendable {
     /// The FE's per-model `inputCharLimit`; `/models` doesn't carry it yet, so it is hardcoded here.
     public static let maxInputCharacters = 16_000
 
-    public static let maxTitleLength = 60
+    /// The backend rejects any single pasted text longer than this, whatever else the message holds.
+    public static let maxPastedTextCharacters = 16_000
 
     public let id: UUID
     public let content: String
@@ -40,28 +41,82 @@ public struct AIChatPastedText: Identifiable, Equatable, Sendable {
 
     public var length: Int { content.utf16.count }
 
-    /// First non-empty line, trimmed, cut to `maxTitleLength` with an ellipsis.
+    /// First non-blank line, trimmed. The chip label truncates it to fit.
     public var title: String {
-        let firstLine = content
+        content
             .split(whereSeparator: \.isNewline)
             .lazy
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .first { !$0.isEmpty } ?? ""
-        guard firstLine.count > Self.maxTitleLength else { return firstLine }
-        return String(firstLine.prefix(Self.maxTitleLength)) + "…"
     }
 
+    /// Typed text never converts; only a single insertion this long does. Blank text stays inline.
     public static func shouldConvert(_ text: String) -> Bool {
-        text.utf16.count >= conversionThreshold
+        text.utf16.count >= conversionThreshold && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// What one chip may grow to while editing: everything else in the message counts against it,
     /// but a chip that is already over is never told its limit is below its own length.
     public static func editLimit(ownLength: Int, otherContentLength: Int, maxInputCharacters: Int = maxInputCharacters) -> Int {
-        max(ownLength, maxInputCharacters - otherContentLength)
+        min(maxPastedTextCharacters, max(ownLength, maxInputCharacters - otherContentLength))
     }
 
     public var payload: AIChatNativePrompt.NativePromptPastedText {
         .init(content: content)
+    }
+}
+
+/// Why a message carrying pasted text can't be sent. Only evaluated when pasted text is present, so
+/// typed-only prompts keep today's behaviour.
+public enum AIChatPastedTextLimitViolation: Equatable, Sendable {
+    /// One pasted text is over the backend's per-paste cap; removing other content can't fix it.
+    case pastedTextTooLong(limit: Int)
+    /// Pasted text with an image attached is over the with-attachments text limit.
+    case tooLongWithImages(limit: Int)
+    /// Pasted text with a file attached is over the with-attachments text limit.
+    case tooLongWithFiles(limit: Int)
+    /// Prompt plus pasted text is over the input limit.
+    case tooLong(limit: Int)
+}
+
+/// The text-length facts of a draft message, in UTF-16 units.
+public struct AIChatPastedTextMessage: Equatable, Sendable {
+    public let promptLength: Int
+    public let pastedTextLengths: [Int]
+    public let hasImage: Bool
+    public let hasFile: Bool
+    public let maxInputCharsWithAttachments: Int?
+
+    public init(prompt: String,
+                pastedTextLengths: [Int],
+                hasImage: Bool = false,
+                hasFile: Bool = false,
+                maxInputCharsWithAttachments: Int? = nil) {
+        self.promptLength = prompt.trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
+        self.pastedTextLengths = pastedTextLengths
+        self.hasImage = hasImage
+        self.hasFile = hasFile
+        self.maxInputCharsWithAttachments = maxInputCharsWithAttachments
+    }
+
+    public var totalLength: Int { promptLength + pastedTextLengths.reduce(0, +) }
+
+    /// The text limit that applies: the with-attachments limit once an image or file is attached, else the input limit.
+    public var effectiveLimit: Int {
+        if hasImage || hasFile, let maxInputCharsWithAttachments {
+            return min(maxInputCharsWithAttachments, AIChatPastedText.maxInputCharacters)
+        }
+        return AIChatPastedText.maxInputCharacters
+    }
+
+    public var violation: AIChatPastedTextLimitViolation? {
+        guard !pastedTextLengths.isEmpty else { return nil }
+        if pastedTextLengths.contains(where: { $0 > AIChatPastedText.maxPastedTextCharacters }) {
+            return .pastedTextTooLong(limit: AIChatPastedText.maxPastedTextCharacters)
+        }
+        guard totalLength > effectiveLimit else { return nil }
+        if hasImage, maxInputCharsWithAttachments != nil { return .tooLongWithImages(limit: effectiveLimit) }
+        if hasFile, maxInputCharsWithAttachments != nil { return .tooLongWithFiles(limit: effectiveLimit) }
+        return .tooLong(limit: effectiveLimit)
     }
 }

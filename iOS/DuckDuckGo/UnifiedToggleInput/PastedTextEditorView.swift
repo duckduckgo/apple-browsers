@@ -22,7 +22,7 @@ import DesignResourcesKit
 import SwiftUI
 import UIKit
 
-/// View/edit sheet for one pasted-text chip. Cancel and drag-to-dismiss discard edits, as on the FE.
+/// View/edit sheet for one pasted-text chip. Cancel and swipe-down discard edits, as on the FE.
 struct PastedTextEditorView: View {
 
     @State private var text: String
@@ -51,6 +51,8 @@ struct PastedTextEditorView: View {
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
 
+                // Cancel/Save live in the navigation bar, and the count sits in the keyboard-avoiding
+                // safe area, so neither is hidden by the keyboard while editing.
                 TextEditor(text: $text)
                     .daxBodyRegular()
                     .accessibilityIdentifier("PastedTextEditor.TextView")
@@ -62,7 +64,7 @@ struct PastedTextEditorView: View {
                     .accessibilityIdentifier("PastedTextEditor.Footer")
             }
             .padding(16)
-            .navigationTitle(UserText.aiChatPastedTextLabel)
+            .navigationTitle(UserText.aiChatPastedTextSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -76,5 +78,78 @@ struct PastedTextEditorView: View {
                 }
             }
         }
+        .navigationViewStyle(.stack)
+    }
+}
+
+/// The one presentation of the editor, shared by the iPhone input and the iPad address bar.
+///
+/// A form sheet is a large-detent sheet at compact width (iPhone, iPad Slide Over and narrow split
+/// view) and a centred card at regular width, so one style covers every size class. `onDismiss`
+/// runs once however the sheet goes away (Save, Cancel or a swipe), so the caller can give focus
+/// back to its input.
+@MainActor
+enum PastedTextEditorPresenter {
+
+    static func present(_ pastedText: AIChatPastedText,
+                        otherContentLength: Int,
+                        maxInputCharacters: Int,
+                        from presenter: UIViewController,
+                        onSave: @escaping (String) -> Void,
+                        onDismiss: @escaping () -> Void) {
+        weak var weakController: UIViewController?
+        let editor = PastedTextEditorView(
+            pastedText: pastedText,
+            otherContentLength: otherContentLength,
+            maxInputCharacters: maxInputCharacters,
+            onSave: { content in
+                onSave(content)
+                weakController?.dismiss(animated: true)
+            },
+            onCancel: {
+                weakController?.dismiss(animated: true)
+            }
+        )
+        let controller = PastedTextEditorHostingController(rootView: editor, onDismiss: onDismiss)
+        controller.modalPresentationStyle = .formSheet
+        if let sheet = controller.sheetPresentationController {
+            // Large only: at 5,000+ characters a medium detent plus the keyboard leaves almost no text visible.
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+        }
+        weakController = controller
+        topmost(from: presenter).present(controller, animated: true)
+    }
+
+    /// Presents over whatever the host already shows, such as the contextual sheet, rather than failing.
+    private static func topmost(from presenter: UIViewController) -> UIViewController {
+        var top = presenter
+        while let presented = top.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
+        return top
+    }
+}
+
+private final class PastedTextEditorHostingController: UIHostingController<PastedTextEditorView> {
+
+    private var onDismiss: (() -> Void)?
+
+    init(rootView: PastedTextEditorView, onDismiss: @escaping () -> Void) {
+        self.onDismiss = onDismiss
+        super.init(rootView: rootView)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        guard isBeingDismissed || presentingViewController == nil else { return }
+        let onDismiss = self.onDismiss
+        self.onDismiss = nil
+        onDismiss?()
     }
 }

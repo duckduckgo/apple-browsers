@@ -595,6 +595,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
                 onTabAttached: { [weak self] in
                     self?.tabAttachmentFeature?.recordTabAttachment()
+                },
+                onPastedTextEditorDismissed: { [weak self] in
+                    self?.restoreFocusAfterPastedTextEditor()
                 }
             )
         )
@@ -2187,6 +2190,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let userScript = boundUserScript
         let tools = toolsController.selectedToolsForSubmission()
 
+        // The footer already explains a pasted-text limit; Return mustn't send around the disabled button.
+        guard attachmentController.pastedTextLimitViolation == nil else { return }
         if let validationMessage = attachmentController.submissionValidationMessage(for: text, mode: .aiChat) {
             attachmentController.presentValidationError(validationMessage)
             return
@@ -2324,6 +2329,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
         textModel.handleUserTextChange(text)
+        refreshPastedTextLimit()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
@@ -2368,6 +2374,21 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         attachmentsChangeSubject.send()
         updateImageButtonEnabledState()
         updateFloatingReturnKeyState()
+        refreshPastedTextLimit()
+    }
+
+    /// The footer says why and Send is disabled while pasted text puts the draft over a limit.
+    private func refreshPastedTextLimit() {
+        let violation = attachmentController.pastedTextLimitViolation
+        footerController?.setPastedTextLimitViolation(violation)
+        viewController.isSubmitBlockedByInputLimit = violation != nil
+    }
+
+    /// The sheet took first responder; give it back so the user can keep typing where they were.
+    private func restoreFocusAfterPastedTextEditor() {
+        guard displayState != .hidden else { return }
+        expandIfOnExpandedInputHost()
+        activateInput()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID) {
@@ -2447,7 +2468,7 @@ private extension UnifiedToggleInputCoordinator {
         let hasValidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains(where: \.isInvalid)
 
-        guard !hasInvalidAttachment && (hasText || hasValidAttachment) else {
+        guard !hasInvalidAttachment && (hasText || hasValidAttachment), attachmentController.pastedTextLimitViolation == nil else {
             if hasInvalidAttachment {
                 attachmentController.syncValidationErrorForCurrentMode()
             }

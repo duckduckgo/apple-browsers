@@ -240,6 +240,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var isToolbarSubmitBlockedByInputLimit: Bool = false {
+        didSet { toolsToolbar.isSubmitBlockedByInputLimit = isToolbarSubmitBlockedByInputLimit }
+    }
+
     var isInputBlockedByUsageLimit: Bool = false {
         didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
     }

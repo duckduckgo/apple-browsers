@@ -78,6 +78,38 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications !== undefined")
     }
 
+    // MARK: - URL Protocol
+
+    func testWhenAURLUsesTheExtensionScheme_ThenItsProtocolReadsAsChromes() throws {
+        try installFakeURL()
+        try evaluateStubScript()
+
+        try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').protocol === 'chrome-extension:'")
+        try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').href === 'webkit-extension://abc/overlay/menu.html'")
+    }
+
+    func testWhenAURLUsesAnotherScheme_ThenItsProtocolIsUnchanged() throws {
+        try installFakeURL()
+        try evaluateStubScript()
+
+        try assertTrue("new URL('https://example.com/').protocol === 'https:'")
+    }
+
+    func testWhenTheProtocolIsSet_ThenTheOriginalSetterRuns() throws {
+        try installFakeURL()
+        try evaluateStubScript()
+
+        try assertTrue("(function() { var url = new URL('https://example.com/'); url.protocol = 'http:'; return url.protocol === 'http:'; })()")
+    }
+
+    func testWhenThePageIsAWebsite_ThenURLIsLeftAlone() throws {
+        try installFakeURL()
+        context.evaluateScript("var location = { protocol: 'https:' };")
+        try evaluateStubScript()
+
+        try assertTrue("new URL('webkit-extension://abc/').protocol === 'webkit-extension:'")
+    }
+
     // MARK: - DuckDuckGo Extensions
 
     func testWhenManifestIsADuckDuckGoExtension_ThenScriptDoesNothing() throws {
@@ -1511,6 +1543,24 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         var originalPermissionsOnAdded = chrome.permissions.onAdded;
         var originalPermissionsOnRemoved = chrome.permissions.onRemoved;
         var originalPermissionsGetAll = chrome.permissions.getAll;
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A `URL` whose `protocol` is an accessor on the prototype, as in WebKit. A bare `JSContext`
+    /// has no `URL`.
+    private func installFakeURL() throws {
+        context.evaluateScript("""
+        globalThis.URL = function(href) {
+            this.href = href;
+            this.scheme = href.slice(0, href.indexOf(':') + 1);
+        };
+        Object.defineProperty(URL.prototype, 'protocol', {
+            get: function() { return this.scheme; },
+            set: function(value) { this.scheme = value; },
+            enumerable: true,
+            configurable: true
+        });
         """)
         try assertNoExceptions()
     }

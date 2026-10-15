@@ -36,6 +36,9 @@ import Foundation
 ///   one, so DuckDuckGo autofill can step aside for it. Without that handler they are persisted in
 ///   `storage.local` under one reserved key.
 ///
+/// `URL` objects report `chrome-extension:` as the protocol of `webkit-extension:` URLs, for extensions
+/// that only accept their own URLs under the schemes they know.
+///
 /// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
 /// are defined where missing. `chrome.permissions` counts `idle`, and `privacy` when the manifest
@@ -113,6 +116,28 @@ public enum WebExtensionAPIStubScript {
                 console.info("[DuckDuckGo] Could not define Symbol." + name + ": " + error);
             }
         });
+
+        // WebKit serves extension pages over `webkit-extension:`, a scheme Chrome extensions don't know.
+        // Some check that a URL is theirs by its protocol: Bitwarden's inline menu only loads its button
+        // from `chrome-extension:`, `moz-extension:` or `safari-web-extension:` URLs, and shows nothing
+        // otherwise. So `URL` reports `chrome-extension:` for these URLs. Only the `protocol` reading
+        // changes: `href`, `origin` and navigation keep the real scheme.
+        try {
+            var urlProtocol = globalThis.URL && Object.getOwnPropertyDescriptor(globalThis.URL.prototype, "protocol");
+            if (urlProtocol && typeof urlProtocol.get === "function" && urlProtocol.configurable) {
+                Object.defineProperty(globalThis.URL.prototype, "protocol", {
+                    get: function() {
+                        var value = urlProtocol.get.call(this);
+                        return value === "webkit-extension:" ? "chrome-extension:" : value;
+                    },
+                    set: urlProtocol.set,
+                    enumerable: urlProtocol.enumerable,
+                    configurable: true
+                });
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not adapt URL.protocol: " + error);
+        }
 
         // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
         // generic nestable stub; "offscreen", "privacy" and "idle" are purpose-shaped (see

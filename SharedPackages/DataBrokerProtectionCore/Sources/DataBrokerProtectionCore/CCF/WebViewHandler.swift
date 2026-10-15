@@ -185,7 +185,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func load(url: URL) async throws {
 #if os(macOS)
-        challengeSolver.beginLoad(of: url)
+        challengeSolver.beginLoad()
 #endif
         webView?.load(url)
         Logger.action.log("Loading URL: \(url.shortDescription)")

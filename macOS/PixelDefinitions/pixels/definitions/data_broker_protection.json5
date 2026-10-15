@@ -1143,7 +1143,7 @@
         ]
     },
     "dbp_challenge_solved_macos": {
-        "description": "Fires when the PIR challenge solver sees a non-challenge main-frame response from the broker's host after a challenge.",
+        "description": "Fires when the PIR challenge solver sees a non-challenge main-frame response after a challenge.",
         "owners": ["quanganhdo"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],

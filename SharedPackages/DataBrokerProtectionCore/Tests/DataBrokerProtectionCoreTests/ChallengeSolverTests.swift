@@ -110,7 +110,7 @@ final class ChallengeSolverTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenNonChallengeResponseComesFromAnotherHost_thenKeepsAwaitingSolve() async {
+    func testWhenNonChallengeResponseComesFromAnotherHost_thenSolves() async {
         let env = Environment()
         env.page.locate = { nil }
         env.clock.onSleep = { _ in
@@ -120,9 +120,9 @@ final class ChallengeSolverTests: XCTestCase {
         _ = env.solver.handleMainFrameResponse(Self.challengeResponse())
         await env.solver.solveTask?.value
 
-        XCTAssertEqual(env.failures, [.challengeNotSolved])
-        XCTAssertTrue(env.solvedResolutions.isEmpty)
-        XCTAssertEqual(env.failedStages, [.noClick])
+        XCTAssertFalse(env.solver.isAwaitingSolve)
+        XCTAssertTrue(env.failures.isEmpty)
+        XCTAssertEqual(env.solvedResolutions, [.unassisted])
     }
 
     @MainActor
@@ -234,7 +234,7 @@ private final class Environment {
             now: { fakeClock.now })
         solver.page = page
         solver.onFailure = { [weak self] in self?.failures.append($0) }
-        solver.beginLoad(of: URL(string: "https://www.example.com/search")!)
+        solver.beginLoad()
     }
 }
 

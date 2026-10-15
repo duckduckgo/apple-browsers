@@ -113,7 +113,6 @@ final class ChallengeSolver {
     private let sleep: Sleep
     private let now: () -> Date
 
-    private var expectedHost: String?
     private var isChallengeResponse = false
     private var didClick = false
     private var didDetectChallenge = false
@@ -137,9 +136,8 @@ final class ChallengeSolver {
         self.now = now
     }
 
-    func beginLoad(of url: URL) {
+    func beginLoad() {
         cancel()
-        expectedHost = Self.normalizedHost(url.host)
         didDetectChallenge = false
         didCaptureClearanceBaseline = false
         clearanceBaseline = nil
@@ -164,16 +162,12 @@ final class ChallengeSolver {
         }
 
         guard isAwaitingSolve else { return false }
-        guard isExpectedBrokerDestination(response.url) else {
-            Logger.action.log("Challenge: non-challenge response did not reach the expected broker host")
-            return false
-        }
 
         isAwaitingSolve = false
         solveTask?.cancel()
         solveTask = nil
         let resolution = currentResolution
-        reportEvent("Solved challenge \(resolution.rawValue); expected broker destination reached", false)
+        reportEvent("Solved challenge \(resolution.rawValue); a non-challenge main-frame response arrived", false)
         if let pixelContext {
             pixelHandler?.fire(.challengeSolved(dataBroker: pixelContext.dataBroker,
                                                 brokerVersion: pixelContext.brokerVersion,
@@ -296,16 +290,6 @@ final class ChallengeSolver {
             return
         }
         reportEvent("Sent checkbox click at \(Int(point.x)),\(Int(point.y))", false)
-    }
-
-    private func isExpectedBrokerDestination(_ url: URL?) -> Bool {
-        guard let expectedHost, let responseHost = Self.normalizedHost(url?.host) else { return false }
-        return responseHost == expectedHost || responseHost.hasSuffix(".\(expectedHost)") || expectedHost.hasSuffix(".\(responseHost)")
-    }
-
-    private static func normalizedHost(_ host: String?) -> String? {
-        guard let host = host?.lowercased() else { return nil }
-        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 }
 #endif

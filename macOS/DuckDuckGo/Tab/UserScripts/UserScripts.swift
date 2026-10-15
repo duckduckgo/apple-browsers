@@ -345,6 +345,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
 
+        // PROTOTYPE (writing assistance): inline selection toolbar.
+        userScripts.append(WritingAssistanceUserScript())
+
         let homepageSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
         if sourceProvider.featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg),
            let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {

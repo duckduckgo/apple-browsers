@@ -1115,7 +1115,9 @@
 		371C3DF02FE40ADF003D31C1 /* permissions-inspector.html in Resources */ = {isa = PBXBuildFile; fileRef = 371C3DEF2FE40ADF003D31C1 /* permissions-inspector.html */; };
 		371C3DF12FE40ADF003D31C1 /* permissions-inspector.html in Resources */ = {isa = PBXBuildFile; fileRef = 371C3DEF2FE40ADF003D31C1 /* permissions-inspector.html */; };
 		371C3DF32FE40ADF003D31C1 /* permissions-inspector.js in Resources */ = {isa = PBXBuildFile; fileRef = 371C3DF22FE40ADF003D31C1 /* permissions-inspector.js */; };
+		564AF2D2B0994B98E0429B80 /* writing-assistance-toolbar.js in Resources */ = {isa = PBXBuildFile; fileRef = 6B52E136A3CC9402CB407234 /* writing-assistance-toolbar.js */; };
 		371C3DF42FE40ADF003D31C1 /* permissions-inspector.js in Resources */ = {isa = PBXBuildFile; fileRef = 371C3DF22FE40ADF003D31C1 /* permissions-inspector.js */; };
+		7B3E3BFCB085EBADB3267E85 /* writing-assistance-toolbar.js in Resources */ = {isa = PBXBuildFile; fileRef = 6B52E136A3CC9402CB407234 /* writing-assistance-toolbar.js */; };
 		371E1D672D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E1D662D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift */; };
 		371E1D682D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E1D662D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift */; };
 		3727A5A72F17F57A002E10E1 /* MemoryPressureReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */; };
@@ -3145,7 +3147,9 @@
 		AA5C8F5E2590EEE800748EB7 /* NSPointExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5C8F5D2590EEE800748EB7 /* NSPointExtension.swift */; };
 		AA5C8F632591021700748EB7 /* NSApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5C8F622591021700748EB7 /* NSApplicationExtension.swift */; };
 		AA5E1EC72A0000000000C002 /* AIChatSelectionContextAttacher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */; };
+		854C3B0A9B7601B1FF4000CA /* WritingAssistanceUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20A8E66C35D9952F24B0C8D /* WritingAssistanceUserScript.swift */; };
 		AA5E1EC72A0000000000C003 /* AIChatSelectionContextAttacher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */; };
+		989D4A5E78D8ACD8500CEC11 /* WritingAssistanceUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20A8E66C35D9952F24B0C8D /* WritingAssistanceUserScript.swift */; };
 		AA5E1EC72A0000000000E002 /* WKWebView+MainResourceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */; };
 		AA5E1EC72A0000000000E003 /* WKWebView+MainResourceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */; };
 		AA5FA697275F90C400DCE9C9 /* FaviconImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */; };
@@ -6629,6 +6633,8 @@
 		AA5C8F5D2590EEE800748EB7 /* NSPointExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPointExtension.swift; sourceTree = "<group>"; };
 		AA5C8F622591021700748EB7 /* NSApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSApplicationExtension.swift; sourceTree = "<group>"; };
 		AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionContextAttacher.swift; sourceTree = "<group>"; };
+		C20A8E66C35D9952F24B0C8D /* WritingAssistanceUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WritingAssistanceUserScript.swift; sourceTree = "<group>"; };
+		6B52E136A3CC9402CB407234 /* writing-assistance-toolbar.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "writing-assistance-toolbar.js"; sourceTree = "<group>"; };
 		AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WKWebView+MainResourceData.swift"; sourceTree = "<group>"; };
 		AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconImageCache.swift; sourceTree = "<group>"; };
 		AA5FA699275F91C700DCE9C9 /* Favicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Favicon.swift; sourceTree = "<group>"; };
@@ -8477,6 +8483,8 @@
 				D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */,
 				72EEC618A9860F92133BC2A9 /* AIChatSettingsStatePixelSender.swift */,
 				AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */,
+				C20A8E66C35D9952F24B0C8D /* WritingAssistanceUserScript.swift */,
+				6B52E136A3CC9402CB407234 /* writing-assistance-toolbar.js */,
 				1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */,
 				312E63962D9D821500806E2A /* AIChatURL.swift */,
 				319FCFF12CC81D54004F9288 /* AIChatRemoteSettings.swift */,
@@ -15150,6 +15158,7 @@
 				9FBB0C012CB94FC10006B6A6 /* view_highlight.json in Resources */,
 				371C3DF02FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF32FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
+				564AF2D2B0994B98E0429B80 /* writing-assistance-toolbar.js in Resources */,
 				B57B84CD3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E482CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E492CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
@@ -15390,6 +15399,7 @@
 				9FBB0C002CB94FC10006B6A6 /* view_highlight.json in Resources */,
 				371C3DF12FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF42FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
+				7B3E3BFCB085EBADB3267E85 /* writing-assistance-toolbar.js in Resources */,
 				B57B84CE3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
@@ -16783,6 +16793,7 @@
 				42D48B438872FA0BF2940227 /* DuckAIFirstPromptNewInstallCohort.swift in Sources */,
 				528319F2B8E6B55D0232E673 /* AIChatSettingsStatePixelSender.swift in Sources */,
 				AA5E1EC72A0000000000C002 /* AIChatSelectionContextAttacher.swift in Sources */,
+				854C3B0A9B7601B1FF4000CA /* WritingAssistanceUserScript.swift in Sources */,
 				3706FBF2293F65D500E42796 /* FindInPageModel.swift in Sources */,
 				1D9A4E5B2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */,
 				9F56CFAE2B84326C00BB7F11 /* AddEditBookmarkDialogViewModel.swift in Sources */,
@@ -18539,6 +18550,7 @@
 				D5F106663497E18BACD4E3AA /* DuckAIFirstPromptNewInstallCohort.swift in Sources */,
 				2736AF4EFDD6049E3E0C4778 /* AIChatSettingsStatePixelSender.swift in Sources */,
 				AA5E1EC72A0000000000C003 /* AIChatSelectionContextAttacher.swift in Sources */,
+				989D4A5E78D8ACD8500CEC11 /* WritingAssistanceUserScript.swift in Sources */,
 				84F1C8DE2C774D4200716446 /* NSTableViewExtension.swift in Sources */,
 				7B7F5D212C526CE600826256 /* AddExcludedDomainView.swift in Sources */,
 				4B92929E26670D2A00AD2C21 /* BookmarkSidebarTreeController.swift in Sources */,

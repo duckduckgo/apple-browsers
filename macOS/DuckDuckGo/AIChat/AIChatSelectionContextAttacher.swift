@@ -82,11 +82,20 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
             )
         }
 
+        // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
+        currentPageContextProvider()?.appendSelectionContext(Self.selectionContext(text: text, url: url))
+        if !isChatAlreadyPresented {
+            aiChatConversationSourceHandler.setData(.contextualAttachSelection)
+        }
+        aiChatCoordinator.revealChat()
+    }
+
+    static func selectionContext(text: String, url: URL?) -> AIChatSelectionContextData {
         let truncated = text.count > Constants.maxSelectionContextLength
         let content = truncated ? String(text.prefix(Constants.maxSelectionContextLength)) : text
         // Count words on the full selection (not the truncated `content`) so the FE shows the real size.
         let wordCount = text.split(whereSeparator: \.isWhitespace).count
-        let selection = AIChatSelectionContextData(
+        return AIChatSelectionContextData(
             id: UUID().uuidString,
             title: UserText.aiChatTextSelection,
             url: url?.absoluteString ?? "",
@@ -95,12 +104,5 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
             fullContentLength: text.count,
             wordCount: wordCount
         )
-
-        // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
-        currentPageContextProvider()?.appendSelectionContext(selection)
-        if !isChatAlreadyPresented {
-            aiChatConversationSourceHandler.setData(.contextualAttachSelection)
-        }
-        aiChatCoordinator.revealChat()
     }
 }

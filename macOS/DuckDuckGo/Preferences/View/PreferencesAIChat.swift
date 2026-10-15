@@ -27,6 +27,8 @@ extension Preferences {
 
     struct AIChatView: View {
         @ObservedObject var model: AIChatPreferences
+        @AppStorage(WritingAssistanceUserScript.SettingsKey.enabled) private var selectionToolsEnabled = true
+        @AppStorage(WritingAssistanceUserScript.SettingsKey.expanded) private var selectionToolsExpanded = true
 
         var body: some View {
             PreferencePane {
@@ -193,6 +195,11 @@ extension Preferences {
                         .disabled(model.isPageContextToggleDisabled)
                         .padding(.leading, 19)
                     }
+
+                    ToggleMenuItem(UserText.aiChatSelectionToolsToggle, isOn: $selectionToolsEnabled)
+                    ToggleMenuItem(UserText.aiChatSelectionToolsExpandedToggle, isOn: $selectionToolsExpanded)
+                        .disabled(!selectionToolsEnabled)
+                        .padding(.leading, 19)
 
                     PromptBarPreferencesView(preferences: model.promptBarPreferences)
                 }

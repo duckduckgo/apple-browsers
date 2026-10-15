@@ -224,23 +224,17 @@ private struct SubscriptionOnboardingCardPreviewSamples: View {
 }
 
 #Preview("Rebranded / Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingCardPreviewSamples()
-    }
+    SubscriptionOnboardingCardPreviewSamples()
 }
 
 #Preview("Rebranded / Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingCardPreviewSamples()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingCardPreviewSamples()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Rebranded / Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingCardPreviewSamples()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingCardPreviewSamples()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

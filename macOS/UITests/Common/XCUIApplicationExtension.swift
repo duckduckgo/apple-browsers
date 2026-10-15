@@ -130,6 +130,7 @@ extension XCUIApplication {
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["UITEST_MODE"] = "1"
+        app.enforceEnglish()
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
         }
@@ -144,6 +145,11 @@ extension XCUIApplication {
         }
         app.launch()
         return app
+    }
+
+    /// The tests match English text, so run the app in English whatever the Mac's language is.
+    private func enforceEnglish() {
+        launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
     }
 
     /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.

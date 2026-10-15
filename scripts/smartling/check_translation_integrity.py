@@ -21,8 +21,8 @@ def get_changed_files():
 
     Example:
         >>> get_changed_files()
-        ['iOS/DuckDuckGo/en.lproj/Localizable.strings',
-         'iOS/DuckDuckGo/en.lproj/Localizable.stringsdict']
+        ['iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.strings',
+         'iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict']
     """
     result = subprocess.run(
         ['git', 'diff', '--name-only', '--', '*.strings', '*.stringsdict'],

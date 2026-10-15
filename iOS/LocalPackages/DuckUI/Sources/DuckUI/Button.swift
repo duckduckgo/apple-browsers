@@ -818,51 +818,13 @@ enum Consts {
 
 // MARK: - Debug galleries
 
-/// Scoped override of `AppRebrand.isAppRebranded` and the design-system palette for the host view's lifetime.
-///
-/// Captures the previous values at init and restores them on deinit, so it doesn't
-/// permanently mutate global state. The palette must be overridden alongside the flag because
-/// the rebranded button fills now resolve through `DesignSystemPalette.current`.
-///
-/// Internal so the galleries (Xcode previews and the runtime debug menu) can reuse it
-/// within the module, e.g. `IOSButtonsDebugView.swift`.
-final class RebrandPreviewOverride: ObservableObject {
-    private let previousIsRebranded: () -> Bool
-    private let previousPalette: ColorPalette
-
-    init(isRebranded: Bool) {
-        self.previousIsRebranded = AppRebrand.isAppRebranded
-        self.previousPalette = DesignSystemPalette.current
-        AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-    }
-
-    deinit {
-        AppRebrand.isAppRebranded = previousIsRebranded
-        DesignSystemPalette.current = previousPalette
-    }
-}
-
 public struct ButtonStylesGallery: View {
-    let isRebranded: Bool
-
     @Environment(\.colorScheme) private var colorScheme
 
-    @StateObject private var override: RebrandPreviewOverride
-
-    public init(isRebranded: Bool) {
-        self.isRebranded = isRebranded
-        _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-    }
-
-    private func applyRebrandOverride() {
-        AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-    }
+    public init() {}
 
     public var body: some View {
-        applyRebrandOverride()
-        return ScrollView {
+        ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("PrimaryButtonStyle") {
                     Button("Default") {}.buttonStyle(PrimaryButtonStyle())
@@ -948,26 +910,14 @@ public struct ButtonStylesGallery: View {
 }
 
 #if DEBUG
-#Preview("Buttons Legacy / Light") {
-    ButtonStylesGallery(isRebranded: false)
+#Preview("Buttons / Light") {
+    ButtonStylesGallery()
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
-#Preview("Buttons Legacy / Dark") {
-    ButtonStylesGallery(isRebranded: false)
-        .environment(\.colorScheme, .dark)
-        .preferredColorScheme(.dark)
-}
-
-#Preview("Buttons Rebranded / Light") {
-    ButtonStylesGallery(isRebranded: true)
-        .environment(\.colorScheme, .light)
-        .preferredColorScheme(.light)
-}
-
-#Preview("Buttons Rebranded / Dark") {
-    ButtonStylesGallery(isRebranded: true)
+#Preview("Buttons / Dark") {
+    ButtonStylesGallery()
         .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }

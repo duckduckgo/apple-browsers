@@ -351,6 +351,85 @@ class AppPrivacyConfigurationTests: XCTestCase {
         XCTAssertEqual(config.stateFor(featureKey: .ampLinks, versionProvider: appVersion), .disabled(.appVersionNotSupported))
     }
 
+    let exampleMaxVersionConfig =
+    """
+    {
+        "features": {
+            "trackingParameters": {
+                "state": "enabled",
+                "maxSupportedVersion": "7.250.0",
+                "exceptions": []
+            },
+            "ampLinks": {
+                "state": "enabled",
+                "minSupportedVersion": "7.200.0",
+                "maxSupportedVersion": "7.250.0",
+                "exceptions": []
+            },
+            "gpc": {
+                "state": "internal",
+                "maxSupportedVersion": "7.250.0",
+                "exceptions": []
+            }
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    func testMaxSupportedVersionCheckReturnsCorrectly() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleMaxVersionConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider())
+
+        let config = manager.privacyConfig
+
+        for version in ["1.0.0", "7.249.9", "7.250", "7.250.0", "7.250.0.0"] {
+            let appVersion = MockAppVersionProvider(appVersion: version)
+            XCTAssertEqual(config.stateFor(featureKey: .trackingParameters, versionProvider: appVersion), .enabled, version)
+        }
+
+        for version in ["7.250.0.1", "7.250.1", "7.251.0", "8.0.0"] {
+            let appVersion = MockAppVersionProvider(appVersion: version)
+            XCTAssertFalse(config.isEnabled(featureKey: .trackingParameters, versionProvider: appVersion, defaultValue: true), version)
+            XCTAssertEqual(config.stateFor(featureKey: .trackingParameters, versionProvider: appVersion), .disabled(.appVersionNotSupported), version)
+        }
+    }
+
+    func testMinAndMaxSupportedVersionCheckReturnsCorrectly() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleMaxVersionConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider())
+
+        let config = manager.privacyConfig
+
+        XCTAssertEqual(config.stateFor(featureKey: .ampLinks, versionProvider: MockAppVersionProvider(appVersion: "7.199.0")), .disabled(.appVersionNotSupported))
+        XCTAssertEqual(config.stateFor(featureKey: .ampLinks, versionProvider: MockAppVersionProvider(appVersion: "7.200.0")), .enabled)
+        XCTAssertEqual(config.stateFor(featureKey: .ampLinks, versionProvider: MockAppVersionProvider(appVersion: "7.250.0")), .enabled)
+        XCTAssertEqual(config.stateFor(featureKey: .ampLinks, versionProvider: MockAppVersionProvider(appVersion: "7.251.0")), .disabled(.appVersionNotSupported))
+    }
+
+    func testWhenInternalUser_MaxSupportedVersionCheckReturnsCorrectly() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleMaxVersionConfig, etag: "test")
+        let mockInternalUserStore = MockInternalUserStoring()
+        mockInternalUserStore.isInternalUser = true
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStore))
+
+        let config = manager.privacyConfig
+
+        XCTAssertEqual(config.stateFor(featureKey: .gpc, versionProvider: MockAppVersionProvider(appVersion: "7.250.0")), .enabled)
+        XCTAssertEqual(config.stateFor(featureKey: .gpc, versionProvider: MockAppVersionProvider(appVersion: "7.251.0")), .disabled(.appVersionNotSupported))
+    }
+
     let exampleInstalledDaysConfig =
             """
             {
@@ -529,6 +608,11 @@ class AppPrivacyConfigurationTests: XCTestCase {
                         "state": "enabled",
                         "minSupportedVersion": "1.36.0"
                     },
+                    "credentialsImportPromotionForExistingUsers": {
+                        "state": "enabled",
+                        "minSupportedVersion": "1.36.0",
+                        "maxSupportedVersion": "2.16.0"
+                    },
                     "inlineIconCredentials": {
                         "state": "enabled"
                     },
@@ -596,6 +680,28 @@ class AppPrivacyConfigurationTests: XCTestCase {
         let futureVersionProvider = MockAppVersionProvider(appVersion: "2.16.0")
         XCTAssertTrue(config.isSubfeatureEnabled(AutofillSubfeature.credentialsSaving, versionProvider: futureVersionProvider, randomizer: Double.random(in:), defaultValue: false))
         XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsSaving), .enabled)
+    }
+
+    func testWhenCheckingSubfeatureState_MaxSupportedVersionCheckReturnsCorrectly() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleSubfeaturesConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider())
+
+        let config = manager.privacyConfig
+        let subfeature = AutofillSubfeature.credentialsImportPromotionForExistingUsers
+
+        let oldVersionProvider = MockAppVersionProvider(appVersion: "1.35.0")
+        XCTAssertEqual(config.stateFor(subfeature, versionProvider: oldVersionProvider, randomizer: Double.random(in:)), .disabled(.appVersionNotSupported))
+        let maxVersionProvider = MockAppVersionProvider(appVersion: "2.16.0")
+        XCTAssertTrue(config.isSubfeatureEnabled(subfeature, versionProvider: maxVersionProvider, randomizer: Double.random(in:), defaultValue: false))
+        XCTAssertEqual(config.stateFor(subfeature, versionProvider: maxVersionProvider, randomizer: Double.random(in:)), .enabled)
+        let futureVersionProvider = MockAppVersionProvider(appVersion: "2.16.1")
+        XCTAssertFalse(config.isSubfeatureEnabled(subfeature, versionProvider: futureVersionProvider, randomizer: Double.random(in:), defaultValue: true))
+        XCTAssertEqual(config.stateFor(subfeature, versionProvider: futureVersionProvider, randomizer: Double.random(in:)), .disabled(.appVersionNotSupported))
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsSaving, versionProvider: futureVersionProvider, randomizer: Double.random(in:)), .enabled)
     }
 
     let exampleDisabledFeatureStateOverridingSubfeatureConfig =

@@ -25,7 +25,6 @@ import SwiftUI
 
 #if DEBUG
 import PreviewSnapshots
-import UIComponents
 #endif
 
 struct TurnOffSyncSheetView: View {
@@ -310,7 +309,6 @@ struct TurnOffSyncSheetView_Previews: PreviewProvider {
                 model: .preview(isSyncEnabled: true, devices: [.thisDevice, .desktop, .otherMobile]),
                 isDeleteServerDataSelected: state == .deleteServerData
             )
-            .applyRebranding()
         }
     )
 }

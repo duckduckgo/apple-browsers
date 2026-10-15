@@ -22,7 +22,6 @@ import DesignResourcesKit
 
 #if DEBUG
 import PreviewSnapshots
-import UIComponents
 #endif
 
 public struct SimplifiedConnectingSheetView: View {
@@ -87,7 +86,6 @@ struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
         ],
         configure: { state in
             SimplifiedConnectingSheetView(model: model(for: state))
-                .applyRebranding()
         }
     )
 

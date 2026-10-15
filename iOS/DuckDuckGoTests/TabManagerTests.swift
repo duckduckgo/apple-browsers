@@ -920,7 +920,7 @@ final class TabManagerTests: XCTestCase {
         func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect) {}
         func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {}
         func escapeHatchDidRequestTabSwitcher() {}
-        func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {}
+        func escapeHatchDidRequestAfterInactivitySettings() {}
     }
 
     func makeManager(_ model: TabsModel,

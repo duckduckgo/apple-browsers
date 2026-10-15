@@ -1,9 +1,9 @@
 name: Snapshot failure report
-description: Render failed snapshot tests from xcresult bundles into one HTML page, upload it unzipped so it opens in the browser, and link it from the job summary.
+description: Render failed snapshot tests from an xcresult bundle into one HTML page, upload it unzipped so it opens in the browser, and link it from the job summary.
 
 inputs:
-  xcresults:
-    description: Space-separated .xcresult paths, relative to working-directory. Missing bundles are skipped.
+  xcresult:
+    description: Path to the .xcresult bundle, relative to working-directory. Nothing is reported if it doesn't exist.
     required: true
   report-name:
     description: File name of the HTML report. Unzipped artifacts are named after their file, so this must be unique within the workflow run.
@@ -23,8 +23,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        read -ra xcresults <<< "${{ inputs.xcresults }}"
-        "${GITHUB_WORKSPACE}/scripts/render-snapshot-failures.py" "${xcresults[@]}" \
+        "${GITHUB_WORKSPACE}/scripts/render-snapshot-failures.py" "${{ inputs.xcresult }}" \
           --output "${{ inputs.report-name }}" \
           --title "${{ inputs.title }}"
 

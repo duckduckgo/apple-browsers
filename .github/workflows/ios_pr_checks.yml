@@ -285,7 +285,7 @@ jobs:
       uses: ./.github/actions/snapshot-failure-report
       with:
         working-directory: iOS
-        xcresults: DerivedData/Logs/Test/iOS-UnitTests.xcresult
+        xcresult: DerivedData/Logs/Test/iOS-UnitTests.xcresult
         report-name: ios-snapshot-failures.html
         title: iOS Snapshot Failures
 

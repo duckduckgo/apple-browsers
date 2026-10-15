@@ -401,9 +401,43 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         schemeHandler.onStart = { started.fulfill() }
         await fulfillment(of: [started], timeout: 5)
 
-        let parameters = recorder.snapshot().pixelParameters
+        // WebKit holds tabs weakly, and an optimized build releases `tabs` after its last use.
+        let parameters = withExtendedLifetime(tabs) { recorder.snapshot().pixelParameters }
         XCTAssertEqual(parameters[Name.openTabs], "2_to_5")
         XCTAssertEqual(parameters[Name.loadingTabs], "1")
+    }
+
+    /// A snapshot is taken while CPM is failing, so it must only read: the apps' tabs return a stored web
+    /// view from `webView(for:)`, and anything else the recorder asked a tab for could create state or
+    /// work in the middle of a failure. Anything WebKit itself asks for when listing `openTabs` is not ours.
+    func testSnapshotOnlyReadsTheWebViewOfEachOpenTab() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContext()
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        try controller.load(context)
+        defer { try? controller.unload(context) }
+        recorder.contextWillLoad(context)
+        let tabs = [RecordingTab(webView: WKWebView(frame: .zero)), RecordingTab(webView: nil)]
+        tabs.forEach { controller.didOpenTab($0) }
+        XCTAssertEqual(context.openTabs.count, tabs.count, "the tabs must be registered, or nothing below is exercised")
+
+        tabs.forEach { $0.forgetCalls() }
+        _ = context.openTabs
+        let callsListingOpenTabs = tabs.map(\.calls)
+
+        tabs.forEach { $0.forgetCalls() }
+        let first = recorder.snapshot().pixelParameters
+        let callsDuringFirstSnapshot = tabs.map(\.calls)
+        tabs.forEach { $0.forgetCalls() }
+        _ = recorder.snapshot()
+        let callsDuringSecondSnapshot = tabs.map(\.calls)
+        withExtendedLifetime(tabs) {}
+
+        let expected = callsListingOpenTabs.map { $0 + ["webView"] }
+        XCTAssertEqual(callsDuringFirstSnapshot, expected, "a snapshot may only read each tab's web view, once")
+        XCTAssertEqual(callsDuringSecondSnapshot, expected, "a repeated snapshot must not do more than the first")
+        XCTAssertEqual(first[Name.openTabs], "2_to_5")
+        XCTAssertEqual(first[Name.loadingTabs], "0", "a tab without a web view is open but not loading")
     }
 
     private typealias Name = CPMMessagingDiagnostics.ParameterName
@@ -626,6 +660,71 @@ private final class TestTab: NSObject, WKWebExtensionTab {
 
     func webView(for context: WKWebExtensionContext) -> WKWebView? {
         webView
+    }
+}
+
+/// Records every question WebKit or the recorder asks of the tab.
+@available(macOS 15.4, iOS 18.4, *)
+private final class RecordingTab: NSObject, WKWebExtensionTab {
+    private let webView: WKWebView?
+    private(set) var calls: [String] = []
+
+    init(webView: WKWebView?) {
+        self.webView = webView
+    }
+
+    func forgetCalls() {
+        calls = []
+    }
+
+    func webView(for context: WKWebExtensionContext) -> WKWebView? {
+        calls.append("webView")
+        return webView
+    }
+
+    func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
+        calls.append("window")
+        return nil
+    }
+
+    func indexInWindow(for context: WKWebExtensionContext) -> UInt {
+        calls.append("indexInWindow")
+        return 0
+    }
+
+    func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
+        calls.append("parentTab")
+        return nil
+    }
+
+    func title(for context: WKWebExtensionContext) -> String? {
+        calls.append("title")
+        return nil
+    }
+
+    func url(for context: WKWebExtensionContext) -> URL? {
+        calls.append("url")
+        return nil
+    }
+
+    func pendingURL(for context: WKWebExtensionContext) -> URL? {
+        calls.append("pendingURL")
+        return nil
+    }
+
+    func isLoadingComplete(for context: WKWebExtensionContext) -> Bool {
+        calls.append("isLoadingComplete")
+        return true
+    }
+
+    func isSelected(for context: WKWebExtensionContext) -> Bool {
+        calls.append("isSelected")
+        return false
+    }
+
+    func isPinned(for context: WKWebExtensionContext) -> Bool {
+        calls.append("isPinned")
+        return false
     }
 }
 

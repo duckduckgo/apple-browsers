@@ -32,6 +32,10 @@ final class DuckAISettingsUITests: DuckAIUITestCase {
 
             app.revealDuckAIEnableToggle()
             app.setDuckAIEnabled(false)
+            // The always-present row below Duck.ai establishes the collapsed section's viewport.
+            let disableAllAI = app.aiFeaturesSettingsList.buttons["Settings.AIFeatures.DisableAllAIOptions"]
+            app.aiFeaturesSettingsList.swipeUpToReveal(disableAllAI, timeout: UITestTimeouts.navigation)
+            XCTAssertTrue(disableAllAI.isHittable, "The end of AI Features settings did not become visible.")
             XCTAssertTrue(
                 duckAISettings.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
                 "Duck.ai Settings remained after Duck.ai was disabled.")
@@ -65,7 +69,6 @@ final class DuckAIIPhoneIPadFlagsUITests: DuckAIUITestCase {
     override var duckAIFeatureFlagLaunchArguments: [String] {
         [
             "-ff.aiChatChromeShortcutIPad", "true",
-            "-ff.iPadDuckAIBarControls", "true",
         ]
     }
 

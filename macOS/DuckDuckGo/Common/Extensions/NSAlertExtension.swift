@@ -45,6 +45,17 @@ extension NSAlert {
         return alert
     }
 
+    /// Shown when a Duck.ai screenshot needs Screen Recording and macOS won't prompt again.
+    /// `.OK` opens the Screen Recording pane of System Settings.
+    static func screenRecordingPermission() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.screenRecordingPermissionPrompt
+        alert.informativeText = UserText.screenRecordingPermissionDisabled
+        alert.addButton(withTitle: UserText.screenRecordingPermissionOpenSettings, response: .OK)
+        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        return alert
+    }
+
     static func fireproofAlert(with domain: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)

@@ -2270,9 +2270,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         case .cancelled:
             return
         case .permissionDenied(let showExplainer):
-            // macOS won't prompt again, so the drawer says where to turn it on.
-            if showExplainer {
-                setScreenRecordingNotice(visible: true)
+            // macOS won't prompt again, so the alert says where to turn it on.
+            guard showExplainer, let window = view.window, window.attachedSheet == nil else { return }
+            NSAlert.screenRecordingPermission().beginSheetModal(for: window) { response in
+                guard response == .OK else { return }
+                AIChatScreenRecordingPermission().openSystemSettings()
             }
         case .failed:
             lastAttachmentError = UserText.aiChatScreenshotCaptureFailed

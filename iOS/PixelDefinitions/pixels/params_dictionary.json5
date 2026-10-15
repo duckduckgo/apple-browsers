@@ -69,8 +69,11 @@
             "tabs_bar_button",
             "chat_history_new_chat",
             "chat_history_open_chat",
+            "chat_history_view_all",
             "voice",
             "onboarding",
+            "subscription_onboarding",
+            "paid_settings",
             "direct_url",
             "serp",
             "icon_shortcut",
@@ -85,6 +88,7 @@
             "return_to_chat_card",
             "tab_switcher_existing_chat",
             "ddg_homepage",
+            "tabs_bar_existing_chat",
             "unattributed"
         ]
     },

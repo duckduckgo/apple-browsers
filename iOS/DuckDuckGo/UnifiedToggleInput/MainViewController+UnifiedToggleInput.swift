@@ -1265,7 +1265,7 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        let duckAIEntrySource = fireDirectDuckAINavigationPixelIfNeeded(for: query)
+        fireUnifiedInputDuckAIDirectNavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -1274,42 +1274,17 @@ extension MainViewController {
         if postIdleSubmissionReason(for: query) == .searchSubmitted {
             recordDuckAISessionPendingExit(.searchStarted)
         }
-        loadQuery(query) { tab in
-            if let duckAIEntrySource {
-                tab.duckAIEntrySource = duckAIEntrySource
-            }
-        }
+        loadQuery(query, via: .typed)
     }
 
-    /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
-    /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
-    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) -> AIChatEntryPointSource? {
-        guard let url = URL.makeSearchURL(query: query,
+    /// Kept for users who turned Duck.ai off; `loadQuery` reports the direct navigation itself.
+    private func fireUnifiedInputDuckAIDirectNavigationPixelIfNeeded(for query: String) {
+        guard !aiChatSettings.isAIChatEnabled,
+              let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
-              url.isDuckAIURL else { return nil }
-
-        PixelKit.fire(Pixel.Event.aiChatDuckAIDirectNavigation, frequency: .dailyAndCount, options: .parameters([
-            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
-            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
-        ]))
-
-        if !aiChatSettings.isAIChatEnabled {
-            PixelKit.fire(Pixel.Event.unifiedToggleInputDuckAIDirectNavigation, frequency: .dailyAndCount)
-        }
-
-        // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
-        // only place the `direct_url` entry can be reported.
-        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
-            currentIsAI: currentTab?.isAITab == true,
-            currentHasContent: currentTab?.tabModel.link != nil,
-            targetIsAI: true,
-            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
-        )
-        fireAIChatEntryPointPixel(source: .directURL,
-                                  opensNewTab: decision == .openInNewTab,
-                                  hasPrompt: false)
-        return .directURL
+              url.isDuckAIURL else { return }
+        PixelKit.fire(Pixel.Event.unifiedToggleInputDuckAIDirectNavigation, frequency: .dailyAndCount)
     }
 
 }
@@ -1414,7 +1389,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
             // `loadUrlRespectingAIBoundary` carries no terminal of its own, so without this the visit
             // would stay open and later report a timeout despite the user having navigated.
             endNewTabPageSessionWithLoad(of: url)
-            loadUrlRespectingAIBoundary(url)
+            loadUrlRespectingAIBoundary(url, via: .typed)
             return
         }
         openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,

@@ -3807,10 +3807,7 @@ extension TabViewController: WKNavigationDelegate {
             if modifierFlags.contains(.command) {
                 if modifierFlags.contains(.shift) {
                     wrappedHandler(.cancel)
-                    delegate?.tab(self,
-                                  didRequestNewTabForUrl: url,
-                                  openedByPage: false,
-                                  inheritingAttribution: adClickAttributionLogic.state)
+                    delegate?.tab(self, didRequestNewTabForFollowedLink: url, inheritingAttribution: adClickAttributionLogic.state)
                     return
                 } else {
                     wrappedHandler(.cancel)

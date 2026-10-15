@@ -777,7 +777,7 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadExternalLinkInNewTab(url)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {

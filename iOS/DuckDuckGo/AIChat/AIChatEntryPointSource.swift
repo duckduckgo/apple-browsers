@@ -66,11 +66,15 @@ public enum AIChatEntryPointSource: String {
     case duckAINewChat = "duck_ai_new_chat"
     case tabSwitcher = "tab_switcher"
     case tabSwitcherExistingChat = "tab_switcher_existing_chat"
+    case tabsBarExistingChat = "tabs_bar_existing_chat"
     case tabsBarButton = "tabs_bar_button"
     case chatHistoryNewChat = "chat_history_new_chat"
     case chatHistoryOpenChat = "chat_history_open_chat"
+    case chatHistoryViewAll = "chat_history_view_all"
     case voice
     case onboarding
+    case subscriptionOnboarding = "subscription_onboarding"
+    case paidSettings = "paid_settings"
     case directURL = "direct_url"
     case serp
     case iconShortcut = "icon_shortcut"
@@ -96,6 +100,10 @@ extension AIChatEntryPointSource {
         }
     }
 
+    /// Opens Duck.ai from Settings → Subscription and the subscription welcome page.
+    static let paidSettingsDeepLink = AppDeepLinkSchemes.openAIChat.url
+        .appendingParameter(name: WidgetSourceType.sourceKey, value: AIChatEntryPointSource.paidSettings.rawValue)
+
     /// Resolves the `source` parameter a Duck.ai deep link carries. Falls back to `.deepLinkOther`
     /// for links with no recognised source, e.g. the URL scheme invoked from outside the app.
     static func forDeepLink(_ url: URL) -> AIChatEntryPointSource {
@@ -103,8 +111,12 @@ extension AIChatEntryPointSource {
         if let widgetSource = WidgetSourceType(rawValue: rawValue) {
             return widgetSource.aiChatEntryPointSource
         }
-        // `AIVoiceChatIntent` writes this one, and it is not a `WidgetSourceType`.
-        return rawValue == VoiceEntryPointSource.siri.rawValue ? .siri : .deepLinkOther
+        // `AIVoiceChatIntent` and Settings → Subscription write these, and they are not a `WidgetSourceType`.
+        switch rawValue {
+        case VoiceEntryPointSource.siri.rawValue: return .siri
+        case AIChatEntryPointSource.paidSettings.rawValue: return .paidSettings
+        default: return .deepLinkOther
+        }
     }
 
     /// Names the page behind an `openAIChat` user-script request so it is not reported as a typed
@@ -115,11 +127,19 @@ extension AIChatEntryPointSource {
         return .serp
     }
 
-    /// Attributes a navigation the page itself started into Duck.ai. Only the DuckDuckGo homepage
-    /// is named; links from other pages stay unattributed rather than being lumped into a catch-all.
-    static func forInPageNavigation(from currentURL: URL?, to targetURL: URL) -> AIChatEntryPointSource? {
-        guard currentURL?.isDuckDuckGoHomepageEntry == true, targetURL.isDuckAIURL else { return nil }
-        return .ddgHomepage
+    /// Attributes a navigation the page itself started into Duck.ai. The DuckDuckGo homepage is named
+    /// whatever started it; elsewhere only a link the user activated counts, as `serp` from the search
+    /// results page and `direct_url` from any other page.
+    static func forInPageNavigation(from currentURL: URL?, to targetURL: URL, isLinkActivation: Bool) -> AIChatEntryPointSource? {
+        guard targetURL.isDuckAIURL, currentURL?.isDuckAIURL != true else { return nil }
+        if currentURL?.isDuckDuckGoHomepageEntry == true { return .ddgHomepage }
+        guard isLinkActivation else { return nil }
+        return currentURL?.isDuckDuckGoSearch == true ? .serp : .directURL
+    }
+
+    /// Doors that are a link the user followed, which also count as a direct navigation.
+    var isFollowedLink: Bool {
+        self == .serp || self == .directURL
     }
 }
 

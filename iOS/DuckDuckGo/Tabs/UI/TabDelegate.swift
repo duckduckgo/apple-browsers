@@ -58,6 +58,11 @@ protocol TabDelegate: AnyObject {
     /// Back on a tab opened from another one closes it and returns to the opener.
     func tabDidRequestCloseOnBack(_ tab: TabViewController)
 
+    /// The user chose to open a link from this page in a new tab.
+    func tab(_ tab: TabViewController,
+             didRequestNewTabForFollowedLink url: URL,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
@@ -241,6 +246,12 @@ extension TabDelegate {
 
     func tabDidRequestCloseOnBack(_ tab: TabViewController) {
         tabDidRequestClose(tab)
+    }
+
+    func tab(_ tab: TabViewController,
+             didRequestNewTabForFollowedLink url: URL,
+             inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        self.tab(tab, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: attribution)
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}

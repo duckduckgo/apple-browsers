@@ -58,6 +58,12 @@ struct AIChatEntryPointSourceTests {
     }
 
     @available(iOS 16, *)
+    @Test("The subscription Duck.ai link resolves to paid_settings", .timeLimit(.minutes(1)))
+    func paidSettingsSourceResolves() {
+        #expect(AIChatEntryPointSource.forDeepLink(AIChatEntryPointSource.paidSettingsDeepLink) == .paidSettings)
+    }
+
+    @available(iOS 16, *)
     @Test("A deep link with no source falls back to deep_link_other", .timeLimit(.minutes(1)))
     func missingSourceFallsBack() {
         #expect(AIChatEntryPointSource.forDeepLink(deepLink(source: nil)) == .deepLinkOther)
@@ -131,24 +137,35 @@ struct AIChatEntryPointSourceTests {
     @Test("A navigation the DuckDuckGo homepage starts into Duck.ai resolves to ddg_homepage", .timeLimit(.minutes(1)))
     func homepageNavigationResolves() {
         let homepageWithParams = URL(string: "https://duckduckgo.com/?atb=v550-1")!
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: duckAIChat) == .ddgHomepage)
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepageWithParams, to: duckAIChat) == .ddgHomepage)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: duckAIChat, isLinkActivation: false) == .ddgHomepage)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepageWithParams, to: duckAIChat, isLinkActivation: false) == .ddgHomepage)
     }
 
-    /// Only the homepage is attributed; links into Duck.ai from other pages stay unattributed on purpose.
+    /// Pages other than the homepage are attributed only when the user follows a link.
     @available(iOS 16, *)
-    @Test("Navigations from other pages have no in-page source", .timeLimit(.minutes(1)))
+    @Test("Navigations other pages start without a link have no in-page source", .timeLimit(.minutes(1)))
     func otherPagesResolveToNil() {
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?q=test")!, to: duckAIChat) == nil)
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://example.com/")!, to: duckAIChat) == nil)
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?ia=chat")!, to: duckAIChat) == nil)
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: nil, to: duckAIChat) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?q=test")!, to: duckAIChat, isLinkActivation: false) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://example.com/")!, to: duckAIChat, isLinkActivation: false) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?ia=chat")!, to: duckAIChat, isLinkActivation: false) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: nil, to: duckAIChat, isLinkActivation: false) == nil)
     }
 
     @available(iOS 16, *)
     @Test("Homepage navigations that do not reach Duck.ai have no in-page source", .timeLimit(.minutes(1)))
     func homepageToWebResolvesToNil() {
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: URL(string: "https://example.com/")!) == nil)
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: URL(string: "https://duckduckgo.com/?q=test")!) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: URL(string: "https://example.com/")!, isLinkActivation: false) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: URL(string: "https://duckduckgo.com/?q=test")!, isLinkActivation: false) == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("A followed link into Duck.ai resolves to serp from the search results page and direct_url elsewhere",
+          .timeLimit(.minutes(1)))
+    func followedLinkResolves() {
+        let serp = URL(string: "https://duckduckgo.com/?q=test")!
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: serp, to: duckAIChat, isLinkActivation: true) == .serp)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://example.com/")!, to: duckAIChat,
+                                                           isLinkActivation: true) == .directURL)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: duckAIChat, to: duckAIChat, isLinkActivation: true) == nil)
     }
 }

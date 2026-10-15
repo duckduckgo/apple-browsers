@@ -426,9 +426,11 @@
     "subscriptionFunnelOrigin": {
         "key": "origin",
         "type": "string",
-        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` (macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift); never an ad-campaign or marketing-attribution origin.",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` or `SubscriptionPlanChangeOrigin` (macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift); never an ad-campaign or marketing-attribution origin.",
         "enum": [
             "funnel_appsettings_macos",
+            "funnel_subscriptionsettings_macos__viewplans",
+            "funnel_subscriptionsettings_macos__upgradetopro",
             "funnel_appmenu_macos",
             "funnel_freescan_macos",
             "funnel_applaunch_macos_winback",

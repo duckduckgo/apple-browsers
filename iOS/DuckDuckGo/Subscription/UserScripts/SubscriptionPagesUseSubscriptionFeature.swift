@@ -643,12 +643,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         Logger.subscription.log("[TierChange] Starting from subscription: \(currentSubscription?.productId ?? "unknown", privacy: .public)")
 
+        let funnelName = SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: subscriptionAttributionOrigin)
         switch effectivePlatform {
         case .apple:
             await subscriptionFlowsExecuter.performTierChange(
                 to: subscriptionSelection.id,
                 changeType: subscriptionSelection.change,
-                contextName: subscriptionAttributionOrigin,
+                contextName: funnelName,
                 setTransactionStatus: { self.setTransactionStatus($0) },
                 setTransactionError: { self.setTransactionError($0.map { self.useSubscriptionError(from: $0) }) },
                 pushPurchaseUpdate: { await self.pushPurchaseUpdate(originalMessage: message, purchaseUpdate: $0) }
@@ -665,7 +666,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                 changeType: changeType,
                 fromPlan: fromPlan,
                 toPlan: subscriptionSelection.id,
-                funnelName: subscriptionAttributionOrigin
+                funnelName: funnelName
             )
             planChangeWideEventData = wideData
             wideEvent.startFlow(wideData)

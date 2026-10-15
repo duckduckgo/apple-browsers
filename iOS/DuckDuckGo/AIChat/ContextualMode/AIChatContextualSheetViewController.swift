@@ -1218,6 +1218,7 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {
         transitionToWebViewAfterInitialPromptStatusIfNeeded(status)
+        webViewController?.notifyChatStatusChanged(status)
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {

@@ -1,10 +1,10 @@
 {
     "ios-duckai-prompt": {
-        "description": "Sent at the end of a Duck.ai prompt submission journey on iOS, from the moment the user submits a prompt through the Unified Toggle Input until the page either delivers a response (status returns to `.ready`) or the journey is orphaned by app termination.",
+        "description": "Sent at the end of a Duck.ai prompt submission journey on iOS, from the moment the user submits a prompt natively (Unified Toggle Input, the iPad address bar, the Ask Duck.ai suggestion row, or the Ask about page sheet's native input) until the page either delivers a response (status returns to `.ready`) or the journey is orphaned by app termination.",
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-duckai-prompt",
-            "version": "2.0"
+            "version": "3.0"
         },
         "feature": {
             "name": "duckai-prompt",
@@ -143,6 +143,18 @@
                                 "type": "boolean",
                                 "description": "Whether the user had any attachment (image, file, or attachment that failed validation) in the composer at submit time."
                             }
+                        }
+                    },
+                    "device": {
+                        "type": "object",
+                        "description": "Device usage context when the prompt was submitted.",
+                        "properties": {
+                            "layout": {
+                                "type": "string",
+                                "description": "regular is the iPad tabs-bar layout (window 678pt or wider); compact is the phone layout, on every iPhone and on narrower iPad windows.",
+                                "enum": ["regular", "compact"]
+                            },
+                            "hardware_keyboard": { "type": "boolean", "description": "Whether a hardware keyboard was connected." }
                         }
                     },
                     "delivery": {

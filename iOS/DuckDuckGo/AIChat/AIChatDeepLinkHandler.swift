@@ -38,7 +38,8 @@ protocol AIChatDeepLinkPresenting: UIViewController {
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
         fromDeepLink: Bool,
-        termsAccepted: Bool
+        termsAccepted: Bool,
+        nativePromptFlow: DuckAIPromptFlowStart?
     )
 }
 
@@ -59,7 +60,8 @@ extension AIChatDeepLinkPresenting {
             reportsNewTab: nil,
             forcesNewTab: false,
             fromDeepLink: fromDeepLink,
-            termsAccepted: false
+            termsAccepted: false,
+            nativePromptFlow: nil
         )
     }
     

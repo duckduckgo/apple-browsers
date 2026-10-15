@@ -4873,7 +4873,8 @@ class MainViewController: UIViewController {
                     reportsNewTab: Bool? = nil,
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
-                    termsAccepted: Bool = false) {
+                    termsAccepted: Bool = false,
+                    nativePromptFlow: DuckAIPromptFlowStart? = nil) {
 
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
@@ -4893,7 +4894,8 @@ class MainViewController: UIViewController {
             reportsNewTab: reportsNewTab,
             forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink,
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            nativePromptFlow: nativePromptFlow
         )
     }
 
@@ -5009,7 +5011,8 @@ class MainViewController: UIViewController {
                                  reportsNewTab: Bool? = nil,
                                  forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false,
-                                 termsAccepted: Bool = false) {
+                                 termsAccepted: Bool = false,
+                                 nativePromptFlow: DuckAIPromptFlowStart? = nil) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
@@ -5062,9 +5065,8 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] tab in
-                tab.duckAIEntrySource = source
-                self?.markAddressBarPromptHandoverIfNeeded(source: source, query: query, autoSend: autoSend,
-                                                           hasAttachments: hasAttachments)
+                self?.prepareTabForDuckAILoad(tab, source: source, query: query, autoSend: autoSend,
+                                              hasAttachments: hasAttachments, nativePromptFlow: nativePromptFlow)
                 if let modelId {
                     self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
                 }
@@ -5075,14 +5077,27 @@ class MainViewController: UIViewController {
             return
         }
 
-        stampDuckAIEntrySourceOnCurrentTab(source)
-        markAddressBarPromptHandoverIfNeeded(source: source, query: query, autoSend: autoSend,
-                                             hasAttachments: images?.isEmpty == false || files?.isEmpty == false)
+        prepareTabForDuckAILoad(tabManager.currentTabsModel.currentTab, source: source, query: query, autoSend: autoSend,
+                                hasAttachments: images?.isEmpty == false || files?.isEmpty == false,
+                                nativePromptFlow: nativePromptFlow)
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
         }
+    }
+
+    /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
+    private func prepareTabForDuckAILoad(_ tab: Tab?,
+                                         source: AIChatEntryPointSource,
+                                         query: String?,
+                                         autoSend: Bool,
+                                         hasAttachments: Bool,
+                                         nativePromptFlow: DuckAIPromptFlowStart?) {
+        guard let tab else { return }
+        tab.duckAIEntrySource = source
+        markAddressBarPromptHandoverIfNeeded(source: source, query: query, autoSend: autoSend, hasAttachments: hasAttachments)
+        startNativeDuckAIPromptFlow(nativePromptFlow, in: tab, source: source)
     }
 
     /// The page reports the handed-over prompt as its own, so its prompt pixels need to know it came from the address bar.
@@ -5714,7 +5729,8 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            openAIChat(source: .suggestionAskAI, value, autoSend: true)
+            openAIChat(source: .suggestionAskAI, value, autoSend: true,
+                       nativePromptFlow: nativeDuckAIPromptFlow { DuckAIPromptFlowStart(userTier: currentDuckAIUserTier) })
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
@@ -5752,7 +5768,8 @@ extension MainViewController: OmniBarDelegate {
                    reasoningEffort: controlValues.selectedReasoningEffort,
                    images: controlValues.selectedImages,
                    files: controlValues.selectedFiles,
-                   termsAccepted: termsAccepted)
+                   termsAccepted: termsAccepted,
+                   nativePromptFlow: nativeDuckAIPromptFlow { DuckAIPromptFlowStart(controlValues: controlValues, tools: tools) })
     }
 
     func onChatHistorySelected(url: URL) {
@@ -8994,6 +9011,10 @@ extension MainViewController: OmniBarFocuser {
 // MARK: - AIChatContentHandlingDelegate
 extension MainViewController: AIChatContentHandlingDelegate {
 
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {
+        reportDuckAIChatStatusOutsideUnifiedInput(status, for: handler)
+    }
+
     func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler:
                                                            AIChatContentHandling) {
         if let controller = tabSwitcherController {
@@ -9485,6 +9506,40 @@ extension MainViewController {
 
     fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
         currentTab.map { .tab($0.tabModel.uid) }
+    }
+
+    /// The Duck.ai page reports response status only to native chat input, so a flow started anywhere else could never complete.
+    private func nativeDuckAIPromptFlow(_ makeFlow: () -> DuckAIPromptFlowStart) -> DuckAIPromptFlowStart? {
+        unifiedToggleInputFeature.isAvailable ? makeFlow() : nil
+    }
+
+    var currentDuckAIUserTier: AIChatUserTier {
+        unifiedToggleInputCoordinator?.subscriptionState.userTier ?? omniBar.iPadDuckAIControlValues.userTier
+    }
+
+    /// Native submits outside Unified Input (iPad address bar, Ask Duck.ai row) start their flow on the receiving tab.
+    fileprivate func startNativeDuckAIPromptFlow(_ start: DuckAIPromptFlowStart?, in tab: Tab, source: AIChatEntryPointSource) {
+        guard let start else { return }
+        duckAIWideEventInstrumentation.submissionStarted(scope: .tab(tab.uid),
+                                                         modelId: start.modelId,
+                                                         userTier: start.userTier,
+                                                         reasoningEffort: start.reasoningEffort,
+                                                         entryPoint: .omnibar,
+                                                         origin: source,
+                                                         inputMode: .keyboard,
+                                                         fireMode: tab.fireTab,
+                                                         isFirstPrompt: true,
+                                                         frontendDeliveryPath: .urlAutoSubmit,
+                                                         hasPageContext: false,
+                                                         toolsSelected: start.toolsSelected,
+                                                         attachmentsSelected: start.attachmentsSelected)
+    }
+
+    /// Unified Input feeds chat status to its own flows; everywhere else the tab's page does.
+    fileprivate func reportDuckAIChatStatusOutsideUnifiedInput(_ status: AIChatStatusValue, for handler: AIChatContentHandling) {
+        guard !unifiedToggleInputFeature.isAvailable,
+              let tab = tabManager.currentTabsModel.tabs.first(where: { tabManager.controller(for: $0)?.aiChatContentHandler === handler }) else { return }
+        duckAIWideEventInstrumentation.chatStatusChanged(status, scope: .tab(tab.uid))
     }
 
     fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {

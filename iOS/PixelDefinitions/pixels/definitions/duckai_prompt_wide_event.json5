@@ -201,6 +201,17 @@
                 "type": "boolean",
                 "description": "Whether the user had any attachment (image, file, or attachment that failed validation) in the composer at submit time."
             },
+            {
+                "key": "feature.data.ext.device.layout",
+                "type": "string",
+                "description": "Layout when the prompt was submitted: regular is the iPad tabs-bar layout; compact is the phone layout.",
+                "enum": ["regular", "compact"]
+            },
+            {
+                "key": "feature.data.ext.device.hardware_keyboard",
+                "type": "boolean",
+                "description": "Whether a hardware keyboard was connected when the prompt was submitted."
+            },
 
             // Latency milestones (ms since prompt submission). Bucketed (round-up) into one of:
             // 100, 500, 1000, 2000, 3000, 5000, 10000, 30000. Any duration over 10s collapses into 30000.

@@ -71,6 +71,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var promptFlowReporter: ContextualDuckAIPromptFlowReporting?
     private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
@@ -208,6 +209,7 @@ final class AIChatContextualWebViewController: UIViewController {
         if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
+        promptFlowReporter = utiHost ?? makeStandalonePromptFlowReporterIfCompletable()
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
@@ -606,7 +608,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         let nsError = error as NSError
         guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
 
-        utiHost?.pageLoadFailed(error: error)
+        promptFlowReporter?.pageLoadFailed(error: error)
     }
 }
 
@@ -615,14 +617,25 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
 extension AIChatContextualWebViewController {
 
     func notifySheetDismissed() {
-        utiHost?.sheetDismissed()
+        promptFlowReporter?.sheetDismissed()
     }
 
     func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
-        utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+        promptFlowReporter?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 
     func notifyFrontendPromptSubmissionAcknowledged() {
-        utiHost?.frontendSubmissionAcknowledged()
+        promptFlowReporter?.frontendSubmissionAcknowledged()
+    }
+
+    func notifyChatStatusChanged(_ status: AIChatStatusValue) {
+        promptFlowReporter?.chatStatusChanged(status)
+    }
+
+    /// The page reports response status only when native chat input is available; without it a flow could never complete.
+    private func makeStandalonePromptFlowReporterIfCompletable() -> ContextualDuckAIPromptFlowReporting? {
+        guard unifiedToggleInputFeature.isAvailable else { return nil }
+        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        return ContextualDuckAIPromptFlowReporter(instrumentation: instrumentation, isFireMode: isFireTab)
     }
 }

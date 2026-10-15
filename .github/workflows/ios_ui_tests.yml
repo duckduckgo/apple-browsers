@@ -19,6 +19,14 @@ on:
         description: "Collect Xcode's additional test diagnostics"
         type: boolean
         default: false
+      execution_profile:
+        description: "Performance pilot (PR and scheduled runs always use baseline)"
+        type: choice
+        default: baseline
+        options:
+        - baseline
+        - grouped
+        - grouped-no-diagnostics
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AppLaunchUITests')"
         type: string
@@ -87,6 +95,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_MODES: ${{ inputs.user_modes }}
+          INPUT_PROFILE: ${{ inputs.execution_profile }}
           INPUT_COLLECT_XCODE_DIAGNOSTICS: ${{ inputs.collect_xcode_diagnostics }}
         run: |
           case "$EVENT_NAME" in
@@ -102,6 +111,17 @@ jobs:
           esac
           echo "run-production=$(jq -r 'index("production") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
           echo "run-internal=$(jq -r 'index("internal") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
+          profile=baseline
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            case "$INPUT_PROFILE" in
+              grouped|grouped-no-diagnostics) profile="$INPUT_PROFILE" ;;
+            esac
+          fi
+          echo "execution-profile=$profile" >> "$GITHUB_OUTPUT"
+          if [[ "$profile" == grouped-no-diagnostics && "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
+            echo "::error::Xcode diagnostics cannot be enabled with grouped-no-diagnostics."
+            exit 1
+          fi
           diagnostics_mode=never
           if [[ "$EVENT_NAME" == workflow_dispatch && "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
             diagnostics_mode=default
@@ -114,6 +134,7 @@ jobs:
         env:
           DEVICES: ${{ inputs.devices || 'both' }}
           TEST_CLASSES: ${{ inputs.single_test_class }}
+          EXECUTION_PROFILE: ${{ steps.modes.outputs.execution-profile }}
         run: |
           # Follow macOS class discovery; Common/Support contain helper-only base classes.
           invalid_classes=$(grep -r 'class.*:.*XCTestCase' iOS/UITests --include='*.swift' \
@@ -148,23 +169,36 @@ jobs:
               error("A discovered test class is excluded from both device plans")
             else true end' > /dev/null
 
-          # Create one matrix entry per eligible class/device pair.
+          # Baseline uses one matrix entry per class/device pair. The opt-in grouped
+          # profiles combine only short phone classes to compare worker overhead.
           matrix=$(jq -cn --argjson tests "$tests" --argjson requested "$requested" \
             --argjson phone "$phone_tests" --argjson ipad "$pad_tests" \
-            --arg devices "$DEVICES" --arg iphone_name "$IPHONE_DEVICE_NAME" --arg ipad_name "$IPAD_DEVICE_NAME" '
-            {include: [
+            --arg devices "$DEVICES" --arg profile "$EXECUTION_PROFILE" \
+            --arg iphone_name "$IPHONE_DEVICE_NAME" --arg ipad_name "$IPAD_DEVICE_NAME" '
+            [
               $tests[] as $test |
               select(($requested | length) == 0 or ($requested | index($test)) != null) |
               {device: "iphone", "device-name": $iphone_name, tests: $phone},
               {device: "ipad", "device-name": $ipad_name, tests: $ipad} |
               select($devices == "both" or $devices == .device) |
               select(.tests | index($test)) |
-              {test: $test, device, "device-name"}
-            ]}')
+              {test: $test, classes: [$test], device, "device-name"}
+            ] as $individual |
+            if $profile == "baseline" then $individual
+            else
+              ["AppLaunchUITests", "BrowsingUITests", "TabSuggestionsUITests"] as $short |
+              [$individual[] | . as $cell | select($cell.device == "iphone" and ($short | index($cell.test)) == null)] as $unbatched |
+              [$individual[] | . as $cell | select($cell.device == "iphone" and ($short | index($cell.test)) != null) | .test] as $group |
+              [$individual[] | select(.device == "ipad")] as $ipad |
+              $unbatched + $ipad +
+                (if ($group | length) > 0 then
+                  [{test: "ShortPhoneBatch", classes: $group, device: "iphone", "device-name": $iphone_name}]
+                else [] end)
+            end | {include: .}')
 
           jq -e --argjson requested "$requested" '
             if (.include | length) == 0 then error("No tests selected")
-            elif ($requested - [.include[].test] | length) > 0 then
+            elif ($requested - [.include[].classes[]] | length) > 0 then
               error("Requested class is unknown or not eligible for selected devices")
             else true end' <<< "$matrix" > /dev/null
           echo "include=$(jq -c '.include' <<< "$matrix")" >> "$GITHUB_OUTPUT"
@@ -300,12 +334,13 @@ jobs:
     uses: ./.github/workflows/ios_run_ui_test.yml
     with:
       test: ${{ matrix.test }}
+      classes: ${{ toJSON(matrix.classes) }}
       device: ${{ matrix.device }}
       device-name: ${{ matrix.device-name }}
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: production
-      build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
       diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
+      build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
 
   ui-tests-internal:
     name: UI Tests
@@ -320,12 +355,13 @@ jobs:
     uses: ./.github/workflows/ios_run_ui_test.yml
     with:
       test: ${{ matrix.test }}
+      classes: ${{ toJSON(matrix.classes) }}
       device: ${{ matrix.device }}
       device-name: ${{ matrix.device-name }}
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: internal
-      build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
       diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
+      build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
 
   test-report:
     name: Report test results

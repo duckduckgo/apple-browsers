@@ -1,7 +1,8 @@
 name: iOS - Run UI Test
 
-# Reusable helper that runs a single UITestCase class, on one simulator, in one user mode.
-# Called by ios_ui_tests.yml once per (device × test) matrix combination, per user-mode leg.
+# Reusable helper that runs one or more UITestCase classes, on one simulator, in one user mode.
+# Normally called once per class/device combination; an opt-in workflow-dispatch pilot can batch
+# short phone classes while retaining the class list in the result report.
 
 permissions:
   contents: read
@@ -14,7 +15,11 @@ on:
   workflow_call:
     inputs:
       test:
-        description: "The UITestCase class to run"
+        description: "The UITestCase class or pilot batch label"
+        required: true
+        type: string
+      classes:
+        description: "JSON array of UITestCase classes covered by this worker"
         required: true
         type: string
       device:
@@ -38,7 +43,7 @@ on:
         required: true
         type: string
       diagnostics-mode:
-        description: "Xcode's additional test diagnostics collection mode"
+        description: "default preserves Xcode's normal behavior; never is an opt-in performance experiment"
         required: false
         default: never
         type: string
@@ -59,6 +64,8 @@ jobs:
     env:
       IOS_VERSION: ${{ inputs.ios-version }}
       TEST_CLASS: ${{ inputs.test }}
+      TEST_CLASSES: ${{ inputs.classes }}
+      DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
       DEVICE: ${{ inputs.device }}
       DEVICE_NAME: ${{ inputs.device-name }}
       USER_MODE: ${{ inputs.user-mode }}
@@ -164,11 +171,15 @@ jobs:
       id: run-ui-tests
       env:
         SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
-        DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
       run: |
         : > ui-tests.log
         xctestrun_path=$(<xctestrun-path)
         DESTINATION="platform=iOS Simulator,id=$SIMULATOR_UDID"
+        test_class_lines=$(jq -er 'if type == "array" and length > 0 and all(.[]; type == "string" and test("^[A-Za-z_][A-Za-z0-9_]*$")) then .[] else error("Expected a non-empty array of valid test class names") end' <<< "$TEST_CLASSES") || exit 1
+        test_selectors=()
+        while IFS= read -r test_class; do
+          test_selectors+=("-only-testing:UI Tests/$test_class")
+        done <<< "$test_class_lines"
         diagnostics_args=()
         case "$DIAGNOSTICS_MODE" in
           default) ;;
@@ -183,8 +194,8 @@ jobs:
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
-          "-only-testing:UI Tests/$TEST_CLASS" \
           "${diagnostics_args[@]}" \
+          "${test_selectors[@]}" \
         2>&1 | tee ui-tests.log \
         | xcbeautify
 
@@ -222,6 +233,15 @@ jobs:
           echo "::error::JUnit report contains no test cases."
           exit 1
         fi
+        test_class_lines=$(jq -er 'if type == "array" and length > 0 and all(.[]; type == "string" and test("^[A-Za-z_][A-Za-z0-9_]*$")) then .[] else error("Expected a non-empty array of valid test class names") end' <<< "$TEST_CLASSES") || exit 1
+        while IFS= read -r test_class; do
+          class_suffix=".$test_class"
+          class_test_count=$(xmllint --xpath "count(//testcase[(@classname = '$test_class' or substring(@classname, string-length(@classname) - string-length('$class_suffix') + 1) = '$class_suffix') and not(skipped)])" "reports/$file")
+          if [[ "$class_test_count" == 0 ]]; then
+            echo "::error::JUnit report contains no executed testcases for requested class '$test_class'."
+            exit 1
+          fi
+        done <<< "$test_class_lines"
         xcrun xcresulttool get test-results summary \
           --path TestResults.xcresult --compact > results-summary.json
         if ! jq -e '(.totalTestCount | type) == "number" and ((.skippedTests // 0) | type) == "number" and (.totalTestCount > (.skippedTests // 0))' results-summary.json >/dev/null; then

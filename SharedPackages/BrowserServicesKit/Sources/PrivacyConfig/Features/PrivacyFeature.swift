@@ -887,6 +887,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.
     case nativeMessaging
+    /// Controls installing Bitwarden from the Chrome Web Store, and password manager extensions
+    /// replacing DuckDuckGo autofill, on macOS.
+    case bitwarden
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

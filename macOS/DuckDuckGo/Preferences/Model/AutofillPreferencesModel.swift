@@ -189,7 +189,7 @@ final class AutofillPreferencesModel: ObservableObject {
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
         syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
-        autofillTakeover: WebExtensionAutofillTakeover = .shared
+        autofillTakeover: WebExtensionAutofillTakeover = Application.appDelegate.webExtensionAutofillTakeover
     ) {
         self.persistor = persistor
         self.autofillTakeover = autofillTakeover
@@ -219,12 +219,15 @@ final class AutofillPreferencesModel: ObservableObject {
         autofillTakeoverCancellable = NotificationCenter.default.publisher(for: .autofillUserSettingsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateManagingExtensions()
+                MainActor.assumeMainThread {
+                    self?.updateManagingExtensions()
+                }
             }
 
         PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened)
     }
 
+    @MainActor
     private func updateManagingExtensions() {
         var updated: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
         for kind in ExtensionManagedAutofillKind.allCases {

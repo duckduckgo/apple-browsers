@@ -127,7 +127,7 @@ public extension WKWebExtension {
 
     /// Returns whether the extension declares a toolbar action in its manifest.
     ///
-    /// Manifest V3 uses `action`;Manifest V2 uses `browser_action` or `page_action`.
+    /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
     /// Extensions without one of these keys have no user-facing button, so the browser
     /// must not put them in the navigation bar.
     ///

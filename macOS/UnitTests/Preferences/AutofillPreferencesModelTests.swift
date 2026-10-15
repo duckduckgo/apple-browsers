@@ -30,6 +30,7 @@ final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool = false
     var debugScriptEnabled: Bool = false
     var showInMenuBar: Bool = false
+    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> = []
 }
 
 final class UserAuthenticatorMock: UserAuthenticating {
@@ -189,7 +190,10 @@ final class AutofillPreferencesModelTests: XCTestCase {
     func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
         let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
         var managing: WebExtensionAutofillTakeover.ManagingExtensions = [:]
-        let takeover = WebExtensionAutofillTakeover(readManagingExtensions: { managing }, clearSetting: { _ in }, notificationCenter: NotificationCenter())
+        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
+                                                    readManagingExtensions: { managing },
+                                                    clearSetting: { _ in },
+                                                    notificationCenter: NotificationCenter())
         let model = try makeModel(takeover: takeover)
         XCTAssertNil(model.managingExtension(for: .passwords))
 
@@ -204,7 +208,8 @@ final class AutofillPreferencesModelTests: XCTestCase {
     @MainActor
     private func makeTakeover(_ managing: WebExtensionAutofillTakeover.ManagingExtensions,
                               clearSetting: @escaping @MainActor (ExtensionManagedAutofillKind) -> Void = { _ in }) -> WebExtensionAutofillTakeover {
-        let takeover = WebExtensionAutofillTakeover(readManagingExtensions: { managing },
+        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
+                                                    readManagingExtensions: { managing },
                                                     clearSetting: clearSetting,
                                                     notificationCenter: NotificationCenter())
         takeover.refresh()

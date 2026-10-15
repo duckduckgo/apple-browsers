@@ -104,7 +104,9 @@ public final class WebExtensionPrivacySettingsStore {
     }
 
     /// Removes the value `identifier` set, so the setting goes back to its default or to another extension.
+    /// Does nothing when the extension may not control settings, so its value is kept for when it may again.
     public func clear(_ setting: WebExtensionPrivacySetting, for identifier: String) {
+        guard canControl(identifier) else { return }
         update { overrides in
             overrides[identifier]?[setting.rawValue] = nil
             if overrides[identifier]?.isEmpty == true {

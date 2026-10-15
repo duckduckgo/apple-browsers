@@ -20,7 +20,7 @@ import AppKit
 import WebExtensions
 
 /// A kind of autofill data an extension can take over from DuckDuckGo.
-enum ExtensionManagedAutofillKind: CaseIterable {
+enum ExtensionManagedAutofillKind: String, CaseIterable {
     case passwords
     case addresses
     case cards
@@ -55,16 +55,18 @@ struct AutofillManagingExtension: Equatable {
 /// manager. DuckDuckGo autofill then steps aside for that kind, until the extension clears the
 /// setting, is uninstalled, or the user gives the kind back to DuckDuckGo in Settings.
 ///
-/// The answer is kept up to date on the main thread and can be read from any thread, because the
-/// autofill user scripts are built off it. A change posts `.autofillUserSettingsDidChange`, which
-/// rebuilds them, so open tabs follow on their next navigation.
+/// The kinds an extension manages are saved in the autofill preferences, where every autofill
+/// decision reads them, from any thread. Being saved, they also apply to tabs restored at launch,
+/// before extensions finish loading. A change posts `.autofillUserSettingsDidChange`, which
+/// rebuilds the autofill scripts, so open tabs follow on their next navigation.
+///
+/// The app delegate owns the one instance, and refreshes it when extensions load or unload, when the
+/// extension manager goes away, and when the Bitwarden flag changes.
 final class WebExtensionAutofillTakeover {
 
     typealias ManagingExtensions = [ExtensionManagedAutofillKind: AutofillManagingExtension]
 
-    static let shared = WebExtensionAutofillTakeover()
-
-    private let lock = NSLock()
+    private var preferences: AutofillPreferencesPersistor
     private var managingExtensions: ManagingExtensions = [:]
     private let readManagingExtensions: @MainActor () -> ManagingExtensions
     private let clearSetting: @MainActor (ExtensionManagedAutofillKind) -> Void
@@ -72,13 +74,16 @@ final class WebExtensionAutofillTakeover {
     private var observer: NSObjectProtocol?
 
     /// - Parameters:
+    ///   - preferences: Where the managed kinds are saved for autofill to read.
     ///   - readManagingExtensions: Which loaded extension manages each kind. Reads the app's extension
     ///     manager by default.
     ///   - clearSetting: Removes every extension's control of a kind. Uses the app's extension manager
     ///     by default.
-    init(readManagingExtensions: @escaping @MainActor () -> ManagingExtensions = WebExtensionAutofillTakeover.managingExtensionsOfLoadedExtensions,
+    init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
+         readManagingExtensions: @escaping @MainActor () -> ManagingExtensions = WebExtensionAutofillTakeover.managingExtensionsOfLoadedExtensions,
          clearSetting: @escaping @MainActor (ExtensionManagedAutofillKind) -> Void = WebExtensionAutofillTakeover.clearSettingForEveryExtension,
          notificationCenter: NotificationCenter = .default) {
+        self.preferences = preferences
         self.readManagingExtensions = readManagingExtensions
         self.clearSetting = clearSetting
         self.notificationCenter = notificationCenter
@@ -96,27 +101,21 @@ final class WebExtensionAutofillTakeover {
     }
 
     /// The extension that manages `kind` instead of DuckDuckGo, if any.
+    @MainActor
     func managingExtension(for kind: ExtensionManagedAutofillKind) -> AutofillManagingExtension? {
-        lock.withLock { managingExtensions[kind] }
+        managingExtensions[kind]
     }
 
-    /// Whether an extension manages `kind`, so DuckDuckGo autofill leaves it alone.
-    func isManagedByExtension(_ kind: ExtensionManagedAutofillKind) -> Bool {
-        managingExtension(for: kind) != nil
-    }
-
-    /// Reads again which extensions manage which kinds.
+    /// Reads again which extensions manage which kinds, and saves the kinds for autofill.
     @MainActor
     func refresh() {
         let updated = readManagingExtensions()
-        let hasChanged = lock.withLock {
-            guard managingExtensions != updated else { return false }
-            managingExtensions = updated
-            return true
-        }
-        if hasChanged {
-            notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
-        }
+        let kinds = Set(updated.keys)
+        guard updated != managingExtensions || kinds != preferences.kindsManagedByExtension else { return }
+
+        managingExtensions = updated
+        preferences.kindsManagedByExtension = kinds
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
     }
 
     /// Gives `kind` back to DuckDuckGo: no extension controls the setting any more, not even one that

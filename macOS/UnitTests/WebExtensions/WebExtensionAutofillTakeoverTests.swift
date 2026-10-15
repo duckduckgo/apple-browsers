@@ -26,30 +26,34 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
     private static let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
 
     private var notificationCenter: NotificationCenter!
+    private var preferences: AutofillPreferencesPersistorMock!
     private var managingExtensions: WebExtensionAutofillTakeover.ManagingExtensions = [:]
     private var clearedKinds: [ExtensionManagedAutofillKind] = []
 
     override func setUp() {
         super.setUp()
         notificationCenter = NotificationCenter()
+        preferences = AutofillPreferencesPersistorMock()
     }
 
     override func tearDown() {
         notificationCenter = nil
+        preferences = nil
         managingExtensions = [:]
         clearedKinds = []
         super.tearDown()
     }
 
     private func makeTakeover() -> WebExtensionAutofillTakeover {
-        WebExtensionAutofillTakeover(readManagingExtensions: { [unowned self] in self.managingExtensions },
+        WebExtensionAutofillTakeover(preferences: preferences,
+                                     readManagingExtensions: { [unowned self] in self.managingExtensions },
                                      clearSetting: { [unowned self] in self.clearedKinds.append($0) },
                                      notificationCenter: notificationCenter)
     }
 
     // MARK: - Refresh
 
-    func testWhenAnExtensionTakesPasswordsOver_ThenOnlyPasswordsAreManagedAndAutofillScriptsAreRebuilt() {
+    func testWhenAnExtensionTakesPasswordsOver_ThenOnlyPasswordAutofillStepsAsideAndScriptsAreRebuilt() {
         let takeover = makeTakeover()
         managingExtensions = [.passwords: Self.bitwarden]
         let rebuilt = expectation(forNotification: .autofillUserSettingsDidChange, object: nil, notificationCenter: notificationCenter)
@@ -58,8 +62,10 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
         wait(for: [rebuilt], timeout: 1)
         XCTAssertEqual(takeover.managingExtension(for: .passwords), Self.bitwarden)
-        XCTAssertFalse(takeover.isManagedByExtension(.addresses))
-        XCTAssertFalse(takeover.isManagedByExtension(.cards))
+        XCTAssertEqual(preferences.kindsManagedByExtension, [.passwords])
+        XCTAssertFalse(preferences.isUsernamesAndPasswordsAutofillActive)
+        XCTAssertTrue(preferences.isAddressesAutofillActive)
+        XCTAssertTrue(preferences.isPaymentMethodsAutofillActive)
     }
 
     /// Every rebuild reloads the autofill scripts, and extensions loading or setting the same value
@@ -76,6 +82,19 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         wait(for: [rebuilt], timeout: 0.2)
     }
 
+    /// The saved kinds apply at launch, before extensions load. Once nothing manages them, the first
+    /// refresh hands autofill back.
+    func testWhenSavedKindsAreNoLongerManaged_ThenRefreshHandsAutofillBack() {
+        preferences.kindsManagedByExtension = [.passwords, .cards]
+        let takeover = makeTakeover()
+        XCTAssertFalse(preferences.isUsernamesAndPasswordsAutofillActive)
+
+        takeover.refresh()
+
+        XCTAssertEqual(preferences.kindsManagedByExtension, [])
+        XCTAssertTrue(preferences.isUsernamesAndPasswordsAutofillActive)
+    }
+
     func testWhenAnExtensionChangesItsPrivacySettings_ThenTheTakeoverIsReadAgain() {
         let takeover = makeTakeover()
         managingExtensions = [.cards: Self.bitwarden]
@@ -84,6 +103,7 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         XCTAssertEqual(takeover.managingExtension(for: .cards), Self.bitwarden)
+        XCTAssertEqual(preferences.kindsManagedByExtension, [.cards])
     }
 
     func testWhenAKindIsGivenBack_ThenItsSettingIsCleared() {
@@ -96,23 +116,10 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     // MARK: - Whether DuckDuckGo Autofill Is Active
 
-    func testWhenAnExtensionManagesAKind_ThenDuckDuckGoAutofillIsOffForThatKindOnly() {
-        let takeover = makeTakeover()
-        managingExtensions = [.passwords: Self.bitwarden]
-        takeover.refresh()
-        let preferences = AutofillPreferencesPersistorMock()
-
-        XCTAssertFalse(preferences.isAutofillActive(for: .passwords, takeover: takeover))
-        XCTAssertTrue(preferences.isAutofillActive(for: .addresses, takeover: takeover))
-        XCTAssertTrue(preferences.isAutofillActive(for: .cards, takeover: takeover))
-    }
-
     func testWhenTheUserTurnedAKindOff_ThenItStaysOffWithoutAnExtension() {
-        let takeover = makeTakeover()
-        let preferences = AutofillPreferencesPersistorMock()
         preferences.askToSaveAddresses = false
 
-        XCTAssertFalse(preferences.isAutofillActive(for: .addresses, takeover: takeover))
-        XCTAssertTrue(preferences.isAutofillActive(for: .passwords, takeover: takeover))
+        XCTAssertFalse(preferences.isAddressesAutofillActive)
+        XCTAssertTrue(preferences.isUsernamesAndPasswordsAutofillActive)
     }
 }

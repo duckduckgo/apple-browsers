@@ -195,6 +195,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
+                isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
@@ -258,8 +259,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
+        // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
         privacySettings?.canControl = { [weak self] identifier in
-            self?.context(for: identifier)?.webExtension.declaresPermission(WebExtensionPrivacySettingsStore.permission) ?? false
+            isAutofillTakeoverEnabled()
+                && self?.context(for: identifier)?.webExtension.declaresPermission(WebExtensionPrivacySettingsStore.permission) == true
         }
 #endif
 

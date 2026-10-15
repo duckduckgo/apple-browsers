@@ -889,7 +889,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case nativeMessaging
     /// Controls installing Bitwarden from the Chrome Web Store, and password manager extensions
     /// replacing DuckDuckGo autofill, on macOS.
-    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1219519018819111
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
     case bitwarden
 }
 

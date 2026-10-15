@@ -1116,7 +1116,7 @@ struct UserText {
     static let autofillPasswordManagerBitwardenExtension = NSLocalizedString("autofill.password-manager.bitwarden.extension", value: "Bitwarden Extension", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwardenDisclaimer = NSLocalizedString("autofill.password-manager.bitwarden.disclaimer", value: "Setup requires installing the Bitwarden app.", comment: "Autofill password manager Bitwarden disclaimer")
     static func autofillManagedByExtension(_ extensionName: String) -> String {
-        let format = NotLocalizedString("autofill.managed-by-extension", value: "Managed by %@", comment: "Autofill settings: an installed browser extension, named in the parameter, manages the user's passwords instead of DuckDuckGo")
+        let format = NSLocalizedString("autofill.managed-by-extension", value: "Managed by %@", comment: "Autofill settings: an installed browser extension, named in the parameter, manages the user's passwords instead of DuckDuckGo")
         return String(format: format, extensionName)
     }
     static func autofillManagedByExtensionExplanation(_ extensionName: String, kinds: [ExtensionManagedAutofillKind]) -> String {
@@ -1127,13 +1127,13 @@ struct UserText {
             case .cards: return autofillManagedKindCards
             }
         }
-        let format = NotLocalizedString("autofill.managed-by-extension.explanation", value: "%1$@ saves and fills your %2$@ instead of DuckDuckGo.", comment: "Autofill settings: the first parameter is the name of a browser extension, the second a list of the kinds of data it manages, such as 'passwords, addresses and credit cards'")
+        let format = NSLocalizedString("autofill.managed-by-extension.explanation", value: "%1$@ saves and fills your %2$@ instead of DuckDuckGo.", comment: "Autofill settings: the first parameter is the name of a browser extension, the second a list of the kinds of data it manages, such as 'passwords, addresses and credit cards'")
         return String(format: format, extensionName, ListFormatter.localizedString(byJoining: kindNames))
     }
-    static let autofillManagedKindPasswords = NotLocalizedString("autofill.managed-kind.passwords", value: "passwords", comment: "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'")
-    static let autofillManagedKindAddresses = NotLocalizedString("autofill.managed-kind.addresses", value: "addresses", comment: "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'")
-    static let autofillManagedKindCards = NotLocalizedString("autofill.managed-kind.cards", value: "credit cards", comment: "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'")
-    static let autofillUseDuckDuckGoInstead = NotLocalizedString("autofill.use-duckduckgo-instead", value: "Use DuckDuckGo Instead", comment: "Autofill settings button: DuckDuckGo takes back saving and filling passwords from a browser extension")
+    static let autofillManagedKindPasswords = NSLocalizedString("autofill.managed-kind.passwords", value: "passwords", comment: "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'")
+    static let autofillManagedKindAddresses = NSLocalizedString("autofill.managed-kind.addresses", value: "addresses", comment: "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'")
+    static let autofillManagedKindCards = NSLocalizedString("autofill.managed-kind.cards", value: "credit cards", comment: "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'")
+    static let autofillUseDuckDuckGoInstead = NSLocalizedString("autofill.use-duckduckgo-instead", value: "Use DuckDuckGo Instead", comment: "Autofill settings button: DuckDuckGo takes back saving and filling passwords from a browser extension")
     static let restartBitwarden = NSLocalizedString("restart.bitwarden", value: "Restart Bitwarden", comment: "Button to restart Bitwarden application")
     static let restartBitwardenInfo = NSLocalizedString("restart.bitwarden.info", value: "Bitwarden is not responding. Please restart it to initiate the communication again", comment: "This string represents a message informing the user that Bitwarden is not responding and prompts them to restart the application to initiate communication again.")
 

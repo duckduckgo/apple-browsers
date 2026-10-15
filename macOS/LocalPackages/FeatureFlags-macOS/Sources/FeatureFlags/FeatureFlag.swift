@@ -112,7 +112,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Lets Bitwarden be installed from the Chrome Web Store, and lets a password manager extension
     /// replace DuckDuckGo autofill through `chrome.privacy`.
-    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1219519018819111
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
     case webExtensionBitwarden
 
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.

@@ -23,7 +23,7 @@ import Foundation
 import os.log
 import PrivacyConfig
 
-struct ChallengeSolverSettings: Decodable, Equatable {
+struct ChallengeSolverSettings: Decodable {
     var autoPassWait: TimeInterval = 5
     var deadline: TimeInterval = 45
     var checkboxOffset: CGFloat = 20

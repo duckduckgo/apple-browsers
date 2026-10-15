@@ -231,15 +231,17 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             }
         } onCancel: {
             Task { @MainActor in
-#if os(macOS)
-                self.challengeSolver.cancel()
-#endif
                 self.resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
             }
         }
     }
 
     private func resumeActiveContinuation(with result: Result<Void, Error>) {
+#if os(macOS)
+        if case .failure = result {
+            challengeSolver.cancel()
+        }
+#endif
         let continuation = activeContinuation
         activeContinuation = nil
         continuation?.resume(with: result)
@@ -492,17 +494,11 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFail: \(error.localizedDescription, privacy: .public)")
-#if os(macOS)
-        challengeSolver.cancel()
-#endif
         resumeActiveContinuation(with: .failure(error))
     }
 
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
-#if os(macOS)
-        challengeSolver.cancel()
-#endif
         resumeActiveContinuation(with: .failure(error))
     }
 
@@ -546,9 +542,6 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         Logger.action.error("WebViewHandler web content process terminated")
-#if os(macOS)
-        challengeSolver.cancel()
-#endif
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.webContentProcessTerminated))
     }
 

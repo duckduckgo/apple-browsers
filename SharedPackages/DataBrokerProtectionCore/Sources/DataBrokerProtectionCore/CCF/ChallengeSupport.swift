@@ -25,27 +25,21 @@ import WebKit
 
 @MainActor
 final class ChallengeOffscreenPanel: NSPanel {
-    private var isObservingSystemChanges = false
-
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
     func presentOffscreen() {
-        startObservingSystemChanges()
         guard moveOffscreen() else { return }
         orderFrontRegardless()
     }
 
     func dismissOffscreen() {
-        stopObservingSystemChanges()
         orderOut(nil)
         contentView = nil
         close()
     }
 
-    @discardableResult
-    func moveOffscreen() -> Bool {
-        orderOut(nil)
+    private func moveOffscreen() -> Bool {
         let size = frame.size
         let screens = NSScreen.screens
         let union = screens.dropFirst().reduce(screens.first?.frame ?? .zero) { $0.union($1.frame) }
@@ -58,55 +52,6 @@ final class ChallengeOffscreenPanel: NSPanel {
             return false
         }
         return true
-    }
-
-    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
-        let intersectsAScreen = NSScreen.screens.contains { $0.frame.intersects(frameRect) }
-        return intersectsAScreen ? super.constrainFrameRect(frameRect, to: screen) : frameRect
-    }
-
-    private func startObservingSystemChanges() {
-        guard !isObservingSystemChanges else { return }
-        isObservingSystemChanges = true
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(screenParametersDidChange),
-            name: NSApplication.didChangeScreenParametersNotification,
-            object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(workspaceWillSleep),
-            name: NSWorkspace.willSleepNotification,
-            object: nil)
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(workspaceDidWake),
-            name: NSWorkspace.didWakeNotification,
-            object: nil)
-    }
-
-    private func stopObservingSystemChanges() {
-        guard isObservingSystemChanges else { return }
-        isObservingSystemChanges = false
-        NotificationCenter.default.removeObserver(
-            self,
-            name: NSApplication.didChangeScreenParametersNotification,
-            object: nil)
-        NSWorkspace.shared.notificationCenter.removeObserver(self)
-    }
-
-    @objc private func screenParametersDidChange() {
-        guard moveOffscreen() else { return }
-        orderFrontRegardless()
-    }
-
-    @objc private func workspaceWillSleep() {
-        orderOut(nil)
-    }
-
-    @objc private func workspaceDidWake() {
-        guard moveOffscreen() else { return }
-        orderFrontRegardless()
     }
 }
 
@@ -213,14 +158,11 @@ final class WebViewChallengePage: ChallengePage {
             styleMask: [.nonactivatingPanel, .borderless],
             backing: .buffered,
             defer: false)
-        panel.becomesKeyOnlyIfNeeded = true
         panel.hidesOnDeactivate = false
-        panel.isFloatingPanel = false
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.stationary, .ignoresCycle]
         panel.isExcludedFromWindowsMenu = true
         panel.backgroundColor = .white
-        panel.acceptsMouseMovedEvents = false
         panel.ignoresMouseEvents = true
         panel.sharingType = .none
         panel.contentView = webView
@@ -236,19 +178,13 @@ final class WebViewChallengePage: ChallengePage {
 
 enum ChallengeVision {
     nonisolated static func findLabel(matching text: String, in image: CGImage, viewSize: CGSize) async -> ChallengeLabel? {
-        let task = Task.detached(priority: .utility) {
+        await Task.detached(priority: .utility) {
             recognizeLabel(matching: text, in: image, viewSize: viewSize)
-        }
-        return await withTaskCancellationHandler {
-            await task.value
-        } onCancel: {
-            task.cancel()
-        }
+        }.value
     }
 
     /// Prefers the shortest line containing the text, so the widget label wins over a page heading that starts with the same words.
     private nonisolated static func recognizeLabel(matching text: String, in image: CGImage, viewSize: CGSize) -> ChallengeLabel? {
-        guard !Task.isCancelled else { return nil }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false

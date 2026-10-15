@@ -391,16 +391,15 @@ public extension SubJobWebRunning {
             self.webViewHandler = handler
         } else {
             let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgentProvider : { nil }
-            let broker = context.dataBroker
             let debugEventReporter = stageCalculator as? DebugEventReporting
             self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
                                                                                prefs: prefs,
                                                                                delegate: self,
                                                                                isFakeBroker: isFakeBroker,
                                                                                executionConfig: executionConfig,
-                                                                               challengePixelDataBroker: context.dataBroker.url,
-                                                                               challengePixelBrokerVersion: context.dataBroker.version,
-                                                                               challengePixelAttemptId: stageCalculator.attemptId,
+                                                                               challengePixelContext: ChallengePixelContext(dataBroker: context.dataBroker.url,
+                                                                                                                                            brokerVersion: context.dataBroker.version,
+                                                                                                                                            attemptId: stageCalculator.attemptId),
                                                                                isChallengeSolverEnabled: featureFlagger.isChallengeSolverOn,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
@@ -408,15 +407,7 @@ public extension SubJobWebRunning {
                                                                                pixelHandler: pixelHandler,
                                                                                actionLogContext: loggerContext(),
                                                                                challengeEventHandler: { message in
-                                                                                   let details = """
-                                                                                   Broker: \(broker.name) \(broker.version)
-                                                                                   URL: \(broker.url)
-                                                                                   \(message)
-                                                                                   """
-                                                                                   debugEventReporter?.recordDebugEvent(
-                                                                                       kind: .challenge,
-                                                                                       actionType: nil,
-                                                                                       details: details)
+                                                                                   debugEventReporter?.recordDebugEvent(kind: .challenge, actionType: nil, details: message)
                                                                                })
         }
 

@@ -16,13 +16,19 @@
 //  limitations under the License.
 //
 
-#if os(macOS)
 import Common
 import ConcurrencyExtensions
 import Foundation
 import os.log
 import PrivacyConfig
 
+public struct ChallengePixelContext {
+    let dataBroker: String
+    let brokerVersion: String
+    let attemptId: UUID
+}
+
+#if os(macOS)
 struct ChallengeSolverSettings: Decodable {
     var autoPassWait: TimeInterval = 5
     var deadline: TimeInterval = 45
@@ -59,7 +65,7 @@ struct ChallengeSolverSettings: Decodable {
 }
 
 /// The challenge label's frame in the web view's top-left-origin coordinates.
-struct ChallengeLabel: Equatable, Sendable {
+struct ChallengeLabel: Sendable {
     let frame: CGRect
 
     func checkboxPoint(offset: CGFloat) -> CGPoint {
@@ -83,12 +89,6 @@ protocol ChallengePage: AnyObject {
 
 @MainActor
 final class ChallengeSolver {
-    struct PixelContext {
-        let dataBroker: String
-        let brokerVersion: String
-        let attemptId: UUID
-    }
-
     private enum Constants {
         static let retryInterval: TimeInterval = 2
         static let stabilityCheckDelay: TimeInterval = 0.4
@@ -105,7 +105,7 @@ final class ChallengeSolver {
 
     private let isEnabled: Bool
     private let settings: ChallengeSolverSettings
-    private let pixelContext: PixelContext?
+    private let pixelContext: ChallengePixelContext?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let reportEvent: (String, Bool) -> Void
     private let sleeper: Sleeper
@@ -120,7 +120,7 @@ final class ChallengeSolver {
 
     init(isEnabled: Bool,
          settings: ChallengeSolverSettings,
-         pixelContext: PixelContext?,
+         pixelContext: ChallengePixelContext?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?,
          reportEvent: @escaping (String, Bool) -> Void,
          sleeper: Sleeper = .default,

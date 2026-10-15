@@ -101,8 +101,6 @@ final class WebViewHandlerTests: XCTestCase {
             prefs: .mock,
             delegate: MockWebViewCommunicationDelegate(),
             executionConfig: BrokerJobExecutionConfig(),
-            challengePixelDataBroker: "example.com",
-            challengePixelBrokerVersion: "1.2.3",
             shouldContinueActionHandler: { true },
             applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             pixelHandler: pixelHandler

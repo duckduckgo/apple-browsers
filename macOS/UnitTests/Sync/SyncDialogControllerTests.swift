@@ -2693,6 +2693,109 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
+    // MARK: - Sync this device fallback
+
+    private func presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: StubCloseSetupConfirmation) {
+        enableImprovedPairingFlow()
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: true)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowEnabledAndSyncOff_showsSyncThisDeviceFallback() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        var didCancelConnection = false
+        connectionController.cancelCalled = { didCancelConnection = true }
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncThisDeviceFallback)
+        XCTAssertTrue(didCancelConnection)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").count, 1)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowEnabledAndSyncOn_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        setUpWithSingleDevice(id: "1")
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").isEmpty)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowDisabled_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: true)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        ddgSyncing.account = nil
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").isEmpty)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowEnabledAndUserDeclines_keepsTheDialogOpen() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        let dialog = managementDialogModel.currentDialog
+        ddgSyncing.account = nil
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, dialog)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").isEmpty)
+    }
+
+    func testSyncThisDeviceFromFallback_createsAccountAndShowsRecoveryCodeWithoutAuthenticating() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await managementDialogModel.cancelPressedWithConfirmation()
+        var createAccountCallCount = 0
+        var wasConnectingWhileCreatingAccount = false
+        ddgSyncing.createAccountCallback = { [managementDialogModel] _, _ in
+            createAccountCallCount += 1
+            wasConnectingWhileCreatingAccount = managementDialogModel?.isConnectingThisDeviceOnly ?? false
+        }
+
+        await syncDialogController.syncThisDeviceFromFallback()
+
+        XCTAssertEqual(createAccountCallCount, 1)
+        XCTAssertTrue(wasConnectingWhileCreatingAccount)
+        XCTAssertFalse(managementDialogModel.isConnectingThisDeviceOnly)
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_sync_tapped_mac").count, 1)
+    }
+
+    func testSyncThisDeviceFromFallback_whileConnecting_isNoOp() async {
+        managementDialogModel.isConnectingThisDeviceOnly = true
+        var createAccountCallCount = 0
+        ddgSyncing.createAccountCallback = { _, _ in createAccountCallCount += 1 }
+
+        await syncDialogController.syncThisDeviceFromFallback()
+
+        XCTAssertEqual(createAccountCallCount, 0)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_sync_tapped_mac").isEmpty)
+    }
+
+    func testCancellingSyncThisDeviceFallback_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        managementDialogModel.cancelPressed()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
     // MARK: - Helper Methods
 
     private func makeControllerWithCloseSetupConfirmation(_ confirmation: StubCloseSetupConfirmation, isSimplifiedSyncSetupV2Enabled: Bool) {
@@ -2708,7 +2811,7 @@ final class SyncDialogControllerTests: XCTestCase {
             featureFlagger: featureFlagger,
             pixelFiring: pixelKitMock,
             keyValueStore: mockKeyValueStore,
-            confirmCloseSetup: { await confirmation.present() }
+            confirmCloseSetup: { _ in await confirmation.present() }
         )
     }
 

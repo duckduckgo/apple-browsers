@@ -4658,7 +4658,7 @@
 "settings.keyboard" = "Klavye";
 
 /* Keyboard setting to show the keyboard on App Launch */
-"settings.keyboard.app-launch" = "Uygulamayı Başlatma";
+"settings.keyboard.app-launch" = "Uygulama Başlatıldığında";
 
 /* Keyboard setting to show the keyboard on a New Tab page */
 "settings.keyboard.new-tab" = "Yeni Sekme";

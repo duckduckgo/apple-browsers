@@ -127,6 +127,13 @@ final class ChallengeSnapshotRequest {
 
 @MainActor
 final class WebViewChallengePage: ChallengePage {
+    private enum Constants {
+        static let clickSettleDelayNanoseconds: UInt64 = 200_000_000
+        static let mouseDownDurationNanoseconds: UInt64 = 80_000_000
+        static let mouseUpSettleDelayNanoseconds: UInt64 = 100_000_000
+        static let snapshotTimeout: TimeInterval = 2
+    }
+
     private weak var webView: WKWebView?
     private var panel: ChallengeOffscreenPanel?
 
@@ -146,7 +153,7 @@ final class WebViewChallengePage: ChallengePage {
         attachPanelIfNeeded(to: webView)
         defer { dismissPanel() }
 
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: Constants.clickSettleDelayNanoseconds)
         guard let window = webView.window else { return }
         let windowPoint = windowPoint(fromCSS: point, in: webView)
         guard let downEvent = mouseEvent(.leftMouseDown, at: windowPoint, in: window),
@@ -156,10 +163,10 @@ final class WebViewChallengePage: ChallengePage {
 
         window.sendEvent(downEvent)
         onMouseDown()
-        try? await Task.sleep(nanoseconds: 80_000_000)
+        try? await Task.sleep(nanoseconds: Constants.mouseDownDurationNanoseconds)
         guard webView.window === window else { return }
         window.sendEvent(upEvent)
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try? await Task.sleep(nanoseconds: Constants.mouseUpSettleDelayNanoseconds)
     }
 
     private func snapshot(of webView: WKWebView, rect: CGRect) async -> CGImage? {
@@ -172,7 +179,7 @@ final class WebViewChallengePage: ChallengePage {
                     request.finish(with: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
                 }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.snapshotTimeout) {
                 request.finish(with: nil)
             }
         }

@@ -27,9 +27,6 @@ struct ChallengeSolverSettings: Decodable, Equatable {
     var deadline: TimeInterval = 45
     var checkboxOffset: CGFloat = 20
     var labelText = "Verify you are human"
-    let retryInterval: TimeInterval = 2
-    let stabilityCheckDelay: TimeInterval = 0.4
-    let stabilityTolerance: CGFloat = 8
 
     private enum CodingKeys: String, CodingKey {
         case autoPassWait = "autoPassWaitSeconds"
@@ -93,6 +90,14 @@ final class ChallengeSolver {
         let attemptId: UUID
     }
 
+    private enum Constants {
+        static let retryInterval: TimeInterval = 2
+        static let stabilityCheckDelay: TimeInterval = 0.4
+        static let stabilityTolerance: CGFloat = 8
+        static let mitigatedHeaderField = "cf-mitigated"
+        static let challengeMitigation = "challenge"
+    }
+
     var page: ChallengePage?
     var onFailure: ((DataBrokerProtectionError) -> Void)?
 
@@ -140,7 +145,7 @@ final class ChallengeSolver {
 
     /// Returns `true` while the solver is awaiting a solve for this response, so the caller must not fail the load on its status code.
     func handleMainFrameResponse(_ response: HTTPURLResponse) -> Bool {
-        let isChallenge = response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame
+        let isChallenge = response.value(forHTTPHeaderField: Constants.mitigatedHeaderField)?.caseInsensitiveCompare(Constants.challengeMitigation) == .orderedSame
         isChallengeResponse = isChallenge
 
         if isChallenge {
@@ -233,7 +238,7 @@ final class ChallengeSolver {
                 if isChallengeResponse, !didClick, let page, let point = try await stableCheckboxPoint(on: page) {
                     try await click(at: point, on: page)
                 }
-                try await sleep(min(settings.retryInterval, max(0, deadline.timeIntervalSince(now()))))
+                try await sleep(min(Constants.retryInterval, max(0, deadline.timeIntervalSince(now()))))
             }
         } catch {
             return
@@ -260,14 +265,14 @@ final class ChallengeSolver {
         }
         try Task.checkCancellation()
 
-        try await sleep(settings.stabilityCheckDelay)
+        try await sleep(Constants.stabilityCheckDelay)
         guard isChallengeResponse, let secondLabel = await page.locateLabel(matching: settings.labelText) else {
             Logger.action.log("Challenge: second snapshot did not contain the verification label")
             return nil
         }
         try Task.checkCancellation()
 
-        guard firstLabel.isStable(comparedTo: secondLabel, tolerance: settings.stabilityTolerance) else {
+        guard firstLabel.isStable(comparedTo: secondLabel, tolerance: Constants.stabilityTolerance) else {
             Logger.action.log("Challenge: snapshot rejected because the verification label was not stable")
             return nil
         }

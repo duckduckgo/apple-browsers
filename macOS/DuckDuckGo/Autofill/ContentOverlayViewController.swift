@@ -275,13 +275,13 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         let prefs = AutofillPreferences()
         switch type {
         case .card:
-            return prefs.askToSavePaymentMethods
+            return prefs.isPaymentMethodsAutofillActive
         case .identity:
-            return prefs.askToSaveAddresses
+            return prefs.isAddressesAutofillActive
         case.password:
-            return prefs.askToSaveUsernamesAndPasswords
+            return prefs.isUsernamesAndPasswordsAutofillActive
         case .none:
-            return prefs.askToSaveAddresses || prefs.askToSavePaymentMethods || prefs.askToSaveUsernamesAndPasswords
+            return prefs.isAddressesAutofillActive || prefs.isPaymentMethodsAutofillActive || prefs.isUsernamesAndPasswordsAutofillActive
         }
     }
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {

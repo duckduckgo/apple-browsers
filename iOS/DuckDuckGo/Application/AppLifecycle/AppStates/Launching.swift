@@ -79,10 +79,15 @@ struct Launching: LaunchingHandling {
         launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
+        // The app's single owner of the Duck.ai bonus record. Shared instance between consumers.
+        // Created before the configuration, which deletes a previous install's record on a new install.
+        let aiChatBonusService = AIChatBonusService()
+
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
             appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatBonusService: aiChatBonusService
         )
 
         var isBookmarksDBFilePresent: Bool?
@@ -226,8 +231,6 @@ struct Launching: LaunchingHandling {
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
-        // The app's single owner of the Duck.ai bonus record. Shared instance between consumers.
-        let aiChatBonusService = AIChatBonusService()
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -389,6 +392,7 @@ struct Launching: LaunchingHandling {
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
+            aiChatBonusService: aiChatBonusService,
             termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver(
                 storageHandler: duckAiNativeStorageHandler,
                 feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)

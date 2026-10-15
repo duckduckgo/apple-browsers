@@ -156,6 +156,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
 
+    /// The first background load of a newly installed embedded extension, while it is in progress.
+    var embeddedBackgroundStartup: Task<Void, Never>?
+
     // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?

@@ -76,10 +76,20 @@ public final class WebExtensionLifecycleCoordinator {
         initialLoadAndSync != nil
     }
 
+    /// Returns what a main-frame web navigation must wait for before it starts: the initial load and
+    /// sync at launch, and afterwards the first background load of an embedded extension installed
+    /// during the session.
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
-        guard initialLoadGateEnabledProvider(), !isInitialLoadGateOpen else { return nil }
-        return { [weak self] in
-            await self?.waitOnInitialLoadAndSync()
+        guard initialLoadGateEnabledProvider() else { return nil }
+        guard isInitialLoadGateOpen else {
+            return { [weak self] in
+                await self?.waitOnInitialLoadAndSync()
+            }
+        }
+        guard let backgroundWaiter = manager.prepareEmbeddedBackgroundForNavigation() else { return nil }
+        let timeout = initialLoadTimeout
+        return {
+            _ = try? await withTimeout(timeout) { await backgroundWaiter() }
         }
     }
 

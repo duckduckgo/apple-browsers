@@ -187,6 +187,71 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
     }
 
+    // MARK: - Embedded background after launch
+
+    @MainActor
+    func testWhenInitialGateIsOpenThenNavigationWaitsForEmbeddedBackground() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.stubbedNavigationWaiter = { await withCheckedContinuation { release = $0 } }
+
+        var waitCompleted = false
+        let navigationWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let waiter = Task { @MainActor in
+            await navigationWaiter()
+            waitCompleted = true
+        }
+        while release == nil {
+            await Task.yield()
+        }
+        XCTAssertFalse(waitCompleted)
+
+        release?.resume()
+        await waiter.value
+        XCTAssertTrue(waitCompleted)
+    }
+
+    @MainActor
+    func testWhenInitialGateIsOpenAndEmbeddedBackgroundIsReadyThenNavigationDoesNotWait() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+
+        XCTAssertNil(sut.initialLoadWaiter)
+        XCTAssertEqual(manager.prepareForNavigationCallCount, 1, "every navigation lets the manager check the background")
+    }
+
+    @MainActor
+    func testEmbeddedBackgroundWaitIsBoundedByInitialLoadTimeout() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager,
+                                                   initialLoadTimeout: 0.01,
+                                                   enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        manager.stubbedNavigationWaiter = { try? await Task.sleep(for: .seconds(60)) }
+
+        let navigationWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let started = Date()
+        await navigationWaiter()
+
+        XCTAssertLessThan(Date().timeIntervalSince(started), 5)
+    }
+
+    @MainActor
+    func testDisabledGateDoesNotPrepareEmbeddedBackgroundForNavigation() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager,
+                                                   initialLoadGateEnabledProvider: { false },
+                                                   enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        manager.stubbedNavigationWaiter = {}
+
+        XCTAssertNil(sut.initialLoadWaiter)
+        XCTAssertEqual(manager.prepareForNavigationCallCount, 0)
+    }
+
     @MainActor
     func testNavigationGateTimesOutWithoutCancellingInitialLoad() async throws {
         let manager = RecordingWebExtensionManager()
@@ -594,6 +659,14 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func resumeBackgroundContentLoad() {
         backgroundContentLoadContinuation?.resume()
         backgroundContentLoadContinuation = nil
+    }
+
+    /// Returned to navigations once the initial gate is open.
+    var stubbedNavigationWaiter: WebExtensionInitialLoadWaiter?
+    private(set) var prepareForNavigationCallCount = 0
+    @MainActor func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter? {
+        prepareForNavigationCallCount += 1
+        return stubbedNavigationWaiter
     }
 
     // Unused protocol requirements

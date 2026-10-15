@@ -176,6 +176,11 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func performSearchTokenRefresh()
+
+    /// Prepares the embedded background for a main-frame navigation and returns a waiter while the
+    /// navigation must not start yet. See `WebExtensionManager.prepareEmbeddedBackgroundForNavigation()`.
+    @MainActor
+    func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter?
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -183,6 +188,9 @@ public extension WebExtensionManaging {
     // Preserve lightweight test and platform-specific conformers that do not own embedded content.
     @MainActor
     func loadEmbeddedExtensionBackgroundContent() async {}
+
+    @MainActor
+    func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

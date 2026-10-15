@@ -205,6 +205,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215330116840129?focus=true
     case osSupportWarning
 
+    /// Remote kill switch for cancelling WebKit's pending passkey request before WebKit starts the next one.
+    /// WebKit replaces a pending request without cancelling it, and the system passkey agent then rejects every
+    /// later passkey request from the app. Disable via privacy config (`macOSBrowserConfig.passkeyRequestCancellation`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219508943990182
+    case passkeyRequestCancellation
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -475,6 +481,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the Bookmarks Bar "Sync Bookmarks" button promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598749?focus=true
     case promoQueueBookmarksBarSyncPromo
+
+    /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
+    case promoQueueBookmarkAddedSyncPromo
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
@@ -799,6 +809,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.osSupportWarning), category: .osSupportWarnings)
+        case .passkeyRequestCancellation:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.passkeyRequestCancellation))
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
@@ -957,6 +969,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
         case .promoQueueBookmarksBarSyncPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
+        case .promoQueueBookmarkAddedSyncPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -1003,7 +1017,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .syncCanUseExchangeV2Point1:
-            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
         case .syncCanSendExchangeChannelSecret:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret), category: .sync)
         case .syncCanWriteUnifiedDeviceList:

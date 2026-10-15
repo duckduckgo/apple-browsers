@@ -71,7 +71,7 @@ public struct SimplifiedSyncSettingsView: View {
         .sheet(isPresented: $model.isTurnOffSyncSheetVisible, onDismiss: {
             model.turnOffSyncSheetDidDismiss()
         }, content: {
-            TurnOffSyncSheetView(model: model)
+            TurnOffSyncSheetView(model: model, isDeleteServerDataSelected: model.isDeleteServerDataSelectedByDefault)
         })
     }
 }
@@ -618,7 +618,6 @@ struct SimplifiedSyncSettingsView_Previews: PreviewProvider {
                     .navigationTitle(UserText.syncTitle)
                     .navigationBarTitleDisplayMode(.inline)
             }
-            .applyRebranding()
         }
     )
 

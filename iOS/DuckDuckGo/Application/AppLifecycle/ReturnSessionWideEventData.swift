@@ -32,7 +32,7 @@ final class ReturnSessionWideEventData: WideEventData {
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
@@ -78,7 +78,7 @@ final class ReturnSessionWideEventData: WideEventData {
     var pageEngaged: Bool
     var toggleUsed: Bool
     var backPressed: Bool
-    var openingScreenChanged: Bool
+    var afterInactivitySettingsOpened: Bool
     var closeTabTapped: Bool
     var burnTabTapped: Bool
 
@@ -91,7 +91,7 @@ final class ReturnSessionWideEventData: WideEventData {
          pageEngaged: Bool = false,
          toggleUsed: Bool = false,
          backPressed: Bool = false,
-         openingScreenChanged: Bool = false,
+         afterInactivitySettingsOpened: Bool = false,
          closeTabTapped: Bool = false,
          burnTabTapped: Bool = false,
          contextData: WideEventContextData = WideEventContextData(),
@@ -107,7 +107,7 @@ final class ReturnSessionWideEventData: WideEventData {
         self.pageEngaged = pageEngaged
         self.toggleUsed = toggleUsed
         self.backPressed = backPressed
-        self.openingScreenChanged = openingScreenChanged
+        self.afterInactivitySettingsOpened = afterInactivitySettingsOpened
         self.closeTabTapped = closeTabTapped
         self.burnTabTapped = burnTabTapped
         self.contextData = contextData
@@ -151,7 +151,7 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.pageEngaged, pageEngaged),
             (WideEventParameter.ReturnSessionFeature.toggleUsed, toggleUsed),
             (WideEventParameter.ReturnSessionFeature.backPressed, backPressed),
-            (WideEventParameter.ReturnSessionFeature.openingScreenChanged, openingScreenChanged),
+            (WideEventParameter.ReturnSessionFeature.afterInactivitySettingsOpened, afterInactivitySettingsOpened),
             (WideEventParameter.ReturnSessionFeature.closeTabTapped, closeTabTapped),
             (WideEventParameter.ReturnSessionFeature.burnTabTapped, burnTabTapped),
         ])
@@ -186,7 +186,7 @@ extension WideEventParameter {
         static let pageEngaged = "feature.data.ext.page_engaged"
         static let toggleUsed = "feature.data.ext.toggle_used"
         static let backPressed = "feature.data.ext.back_pressed"
-        static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
+        static let afterInactivitySettingsOpened = "feature.data.ext.after_inactivity_settings_opened"
         static let closeTabTapped = "feature.data.ext.close_tab_tapped"
         static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
     }

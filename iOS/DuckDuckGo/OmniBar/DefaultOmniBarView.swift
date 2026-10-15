@@ -2602,33 +2602,6 @@ final class ResignSuppressingTextView: UITextView {
 }
 
 #if DEBUG
-final class RebrandPreviewOverride: ObservableObject {
-    private let isRebranded: Bool
-    private let previousAppRebrand: () -> Bool
-    private let previousDesignSystemRebrand: () -> Bool
-    private let previousPalette: ColorPalette
-
-    init(isRebranded: Bool) {
-        self.isRebranded = isRebranded
-        previousAppRebrand = AppRebrand.isAppRebranded
-        previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
-        previousPalette = DesignSystemPalette.current
-        apply()
-    }
-
-    func apply() {
-        AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-    }
-
-    deinit {
-        AppRebrand.isAppRebranded = previousAppRebrand
-        DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
-        DesignSystemPalette.current = previousPalette
-    }
-}
-
 /// Bridges the UIKit ``DefaultOmniBarView`` into SwiftUI so it can be shown in a `#Preview`.
 private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
     let omniBarView: DefaultOmniBarView
@@ -2638,25 +2611,14 @@ private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
 }
 
 private struct DefaultOmniBarViewGallery: View {
-    @StateObject private var rebrandOverride: RebrandPreviewOverride
-
-    init(isRebranded: Bool) {
-        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-    }
-
     var body: some View {
-        rebrandOverride.apply()
-        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
+        DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
             .frame(width: 360, height: 60)
             .padding()
     }
 }
 
-#Preview("Address bar / Legacy") {
-    DefaultOmniBarViewGallery(isRebranded: false)
-}
-
-#Preview("Address bar / Rebranded") {
-    DefaultOmniBarViewGallery(isRebranded: true)
+#Preview("Address bar") {
+    DefaultOmniBarViewGallery()
 }
 #endif

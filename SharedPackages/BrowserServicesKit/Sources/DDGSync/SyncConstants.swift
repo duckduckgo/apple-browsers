@@ -31,6 +31,25 @@ public enum PairingV2JoinStatus: Equatable {
     case unknown
 }
 
+public struct PairingV2JoinReport: Equatable {
+    public let hostHasAccount: Bool
+    public let hostKind: PairingV2DeviceKind
+    public let joinerHasAccount: Bool
+    public let joinerKind: PairingV2DeviceKind
+    public let protocolVersion: String
+    public let didSucceed: Bool
+
+    public init(hostHasAccount: Bool, hostKind: PairingV2DeviceKind, joinerHasAccount: Bool,
+                joinerKind: PairingV2DeviceKind, protocolVersion: String, didSucceed: Bool) {
+        self.hostHasAccount = hostHasAccount
+        self.hostKind = hostKind
+        self.joinerHasAccount = joinerHasAccount
+        self.joinerKind = joinerKind
+        self.protocolVersion = protocolVersion
+        self.didSucceed = didSucceed
+    }
+}
+
 public enum SyncSetupSource: String {
     case recovery
     case exchange

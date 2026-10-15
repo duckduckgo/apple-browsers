@@ -28,14 +28,14 @@ import XCTest
 @MainActor
 final class BookmarksBarSyncButtonTests: XCTestCase {
 
-    private var syncPromo: MockBookmarksBarSyncPromo!
+    private var syncPromo: MockSyncDeviceButtonPromo!
     private var pixelFiring: PixelKitMock!
     private var syncLauncher: MockSyncDeviceFlowLauncher!
     private var viewController: BookmarksBarViewController!
 
     override func setUp() {
         super.setUp()
-        syncPromo = MockBookmarksBarSyncPromo()
+        syncPromo = MockSyncDeviceButtonPromo()
         pixelFiring = PixelKitMock()
         syncLauncher = MockSyncDeviceFlowLauncher()
         let bookmarkManager = MockBookmarkManager()
@@ -48,12 +48,9 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
             appereancePreferences: AppearancePreferencesPersistorMock(),
             syncButtonModel: DismissableSyncDeviceButtonModel(
                 source: .bookmarksBar,
-                keyValueStore: MockKeyValueStore(),
-                authStatePublisher: Empty().eraseToAnyPublisher(),
-                initialAuthState: .inactive,
                 syncLauncher: syncLauncher,
-                featureFlagger: MockFeatureFlagger(),
                 pixelFiring: pixelFiring,
+                notificationCenter: NotificationCenter(),
                 promo: syncPromo
             )
         )
@@ -142,9 +139,11 @@ final class BookmarksBarSyncButtonTests: XCTestCase {
     }
 }
 
-final class MockBookmarksBarSyncPromo: BookmarksBarSyncPromoPresenting {
+final class MockSyncDeviceButtonPromo: SyncDeviceButtonPromoPresenting {
     let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
     private(set) var syncSetupStartedCount = 0
+    private(set) var syncButtonDismissedCount = 0
+    private(set) var syncButtonSurfaceClosedCount = 0
 
     var isPromoActivePublisher: AnyPublisher<Bool, Never> {
         isPromoActiveSubject.removeDuplicates().eraseToAnyPublisher()
@@ -152,5 +151,13 @@ final class MockBookmarksBarSyncPromo: BookmarksBarSyncPromoPresenting {
 
     func syncSetupStarted() {
         syncSetupStartedCount += 1
+    }
+
+    func syncButtonDismissed() {
+        syncButtonDismissedCount += 1
+    }
+
+    func syncButtonSurfaceClosed() {
+        syncButtonSurfaceClosedCount += 1
     }
 }

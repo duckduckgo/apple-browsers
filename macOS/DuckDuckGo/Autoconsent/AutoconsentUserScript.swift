@@ -50,7 +50,9 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private weak var selfTestWebView: WKWebView?
     private var selfTestFrameInfo: WKFrameInfo?
 
-    private var topUrl: URL?
+    private var topUrl: URL? {
+        didSet { siteRank = siteRankLookup.siteRank(for: topUrl) }
+    }
     private let siteRankLookup = CPMSiteRankLookup()
     private lazy var siteRank = siteRankLookup.siteRank(for: topUrl)
     private let preferences: CookiePopupProtectionPreferences
@@ -289,7 +291,6 @@ extension AutoconsentUserScript {
             clearReloadLoopState()
         }
         topUrl = url
-        siteRank = siteRankLookup.siteRank(for: url)
     }
 
     @MainActor

@@ -125,7 +125,6 @@ final class AutoconsentManagement: AutoconsentManaging {
 
     func fireSummaryPixel() {
         if !pixelCounter.isEmpty {
-            // one summary pixel per site rank bucket
             for (siteRank, events) in pixelCounter {
                 var parameters = pendingAdditionalParams
                 parameters["siteRank"] = siteRank?.rawValue

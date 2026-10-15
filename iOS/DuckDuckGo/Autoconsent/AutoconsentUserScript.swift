@@ -63,7 +63,9 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     weak var selfTestWebView: WKWebView?
     var selfTestFrameInfo: WKFrameInfo?
 
-    var topUrl: URL?
+    var topUrl: URL? {
+        didSet { siteRank = siteRankLookup.siteRank(for: topUrl) }
+    }
     private let siteRankLookup = CPMSiteRankLookup()
     private lazy var siteRank = siteRankLookup.siteRank(for: topUrl)
     var preferences: AutoconsentPreferences
@@ -687,7 +689,6 @@ extension AutoconsentUserScript {
             clearReloadLoopState()
         }
         topUrl = url
-        siteRank = siteRankLookup.siteRank(for: url)
     }
 
     /// Detects a reload loop

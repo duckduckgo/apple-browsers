@@ -7,6 +7,9 @@ the native handler interceptor, a JavaScript prelude prepended to the background
 WebKit process control (`CPMReproWebKitSPI`). Each test asserts what users need (a navigation gets
 a CPM response), so a failing test means the problem reproduced.
 
+The harness runs on macOS only. The app-hosted iOS test run cannot find the package's resource bundle
+(`Bundle.module`), which crashes the test process, so the tests skip on iOS and are only compiled there.
+
 ## Tiers
 
 - **CI**: tests run once per CI run and finish in seconds. A test that proves a fix is committed

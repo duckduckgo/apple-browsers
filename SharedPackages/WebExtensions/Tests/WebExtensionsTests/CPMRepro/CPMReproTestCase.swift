@@ -44,6 +44,15 @@ internal class CPMReproTestCase: XCTestCase {
         Int(ProcessInfo.processInfo.environment["CPM_REPRO_ITERATIONS"] ?? "") ?? 1
     }
 
+    override func setUp() async throws {
+        try await super.setUp()
+        #if os(iOS)
+        // The harness loads the bundled extension through `Bundle.module`, which the app-hosted iOS test
+        // run cannot find; the missing bundle crashes the whole test process.
+        throw XCTSkip("The CPM repro harness runs on macOS only")
+        #endif
+    }
+
     /// Skips the test unless `CPM_REPRO=1` is set. For tests too slow for CI.
     func requireLocalRun() throws {
         let isEnabled = ProcessInfo.processInfo.environment["CPM_REPRO"] == "1"

@@ -115,9 +115,19 @@ public extension WKWebExtension {
         !declaresDuckDuckGoSettings(inManifest: manifest)
     }
 
+    /// Whether the manifest asks for `permission`, as a required or an optional permission.
+    ///
+    /// Reads the manifest itself, because WebKit leaves out of `requestedPermissions` and
+    /// `optionalPermissions` the names it doesn't implement, such as `privacy`.
+    func declaresPermission(_ permission: String) -> Bool {
+        ["permissions", "optional_permissions"].contains { key in
+            (manifest[key] as? [Any])?.contains { $0 as? String == permission } ?? false
+        }
+    }
+
     /// Returns whether the extension declares a toolbar action in its manifest.
     ///
-    /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
+    /// Manifest V3 uses `action`;Manifest V2 uses `browser_action` or `page_action`.
     /// Extensions without one of these keys have no user-facing button, so the browser
     /// must not put them in the navigation bar.
     ///

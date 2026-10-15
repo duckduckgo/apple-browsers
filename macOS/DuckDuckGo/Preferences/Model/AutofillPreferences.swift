@@ -34,6 +34,27 @@ protocol AutofillPreferencesPersistor {
     var showInMenuBar: Bool { get set }
 }
 
+extension AutofillPreferencesPersistor {
+
+    /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
+    /// no extension has taken passwords over.
+    var isUsernamesAndPasswordsAutofillActive: Bool {
+        askToSaveUsernamesAndPasswords && !WebExtensionAutofillTakeover.shared.isManagedByExtension(.passwords)
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
+    /// has taken addresses over.
+    var isAddressesAutofillActive: Bool {
+        askToSaveAddresses && !WebExtensionAutofillTakeover.shared.isManagedByExtension(.addresses)
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
+    /// extension has taken cards over.
+    var isPaymentMethodsAutofillActive: Bool {
+        askToSavePaymentMethods && !WebExtensionAutofillTakeover.shared.isManagedByExtension(.cards)
+    }
+}
+
 enum PasswordManager: String, CaseIterable {
     case duckduckgo
     case bitwarden

@@ -555,7 +555,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionManager: WebExtensionManaging? {
+        didSet {
+            // Extensions that took autofill over stop counting when the manager goes away.
+            MainActor.assumeMainThread {
+                WebExtensionAutofillTakeover.shared.refresh()
+            }
+        }
+    }
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?

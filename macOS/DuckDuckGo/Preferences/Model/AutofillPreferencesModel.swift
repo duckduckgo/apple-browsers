@@ -96,6 +96,36 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @Published private(set) var showSyncPromo: Bool = false
 
+    /// The extensions that have taken kinds of autofill data over from DuckDuckGo.
+    @Published private(set) var managingExtensions: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
+
+    func managingExtension(for kind: ExtensionManagedAutofillKind) -> AutofillManagingExtension? {
+        managingExtensions[kind]
+    }
+
+    /// The kinds `managingExtension` has taken over, in a fixed order.
+    func kinds(managedBy managingExtension: AutofillManagingExtension) -> [ExtensionManagedAutofillKind] {
+        ExtensionManagedAutofillKind.allCases.filter { managingExtensions[$0] == managingExtension }
+    }
+
+    /// Extensions that took addresses or cards over, but not passwords.
+    var extensionsManagingOnlyAddressesOrCards: [AutofillManagingExtension] {
+        var result: [AutofillManagingExtension] = []
+        for kind in [ExtensionManagedAutofillKind.addresses, .cards] {
+            guard let managingExtension = managingExtensions[kind],
+                  managingExtension != managingExtensions[.passwords],
+                  !result.contains(managingExtension) else { continue }
+            result.append(managingExtension)
+        }
+        return result
+    }
+
+    /// Gives `kinds` back to DuckDuckGo from the extensions that took them over.
+    @MainActor
+    func useDuckDuckGoInstead(for kinds: [ExtensionManagedAutofillKind]) {
+        kinds.forEach(autofillTakeover.giveBackToDuckDuckGo)
+    }
+
     func authorizeAutoLockSettingsChange(
         isEnabled isAutoLockEnabledNewValue: Bool? = nil,
         threshold autoLockThresholdNewValue: AutofillAutoLockThreshold? = nil
@@ -158,9 +188,11 @@ final class AutofillPreferencesModel: ObservableObject {
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
-        syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
+        syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
+        autofillTakeover: WebExtensionAutofillTakeover = .shared
     ) {
         self.persistor = persistor
+        self.autofillTakeover = autofillTakeover
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
@@ -183,7 +215,24 @@ final class AutofillPreferencesModel: ObservableObject {
                 }
             }
 
+        updateManagingExtensions()
+        autofillTakeoverCancellable = NotificationCenter.default.publisher(for: .autofillUserSettingsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateManagingExtensions()
+            }
+
         PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened)
+    }
+
+    private func updateManagingExtensions() {
+        var updated: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
+        for kind in ExtensionManagedAutofillKind.allCases {
+            updated[kind] = autofillTakeover.managingExtension(for: kind)
+        }
+        if updated != managingExtensions {
+            managingExtensions = updated
+        }
     }
 
     private var persistor: AutofillPreferencesPersistor
@@ -192,6 +241,8 @@ final class AutofillPreferencesModel: ObservableObject {
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let syncPromoManager: SyncPromoManaging
     private var syncPromoCancellable: AnyCancellable?
+    private let autofillTakeover: WebExtensionAutofillTakeover
+    private var autofillTakeoverCancellable: AnyCancellable?
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)

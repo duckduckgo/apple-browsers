@@ -98,6 +98,12 @@
         "description": "Where the chat is shown: address_bar when the address bar handed the prompt to the Duck.ai page, contextual_chat for any prompt in the Ask about page sheet, otherwise duck_ai.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "aichat_menu_source": {
+        "key": "source",
+        "type": "string",
+        "description": "Which button opened the Duck.ai menu: address_bar or the iPad tabs_bar_button. Absent before the tabs-bar button was told apart.",
+        "enum": ["address_bar", "tabs_bar_button"]
+    },
     "aichat_first_prompt_new_install": {
         "key": "first_prompt_new_install",
         "type": "boolean",

@@ -1027,6 +1027,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onTextEntryModeDidChange(mode)
     }
 
+    func endEditingInSearchMode() {
+        setSelectedTextEntryMode(.search)
+        endEditing()
+    }
+
     func setSelectedTextEntryMode(_ mode: TextEntryMode) {
         guard selectedTextEntryMode != mode else { return }
         selectedTextEntryMode = mode

@@ -118,7 +118,7 @@ extension MainViewController {
         button.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown()
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown(source: DuckAIMenuSource(source))
                 completion(self?.duckAIAddressBarMenuChildren(source: source, type: type) ?? [])
             }
         ])
@@ -175,27 +175,28 @@ extension MainViewController {
     }
 
     private func duckAIAddressBarMenuChildren(source: AIChatEntryPointSource, type: DuckAIAddressBarMenuType) -> [UIMenuElement] {
-        DuckAIAddressBarMenuFactory.makeActions(
+        let menuSource = DuckAIMenuSource(source)
+        return DuckAIAddressBarMenuFactory.makeActions(
             featureFlagger: featureFlagger,
             userInterfaceIdiom: UIDevice.current.userInterfaceIdiom,
             isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             type: type,
             onNewChat: { [weak self] in
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected(source: menuSource)
                 self?.openFreshDuckAIChatFromAddressBarMenu(source: source)
             },
             onContextAction: { [weak self] in
                 switch type {
                 case .webPage, .document:
-                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected(source: menuSource)
                     self?.askAboutCurrentPageFromAddressBar()
                 case .search(let query):
-                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutSearchSelected()
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutSearchSelected(source: menuSource)
                     self?.askAboutCurrentSearchFromAddressBar(query: query, source: source)
                 }
             },
             onRecentChats: { [weak self] in
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected()
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected(source: menuSource)
                 self?.openRecentChatsFromAddressBarMenu()
             }
         )

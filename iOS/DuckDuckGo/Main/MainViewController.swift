@@ -4936,8 +4936,13 @@ class MainViewController: UIViewController {
         tabManager.currentTabsModel.currentTab?.promptPageType ?? .unknown
     }
 
+    /// Voice requested from the address bar (iPad) or Unified Input.
     func onDuckAIVoiceModeRequested() {
-        PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.ntp.rawValue]))
+        startDuckAIVoiceMode(from: .addressBar)
+    }
+
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
+        PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -6650,10 +6655,17 @@ extension MainViewController: OmniBarDelegate {
             }
         )
 
+        fireAddressBarButtonPixels(for: source)
+        featureDiscovery.setWasUsedBefore(.aiChat)
+    }
+
+    /// The tabs-bar button shares this path, but its entry pixel already reports `tabs_bar_button`.
+    private func fireAddressBarButtonPixels(for source: AIChatEntryPointSource) {
+        guard source != .tabsBarButton else { return }
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarAichatButtonPressed, frequency: .dailyAndCount)
         }
-        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
+        PixelKit.fire(Pixel.Event.openAIChatFromAddressBar, options: .parameters(featureDiscovery.addToParams([:], forFeature: .aiChat)))
     }
 
     private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
@@ -6973,8 +6985,10 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
             fireAddressBarQuerySubmittedPixel(queryType: addressBarQueryType(for: query))
             postIdleSessionInstrumentation.sessionEnded(reason: .searchSubmitted)
-            viewCoordinator.omniBar.setSelectedTextEntryMode(.search)
-            loadQuery(query)
+            recordDuckAISessionPendingExit(.searchStarted)
+            viewCoordinator.omniBar.endEditingInSearchMode()
+            dismissOmniBar()
+            loadQuery(query, via: .typed)
         case .viewAllChats:
             onViewAllChatsSelected()
         }

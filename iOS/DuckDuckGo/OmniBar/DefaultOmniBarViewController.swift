@@ -369,6 +369,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         syncInputOutcomeMeasurement()
     }
 
+    override func endEditingInSearchMode() {
+        guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle else {
+            super.endEditingInSearchMode()
+            return
+        }
+        dismissIPadDuckAIMode()
+    }
+
     override func endEditing() {
         saveIPadDraftText()
         if omniBarView.isSearchAreaExpanded {

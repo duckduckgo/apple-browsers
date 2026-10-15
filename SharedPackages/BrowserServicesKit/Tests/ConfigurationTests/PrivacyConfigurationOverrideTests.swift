@@ -105,6 +105,29 @@ struct PrivacyConfigurationOverrideCommandTests {
     }
 }
 
+@Suite("Privacy configuration override failure log lines")
+struct PrivacyConfigurationOverrideFailureTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ends with source", .timeLimit(.minutes(1)), arguments: [
+        (PrivacyConfigurationOverrideFailure.invalidURL, "invalid_url"),
+        (.notInternal, "not_internal"),
+        (.downloadFailed, "download_failed"),
+    ])
+    func formatsLine(failure: PrivacyConfigurationOverrideFailure, reason: String) {
+        let line = failure.logLine(source: "http://localhost:8080/ios-config.json")
+        #expect(line == "CONFIG_OVERRIDE_FAILED action=set_url reason=\(reason) source=http://localhost:8080/ios-config.json")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Invalid source is the raw argument without whitespace", .timeLimit(.minutes(1)), arguments: [
+        ("", ""), ("  ", ""), ("not a url", "notaurl"), (" reset\n", "reset"), ("ftp://example.com/c.json", "ftp://example.com/c.json"),
+    ])
+    func invalidSource(value: String, expected: String) {
+        #expect(PrivacyConfigurationOverrideCommand.invalidArgumentSource(value) == expected)
+    }
+}
+
 @Suite("Privacy configuration override marker")
 struct PrivacyConfigurationOverrideMarkerTests {
 
@@ -121,6 +144,58 @@ struct PrivacyConfigurationOverrideMarkerTests {
         #expect(marker.isSet)
         marker.set(false)
         #expect(!marker.isSet)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without a valid argument, removes the stored configuration and clears the marker", .timeLimit(.minutes(1)), arguments: [
+        nil, "", "reset", "not a url",
+    ])
+    func resetsWithoutValidArgument(argument: String?) throws {
+        let (marker, launchArguments, cleanUp) = try makeMarker(argument: argument)
+        defer { cleanUp() }
+        marker.set(true)
+        var removals = 0
+
+        #expect(marker.resetIfNeeded(userDefaults: launchArguments) { removals += 1 })
+        #expect(removals == 1)
+        #expect(!marker.isSet)
+        #expect(!marker.resetIfNeeded(userDefaults: launchArguments) { removals += 1 })
+        #expect(removals == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With a valid argument, keeps the stored configuration and the marker", .timeLimit(.minutes(1)))
+    func keepsWithValidArgument() throws {
+        let (marker, launchArguments, cleanUp) = try makeMarker(argument: "http://localhost:8080/ios-config.json")
+        defer { cleanUp() }
+        marker.set(true)
+
+        #expect(!marker.resetIfNeeded(userDefaults: launchArguments) { Issue.record("Unexpected removal") })
+        #expect(marker.isSet)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without the marker, leaves the stored configuration alone", .timeLimit(.minutes(1)))
+    func keepsWithoutMarker() throws {
+        let (marker, launchArguments, cleanUp) = try makeMarker(argument: nil)
+        defer { cleanUp() }
+
+        #expect(!marker.resetIfNeeded(userDefaults: launchArguments) { Issue.record("Unexpected removal") })
+    }
+
+    private func makeMarker(argument: String?) throws -> (PrivacyConfigurationOverrideMarker, UserDefaults, () -> Void) {
+        let markerSuite = UUID().uuidString
+        let argumentSuite = UUID().uuidString
+        let markerDefaults = try #require(UserDefaults(suiteName: markerSuite))
+        let launchArguments = try #require(UserDefaults(suiteName: argumentSuite))
+        if let argument {
+            launchArguments.set(argument, forKey: PrivacyConfigurationOverrideCommand.launchArgumentKey)
+        }
+        let cleanUp = {
+            markerDefaults.removePersistentDomain(forName: markerSuite)
+            launchArguments.removePersistentDomain(forName: argumentSuite)
+        }
+        return (PrivacyConfigurationOverrideMarker(defaults: markerDefaults), launchArguments, cleanUp)
     }
 }
 
@@ -271,21 +346,9 @@ final class PrivacyConfigurationOverrideReporterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Without an argument, replaces a stored override with production and clears the marker", .timeLimit(.minutes(1)))
-    func productionFetchAfterOverride() async {
+    @Test("Without an argument, does nothing", .timeLimit(.minutes(1)))
+    func noFetchWithoutArgument() {
         marker.set(true)
-        var didFetch = false
-        let fetchTask = reporter.handle(nil) { didFetch = true }
-        await fetchTask?.value
-
-        #expect(didFetch)
-        #expect(!marker.isSet)
-        #expect(lines.isEmpty)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Without an argument and no stored override, does nothing", .timeLimit(.minutes(1)))
-    func noFetchWithoutMarker() {
         let fetchTask = reporter.handle(nil) { Issue.record("Unexpected fetch") }
 
         #expect(fetchTask == nil)

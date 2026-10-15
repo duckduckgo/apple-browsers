@@ -69,11 +69,15 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         usesCompactLayout ? Constants.removeButtonSize : Constants.standardRemoveButtonSize
     }
 
+    /// Glyph-backed chips (tab favicon, pasted text) sit at 20pt in the 24pt compact frame, like the selection chip.
     private var iconSize: CGFloat {
-        if usesCompactLayout, case .tab = attachment {
+        guard usesCompactLayout else { return iconFrameSize }
+        switch attachment {
+        case .tab, .pastedText:
             return Constants.faviconSize
+        case .image, .file, .invalidFile:
+            return iconFrameSize
         }
-        return iconFrameSize
     }
 
     var minimumContentWidth: CGFloat {
@@ -318,8 +322,8 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     func configurePastedText(_ pastedText: AIChatPastedText) {
         imageView.image = nil
         imageView.isHidden = true
-        // Same layout as the tab chip's glyph fallback: a tinted glyph, since the colour icon set has no text document.
-        fileIconView.image = usesCompactLayout ? DesignSystemImages.Glyphs.Size16.note : DesignSystemImages.Glyphs.Size24.note
+        // The selection chip's icon and tint, since both are text attachments (AIChatContextualSheetCoordinator.refreshSelectionChips).
+        fileIconView.image = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)
         fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
         fileNameLabel.text = pastedText.title
         fileNameLabel.lineBreakMode = .byTruncatingTail

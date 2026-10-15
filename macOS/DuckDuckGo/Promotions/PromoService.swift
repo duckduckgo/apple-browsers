@@ -89,6 +89,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 record.timesDismissed = 0
                 record.lastShown = nil
                 record.actioned = false
+                record.lastActioned = nil
             }
             historyStore.save(record)
             notifyRecordChanged(for: promoId, record: record)
@@ -697,11 +698,17 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         var record = historyStore.record(for: promoId)
         switch result {
-        case .actioned:
+        case .actioned(cooldown: nil):
             record.timesDismissed += 1
             record.lastDismissed = currentDate
             record.nextEligibleDate = .distantFuture
             record.actioned = true
+            record.lastActioned = currentDate
+        case .actioned(cooldown: let interval?):
+            record.timesDismissed += 1
+            record.lastDismissed = currentDate
+            record.nextEligibleDate = currentDate.addingTimeInterval(interval)
+            record.lastActioned = currentDate
         case .ignored(cooldown: nil):
             record.timesDismissed += 1
             record.lastDismissed = currentDate

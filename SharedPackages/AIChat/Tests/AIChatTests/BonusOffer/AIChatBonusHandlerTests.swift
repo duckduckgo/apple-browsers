@@ -233,18 +233,6 @@ struct AIChatBonusHandlerTests {
         #expect(published.values == [AIChatBonusRecordPayload(record: AIChatBonusRecordMock.active, isNewInstall: true, aiChatEnabled: true)])
     }
 
-    @Test("Check a deleted record publishes a payload with a null record")
-    func deletedRecordPublishesANullRecord() {
-        // GIVEN
-        let published = PublishedValues(sut.recordPayloadPublisher)
-
-        // WHEN
-        service.recordSubject.send(nil)
-
-        // THEN
-        #expect(published.values == [AIChatBonusRecordPayload(record: nil, isNewInstall: true, aiChatEnabled: true)])
-    }
-
     @Test("Check the published payload carries the facts at the time of the change")
     func publishedPayloadReadsTheFactsWhenTheRecordChanges() {
         // GIVEN

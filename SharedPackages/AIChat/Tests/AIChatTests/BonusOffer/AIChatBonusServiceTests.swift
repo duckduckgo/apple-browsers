@@ -438,10 +438,3 @@ extension AIChatBonusServiceTests {
         }
     }
 }
-
-/// Waits until the main queue has run everything queued before this call, e.g. values delivered with `.receive(on: DispatchQueue.main)`.
-func drainMainQueue() async {
-    await withCheckedContinuation { continuation in
-        DispatchQueue.main.async { continuation.resume() }
-    }
-}

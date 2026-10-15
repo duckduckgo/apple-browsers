@@ -23,14 +23,14 @@ import Foundation
 final class MockAIChatBonusMessageHandling: AIChatBonusMessageHandling {
     var storedRecord: AIChatBonusRecord?
     var error: Error?
-    let recordSubject = PassthroughSubject<AIChatBonusRecord?, Never>()
+    let recordSubject = PassthroughSubject<AIChatBonusRecord, Never>()
 
     private(set) var claimedCampaignNames: [String] = []
     private(set) var appliedOutcomes: [AIChatBonusRedeemOutcome] = []
     private(set) var dismissCallCount = 0
     private(set) var endCallCount = 0
 
-    var recordPublisher: AnyPublisher<AIChatBonusRecord?, Never> {
+    var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> {
         recordSubject.eraseToAnyPublisher()
     }
 

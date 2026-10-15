@@ -29,10 +29,10 @@ import os.log
 /// Only the two requests return the record, for the bridge's reply. The notifications expect no reply:
 /// Duck.ai learns the new record from the push native sends to every Duck.ai tab after a write.
 public protocol AIChatBonusMessageHandling {
-    /// Emits the record after every write that changes it, so native can push it to every Duck.ai tab with `submitAIChatBonusRecord`. Emits `nil` once the record is deleted.
+    /// Emits the record after every write that changes it, so native can push it to every Duck.ai tab with `submitAIChatBonusRecord`.
     ///
     /// Delivers on the main queue, in the order the writes happened.
-    var recordPublisher: AnyPublisher<AIChatBonusRecord?, Never> { get }
+    var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> { get }
 
     /// Returns the stored record.
     ///
@@ -88,7 +88,7 @@ public final class AIChatBonusService: @unchecked Sendable {
     private let now: () -> Date
     private let makeBonusId: () -> String
     private let lock = NSLock()
-    private let recordSubject = PassthroughSubject<AIChatBonusRecord?, Never>()
+    private let recordSubject = PassthroughSubject<AIChatBonusRecord, Never>()
 
     /// Create a new instance of the `AIChatBonusService` with the specified parameters.
     /// - Parameters:
@@ -114,7 +114,7 @@ public final class AIChatBonusService: @unchecked Sendable {
 
 extension AIChatBonusService: AIChatBonusMessageHandling {
 
-    public var recordPublisher: AnyPublisher<AIChatBonusRecord?, Never> {
+    public var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> {
         // Sent while the lock is held, so values go out in write order. Delivered asynchronously on main, so a
         // subscriber never runs inside the writer's lock and can call back into the service without deadlocking.
         recordSubject

@@ -121,6 +121,15 @@ enum UserText {
                                        comment: "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
         return String(format: format, deviceName)
     }
+    static func removeDeviceConfirmTitleImproved(_ deviceName: String) -> String {
+        let format = NotLocalizedString("preferences.sync.remove-device-v3.title", bundle: Bundle.module, value: "Remove %@ from Sync & Backup?", comment: "Title of the confirmation shown before removing a device from Sync & Backup. The device name is inserted in place of %@")
+        return String(format: format, deviceName)
+    }
+    static func removeDeviceConfirmMessageImproved(_ deviceName: String) -> String {
+        let format = NotLocalizedString("preferences.sync.remove-device-v3.message", bundle: Bundle.module, value: "“%@” will no longer be able to access your synced data on other devices. Bookmarks, Autofill data and Duck.ai chats will remain on your devices.", comment: "Message of the confirmation shown before removing a device from Sync & Backup. The device name is inserted in place of %@")
+        return String(format: format, deviceName)
+    }
+    static let removeDeviceConfirmButtonImproved = NotLocalizedString("preferences.sync.remove-device-v3.button", bundle: Bundle.module, value: "Remove", comment: "Button that confirms removing a device from Sync & Backup")
 
     // Turn off and delete server data confirmation dialog (V2 — simplifiedSyncSetupV2).
     static let deleteAccountConfirmTitleV2 = NSLocalizedString("preferences.sync.delete-account-v2.title", bundle: Bundle.module, value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")

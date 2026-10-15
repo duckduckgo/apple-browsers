@@ -196,7 +196,6 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.aiChatNativeChatHistory", "true",
             "-ff.aiChatAddressBarRecentChats", "true",
             "-ff.customizeNTPIcons", "true",
-            "-aichat.settings.isEnabled", "true",
         ])
 
         let aiChatButton = element(withIdentifier: AccessibilityID.aiChat)
@@ -589,6 +588,7 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
         ]

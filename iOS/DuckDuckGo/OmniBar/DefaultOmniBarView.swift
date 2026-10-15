@@ -738,6 +738,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let floatingGlassContentHostView = FloatingGlassContentHostView()
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
+    private var omniBarLongPressPreviewImage: UIImage?
+    private var omniBarLongPressOriginalAlpha: CGFloat?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
@@ -1542,6 +1544,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func removeOmniBarLongPressInteraction() {
         guard let omniBarLongPressInteraction else { return }
+        restoreAddressBarAfterLongPressMenu()
         searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
@@ -1830,9 +1833,65 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        floatingAddressBarMenuPreview(for: interaction)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        floatingAddressBarMenuPreview(for: interaction)
+    }
+
+    private func floatingAddressBarMenuPreview(for interaction: UIContextMenuInteraction) -> UITargetedPreview? {
+        guard isFloatingUIEnabled,
+              interaction === omniBarLongPressInteraction,
+              window != nil,
+              !searchAreaContainerView.bounds.isEmpty else { return nil }
+
+        let bounds = searchAreaContainerView.bounds
+        // Snapshot keeps live controls in their glass host.
+        let image = omniBarLongPressPreviewImage ?? UIGraphicsImageRenderer(bounds: bounds).image { _ in
+            searchAreaContainerView.drawHierarchy(in: bounds, afterScreenUpdates: false)
+        }
+        omniBarLongPressPreviewImage = image
+        let snapshot = UIImageView(image: image)
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(roundedRect: bounds, cornerRadius: bounds.height / 2)
+
+        let center = convert(CGPoint(x: bounds.midX, y: bounds.midY), from: searchAreaContainerView)
+        let target = UIPreviewTarget(container: self, center: center)
+        return UITargetedPreview(view: snapshot, parameters: parameters, target: target)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
+        guard interaction === omniBarLongPressInteraction, omniBarLongPressPreviewImage != nil else { return }
+        omniBarLongPressOriginalAlpha = searchAreaContainerView.alpha
+        searchAreaContainerView.alpha = 0
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willEndFor configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionAnimating?) {
+        guard interaction === omniBarLongPressInteraction else { return }
+        if let animator {
+            animator.addCompletion { [weak self] in
+                self?.restoreAddressBarAfterLongPressMenu()
+            }
+        } else {
+            restoreAddressBarAfterLongPressMenu()
+        }
+    }
+
+    private func restoreAddressBarAfterLongPressMenu() {
+        if let alpha = omniBarLongPressOriginalAlpha {
+            searchAreaContainerView.alpha = alpha
+        }
+        omniBarLongPressOriginalAlpha = nil
+        omniBarLongPressPreviewImage = nil
     }
 }
 

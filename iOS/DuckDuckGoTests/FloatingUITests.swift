@@ -904,6 +904,96 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 }
 
+final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
+
+    func testWhenFloatingMenuHighlightsAndDismissesThenPreviewIncludesWholeFieldWithoutMovingControls() throws {
+        for isBottom in [false, true] {
+            let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+            barView.isUsingSmallTopSpacing = isBottom
+            barView.frame = CGRect(x: 0, y: 100, width: 390, height: barView.expectedHeight)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            barView.layoutIfNeeded()
+            barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+
+            let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+                .first { $0.delegate === barView })
+            let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+            let container = try XCTUnwrap(barView.searchContainer)
+            let fieldParent = barView.textField.superview
+            let containerParent = container.superview
+            let contentHost = try XCTUnwrap(container.subviews.first { $0 is DefaultOmniBarView.FloatingGlassContentHostView
+                || $0 is UIVisualEffectView })
+            let contentParent = contentHost.superview
+
+            let highlight = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+            barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
+            XCTAssertEqual(container.alpha, 0)
+            let dismissal = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+            XCTAssertTrue((highlight.view as? UIImageView)?.image === (dismissal.view as? UIImageView)?.image)
+            barView.contextMenuInteraction(interaction, willEndFor: configuration, animator: nil)
+            XCTAssertEqual(container.alpha, 1)
+
+            for preview in [highlight, dismissal] {
+                XCTAssertTrue(preview.view is UIImageView)
+                XCTAssertEqual(preview.view.bounds.size, container.bounds.size)
+                XCTAssertGreaterThan(preview.view.bounds.width, barView.textField.bounds.width)
+                XCTAssertEqual(preview.parameters.backgroundColor, .clear)
+                let previewBounds = try XCTUnwrap(preview.parameters.visiblePath).bounds
+                XCTAssertEqual(previewBounds.minX, container.bounds.minX, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.minY, container.bounds.minY, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.width, container.bounds.width, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.height, container.bounds.height, accuracy: 0.001)
+                XCTAssertTrue(preview.target.container === barView)
+                XCTAssertEqual(preview.target.center,
+                               barView.convert(CGPoint(x: container.bounds.midX, y: container.bounds.midY), from: container))
+            }
+            XCTAssertTrue(barView.textField.superview === fieldParent)
+            XCTAssertTrue(container.superview === containerParent)
+            XCTAssertTrue(contentHost.superview === contentParent)
+
+            _ = barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration)
+            barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
+            barView.longPressMenuProvider = nil
+            XCTAssertEqual(container.alpha, 1)
+            XCTAssertFalse(barView.textField.interactions.contains { $0 === interaction })
+        }
+    }
+
+    func testWhenFloatingUIIsDisabledThenMenuUsesDefaultPreviews() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+
+    func testWhenInteractionBelongsToAnotherControlThenMenuUsesDefaultPreviews() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = UIContextMenuInteraction(delegate: barView)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+}
+
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
     private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {

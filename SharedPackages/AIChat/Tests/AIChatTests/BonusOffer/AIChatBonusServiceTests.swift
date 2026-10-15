@@ -26,6 +26,13 @@ import Testing
 struct AIChatBonusServiceTests {
     private static let now = Date(timeIntervalSince1970: 1_780_000_000.123_4)
 
+    private static let expired = AIChatBonusRecord(
+        campaignName: AIChatBonusRecordMock.campaignName,
+        bonusId: AIChatBonusRecordMock.bonusId,
+        terms: AIChatBonusRecord.Terms(multiplier: 2, expiresAt: now.timeIntervalSince1970 - 1),
+        lastRedeemAttemptAt: 1_770_000_000_000
+    )
+
     private let store = MockAIChatBonusStore()
     private let pixelFiring = MockAIChatBonusPixelFiring()
     private let sut: AIChatBonusService
@@ -370,6 +377,230 @@ struct AIChatBonusServiceTests {
         #expect(readFinished.wait(timeout: .now() + 5) == .success)
         #expect(recordReadBySubscriber == AIChatBonusRecord(dismissed: true))
         cancellable.cancel()
+    }
+
+    // MARK: - Expired boost
+
+    @Test("Check reading an expired boost ends it and keeps the campaign")
+    func readingAnExpiredBoostEndsIt() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == AIChatBonusRecordMock.ended)
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check reading an unexpired boost leaves it as it is")
+    func readingAnUnexpiredBoostLeavesIt() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == AIChatBonusRecordMock.active)
+        #expect(store.writeCallCount == 0)
+    }
+
+    @Test("Check reading a pending claim leaves it as it is")
+    func readingAPendingClaimLeavesIt() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.pending
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == AIChatBonusRecordMock.pending)
+        #expect(store.writeCallCount == 0)
+    }
+
+    @Test("Check the boost isn't active once an expired record is ended")
+    func expiredBoostIsNotActive() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+
+        // WHEN
+        let result = try sut.isBoostActive()
+
+        // THEN
+        #expect(!result)
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check ending an expired boost ends it")
+    func endBoostIfExpiredEndsAnExpiredBoost() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+
+        // WHEN
+        try sut.endBoostIfExpired()
+
+        // THEN
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check a failed write while ending an expired boost still returns the record")
+    func failedExpiryWriteStillReturnsTheRecord() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+        store.writeError = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == Self.expired)
+        #expect(pixelFiring.storeFailures == [.writeFailed(errSecNotAvailable)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check ending an expired boost publishes the ended record", .timeLimit(.minutes(1)))
+    func endingAnExpiredBoostPublishes() async throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        _ = try sut.record()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values == [AIChatBonusRecordMock.ended])
+    }
+
+    @Test("Check a failed read while ending an expired boost is passed on")
+    func failedReadWhileEndingAnExpiredBoostIsPassedOn() {
+        // GIVEN
+        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+
+        // WHEN / THEN
+        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+            try sut.endBoostIfExpired()
+        }
+    }
+
+    // MARK: - Permanent delete
+
+    @Test("Check deleting the record permanently removes it")
+    func permanentlyDeletingRemovesTheRecord() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+
+        // WHEN
+        try sut.permanentlyDeleteRecord()
+
+        // THEN
+        #expect(store.storedRecord == nil)
+        #expect(try sut.record() == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check deleting the record permanently publishes nothing", .timeLimit(.minutes(1)))
+    func permanentlyDeletingPublishesNothing() async throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        try sut.permanentlyDeleteRecord()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values.isEmpty)
+    }
+
+    @Test("Check a failed delete is retried on the next read")
+    func failedDeleteIsRetriedOnTheNextRead() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+        store.deleteError = AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.permanentlyDeleteRecord()
+        }
+        store.deleteError = nil
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == nil)
+        #expect(store.deleteCallCount == 2)
+        #expect(pixelFiring.storeFailures == [.deleteFailed(errSecInteractionNotAllowed)])
+    }
+
+    @Test("Check the old record is never returned while the delete keeps failing")
+    func oldRecordIsNotReturnedWhileTheDeleteFails() {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+        store.deleteError = AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.permanentlyDeleteRecord()
+        }
+
+        // WHEN / THEN
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.record()
+        }
+        #expect(store.readCallCount == 0)
+    }
+
+    @Test("Check a claim mints nothing while a failed delete keeps failing")
+    func claimMintsNothingWhileTheDeleteFails() {
+        // GIVEN: a previous install's record is left behind because the delete failed, and it keeps failing.
+        store.storedRecord = AIChatBonusRecordMock.ended
+        store.deleteError = AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.permanentlyDeleteRecord()
+        }
+
+        // WHEN / THEN
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
+        }
+        #expect(store.writeCallCount == 0)
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check a claim retries a failed delete before reading the record")
+    func claimRetriesAFailedDeleteFirst() throws {
+        // GIVEN: a previous install's ended record is left behind because the delete failed.
+        store.storedRecord = AIChatBonusRecordMock.ended
+        store.deleteError = AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.permanentlyDeleteRecord()
+        }
+        store.deleteError = nil
+
+        // WHEN
+        let result = try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
+
+        // THEN: the old record is gone, so a new Bonus ID is minted.
+        #expect(store.deleteCallCount == 2)
+        #expect(result == AIChatBonusRecord(campaignName: AIChatBonusRecordMock.campaignName, bonusId: AIChatBonusRecordMock.bonusId))
+    }
+
+    @Test("Check a successful retry isn't repeated on later reads")
+    func successfulRetryIsNotRepeated() throws {
+        // GIVEN
+        store.deleteError = AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)
+        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+            try sut.permanentlyDeleteRecord()
+        }
+        store.deleteError = nil
+        _ = try sut.record()
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(store.deleteCallCount == 2)
+        #expect(result == nil)
     }
 
     // MARK: - Failures

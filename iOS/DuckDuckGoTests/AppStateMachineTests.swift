@@ -706,6 +706,17 @@ final class LaunchBreadcrumbTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Only the first event dropped during launch is reported", .timeLimit(.minutes(1)))
+    func onlyFirstDroppedEventIsReported() {
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.didBecomeActive)
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willResignActive)
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["event": "willConnectToWindow", "state": "initializing", "step": "none"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Events dropped after launch are not reported as dropped during launch", .timeLimit(.minutes(1)))
     func eventDroppedAfterLaunchIsNotReported() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))

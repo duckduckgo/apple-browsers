@@ -185,6 +185,9 @@ final class AppStateMachine {
     /// consecutive scene connections reuse the same window or receive a new one.
     private var lastConnectedWindowIdentifier: ObjectIdentifier?
 
+    /// Only the first drop carries the step launch was stuck at; later ones repeat on every app switch.
+    private var hasReportedDroppedEvent = false
+
     private let terminatingStateFactory: TerminatingStateFactory
     private let launchBreadcrumb: LaunchBreadcrumb
 
@@ -351,6 +354,8 @@ final class AppStateMachine {
                                                                 PixelParameters.appEvent: event.name]))
         switch state {
         case .initializing, .launching:
+            guard !hasReportedDroppedEvent else { break }
+            hasReportedDroppedEvent = true
             launchBreadcrumb.reportDroppedEvent(event, in: state)
         case .connected, .foreground, .background, .terminating, .simulated:
             break

@@ -840,7 +840,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             }
 
             if selectedTextEntryMode == .aiChat {
-                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues(), termsAccepted: false)
+                submitAIChatQuery(query)
                 return
             }
 
@@ -866,6 +866,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         assert(Thread.isMainThread)
         state = state.onReloadState
         refreshState(state)
+    }
+
+    /// Text submitted from the search field while in Duck.ai mode, e.g. Paste & Go.
+    func submitAIChatQuery(_ query: String) {
+        omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues(), termsAccepted: false)
     }
 
     @objc private func pasteURLAndGo(sender: UIMenuItem) {
@@ -1089,7 +1094,9 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount)
+        PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount, options: .parameters([
+            "toggle_visible": String(dependencies.aiChatAddressBarExperience.shouldShowModeToggle)
+        ]))
         
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true

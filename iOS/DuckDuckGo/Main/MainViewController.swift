@@ -5933,6 +5933,10 @@ extension MainViewController: OmniBarDelegate {
 
     /// A suggestion picked with the arrow keys and Return.
     func onOmniSuggestionSelected(_ suggestion: Suggestion) {
+        AutocompleteSuggestionsPixels().fireClickPixels(
+            for: suggestion,
+            isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         autocomplete(selectedSuggestion: suggestion)
     }
 
@@ -6502,12 +6506,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if tapped {
-            let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
-            fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
-                                     serp: .addressBarClickOnSERP,
-                                     website: .addressBarClickOnWebsite,
-                                     aiChat: .addressBarClickOnAIChat,
-                                     additionalParameters: modeParam)
+            fireAddressBarClickPixel()
             recordNewTabPageSessionAction { $0.tapInputBar() }
         }
 
@@ -6820,14 +6819,19 @@ extension MainViewController: OmniBarDelegate {
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
         revealFloatingChromeImmediately()
-        let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         ViewHighlighter.hideAll()
+        fireAddressBarClickPixel()
+        recordNewTabPageSessionAction { $0.tapInputBar() }
+    }
+
+    /// A tap on the address bar, or ⌘L, by the kind of page it was opened over.
+    func fireAddressBarClickPixel() {
+        let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
                                  serp: .addressBarClickOnSERP,
                                  website: .addressBarClickOnWebsite,
                                  aiChat: .addressBarClickOnAIChat,
                                  additionalParameters: modeParam)
-        recordNewTabPageSessionAction { $0.tapInputBar() }
     }
 
     func onExperimentalAddressBarClearPressed() {
@@ -6980,6 +6984,7 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
             onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chat.chatId))
         case .url(let suggestion):
+            AutocompleteSuggestionsPixels().fireDuckAIClickPixel(for: suggestion)
             handleSuggestionSelected(suggestion)
         case .searchDuckDuckGo(let query):
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
@@ -8285,7 +8290,8 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
-        newTab(allowingKeyboard: false)
+        // It shows Duck.ai, not a New Tab Page, so it starts no New Tab Page visit.
+        newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
         openAIChat(source: .tabSwitcher, reportsNewTab: true)
     }
 

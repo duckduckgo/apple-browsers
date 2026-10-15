@@ -81,7 +81,14 @@
                             "widget_control_center",
                             "siri",
                             "deep_link_other",
-                            "unknown"
+                            "unknown",
+                            "browsing_menu_duckai",
+                            "duck_ai_new_chat",
+                            "tab_switcher_existing_chat",
+                            "tabs_bar_existing_chat",
+                            "return_to_chat_card",
+                            "ddg_homepage",
+                            "unattributed"
                         ]
                     },
                     "session_duration_ms_bucketed": {

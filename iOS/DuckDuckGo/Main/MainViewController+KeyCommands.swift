@@ -188,6 +188,10 @@ extension MainViewController {
         guard isShortcutEnabled() else { return }
 
         showBars()
+        // A tap only counts when it starts editing; ⌘L on an already focused bar is the same.
+        if !isInputFocused {
+            fireAddressBarClickPixel()
+        }
         viewCoordinator.omniBar.beginEditing(animated: true)
     }
 

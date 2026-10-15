@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import Testing
 @testable import Core
 @testable import DuckDuckGo
@@ -167,5 +168,41 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://example.com/")!, to: duckAIChat,
                                                            isLinkActivation: true) == .directURL)
         #expect(AIChatEntryPointSource.forInPageNavigation(from: duckAIChat, to: duckAIChat, isLinkActivation: true) == nil)
+    }
+
+    // MARK: - Definition drift
+
+    private static let generatedSchemasDirectory = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .appendingPathComponent("../PixelDefinitions/wide_events/generated_schemas")
+
+    private static func schemaEnum(metaType: String, version: String, path: [String]) throws -> Set<String> {
+        let url = generatedSchemasDirectory.appendingPathComponent("\(metaType)-\(version).json")
+        var node = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        for key in path {
+            let properties = try #require(node["properties"] as? [String: Any])
+            node = try #require(properties[key] as? [String: Any])
+        }
+        return Set(try #require(node["enum"] as? [String]))
+    }
+
+    private static let entrySourceValues = Set(AIChatEntryPointSource.allCases.map(\.rawValue))
+
+    @available(iOS 16, *)
+    @Test("Every entry source is in the ios-return-session source enum", .timeLimit(.minutes(1)))
+    func returnSessionSourceEnumCoversEveryEntrySource() throws {
+        let values = try Self.schemaEnum(metaType: "ios-return-session",
+                                         version: ReturnSessionWideEventData.metadata.version,
+                                         path: ["feature", "data", "ext", "source"])
+        #expect(Self.entrySourceValues.subtracting(values).isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("Every entry source is in the ios-duckai-prompt origin enum", .timeLimit(.minutes(1)))
+    func duckAIPromptOriginEnumCoversEveryEntrySource() throws {
+        let values = try Self.schemaEnum(metaType: "ios-duckai-prompt",
+                                         version: DuckAIPromptWideEventData.metadata.version,
+                                         path: ["feature", "data", "ext", "prompt", "origin"])
+        #expect(Self.entrySourceValues.subtracting(values).isEmpty)
     }
 }

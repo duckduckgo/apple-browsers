@@ -357,6 +357,13 @@
             }
         ]
     },
+    "autocomplete_duckai_shown": {
+        "description": "Fires when the Duck.ai-mode suggestion list comes on screen with rows, at most once per address-bar focus (iPhone Unified Input and the iPad popover). The denominator for the m_autocomplete_duckai_click_* pixels.",
+        "owners": ["jaceklyp"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_autocomplete_duckai_click_website": {
         "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",
         "owners": ["pikorddg"],
@@ -462,7 +469,13 @@
                     "widget_lock_screen",
                     "widget_control_center",
                     "siri",
-                    "deep_link_other"
+                    "deep_link_other",
+                    "browsing_menu_duckai",
+                    "duck_ai_new_chat",
+                    "tab_switcher_existing_chat",
+                    "tabs_bar_existing_chat",
+                    "return_to_chat_card",
+                    "ddg_homepage"
                 ]
             },
             "unified_input_surface",

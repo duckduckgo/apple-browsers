@@ -407,6 +407,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         super.onClearButtonPressed()
     }
 
+    /// Goes through the iPad Duck.ai submit, so its prompt pixels and wide event fire.
+    override func submitAIChatQuery(_ query: String) {
+        omniBarView.aiChatTextView.text = query
+        submitIPadDuckAIText(from: omniBarView.aiChatTextView, sentWithAsk: false)
+    }
+
     override func consumeAIChatControlValues() -> IPadDuckAIControlValues {
         let values = iPadDuckAIControlValues
         iPadDraft.clear()

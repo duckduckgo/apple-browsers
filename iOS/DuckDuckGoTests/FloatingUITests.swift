@@ -1097,6 +1097,43 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(trailingEdge, fieldFrame.maxX - inset, accuracy: 0.5)
     }
 
+    func testWhenFieldLayoutChangesThenNotificationsKeepUniformPadding() throws {
+        let types: [OmniBarNotificationType] = [.trackersBlocked(count: 12), .cookiePopupManaged]
+        for isFloating in [false, true] {
+            let barView = makeBarView(isFloatingUIEnabled: isFloating)
+            let controller = UIViewController()
+            controller.view.addSubview(barView)
+
+            for isBottom in [false, true] {
+                barView.isUsingSmallTopSpacing = isBottom
+                barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+                barView.layoutIfNeeded()
+
+                let field = try XCTUnwrap(barView.searchContainer)
+                let fieldFrame = barView.convert(field.bounds, from: field)
+                let container = try XCTUnwrap(barView.notificationContainer)
+                let containerFrame = barView.convert(container.bounds, from: container)
+
+                for type in types {
+                    container.prepareAnimation(type, in: controller)
+                    let notification = try XCTUnwrap(container.currentNotificationController).rootView
+                    let verticalInset = (fieldFrame.height - notification.lozengeHeight) / 2
+                    XCTAssertEqual(verticalInset, OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.minX, fieldFrame.minX, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.midY, fieldFrame.midY, accuracy: 0.01)
+                    barView.isExpandedPhoneLayout = true
+                    barView.layoutIfNeeded()
+                    let updatedNotification = try XCTUnwrap(container.currentNotificationController).rootView
+                    XCTAssertEqual((field.bounds.height - updatedNotification.lozengeHeight) / 2,
+                                   OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
+                    barView.isExpandedPhoneLayout = false
+                    barView.layoutIfNeeded()
+                    container.removePreviousNotification()
+                }
+            }
+        }
+    }
+
     func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {
         let barView = makeBarView(isFloatingUIEnabled: false)
         barView.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)

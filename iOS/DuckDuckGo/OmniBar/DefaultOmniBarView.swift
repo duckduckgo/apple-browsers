@@ -858,6 +858,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             self.searchAreaShadowView = shadowView
         }
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
+        notificationContainer.fieldView = searchAreaContainerView
 
         setUpSubviews()
         setUpConstraints()

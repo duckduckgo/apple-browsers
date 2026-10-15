@@ -89,6 +89,13 @@ protocol ChallengePage: AnyObject {
 
 @MainActor
 final class ChallengeSolver {
+    private enum ClearanceObservation {
+        case notDetected
+        case waitingForFirstCookieRead
+        case waitingForClearanceCookieChange(initialValue: String?)
+        case clearanceReported
+    }
+
     private enum Constants {
         static let retryInterval: TimeInterval = 2
         static let stabilityCheckDelay: TimeInterval = 0.4
@@ -111,12 +118,8 @@ final class ChallengeSolver {
     private let sleeper: Sleeper
     private let dateProvider: CurrentDateProviding
 
-    private var isChallengeResponse = false
-    private var didClick = false
-    private var didDetectChallenge = false
-    private var didCaptureClearanceBaseline = false
-    private var clearanceBaseline: String?
-    private var didReportClearance = false
+    private var didSendChallengeClick = false
+    private var clearanceObservation: ClearanceObservation = .notDetected
 
     init(isEnabled: Bool,
          settings: ChallengeSolverSettings,
@@ -136,19 +139,16 @@ final class ChallengeSolver {
 
     func beginLoad() {
         cancel()
-        didDetectChallenge = false
-        didCaptureClearanceBaseline = false
-        clearanceBaseline = nil
-        didReportClearance = false
+        clearanceObservation = .notDetected
     }
 
     /// Returns `true` while the solver is awaiting a solve for this response, so the caller must not fail the load on its status code.
     func handleMainFrameResponse(_ response: HTTPURLResponse) -> Bool {
         let isChallenge = response.value(forHTTPHeaderField: Constants.mitigatedHeaderField)?.caseInsensitiveCompare(Constants.challengeMitigation) == .orderedSame
-        isChallengeResponse = isChallenge
-
         if isChallenge {
-            didDetectChallenge = true
+            if case .notDetected = clearanceObservation {
+                clearanceObservation = .waitingForFirstCookieRead
+            }
             fireDetectionPixel()
             guard isEnabled else { return false }
             if !isAwaitingSolve {
@@ -175,20 +175,23 @@ final class ChallengeSolver {
         return false
     }
 
-    /// Fires the clearance pixel when `cf_clearance` changes after a challenge. The first cookies seen after detection are the baseline,
-    /// so a clearance left over from an earlier challenge in the same job does not count.
+    /// Reports challenge clearance once per load when `cf_clearance` changes from its first observed value after detection.
+    /// Ignores unchanged cookies from earlier challenges and further cookie changes after reporting clearance.
+    /// Compared locally to determine outcome; never included in the pixel payload.
     func handleCookies(_ cookies: [HTTPCookie]) {
-        guard didDetectChallenge, !didReportClearance else { return }
         let clearance = cookies.first { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }?.value
 
-        guard didCaptureClearanceBaseline else {
-            didCaptureClearanceBaseline = true
-            clearanceBaseline = clearance
+        switch clearanceObservation {
+        case .notDetected, .clearanceReported:
             return
+        case .waitingForFirstCookieRead:
+            clearanceObservation = .waitingForClearanceCookieChange(initialValue: clearance)
+            return
+        case .waitingForClearanceCookieChange(let initialValue):
+            guard let clearance, clearance != initialValue else { return }
         }
-        guard let clearance, clearance != clearanceBaseline else { return }
 
-        didReportClearance = true
+        clearanceObservation = .clearanceReported
         let resolution = currentResolution
         reportEvent("Supporting evidence: cf_clearance changed; resolution=\(resolution.rawValue)", false)
         guard let pixelContext else { return }
@@ -202,13 +205,12 @@ final class ChallengeSolver {
     func cancel() {
         solveTask?.cancel()
         solveTask = nil
-        isChallengeResponse = false
         isAwaitingSolve = false
-        didClick = false
+        didSendChallengeClick = false
     }
 
     private var currentResolution: DataBrokerProtectionSharedPixels.ChallengeResolution {
-        if didClick { return .assisted }
+        if didSendChallengeClick { return .assisted }
         return isAwaitingSolve ? .unknown : .unassisted
     }
 
@@ -223,7 +225,7 @@ final class ChallengeSolver {
 
     private func startSolving() {
         solveTask?.cancel()
-        didClick = false
+        didSendChallengeClick = false
         solveTask = Task { [weak self] in
             await self?.solve()
         }
@@ -234,7 +236,7 @@ final class ChallengeSolver {
         do {
             try await sleep(for: settings.autoPassWait)
             while isAwaitingSolve, dateProvider.currentDate < deadline {
-                if isChallengeResponse, !didClick, let page, let point = try await stableCheckboxPoint(on: page) {
+                if !didSendChallengeClick, let page, let point = try await stableCheckboxPoint(on: page) {
                     try await click(at: point, on: page)
                 }
                 try await sleep(for: min(Constants.retryInterval, deadline.timeIntervalSince(dateProvider.currentDate)))
@@ -244,8 +246,8 @@ final class ChallengeSolver {
         }
 
         guard isAwaitingSolve else { return }
-        let failureStage: DataBrokerProtectionSharedPixels.ChallengeFailureStage = didClick ? .afterClick : .noClick
-        let failureDescription = didClick ? "after click" : "with no click delivered"
+        let failureStage: DataBrokerProtectionSharedPixels.ChallengeFailureStage = didSendChallengeClick ? .afterClick : .noClick
+        let failureDescription = didSendChallengeClick ? "after click" : "with no click delivered"
         cancel()
         reportEvent("Failed challenge \(failureDescription); broker destination did not arrive before the deadline", true)
         if let pixelContext {
@@ -274,7 +276,7 @@ final class ChallengeSolver {
         try Task.checkCancellation()
 
         try await sleep(for: Constants.stabilityCheckDelay)
-        guard isChallengeResponse, let secondLabel = await page.locateLabel(matching: settings.labelText) else {
+        guard isAwaitingSolve, let secondLabel = await page.locateLabel(matching: settings.labelText) else {
             Logger.action.log("Challenge: second snapshot did not contain the verification label")
             return nil
         }
@@ -288,11 +290,11 @@ final class ChallengeSolver {
     }
 
     private func click(at point: CGPoint, on page: ChallengePage) async throws {
-        guard isAwaitingSolve, isChallengeResponse else { return }
+        guard isAwaitingSolve else { return }
         try await page.click(at: point) {
-            didClick = true
+            didSendChallengeClick = true
         }
-        guard didClick else {
+        guard didSendChallengeClick else {
             Logger.action.error("Challenge: checkbox click was not delivered")
             return
         }

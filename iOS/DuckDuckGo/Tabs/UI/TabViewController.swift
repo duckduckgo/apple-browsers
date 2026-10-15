@@ -342,7 +342,8 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
-                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+                                                                  isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
+                                                                  eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
@@ -1980,7 +1981,9 @@ class TabViewController: UIViewController {
         updateContentMode()
         cachedRuntimeConfigurationForDomain = [:]
         adBlockingNavigationHandler.handleReload()
-        duckPlayerNavigationHandler.handleReload(webView: webView)
+        if duckPlayerNavigationHandler.handleReload(webView: webView) == .reload {
+            webView.reload()
+        }
         delegate?.tabLoadingStateDidChange(tab: self)
         resetCreditCardPrompt()
     }

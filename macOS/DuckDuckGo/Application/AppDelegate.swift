@@ -474,6 +474,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    lazy var bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarkAddedSyncPromoDelegate(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            storage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -1562,6 +1573,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // checking state – updating later would only take effect on next launch
         grammarFeaturesManager.manage()
 
+        // Must run before the first web view starts a passkey request
+        if featureFlagger.isFeatureOn(.passkeyRequestCancellation) {
+            WebKitPasskeyRequestCanceller.install()
+        }
+
         configurationManager.start()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
@@ -1634,7 +1650,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autofillImportPromoObserver: autofillImportPromoObserver,
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
             syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
-            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate
+            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate,
+            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

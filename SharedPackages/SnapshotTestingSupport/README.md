@@ -181,7 +181,6 @@ The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI.
 - Function names that start with `test` keep `#function`-derived snapshot paths consistent with the legacy XCTest convention.
 - One `@Suite` per view test file; one `@Test` per view configuration.
 - `*_PreviewMocks.swift` under `#if DEBUG` for preview-only mocks.
-- This package doesn't know about the design system. To render the **rebranded** design, apply `.applyRebranding()` (from `UIComponents`) inside the `PreviewSnapshots` closure, so both previews and snapshots pick it up.
 
 ## Examples in the repo
 

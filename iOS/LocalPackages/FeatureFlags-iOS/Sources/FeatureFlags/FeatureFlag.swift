@@ -594,6 +594,11 @@ public enum FeatureFlag: String {
     /// Removes tracking parameters without `URLComponents`, which hangs or runs out of memory on very large URLs.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
     case fastTrackingParameterFilter
+
+    /// Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
+    case aiChatLimitExtensionPromo
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1003,7 +1008,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .syncImprovedPairingFlow:
-            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:
@@ -1014,6 +1019,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
+        case .aiChatLimitExtensionPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
         }
     }
 

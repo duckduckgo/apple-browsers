@@ -160,6 +160,12 @@
 /* Title on the sync-setup prompt asking whether to sync with another device or just this device */
 "sync.simplified.another.device.v2.title" = "Synchronisiere dieses Gerät mit einem nahegelegenen Computer.";
 
+/* Body on the sync-setup prompt explaining that the user can sync this device only and pair another device later */
+"sync.simplified.another.device.v3.body" = "Hast du gerade kein anderes Gerät? Synchronisiere nur dieses Gerät und später mit einem anderen.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v3.title" = "Hast du ein anderes Gerät in der Nähe? Geräte synchronisieren.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Lädt Symbole von Webseiten, die du als Lesezeichen gespeichert hast. Symbol-Downloads werden in deinem Netzwerk offengelegt.";
 
@@ -183,6 +189,12 @@
 
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Wiederherstellungscode kopieren";
+
+/* Alert button that confirms turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.action" = "Dauerhaft löschen";
+
+/* Title of the alert confirming turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.title" = "Du kannst diese Aktion nicht rückgängig machen.";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Synchronisierung deaktivieren und Serverdaten löschen";
@@ -247,11 +259,17 @@
 /* Footer caption shown under the Remove Device button on the manage device screen */
 "sync.simplified.manage.device.remove.footer" = "Wenn du dieses Gerät entfernst, kann es nicht mehr auf deine synchronisierten Daten zugreifen.";
 
+/* Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name */
+"sync.simplified.manage.device.remove.footer.named" = "„%@“ kann nicht mehr auf deine synchronisierten Daten auf anderen Geräten zugreifen.";
+
 /* Status label shown under a device name on the manage device screen when the device is synced */
 "sync.simplified.manage.device.status.synced" = "Synchronisiert";
 
 /* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
 "sync.simplified.manage.device.turn.off.footer" = "Dieses Gerät kann nicht mehr auf deine synchronisierten Daten zugreifen, wenn diese Funktion deaktiviert ist.";
+
+/* Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name */
+"sync.simplified.manage.device.turn.off.footer.named" = "„%@“ kann nicht mehr auf deine synchronisierten Daten auf anderen Geräten zugreifen, wenn diese Funktion deaktiviert ist.";
 
 /* My Devices section header shown when Sync & Backup is enabled */
 "sync.simplified.my.devices.section.header" = "Meine Geräte";
@@ -274,6 +292,15 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Verwende diesen Code, um deine Daten wiederherzustellen, wenn du den Zugriff auf dieses Gerät verlierst. Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden. [Mehr erfahren](%@)";
 
+/* Confirmation alert button to remove a device from Sync & Backup */
+"sync.simplified.remove.device.confirm.action" = "Entfernen";
+
+/* Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.message" = "„%@“ kann nicht mehr auf deine synchronisierten Daten zugreifen. Lesezeichen, Autofill-Daten und Duck.ai-Chats bleiben auf deinen Geräten.";
+
+/* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.title" = "%@ aus Sync & Backup entfernen?";
+
 /* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-App";
 
@@ -292,14 +319,29 @@
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Code teilen";
 
+/* Button on the scan-QR tab that opens the app's iOS Settings so the user can allow camera access */
+"sync.simplified.scan.v2.camera.denied.button" = "Berechtigungen ändern";
+
+/* Message on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.message" = "Wenn du den QR-Code zum Synchronisieren scannen möchtest, sind Kameraberechtigungen erforderlich.";
+
+/* Title on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.title" = "DuckDuckGo muss auf deine Kamera zugreifen.";
+
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Schließen";
 
 /* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo für Desktop";
 
+/* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
+"sync.simplified.scan.v2.qr.got.it.button" = "Verstanden";
+
 /* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "QR-Code zum Synchronisieren scannen.";
+
+/* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
+"sync.simplified.scan.v2.qr.instruction" = "Auf %@,\ngehe zu **Sync & Backup** › **Mit einem anderen Gerät synchronisieren**";
 
 /* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
 "sync.simplified.scan.v2.qr.open.app" = "%@ öffnen";
@@ -340,6 +382,27 @@
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Dieses Gerät synchronisieren";
 
+/* Button on the turn off Sync & Backup sheet that turns off sync and deletes the server data */
+"sync.simplified.turn.off.sheet.delete.button" = "Serverdaten deaktivieren und löschen";
+
+/* Message of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.delete.message" = "Alle Geräte, die Sync & Backup verwenden, werden getrennt und deine synchronisierten Daten werden vom Server gelöscht.";
+
+/* Toggle label on the turn off Sync & Backup sheet to also delete the synced data from the server */
+"sync.simplified.turn.off.sheet.delete.toggle" = "Auch Serverdaten löschen?";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is off */
+"sync.simplified.turn.off.sheet.delete.toggle.off.footer" = "Sync & Backup deaktivieren und alle synchronisierten Daten vom Server löschen und deinen Wiederherstellungscode deaktivieren.";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is on */
+"sync.simplified.turn.off.sheet.delete.toggle.on.footer" = "Deaktiviert Sync & Backup und löscht deine synchronisierten Daten vom Server.";
+
+/* Title of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.title" = "Sync & Backup deaktivieren?";
+
+/* Sync settings action button title that opens the options to turn off Sync & Backup */
+"sync.simplified.turn.off.sync.button" = "Sync & Backup deaktivieren";
+
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Mit anderem Gerät synchronisieren";
 
@@ -360,3 +423,4 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Du verwendest die Entwicklungsumgebung für die Synchronisierung";
+

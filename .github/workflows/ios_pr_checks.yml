@@ -210,6 +210,7 @@ jobs:
         # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
         # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
         SPM_FORCE_DEBUG: "1"
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"

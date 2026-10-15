@@ -307,6 +307,8 @@ jobs:
 
     - name: Run unit tests
       id: run-unit-tests
+      env:
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
       run: |
         export OS_ACTIVITY_MODE=debug
         mkdir -p DerivedData/Logs/Test

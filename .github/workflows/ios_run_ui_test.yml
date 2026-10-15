@@ -43,7 +43,7 @@ on:
         required: true
         type: string
       diagnostics-mode:
-        description: "default preserves Xcode's normal behavior; never is an opt-in performance experiment"
+        description: "Xcode's additional diagnostics collection mode"
         required: false
         default: never
         type: string

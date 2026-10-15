@@ -15,10 +15,6 @@ env:
 on:
   workflow_dispatch:
     inputs:
-      collect_xcode_diagnostics:
-        description: "Collect Xcode's additional test diagnostics"
-        type: boolean
-        default: false
       execution_profile:
         description: "Performance pilot (PR and scheduled runs always use baseline)"
         type: choice
@@ -27,6 +23,10 @@ on:
         - baseline
         - grouped
         - grouped-no-diagnostics
+      collect_xcode_diagnostics:
+        description: "Collect Xcode's additional test diagnostics (manual baseline/grouped runs only)"
+        type: boolean
+        default: false
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AppLaunchUITests')"
         type: string
@@ -118,13 +118,15 @@ jobs:
             esac
           fi
           echo "execution-profile=$profile" >> "$GITHUB_OUTPUT"
-          if [[ "$profile" == grouped-no-diagnostics && "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
-            echo "::error::Xcode diagnostics cannot be enabled with grouped-no-diagnostics."
-            exit 1
-          fi
           diagnostics_mode=never
-          if [[ "$EVENT_NAME" == workflow_dispatch && "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
-            diagnostics_mode=default
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            if [[ "$profile" == grouped-no-diagnostics && "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
+              echo "::error::The grouped-no-diagnostics profile cannot collect Xcode diagnostics."
+              exit 1
+            fi
+            if [[ "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
+              diagnostics_mode=default
+            fi
           fi
           echo "diagnostics-mode=$diagnostics_mode" >> "$GITHUB_OUTPUT"
 

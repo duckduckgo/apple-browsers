@@ -422,9 +422,11 @@
             "appVersion",
             "aichat_first_prompt_new_install",
             "unified_input_page_type",
+            "usage_layout",
+            "usage_hardware_keyboard",
             {
                 "key": "default_mode",
-                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent on iPad's address-bar toggle path, which has no Search-side counterpart — filter on it being present for any Search-vs-Duck.ai ratio.",
+                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent before iPad's address bar reported it; filter on it being present for any Search-vs-Duck.ai ratio.",
                 "type": "string",
                 "enum": ["search", "duckAI", "lastUsed"]
             },
@@ -496,13 +498,21 @@
         ]
     },
     "m_aichat_unified_input_query_submitted": {
-        "description": "Fires on every Search submission in the unified toggle input — the Search-side denominator for m_aichat_unified_input_prompt_submitted. Not fired on iPad's address-bar toggle path, so filter on default_mode being present for any Search-vs-Duck.ai ratio.",
+        "description": "Fires on every Search submission in the unified toggle input and the iPad address bar (typed, a suggestion tapped or picked with the keyboard, an address typed in Duck.ai mode, or the Search DuckDuckGo row in Duck.ai mode). On iPad query_type follows what the address bar loads — the Search-side denominator for m_aichat_unified_input_prompt_submitted. Filter on default_mode being present for any Search-vs-Duck.ai ratio.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             "unified_input_page_type",
+            {
+                "key": "query_type",
+                "description": "search for a search, url for an address the user typed or picked, so addresses can be filtered out without changing existing counts.",
+                "type": "string",
+                "enum": ["search", "url"]
+            },
+            "usage_layout",
+            "usage_hardware_keyboard",
             {
                 "key": "default_mode",
                 "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch.",

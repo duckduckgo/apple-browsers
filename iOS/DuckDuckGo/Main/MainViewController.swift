@@ -5107,6 +5107,54 @@ class MainViewController: UIViewController {
         currentTab?.duckAIPromptAttribution.addressBarWillHandOverPrompt()
     }
 
+    /// Address-bar search submits outside Unified Input, which fires its own.
+    func fireAddressBarQuerySubmittedPixel(queryType: UnifiedToggleInputQueryType) {
+        guard !unifiedToggleInputFeature.isAvailable else { return }
+        UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+            surface: .addressBar,
+            pageType: currentPromptPageType(),
+            isToggleVisible: aiChatAddressBarExperience.shouldShowModeToggle,
+            defaultMode: aiChatSettings.defaultOmnibarMode,
+            queryType: queryType,
+            usageContext: usageContextProvider.currentContext
+        )
+    }
+
+    /// Classified by what the address bar loads for the text, so it matches the navigation.
+    private func addressBarQueryType(for query: String) -> UnifiedToggleInputQueryType {
+        URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url)
+            .map(UnifiedToggleInputQueryType.init(loading:)) ?? .search
+    }
+
+    private func fireAddressBarSubmissionPixel(for suggestion: Suggestion) {
+        switch suggestion {
+        case .phrase, .unknown:
+            fireAddressBarQuerySubmittedPixel(queryType: .search)
+        case .website, .bookmark, .historyEntry, .internalPage, .openTab:
+            fireAddressBarQuerySubmittedPixel(queryType: .url)
+        case .askAIChat:
+            break
+        }
+    }
+
+    /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
+    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+        UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+            hasText: true,
+            selectedTool: nil,
+            attachments: [],
+            reasoningMode: nil,
+            modelId: nil,
+            surface: .addressBar,
+            pageType: currentPromptPageType(),
+            origin: .suggestionAskAI,
+            defaultMode: aiChatSettings.defaultOmnibarMode,
+            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
+            usageContext: usageContextProvider.currentContext
+        )
+        featureDiscovery.markDuckAIPromptSubmitted()
+    }
+
     /// Executes the closure if the current tab is an AI tab
     private func performActionIfAITab(_ action: () -> Void) {
         guard currentTab?.isAITab == true else { return }
@@ -5685,6 +5733,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func handleSuggestionSelected(_ suggestion: Suggestion) {
+        fireAddressBarSubmissionPixel(for: suggestion)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -5729,6 +5778,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
+            fireAskDuckAISuggestionPromptSubmittedPixel()
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
                        nativePromptFlow: nativeDuckAIPromptFlow { DuckAIPromptFlowStart(userTier: currentDuckAIUserTier) })
 
@@ -5843,6 +5893,7 @@ extension MainViewController: OmniBarDelegate {
         return suggestionTrayController?.selectedSuggestion
     }
 
+    /// A suggestion picked with the arrow keys and Return.
     func onOmniSuggestionSelected(_ suggestion: Suggestion) {
         autocomplete(selectedSuggestion: suggestion)
     }
@@ -5880,6 +5931,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
+        fireAddressBarQuerySubmittedPixel(queryType: addressBarQueryType(for: query))
         // A search submission IS search mode — commit directly (see onPromptSubmitted).
         commitToggleMode(.search)
         if !daxDialogsManager.shouldShowFireButtonPulse {
@@ -6886,6 +6938,7 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
             handleSuggestionSelected(suggestion)
         case .searchDuckDuckGo(let query):
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
+            fireAddressBarQuerySubmittedPixel(queryType: addressBarQueryType(for: query))
             postIdleSessionInstrumentation.sessionEnded(reason: .searchSubmitted)
             viewCoordinator.omniBar.setSelectedTextEntryMode(.search)
             loadQuery(query)

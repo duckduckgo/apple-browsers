@@ -930,7 +930,9 @@ extension DefaultOmniBarViewController {
             surface: .addressBar,
             pageType: omniDelegate?.currentPromptPageType() ?? .unknown,
             origin: .ipadTogglePrompt,
-            isFirstPromptNewInstall: isFirstPromptNewInstall
+            defaultMode: dependencies.aiChatSettings.defaultOmnibarMode,
+            isFirstPromptNewInstall: isFirstPromptNewInstall,
+            usageContext: UsageContextProvider().currentContext
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,

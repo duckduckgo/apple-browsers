@@ -114,11 +114,9 @@ private struct VPNTipsCarousel: View {
 #if DEBUG
 
 #Preview("Tips") {
-    RebrandedPreview {
-        SubscriptionOnboardingVPNTipsView(
-            title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
-        .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingVPNTipsView(
+        title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
+    .subscriptionOnboardingNavigationContainer()
 }
 
 #endif

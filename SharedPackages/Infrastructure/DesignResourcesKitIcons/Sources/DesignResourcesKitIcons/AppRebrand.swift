@@ -27,20 +27,8 @@ import Foundation
 /// **How callers use it**
 /// - DesignSystem accessors and the `Image(rebrandable:)` initializer read
 ///   `AppRebrand.isAppRebranded` internally, so call sites never have to write a ternary.
-/// - The default value is `false`, meaning the legacy variants are returned. The host app should
-///   override this at launch by setting the closure to a live feature-flag lookup, e.g.:
-///
-///   ```swift
-///   AppRebrand.isAppRebranded = {
-///       AppDependencyProvider.shared.featureFlagger.isFeatureOn(.appRebranding)
-///   }
-///   ```
-///
-/// Extension targets that don't have a `FeatureFlagger` of their own can leave this at the
-/// default `{ false }`, in which case they'll always show the legacy visuals.
 public enum AppRebrand {
 
     /// Returns `true` when the app should display the rebranded visuals; `false` for legacy.
-    /// Set this once at launch from the host app.
-    nonisolated(unsafe) public static var isAppRebranded: () -> Bool = { false }
+    nonisolated(unsafe) public static var isAppRebranded: () -> Bool = { true }
 }

@@ -53,4 +53,5 @@ struct PromoDependencies {
     let syncSetupBookmarksPromoManager: SyncPromoManager
     let syncSetupAutofillPromoManager: SyncPromoManager
     let bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate
+    let bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate
 }

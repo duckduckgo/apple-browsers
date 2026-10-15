@@ -115,22 +115,12 @@ private extension SyncSettingsViewModel {
     }
 }
 
-#Preview("Rebranded") {
-    RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptView(model: .previewModel())
-    }
+#Preview("Default") {
+    SyncAnotherDevicePromptView(model: .previewModel())
 }
 
 #Preview("Connecting") {
-    RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptView(model: .previewModel(isConnecting: true))
-    }
-}
-
-#Preview("Legacy brand") {
-    RebrandedPreview(isRebranded: false) {
-        SyncAnotherDevicePromptView(model: .previewModel())
-    }
+    SyncAnotherDevicePromptView(model: .previewModel(isConnecting: true))
 }
 
 #endif

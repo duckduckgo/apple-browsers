@@ -1,0 +1,58 @@
+//
+//  AIChatMenuButtonPixelFirer.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppKit
+import PixelKit
+
+/// The tab-bar Duck.ai menu button's own pixels. The sidebar pixels that a menu pick leads to are
+/// fired by the open and close paths it shares with the main menu.
+struct AIChatMenuButtonPixelFirer {
+
+    /// Kept apart so the menu's New Chat and the click that skips the menu each have their own daily
+    /// count.
+    enum NewChatGesture: Equatable {
+        case menuItem
+        /// Middle-click or ⌘-click on the button.
+        case middleClick
+
+        /// `nil` for a plain click, which opens the menu.
+        init?(clickEventType: NSEvent.EventType?, isCommandPressed: Bool) {
+            guard clickEventType == .otherMouseUp || isCommandPressed else { return nil }
+            self = .middleClick
+        }
+    }
+
+    private let pixelFiring: PixelFiring?
+
+    init(pixelFiring: PixelFiring? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
+    func fireMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry) {
+        pixelFiring?.fire(AIChatPixel.aiChatTitleBarMenuShown(sidebarEntry: sidebarEntry), frequency: .dailyAndCount)
+    }
+
+    func fireNewChat(via gesture: NewChatGesture) {
+        switch gesture {
+        case .menuItem:
+            pixelFiring?.fire(AIChatPixel.aiChatNewChatTitleBarMenu, frequency: .dailyAndStandard)
+        case .middleClick:
+            pixelFiring?.fire(AIChatPixel.aiChatTitleBarMiddleClickNewChat, frequency: .dailyAndCount)
+        }
+    }
+}

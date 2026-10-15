@@ -740,6 +740,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private var omniBarLongPressPreviewImage: UIImage?
     private var omniBarLongPressOriginalAlpha: CGFloat?
+    private var omniBarLongPressPendingAction: ((UIImage?) -> Void)?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
@@ -1544,7 +1545,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func removeOmniBarLongPressInteraction() {
         guard let omniBarLongPressInteraction else { return }
+        omniBarLongPressPendingAction = nil
         restoreAddressBarAfterLongPressMenu()
+        omniBarLongPressPreviewImage = nil
         searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
@@ -1827,6 +1830,7 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
         guard interaction === omniBarLongPressInteraction,
               let menu = longPressMenuProvider?() else { return nil }
 
+        omniBarLongPressPreviewImage = nil
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             menu
         }
@@ -1879,10 +1883,31 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
         guard interaction === omniBarLongPressInteraction else { return }
         if let animator {
             animator.addCompletion { [weak self] in
-                self?.restoreAddressBarAfterLongPressMenu()
+                self?.completeLongPressMenuDismissal()
             }
         } else {
-            restoreAddressBarAfterLongPressMenu()
+            completeLongPressMenuDismissal()
+        }
+    }
+
+    func performAfterLongPressMenuDismissal(_ action: @escaping (UIImage?) -> Void) {
+        guard omniBarLongPressOriginalAlpha != nil else {
+            let preview = omniBarLongPressPreviewImage
+            omniBarLongPressPreviewImage = nil
+            action(preview)
+            return
+        }
+        omniBarLongPressPendingAction = action
+    }
+
+    private func completeLongPressMenuDismissal() {
+        let preview = omniBarLongPressPreviewImage
+        restoreAddressBarAfterLongPressMenu()
+        let action = omniBarLongPressPendingAction
+        omniBarLongPressPendingAction = nil
+        if let action {
+            omniBarLongPressPreviewImage = nil
+            action(preview)
         }
     }
 
@@ -1891,7 +1916,6 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
             searchAreaContainerView.alpha = alpha
         }
         omniBarLongPressOriginalAlpha = nil
-        omniBarLongPressPreviewImage = nil
     }
 }
 

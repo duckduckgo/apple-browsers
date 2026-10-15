@@ -6170,6 +6170,12 @@ extension MainViewController: OmniBarDelegate {
                 self?.currentTab?.onCopyAction(forUrl: url)
             },
             onMoveAddressBar: { [weak self] in
+                if self?.isFloatingUIEnabled == true {
+                    self?.omniBar.barView.performAfterLongPressMenuDismissal { [weak self] preview in
+                        self?.moveFloatingAddressBar(preview: preview)
+                    }
+                    return
+                }
                 // iOS 26 has broken something so we have to use an animation
                 //  to get symmetry in the movement (rather than disabling animations
                 //  which doesn't appear to work properly on iOS 26.4,
@@ -6201,6 +6207,51 @@ extension MainViewController: OmniBarDelegate {
 
     func onOmniBarLongPressMenuDisplayed() {
         longPressBarMenuBuilder.fireOmniBarMenuOpenPixel()
+    }
+
+    private func moveFloatingAddressBar(preview: UIImage?) {
+        guard !isAddressBarMoveInProgress else { return }
+        isAddressBarMoveInProgress = true
+        view.layoutIfNeeded()
+        viewCoordinator.navigationBarContainer.backgroundColor = .clear
+        omniBar.prepareForMoveTransition()
+
+        let snapshot: UIImageView?
+        if !UIAccessibility.isReduceMotionEnabled, view.window != nil, !view.bounds.isEmpty {
+            // Freeze glass before rehosting.
+            let image = UIGraphicsImageRenderer(bounds: view.bounds).image { _ in
+                view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
+                if let field = omniBar.barView.searchContainer {
+                    preview?.draw(in: field.convert(field.bounds, to: view))
+                }
+            }
+            snapshot = UIImageView(image: image)
+            snapshot?.frame = view.bounds
+            snapshot?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            snapshot?.isUserInteractionEnabled = true
+        } else {
+            snapshot = nil
+        }
+
+        UIView.performWithoutAnimation {
+            self.toggleAddressBarLocation()
+            self.omniBar.moveTransitionCompleted()
+            self.revealFloatingChromeImmediately()
+            self.decorate()
+            self.view.layoutIfNeeded()
+        }
+
+        guard let snapshot else {
+            isAddressBarMoveInProgress = false
+            return
+        }
+        view.addSubview(snapshot)
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut], animations: {
+            snapshot.alpha = 0
+        }) { [weak self] _ in
+            snapshot.removeFromSuperview()
+            self?.isAddressBarMoveInProgress = false
+        }
     }
 
     private func toggleAddressBarLocation() {

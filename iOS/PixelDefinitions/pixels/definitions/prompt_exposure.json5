@@ -30,7 +30,7 @@
                 "description": "The kind of app-originated prompt shown. No message or user identifiers are sent.",
                 "enum": [
                     "app_rating_prompt",
-                    "win_back_offer",
+                    "subscription_win_back_offer",
                     "subscription_promo_modal",
                     "new_address_bar_picker",
                     "re_engagement_prompt",

@@ -532,6 +532,39 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("Tab change and data clearing reasons complete both flows as success with the same reason",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (ReturnSessionWideEventData.StatusReason.tabSelected, PostIdleSessionWideEventData.StatusReason.tabSelected),
+            (.tabOpened, .tabOpened),
+            (.tabClosed, .tabClosed),
+            (.tabSwiped, .tabSwiped),
+            (.dataCleared, .dataCleared),
+          ])
+    func tabChangeAndDataClearingReasonsCompleteBothFlows(reason: ReturnSessionWideEventData.StatusReason,
+                                                          postIdleReason: PostIdleSessionWideEventData.StatusReason) {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionEnded(reason: reason)
+
+        #expect(reason.postIdleReason == postIdleReason)
+        #expect(lastReturnCompletion(wideEvent)?.1 == .success(reason: reason.rawValue))
+        #expect(lastCompletion(wideEvent)?.1 == .success(reason: postIdleReason.rawValue))
+    }
+
+    @available(iOS 16, *)
+    @Test("The first reason wins: a later sessionEnded is a no-op", .timeLimit(.minutes(1)))
+    func firstReasonWins() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionEnded(reason: .tabSwitcherSelected)
+        sut.sessionEnded(reason: .tabSelected)
+
+        #expect(wideEvent.completions.count == 2)
+        #expect(lastReturnCompletion(wideEvent)?.0.statusReason == .tabSwitcherSelected)
+    }
+
+    @available(iOS 16, *)
     @Test("sessionEnded on an ordinary return completes only the return-session flow", .timeLimit(.minutes(1)))
     func sessionEndedOnOrdinaryReturnCompletesOnlyReturnFlow() {
         let (sut, wideEvent, _) = makeSUT()

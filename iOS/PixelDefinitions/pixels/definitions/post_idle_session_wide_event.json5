@@ -56,6 +56,11 @@
                     "app_backgrounded",
                     "favorite_selected",
                     "chat_selected",
+                    "tab_selected",
+                    "tab_opened",
+                    "tab_closed",
+                    "tab_swiped",
+                    "data_cleared",
                     "app_terminated"
                 ]
             },

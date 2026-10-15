@@ -212,6 +212,7 @@ extension MainViewController {
     }
 
     private func openDuckAIChatsFromAddressBarMenu() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
         if tabManager.currentTabsModel.currentTab?.link != nil {
             loadUrlInNewTab(url, inheritedAttribution: nil)

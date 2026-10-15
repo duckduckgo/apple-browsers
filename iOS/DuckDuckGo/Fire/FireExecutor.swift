@@ -48,6 +48,11 @@ struct FireRequest {
         static let aiChats = Options(rawValue: 1 << 2)
         static let all: Options = [.tabs, .data, .aiChats]
     }
+
+    var deletesDuckAIChats: Bool {
+        if case .tab = scope { return true }
+        return options.contains(.aiChats)
+    }
     
     enum Trigger {
         case manualFire              // User pressed Fire Button

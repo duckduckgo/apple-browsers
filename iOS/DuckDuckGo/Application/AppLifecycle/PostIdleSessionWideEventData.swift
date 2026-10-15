@@ -33,7 +33,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         mobileMetaType: "ios-post-idle-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-post-idle-session",
-        version: "1.3.0"
+        version: "1.4.0"
     )
 
     enum Surface: String, Codable, CaseIterable {
@@ -48,6 +48,11 @@ final class PostIdleSessionWideEventData: WideEventData {
         case appBackgrounded = "app_backgrounded"
         case favoriteSelected = "favorite_selected"
         case chatSelected = "chat_selected"
+        case tabSelected = "tab_selected"
+        case tabOpened = "tab_opened"
+        case tabClosed = "tab_closed"
+        case tabSwiped = "tab_swiped"
+        case dataCleared = "data_cleared"
     }
 
     var globalData: WideEventGlobalData

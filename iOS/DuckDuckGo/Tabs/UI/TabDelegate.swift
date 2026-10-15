@@ -55,6 +55,9 @@ protocol TabDelegate: AnyObject {
                             behavior: TabClosingBehavior,
                             clearTabHistory: Bool)
 
+    /// Back on a tab opened from another one closes it and returns to the opener.
+    func tabDidRequestCloseOnBack(_ tab: TabViewController)
+
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
@@ -234,6 +237,10 @@ extension TabDelegate {
 
     func tabDidRequestClose(_ tab: TabViewController) {
         tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+    }
+
+    func tabDidRequestCloseOnBack(_ tab: TabViewController) {
+        tabDidRequestClose(tab)
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}

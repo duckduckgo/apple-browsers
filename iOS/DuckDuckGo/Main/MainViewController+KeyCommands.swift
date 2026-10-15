@@ -230,6 +230,7 @@ extension MainViewController {
         
         // A New Tab Page often has no tab controller yet, and find-in-page then does nothing.
         if currentTab != nil || featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
+            recordUserOpenedTab()
             newTab()
         } else {
             keyboardFind()
@@ -242,6 +243,7 @@ extension MainViewController {
         guard fireModeCapability.isFireModeEnabled else { return }
 
         recordDuckAISessionPendingExit(.fireTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.fire, source: .keyCommand)
         performCancel()
         newTab()
@@ -252,19 +254,14 @@ extension MainViewController {
         guard isShortcutEnabled() else { return }
         
         guard let tab = currentTab else { return }
-        closeTab(tab.tabModel)
+        closeTabOnUserRequest(tab.tabModel)
     }
     
     @objc func keyboardNextTab() {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.nextTab else { return }
-        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
-        performCancel()
-        selectTab(targetTab)
-        if switchesTab {
-            showKeyboardOnNewTabPageIfAllowed()
-        }
+        selectTabFromKeyboard(targetTab)
     }
 
     @objc func keyboardSelectTab(_ command: UIKeyCommand) {
@@ -273,22 +270,22 @@ extension MainViewController {
         guard let input = command.input, let number = Int(input), (1...9).contains(number),
               let targetTab = tabManager.currentTabsModel.get(tabAt: number - 1) else { return }
 
-        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
-        performCancel()
-        selectTab(targetTab)
-        if switchesTab {
-            showKeyboardOnNewTabPageIfAllowed()
-        }
+        selectTabFromKeyboard(targetTab)
     }
     
     @objc func keyboardPreviousTab() {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.previousTab else { return }
+        selectTabFromKeyboard(targetTab)
+    }
+
+    private func selectTabFromKeyboard(_ targetTab: Tab) {
         let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
         if switchesTab {
+            recordDirectTabSelection(of: targetTab)
             showKeyboardOnNewTabPageIfAllowed()
         }
     }

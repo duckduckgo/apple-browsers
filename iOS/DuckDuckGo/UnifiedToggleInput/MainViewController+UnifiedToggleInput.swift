@@ -1651,17 +1651,20 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {
+        recordUserOpenedTab()
         newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
     func aiChatTabChatHeaderDidTapNewSearch() {
+        recordUserOpenedTab()
         recordDuckAISessionPendingExit(.searchStarted)
         newTab(reuseExisting: false, allowingKeyboard: true)
         unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(.search)
     }
 
     func aiChatTabChatHeaderDidTapNewFireTab() {
+        recordUserOpenedTab()
         recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .aiChatHeaderPlusMenu)
         newTab(reuseExisting: false, allowingKeyboard: true)

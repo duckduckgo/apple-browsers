@@ -1253,6 +1253,7 @@ class MainViewController: UIViewController {
             if tab !== tabManager.currentTabsModel.currentTab {
                 pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
+                postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
                 currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
                 selectTab(tab)
             }
@@ -1262,6 +1263,7 @@ class MainViewController: UIViewController {
 
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
+            self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
@@ -2411,6 +2413,15 @@ class MainViewController: UIViewController {
     /// so the generic post-fire keyboard fallback is skipped for them.
     private func isEscapeHatchBurn(_ request: FireRequest) -> Bool {
         request.source == .escapeHatch
+    }
+
+    /// Escape-hatch burns are excluded: they record `burnTabTapped` and keep the return session going.
+    private func endSessionsWithDataClearing(_ request: FireRequest) {
+        guard request.trigger == .manualFire, !isEscapeHatchBurn(request) else { return }
+        if request.deletesDuckAIChats {
+            recordDuckAISessionPendingExit(.chatDeleted)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .dataCleared)
     }
 
     private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
@@ -6207,7 +6218,7 @@ extension MainViewController: OmniBarDelegate {
             },
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
-                self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+                self?.closeTabOnUserRequest(tab.tabModel)
             }
         ))
     }
@@ -6845,6 +6856,7 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
             handleSuggestionSelected(suggestion)
         case .searchDuckDuckGo(let query):
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
+            postIdleSessionInstrumentation.sessionEnded(reason: .searchSubmitted)
             viewCoordinator.omniBar.setSelectedTextEntryMode(.search)
             loadQuery(query)
         case .viewAllChats:
@@ -7319,6 +7331,10 @@ extension MainViewController: TabDelegate {
         return newTab.webView
     }
 
+    func tabDidRequestCloseOnBack(_ tab: TabViewController) {
+        closeTabOnUserRequest(tab.tabModel)
+    }
+
     func tabDidRequestClose(_ tab: Tab,
                             behavior: TabClosingBehavior,
                             clearTabHistory: Bool) {
@@ -7367,6 +7383,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewTab(_ tab: TabViewController) {
+        recordUserOpenedTab()
         endNewTabPageSessionWithMenuItem()
         _ = findInPageView?.resignFirstResponder()
         newTab()
@@ -7460,7 +7477,9 @@ extension MainViewController: TabDelegate {
                             openedByPage: Bool,
                             inheritedAttribution attribution: AdClickAttributionLogic.State?,
                             completion: ((Tab) -> Void)? = nil) {
+        // A link that opens a tab is the user acting on the page, so it doesn't end the return session.
         if !openedByPage {
+            recordUserOpenedTab()
             recordDuckAISessionPendingExit(.newTabOpened)
         }
         _ = findInPageView?.resignFirstResponder()
@@ -7820,6 +7839,24 @@ extension MainViewController: TabDelegate {
         present(alert, animated: true)
     }
 
+    /// Closes a tab the user asked to close; leaving the current tab ends the return session.
+    func closeTabOnUserRequest(_ tab: Tab, refreshInPlace: Bool = false) {
+        if tab === tabManager.currentTabsModel.currentTab {
+            postIdleSessionInstrumentation.sessionEnded(reason: .tabClosed)
+        }
+        closeTab(tab, refreshInPlace: refreshInPlace)
+    }
+
+    /// A tab the user opened, which takes them off the current page.
+    func recordUserOpenedTab() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabOpened)
+    }
+
+    /// A tab picked from the tabs bar or a keyboard shortcut, once it is on screen.
+    func recordDirectTabSelection(of tab: Tab) {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
+    }
+
     func selectTab(_ tab: Tab) {
         if tab.uid != tabManager.currentTabsModel.currentTab?.uid {
             newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
@@ -7971,6 +8008,9 @@ extension MainViewController: TabSwitcherDelegate {
 
     /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
     func notifyTabsWillClose(_ tabs: [Tab]) {
+        if tabs.contains(where: { $0 === tabManager.currentTabsModel.currentTab }) {
+            postIdleSessionInstrumentation.sessionEnded(reason: .tabClosed)
+        }
         recordDuckAISessionCloseIfNeeded(closingTabs: tabs)
         discardNewTabPageSessionIfHostingTabClosed(tabs)
 
@@ -8258,6 +8298,7 @@ extension MainViewController {
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
+        endSessionsWithDataClearing(request)
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
@@ -8983,7 +9024,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     private func closeCurrentTab() {
         guard let tab = currentTab?.tabModel else { return }
-        closeTab(tab)
+        closeTabOnUserRequest(tab)
     }
 
 }
@@ -9244,6 +9285,7 @@ extension MainViewController {
             self.closeTab(tab, behavior: .createEmptyTabAtSamePosition)
 
         case .newTab:
+            self.recordUserOpenedTab()
             self.newTab()
 
         case .fire:
@@ -9357,6 +9399,7 @@ extension MainViewController {
             closeTab(tab, behavior: .createEmptyTabAtSamePosition)
 
         case .newTab:
+            recordUserOpenedTab()
             newTab()
 
         case .bookmarks:

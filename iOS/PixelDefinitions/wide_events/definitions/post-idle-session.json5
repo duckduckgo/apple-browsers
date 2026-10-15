@@ -4,7 +4,7 @@
         "owners": ["samsymons", "SabrinaTardio", "jleandroperez"],
         "meta": {
             "type": "ios-post-idle-session",
-            "version": "3.0"
+            "version": "4.0"
         },
         "feature": {
             "name": "post_idle_session",
@@ -18,7 +18,7 @@
                     },
                     "status_reason": {
                         "type": "string",
-                        "description": "Terminal reason describing how the session ended. SUCCESS uses one of the user-action reasons; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered after an app crash or termination.",
+                        "description": "Terminal reason describing how the session ended. SUCCESS uses one of the user-action reasons; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered after an app crash or termination. tab_selected, tab_opened, tab_closed and tab_swiped end the session once the user lands on another tab (tabs bar or keyboard shortcut, new tab, closing the current tab, swipe); data_cleared ends it when the user clears data with Fire.",
                         "enum": [
                             "bar_used",
                             "return_to_page_tapped",
@@ -26,6 +26,11 @@
                             "app_backgrounded",
                             "favorite_selected",
                             "chat_selected",
+                            "tab_selected",
+                            "tab_opened",
+                            "tab_closed",
+                            "tab_swiped",
+                            "data_cleared",
                             "app_terminated"
                         ]
                     },

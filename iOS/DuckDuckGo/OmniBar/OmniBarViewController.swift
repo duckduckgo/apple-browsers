@@ -295,14 +295,10 @@ class OmniBarViewController: UIViewController, OmniBar {
             self?.onDismissPressed()
         }
         expandableBarView?.onSearchModePressed = { [weak self] in
-            guard let self else { return }
-            self.setSelectedTextEntryMode(.search)
-            self.omniDelegate?.onTextEntryModeDidChange(.search)
+            self?.selectTextEntryModeFromUser(.search)
         }
         expandableBarView?.onAIChatModePressed = { [weak self] in
-            guard let self else { return }
-            self.setSelectedTextEntryMode(.aiChat)
-            self.omniDelegate?.onTextEntryModeDidChange(.aiChat)
+            self?.selectTextEntryModeFromUser(.aiChat)
         }
         expandableBarView?.onAIChatSendPressed = { [weak self] in
             self?.onAIChatSendPressed()
@@ -1023,6 +1019,12 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatPressed() {
         omniDelegate?.onAIChatPressed()
+    }
+
+    /// A mode change the user asked for (toggle tap or keyboard), reported to the delegate.
+    func selectTextEntryModeFromUser(_ mode: TextEntryMode) {
+        setSelectedTextEntryMode(mode)
+        omniDelegate?.onTextEntryModeDidChange(mode)
     }
 
     func setSelectedTextEntryMode(_ mode: TextEntryMode) {

@@ -2011,7 +2011,7 @@ class TabViewController: UIViewController {
             }
             if openingTab != nil {
                 stashReopenableStateOnOpener()
-                delegate?.tabDidRequestClose(self)
+                delegate?.tabDidRequestCloseOnBack(self)
                 return
             }
         }
@@ -2040,7 +2040,7 @@ class TabViewController: UIViewController {
 
         if openingTab != nil {
             stashReopenableStateOnOpener()
-            delegate?.tabDidRequestClose(self)
+            delegate?.tabDidRequestCloseOnBack(self)
         }
 
     }
@@ -2053,7 +2053,7 @@ class TabViewController: UIViewController {
             chromeDelegate?.omniBar.endEditing()
         } else if openingTab != nil {
             stashReopenableStateOnOpener()
-            delegate?.tabDidRequestClose(self)
+            delegate?.tabDidRequestCloseOnBack(self)
         } else if let url {
             load(url: url)
         }

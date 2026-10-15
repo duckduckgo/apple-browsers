@@ -145,7 +145,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         if selectedTextEntryMode == .aiChat {
             omniBarView.aiChatTextView.insertText("\n")
         } else {
-            setSelectedTextEntryMode(.aiChat)
+            selectTextEntryModeFromUser(.aiChat)
         }
     }
 

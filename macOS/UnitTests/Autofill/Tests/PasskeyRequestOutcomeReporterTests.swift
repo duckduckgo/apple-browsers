@@ -54,10 +54,15 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     }
 
     private let activeUserPixelName = "passkey_active_user_macos"
+    private let stuckPixelName = "passkey_stuck_macos"
 
-    /// Fired pixels other than the active user one.
+    /// Fired pixels other than the active user and stuck ones.
     private var outcomeFireCalls: [ExpectedFireCall] {
-        pixelFiring.actualFireCalls.filter { $0.pixel.name != activeUserPixelName }
+        pixelFiring.actualFireCalls.filter { ![activeUserPixelName, stuckPixelName].contains($0.pixel.name) }
+    }
+
+    private var stuckFireCalls: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name == stuckPixelName }
     }
 
     private var firedPixels: [String] {
@@ -168,6 +173,31 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
             waitPastDelay()
 
             XCTAssertTrue(activeUserFireCalls.isEmpty, "\(outcome)")
+        }
+    }
+
+    // MARK: - Stuck
+
+    func test_stuck_firesRightAway_forRefusedSheet() {
+        reporter.report(outcome(.failure(.requestInProgress)))
+
+        XCTAssertEqual(stuckFireCalls, [ExpectedFireCall(pixel: PasskeyStuckPixel(), frequency: .dailyAndCount)])
+    }
+
+    func test_stuck_doesNotFire_forOtherOutcomes() {
+        let outcomes: [PasskeyRequestOutcome] = [
+            outcome(.failure(.requestInProgress), style: .autofill),
+            outcome(.failure(.failed)),
+            outcome(.canceled),
+            outcome(.success)
+        ]
+
+        for outcome in outcomes {
+            makeReporter()
+            reporter.report(outcome)
+            waitPastDelay()
+
+            XCTAssertTrue(stuckFireCalls.isEmpty, "\(outcome)")
         }
     }
 

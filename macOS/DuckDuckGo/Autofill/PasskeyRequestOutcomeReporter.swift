@@ -101,6 +101,13 @@ extension PasskeyRequestOutcome {
             return false
         }
     }
+
+    /// Whether this request shows passkeys are stuck: the user asked for the passkey sheet and the system refused it
+    /// because another request is still open. AutoFill refusals don't count, since they also happen once in a while
+    /// without being stuck.
+    var isStuck: Bool {
+        style == .modal && result == .failure(.requestInProgress)
+    }
 }
 
 extension PasskeyRequestOutcome.Result {
@@ -154,6 +161,9 @@ final class PasskeyRequestOutcomeReporter {
 
         if outcome.isActiveUse {
             pixelFiring?.fire(PasskeyActiveUserPixel(), frequency: .daily)
+        }
+        if outcome.isStuck {
+            pixelFiring?.fire(PasskeyStuckPixel(), frequency: .dailyAndCount)
         }
 
         let pixel = PasskeyRequestOutcomePixel(outcome)
@@ -209,6 +219,14 @@ struct PasskeyRequestOutcomePixel: PixelKit.Event {
 /// A user used a passkey or saw the passkey sheet today.
 struct PasskeyActiveUserPixel: PixelKit.Event {
     var name: String { "passkey_active_user_macos" }
+    var namePrefix: PixelKitNamePrefix { .none }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+/// The system refused to show the passkey sheet the user asked for, because another request is still open.
+struct PasskeyStuckPixel: PixelKit.Event {
+    var name: String { "passkey_stuck_macos" }
     var namePrefix: PixelKitNamePrefix { .none }
     var parameters: [String: String]? { nil }
     var standardParameters: [PixelKitStandardParameter]? { nil }

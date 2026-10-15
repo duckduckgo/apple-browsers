@@ -34,7 +34,16 @@ def main() -> int:
         if not Path(xcresult).is_dir():
             print(f"{xcresult} not found; skipping.", file=sys.stderr)
             continue
-        tests.extend(_collect(xcresult))
+        try:
+            tests.extend(_collect(xcresult))
+        except subprocess.CalledProcessError as error:
+            print(
+                f"Could not export attachments from {xcresult} (exit {error.returncode}).",
+                file=sys.stderr,
+            )
+            if error.stderr:
+                print(error.stderr.rstrip(), file=sys.stderr)
+            return 1
 
     if not tests:
         print("No snapshot failures found; no report written.")
@@ -111,6 +120,13 @@ def _mismatch_details(xcresult: str, test_identifier: str) -> list[dict]:
         capture_output=True, text=True,
     )
     if result.returncode != 0:
+        print(
+            f"Could not read snapshot details for {test_identifier} in {xcresult} "
+            f"(exit {result.returncode}); using unnamed comparisons.",
+            file=sys.stderr,
+        )
+        if result.stderr:
+            print(result.stderr.rstrip(), file=sys.stderr)
         return []
 
     details: list[dict] = []

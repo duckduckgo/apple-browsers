@@ -4664,7 +4664,7 @@
 "settings.keyboard.new-tab" = "Nov zavihek";
 
 /* Header for settings that control when to show the keyboard */
-"settings.keyboard.show-on" = "Pokaži tipkovnico v/pri";
+"settings.keyboard.show-on" = "Pokaži tipkovnico v tem primeru";
 
 /* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Prikaže povezavo za vrnitev na nazadnje uporabljeni zavihek, ko zaženete aplikacijo po nedejavnosti.";

@@ -116,9 +116,9 @@ extension Preferences {
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: DesignSystemRebrand.isAppRebranded() ? .statusYellowTertiary : .alertYellow))
+                .background(Color(designSystemColor: .statusYellowTertiary))
                 .foregroundColor(.black)
-                .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
+                .cornerRadius(9)
         }
     }
 
@@ -128,9 +128,9 @@ extension Preferences {
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: DesignSystemRebrand.isAppRebranded() ? .statusYellowTertiary : .alertYellow))
+                .background(Color(designSystemColor: .statusYellowTertiary))
                 .foregroundColor(.black)
-                .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
+                .cornerRadius(9)
         }
     }
 

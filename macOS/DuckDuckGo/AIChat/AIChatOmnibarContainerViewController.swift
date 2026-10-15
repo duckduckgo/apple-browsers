@@ -1420,7 +1420,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if let stagedAttachmentKind {
             attachmentPrivacyPixelFirer.fireLearnMoreTapped(kind: stagedAttachmentKind)
         }
-        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatUploadFilesAndImagesPrivacy,
                                                               source: .ui,
                                                               newTab: true,
                                                               selected: true)

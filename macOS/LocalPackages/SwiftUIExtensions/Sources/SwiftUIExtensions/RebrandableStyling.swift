@@ -21,11 +21,10 @@ import DesignResourcesKit
 
 public extension Color {
 
-    /// Link / accent-text foreground color that follows the app-rebrand state, resolved against `palette`.
+    /// Link / accent-text foreground color, resolved against `palette`.
     ///
-    /// Rebranded builds use the design-system `accentTextPrimary`; legacy builds keep `linkBlue`.
     static func rebrandableLink(palette: ColorPalette) -> Color {
-        DesignSystemRebrand.isAppRebranded() ? Color(designSystemColor: .accentTextPrimary, palette: palette) : Color(.linkBlue)
+        Color(designSystemColor: .accentTextPrimary, palette: palette)
     }
 }
 
@@ -48,7 +47,7 @@ private struct RebrandedControlTintModifier: ViewModifier {
     @Environment(\.designSystemPalette) private var palette
 
     func body(content: Content) -> some View {
-        content.tint(DesignSystemRebrand.isAppRebranded() ? Color(designSystemColor: .accentPrimary, palette: palette) : nil)
+        content.tint(Color(designSystemColor: .accentPrimary, palette: palette))
     }
 }
 

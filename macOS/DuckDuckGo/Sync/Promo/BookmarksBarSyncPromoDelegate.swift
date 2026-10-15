@@ -194,6 +194,11 @@ final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, SyncDeviceButt
     }
 
     @MainActor
+    func syncButtonDismissed() {
+        resolve(with: .ignored())
+    }
+
+    @MainActor
     private func resolve(with result: PromoResult) {
         guard let continuation = resultContinuation else { return }
         resultContinuation = nil

@@ -69,6 +69,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     override func tearDown() {
         cancellables.removeAll()
+        mockDelegate?.pendingInitialPromptRequest?.cancel()
         if appOpenWindow != nil {
             sut.viewController.deactivateInput()
             appOpenWindow?.isHidden = true
@@ -3214,6 +3215,128 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(mockDelegate.submittedModelId)
     }
 
+    func testInitialPromptPreparationIgnoresRepeatedSendAndReturn() {
+        configureInitialPromptTabAttachment()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .textEntry)
+
+        XCTAssertEqual(mockDelegate.initialPromptPreparationCount, 1)
+        XCTAssertNil(mockDelegate.submittedPrompt)
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.map(\.text), ["first"])
+    }
+
+    func testCancelledInitialPromptPreparationKeepsDraftAndAllowsRetry() {
+        configureInitialPromptTabAttachment()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+
+        mockDelegate.completeInitialPromptPreparation(false)
+
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "first")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.initialPromptPreparationCount, 2)
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+    }
+
+    func testCompletedInitialPromptPreparationClearsDraft() {
+        configureInitialPromptTabAttachment()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+
+        mockDelegate.completeInitialPromptPreparation(true)
+
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testInitialPromptPreparationFollowsSourceTabAndClearsDraftAfterSuccess() {
+        configureInitialPromptTabAttachment()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+
+        sut.activateForTab("other")
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        sut.setText("from other tab")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "from other tab", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "from other tab")
+
+        sut.activateForTab("source")
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "first")
+
+        sut.activateForTab("other")
+        sut.setText("other draft")
+        mockDelegate.completeInitialPromptPreparation(true)
+
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "other draft")
+        sut.activateForTab("source")
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testSwitchingBackToWaitingSourceDoesNotPrepareItsTabsAgain() {
+        var acquisitionCount = 0
+        configureInitialPromptTabAttachment { acquisitionCount += 1 }
+        XCTAssertEqual(acquisitionCount, 1)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+
+        sut.activateForTab("other")
+        sut.activateForTab("source")
+
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(acquisitionCount, 1)
+    }
+
+    func testUnavailableTabAttachmentFeatureKeepsOrdinarySubmission() {
+        let feature = MentionAttachmentFeature()
+        feature.state = .unavailable
+        sut.activateForTab("source")
+        sut.configureTabAttachments(source: nil, feature: feature)
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText("ordinary prompt")
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ordinary prompt", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "ordinary prompt")
+        XCTAssertEqual(mockDelegate.initialPromptPreparationCount, 0)
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+    }
+
+    private func configureInitialPromptTabAttachment(onAcquire: (() -> Void)? = nil) {
+        let url = URL(string: "https://example.com/page")!
+        let tab = Tab(uid: "attached", link: Link(title: "Page", url: url), fireTab: false)
+        var source = MultiTabAttachmentSource(currentTabID: "source", mode: .normal, tabsProvider: { [tab] })
+        source.acquirePage = { _ in
+            onAcquire?()
+            return nil
+        }
+        sut.activateForTab("source")
+        sut.configureTabAttachments(source: source, feature: MentionAttachmentFeature())
+        sut.updateInputMode(.aiChat, animated: false)
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Page", url: url, source: .recentTabs)
+        sut.viewController.addAttachment(.tab(attachment))
+        sut.setText("first")
+    }
+
     // MARK: - Attachments Change Publisher
 
     func test_addImageAttachment_publishesAttachmentsChange() {
@@ -4034,6 +4157,9 @@ private final class AppOpenModelsService: AIChatModelsProviding {
 @MainActor
 private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
+    var initialPromptPreparationCount = 0
+    var pendingInitialPromptRequest: MultiTabAttachmentRequest?
+    private var initialPromptCompletion: ((Bool) -> Void)?
     var submittedModelId: String?
     var submittedTools: [AIChatRAGTool]?
     var submittedReasoningEffort: AIChatReasoningEffort?
@@ -4056,6 +4182,19 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedImages = images
         submittedFiles = files
         onPromptSubmit?()
+    }
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        initialPromptPreparationCount += 1
+        pendingInitialPromptRequest = request
+        initialPromptCompletion = completion
+    }
+    func completeInitialPromptPreparation(_ prepared: Bool) {
+        pendingInitialPromptRequest?.cancel()
+        pendingInitialPromptRequest = nil
+        let completion = initialPromptCompletion
+        initialPromptCompletion = nil
+        completion?(prepared)
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }

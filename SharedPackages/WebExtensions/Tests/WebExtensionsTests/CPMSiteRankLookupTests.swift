@@ -74,8 +74,10 @@ final class CPMSiteRankLookupTests: XCTestCase {
         XCTAssertEqual(lookup.siteRank(for: nil), .other)
     }
 
-    func testWhenHostIsPunycodeThenItMatchesTheInternationalizedDomain() {
+    func testWhenHostIsInternationalizedThenItMatchesItsPunycodeEntry() {
         let lookup = Self.makeLookup(["xn--bcher-kva.de"])
+        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.bücher.de/")), .top10k)
+        XCTAssertEqual(lookup.siteRank(for: URL(string: "https://WWW.BÜCHER.DE./")), .top10k)
         XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.xn--bcher-kva.de/")), .top10k)
         XCTAssertEqual(lookup.siteRank(for: URL(string: "https://www.bucher.de/")), .other)
     }

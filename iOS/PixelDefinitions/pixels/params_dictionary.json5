@@ -409,7 +409,14 @@
         "type": "string",
         "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
         "pattern": "^funnel_",
-        "examples": ["funnel_appmenu_ios", "funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_appsettings_ios_winback", "funnel_subscriptionsettings_ios__viewplans", "funnel_subscriptionsettings_ios__upgradetopro"]
+        "examples": [
+            "funnel_appmenu_ios",
+            "funnel_appsettings_ios",
+            "funnel_onboarding_ios",
+            "funnel_appsettings_ios_winback",
+            "funnel_subscriptionsettings_ios__viewplans",
+            "funnel_subscriptionsettings_ios__upgradetopro"
+        ]
     },
     "locale": {
         "key": "locale",

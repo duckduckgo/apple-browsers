@@ -39,46 +39,12 @@ struct PasskeyRequestOutcome: Equatable {
         case success
         /// The user closed the passkey sheet.
         case canceled
-        case failure(Failure)
-    }
-
-    enum Failure: Equatable {
-        /// The agent refused the request because the app already has one open, which is what passkeys being stuck looks like.
-        case requestInProgress
-        case failed
-        case other(code: Int)
-
-        var parameterValue: String {
-            switch self {
-            case .requestInProgress: return "requestInProgress"
-            case .failed: return "failed"
-            case .other(let code): return "other_\(code)"
-            }
-        }
-    }
-
-    enum Duration: String {
-        case under100ms
-        case under1s
-        case under10s
-        case under1m
-        case over1m
-
-        init(_ interval: TimeInterval) {
-            switch interval {
-            case ..<0.1: self = .under100ms
-            case ..<1: self = .under1s
-            case ..<10: self = .under10s
-            case ..<60: self = .under1m
-            default: self = .over1m
-            }
-        }
+        case failure(NSError)
     }
 
     let style: Style
     let type: RequestType
     let result: Result
-    let duration: Duration
 }
 
 extension PasskeyRequestOutcome {
@@ -89,7 +55,7 @@ extension PasskeyRequestOutcome {
         case (.success, _):
             // The user used a passkey.
             return true
-        case (.failure(.requestInProgress), _):
+        case (.failure(let error), _) where error.isPasskeyRequestInProgress:
             // The system refused the request because another one is still open, so no sheet was shown.
             return false
         case (_, .modal):
@@ -105,35 +71,37 @@ extension PasskeyRequestOutcome {
     /// because another request is still open. AutoFill refusals don't count, since they also happen once in a while
     /// without being stuck.
     var isStuck: Bool {
-        style == .modal && result == .failure(.requestInProgress)
+        guard style == .modal, case .failure(let error) = result else { return false }
+        return error.isPasskeyRequestInProgress
     }
 }
 
 extension PasskeyRequestOutcome.Result {
 
-    /// The reason the agent gives when it refuses a request because the app already has one open.
-    private static let requestInProgressReason = "Request already in progress for specified application identifier."
-
     /// The result of a request that ended with `error`, or succeeded if there's none.
     init(error: NSError?) {
-        guard let error else {
+        switch error {
+        case nil:
             self = .success
-            return
-        }
-        guard error.domain == ASAuthorizationError.errorDomain else {
-            self = .failure(.other(code: error.code))
-            return
-        }
-        switch ASAuthorizationError.Code(rawValue: error.code) {
-        case .canceled:
+        case let error? where error.domain == ASAuthorizationError.errorDomain && error.code == ASAuthorizationError.canceled.rawValue:
             self = .canceled
-        case .failed where error.userInfo[NSLocalizedFailureReasonErrorKey] as? String == Self.requestInProgressReason:
-            self = .failure(.requestInProgress)
-        case .failed:
-            self = .failure(.failed)
-        default:
-            self = .failure(.other(code: error.code))
+        case let error?:
+            self = .failure(error)
         }
+    }
+}
+
+extension NSError {
+
+    /// The reason the agent gives when it refuses a request because the app already has one open.
+    private static let passkeyRequestInProgressReason = "Request already in progress for specified application identifier."
+
+    /// Whether the agent refused the request because the app already has one open, which is what passkeys being stuck
+    /// looks like.
+    var isPasskeyRequestInProgress: Bool {
+        domain == ASAuthorizationError.errorDomain
+            && code == ASAuthorizationError.failed.rawValue
+            && userInfo[NSLocalizedFailureReasonErrorKey] as? String == Self.passkeyRequestInProgressReason
     }
 }
 
@@ -209,15 +177,15 @@ struct PasskeyRequestOutcomePixel: PixelKit.Event {
     }
 
     var parameters: [String: String]? {
-        var parameters = [
+        [
             "style": outcome.style.rawValue,
-            "type": outcome.type.rawValue,
-            "duration": outcome.duration.rawValue
+            "type": outcome.type.rawValue
         ]
-        if case .failure(let failure) = outcome.result {
-            parameters["error"] = failure.parameterValue
-        }
-        return parameters
+    }
+
+    var error: NSError? {
+        guard case .failure(let error) = outcome.result else { return nil }
+        return error
     }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }

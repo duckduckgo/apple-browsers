@@ -45,8 +45,14 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     }
 
     private func outcome(_ result: PasskeyRequestOutcome.Result, style: PasskeyRequestOutcome.Style = .modal) -> PasskeyRequestOutcome {
-        PasskeyRequestOutcome(style: style, type: .get, result: result, duration: .under1s)
+        PasskeyRequestOutcome(style: style, type: .get, result: result)
     }
+
+    private let failedError = NSError(domain: ASAuthorizationError.errorDomain, code: ASAuthorizationError.failed.rawValue)
+
+    private let requestInProgressError = NSError(domain: ASAuthorizationError.errorDomain,
+                                                 code: ASAuthorizationError.failed.rawValue,
+                                                 userInfo: [NSLocalizedFailureReasonErrorKey: "Request already in progress for specified application identifier."])
 
     private func waitPastDelay() {
         let expectation = expectation(description: "delay passed")
@@ -93,29 +99,29 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     }
 
     func test_failure_firesAfterDelay() {
-        reporter.report(outcome(.failure(.failed)))
+        reporter.report(outcome(.failure(failedError)))
         XCTAssertTrue(outcomeFireCalls.isEmpty)
 
         waitPastDelay()
 
         XCTAssertEqual(outcomeFireCalls, [
-            ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.failure(.failed))), frequency: .dailyAndCount)
+            ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.failure(failedError))), frequency: .dailyAndCount)
         ])
     }
 
     func test_failures_inQuickSuccession_fireOnlyTheLast() {
-        reporter.report(outcome(.failure(.failed), style: .autofill))
-        reporter.report(outcome(.failure(.requestInProgress)))
+        reporter.report(outcome(.failure(failedError), style: .autofill))
+        reporter.report(outcome(.failure(requestInProgressError)))
 
         waitPastDelay()
 
         XCTAssertEqual(outcomeFireCalls, [
-            ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.failure(.requestInProgress))), frequency: .dailyAndCount)
+            ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.failure(requestInProgressError))), frequency: .dailyAndCount)
         ])
     }
 
     func test_success_afterFailure_dropsTheFailure() {
-        reporter.report(outcome(.failure(.failed)))
+        reporter.report(outcome(.failure(failedError)))
         reporter.report(outcome(.success))
 
         waitPastDelay()
@@ -124,7 +130,7 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     }
 
     func test_cancellation_afterFailure_dropsTheFailure() {
-        reporter.report(outcome(.failure(.failed)))
+        reporter.report(outcome(.failure(failedError)))
         reporter.report(outcome(.canceled))
 
         waitPastDelay()
@@ -133,9 +139,9 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     }
 
     func test_failure_afterDelayPassed_firesAgain() {
-        reporter.report(outcome(.failure(.failed)))
+        reporter.report(outcome(.failure(failedError)))
         waitPastDelay()
-        reporter.report(outcome(.failure(.failed)))
+        reporter.report(outcome(.failure(failedError)))
         waitPastDelay()
 
         XCTAssertEqual(firedPixels, ["passkey_request_failure_macos", "passkey_request_failure_macos"])
@@ -148,7 +154,7 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
             outcome(.success),
             outcome(.success, style: .autofill),
             outcome(.canceled),
-            outcome(.failure(.failed))
+            outcome(.failure(failedError))
         ]
 
         for activeUse in outcomes {
@@ -162,9 +168,9 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     func test_activeUser_doesNotFire_withoutPasskeyUseOrSheet() {
         let outcomes: [PasskeyRequestOutcome] = [
             outcome(.canceled, style: .autofill),
-            outcome(.failure(.failed), style: .autofill),
-            outcome(.failure(.requestInProgress)),
-            outcome(.failure(.requestInProgress), style: .autofill),
+            outcome(.failure(failedError), style: .autofill),
+            outcome(.failure(requestInProgressError)),
+            outcome(.failure(requestInProgressError), style: .autofill),
             outcome(.canceled, style: .unknown)
         ]
 
@@ -180,15 +186,15 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     // MARK: - Stuck
 
     func test_stuck_firesRightAway_forRefusedSheet() {
-        reporter.report(outcome(.failure(.requestInProgress)))
+        reporter.report(outcome(.failure(requestInProgressError)))
 
         XCTAssertEqual(stuckFireCalls, [ExpectedFireCall(pixel: PasskeyStuckPixel(), frequency: .dailyAndCount)])
     }
 
     func test_stuck_doesNotFire_forOtherOutcomes() {
         let outcomes: [PasskeyRequestOutcome] = [
-            outcome(.failure(.requestInProgress), style: .autofill),
-            outcome(.failure(.failed)),
+            outcome(.failure(requestInProgressError), style: .autofill),
+            outcome(.failure(failedError)),
             outcome(.canceled),
             outcome(.success)
         ]
@@ -205,14 +211,14 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     // MARK: - Parameters
 
     func test_successAndCancellationParameters_haveNoError() {
-        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.success)).parameters, ["style": "modal", "type": "get", "duration": "under1s"])
-        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.canceled)).parameters, ["style": "modal", "type": "get", "duration": "under1s"])
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.success)).parameters, ["style": "modal", "type": "get"])
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.canceled)).parameters, ["style": "modal", "type": "get"])
     }
 
-    func test_failureParameters_includeError() {
-        let pixel = PasskeyRequestOutcomePixel(outcome(.failure(.other(code: 1006)), style: .autofill))
-
-        XCTAssertEqual(pixel.parameters, ["style": "autofill", "type": "get", "duration": "under1s", "error": "other_1006"])
+    func test_failure_carriesError() {
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.failure(failedError), style: .autofill)).parameters, ["style": "autofill", "type": "get"])
+        XCTAssertEqual(PasskeyRequestOutcomePixel(outcome(.failure(failedError))).error, failedError)
+        XCTAssertNil(PasskeyRequestOutcomePixel(outcome(.success)).error)
     }
 
     // MARK: - Results
@@ -227,32 +233,14 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
         XCTAssertEqual(PasskeyRequestOutcome.Result(error: error), .canceled)
     }
 
-    func test_result_failedWithRequestInProgressReason_isRequestInProgress() {
-        let error = NSError(domain: ASAuthorizationError.errorDomain,
-                            code: ASAuthorizationError.failed.rawValue,
-                            userInfo: [NSLocalizedFailureReasonErrorKey: "Request already in progress for specified application identifier."])
+    func test_result_otherError_isFailure() {
+        let error = NSError(domain: "SomeDomain", code: ASAuthorizationError.canceled.rawValue)
 
-        XCTAssertEqual(PasskeyRequestOutcome.Result(error: error), .failure(.requestInProgress))
+        XCTAssertEqual(PasskeyRequestOutcome.Result(error: error), .failure(error))
     }
 
-    func test_result_failedWithOtherReason_isFailed() {
-        let error = NSError(domain: ASAuthorizationError.errorDomain,
-                            code: ASAuthorizationError.failed.rawValue,
-                            userInfo: [NSLocalizedFailureReasonErrorKey: "Something else."])
-
-        XCTAssertEqual(PasskeyRequestOutcome.Result(error: error), .failure(.failed))
-    }
-
-    func test_result_otherCodeOrDomain_isOtherFailure() {
-        XCTAssertEqual(PasskeyRequestOutcome.Result(error: NSError(domain: ASAuthorizationError.errorDomain, code: 1006)), .failure(.other(code: 1006)))
-        XCTAssertEqual(PasskeyRequestOutcome.Result(error: NSError(domain: "SomeDomain", code: 7)), .failure(.other(code: 7)))
-    }
-
-    func test_duration_buckets() {
-        XCTAssertEqual(PasskeyRequestOutcome.Duration(0.003), .under100ms)
-        XCTAssertEqual(PasskeyRequestOutcome.Duration(0.28), .under1s)
-        XCTAssertEqual(PasskeyRequestOutcome.Duration(5), .under10s)
-        XCTAssertEqual(PasskeyRequestOutcome.Duration(30), .under1m)
-        XCTAssertEqual(PasskeyRequestOutcome.Duration(90), .over1m)
+    func test_requestInProgress_isToldByFailureReason() {
+        XCTAssertTrue(requestInProgressError.isPasskeyRequestInProgress)
+        XCTAssertFalse(failedError.isPasskeyRequestInProgress)
     }
 }

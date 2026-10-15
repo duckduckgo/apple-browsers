@@ -18,12 +18,6 @@
                 "type": "string",
                 "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
                 "enum": ["get", "create", "other"]
-            },
-            {
-                "key": "duration",
-                "type": "string",
-                "description": "Time from the request reaching the system passkey service to its outcome, bucketed.",
-                "enum": ["under100ms", "under1s", "under10s", "under1m", "over1m"]
             }
         ]
     },
@@ -45,12 +39,6 @@
                 "type": "string",
                 "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
                 "enum": ["get", "create", "other"]
-            },
-            {
-                "key": "duration",
-                "type": "string",
-                "description": "Time from the request reaching the system passkey service to its outcome, bucketed.",
-                "enum": ["under100ms", "under1s", "under10s", "under1m", "over1m"]
             }
         ]
     },
@@ -73,18 +61,10 @@
                 "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
                 "enum": ["get", "create", "other"]
             },
-            {
-                "key": "duration",
-                "type": "string",
-                "description": "Time from the request reaching the system passkey service to its outcome, bucketed.",
-                "enum": ["under100ms", "under1s", "under10s", "under1m", "over1m"]
-            },
-            {
-                "key": "error",
-                "type": "string",
-                "description": "`requestInProgress` when the system passkey service refused the request because the app already has one open (passkeys are stuck), `failed` for other failures, `other_<code>` for any other AuthenticationServices error code.",
-                "pattern": "^(requestInProgress|failed|other_-?[0-9]+)$"
-            }
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
         ]
     },
     "passkey_active_user_macos": {

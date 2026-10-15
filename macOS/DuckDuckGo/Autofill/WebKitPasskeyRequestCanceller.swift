@@ -238,7 +238,7 @@ extension ASAuthorizationController {
 
     private static let passkeyRequestStartKey = UnsafeRawPointer(bitPattern: "passkeyRequestStartKey".hashValue)!
 
-    /// When and how the request was sent to the agent, so its outcome can be reported with it. `nil` for a request that
+    /// How the request was sent to the agent, so its outcome can be reported with it. `nil` for a request that
     /// never reached the agent.
     fileprivate var passkeyRequestStart: PasskeyRequestStart? {
         get {
@@ -250,10 +250,9 @@ extension ASAuthorizationController {
     }
 }
 
-/// When and how a WebKit passkey request was sent to the agent.
+/// How a WebKit passkey request was sent to the agent.
 private final class PasskeyRequestStart: NSObject {
     let style: PasskeyRequestOutcome.Style
-    let date = Date()
     /// Whether WebKit or the canceller cancelled the request, so its failure isn't something the user did or saw.
     var wasCancelled = false
 
@@ -284,10 +283,7 @@ extension WebKitPasskeyRequestCanceller {
         default: type = .other
         }
 
-        let outcome = PasskeyRequestOutcome(style: start.style,
-                                            type: type,
-                                            result: .init(error: error),
-                                            duration: .init(Date().timeIntervalSince(start.date)))
+        let outcome = PasskeyRequestOutcome(style: start.style, type: type, result: .init(error: error))
         // The reporter's debouncing relies on a single thread, and the delegate isn't guaranteed to be called on main.
         DispatchQueue.main.async {
             outcomeReporter?.report(outcome)

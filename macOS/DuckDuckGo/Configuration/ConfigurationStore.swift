@@ -215,6 +215,12 @@ final class ConfigurationStore: ConfigurationStoring {
         Logger.config.info("remoteMessagingConfig \(self.remoteMessagingConfigEtag ?? "", privacy: .public)")
     }
 
+    /// Drops the stored privacy configuration and its ETag, so the next launch starts on the embedded configuration.
+    func removeStoredPrivacyConfiguration() {
+        privacyConfigurationEtag = nil
+        try? FileManager.default.removeItem(at: fileUrl(for: .privacyConfiguration))
+    }
+
     func fileUrl(for configuration: Configuration) -> URL {
         let dir = FileManager.default.configurationDirectory()
         return dir.appendingPathComponent(configuration.fileName)

@@ -88,7 +88,8 @@ final class UserScripts: UserScriptsProvider {
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         aiChatBonusService: AIChatBonusService = AppDependencyProvider.shared.aiChatBonusService) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
@@ -136,9 +137,13 @@ final class UserScripts: UserScriptsProvider {
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let homepageAiChatsProvider = HomepageAiChatsProvider(featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        let aiChatBonusHandler = AIChatBonusHandler(service: aiChatBonusService,
+                                                    factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(),
+                                                                                            aiChatSettings: aiChatSettings))
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
+                                                          bonusHandler: aiChatBonusHandler,
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
                                                           attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,

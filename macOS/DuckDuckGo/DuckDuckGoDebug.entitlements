@@ -11,6 +11,8 @@
 	<true/>
 	<key>com.apple.developer.usernotifications.time-sensitive</key>
 	<true/>
+	<key>com.apple.developer.web-browser.public-key-credential</key>
+	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>$(IPC_APP_GROUP)</string>

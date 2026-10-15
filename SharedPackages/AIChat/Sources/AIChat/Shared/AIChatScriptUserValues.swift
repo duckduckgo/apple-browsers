@@ -160,6 +160,9 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsAttachmentPrivacyDisplay: Bool
     /// `true` when the duckduckgo.com homepage may request the user's chats via `getAIChats`.
     public let supportsHomePageChatSuggestions: Bool
+    /// `true` when native supports the Bonus offer messages, so Duck.ai
+    /// shows the limit extension offer. Gated by the bonus offer feature flag.
+    public let supportsBonusOffer: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -237,7 +240,8 @@ public struct AIChatNativeConfigValues: Codable {
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
                 supportsBrowserTools: Bool = false,
                 supportsAttachmentPrivacyDisplay: Bool = false,
-                supportsHomePageChatSuggestions: Bool = false) {
+                supportsHomePageChatSuggestions: Bool = false,
+                supportsBonusOffer: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -270,6 +274,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsBrowserTools = supportsBrowserTools
         self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
         self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
+        self.supportsBonusOffer = supportsBonusOffer
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

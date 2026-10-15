@@ -214,6 +214,8 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
+        # Avoid Xcode's verbose simulator collection for runtime warnings in passing tests.
+        # Keep the console log, result bundle, and crash reports for failed runs.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -223,6 +225,7 @@ jobs:
           -skipMacroValidation \
           -test-iterations 3 \
           -retry-tests-on-failure \
+          -collect-test-diagnostics never \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \

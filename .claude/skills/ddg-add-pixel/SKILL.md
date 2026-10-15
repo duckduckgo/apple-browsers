@@ -11,7 +11,7 @@ These steps cover the usual case. For anything they don't, the Swift API referen
 
 1. **Find what exists.** `git grep` the feature name in `iOS/PixelDefinitions`,
    `macOS/PixelDefinitions` and `*Pixel*.swift`. Extend the feature's existing `PixelKit.Event`
-   enum when there is one; otherwise create one in its own file. `iOS/Core/PixelEvent.swift` is
+   enum when there is one; otherwise create one in its own file. `iOS/Core/Statistics/PixelEvent.swift` is
    closed to new cases, and Danger fails a PR that adds one.
 2. **Name it** `feature_action` or `feature-subfeature_action`: descriptive, without an `m_` or
    `m-` prefix, and without legacy shorthand like `ml`.

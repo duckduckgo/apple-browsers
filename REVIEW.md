@@ -28,7 +28,7 @@ a Nit, lead the summary with "No blocking issues".
 - Anything CI already enforces: SwiftLint, `npm run validate-pixel-defs`,
   `scripts/check_wide_event_consistency.mjs`,
   `scripts/check_wide_event_schema_immutability.mjs`, and the Danger check that
-  hard-fails a new case in `iOS/Core/PixelEvent.swift`
+  hard-fails a new case in `iOS/Core/Statistics/PixelEvent.swift`
 - Generated files, including anything under `wide_events/generated_schemas/`
 - A `Package.resolved` diff that differs only in `originHash` — it churns across
   Xcode versions and means nothing on its own
@@ -118,8 +118,8 @@ and a guard test fails when the two drift apart.
 
 | Embedded data file | Paired provider |
 |---|---|
-| `iOS/Core/ios-config.json` | `iOS/Core/AppPrivacyConfigurationDataProvider.swift` |
-| `iOS/Core/trackerData.json` | `iOS/Core/AppTrackerDataSetProvider.swift` |
+| `iOS/Core/ContentBlocker/PrivacyConfiguration/ios-config.json` | `iOS/Core/ContentBlocker/AppPrivacyConfigurationDataProvider.swift` |
+| `iOS/Core/ContentBlocker/Domain/trackerData.json` | `iOS/Core/ContentBlocker/AppTrackerDataSetProvider.swift` |
 | `macOS/DuckDuckGo/ContentBlocker/Resources/macos-config.json` | `macOS/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift` |
 | `macOS/DuckDuckGo/ContentBlocker/Resources/trackerData.json` | `macOS/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift` |
 

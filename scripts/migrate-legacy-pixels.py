@@ -33,7 +33,7 @@ How it works
 5. `render` rebuilds the call text; `ensure_pixelkit_import` adds `import PixelKit` where the file
    lacks it.
 
-Frequency mapping (from `iOS/Core/PixelEvent+PixelKit.swift`, which is the reference)
+Frequency mapping (from `iOS/Core/Statistics/PixelEvent+PixelKit.swift`, which is the reference)
 -------------------------------------------------------------------------------------
     Pixel.fire(pixel:)                                             .standard  (omitted)
     Pixel.fire(pixel:debounce: n)                                  .debounce(seconds: n)
@@ -49,7 +49,7 @@ Frequency mapping (from `iOS/Core/PixelEvent+PixelKit.swift`, which is the refer
 
 `.uniqueByName` hard-guards on a `_u` suffix and returns *without firing* when it is absent, so a
 `_unique` pixel routed there would silently stop being sent. The UniquePixel frequency is
-therefore resolved from the event's `name` in `iOS/Core/PixelEvent.swift` (see
+therefore resolved from the event's `name` in `iOS/Core/Statistics/PixelEvent.swift` (see
 `PixelEventNameTable`), never from the call, and an event whose name suffix cannot be resolved
 statically is reported rather than guessed.
 
@@ -97,7 +97,7 @@ from typing import Optional
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEARCH_ROOT = "iOS"
 
-PIXEL_EVENT_FILE = "iOS/Core/PixelEvent.swift"
+PIXEL_EVENT_FILE = "iOS/Core/Statistics/PixelEvent.swift"
 
 DEFAULT_REPORT_PATH = (
     ".superpowers/sdd/2026-08-26-ios-pixelkit-migration/task-8-classification.md"
@@ -109,14 +109,14 @@ DEFAULT_REPORT_PATH = (
 
 # Deleted wholesale in Phase 3, so migrating their internals is wasted work.
 EXCLUDED_FILES = {
-    "iOS/Core/Pixel.swift",
+    "iOS/Core/Statistics/Pixel.swift",
     "iOS/Core/DailyPixel.swift",
     "iOS/Core/UniquePixel.swift",
     "iOS/Core/PersistentPixel.swift",
     # The adapter's file documentation deliberately names every legacy API in its mapping
     # tables. Rewriting those would corrupt the reference explaining why each migrated call
     # site chose its frequency.
-    "iOS/Core/PixelEvent+PixelKit.swift",
+    "iOS/Core/Statistics/PixelEvent+PixelKit.swift",
 }
 
 EXCLUDED_PREFIXES = (
@@ -1368,7 +1368,7 @@ def build_report(
     w(
         "`.uniqueByName` hard-guards on a `_u` suffix and returns **without firing** when it is "
         "absent, so routing a `_unique` pixel there would silently kill it. The frequency is "
-        "therefore resolved from the event's `name` in `iOS/Core/PixelEvent.swift`, never from "
+        "therefore resolved from the event's `name` in `iOS/Core/Statistics/PixelEvent.swift`, never from "
         "the call.\n"
     )
     w("| Site | Resolved name | Suffix | Frequency |")

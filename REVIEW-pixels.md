@@ -12,7 +12,7 @@ below says otherwise.
 
 A PR introduces a pixel if it adds or changes a case, or a `name` string, in:
 
-- **iOS:** `iOS/Core/PixelEvent.swift`, or any enum conforming to
+- **iOS:** `iOS/Core/Statistics/PixelEvent.swift`, or any enum conforming to
   `PixelKit.Event` under `iOS/`
 - **macOS:** any enum conforming to `PixelKit.Event` under `macOS/`, such as
   `UpdateFlowPixels.swift` or `FireButtonPixel.swift`

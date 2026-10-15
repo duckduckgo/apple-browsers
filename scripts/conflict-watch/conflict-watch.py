@@ -198,7 +198,7 @@ DEFAULT_ALWAYS_IGNORE = (
     "**/*.generated.swift,"
     # Append-only registries that everyone touches
     "**/PixelDefinitions/**,"
-    "iOS/Core/PixelEvent.swift,"
+    "iOS/Core/Statistics/PixelEvent.swift,"
     "iOS/Core/FeatureFlag.swift,"
     # Localized strings and localization bundles
     "iOS/DuckDuckGo/UserInterface/UserText.swift,"

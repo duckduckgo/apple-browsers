@@ -24,11 +24,14 @@ import AIChat
 final class AIChatService: NSObject {
 
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatBonusService: AIChatBonusService
     private let termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
 
     init(aiChatSettings: AIChatSettingsProvider,
+         aiChatBonusService: AIChatBonusService,
          termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver? = nil) {
         self.aiChatSettings = aiChatSettings
+        self.aiChatBonusService = aiChatBonusService
         self.termsOfServiceChatsObserver = termsOfServiceChatsObserver
         super.init()
         termsOfServiceChatsObserver?.start()
@@ -38,7 +41,9 @@ final class AIChatService: NSObject {
 
     @MainActor
     func resume() {
-        // No-op
+        // Removes an expired boost's Bonus ID even when Duck.ai isn't opened.
+        // A failure is already logged and reported by the service, and there's nothing else to do with it here.
+        try? aiChatBonusService.endBoostIfExpired()
     }
 
     // MARK: - Suspend

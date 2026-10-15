@@ -280,6 +280,15 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+    - name: Report snapshot failures
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: iOS
+        xcresults: DerivedData/Logs/Test/iOS-UnitTests.xcresult
+        report-name: ios-snapshot-failures.html
+        title: iOS Snapshot Failures
+
     - name: Upload crash reports
       uses: actions/upload-artifact@v6
       if: failure() || cancelled()

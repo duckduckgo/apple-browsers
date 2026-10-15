@@ -515,6 +515,17 @@ jobs:
         path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
 
+    - name: Report snapshot failures
+      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: macOS
+        xcresults: >-
+          DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
+          DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
+        report-name: macos-${{ matrix.flavor }}-snapshot-failures.html
+        title: macOS ${{ matrix.flavor }} Snapshot Failures
+
     - name: Upload crash reports
       uses: actions/upload-artifact@v6
       if: failure() || cancelled()

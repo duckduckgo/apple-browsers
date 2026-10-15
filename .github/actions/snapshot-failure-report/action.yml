@@ -1,0 +1,44 @@
+name: Snapshot failure report
+description: Render failed snapshot tests from xcresult bundles into one HTML page, upload it unzipped so it opens in the browser, and link it from the job summary.
+
+inputs:
+  xcresults:
+    description: Space-separated .xcresult paths, relative to working-directory. Missing bundles are skipped.
+    required: true
+  report-name:
+    description: File name of the HTML report. Unzipped artifacts are named after their file, so this must be unique within the workflow run.
+    required: true
+  title:
+    description: Heading shown at the top of the report and in the job summary link.
+    required: true
+  working-directory:
+    description: Directory to run the steps in. Composite actions do not inherit the caller's defaults.run.working-directory, so this must be passed explicitly.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Render snapshot failures
+      id: render
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        read -ra xcresults <<< "${{ inputs.xcresults }}"
+        "${GITHUB_WORKSPACE}/scripts/render-snapshot-failures.py" "${xcresults[@]}" \
+          --output "${{ inputs.report-name }}" \
+          --title "${{ inputs.title }}"
+
+    - name: Upload snapshot failures
+      id: upload
+      if: steps.render.outputs.report != ''
+      uses: actions/upload-artifact@v7
+      with:
+        path: ${{ inputs.working-directory }}/${{ inputs.report-name }}
+        archive: false
+        retention-days: 7
+
+    - name: Link snapshot failures from the job summary
+      if: steps.upload.outputs.artifact-url != ''
+      shell: bash
+      run: |
+        echo "### 📸 [${{ inputs.title }}](${{ steps.upload.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"

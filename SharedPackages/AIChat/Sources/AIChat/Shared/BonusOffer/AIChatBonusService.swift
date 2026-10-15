@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import os.log
 
@@ -28,6 +29,10 @@ import os.log
 /// Only the two requests return the record, for the bridge's reply. The notifications expect no reply:
 /// Duck.ai learns the new record from the push native sends to every Duck.ai tab after a write.
 public protocol AIChatBonusMessageHandling {
+    /// Emits the record after every write that changes it, so native can push it to every Duck.ai tab with `submitAIChatBonusRecord`.
+    ///
+    /// Delivers on the main queue, in the order the writes happened.
+    var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> { get }
 
     /// Returns the stored record.
     ///
@@ -83,6 +88,7 @@ public final class AIChatBonusService: @unchecked Sendable {
     private let now: () -> Date
     private let makeBonusId: () -> String
     private let lock = NSLock()
+    private let recordSubject = PassthroughSubject<AIChatBonusRecord, Never>()
 
     /// Create a new instance of the `AIChatBonusService` with the specified parameters.
     /// - Parameters:
@@ -108,6 +114,14 @@ public final class AIChatBonusService: @unchecked Sendable {
 
 extension AIChatBonusService: AIChatBonusMessageHandling {
 
+    public var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> {
+        // Sent while the lock is held, so values go out in write order. Delivered asynchronously on main, so a
+        // subscriber never runs inside the writer's lock and can call back into the service without deadlocking.
+        recordSubject
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
     public func record() throws -> AIChatBonusRecord? {
         try withLockedRecord { $0 }
     }
@@ -119,7 +133,7 @@ extension AIChatBonusService: AIChatBonusMessageHandling {
                 Logger.aiChat.debug("Duck.ai bonus: claim kept the stored record")
                 return claimedRecord
             }
-            try store.write(claimedRecord)
+            try write(claimedRecord)
             Logger.aiChat.debug("Duck.ai bonus: claim stored")
             return claimedRecord
         }
@@ -143,7 +157,7 @@ extension AIChatBonusService: AIChatBonusMessageHandling {
 
 private extension AIChatBonusService {
 
-    /// Locks, reads the record and hands it to `mutation`, which may write through the store. Holds the lock
+    /// Locks, reads the record and hands it to `mutation`, which may change it through `write(_:)`. Holds the lock
     /// until `mutation` returns, so no other change can slip in between its read and its write.
     ///
     /// Reports and re-throws any store error, so every read and write is reported in one place.
@@ -151,7 +165,7 @@ private extension AIChatBonusService {
     /// - Parameters:
     ///   - caller: The public method calling it, for the log. Filled in by the compiler.
     ///   - mutation: The mutation to apply to the stored record, or `nil` when the device has none.
-    /// - Returns: What `block` returns.
+    /// - Returns: What `mutation` returns.
     func withLockedRecord<Result>(
         caller: String = #function,
         _ mutation: (AIChatBonusRecord?) throws -> Result
@@ -182,10 +196,17 @@ private extension AIChatBonusService {
                 Logger.aiChat.debug("Duck.ai bonus: \(caller, privacy: .public) ignored, reason=\(reason.rawValue, privacy: .public)")
             case .write(let updated):
                 guard updated != current else { return }
-                try store.write(updated)
+                try write(updated)
                 Logger.aiChat.debug("Duck.ai bonus: \(caller, privacy: .public) stored")
             }
         }
+    }
+
+    /// Writes `record` and publishes it. Call only from a `withLockedRecord` mutation, so the send happens
+    /// inside the lock and pushes follow the order of the writes.
+    func write(_ record: AIChatBonusRecord) throws {
+        try store.write(record)
+        recordSubject.send(record)
     }
 
     /// Logs a store failure and fires the debug pixel, then leaves it to the caller to decide what to do.

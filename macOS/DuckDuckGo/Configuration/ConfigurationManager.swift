@@ -169,10 +169,15 @@ final class ConfigurationManager: DefaultConfigurationManager {
     /// Fetches and applies the privacy configuration for debug and override flows.
     /// Throws if the refresh check fails. A not-modified response reapplies the cached configuration.
     func fetchPrivacyConfiguration(isDebug: Bool = false) async throws {
+        try await fetchPrivacyConfigurationWithoutRecompiling(isDebug: isDebug)
+        contentBlockingManager.scheduleCompilation()
+    }
+
+    /// Same as `fetchPrivacyConfiguration`, for callers that recompile content blocking themselves.
+    func fetchPrivacyConfigurationWithoutRecompiling(isDebug: Bool) async throws {
         try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
         privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
                                            data: store.loadData(for: .privacyConfiguration))
-        contentBlockingManager.scheduleCompilation()
     }
 
     private func handleTrackerBlockingFetchError(_ error: Swift.Error, for configuration: Configuration) {

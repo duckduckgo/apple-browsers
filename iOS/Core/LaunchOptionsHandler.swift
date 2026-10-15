@@ -106,12 +106,12 @@ public final class LaunchOptionsHandler {
         return port
     }
 
-    /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
-    /// `-privacyConfigURL <url>` or `-privacyConfigURL reset`. Applied for internal users only.
+    /// `-privacyConfigURL <url>`. Applied for internal users only.
     public var privacyConfigurationOverride: PrivacyConfigurationOverrideCommand? {
         PrivacyConfigurationOverrideCommand(userDefaults: userDefaults)
     }
 
+    /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
     public var isAutomationSession: Bool {
 #if DEBUG || ALPHA
         isWebDriverAutomationSession || isUITesting

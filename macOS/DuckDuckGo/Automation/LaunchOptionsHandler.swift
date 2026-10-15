@@ -56,7 +56,7 @@ public final class LaunchOptionsHandler {
         userDefaults.string(forKey: Self.isInternalUserKey)?.lowercased() == "true"
     }
 
-    /// `-privacyConfigURL <url>` or `-privacyConfigURL reset`. Applied for internal users only.
+    /// `-privacyConfigURL <url>`. Applied for internal users only.
     public var privacyConfigurationOverride: PrivacyConfigurationOverrideCommand? {
         PrivacyConfigurationOverrideCommand(userDefaults: userDefaults)
     }

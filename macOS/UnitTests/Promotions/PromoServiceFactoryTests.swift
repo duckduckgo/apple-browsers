@@ -282,7 +282,10 @@ extension PromoServiceFactoryTests {
             ),
             autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
-                isAnyCategoryEmptyProvider: { true }
+                isAnyCategoryEmptyProvider: { true },
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
             )
         )
     }

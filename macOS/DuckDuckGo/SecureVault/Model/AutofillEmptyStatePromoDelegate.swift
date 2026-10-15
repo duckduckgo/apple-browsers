@@ -17,6 +17,7 @@
 //
 
 import Combine
+import DDGSync
 import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
@@ -24,6 +25,10 @@ import PrivacyConfig
 protocol AutofillEmptyStatePromoPresenting: AnyObject {
     var isPromoActive: Bool { get }
     var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
+    @MainActor func importStarted()
+    @MainActor func importFinished()
+    @MainActor func syncSetupStarted()
+    @MainActor func syncSetupFinished()
 }
 
 /// Shows the import/sync CTAs of the Passwords panel empty states through the promo queue.
@@ -31,23 +36,52 @@ final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, AutofillEmpt
 
     private let featureFlagger: FeatureFlagger
     private let isAnyCategoryEmptyProvider: () -> Bool
+    private let recordResult: @MainActor (_ promoID: String, PromoResult) -> Void
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
     private let eligibilityQueue = DispatchQueue(label: "com.duckduckgo.autofillEmptyStatePromo.eligibility", qos: .utility)
     private var cancellables = Set<AnyCancellable>()
+    private var isImportFromEmptyStateInProgress = false
+    private var isSyncSetupFromEmptyStateInProgress = false
 
-    /// - Parameter isAnyCategoryEmptyProvider: Whether passwords, identities or credit cards has no items.
-    ///   Must be synchronous and safe to call off the main thread.
+    /// - Parameters:
+    ///   - isAnyCategoryEmptyProvider: Whether passwords, identities or credit cards has no items.
+    ///     Must be synchronous and safe to call off the main thread.
+    ///   - dataImportCompletedPublisher: Emits when an import of every selected data type succeeds.
+    ///   - recordResult: Records a result with the promo queue, including after the promo has been hidden.
     init(featureFlagger: FeatureFlagger,
-         isAnyCategoryEmptyProvider: @escaping () -> Bool) {
+         isAnyCategoryEmptyProvider: @escaping () -> Bool,
+         dataImportCompletedPublisher: AnyPublisher<Void, Never>,
+         syncService: DDGSyncing?,
+         recordResult: @escaping @MainActor (_ promoID: String, PromoResult) -> Void) {
         self.featureFlagger = featureFlagger
         self.isAnyCategoryEmptyProvider = isAnyCategoryEmptyProvider
+        self.recordResult = recordResult
 
         featureFlagger.updatesPublisher
             .receive(on: eligibilityQueue)
             .sink { [weak self] in
                 self?.refreshEligibility()
+            }
+            .store(in: &cancellables)
+
+        dataImportCompletedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                MainActor.assumeMainThread {
+                    self?.recordActionedIfImportStartedFromEmptyState()
+                }
+            }
+            .store(in: &cancellables)
+
+        syncService?.authStatePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] authState in
+                MainActor.assumeMainThread {
+                    self?.recordActionedIfSyncSetUpFromEmptyState(authState)
+                }
             }
             .store(in: &cancellables)
     }
@@ -64,6 +98,42 @@ final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, AutofillEmpt
 
     func refreshEligibility() {
         isEligibleSubject.send(featureFlagger.isFeatureOn(.promoQueueAutofillEmptyStatePromo) && isAnyCategoryEmptyProvider())
+    }
+
+    // MARK: - Promo queue result
+
+    @MainActor
+    func importStarted() {
+        isImportFromEmptyStateInProgress = true
+    }
+
+    @MainActor
+    func importFinished() {
+        isImportFromEmptyStateInProgress = false
+    }
+
+    @MainActor
+    func syncSetupStarted() {
+        isSyncSetupFromEmptyStateInProgress = true
+    }
+
+    @MainActor
+    func syncSetupFinished() {
+        isSyncSetupFromEmptyStateInProgress = false
+    }
+
+    @MainActor
+    private func recordActionedIfImportStartedFromEmptyState() {
+        guard isImportFromEmptyStateInProgress else { return }
+        isImportFromEmptyStateInProgress = false
+        recordResult(PromoServiceFactory.autofillEmptyStateImportSyncPromoID, .actioned(cooldown: 0))
+    }
+
+    @MainActor
+    private func recordActionedIfSyncSetUpFromEmptyState(_ authState: SyncAuthState) {
+        guard authState == .active || authState == .addingNewDevice, isSyncSetupFromEmptyStateInProgress else { return }
+        isSyncSetupFromEmptyStateInProgress = false
+        recordResult(PromoServiceFactory.autofillEmptyStateImportSyncPromoID, .actioned(cooldown: 0))
     }
 
     // MARK: - Promo queue display

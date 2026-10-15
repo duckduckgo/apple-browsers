@@ -791,14 +791,21 @@ final class PasswordManagementViewController: NSViewController {
     @objc func onImportClicked(_ sender: NSButton) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
     }
 
     @objc func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
         PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     @objc func onDeleteAllPasswordsClicked(_ sender: Any) {

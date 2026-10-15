@@ -506,6 +506,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isAnyCategoryEmptyProvider: {
                 guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
                 return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
+            },
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
             }
         )
     }()

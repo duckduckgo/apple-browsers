@@ -1811,13 +1811,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             urlProvider: configurationURLProvider,
             contentBlockingUpdates: contentBlockingManager.updatesPublisher.map(\.completionTokens).eraseToAnyPublisher(),
-            scheduleCompilation: { contentBlockingManager.scheduleCompilation() }
+            scheduleCompilation: { contentBlockingManager.scheduleCompilation() },
+            overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
         )
         privacyConfigurationOverrideReporter = reporter
 
         let configurationManager = configurationManager
-        guard let command = launchOptionsHandler.privacyConfigurationOverride,
-              let fetchTask = reporter.handle(command, fetch: { try await configurationManager.fetchPrivacyConfiguration(isDebug: true) }) else {
+        let fetchTask = reporter.handle(launchOptionsHandler.privacyConfigurationOverride) {
+            try await configurationManager.fetchPrivacyConfigurationWithoutRecompiling(isDebug: true)
+        }
+        guard let fetchTask else {
             configurationManager.start()
             return
         }

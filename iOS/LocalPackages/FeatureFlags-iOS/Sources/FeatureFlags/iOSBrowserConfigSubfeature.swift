@@ -137,9 +137,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
 
-    /// Redesigned New Tab Page with a centered search input on iPad.
-    case newTabPageCenteredInputIPad
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
     case sitePermissions
 

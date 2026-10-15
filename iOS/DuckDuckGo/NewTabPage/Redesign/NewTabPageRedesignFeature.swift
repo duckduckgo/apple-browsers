@@ -17,32 +17,24 @@
 //  limitations under the License.
 //
 
-import Common
 import FeatureFlags_iOS
 import PrivacyConfig
 
 protocol NewTabPageRedesignFeatureProviding {
 
-    /// Whether the redesigned New Tab Page can be shown on this device.
+    /// Whether the redesigned New Tab Page can be shown.
     var isAvailable: Bool { get }
 }
 
 struct NewTabPageRedesignFeature: NewTabPageRedesignFeatureProviding {
 
     private let featureFlagger: FeatureFlagger
-    private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: FeatureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+    init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
-        self.devicePlatform = devicePlatform
     }
 
     var isAvailable: Bool {
-        // The device check comes first, and must stay first: reading the iPhone experiment flag on
-        // iPad would enrol it in the experiment cohort and dilute the results, so iPad has its own flag.
-        guard devicePlatform.isIphone else { return featureFlagger.isFeatureOn(.newTabPageCenteredInputIPad) }
-
-        return featureFlagger.isFeatureOn(.newTabPageRedesign)
+        featureFlagger.isFeatureOn(.newTabPageRedesign)
     }
 }

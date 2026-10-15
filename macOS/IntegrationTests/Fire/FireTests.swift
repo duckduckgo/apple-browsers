@@ -191,16 +191,26 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnAll_ThenPinnedTabsArePersisted() async {
+    func testWhenBurnAll_ThenPinnedTabsArePersisted() async throws {
 
-        let schemeHandler = self.schemeHandler!
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
 
-        let urls = ["https://duck.com/", "https://spreadprivacy.com/", "https://wikipedia.org/"].map { $0.url! }
-        var pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()) }
+        // Local pages also load in the replacement tabs without requiring an HTTPS mock.
+        let fileManager = FileManager.default
+        let temporaryDirectory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer {
+            try? fileManager.removeItem(at: temporaryDirectory)
+        }
+        let urls = try (1...3).map { index in
+            let url = temporaryDirectory.appendingPathComponent("pinned-\(index).html")
+            try Self.testHtml.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        }
+        var pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link)) }
         pinnedTabsManagerProvider.newPinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
         let fire = Fire(cacheManager: manager,
@@ -211,12 +221,7 @@ final class FireTests: XCTestCase {
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
                         isAppActiveProvider: { true }, // App is active - should manage windows
-                        aIChatHistoryCleaner: MockAIChatHistoryCleaner(),
-                        makeReplacementPinnedTab: { content in
-                            Tab(content: content,
-                                webViewConfiguration: schemeHandler.webViewConfiguration(),
-                                shouldLoadInBackground: true)
-                        })
+                        aIChatHistoryCleaner: MockAIChatHistoryCleaner())
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
@@ -241,7 +246,7 @@ final class FireTests: XCTestCase {
         XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
 
         for tab in tabCollectionViewModel.pinnedTabs {
-            XCTAssertTrue(tab.webView.configuration.urlSchemeHandler(forURLScheme: "https") === schemeHandler)
+            XCTAssertFalse(pinnedTabs.contains { $0 === tab }, "Burning should replace each pinned tab")
         }
 
         let tabsToClean = (tabCollectionViewModel.pinnedTabs + pinnedTabs).reduce(into: [Tab]()) { tabs, tab in

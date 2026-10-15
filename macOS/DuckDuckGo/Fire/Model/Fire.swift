@@ -188,7 +188,6 @@ final class Fire: FireProtocol {
     let syncService: DDGSyncing?
     let syncDataProviders: SyncDataProvidersSource?
     let tabCleanupPreparer: TabCleanupPreparing
-    private let makeReplacementPinnedTab: @MainActor (Tab.TabContent) -> Tab
     let secureVaultFactory: AutofillVaultFactory
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
@@ -352,10 +351,7 @@ final class Fire: FireProtocol {
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
          dataClearingWideEventService: DataClearingWideEventService? = nil,
-         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer(),
-         makeReplacementPinnedTab: @escaping @MainActor (Tab.TabContent) -> Tab = { content in
-             Tab(content: content, shouldLoadInBackground: true)
-         }
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -391,7 +387,6 @@ final class Fire: FireProtocol {
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
         self.dataClearingWideEventService = dataClearingWideEventService
         self.tabCleanupPreparer = tabCleanupPreparer
-        self.makeReplacementPinnedTab = makeReplacementPinnedTab
     }
 
     @MainActor
@@ -1067,7 +1062,7 @@ final class Fire: FireProtocol {
         var firstError: Error?
 
         func replacementPinnedTab(from pinnedTab: AnyTab) -> Tab {
-            return makeReplacementPinnedTab(pinnedTab.content.loadedFromCache())
+            return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
         }
 
         func selectPinnedTabIfNeeded(in tabCollectionViewModel: TabCollectionViewModel) {

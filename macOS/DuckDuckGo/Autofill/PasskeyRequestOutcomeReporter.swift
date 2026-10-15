@@ -82,6 +82,20 @@ struct PasskeyRequestOutcome: Equatable {
     let duration: Duration
 }
 
+extension PasskeyRequestOutcome {
+
+    /// Whether the user used a passkey or saw the passkey sheet. AutoFill requests start on page load for every visitor, so
+    /// only a successful one counts, and a refused request never showed the sheet.
+    var isActiveUse: Bool {
+        switch (result, style) {
+        case (.success, _): return true
+        case (.failure(.requestInProgress), _): return false
+        case (_, .modal): return true
+        case (_, .autofill), (_, .unknown): return false
+        }
+    }
+}
+
 extension PasskeyRequestOutcome.Result {
 
     /// The reason the agent gives when it refuses a request because the app already has one open.
@@ -110,7 +124,8 @@ extension PasskeyRequestOutcome.Result {
     }
 }
 
-/// Fires a pixel for how each WebKit passkey request ends, so we can see whether passkeys work for users.
+/// Fires a pixel for how each WebKit passkey request ends, so we can see whether passkeys work for users, and a daily
+/// pixel for users who used a passkey or saw the passkey sheet.
 ///
 /// Successes and cancellations fire right away. A failure waits for ``failureDelay`` and fires only if no other outcome
 /// arrives first: a newer failure replaces it, and a success or cancellation drops it. Pages often retry a failed
@@ -129,6 +144,10 @@ final class PasskeyRequestOutcomeReporter {
     func report(_ outcome: PasskeyRequestOutcome) {
         pendingFailure?.cancel()
         pendingFailure = nil
+
+        if outcome.isActiveUse {
+            pixelFiring?.fire(PasskeyActiveUserPixel(), frequency: .daily)
+        }
 
         let pixel = PasskeyRequestOutcomePixel(outcome)
         Logger.general.log("WebKit passkey request outcome: \(pixel.name, privacy: .public) \(pixel.parameters ?? [:], privacy: .public)")
@@ -177,5 +196,13 @@ struct PasskeyRequestOutcomePixel: PixelKit.Event {
         return parameters
     }
 
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+/// A user used a passkey or saw the passkey sheet today.
+struct PasskeyActiveUserPixel: PixelKit.Event {
+    var name: String { "passkey_active_user_macos" }
+    var namePrefix: PixelKitNamePrefix { .none }
+    var parameters: [String: String]? { nil }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

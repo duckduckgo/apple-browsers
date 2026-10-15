@@ -86,5 +86,12 @@
                 "pattern": "^(requestInProgress|failed|other_-?[0-9]+)$"
             }
         ]
+    },
+    "passkey_active_user_macos": {
+        "description": "A user signed in or created a passkey on a web page, or saw the passkey sheet for one, at least once today. Passkey suggestions shown in a sign-in field don't count unless the user picks one, since pages start them for every visitor.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion"]
     }
 }

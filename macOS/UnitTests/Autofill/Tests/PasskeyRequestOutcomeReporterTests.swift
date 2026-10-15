@@ -29,6 +29,10 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        makeReporter()
+    }
+
+    private func makeReporter() {
         pixelFiring = PixelKitMock()
         reporter = PasskeyRequestOutcomeReporter(pixelFiring: pixelFiring, failureDelay: delay)
     }
@@ -49,8 +53,19 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
+    private let activeUserPixelName = "passkey_active_user_macos"
+
+    /// Fired pixels other than the active user one.
+    private var outcomeFireCalls: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name != activeUserPixelName }
+    }
+
     private var firedPixels: [String] {
-        pixelFiring.actualFireCalls.map { $0.pixel.name }
+        outcomeFireCalls.map { $0.pixel.name }
+    }
+
+    private var activeUserFireCalls: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name == activeUserPixelName }
     }
 
     // MARK: - Firing
@@ -58,7 +73,7 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     func test_success_firesRightAway() {
         reporter.report(outcome(.success))
 
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
+        XCTAssertEqual(outcomeFireCalls, [
             ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.success)), frequency: .dailyAndCount)
         ])
     }
@@ -66,18 +81,18 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
     func test_cancellation_firesRightAway() {
         reporter.report(outcome(.canceled))
 
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
+        XCTAssertEqual(outcomeFireCalls, [
             ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.canceled)), frequency: .dailyAndCount)
         ])
     }
 
     func test_failure_firesAfterDelay() {
         reporter.report(outcome(.failure(.failed)))
-        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertTrue(outcomeFireCalls.isEmpty)
 
         waitPastDelay()
 
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
+        XCTAssertEqual(outcomeFireCalls, [
             ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.failure(.failed))), frequency: .dailyAndCount)
         ])
     }
@@ -88,7 +103,7 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
 
         waitPastDelay()
 
-        XCTAssertEqual(pixelFiring.actualFireCalls, [
+        XCTAssertEqual(outcomeFireCalls, [
             ExpectedFireCall(pixel: PasskeyRequestOutcomePixel(outcome(.failure(.requestInProgress))), frequency: .dailyAndCount)
         ])
     }
@@ -118,6 +133,42 @@ final class PasskeyRequestOutcomeReporterTests: XCTestCase {
         waitPastDelay()
 
         XCTAssertEqual(firedPixels, ["passkey_request_failure_macos", "passkey_request_failure_macos"])
+    }
+
+    // MARK: - Active users
+
+    func test_activeUser_firesDaily_forSuccessesAndShownSheets() {
+        let outcomes: [PasskeyRequestOutcome] = [
+            outcome(.success),
+            outcome(.success, style: .autofill),
+            outcome(.canceled),
+            outcome(.failure(.failed))
+        ]
+
+        for activeUse in outcomes {
+            makeReporter()
+            reporter.report(activeUse)
+
+            XCTAssertEqual(activeUserFireCalls, [ExpectedFireCall(pixel: PasskeyActiveUserPixel(), frequency: .daily)], "\(activeUse)")
+        }
+    }
+
+    func test_activeUser_doesNotFire_withoutPasskeyUseOrSheet() {
+        let outcomes: [PasskeyRequestOutcome] = [
+            outcome(.canceled, style: .autofill),
+            outcome(.failure(.failed), style: .autofill),
+            outcome(.failure(.requestInProgress)),
+            outcome(.failure(.requestInProgress), style: .autofill),
+            outcome(.canceled, style: .unknown)
+        ]
+
+        for outcome in outcomes {
+            makeReporter()
+            reporter.report(outcome)
+            waitPastDelay()
+
+            XCTAssertTrue(activeUserFireCalls.isEmpty, "\(outcome)")
+        }
     }
 
     // MARK: - Parameters

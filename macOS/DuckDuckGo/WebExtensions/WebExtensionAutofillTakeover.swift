@@ -60,17 +60,27 @@ struct AutofillManagingExtension: Equatable {
 /// rebuilds them, so open tabs follow on their next navigation.
 final class WebExtensionAutofillTakeover {
 
+    typealias ManagingExtensions = [ExtensionManagedAutofillKind: AutofillManagingExtension]
+
     static let shared = WebExtensionAutofillTakeover()
 
     private let lock = NSLock()
-    private var managingExtensions: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
-    private let managerProvider: @MainActor () -> WebExtensionManaging?
+    private var managingExtensions: ManagingExtensions = [:]
+    private let readManagingExtensions: @MainActor () -> ManagingExtensions
+    private let clearSetting: @MainActor (ExtensionManagedAutofillKind) -> Void
     private let notificationCenter: NotificationCenter
     private var observer: NSObjectProtocol?
 
-    init(managerProvider: @escaping @MainActor () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager },
+    /// - Parameters:
+    ///   - readManagingExtensions: Which loaded extension manages each kind. Reads the app's extension
+    ///     manager by default.
+    ///   - clearSetting: Removes every extension's control of a kind. Uses the app's extension manager
+    ///     by default.
+    init(readManagingExtensions: @escaping @MainActor () -> ManagingExtensions = WebExtensionAutofillTakeover.managingExtensionsOfLoadedExtensions,
+         clearSetting: @escaping @MainActor (ExtensionManagedAutofillKind) -> Void = WebExtensionAutofillTakeover.clearSettingForEveryExtension,
          notificationCenter: NotificationCenter = .default) {
-        self.managerProvider = managerProvider
+        self.readManagingExtensions = readManagingExtensions
+        self.clearSetting = clearSetting
         self.notificationCenter = notificationCenter
         if #available(macOS 15.4, *) {
             observer = notificationCenter.addObserver(forName: .webExtensionPrivacySettingsDidChange, object: nil, queue: .main) { [weak self] _ in
@@ -98,17 +108,7 @@ final class WebExtensionAutofillTakeover {
     /// Reads again which extensions manage which kinds.
     @MainActor
     func refresh() {
-        var updated: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
-        if #available(macOS 15.4, *), let manager = managerProvider() as? WebExtensionManager, let store = manager.privacySettings {
-            for kind in ExtensionManagedAutofillKind.allCases {
-                guard let identifier = store.identifierTurningOff(kind.privacySetting),
-                      let context = manager.context(for: identifier) else { continue }
-                updated[kind] = AutofillManagingExtension(identifier: identifier,
-                                                          name: context.webExtension.displayName ?? identifier,
-                                                          icon: context.webExtension.icon(for: NSSize(width: 32, height: 32)))
-            }
-        }
-
+        let updated = readManagingExtensions()
         let hasChanged = lock.withLock {
             guard managingExtensions != updated else { return false }
             managingExtensions = updated
@@ -119,13 +119,36 @@ final class WebExtensionAutofillTakeover {
         }
     }
 
-    /// Gives `kind` back to DuckDuckGo: the extension that manages it no longer controls the setting.
-    /// The extension sees that it isn't in control any more, as in Chrome.
+    /// Gives `kind` back to DuckDuckGo: no extension controls the setting any more, not even one that
+    /// set it before the one managing it now. The extensions see that they aren't in control, as in Chrome.
     @MainActor
     func giveBackToDuckDuckGo(_ kind: ExtensionManagedAutofillKind) {
+        clearSetting(kind)
+    }
+
+    // MARK: - App Extension Manager
+
+    @MainActor
+    static func managingExtensionsOfLoadedExtensions() -> ManagingExtensions {
         guard #available(macOS 15.4, *),
-              let identifier = managingExtension(for: kind)?.identifier,
-              let store = (managerProvider() as? WebExtensionManager)?.privacySettings else { return }
-        store.clear(kind.privacySetting, for: identifier)
+              let manager = NSApp.delegateTyped.webExtensionManager as? WebExtensionManager,
+              let store = manager.privacySettings else { return [:] }
+
+        var result: ManagingExtensions = [:]
+        for kind in ExtensionManagedAutofillKind.allCases {
+            guard let identifier = store.identifierTurningOff(kind.privacySetting),
+                  let context = manager.context(for: identifier) else { continue }
+            result[kind] = AutofillManagingExtension(identifier: identifier,
+                                                     name: context.webExtension.displayName ?? identifier,
+                                                     icon: context.webExtension.icon(for: NSSize(width: 32, height: 32)))
+        }
+        return result
+    }
+
+    @MainActor
+    static func clearSettingForEveryExtension(_ kind: ExtensionManagedAutofillKind) {
+        guard #available(macOS 15.4, *),
+              let store = (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.privacySettings else { return }
+        store.clearAll(kind.privacySetting)
     }
 }

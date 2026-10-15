@@ -113,6 +113,19 @@ public final class WebExtensionPrivacySettingsStore {
         }
     }
 
+    /// Removes the value every extension set for `setting`, so it goes back to its default rather than
+    /// to the next extension that set it.
+    public func clearAll(_ setting: WebExtensionPrivacySetting) {
+        update { overrides in
+            for identifier in overrides.keys {
+                overrides[identifier]?[setting.rawValue] = nil
+                if overrides[identifier]?.isEmpty == true {
+                    overrides[identifier] = nil
+                }
+            }
+        }
+    }
+
     /// Copies the values of an installation to the installation that replaces it in an update.
     public func copySettingsForUpdate(from oldIdentifier: String, to newIdentifier: String) {
         update { overrides in

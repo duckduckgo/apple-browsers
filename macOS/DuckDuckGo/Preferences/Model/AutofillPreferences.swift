@@ -39,19 +39,29 @@ extension AutofillPreferencesPersistor {
     /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
     /// no extension has taken passwords over.
     var isUsernamesAndPasswordsAutofillActive: Bool {
-        askToSaveUsernamesAndPasswords && !WebExtensionAutofillTakeover.shared.isManagedByExtension(.passwords)
+        isAutofillActive(for: .passwords)
     }
 
     /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
     /// has taken addresses over.
     var isAddressesAutofillActive: Bool {
-        askToSaveAddresses && !WebExtensionAutofillTakeover.shared.isManagedByExtension(.addresses)
+        isAutofillActive(for: .addresses)
     }
 
     /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
     /// extension has taken cards over.
     var isPaymentMethodsAutofillActive: Bool {
-        askToSavePaymentMethods && !WebExtensionAutofillTakeover.shared.isManagedByExtension(.cards)
+        isAutofillActive(for: .cards)
+    }
+
+    func isAutofillActive(for kind: ExtensionManagedAutofillKind, takeover: WebExtensionAutofillTakeover = .shared) -> Bool {
+        let isWanted: Bool
+        switch kind {
+        case .passwords: isWanted = askToSaveUsernamesAndPasswords
+        case .addresses: isWanted = askToSaveAddresses
+        case .cards: isWanted = askToSavePaymentMethods
+        }
+        return isWanted && !takeover.isManagedByExtension(kind)
     }
 }
 

@@ -2461,8 +2461,10 @@
 		7BE33DE52DC12C4E00A96502 /* NativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */; };
 		7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
 		7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
+		91547350ABB7129992749FED /* WebExtensionAutofillTakeoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */; };
 		7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
 		7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
+		B5A373FA411A6E99C15ACE3C /* WebExtensionAutofillTakeoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */; };
 		7BEC182F2AD5D8DC00D30536 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */; };
 		7BEC20422B0F505F00243D3E /* AddBookmarkPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */; };
 		7BEC20432B0F505F00243D3E /* AddBookmarkPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */; };
@@ -6257,6 +6259,7 @@
 		7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandler.swift; sourceTree = "<group>"; };
 		7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifestTests.swift; sourceTree = "<group>"; };
 		7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSessionTests.swift; sourceTree = "<group>"; };
+		0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAutofillTakeoverTests.swift; sourceTree = "<group>"; };
 		7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAPICompatibilityLogViewModelTests.swift; sourceTree = "<group>"; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
 		7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverView.swift; sourceTree = "<group>"; };
@@ -8933,6 +8936,7 @@
 				DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */,
 				7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */,
 				7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */,
+				0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */,
 				7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */,
 			);
 			path = WebExtensions;
@@ -17479,6 +17483,7 @@
 				7BD5A0312F0A0C0100000031 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */,
 				7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */,
+				91547350ABB7129992749FED /* WebExtensionAutofillTakeoverTests.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
 				FFA1DFE4967209A9C47D7160 /* QuitSurveyPromoObserverTests.swift in Sources */,
@@ -19975,6 +19980,7 @@
 				7BD5A0322F0A0C0100000032 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */,
 				7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */,
+				B5A373FA411A6E99C15ACE3C /* WebExtensionAutofillTakeoverTests.swift in Sources */,
 				B68412202B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,
 				BDA764912BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,

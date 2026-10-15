@@ -36,8 +36,8 @@ import Foundation
 ///   one, so DuckDuckGo autofill can step aside for it. Without that handler they are persisted in
 ///   `storage.local` under one reserved key.
 ///
-/// `URL` objects report `chrome-extension:` as the protocol of `webkit-extension:` URLs, for extensions
-/// that only accept their own URLs under the schemes they know.
+/// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
+/// solves, for Chrome-only code no generic stub can cover.
 ///
 /// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
@@ -117,27 +117,65 @@ public enum WebExtensionAPIStubScript {
             }
         });
 
-        // WebKit serves extension pages over `webkit-extension:`, a scheme Chrome extensions don't know.
-        // Some check that a URL is theirs by its protocol: Bitwarden's inline menu only loads its button
-        // from `chrome-extension:`, `moz-extension:` or `safari-web-extension:` URLs, and shows nothing
-        // otherwise. So `URL` reports `chrome-extension:` for these URLs. Only the `protocol` reading
-        // changes: `href`, `origin` and navigation keep the real scheme.
-        try {
-            var urlProtocol = globalThis.URL && Object.getOwnPropertyDescriptor(globalThis.URL.prototype, "protocol");
-            if (urlProtocol && typeof urlProtocol.get === "function" && urlProtocol.configurable) {
-                Object.defineProperty(globalThis.URL.prototype, "protocol", {
-                    get: function() {
-                        var value = urlProtocol.get.call(this);
-                        return value === "webkit-extension:" ? "chrome-extension:" : value;
-                    },
-                    set: urlProtocol.set,
-                    enumerable: urlProtocol.enumerable,
-                    configurable: true
-                });
+        // Fixes for a single extension, for Chrome-only code no generic stub can cover. Each entry names
+        // the extension, recognizes it by its manifest and applies its fix. A fix only changes how the
+        // extension's own pages behave, so matching on fields another extension could copy gives nothing
+        // away. Add an entry only for a problem seen in that extension, and say what it fixes.
+        var extensionFixes = [
+            {
+                // Bitwarden's inline menu only loads its field button from `chrome-extension:`,
+                // `moz-extension:` or `safari-web-extension:` URLs, so on `webkit-extension:` pages the
+                // button never shows.
+                name: "Bitwarden",
+                matches: function(manifest) {
+                    return manifest.homepage_url === "https://bitwarden.com";
+                },
+                apply: reportChromeExtensionProtocol
             }
-        } catch (error) {
-            console.info("[DuckDuckGo] Could not adapt URL.protocol: " + error);
+        ];
+
+        // `URL` reports `chrome-extension:` as the protocol of `webkit-extension:` URLs. `href`, `origin`
+        // and navigation keep the real scheme, and setting the protocol to `chrome-extension:` writes the
+        // real one, so a URL rebuilt from its parts still loads.
+        function reportChromeExtensionProtocol() {
+            var urlProtocol = globalThis.URL && Object.getOwnPropertyDescriptor(globalThis.URL.prototype, "protocol");
+            if (!urlProtocol || typeof urlProtocol.get !== "function" || typeof urlProtocol.set !== "function"
+                || !urlProtocol.configurable) {
+                return;
+            }
+            Object.defineProperty(globalThis.URL.prototype, "protocol", {
+                get: function() {
+                    var value = urlProtocol.get.call(this);
+                    return value === "webkit-extension:" ? "chrome-extension:" : value;
+                },
+                set: function(value) {
+                    urlProtocol.set.call(this, value === "chrome-extension:" ? "webkit-extension:" : value);
+                },
+                enumerable: urlProtocol.enumerable,
+                configurable: true
+            });
         }
+
+        (function applyExtensionFixes() {
+            var manifest = null;
+            try {
+                manifest = api.runtime && typeof api.runtime.getManifest === "function" ? api.runtime.getManifest() : null;
+            } catch (error) {
+                return;
+            }
+            if (manifest === null || typeof manifest !== "object") {
+                return;
+            }
+            extensionFixes.forEach(function(fix) {
+                try {
+                    if (fix.matches(manifest)) {
+                        fix.apply();
+                    }
+                } catch (error) {
+                    console.info("[DuckDuckGo] Could not apply the " + fix.name + " fix: " + error);
+                }
+            });
+        })();
 
         // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
         // generic nestable stub; "offscreen", "privacy" and "idle" are purpose-shaped (see

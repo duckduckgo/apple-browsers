@@ -78,33 +78,35 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications !== undefined")
     }
 
-    // MARK: - URL Protocol
+    // MARK: - Extension Fixes
 
-    func testWhenAURLUsesTheExtensionScheme_ThenItsProtocolReadsAsChromes() throws {
+    func testWhenTheExtensionIsBitwarden_ThenItsURLsReportChromesProtocol() throws {
         try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://bitwarden.com' }")
         try evaluateStubScript()
 
         try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').protocol === 'chrome-extension:'")
         try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').href === 'webkit-extension://abc/overlay/menu.html'")
-    }
-
-    func testWhenAURLUsesAnotherScheme_ThenItsProtocolIsUnchanged() throws {
-        try installFakeURL()
-        try evaluateStubScript()
-
         try assertTrue("new URL('https://example.com/').protocol === 'https:'")
     }
 
-    func testWhenTheProtocolIsSet_ThenTheOriginalSetterRuns() throws {
+    func testWhenBitwardenSetsChromesProtocol_ThenTheURLKeepsTheRealScheme() throws {
         try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://bitwarden.com' }")
         try evaluateStubScript()
 
-        try assertTrue("(function() { var url = new URL('https://example.com/'); url.protocol = 'http:'; return url.protocol === 'http:'; })()")
+        try assertTrue("""
+        (function() {
+            var url = new URL('webkit-extension://abc/');
+            url.protocol = url.protocol;
+            return url.scheme === 'webkit-extension:';
+        })()
+        """)
     }
 
-    func testWhenThePageIsAWebsite_ThenURLIsLeftAlone() throws {
+    func testWhenTheExtensionIsAnotherOne_ThenItsURLsAreLeftAlone() throws {
         try installFakeURL()
-        context.evaluateScript("var location = { protocol: 'https:' };")
+        try declareManifest("{ homepage_url: 'https://example.com' }")
         try evaluateStubScript()
 
         try assertTrue("new URL('webkit-extension://abc/').protocol === 'webkit-extension:'")
@@ -1562,6 +1564,12 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
             configurable: true
         });
         """)
+        try assertNoExceptions()
+    }
+
+    /// Gives the page the manifest `literal`, a JavaScript object literal.
+    private func declareManifest(_ literal: String) throws {
+        context.evaluateScript("chrome.runtime.getManifest = function() { return \(literal); };")
         try assertNoExceptions()
     }
 

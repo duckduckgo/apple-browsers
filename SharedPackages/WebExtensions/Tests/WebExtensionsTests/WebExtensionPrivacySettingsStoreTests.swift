@@ -111,6 +111,19 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "bitwarden").levelOfControl, .controllableByThisExtension)
     }
 
+    func testWhenEveryValueOfASettingIsCleared_ThenNoExtensionControlsItAndOtherSettingsAreKept() {
+        let store = makeStore()
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        date += 1
+        store.set(false, for: .passwordSavingEnabled, by: "other")
+        store.set(false, for: .autofillAddressEnabled, by: "other")
+
+        store.clearAll(.passwordSavingEnabled)
+
+        XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
+        XCTAssertEqual(store.identifierTurningOff(.autofillAddressEnabled), "other")
+    }
+
     // MARK: - Extensions That May Not Control Settings
 
     func testWhenAnExtensionMayNotControlSettings_ThenItsSetIsRefused() {

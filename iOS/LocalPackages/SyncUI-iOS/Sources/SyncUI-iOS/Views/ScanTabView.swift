@@ -402,12 +402,10 @@ private struct ScanTabPreview: View {
     @State var showIntroAnimation = false
 
     var body: some View {
-        RebrandedPreview(isRebranded: true) {
-            NavigationView {
-                ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .environment(\.colorScheme, .dark)
-            }
+        NavigationView {
+            ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .environment(\.colorScheme, .dark)
         }
     }
 }

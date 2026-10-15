@@ -59,23 +59,17 @@ private func widgetEducationPreview() -> some View {
 }
 
 #Preview("Widget education - Light") {
-    RebrandedPreview {
-        widgetEducationPreview()
-    }
+    widgetEducationPreview()
 }
 
 #Preview("Widget education - Dark") {
-    RebrandedPreview {
-        widgetEducationPreview()
-    }
-    .preferredColorScheme(.dark)
+    widgetEducationPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Widget education - Large Text") {
-    RebrandedPreview {
-        widgetEducationPreview()
-    }
-    .dynamicTypeSize(.accessibility3)
+    widgetEducationPreview()
+        .dynamicTypeSize(.accessibility3)
 }
 
 #endif

@@ -89,6 +89,9 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let animatesPresentationEffects: Bool
     private let firePixel: (PromptBarPixel) -> Void
     private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
+    private let isDragEnabled: () -> Bool
+    private let loadRelativePosition: () -> CGPoint?
+    private let saveRelativePosition: (CGPoint) -> Void
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
@@ -106,6 +109,9 @@ final class PromptBarPresenter: PromptBarPresenting {
          presentationEffectsEnabled: @escaping () -> Bool = { false },
          animatesPresentationEffects: Bool = true,
          promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
+         isDragEnabled: @escaping () -> Bool = { false },
+         loadRelativePosition: @escaping () -> CGPoint? = { nil },
+         saveRelativePosition: @escaping (CGPoint) -> Void = { _ in },
          firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
             if case .firstUse = pixel {
                 PixelKit.fire(pixel, frequency: .uniqueByName, includeAppVersionParameter: true)
@@ -120,6 +126,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         self.presentationEffectsEnabled = presentationEffectsEnabled
         self.animatesPresentationEffects = animatesPresentationEffects
         self.promoOutcome = promoOutcome
+        self.isDragEnabled = isDragEnabled
+        self.loadRelativePosition = loadRelativePosition
+        self.saveRelativePosition = saveRelativePosition
         self.firePixel = firePixel
 
         self.content.onSubmit = { [weak self] in
@@ -204,9 +213,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         content.prepareForPresentation()
 
         let window = existingWindowOrNew()
-        window.setFrame(PromptBarPlacement.frame(forContentHeight: content.preferredWindowContentSize.height,
-                                                 in: screenProvider.targetVisibleFrame),
-                        display: false)
+        let isDraggable = isDragEnabled()
+        window.isMovableByWindowBackground = isDraggable
+        window.setFrame(presentationFrame(isDraggable: isDraggable), display: false)
 
         let showsEffects = presentationEffectsEnabled()
         window.alphaValue = showsEffects ? 0 : 1
@@ -223,6 +232,15 @@ final class PromptBarPresenter: PromptBarPresenting {
         subscribeToResignKey(of: window)
     }
 
+    private func presentationFrame(isDraggable: Bool) -> NSRect {
+        let contentHeight = content.preferredWindowContentSize.height
+        let visibleFrame = screenProvider.targetVisibleFrame
+        guard isDraggable, let relativePosition = loadRelativePosition() else {
+            return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame)
+        }
+        return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame, relativePosition: relativePosition)
+    }
+
     func dismiss(reason: PromptBarDismissReason) {
         // Visibility, not just existence: submitting reports through two delegate callbacks and so
         // asks to dismiss twice, and `resetAfterDismissal` must not run against a torn-down bar.
@@ -230,6 +248,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         // Read before `resetAfterDismissal()` clears the draft.
         let hadText = content.hasPromptText
         resignKeyCancellable = nil
+        if window.isMovableByWindowBackground, let visibleFrame = window.screen?.visibleFrame {
+            saveRelativePosition(PromptBarPlacement.relativePosition(of: window.frame, in: visibleFrame))
+        }
         window.orderOut(nil)
         if let dimWindow {
             self.dimWindow = nil
@@ -281,9 +302,13 @@ final class PromptBarPresenter: PromptBarPresenting {
         guard let window else { return }
 
         var frame = window.frame
-        let top = frame.maxY
+        var top = frame.maxY
         frame.size.height = size.height
-        frame.origin.y = top - size.height
+        if let visibleFrame = window.screen?.visibleFrame {
+            frame.size.height = min(size.height, visibleFrame.height)
+            top = min(max(top, visibleFrame.minY + frame.height), visibleFrame.maxY)
+        }
+        frame.origin.y = top - frame.height
         window.setFrame(frame, display: true, animate: false)
     }
 }

@@ -52,8 +52,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -92,8 +92,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -140,8 +140,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -185,8 +185,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -218,8 +218,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -246,8 +246,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -273,8 +273,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -312,8 +312,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -345,8 +345,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -378,8 +378,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -494,8 +494,8 @@
             {
                 "key": "flow_version",
                 "type": "string",
-                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
-                "enum": ["v1", "v2"]
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
             },
             {
                 "key": "my_kind",
@@ -611,6 +611,27 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "sync_setup_authentication_result": {
+        "description": "Fired when the user responds to the device authentication prompt (Face ID, Touch ID or passcode) that gates a Sync setup flow, or when the prompt can't be shown because the device has no passcode. Not fired when a recent authentication is reused and no prompt is shown.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "result",
+                "type": "string",
+                "description": "Outcome of the authentication. failed includes the user cancelling the prompt. unconfigured means the device has no passcode set.",
+                "enum": ["succeeded", "failed", "unconfigured"]
+            },
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the authentication was requested. settings_not_synced: Sync with Another Device or the back-up toggle while not synced, including promotions that open the pairing flow. settings_synced: Sync with Another Device while already synced. this_device: Sync This Device Only on the sync another device prompt. recover: recovering synced data with a recovery code. deep_link: a Sync setup deep link.",
+                "enum": ["settings_not_synced", "settings_synced", "this_device", "recover", "deep_link"]
+            }
+        ]
+    },
     "sync_setup_deep_link_flow_started": {
         "description": "Fired when a Sync setup flow starts from a deep link.",
         "owners": ["amddg44"],
@@ -638,5 +659,79 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_setup_joiner_recovery_code_done_success": {
+        "description": "Fired by the joiner after successfully sending a recovery_code_done success report to the host.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "host_has_account",
+                "type": "boolean",
+                "description": "Whether the host had an account when roles were negotiated."
+            },
+            {
+                "key": "host_kind",
+                "type": "string",
+                "description": "The host client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "joiner_has_account",
+                "type": "boolean",
+                "description": "Whether the joiner had an account when roles were negotiated."
+            },
+            {
+                "key": "joiner_kind",
+                "type": "string",
+                "description": "The joiner client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "protocol_version",
+                "type": "string",
+                "description": "The negotiated Exchange protocol version."
+            }
+        ]
+    },
+    "sync_setup_joiner_recovery_code_done_failed": {
+        "description": "Fired by the joiner after successfully sending a recovery_code_done failed report to the host.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "host_has_account",
+                "type": "boolean",
+                "description": "Whether the host had an account when roles were negotiated."
+            },
+            {
+                "key": "host_kind",
+                "type": "string",
+                "description": "The host client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "joiner_has_account",
+                "type": "boolean",
+                "description": "Whether the joiner had an account when roles were negotiated."
+            },
+            {
+                "key": "joiner_kind",
+                "type": "string",
+                "description": "The joiner client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "protocol_version",
+                "type": "string",
+                "description": "The negotiated Exchange protocol version."
+            }
+        ]
     }
 }

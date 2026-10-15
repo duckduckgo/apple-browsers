@@ -15,6 +15,10 @@ env:
 on:
   workflow_dispatch:
     inputs:
+      collect_xcode_diagnostics:
+        description: "Collect Xcode's additional test diagnostics"
+        type: boolean
+        default: false
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AppLaunchUITests')"
         type: string
@@ -72,6 +76,7 @@ jobs:
       include: ${{ steps.matrix.outputs.include }}
       run-production: ${{ steps.modes.outputs.run-production }}
       run-internal: ${{ steps.modes.outputs.run-internal }}
+      diagnostics-mode: ${{ steps.modes.outputs.diagnostics-mode }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -82,6 +87,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_MODES: ${{ inputs.user_modes }}
+          INPUT_COLLECT_XCODE_DIAGNOSTICS: ${{ inputs.collect_xcode_diagnostics }}
         run: |
           case "$EVENT_NAME" in
             schedule) modes='["production", "internal"]' ;;
@@ -96,6 +102,11 @@ jobs:
           esac
           echo "run-production=$(jq -r 'index("production") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
           echo "run-internal=$(jq -r 'index("internal") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
+          diagnostics_mode=never
+          if [[ "$EVENT_NAME" == workflow_dispatch && "$INPUT_COLLECT_XCODE_DIAGNOSTICS" == true ]]; then
+            diagnostics_mode=default
+          fi
+          echo "diagnostics-mode=$diagnostics_mode" >> "$GITHUB_OUTPUT"
 
       - name: Define test matrix
         id: matrix
@@ -294,6 +305,7 @@ jobs:
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: production
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
+      diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
 
   ui-tests-internal:
     name: UI Tests
@@ -313,6 +325,7 @@ jobs:
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: internal
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
+      diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
 
   test-report:
     name: Report test results

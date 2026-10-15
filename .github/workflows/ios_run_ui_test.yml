@@ -37,6 +37,11 @@ on:
         description: "Immutable build artifact name"
         required: true
         type: string
+      diagnostics-mode:
+        description: "Xcode's additional test diagnostics collection mode"
+        required: false
+        default: never
+        type: string
 
 jobs:
   run-ui-test:
@@ -134,9 +139,16 @@ jobs:
       id: run-ui-tests
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+        DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
       run: |
         : > ui-tests.log
         xctestrun_path=$(<xctestrun-path)
+        diagnostics_args=()
+        case "$DIAGNOSTICS_MODE" in
+          default) ;;
+          never) diagnostics_args=(-collect-test-diagnostics never) ;;
+          *) echo "::error::Unsupported diagnostics mode '$DIAGNOSTICS_MODE'."; exit 1 ;;
+        esac
         set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
           xcodebuild test-without-building \
           -xctestrun "$xctestrun_path" \
@@ -146,6 +158,7 @@ jobs:
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
           "-only-testing:UI Tests/$TEST_CLASS" \
+          "${diagnostics_args[@]}" \
         2>&1 | tee ui-tests.log \
         | xcbeautify
 

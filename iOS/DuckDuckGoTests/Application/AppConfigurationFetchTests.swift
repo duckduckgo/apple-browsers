@@ -19,6 +19,8 @@
 
 import XCTest
 import BackgroundTasks
+import Configuration
+@testable import Core
 @testable import DuckDuckGo
 
 class AppConfigurationFetchTests: XCTestCase {
@@ -33,6 +35,59 @@ class AppConfigurationFetchTests: XCTestCase {
         try super.setUpWithError()
 
         UserDefaults(suiteName: testGroupName)?.removePersistentDomain(forName: testGroupName)
+    }
+
+    // MARK: - Override reset
+
+    func testWhenStoredOverrideIsDiscardedThenRefreshThrottleIsCleared() {
+        let (markerDefaults, launchArguments) = makeOverrideDefaults()
+        PrivacyConfigurationOverrideMarker(defaults: markerDefaults).set(true)
+        let key = UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue
+        launchArguments.set(Date(), forKey: key)
+        var removals = 0
+
+        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(markerDefaults: markerDefaults,
+                                                                                            launchArguments: launchArguments) { removals += 1 }
+
+        XCTAssertTrue(didReset)
+        XCTAssertEqual(removals, 1)
+        XCTAssertNil(launchArguments.object(forKey: key))
+    }
+
+    func testWhenNoStoredOverrideThenRefreshThrottleIsKept() {
+        let (markerDefaults, launchArguments) = makeOverrideDefaults()
+        let key = UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue
+        launchArguments.set(Date(), forKey: key)
+
+        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(markerDefaults: markerDefaults,
+                                                                                            launchArguments: launchArguments) { XCTFail("Unexpected removal") }
+
+        XCTAssertFalse(didReset)
+        XCTAssertNotNil(launchArguments.object(forKey: key))
+    }
+
+    func testWhenOverrideArgumentIsPresentThenRefreshThrottleIsKept() {
+        let (markerDefaults, launchArguments) = makeOverrideDefaults()
+        PrivacyConfigurationOverrideMarker(defaults: markerDefaults).set(true)
+        launchArguments.set("http://localhost:8080/ios-config.json", forKey: PrivacyConfigurationOverrideCommand.launchArgumentKey)
+        let key = UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue
+        launchArguments.set(Date(), forKey: key)
+
+        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(markerDefaults: markerDefaults,
+                                                                                            launchArguments: launchArguments) { XCTFail("Unexpected removal") }
+
+        XCTAssertFalse(didReset)
+        XCTAssertNotNil(launchArguments.object(forKey: key))
+    }
+
+    private func makeOverrideDefaults() -> (marker: UserDefaults, launchArguments: UserDefaults) {
+        let markerSuite = "\(testGroupName).marker.\(UUID().uuidString)"
+        let argumentsSuite = "\(testGroupName).arguments.\(UUID().uuidString)"
+        addTeardownBlock {
+            UserDefaults(suiteName: markerSuite)?.removePersistentDomain(forName: markerSuite)
+            UserDefaults(suiteName: argumentsSuite)?.removePersistentDomain(forName: argumentsSuite)
+        }
+        return (UserDefaults(suiteName: markerSuite)!, UserDefaults(suiteName: argumentsSuite)!)
     }
 
     func testBackgroundRefreshCompletionStatusSuccess() {

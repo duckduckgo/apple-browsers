@@ -119,10 +119,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .downgraded: versionChange = .downgraded
         case .noChange: versionChange = nil
         }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
-            NSApp.isActive ? .active : .inactive
+        let presence = cpmPresenceTracker
+        // A Mac whose screen is locked or asleep never reports `background`; CPM diagnostics report it as such.
+        let applicationState: @MainActor () -> CPMAppSessionDiagnostics.ApplicationState = {
+            if presence.isUserAway { return .background }
+            return NSApp.isActive ? .active : .inactive
         }
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange,
+                                        launchDate: appLaunchDate,
+                                        applicationState: applicationState,
+                                        lastResumeDate: { presence.lastResumeDate })
     }
+    /// Whether the screen is locked or asleep, and when the system last woke, for CPM diagnostics.
+    private(set) lazy var cpmPresenceTracker: CPMPresenceTracker = {
+        let tracker = CPMPresenceTracker()
+        let workspace = NSWorkspace.shared.notificationCenter
+        tracker.observe(NSWorkspace.screensDidSleepNotification, on: workspace, as: .screenSlept)
+        tracker.observe(NSWorkspace.screensDidWakeNotification, on: workspace, as: .screenWoke)
+        tracker.observe(NSWorkspace.didWakeNotification, on: workspace, as: .resumed)
+        let distributed = DistributedNotificationCenter.default()
+        tracker.observe(Notification.Name("com.apple.screenIsLocked"), on: distributed, as: .screenLocked)
+        tracker.observe(Notification.Name("com.apple.screenIsUnlocked"), on: distributed, as: .screenUnlocked)
+        return tracker
+    }()
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider

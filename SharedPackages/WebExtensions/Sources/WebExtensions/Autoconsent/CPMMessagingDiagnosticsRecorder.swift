@@ -123,17 +123,28 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     /// Every background web view WebKit created for the CPM context that has not been deallocated yet.
     private var liveBackgroundWebViews: [WeakBox<WKWebView>] = []
     let backgroundReadinessObserver: CPMBackgroundReadinessObserver
+    private var contextLoadStartedAt: Date?
+    /// Seconds from `contextWillLoad` to the context's first background view; `nil` until that view exists.
+    private var secondsFromContextLoadToFirstBackgroundView: TimeInterval?
+    private let pixelFiring: (any WebExtensionPixelFiring)?
+    private let deviceState: @MainActor () -> CPMDeviceState?
 
     /// - Parameters:
     ///   - tabResolver: Maps the health monitor's tab identifier to the tab's web view. Platform-specific.
     ///   - observesMemoryPressure: Disable in tests to avoid installing a dispatch source.
     ///   - featureFlags: Delegate-proxy and graveyard-treatment switches; `nil` disables graveyard retention.
+    ///   - pixelFiring: Receives one `cpmBackgroundReady` event for every background start that is observed; `nil` fires none.
+    ///   - deviceState: Reads power, thermal and Lockdown Mode conditions; `nil` from it leaves them unreported.
     public init(tabResolver: @escaping TabResolver,
                 observesMemoryPressure: Bool = true,
                 featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)? = nil,
                 now: @escaping () -> Date = Date.init,
-                appSession: CPMAppSessionDiagnostics? = nil) {
+                appSession: CPMAppSessionDiagnostics? = nil,
+                pixelFiring: (any WebExtensionPixelFiring)? = nil,
+                deviceState: @escaping @MainActor () -> CPMDeviceState? = { CPMDeviceState.current() }) {
         self.appSession = appSession
+        self.pixelFiring = pixelFiring
+        self.deviceState = deviceState
         self.tabResolver = tabResolver
         self.featureFlags = featureFlags
         self.backgroundWebViewGraveyard = CPMBackgroundWebViewGraveyard(featureFlags: featureFlags)
@@ -149,6 +160,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         }
         if observesMemoryPressure {
             installMemoryPressureSource()
+        }
+        backgroundReadinessObserver.onLoadFinished = { [weak self] readiness in
+            self?.backgroundDidFinishLoading(readiness)
         }
         featureFlagsCancellable = featureFlags?.updatesPublisher
             .receive(on: DispatchQueue.main)
@@ -220,6 +234,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         networkProcessIdentifierAtLastBackgroundViewCreation = nil
         lastBackgroundWebViewCreatedAt = nil
         lastBackgroundLoadError = nil
+        contextLoadStartedAt = now()
+        secondsFromContextLoadToFirstBackgroundView = nil
         backgroundReadinessObserver.stopObserving()
         // Preserve the latest update across context reloads, without carrying over old-context callbacks.
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
@@ -282,6 +298,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     public func didCreateBackgroundWebView(_ webView: WKWebView, for context: WKWebExtensionContext) {
         guard self.context === context else { return }
         backgroundWebViewCreateCount += 1
+        if backgroundWebViewCreateCount == 1 {
+            secondsFromContextLoadToFirstBackgroundView = contextLoadStartedAt.map { now().timeIntervalSince($0) }
+        }
 
         // Facts about the view being replaced, captured before it is forgotten.
         let previousViewWasAlive = currentBackgroundWebView != nil
@@ -432,6 +451,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         } else if isBackgroundDelegateProxyEnabled {
             diagnostics.backgroundReadiness = .noBackground
         }
+        diagnostics.secondsFromContextLoadToBackgroundView = secondsFromContextLoadToFirstBackgroundView
+        diagnostics.deviceState = deviceState()
+        diagnostics.secondsSinceResume = secondsSinceResume()
         if let context {
             let tabs = context.openTabs.compactMap { $0.base as? any WKWebExtensionTab }
             diagnostics.openTabCount = tabs.count
@@ -497,6 +519,22 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         }
         source.resume()
         memoryPressureSource = source
+    }
+
+    private func secondsSinceResume() -> TimeInterval? {
+        appSession?.lastResumeDate?().map { now().timeIntervalSince($0) }
+    }
+
+    /// Reports how this background start went, whether or not anything failed: the baseline the failure pixels lack.
+    private func backgroundDidFinishLoading(_ readiness: CPMBackgroundReadiness) {
+        let isFirstViewOfContext = backgroundWebViewCreateCount <= 1
+        let details = CPMBackgroundReadyDetails(kind: isFirstViewOfContext ? .contextLoad : .wake,
+                                                readiness: readiness,
+                                                applicationState: appSession?.applicationState?(),
+                                                secondsFromContextLoadToBackgroundView: isFirstViewOfContext ? secondsFromContextLoadToFirstBackgroundView : nil,
+                                                deviceState: deviceState(),
+                                                secondsSinceResume: secondsSinceResume())
+        pixelFiring?.fire(.cpmBackgroundReady(details))
     }
 
     /// Internal so tests can inject errors; a real `WKWebExtensionContext` only reports them through WebKit.

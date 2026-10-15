@@ -104,7 +104,9 @@ public enum WebExtensionManagerFactory {
                 case .downgraded: change = .downgraded
                 case nil: change = nil
                 }
-                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate) {
+                let presence = CPMPresenceTracker()
+                presence.observe(UIApplication.didBecomeActiveNotification, on: .default, as: .resumed)
+                let applicationState: @MainActor () -> CPMAppSessionDiagnostics.ApplicationState = {
                     switch UIApplication.shared.applicationState {
                     case .active: return .active
                     case .inactive: return .inactive
@@ -112,7 +114,12 @@ public enum WebExtensionManagerFactory {
                     @unknown default: return .inactive
                     }
                 }
-            }
+                return CPMAppSessionDiagnostics(appVersionChange: change,
+                                                launchDate: session.launchDate,
+                                                applicationState: applicationState,
+                                                lastResumeDate: { presence.lastResumeDate })
+            },
+            pixelFiring: pixelFiring
         ) : nil
 
         return WebExtensionManager(

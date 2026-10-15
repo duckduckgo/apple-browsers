@@ -36,14 +36,8 @@ struct PrivacyConfigurationOverrideCommandTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Parses reset", .timeLimit(.minutes(1)))
-    func parsesReset() {
-        #expect(PrivacyConfigurationOverrideCommand(launchArgumentValue: "reset") == .reset)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Rejects missing or invalid values", .timeLimit(.minutes(1)), arguments: [
-        nil, "", "  ", "not a url", "localhost:8080/config.json", "file:///tmp/config.json", "ftp://example.com/config.json", "http://",
+        nil, "", "  ", "not a url", "localhost:8080/config.json", "file:///tmp/config.json", "ftp://example.com/config.json", "http://", "reset",
     ])
     func rejectsInvalidValue(value: String?) {
         #expect(PrivacyConfigurationOverrideCommand(launchArgumentValue: value) == nil)
@@ -62,14 +56,42 @@ struct PrivacyConfigurationOverrideCommandTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Sets the override for internal users", .timeLimit(.minutes(1)))
-    func setsOverrideForInternalUser() {
+    @Test("Sets a session override for internal users", .timeLimit(.minutes(1)))
+    func setsSessionOverrideForInternalUser() {
         let (provider, store) = makeURLProvider(isInternalUser: true)
         let url = URL(string: "http://localhost:8080/ios-config.json")!
 
         #expect(PrivacyConfigurationOverrideCommand.set(url).apply(to: provider))
-        #expect(store.customPrivacyConfigurationURL == url)
+        #expect(provider.url(for: .privacyConfiguration) == url)
         #expect(provider.isPrivacyConfigurationOverridden)
+        #expect(store.customPrivacyConfigurationURL == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A session override is not kept for the next launch", .timeLimit(.minutes(1)))
+    func sessionOverrideIsNotPersisted() {
+        let (provider, store) = makeURLProvider(isInternalUser: true)
+        PrivacyConfigurationOverrideCommand.set(URL(string: "http://localhost:8080/ios-config.json")!).apply(to: provider)
+
+        let nextLaunch = ConfigurationURLProvider(defaultProvider: MockConfigurationURLProvider(),
+                                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                                  store: store)
+        #expect(store.customPrivacyConfigurationURL == nil)
+        #expect(!nextLaunch.isPrivacyConfigurationOverridden)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The session override wins over the debug custom URL, which returns after the launch", .timeLimit(.minutes(1)))
+    func sessionOverrideWinsOverDebugCustomURL() {
+        let (provider, store) = makeURLProvider(isInternalUser: true)
+        let debugURL = URL(string: "http://localhost:9090/debug-config.json")!
+        let sessionURL = URL(string: "http://localhost:8080/ios-config.json")!
+        store.customPrivacyConfigurationURL = debugURL
+        #expect(provider.url(for: .privacyConfiguration) == debugURL)
+
+        PrivacyConfigurationOverrideCommand.set(sessionURL).apply(to: provider)
+        #expect(provider.url(for: .privacyConfiguration) == sessionURL)
+        #expect(store.customPrivacyConfigurationURL == debugURL)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -81,16 +103,24 @@ struct PrivacyConfigurationOverrideCommandTests {
         #expect(store.customPrivacyConfigurationURL == nil)
         #expect(!provider.isPrivacyConfigurationOverridden)
     }
+}
+
+@Suite("Privacy configuration override marker")
+struct PrivacyConfigurationOverrideMarkerTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("Reset clears the override", .timeLimit(.minutes(1)))
-    func resetClearsOverride() {
-        let (provider, store) = makeURLProvider(isInternalUser: true)
-        store.customPrivacyConfigurationURL = URL(string: "http://localhost:8080/ios-config.json")
+    @Test("Is set and cleared", .timeLimit(.minutes(1)))
+    func setAndClear() throws {
+        let suiteName = "PrivacyConfigurationOverrideMarkerTests"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let marker = PrivacyConfigurationOverrideMarker(defaults: defaults)
 
-        #expect(PrivacyConfigurationOverrideCommand.reset.apply(to: provider))
-        #expect(store.customPrivacyConfigurationURL == nil)
-        #expect(!provider.isPrivacyConfigurationOverridden)
+        #expect(!marker.isSet)
+        marker.set(true)
+        #expect(marker.isSet)
+        marker.set(false)
+        #expect(!marker.isSet)
     }
 }
 
@@ -104,6 +134,8 @@ final class PrivacyConfigurationOverrideReporterTests {
     let store: MockCustomConfigurationURLStore
     let internalUserDecider = MockInternalUserDecider(isInternalUser: true)
     let contentBlockingUpdates = PassthroughSubject<[String], Never>()
+    let markerSuiteName = UUID().uuidString
+    let marker: PrivacyConfigurationOverrideMarker
     var scheduledTokens = [String]()
     var lines = [String]()
     var reporter: PrivacyConfigurationOverrideReporter!
@@ -113,6 +145,7 @@ final class PrivacyConfigurationOverrideReporterTests {
         privacyConfig.version = "1700000000001"
         privacyConfigurationManager = OverridePrivacyConfigurationManagerMock(privacyConfig: privacyConfig)
         (provider, store) = makeURLProvider(internalUserDecider: internalUserDecider)
+        marker = PrivacyConfigurationOverrideMarker(defaults: UserDefaults(suiteName: markerSuiteName)!)
         reporter = PrivacyConfigurationOverrideReporter(
             privacyConfigurationManager: privacyConfigurationManager,
             urlProvider: provider,
@@ -122,8 +155,13 @@ final class PrivacyConfigurationOverrideReporterTests {
                 scheduledTokens.append(token)
                 return token
             },
+            overrideMarker: marker,
             log: { [unowned self] in lines.append($0) }
         )
+    }
+
+    deinit {
+        UserDefaults(suiteName: markerSuiteName)?.removePersistentDomain(forName: markerSuiteName)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -138,8 +176,9 @@ final class PrivacyConfigurationOverrideReporterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Logs once per applied config, then once when its rules compile", .timeLimit(.minutes(1)))
-    func logsConfigThenContentBlocking() {
-        store.customPrivacyConfigurationURL = overrideURL
+    func logsConfigThenContentBlocking() async {
+        let fetchTask = reporter.handle(.set(overrideURL)) {}
+        await fetchTask?.value
 
         privacyConfigurationManager.updatesSubject.send()
         privacyConfigurationManager.updatesSubject.send()
@@ -160,9 +199,9 @@ final class PrivacyConfigurationOverrideReporterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Logs again when a new config is applied", .timeLimit(.minutes(1)))
-    func logsNewConfig() {
-        store.customPrivacyConfigurationURL = overrideURL
-        privacyConfigurationManager.updatesSubject.send()
+    func logsNewConfig() async {
+        let fetchTask = reporter.handle(.set(overrideURL)) {}
+        await fetchTask?.value
 
         privacyConfig.identifier = "def456"
         privacyConfig.version = "1700000000002"
@@ -170,6 +209,18 @@ final class PrivacyConfigurationOverrideReporterTests {
 
         #expect(lines.count == 2)
         #expect(lines.last == "CONFIG_OVERRIDE_APPLIED stage=config version=1700000000002 etag=def456 source=http://localhost:8080/ios-config.json")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Does not log a config loaded from disk at startup", .timeLimit(.minutes(1)))
+    func silentForDiskLoadedConfig() {
+        provider.setSessionURL(overrideURL, for: .privacyConfiguration)
+
+        privacyConfigurationManager.updatesSubject.send()
+        reporter.reportConfigApplied()
+
+        #expect(lines.isEmpty)
+        #expect(scheduledTokens.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -185,7 +236,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @available(iOS 16, macOS 13, *)
     @Test("Stays silent for non-internal users", .timeLimit(.minutes(1)))
     func silentForNonInternalUser() {
-        store.customPrivacyConfigurationURL = overrideURL
+        provider.setSessionURL(overrideURL, for: .privacyConfiguration)
         internalUserDecider.isInternalUser = false
 
         privacyConfigurationManager.updatesSubject.send()
@@ -194,46 +245,62 @@ final class PrivacyConfigurationOverrideReporterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Handling a command sets the override, fetches, and reports even without a reload", .timeLimit(.minutes(1)))
+    @Test("Handling a command sets a session override, fetches, marks the store, and reports even without a reload", .timeLimit(.minutes(1)))
     func handleReportsAfterFetch() async {
         var didFetch = false
-        await reporter.handle(.set(overrideURL)) { didFetch = true }?.value
+        let fetchTask = reporter.handle(.set(overrideURL)) { didFetch = true }
+        await fetchTask?.value
 
         #expect(didFetch)
-        #expect(store.customPrivacyConfigurationURL == overrideURL)
+        #expect(provider.isPrivacyConfigurationOverridden)
+        #expect(store.customPrivacyConfigurationURL == nil)
+        #expect(marker.isSet)
         #expect(lines == ["CONFIG_OVERRIDE_APPLIED stage=config version=1700000000001 etag=abc123 source=http://localhost:8080/ios-config.json"])
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Handling a command reports nothing when the fetch fails", .timeLimit(.minutes(1)))
+    @Test("Handling a command reports nothing and leaves the marker unset when the fetch fails", .timeLimit(.minutes(1)))
     func handleFetchFailure() async {
         struct FetchError: Error {}
-        await reporter.handle(.set(overrideURL)) { throw FetchError() }?.value
+        let fetchTask = reporter.handle(.set(overrideURL)) { throw FetchError() }
+        await fetchTask?.value
 
-        #expect(store.customPrivacyConfigurationURL == overrideURL)
+        #expect(!marker.isSet)
+        #expect(lines.isEmpty)
+        #expect(scheduledTokens.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without an argument, replaces a stored override with production and clears the marker", .timeLimit(.minutes(1)))
+    func productionFetchAfterOverride() async {
+        marker.set(true)
+        var didFetch = false
+        let fetchTask = reporter.handle(nil) { didFetch = true }
+        await fetchTask?.value
+
+        #expect(didFetch)
+        #expect(!marker.isSet)
         #expect(lines.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Handling reset clears the override and reports nothing", .timeLimit(.minutes(1)))
-    func handleReset() async {
-        store.customPrivacyConfigurationURL = overrideURL
-        var didFetch = false
-        await reporter.handle(.reset) { didFetch = true }?.value
+    @Test("Without an argument and no stored override, does nothing", .timeLimit(.minutes(1)))
+    func noFetchWithoutMarker() {
+        let fetchTask = reporter.handle(nil) { Issue.record("Unexpected fetch") }
 
-        #expect(didFetch)
-        #expect(store.customPrivacyConfigurationURL == nil)
+        #expect(fetchTask == nil)
         #expect(lines.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Handling a command does nothing for non-internal users", .timeLimit(.minutes(1)))
-    func handleNonInternalUser() async {
+    func handleNonInternalUser() {
         internalUserDecider.isInternalUser = false
-        let task = reporter.handle(.set(overrideURL)) { Issue.record("Unexpected fetch") }
+        let fetchTask = reporter.handle(.set(overrideURL)) { Issue.record("Unexpected fetch") }
 
-        #expect(task == nil)
-        #expect(store.customPrivacyConfigurationURL == nil)
+        #expect(fetchTask == nil)
+        #expect(!provider.isPrivacyConfigurationOverridden)
+        #expect(!marker.isSet)
         #expect(lines.isEmpty)
     }
 }

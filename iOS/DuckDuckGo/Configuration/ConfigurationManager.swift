@@ -169,11 +169,13 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
     }
 
-    /// Fetches and applies the privacy configuration, reapplying the stored one when the server answers 304.
-    /// Used by the `-privacyConfigURL` launch argument. Throws if the fetch fails.
+    /// Used by the `-privacyConfigURL` launch argument. Reapplies the stored configuration on a 304.
+    /// Doesn't recompile content blocking: `PrivacyConfigurationOverrideReporter` does that once.
     func fetchPrivacyConfiguration() async throws {
         try await fetcher.fetch(.privacyConfiguration, isDebug: true)
-        updateTrackerBlockingDependencies()
+        privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                           data: store.loadData(for: .privacyConfiguration))
+        NotificationCenter.default.post(name: ConfigurationManager.didUpdateTrackerDependencies, object: self)
     }
 
     private func updateTrackerBlockingDependencies() {

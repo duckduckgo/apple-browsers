@@ -437,11 +437,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertEqual(sut.privacyConfigurationOverride, .set(URL(string: "http://localhost:8080/ios-config.json")!))
     }
 
-    func testPrivacyConfigurationOverrideReadsResetLaunchArgument() {
-        userDefaults.set("reset", forKey: "privacyConfigURL")
+    func testPrivacyConfigurationOverrideIgnoresInvalidLaunchArgument() {
+        userDefaults.set("not a url", forKey: "privacyConfigURL")
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
-        XCTAssertEqual(sut.privacyConfigurationOverride, .reset)
+        XCTAssertNil(sut.privacyConfigurationOverride)
     }
 
     func testPrivacyConfigurationOverrideIsNilWithoutLaunchArgument() {

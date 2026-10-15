@@ -593,6 +593,21 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("setOutcome === 'rejected'")
     }
 
+    func testWhenTheAppRefusesASetMadeWithACallback_ThenTheCallbackGetsTheErrorInLastError() throws {
+        try installFakePrivacyHandler(refusesSet: true)
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var callbackError = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: false }, function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackError === \"The extension can't control this setting\"")
+        try assertTrue("chrome.runtime.lastError === undefined")
+    }
+
     func testWhenTheAppAnswersNothingUsable_ThenGetReportsTheSettingAsNotControllable() throws {
         try installFakePrivacyHandler()
         try evaluateStubScript()

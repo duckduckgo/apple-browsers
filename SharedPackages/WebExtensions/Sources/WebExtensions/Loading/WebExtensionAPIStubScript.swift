@@ -297,9 +297,45 @@ public enum WebExtensionAPIStubScript {
             if (typeof callback === "function") {
                 promise.then(function(value) {
                     invokeCallback(callback, value);
-                }, function() {});
+                }, function(error) {
+                    invokeCallbackWithError(callback, error);
+                });
             }
             return promise;
+        }
+
+        // Calls `callback` with no value and the failure in `runtime.lastError` while it runs, as Chrome
+        // reports a failed call to a callback.
+        function invokeCallbackWithError(callback, error) {
+            Promise.resolve().then(function() {
+                var runtime = api.runtime;
+                var previous = runtime ? Object.getOwnPropertyDescriptor(runtime, "lastError") : undefined;
+                var message = error && error.message ? String(error.message) : String(error);
+                try {
+                    if (runtime) {
+                        Object.defineProperty(runtime, "lastError", { value: { message: message }, configurable: true });
+                    }
+                } catch (defineError) {
+                    // A runtime that won't take `lastError` still gets its callback called.
+                }
+                try {
+                    callback(undefined);
+                } catch (callbackError) {
+                    setTimeout(function() {
+                        throw callbackError;
+                    }, 0);
+                } finally {
+                    try {
+                        if (previous) {
+                            Object.defineProperty(runtime, "lastError", previous);
+                        } else if (runtime) {
+                            delete runtime.lastError;
+                        }
+                    } catch (restoreError) {
+                        // Nothing to restore.
+                    }
+                }
+            });
         }
 
         // `path`, when given, names the API for the compatibility log: registering a listener counts

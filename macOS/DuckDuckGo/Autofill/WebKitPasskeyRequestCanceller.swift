@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AuthenticationServices
 import Foundation
 import os.log
@@ -53,7 +54,7 @@ final class WebKitPasskeyRequestCanceller {
     private let webKitDelegateClass: AnyClass
     /// The latest WebKit request, cancelled when the next one starts. Held strongly because WebKit lets go of it as
     /// soon as it replaces it.
-    private var lastWebKitController: PasskeyAuthorizationController?
+    private(set) var lastWebKitController: PasskeyAuthorizationController?
     /// How long a new request waits after cancelling one still open in another page, so it starts only after the agent
     /// has finished winding down the cancelled one. The app gets no signal when that happens, so a fixed delay is the
     /// only safe option found.
@@ -166,6 +167,24 @@ extension WebKitPasskeyRequestCanceller {
         installed = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
         _ = ASAuthorizationController.swizzlePasskeyRequestMethodsOnce
         reportOutcomes(of: webKitDelegateClass, to: PasskeyRequestOutcomeReporter(pixelFiring: pixelFiring))
+        willTerminateObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
+                                                                       object: nil,
+                                                                       queue: .main) { _ in
+            cancelOpenRequestBeforeQuitting()
+        }
+    }
+
+    private static var willTerminateObserver: NSObjectProtocol?
+
+    /// Cancels WebKit's request if it's still open in the agent. The agent keeps a request the app never cancelled even
+    /// after the app quits, and then refuses every passkey request from the app's next launch.
+    @available(macOS 13.0, *)
+    private static func cancelOpenRequestBeforeQuitting() {
+        guard let controller = installed?.lastWebKitController as? ASAuthorizationController,
+              let start = controller.passkeyRequestStart, !start.wasCancelled else { return }
+
+        Logger.general.log("Cancelling the open WebKit passkey request before quitting")
+        controller.cancel()
     }
 
     /// WebKit's private `ASAuthorizationController` delegate, which is how WebKit's passkey requests are recognised.

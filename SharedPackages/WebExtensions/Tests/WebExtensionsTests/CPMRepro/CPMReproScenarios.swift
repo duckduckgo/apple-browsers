@@ -115,7 +115,7 @@ extension CPMReproTestCase {
             let tab = harness.openTab()
             let inFlight = harness.navigate(tab)
             await freeze.value
-            let outcome = await harness.outcome(for: inFlight, grace: 5)
+            let outcome = await harness.outcome(for: inFlight, in: tab, grace: 5)
             harness.log.add("in-flight navigation after thaw -> \(outcome) content=\(await harness.contentMarks(in: tab))")
             await harness.sleep(1)
         case .networkProcessCrash:

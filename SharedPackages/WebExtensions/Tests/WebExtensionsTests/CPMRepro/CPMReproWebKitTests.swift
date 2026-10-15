@@ -51,7 +51,7 @@ final class CPMReproWebKitTests: CPMReproTestCase {
             let harness = try await makeHarness(options)
             let tab = harness.openTab()
             let url = harness.navigate(tab)
-            let outcome = await harness.outcome(for: url)
+            let outcome = await harness.outcome(for: url, in: tab)
             let received = harness.backgroundReceivedInit(from: url)
             harness.log.add("iteration \(iteration): \(outcome) backgroundReceivedInit=\(received)")
             if outcome == .timedOut { lost += 1 }
@@ -68,7 +68,7 @@ final class CPMReproWebKitTests: CPMReproTestCase {
             await harness.sleep(TimeInterval(delay) / 1000)
             let tab = harness.openTab()
             let url = harness.navigate(tab)
-            let outcome = await harness.outcome(for: url)
+            let outcome = await harness.outcome(for: url, in: tab)
             results.append("\(delay)ms: \(outcome == .timedOut ? "LOST" : "ok")")
         }
         print("SWEEP:\n" + results.joined(separator: "\n"))

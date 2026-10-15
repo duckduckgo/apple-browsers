@@ -227,34 +227,57 @@ final class CPMReproHarness: AutoconsentMessageHandlerDelegate {
         return url
     }
 
-    /// Waits for navigation to finish, then for the CPM dashboard refresh of that document,
-    /// using the same 4 s grace period as the production health monitor.
-    func outcome(for url: URL, grace: TimeInterval = 4, finishTimeout: TimeInterval = 10) async -> Outcome {
+    /// Waits for navigation to finish, then for CPM to answer that document within the same 4 s grace
+    /// period as the production health monitor. CPM answered when both signals arrived: the native
+    /// dashboard refresh the monitor observes, and `initResp` in the page, which is what lets CPM act on
+    /// the page. A refresh without `initResp`, or the reverse, is a failure.
+    func outcome(for url: URL, in tab: CPMReproTab, grace: TimeInterval = 4, finishTimeout: TimeInterval = 10) async -> Outcome {
         let key = url.absoluteString
         _ = await waitUntil(timeout: finishTimeout) { self.finishTimes[key] != nil }
         guard let finished = finishTimes[key] else { return .timedOut }
         _ = await waitUntil(timeout: grace) { self.responseTimes[key] != nil }
         guard let responded = responseTimes[key], responded - finished <= grace else { return .timedOut }
+        let deadline = finished + grace
+        guard await waitForInitResponse(in: tab, attribute: "initresp", until: deadline) else {
+            log.add("dashboard refresh of \(key) arrived but the page got no initResp")
+            return .timedOut
+        }
         return .responded(latency: responded - finished)
+    }
+
+    /// Waits until the page of `tab` has a content-script mark `data-cpm-repro-<attribute>`, until
+    /// `deadline` on the log clock.
+    private func waitForInitResponse(in tab: CPMReproTab, attribute: String, until deadline: TimeInterval) async -> Bool {
+        let script = "document.documentElement.hasAttribute('data-cpm-repro-\(attribute)')"
+        while true {
+            let value = try? await tab.webView.evaluateJavaScript(script)
+            if value as? Bool == true { return true }
+            if log.elapsed >= deadline { return false }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
     }
 
     func navigateAndMeasure(_ tab: CPMReproTab, site: String? = nil) async -> Outcome {
         let url = navigate(tab, site: site)
-        let result = await outcome(for: url)
+        let result = await outcome(for: url, in: tab)
         let marks = await contentMarks(in: tab)
         log.add("tab \(tab.identifier) \(url.absoluteString) -> \(result) content=\(marks)")
         return result
     }
 
     /// Asks the document currently loaded in `tab` to send CPM's `init` again, without navigating,
-    /// and waits for the dashboard refresh it should produce.
+    /// and waits for both answers it should produce: the dashboard refresh and a new `initResp` in
+    /// the page. The page's previous `initResp` mark is cleared first, so an answer to the document's
+    /// first `init` cannot count.
     func reinitExistingDocument(in tab: CPMReproTab, grace: TimeInterval = 4) async -> Outcome {
         guard let url = tab.webView.url else { return .timedOut }
         let key = url.absoluteString
         let sentAt = log.elapsed
+        _ = try? await tab.webView.evaluateJavaScript("document.documentElement.removeAttribute('data-cpm-repro-initresp-last')")
         _ = try? await tab.webView.evaluateJavaScript("document.dispatchEvent(new CustomEvent('cpm-repro-reinit'))")
-        let responded = await waitUntil(timeout: grace) { (self.lastResponseTimes[key] ?? 0) > sentAt }
-        let result: Outcome = responded ? .responded(latency: (lastResponseTimes[key] ?? sentAt) - sentAt) : .timedOut
+        let refreshed = await waitUntil(timeout: grace) { (self.lastResponseTimes[key] ?? 0) > sentAt }
+        let answered = refreshed ? await waitForInitResponse(in: tab, attribute: "initresp-last", until: sentAt + grace) : false
+        let result: Outcome = answered ? .responded(latency: (lastResponseTimes[key] ?? sentAt) - sentAt) : .timedOut
         log.add("tab \(tab.identifier) existing document re-init \(key) -> \(result) content=\(await contentMarks(in: tab))")
         return result
     }

@@ -150,8 +150,8 @@ final class CPMReproSingleTabTests: CPMReproTestCase {
         let waking = harness.navigate(first)
         _ = await harness.waitUntil(timeout: 5) { harness.backgroundWebView != nil }
         let racing = harness.navigate(second)
-        let wakingOutcome = await harness.outcome(for: waking)
-        let racingOutcome = await harness.outcome(for: racing)
+        let wakingOutcome = await harness.outcome(for: waking, in: first)
+        let racingOutcome = await harness.outcome(for: racing, in: second)
         harness.log.add("waking tab -> \(wakingOutcome); second tab during load -> \(racingOutcome)")
         XCTAssertNotEqual(wakingOutcome, .timedOut)
         XCTAssertNotEqual(racingOutcome, .timedOut)

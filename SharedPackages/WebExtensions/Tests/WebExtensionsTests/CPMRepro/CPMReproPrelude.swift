@@ -57,7 +57,7 @@ struct CPMReproPrelude: Encodable {
 
     /// Prepended to the CPM content script. Records, as attributes on the document element (shared
     /// with the page world), when the script ran, when `init` was sent and settled, and when
-    /// `initResp` arrived. Times are `performance.now()` milliseconds since navigation start.
+    /// `initResp` arrived (`initresp` the first time, `initresp-last` every time). Times are `performance.now()` milliseconds since navigation start.
     static let contentScript = #"""
     // cpm-repro content prelude: test-only instrumentation, no behavior change.
     (() => {
@@ -93,7 +93,10 @@ struct CPMReproPrelude: Encodable {
       });
       const addListener = runtime.onMessage.addListener.bind(runtime.onMessage);
       install(runtime.onMessage, "addListener", (listener) => addListener((m, s, r) => {
-        if (m?.type === "initResp") mark("initresp");
+        if (m?.type === "initResp") {
+          mark("initresp");
+          document.documentElement.setAttribute("data-cpm-repro-initresp-last", String(Math.round(performance.now())));
+        }
         return listener(m, s, r);
       }));
     })();

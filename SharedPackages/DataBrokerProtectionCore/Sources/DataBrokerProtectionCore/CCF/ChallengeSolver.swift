@@ -25,18 +25,15 @@ import PrivacyConfig
 struct ChallengeSolverSettings: Decodable, Equatable {
     var autoPassWait: TimeInterval = 5
     var deadline: TimeInterval = 45
-    var retryInterval: TimeInterval = 2
-    var stabilityCheckDelay: TimeInterval = 0.4
-    var stabilityTolerance: CGFloat = 8
     var checkboxOffset: CGFloat = 20
     var labelText = "Verify you are human"
+    let retryInterval: TimeInterval = 2
+    let stabilityCheckDelay: TimeInterval = 0.4
+    let stabilityTolerance: CGFloat = 8
 
     private enum CodingKeys: String, CodingKey {
         case autoPassWait = "autoPassWaitSeconds"
         case deadline = "deadlineSeconds"
-        case retryInterval = "retryIntervalSeconds"
-        case stabilityCheckDelay = "stabilityCheckDelaySeconds"
-        case stabilityTolerance = "stabilityTolerancePoints"
         case checkboxOffset = "checkboxOffsetPoints"
         case labelText
     }
@@ -48,9 +45,6 @@ struct ChallengeSolverSettings: Decodable, Equatable {
         let defaults = ChallengeSolverSettings()
         autoPassWait = try container.decodeIfPresent(TimeInterval.self, forKey: .autoPassWait) ?? defaults.autoPassWait
         deadline = try container.decodeIfPresent(TimeInterval.self, forKey: .deadline) ?? defaults.deadline
-        retryInterval = try container.decodeIfPresent(TimeInterval.self, forKey: .retryInterval) ?? defaults.retryInterval
-        stabilityCheckDelay = try container.decodeIfPresent(TimeInterval.self, forKey: .stabilityCheckDelay) ?? defaults.stabilityCheckDelay
-        stabilityTolerance = try container.decodeIfPresent(CGFloat.self, forKey: .stabilityTolerance) ?? defaults.stabilityTolerance
         checkboxOffset = try container.decodeIfPresent(CGFloat.self, forKey: .checkboxOffset) ?? defaults.checkboxOffset
         labelText = try container.decodeIfPresent(String.self, forKey: .labelText) ?? defaults.labelText
     }

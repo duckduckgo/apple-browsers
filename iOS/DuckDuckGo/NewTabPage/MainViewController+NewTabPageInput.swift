@@ -23,6 +23,9 @@ import UIKit
 extension MainViewController {
 
     var newTabPageInputPresentation: NewTabPageInputPresentation {
+        // Large width iPad keeps its bar and buttons on the New Tab Page; only the search field hides.
+        // Compact width iPad falls back to the iPhone presentation.
+        guard !AppWidthObserver.shared.isLargeWidth else { return .browser }
         let hasInlineInput = newTabPageViewController?.hasInlineSearchInput == true
         return NewTabPageInputPresentation.resolve(
             hasInlineInput: hasInlineInput,
@@ -65,6 +68,7 @@ extension MainViewController {
     }
 
     func updateAddressBarSuppressionForNewTabPage() {
+        updatePadNewTabPageSearchFieldVisibility()
         let presentation = newTabPageInputPresentation
         // Update even when chrome is unchanged: the shared controller may now belong to another tab.
         updateUnifiedInputContentPresentation(presentation: presentation, isOnAITab: currentTab?.isAITab == true)
@@ -83,6 +87,34 @@ extension MainViewController {
             // Restore scrolling only after the resting chrome and safe area have settled.
             view.layoutIfNeeded()
             transitionSource?.setSearchInputEditing(false)
+        }
+    }
+
+    /// Hides the large width iPad address bar search field while the New Tab Page's own search input is on screen.
+    func updatePadNewTabPageSearchFieldVisibility(animated: Bool = false) {
+        guard isPad else { return }
+        let usesPadLayout = AppWidthObserver.shared.isLargeWidth
+        let inputSource = newTabPageViewController as? NewTabPageInputTransitionSource
+        let isEditing = viewCoordinator.omniBar.isTextFieldEditing
+        // Compact width restores both, so a resize mid-session leaves nothing hidden for the iPhone path.
+        inputSource?.setInlineInputHidden(usesPadLayout && isEditing, animated: animated)
+        // Measure after the inline input is restored, so its frame reflects the resting layout.
+        newTabPageViewController?.view.layoutIfNeeded()
+        let hidesSearchField = usesPadLayout
+            && newTabPageViewController?.parent === self
+            && newTabPageViewController?.hasInlineSearchInput == true
+            && !isEditing
+            && inputSource?.isSearchInputVisible == true
+        let searchField = viewCoordinator.omniBar.barView.searchContainer
+        let targetAlpha: CGFloat = hidesSearchField ? 0 : 1
+        searchField?.isUserInteractionEnabled = !hidesSearchField
+        guard searchField?.alpha != targetAlpha else { return }
+        guard animated else {
+            searchField?.alpha = targetAlpha
+            return
+        }
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
+            searchField?.alpha = targetAlpha
         }
     }
 

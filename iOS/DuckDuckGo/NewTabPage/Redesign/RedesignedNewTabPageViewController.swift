@@ -30,6 +30,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let customizeButtonTrailingMargin: CGFloat = 20
         static let customizeButtonSize: CGFloat = 44
         static let portraitContentTopInset: CGFloat = 96
+        static let padContentTopInset: CGFloat = 32
+        static let padMaximumContentWidth: CGFloat = 544
         static let entranceTranslation: CGFloat = 12
         static let entranceDuration: TimeInterval = 0.25
     }
@@ -55,6 +57,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private var entranceAnimator: UIViewPropertyAnimator?
     private var detachedContentOffset: CGPoint?
     private var inputEditingLayout: InputEditingLayout?
+    private var lastReportedSearchInputVisibility: Bool?
 
     private struct InputEditingLayout {
         let contentOffset: CGPoint
@@ -134,6 +137,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.clipsToBounds = true
         addSubviews()
         installBlocks()
+        scrollView.delegate = self
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -145,7 +149,16 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         // and stop preserving geometry captured before a rotation or window resize.
         let layoutSize = view.window?.bounds.size ?? view.bounds.size
         let isLandscape = layoutSize.width > layoutSize.height
-        contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+        if AppWidthObserver.shared.isLargeWidth {
+            contentTopConstraint.constant = Metrics.padContentTopInset
+            let visibleWidth = view.bounds.inset(by: view.safeAreaInsets).width
+            let horizontalInset = max(0, (visibleWidth - Metrics.padMaximumContentWidth) / 2)
+            blocksStackView.isLayoutMarginsRelativeArrangement = true
+            blocksStackView.directionalLayoutMargins = .init(top: 0, leading: horizontalInset, bottom: 0, trailing: horizontalInset)
+        } else {
+            contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+            blocksStackView.isLayoutMarginsRelativeArrangement = false
+        }
         if let savedLayout = inputEditingLayout, savedLayout.windowBounds != view.window?.bounds {
             inputEditingLayout?.isGeometryValid = false
         }
@@ -447,6 +460,29 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         return frame.intersects(viewport) ? frame : nil
     }
 
+    var isSearchInputVisible: Bool {
+        visibleSearchInputFrameInWindow() != nil
+    }
+
+    func setInlineInputHidden(_ hidden: Bool, animated: Bool) {
+        let blockViews = blocks
+            .filter { $0.id == .welcome || $0.id == .searchInput }
+            .compactMap { $0.viewController.view }
+        guard blockViews.contains(where: { $0.isHidden != hidden }) else { return }
+        let applyVisibility = {
+            blockViews.forEach {
+                $0.isHidden = hidden
+                $0.alpha = hidden ? 0 : 1
+            }
+            self.blocksStackView.layoutIfNeeded()
+        }
+        guard animated else {
+            applyVisibility()
+            return
+        }
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut], animations: applyVisibility)
+    }
+
     func setSearchInputEditing(_ isEditing: Bool) {
         if isEditing, inputEditingLayout == nil {
             finishEntranceAnimation()
@@ -465,5 +501,15 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+    }
+}
+
+extension RedesignedNewTabPageViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let isVisible = isSearchInputVisible
+        guard lastReportedSearchInputVisibility != isVisible else { return }
+        lastReportedSearchInputVisibility = isVisible
+        delegate?.newTabPageDidChangeSearchInputVisibility(self)
     }
 }

@@ -94,6 +94,10 @@ protocol NewTabPage: UIViewController,
 protocol NewTabPageInputTransitionSource: AnyObject {
     var canAnimateSearchInput: Bool { get }
     var searchInputView: UIView? { get }
+    /// Whether any part of the inline search input is inside the page's visible area.
+    var isSearchInputVisible: Bool { get }
     func searchInputTransitionFrame(in view: UIView) -> CGRect?
     func setSearchInputEditing(_ isEditing: Bool)
+    /// Collapses the greeting and inline search input while the address bar edits in their place.
+    func setInlineInputHidden(_ hidden: Bool, animated: Bool)
 }

@@ -6545,6 +6545,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() {
         finishNewTabPageInputHandoff()
+        updatePadNewTabPageSearchFieldVisibility(animated: true)
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
         dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
@@ -6567,6 +6568,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidEndEditing() {
         finishNewTabPageInputHandoff()
+        updatePadNewTabPageSearchFieldVisibility(animated: true)
         // Restore the tab's committed mode — the user may have toggled without submitting.
         if let tab = tabManager.currentTabsModel.currentTab {
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
@@ -7065,6 +7067,11 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidScroll(_ controller: any NewTabPage) {
         recordNewTabPageSessionAction { $0.scrollView() }
+    }
+
+    func newTabPageDidChangeSearchInputVisibility(_ controller: any NewTabPage) {
+        guard controller === newTabPageViewController else { return }
+        updatePadNewTabPageSearchFieldVisibility(animated: true)
     }
 
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) {

@@ -39,9 +39,9 @@ struct NewTabPageRedesignFeature: NewTabPageRedesignFeatureProviding {
     }
 
     var isAvailable: Bool {
-        // The device check comes first, and must stay first: reading the flag on a device that can
-        // never show the redesign would enrol it in the experiment cohort and dilute the results.
-        guard devicePlatform.isIphone else { return false }
+        // The device check comes first, and must stay first: reading the iPhone experiment flag on
+        // iPad would enrol it in the experiment cohort and dilute the results, so iPad has its own flag.
+        guard devicePlatform.isIphone else { return featureFlagger.isFeatureOn(.newTabPageCenteredInputIPad) }
 
         return featureFlagger.isFeatureOn(.newTabPageRedesign)
     }

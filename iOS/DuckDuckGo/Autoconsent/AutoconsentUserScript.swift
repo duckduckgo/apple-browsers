@@ -64,6 +64,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     var selfTestFrameInfo: WKFrameInfo?
 
     var topUrl: URL?
+    private let siteRankLookup = CPMSiteRankLookup()
+    private lazy var siteRank = siteRankLookup.siteRank(for: topUrl)
     var preferences: AutoconsentPreferences
 
     /// This gets set when the script is injected via didInstallContentRuleLists calls.
@@ -612,7 +614,7 @@ extension AutoconsentUserScript {
             additionalParams["fromExtension"] = "0"
         }
 
-        management?.firePixel(pixel: pixel, topUrl: topUrl, additionalParameters: additionalParams)
+        management?.firePixel(pixel: pixel, siteRank: siteRank, additionalParameters: additionalParams)
     }
 
     private var serializedCPMErrors: String? {
@@ -685,6 +687,7 @@ extension AutoconsentUserScript {
             clearReloadLoopState()
         }
         topUrl = url
+        siteRank = siteRankLookup.siteRank(for: url)
     }
 
     /// Detects a reload loop

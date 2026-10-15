@@ -140,13 +140,13 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenNativeAutoconsentPixelFiresThenTopUrlIsPassedForTheSiteRank() {
+    func testWhenNativeAutoconsentPixelFiresThenTheSiteRankOfTheTopUrlIsPassed() {
         let management = MockAutoconsentManagement()
         userScript.management = management
 
         sendInit(url: "https://www.google.com/")
 
-        XCTAssertEqual(management.lastTopUrl, URL(string: "https://www.google.com/"))
+        XCTAssertEqual(management.lastSiteRank, .top10k)
     }
 
     @MainActor
@@ -166,9 +166,9 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
 
         let management = AutoconsentManagement()
         let parameters = ["consentHeuristicEnabled": "tier1"]
-        management.firePixel(pixel: .acInit, topUrl: URL(string: "https://www.google.com/"), additionalParameters: parameters)
-        management.firePixel(pixel: .acInit, topUrl: URL(string: "https://example.com/"), additionalParameters: parameters)
-        management.firePixel(pixel: .popupFound, topUrl: URL(string: "https://example.com/"), additionalParameters: parameters)
+        management.firePixel(pixel: .acInit, siteRank: .top10k, additionalParameters: parameters)
+        management.firePixel(pixel: .acInit, siteRank: .other, additionalParameters: parameters)
+        management.firePixel(pixel: .popupFound, siteRank: .other, additionalParameters: parameters)
         management.fireSummaryPixel()
 
         let summaries = firedPixels.filter { $0.name.contains("autoconsent_summary") }.map(\.parameters)

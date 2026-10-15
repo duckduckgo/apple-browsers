@@ -1,13 +1,13 @@
 {
     "aichat_unified_input_tab_picker_shown": {
-        "description": "Fires once when Add tabs picker is presented or the mention list changes from hidden to visible. Filtering while the mention list remains visible does not create another impression. Returning to matching results after the list was hidden starts a new impression. Surface is captured when the picker or mention list becomes visible. Recent tabs inline menu has no impression event.",
+        "description": "Fires when the \"add tabs to DuckAI chat\" menu is shown",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_picker_source"]
     },
     "aichat_unified_input_tab_picker_canceled": {
-        "description": "Fires once when a presented picker closes without applying a selection change: close button, interactive dismissal, or confirmation with no accepted changes. For mentions, fires when a visible list is hidden without successfully accepting a tab, including when filtering leaves no matching tabs. Surface identifies where that visibility session began, including when dismissal follows a surface change. A disabled multi-tab feature suppresses this event. Further dismissal or text selection while the list is already hidden does not fire again.",
+        "description": "Fires when the \"add tabs to DuckAI chat\" menu is closed without a selection.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -21,14 +21,14 @@
         "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_attachment_source"]
     },
     "aichat_unified_input_tab_removed": {
-        "description": "Fires when the user removes a tab via its chip, recent tabs, or Add tabs picker. On the address bar, this can be the current tab; in contextual chat, the current page uses separate page-context pixels. Source is the original attachment source. Excludes automatic removal.",
+        "description": "Fires when the user removes a tab via its chip, recent tabs, or Add tabs picker.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface", "unified_input_page_type", "aichat_tab_attachment_source"]
     },
     "aichat_unified_input_tabs_sent": {
-        "description": "Fires after native dispatch of a prompt containing at least one validated tab attachment context, including the current tab when explicitly attached from the address bar. Count includes the contextual current page if included in the final payload. Excludes contextual current-page-only prompts, empty results, canceled or rejected dispatches, and a disabled multi-tab feature. Dispatch is not a frontend or backend success acknowledgement.",
+        "description": "Fires on chat submission if it contains page context.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -60,7 +60,7 @@
         ]
     },
     "aichat_unified_input_tabs_submission_incomplete": {
-        "description": "Fires once after native dispatch of a prompt when at least one selected tab attachment captured in its submission request is absent from the final payload, including collection failure, empty content, or validation rejection. Partial loss also fires tabs_sent for the contexts that survived. Excludes cancellation, disabled feature, rejected dispatch, tabs removed before submission, and frontend/backend errors.",
+        "description": "Fires when chat submission is missing at least one tab that was captured in the submission request",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

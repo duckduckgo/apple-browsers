@@ -25,9 +25,19 @@ import DesignResourcesKit
 /// need to be able to Tab onto this button and press Enter/Space to start the voice session.
 ///
 /// Mirrors the keyboard handling in `AIChatOmnibarToolButton`: Tab calls a callback (so the
-/// container VC can route focus back to the textarea), Enter/Space triggers the button's
-/// action via `NSButton`'s built-in behavior.
+/// container VC can route focus back to the textarea), Enter/Space sends the button's action.
 final class AIChatSubmitButton: MouseOverButton {
+
+    private enum Constants {
+        static let focusRingLineWidth: CGFloat = 1.5
+        static let focusRingOutset: CGFloat = 1
+    }
+
+    private enum KeyCode {
+        static let tab: UInt16 = 48
+        static let space: UInt16 = 49
+        static let returnKey: UInt16 = 36
+    }
 
     /// Set by the container VC. When non-nil, `Tab` advances focus via this callback instead
     /// of the default first-responder chain.
@@ -36,7 +46,7 @@ final class AIChatSubmitButton: MouseOverButton {
     private let focusRingLayer: CAShapeLayer = {
         let layer = CAShapeLayer()
         layer.fillColor = nil
-        layer.lineWidth = 1.5
+        layer.lineWidth = Constants.focusRingLineWidth
         layer.lineCap = .round
         layer.lineJoin = .round
         layer.isHidden = true
@@ -105,15 +115,15 @@ final class AIChatSubmitButton: MouseOverButton {
 
     override func layout() {
         super.layout()
-        // Focus ring sits 1pt outside the button, matching `AIChatOmnibarToolButton`.
+        // Focus ring sits just outside the button, matching `AIChatOmnibarToolButton`.
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        let ringRect = bounds.insetBy(dx: -1, dy: -1)
-        focusRingLayer.frame = ringRect
+        let outset = Constants.focusRingOutset
+        focusRingLayer.frame = bounds.insetBy(dx: -outset, dy: -outset)
         focusRingLayer.path = CGPath(
             roundedRect: focusRingLayer.bounds,
-            cornerWidth: cornerRadius + 1,
-            cornerHeight: cornerRadius + 1,
+            cornerWidth: cornerRadius + outset,
+            cornerHeight: cornerRadius + outset,
             transform: nil
         )
         CATransaction.commit()
@@ -126,13 +136,13 @@ final class AIChatSubmitButton: MouseOverButton {
 
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
-        case 48: // Tab
+        case KeyCode.tab:
             if let onTabPressed {
                 onTabPressed()
             } else {
                 super.keyDown(with: event)
             }
-        case 49, 36: // Space, Return — trigger the button's action manually.
+        case KeyCode.space, KeyCode.returnKey:
             // NSButton's default keyDown doesn't reliably fire the action when the button
             // uses a custom layer-drawn appearance (`bezelStyle = .shadowlessSquare`, no border).
             if isEnabled, let action, let target {

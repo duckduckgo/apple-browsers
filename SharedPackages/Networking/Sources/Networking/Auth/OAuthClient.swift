@@ -189,13 +189,23 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var migrationOngoingTask: Task<Void, Error>?
     private var refreshOngoingTask: Task<TokenContainer, Error>?
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
+    private let tokenRefresher: any TokenRefreshing
 
+    /// - Parameters:
+    ///   - tokensStorage: Where the current token container is read from and saved to.
+    ///   - authService: The auth API client.
+    ///   - refreshEventMapping: Receives the token refresh step events.
+    ///   - tokenRefresher: Performs refreshes and decoding. When nil, a `DefaultTokenRefresher` using `authService` and `refreshEventMapping` is created.
     public init(tokensStorage: any AuthTokenStoring,
                 authService: OAuthService,
-                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?) {
+                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
+                tokenRefresher: (any TokenRefreshing)? = nil) {
         self.tokenStorage = tokensStorage
         self.authService = authService
         self.refreshEventMapping = refreshEventMapping
+        self.tokenRefresher = tokenRefresher ?? DefaultTokenRefresher(authService: authService,
+                                                                      clientID: Constants.clientID,
+                                                                      refreshEventMapping: refreshEventMapping)
     }
 
     // MARK: - Internal
@@ -221,36 +231,15 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
 #if DEBUG
-    func setTestingDecodedTokenContainer(_ container: TokenContainer) {
-        testingDecodedTokenContainer = container
+    /// Makes every decode return `container` instead of verifying the tokens.
+    /// Only applies when the client uses a `DefaultTokenRefresher`.
+    func setTestingDecodedTokenContainer(_ container: TokenContainer) async {
+        await (tokenRefresher as? DefaultTokenRefresher)?.setTestingDecodedTokenContainers([container])
     }
-
-    private var testingDecodedTokenContainer: TokenContainer?
 #endif
 
     public func decode(accessToken: String, refreshToken: String, refreshID: String? = nil) async throws -> TokenContainer {
-        Logger.OAuthClient.log("Decoding tokens")
-
-#if DEBUG
-        if let testingDecodedTokenContainer {
-            return testingDecodedTokenContainer
-        }
-#endif
-
-        if let refreshID { refreshEventMapping?.fire(.tokenRefreshFetchingJWKS(refreshID: refreshID)) }
-        let jwtSigners = try await authService.getJWTSigners()
-        if let refreshID { refreshEventMapping?.fire(.tokenRefreshFetchedJWKS(refreshID: refreshID)) }
-
-        if let refreshID { refreshEventMapping?.fire(.tokenRefreshVerifyingAccessToken(refreshID: refreshID)) }
-        let decodedAccessToken = try jwtSigners.verify(accessToken, as: JWTAccessToken.self)
-
-        if let refreshID { refreshEventMapping?.fire(.tokenRefreshVerifyingRefreshToken(refreshID: refreshID)) }
-        let decodedRefreshToken = try jwtSigners.verify(refreshToken, as: JWTRefreshToken.self)
-
-        return TokenContainer(accessToken: accessToken,
-                               refreshToken: refreshToken,
-                               decodedAccessToken: decodedAccessToken,
-                               decodedRefreshToken: decodedRefreshToken)
+        try await tokenRefresher.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: refreshID)
     }
 
     // MARK: - Public
@@ -268,7 +257,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer {
         switch policy {
         case .local:
@@ -331,14 +319,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("Starting token refresh")
 
                 do {
-                    refreshEventMapping?.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
-                    let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
-                    refreshEventMapping?.fire(.tokenRefreshRefreshedAccessToken(refreshID: refreshID))
-
-                    let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken,
-                                                           refreshToken: refreshTokenResponse.refreshToken,
-                                                           refreshID: refreshID)
-                    Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
+                    let refreshedTokens = try await tokenRefresher.refresh(localTokenContainer, refreshID: refreshID)
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
                     try tokenStorage.saveTokenContainer(refreshedTokens)
@@ -346,18 +327,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
                     return refreshedTokens
-                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyError.errorCode == .invalidTokenRequest {
-                    let error = OAuthClientError.invalidTokenRequest(apiError.bodyError.tokenStatus)
-                    Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")
-                    refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
-                    throw error
-                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyError.errorCode == .unknownAccount {
-                    Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")
-                    let error = OAuthClientError.unknownAccount
-                    refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
-                    throw error
                 } catch {
-                    Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                     throw error
                 }

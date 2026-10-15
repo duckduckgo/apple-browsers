@@ -71,7 +71,7 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
 
         let notificationText: String? = {
             switch bridge.pendingApplicationUpdateStatus {
-            case .noChange: return nil
+            case .noChange: return force ? UserText.browserUpdatedNotification : nil
             case .updated: return UserText.browserUpdatedNotification
             case .downgraded: return UserText.browserDowngradedNotification
             }

@@ -1,21 +1,22 @@
 ---
 name: ddg-design-system
-description: Use when creating, changing or reviewing UI on iOS or macOS, including colors, typography, icons, shadows, spacing and reusable components from DesignResourcesKit (DRK), DesignResourcesKitIcons or UIComponents.
+description: Use when creating, changing or reviewing UI on iOS or macOS, including colors, typography, icons, corner radii, shadows, spacing, button styles and other shared components from DesignResourcesKit (DRK), DesignResourcesKitIcons, UIComponents or DuckUI.
 ---
 
 # Design system (DRK)
 
 Figma defines the design intent. The code in `SharedPackages/Infrastructure/DesignResourcesKit`,
-`SharedPackages/Infrastructure/DesignResourcesKitIcons` and `SharedPackages/UIComponents` defines
-what is available; read it rather than assuming an API exists.
+`SharedPackages/Infrastructure/DesignResourcesKitIcons`, `SharedPackages/UIComponents` and, on iOS,
+`iOS/LocalPackages/DuckUI` defines what is available; read it rather than assuming an API exists.
 
 ## Lookup order
 
 For every color, font, icon or piece of repeated styling, stop at the first step that fits:
 
 1. A DRK semantic color or typography style, or a DRKIcons asset in the matching size.
-2. A common component, modifier or preset in UIComponents, or an existing usage nearby. Look
-   before writing your own buttons, shadows, borders, corner radii or spacing.
+2. A common component, modifier or preset in UIComponents, a button style in DuckUI (iOS), or an
+   existing usage nearby. Look before writing your own buttons, shadows, borders, corner radii or
+   spacing.
 3. Nothing fits: ask the user what to do. Figma and a designer should resolve the doubt.
 
 `SingleUseColor` is the fallback when no semantic color fits. When you use one, say so explicitly

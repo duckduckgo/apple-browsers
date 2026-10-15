@@ -44,11 +44,15 @@ final class BackgroundingUITests: UITestCase {
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
 
             app.descendants(matching: .any)["privacy-icon-shield.button"].firstMatch.tapWhenHittable()
+            let disableProtectionsSwitch = app.switches["Disable Protections"]
             XCTAssertTrue(
-                app.switches["Disable Protections"].wait(
+                disableProtectionsSwitch.waitForExistence(timeout: UITestTimeouts.navigation),
+                "Privacy dashboard content did not appear after backgrounding.")
+            XCTAssertTrue(
+                disableProtectionsSwitch.wait(
                     for: NSPredicate(format: "value == %@", "1"),
                     timeout: UITestTimeouts.elementExistence),
-                "Privacy protections did not appear after backgrounding.")
+                "Privacy protections were not enabled after backgrounding.")
             app.buttons["Done"].tapWhenHittable()
         }
 

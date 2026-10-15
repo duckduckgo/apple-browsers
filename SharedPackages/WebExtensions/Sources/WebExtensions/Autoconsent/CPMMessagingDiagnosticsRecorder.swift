@@ -118,8 +118,11 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     private var previousBackgroundWebProcessIdentifier: Int32?
     private var networkProcessIdentifierAtLastBackgroundViewCreation: Int32?
     private var lastBackgroundWebViewCreatedAt: Date?
+    /// Facts captured when the context last recorded `BackgroundContentFailedToLoad`.
+    private var lastBackgroundLoadError: (appState: CPMAppSessionDiagnostics.ApplicationState?, secondsAfterViewCreation: TimeInterval?)?
     /// Every background web view WebKit created for the CPM context that has not been deallocated yet.
     private var liveBackgroundWebViews: [WeakBox<WKWebView>] = []
+    let backgroundReadinessObserver: CPMBackgroundReadinessObserver
 
     /// - Parameters:
     ///   - tabResolver: Maps the health monitor's tab identifier to the tab's web view. Platform-specific.
@@ -135,6 +138,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         self.featureFlags = featureFlags
         self.backgroundWebViewGraveyard = CPMBackgroundWebViewGraveyard(featureFlags: featureFlags)
         self.now = now
+        self.backgroundReadinessObserver = CPMBackgroundReadinessObserver(now: now)
         self.backgroundWebViewGraveyard.lifecycleEventHandler = { [weak self] event in
             switch event {
             case .held:
@@ -215,6 +219,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         previousBackgroundWebProcessIdentifier = nil
         networkProcessIdentifierAtLastBackgroundViewCreation = nil
         lastBackgroundWebViewCreatedAt = nil
+        lastBackgroundLoadError = nil
+        backgroundReadinessObserver.stopObserving()
         // Preserve the latest update across context reloads, without carrying over old-context callbacks.
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
         backgroundProcessIsUnresponsive = false
@@ -301,6 +307,12 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         if isBackgroundDelegateProxyEnabled,
            CPMBackgroundWebViewDelegateProxy.install(on: webView, delegate: self) != nil {
             record(.proxyInstalled)
+        }
+        // Shares the delegate-proxy switch: both observe the background on top of WebKit's own handling.
+        if isBackgroundDelegateProxyEnabled {
+            backgroundReadinessObserver.observe(webView, in: context)
+        } else {
+            backgroundReadinessObserver.stopObserving()
         }
         let generation = contextGeneration
         webView.onDeinit { [weak self] in
@@ -398,6 +410,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         diagnostics.extensionContextLoaded = context?.isLoaded ?? false
         diagnostics.secondsSinceCriticalMemoryPressure = lastCriticalMemoryPressureAt.map { now().timeIntervalSince($0) }
         diagnostics.extensionContextErrors = currentContextErrors()
+        diagnostics.hasBackgroundLoadError = lastBackgroundLoadError != nil
+        diagnostics.backgroundLoadErrorAppState = lastBackgroundLoadError?.appState
+        diagnostics.secondsFromBackgroundViewToLoadError = lastBackgroundLoadError?.secondsAfterViewCreation
         diagnostics.backgroundWebViewCreateCount = backgroundWebViewCreateCount
         diagnostics.backgroundWebViewAlive = currentBackgroundWebView != nil
         diagnostics.leakedBackgroundWebViewCount = leakedBackgroundWebViewCount()
@@ -408,9 +423,19 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
            let identifierNow = Self.networkProcessIdentifier(for: context) {
             diagnostics.networkProcessRestarted = identifierAtLoad != identifierNow
         }
+        diagnostics.applicationState = appSession?.applicationState?()
         if let backgroundWebView = currentBackgroundWebView {
             diagnostics.backgroundWebProcessAlive = Self.webProcessIdentifier(of: backgroundWebView).map { $0 != 0 }
             diagnostics.backgroundWebProcessResponsive = Self.webProcessIsResponsive(backgroundWebView)
+            diagnostics.secondsSinceBackgroundViewCreation = lastBackgroundWebViewCreatedAt.map { now().timeIntervalSince($0) }
+            diagnostics.backgroundReadiness = backgroundReadinessObserver.readiness(of: backgroundWebView)
+        } else if isBackgroundDelegateProxyEnabled {
+            diagnostics.backgroundReadiness = .noBackground
+        }
+        if let context {
+            let tabs = context.openTabs.compactMap { $0.base as? any WKWebExtensionTab }
+            diagnostics.openTabCount = tabs.count
+            diagnostics.loadingTabCount = tabs.filter { $0.webView?(for: context)?.isLoading == true }.count
         }
         let snapshotTime = now()
         diagnostics.backgroundEvents = backgroundEvents.suffix(Self.maximumEventsInPixel).map {
@@ -474,7 +499,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         memoryPressureSource = source
     }
 
-    private func recordContextErrors(_ errors: [NSError]) {
+    /// Internal so tests can inject errors; a real `WKWebExtensionContext` only reports them through WebKit.
+    func recordContextErrors(_ errors: [NSError]) {
         for domainAndCode in errors.map(\.domainAndCode) where !recordedContextErrors.contains(domainAndCode) {
             recordedContextErrors.append(domainAndCode)
         }
@@ -485,6 +511,10 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             let domainAndCode = error.domainAndCode
             if backgroundEvents.last.map({ $0.kind == .contextError(domainAndCode) && now().timeIntervalSince($0.at) < 1 }) != true {
                 record(.contextError(domainAndCode))
+                // Error 6 arrives after WebKit closed the view whose load failed and before it creates the next one,
+                // so the latest creation time still belongs to the failed load.
+                lastBackgroundLoadError = (appState: appSession?.applicationState?(),
+                                           secondsAfterViewCreation: lastBackgroundWebViewCreatedAt.map { now().timeIntervalSince($0) })
             }
         }
     }

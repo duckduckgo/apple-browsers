@@ -599,10 +599,64 @@
         "enum": ["initialization_failed", "messaging_stuck"],
         "description": "Whether the recovered episode had only an initialization failure or had been confirmed stuck."
     },
+    "cpm_recovery_document": {
+        "key": "recovery_document",
+        "type": "string",
+        "enum": ["failed_navigation", "later_navigation", "unattributed"],
+        "description": "Which navigation answered: the one that failed (its response arrived after the grace period), a later one, or a response that matched an open document but no single tab."
+    },
+    "cpm_recovery_after": {
+        "key": "recovery_after",
+        "type": "string",
+        "enum": ["under_4s", "4s_to_10s", "10s_to_30s", "30s_to_2m", "over_2m"],
+        "description": "Time bucket from the episode's first failure to the recovery. A failure is reported 4 seconds after the navigation finished."
+    },
     "background_events": {
         "key": "bg_events",
         "type": "string",
         "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), process death, graveyard hold/release, context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+    },
+    "background_load_error_app_state": {
+        "key": "bg_load_error_app_state",
+        "type": "string",
+        "description": "App state when the CPM context last recorded WKWebExtensionContextErrorDomain:6 (background content failed to load); none when the context recorded no such error. Omitted when the app does not report its state.",
+        "enum": ["none", "active", "inactive", "background"]
+    },
+    "background_load_error_after": {
+        "key": "bg_load_error_after",
+        "type": "string",
+        "description": "Time bucket from the creation of the CPM background view whose load failed to that WKWebExtensionContextErrorDomain:6. WebKit unloads a background that has not finished loading 30 seconds after the wake, so 25s_to_35s points at that timeout. none when the context recorded no such error.",
+        "enum": ["none", "under_5s", "5s_to_25s", "25s_to_35s", "over_35s"]
+    },
+    "cpm_app_state": {
+        "key": "app_state",
+        "type": "string",
+        "description": "App state when the CPM failure was recorded. Omitted when the app does not report its state.",
+        "enum": ["active", "inactive", "background"]
+    },
+    "background_view_age": {
+        "key": "bg_view_age",
+        "type": "string",
+        "description": "Time bucket since the current CPM background view was created. Separates failures during a background wake (the view is a few seconds old) from failures long after it. Omitted when there is no background view.",
+        "enum": ["under_4s", "4s_to_8s", "8s_to_30s", "30s_to_2m", "over_2m"]
+    },
+    "background_ready_after": {
+        "key": "bg_ready_after",
+        "type": "string",
+        "description": "Whether WebKit had finished loading the current CPM background (WKWebExtensionContext.loadBackgroundContent completion) when the failure was recorded: pending while it was still loading, failed when the load failed, none when there was no background view; otherwise a time bucket from the view's creation to the end of its load. Omitted when background observation is disabled.",
+        "enum": ["none", "pending", "failed", "under_1s", "1s_to_4s", "4s_to_10s", "10s_to_30s", "over_30s"]
+    },
+    "cpm_open_tabs": {
+        "key": "open_tabs",
+        "type": "string",
+        "description": "Bucketed number of tabs known to the CPM extension context (WKWebExtensionContext.openTabs) when the failure was recorded.",
+        "enum": ["0", "1", "2_to_5", "6_to_10", "11_to_20", "21_to_50", "over_50"]
+    },
+    "cpm_loading_tabs": {
+        "key": "loading_tabs",
+        "type": "string",
+        "description": "Bucketed number of those tabs whose web view was loading when the failure was recorded.",
+        "enum": ["0", "1", "2", "3_to_5", "over_5"]
     },
     "background_graveyard_enabled": {
         "key": "background_graveyard_enabled",

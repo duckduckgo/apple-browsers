@@ -68,9 +68,9 @@ public enum WebExtensionPixelEvent {
     /// A later eligible navigation confirmed the preceding initialization failure.
     case cpmMessagingStuck(reason: CPMMessagingFailureReason, diagnostics: CPMMessagingDiagnostics? = nil)
     /// CPM messaging recovered without an intervening successful extension reload.
-    case cpmMessagingRecoveredWithoutExtensionReload(from: CPMMessagingRecoverySource)
+    case cpmMessagingRecoveredWithoutExtensionReload(from: CPMMessagingRecoverySource, details: CPMMessagingRecoveryDetails? = nil)
     /// CPM messaging recovered after an embedded-extension reload.
-    case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource)
+    case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource, details: CPMMessagingRecoveryDetails? = nil)
     /// The first CPM measurement using a successful extension-reload generation also failed.
     case cpmMessagingExtensionReloadFailed
 }
@@ -79,6 +79,41 @@ public enum WebExtensionPixelEvent {
 public enum CPMMessagingRecoverySource: String, Sendable {
     case initializationFailed = "initialization_failed"
     case messagingStuck = "messaging_stuck"
+}
+
+/// How a recovery was observed: which navigation answered, and how long after the episode's first failure.
+public struct CPMMessagingRecoveryDetails: Equatable, Sendable {
+    public enum Document: String, Sendable {
+        /// The navigation that failed answered after its grace period: the response was late, not lost.
+        case failedNavigation = "failed_navigation"
+        /// A later navigation answered.
+        case laterNavigation = "later_navigation"
+        /// A response matched an open document but no single tab.
+        case unattributed
+    }
+
+    public let document: Document
+    public let secondsSinceFirstFailure: TimeInterval
+
+    public init(document: Document, secondsSinceFirstFailure: TimeInterval) {
+        self.document = document
+        self.secondsSinceFirstFailure = secondsSinceFirstFailure
+    }
+
+    var pixelParameters: [String: String] {
+        ["recovery_document": document.rawValue, "recovery_after": Self.delayBucket(secondsSinceFirstFailure)]
+    }
+
+    /// A failure is reported 4 s after the navigation finished, so `under_4s` is a response within 8 s of it.
+    static func delayBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<4: return "under_4s"
+        case ..<10: return "4s_to_10s"
+        case ..<30: return "10s_to_30s"
+        case ..<120: return "30s_to_2m"
+        default: return "over_2m"
+        }
+    }
 }
 
 /// Reporting cadence shared by both platform CPM pixel adapters.
@@ -143,14 +178,14 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "debug_web_extension_cpm_messaging_stuck_\(reason.rawValue)"
             frequency = .dailyAndCount
             parameters = diagnostics?.pixelParameters ?? [:]
-        case .cpmMessagingRecoveredWithoutExtensionReload(let source):
+        case .cpmMessagingRecoveredWithoutExtensionReload(let source, let details):
             name = "debug_web_extension_cpm_messaging_recovered_without_extension_reload"
             frequency = .dailyAndCount
-            parameters = ["recovery_from": source.rawValue]
-        case .cpmMessagingRecoveredAfterExtensionReload(let source):
+            parameters = (details?.pixelParameters ?? [:]).merging(["recovery_from": source.rawValue]) { _, source in source }
+        case .cpmMessagingRecoveredAfterExtensionReload(let source, let details):
             name = "debug_web_extension_cpm_messaging_recovered_after_extension_reload"
             frequency = .dailyAndCount
-            parameters = ["recovery_from": source.rawValue]
+            parameters = (details?.pixelParameters ?? [:]).merging(["recovery_from": source.rawValue]) { _, source in source }
         case .cpmMessagingExtensionReloadFailed:
             name = "debug_web_extension_cpm_messaging_extension_reload_failed"
             frequency = .dailyAndCount

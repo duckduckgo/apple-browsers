@@ -25,13 +25,37 @@ public struct CPMAppSessionDiagnostics {
         case downgraded
     }
 
+    /// Foreground state of the app, read with each diagnostics snapshot and when a background load error is recorded.
+    public enum ApplicationState: String, Sendable {
+        case active
+        case inactive
+        case background
+    }
+
     public let appVersionChange: VersionChange?
     public let launchDate: Date
+    /// Reads the app's current state; `nil` leaves it unreported.
+    public let applicationState: (@MainActor () -> ApplicationState)?
 
-    public init(appVersionChange: VersionChange?, launchDate: Date) {
+    public init(appVersionChange: VersionChange?,
+                launchDate: Date,
+                applicationState: (@MainActor () -> ApplicationState)? = nil) {
         self.appVersionChange = appVersionChange
         self.launchDate = launchDate
+        self.applicationState = applicationState
     }
+}
+
+/// Whether WebKit finished loading the CPM background, as reported by `WKWebExtensionContext.loadBackgroundContent`.
+public enum CPMBackgroundReadiness: Equatable, Sendable {
+    /// No background view was created for the current context.
+    case noBackground
+    /// WebKit has not finished loading the current background.
+    case pending
+    /// The current background finished loading this long after its view was created.
+    case loaded(secondsAfterViewCreation: TimeInterval)
+    /// WebKit reported that the current background failed to load.
+    case failed
 }
 
 /// Best-effort state attached to Web Extension messaging failures. Unavailable facts are omitted.
@@ -80,6 +104,23 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     public var backgroundWebProcessResponsive: Bool?
     /// Whether the background-process termination associated with this health episode had treatment enabled.
     public var backgroundGraveyardTreatmentEnabled: Bool?
+    /// App state when the most recent `BackgroundContentFailedToLoad` (error 6) was recorded for this context;
+    /// `nil` when none was recorded or the app does not report its state.
+    public var backgroundLoadErrorAppState: CPMAppSessionDiagnostics.ApplicationState?
+    /// Seconds from the creation of the background view whose load failed to that error 6. WebKit unloads a background
+    /// that has not finished loading 30 s after the wake that started it, so values near 30 s point at that timer.
+    public var secondsFromBackgroundViewToLoadError: TimeInterval?
+    /// Whether this context recorded a background load error: `false` reports `none`, `nil` (unknown) omits both values.
+    public var hasBackgroundLoadError: Bool?
+    /// App state at the snapshot; `nil` when the app does not report its state.
+    public var applicationState: CPMAppSessionDiagnostics.ApplicationState?
+    /// Seconds since the current background view was created; `nil` when there is no background view.
+    public var secondsSinceBackgroundViewCreation: TimeInterval?
+    /// Whether the current background had finished loading; `nil` when readiness is not observed.
+    public var backgroundReadiness: CPMBackgroundReadiness?
+    /// Tabs in `WKWebExtensionContext.openTabs`, and how many of their web views were loading.
+    public var openTabCount: Int?
+    public var loadingTabCount: Int?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
     /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
     public var backgroundEvents: [BackgroundEvent] = []
@@ -138,6 +179,13 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         public static let backgroundWebProcessResponsive = "bg_process_responsive"
         public static let backgroundGraveyardTreatmentEnabled = "background_graveyard_enabled"
         public static let backgroundEvents = "bg_events"
+        public static let backgroundLoadErrorAppState = "bg_load_error_app_state"
+        public static let backgroundLoadErrorAfter = "bg_load_error_after"
+        public static let applicationState = "app_state"
+        public static let backgroundViewAge = "bg_view_age"
+        public static let backgroundReadyAfter = "bg_ready_after"
+        public static let openTabs = "open_tabs"
+        public static let loadingTabs = "loading_tabs"
     }
 
     /// Longest `bg_events` value; older events are dropped first.
@@ -166,6 +214,21 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         if !backgroundEvents.isEmpty {
             parameters[ParameterName.backgroundEvents] = Self.backgroundEventsValue(backgroundEvents)
         }
+        switch hasBackgroundLoadError {
+        case true?:
+            parameters[ParameterName.backgroundLoadErrorAppState] = backgroundLoadErrorAppState?.rawValue
+            parameters[ParameterName.backgroundLoadErrorAfter] = secondsFromBackgroundViewToLoadError.map(Self.loadErrorDelayBucket)
+        case false?:
+            parameters[ParameterName.backgroundLoadErrorAppState] = "none"
+            parameters[ParameterName.backgroundLoadErrorAfter] = "none"
+        case nil:
+            break
+        }
+        parameters[ParameterName.applicationState] = applicationState?.rawValue
+        parameters[ParameterName.backgroundViewAge] = secondsSinceBackgroundViewCreation.map(Self.backgroundViewAgeBucket)
+        parameters[ParameterName.backgroundReadyAfter] = backgroundReadiness.map(Self.readinessValue)
+        parameters[ParameterName.openTabs] = openTabCount.map(Self.tabCountBucket)
+        parameters[ParameterName.loadingTabs] = loadingTabCount.map(Self.countBucket)
         return parameters
     }
 
@@ -178,6 +241,56 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         case ..<300: return "5m"
         case ..<1800: return "30m"
         default: return "over_30"
+        }
+    }
+
+    /// Separates loads that failed quickly from those cut off by WebKit's 30 s background unload timer.
+    static func loadErrorDelayBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<5: return "under_5s"
+        case ..<25: return "5s_to_25s"
+        case ..<35: return "25s_to_35s"
+        default: return "over_35s"
+        }
+    }
+
+    /// Fine enough to tell a failure during a wake (the view is a few seconds old) from one long after it.
+    static func backgroundViewAgeBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<4: return "under_4s"
+        case ..<8: return "4s_to_8s"
+        case ..<30: return "8s_to_30s"
+        case ..<120: return "30s_to_2m"
+        default: return "over_2m"
+        }
+    }
+
+    /// Load times around the monitor's 4 s grace period and WebKit's 30 s unload timer.
+    static func readinessValue(_ readiness: CPMBackgroundReadiness) -> String {
+        switch readiness {
+        case .noBackground: return "none"
+        case .pending: return "pending"
+        case .failed: return "failed"
+        case .loaded(let seconds):
+            switch seconds {
+            case ..<1: return "under_1s"
+            case ..<4: return "1s_to_4s"
+            case ..<10: return "4s_to_10s"
+            case ..<30: return "10s_to_30s"
+            default: return "over_30s"
+            }
+        }
+    }
+
+    static func tabCountBucket(_ count: Int) -> String {
+        switch count {
+        case ...0: return "0"
+        case 1: return "1"
+        case 2...5: return "2_to_5"
+        case 6...10: return "6_to_10"
+        case 11...20: return "11_to_20"
+        case 21...50: return "21_to_50"
+        default: return "over_50"
         }
     }
 

@@ -1058,6 +1058,64 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(recovered.parameters, ["recovery_from": "messaging_stuck"])
     }
 
+    func testLateResponseToTheFailedNavigationIsReportedWithItsDelay() throws {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        var date = Date(timeIntervalSince1970: 1_000)
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, episodeLifetime: 300, now: { date })
+
+        let measurement = monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other)
+        date += 4
+        monitor.reportFailure(measurement)
+        date += 6
+        monitor.reportSuccess(measurement)
+
+        let recovery = try XCTUnwrap(pixelFiring.metadata.last)
+        XCTAssertEqual(recovery.name, "debug_web_extension_cpm_messaging_recovered_without_extension_reload")
+        XCTAssertEqual(recovery.parameters, [
+            "recovery_from": "initialization_failed",
+            "recovery_document": "failed_navigation",
+            "recovery_after": "4s_to_10s"
+        ])
+    }
+
+    func testRecoveryOnALaterNavigationIsReportedAsSuch() throws {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        var date = Date(timeIntervalSince1970: 1_000)
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, episodeLifetime: 300, now: { date })
+
+        beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other)
+        date += 45
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other))
+
+        let recovery = try XCTUnwrap(pixelFiring.metadata.last)
+        XCTAssertEqual(recovery.parameters["recovery_document"], "later_navigation")
+        XCTAssertEqual(recovery.parameters["recovery_after"], "30s_to_2m")
+    }
+
+    func testUnattributedResponseRecoveringStuckEpisodeIsReportedAsUnattributed() throws {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let sharedURL = URL(string: "https://example.com/healthy")!
+
+        beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other)
+        beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other)
+        startAndCommitNavigation(tabIdentifier: "tab-3", url: sharedURL, navigationKind: .other, on: monitor)
+        startAndCommitNavigation(tabIdentifier: "tab-4", url: sharedURL, navigationKind: .other, on: monitor)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: sharedURL))
+
+        let recovery = try XCTUnwrap(pixelFiring.metadata.last)
+        XCTAssertEqual(recovery.parameters["recovery_from"], "messaging_stuck")
+        XCTAssertEqual(recovery.parameters["recovery_document"], "unattributed")
+        XCTAssertEqual(recovery.parameters["recovery_after"], "under_4s")
+    }
+
+    func testRecoveryDelayBuckets() {
+        let buckets = [0, 3.9, 4, 9.9, 10, 29.9, 30, 119, 120].map(CPMMessagingRecoveryDetails.delayBucket)
+        XCTAssertEqual(buckets, [
+            "under_4s", "under_4s", "4s_to_10s", "4s_to_10s", "10s_to_30s", "10s_to_30s", "30s_to_2m", "30s_to_2m", "over_2m"
+        ])
+    }
+
     func testRecoveryParametersDistinguishEpisodeStateWithAndWithoutReload() throws {
         for wasStuck in [false, true] {
             for didReload in [false, true] {
@@ -1075,7 +1133,8 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
                 let recovery = try XCTUnwrap(pixelFiring.metadata.last)
                 let suffix = didReload ? "after_extension_reload" : "without_extension_reload"
                 XCTAssertEqual(recovery.name, "debug_web_extension_cpm_messaging_recovered_\(suffix)")
-                XCTAssertEqual(recovery.parameters, ["recovery_from": wasStuck ? "messaging_stuck" : "initialization_failed"])
+                XCTAssertEqual(recovery.parameters["recovery_from"], wasStuck ? "messaging_stuck" : "initialization_failed")
+                XCTAssertEqual(recovery.parameters["recovery_document"], "later_navigation")
                 XCTAssertEqual(recovery.frequency, .dailyAndCount)
                 let eventCount = pixelFiring.events.count
                 monitor.reportSuccess(measurement)

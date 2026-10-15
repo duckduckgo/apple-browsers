@@ -448,7 +448,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
         guard let episode else { return }
         if episode.isStuck {
-            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck))
+            let details = recoveryDetails(document: .unattributed, episode: episode)
+            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck, details: details))
         }
         self.episode = nil
     }
@@ -708,13 +709,18 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         let didThisMeasurementFail = record.state == .failed
         if episode.isStuck || didThisMeasurementFail || episode.failedTabIdentifiers.contains(measurement.tabIdentifier) {
             let source: CPMMessagingRecoverySource = episode.isStuck ? .messagingStuck : .initializationFailed
+            let details = recoveryDetails(document: didThisMeasurementFail ? .failedNavigation : .laterNavigation, episode: episode)
             if episode.reloadGeneration != nil {
-                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload(from: source))
+                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload(from: source, details: details))
             } else {
-                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: source))
+                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: source, details: details))
             }
         }
         self.episode = nil
+    }
+
+    private func recoveryDetails(document: CPMMessagingRecoveryDetails.Document, episode: Episode) -> CPMMessagingRecoveryDetails {
+        CPMMessagingRecoveryDetails(document: document, secondsSinceFirstFailure: now().timeIntervalSince(episode.startedAt))
     }
 
     /// Updates CPM correlation state from an extension-manager lifecycle event.

@@ -1037,7 +1037,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionChangeSelected_WhenOriginIsSubscriptionSettingsViewPlans_StartsWideEventWithAppSettingsFunnelName() async throws {
         // Given
         let originURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_subscriptionsettings_macos__viewplans")!
-        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: [:], webView: MockURLWebView(url: originURL))
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: [:], webView: webView)
         let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]
 
         let stripeSubscription = DuckDuckGoSubscription(

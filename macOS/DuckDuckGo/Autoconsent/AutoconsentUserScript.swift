@@ -51,6 +51,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var selfTestFrameInfo: WKFrameInfo?
 
     private var topUrl: URL?
+    private let siteRankLookup = CPMSiteRankLookup()
+    private lazy var siteRank = siteRankLookup.siteRank(for: topUrl)
     private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
     private let featureFlagger: FeatureFlagger
@@ -287,6 +289,7 @@ extension AutoconsentUserScript {
             clearReloadLoopState()
         }
         topUrl = url
+        siteRank = siteRankLookup.siteRank(for: url)
     }
 
     @MainActor
@@ -684,7 +687,7 @@ extension AutoconsentUserScript {
             }
         }
         // increment counter
-        management.pixelCounter[management.siteRankLookup.siteRank(for: topUrl), default: [:]][pixel.key, default: 0] += 1
+        management.pixelCounter[siteRank, default: [:]][pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
         PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParams)

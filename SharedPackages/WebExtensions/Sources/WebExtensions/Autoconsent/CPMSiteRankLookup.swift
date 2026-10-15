@@ -26,12 +26,9 @@ public enum CPMSiteRank: String, CaseIterable, Sendable {
     case other
 }
 
-/// Finds the `CPMSiteRank` of a top-level URL on the device. The URL and its domain are only used for the lookup,
-/// and are never sent.
-///
-/// It is a port of `cpm-site-rank.js` in duckduckgo-privacy-extension, which the embedded web extension uses, and must
-/// give the same results. `site-buckets.json` is a copy of the extension's `shared/data/bundled/site-buckets.json`, and a
-/// test checks that it matches the bundled extension.
+/// Port of the embedded extension's lookup (`cpm-site-rank.js` and `shared-utils/domain-hashes.js` in
+/// duckduckgo-privacy-extension), which must give the same results. `site-buckets.json` is a copy of the extension's
+/// list, and a test checks that it matches the bundled extension.
 public final class CPMSiteRankLookup: Sendable {
 
     /// Sorted 32-bit FNV-1a hashes of the top sites' registrable domains.
@@ -69,8 +66,7 @@ public final class CPMSiteRankLookup: Sendable {
         self.data = data
     }
 
-    /// Checks every suffix of the hostname with at least two labels, shortest first, so `www.example.co.uk` matches
-    /// when `example.co.uk` is a top site. This avoids the Public Suffix List.
+    /// Checks every suffix of the hostname with at least two labels, so `www.example.co.uk` matches `example.co.uk`.
     /// - Returns: the bucket of the URL, or `nil` if the bundled data could not be loaded.
     public func siteRank(for url: URL?) -> CPMSiteRank? {
         guard let data = data() else { return nil }

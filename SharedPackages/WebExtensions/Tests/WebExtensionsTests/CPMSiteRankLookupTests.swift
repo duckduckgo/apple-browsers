@@ -20,8 +20,8 @@ import XCTest
 import ZIPFoundation
 @testable import WebExtensions
 
-/// Mirrors `unit-test/background/cpm-site-rank.js` in duckduckgo-privacy-extension, so that the legacy CPM and the
-/// embedded extension send the same buckets.
+/// Mirrors `unit-test/background/cpm-site-rank.js` and `unit-test/shared-utils/domain-hashes.js` in
+/// duckduckgo-privacy-extension, so that the legacy CPM and the embedded extension send the same buckets.
 final class CPMSiteRankLookupTests: XCTestCase {
 
     private let lookup = CPMSiteRankLookupTests.makeLookup(["google.com", "youtube.com", "wikipedia.org", "bbc.co.uk", "www.gov.uk"])
@@ -122,7 +122,7 @@ final class CPMSiteRankLookupTests: XCTestCase {
         return CPMSiteRankLookup(data: { hashes.map { CPMSiteRankLookup.LookupData(hashes: $0) } })
     }
 
-    /// Same encoding as `encodeTopSites` in the extension.
+    /// Same encoding as `encodeDomainHashes` in the extension.
     private static func encode(_ domains: [String]) -> (count: Int, data: String) {
         let hashes = Array(Set(domains.map { CPMSiteRankLookup.fnv1a32($0.utf8) })).sorted()
         var bytes = [UInt8]()

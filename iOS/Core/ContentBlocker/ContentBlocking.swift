@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Combine
 import Common
+import Configuration
 import FoundationExtensions
 import ContentBlocking
 import PrivacyConfig
@@ -46,6 +47,7 @@ public final class ContentBlocking {
     }
 
     private init(privacyConfigurationManager: PrivacyConfigurationManaging? = nil) {
+        Self.discardStoredPrivacyConfigurationFromEarlierOverride()
         let internalUserDecider = DefaultInternalUserDecider(store: InternalUserStore())
         let statisticsStore = StatisticsUserDefaults()
         let privacyConfigurationManager = privacyConfigurationManager
@@ -80,6 +82,17 @@ public final class ContentBlocking {
                                                                           exceptionsSource: exceptionsSource,
                                                                           errorReporting: attributionDebugEvents,
                                                                           compilationErrorReporting: Self.debugEvents)
+    }
+
+    /// A launch without `-privacyConfigURL` must not read a privacy configuration stored by an earlier override.
+    /// Runs before the privacy configuration manager reads the store.
+    private static func discardStoredPrivacyConfigurationFromEarlierOverride() {
+        let defaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
+        let marker = PrivacyConfigurationOverrideMarker(defaults: defaults)
+        marker.resetIfNeeded(userDefaults: .app) {
+            _ = FileStore().removeData(forFile: Configuration.privacyConfiguration.storeKey)
+            UserDefaultsETagStorage().removeEtag(for: .privacyConfiguration)
+        }
     }
 
     private static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in

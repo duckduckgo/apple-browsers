@@ -28,18 +28,38 @@ import PrivacyConfig
 public enum PrivacyConfigurationOverrideCommand: Equatable {
     case set(URL)
 
+    var url: URL {
+        switch self {
+        case .set(let url): return url
+        }
+    }
+
     public static let launchArgumentKey = "privacyConfigURL"
 
     /// Returns nil when the value is missing or is not an http(s) URL with a host.
     public init?(launchArgumentValue value: String?) {
         guard let value else { return nil }
-        guard let url = URL(string: value.trimmingCharacters(in: .whitespacesAndNewlines)),
-              let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
-              url.host?.isEmpty == false else {
-            logFailure(.invalidURL)
+        guard let url = Self.url(fromLaunchArgument: value) else {
+            logFailure(.invalidURL, source: Self.invalidArgumentSource(value))
             return nil
         }
         self = .set(url)
+    }
+
+    /// The raw argument without whitespace, so the value stays one field of the log line.
+    static func invalidArgumentSource(_ value: String) -> String {
+        value.filter { !$0.isWhitespace }
+    }
+
+    /// Parses the argument without logging. Returns nil unless the value is an http(s) URL with a host.
+    public static func url(fromLaunchArgument value: String?) -> URL? {
+        guard let value,
+              let url = URL(string: value.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
+              url.host?.isEmpty == false else {
+            return nil
+        }
+        return url
     }
 
     /// Reads the launch argument from the argument domain of `userDefaults`.
@@ -51,15 +71,15 @@ public enum PrivacyConfigurationOverrideCommand: Equatable {
     /// - Returns: true when the caller must fetch the privacy configuration now, false when the command was ignored.
     @discardableResult
     public func apply(to urlSetter: CustomConfigurationURLSetting) -> Bool {
-        guard urlSetter.isCustomURLEnabled else {
-            logFailure(.notInternal)
-            return false
-        }
         switch self {
         case .set(let url):
+            guard urlSetter.isCustomURLEnabled else {
+                logFailure(.notInternal, source: url.absoluteString)
+                return false
+            }
             urlSetter.setSessionURL(url, for: .privacyConfiguration)
+            return true
         }
-        return true
     }
 }
 
@@ -89,6 +109,22 @@ public struct PrivacyConfigurationOverrideMarker {
 
     public func set(_ isSet: Bool) {
         defaults.set(isSet, forKey: Self.key)
+    }
+
+    /// Drops a stored privacy configuration that came from an earlier override, when this launch has no valid argument.
+    ///
+    /// Call it before anything reads the stored configuration, so the app starts on its embedded configuration
+    /// and fetches production as usual.
+    /// - Returns: true when the stored configuration was removed.
+    @discardableResult
+    public func resetIfNeeded(userDefaults: UserDefaults, removeStoredConfiguration: () -> Void) -> Bool {
+        guard isSet else { return false }
+        let argument = userDefaults.string(forKey: PrivacyConfigurationOverrideCommand.launchArgumentKey)
+        guard PrivacyConfigurationOverrideCommand.url(fromLaunchArgument: argument) == nil else { return false }
+        removeStoredConfiguration()
+        set(false)
+        Logger.config.log("privacy config override: removed stored override configuration")
+        return true
     }
 }
 
@@ -160,29 +196,20 @@ public final class PrivacyConfigurationOverrideReporter {
 
     /// Applies `command` now, then runs `fetch` in a task. `fetch` must fetch and apply the privacy configuration.
     ///
-    /// Without a command, the task runs only when the stored configuration came from an earlier override,
-    /// so that production replaces it. Call this on every cold launch, before any scheduled refresh.
+    /// Without a command there is nothing to fetch: `PrivacyConfigurationOverrideMarker.resetIfNeeded` has already
+    /// dropped any stored override. Call this on every cold launch, before any scheduled refresh.
     /// - Returns: the fetch task, or nil when there is nothing to fetch.
     @discardableResult
     public func handle(_ command: PrivacyConfigurationOverrideCommand?,
                        fetch: @escaping () async throws -> Void) -> Task<Void, Never>? {
-        if let command {
-            guard command.apply(to: urlProvider) else { return nil }
-            Logger.config.log("privacy config override: launch argument handled")
-        } else {
-            guard overrideMarker.isSet else { return nil }
-            Logger.config.log("privacy config override: replacing earlier override with production")
-        }
+        guard let command, command.apply(to: urlProvider) else { return nil }
+        Logger.config.log("privacy config override: launch argument handled")
         return Task {
             Logger.config.log("privacy config override: fetch started")
             do {
                 try await fetch()
             } catch {
-                if command == nil {
-                    Logger.config.error("Failed to fetch production privacy configuration: \(error.localizedDescription, privacy: .public)")
-                } else {
-                    logFailure(.downloadFailed)
-                }
+                logFailure(.downloadFailed, source: command.url.absoluteString)
                 return
             }
             Logger.config.log("privacy config override: fetch finished")
@@ -213,14 +240,10 @@ public final class PrivacyConfigurationOverrideReporter {
         }
     }
 
-    private func finishFetch(for command: PrivacyConfigurationOverrideCommand?) {
-        guard command != nil else {
-            overrideMarker.set(false)
-            return
-        }
+    private func finishFetch(for command: PrivacyConfigurationOverrideCommand) {
         // Fell back to the embedded configuration, so nothing from the override was applied.
         guard currentAppliedConfig() != nil else {
-            logFailure(.downloadFailed)
+            logFailure(.downloadFailed, source: command.url.absoluteString)
             return
         }
         overrideMarker.set(true)
@@ -248,11 +271,11 @@ enum PrivacyConfigurationOverrideFailure: String {
     case notInternal = "not_internal"
     case downloadFailed = "download_failed"
 
-    var logLine: String {
-        "CONFIG_OVERRIDE_FAILED action=set_url reason=\(rawValue)"
+    func logLine(source: String) -> String {
+        "CONFIG_OVERRIDE_FAILED action=set_url reason=\(rawValue) source=\(source)"
     }
 }
 
-private func logFailure(_ failure: PrivacyConfigurationOverrideFailure) {
-    Logger.config.error("\(failure.logLine, privacy: .public)")
+private func logFailure(_ failure: PrivacyConfigurationOverrideFailure, source: String) {
+    Logger.config.error("\(failure.logLine(source: source), privacy: .public)")
 }

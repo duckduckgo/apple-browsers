@@ -143,6 +143,7 @@ extension PasskeyRequestOutcome.Result {
 /// Successes and cancellations fire right away. A failure waits for ``failureDelay`` and fires only if no other outcome
 /// arrives first: a newer failure replaces it, and a success or cancellation drops it. Pages often retry a failed
 /// request, so this reports one failure per burst of retries, and none when the user ends up seeing the passkey sheet.
+@MainActor
 final class PasskeyRequestOutcomeReporter {
 
     private let pixelFiring: PixelFiring?

@@ -21,6 +21,7 @@ import AuthenticationServices
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class PasskeyRequestOutcomeReporterTests: XCTestCase {
 
     private let delay: TimeInterval = 0.05

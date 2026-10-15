@@ -153,6 +153,7 @@ extension WebKitPasskeyRequestCanceller {
     ///
     /// If WebKit's delegate class is missing, for example because a macOS update changed WebKit, nothing is installed,
     /// passkeys behave as they would without it, and a pixel reports it.
+    @MainActor
     static func install(pixelFiring: PixelFiring? = PixelKit.shared) {
         guard #available(macOS 13.0, *), installed == nil else { return }
 
@@ -264,6 +265,7 @@ private final class PasskeyRequestStart: NSObject {
 extension WebKitPasskeyRequestCanceller {
 
     /// Reports how WebKit's passkey requests end, kept so it's created only once.
+    @MainActor
     fileprivate static var outcomeReporter: PasskeyRequestOutcomeReporter?
 
     /// Reports the outcome of a request the user saw end. Requests that never reached the agent, and failures of
@@ -282,10 +284,14 @@ extension WebKitPasskeyRequestCanceller {
         default: type = .other
         }
 
-        outcomeReporter?.report(PasskeyRequestOutcome(style: start.style,
-                                                      type: type,
-                                                      result: .init(error: error),
-                                                      duration: .init(Date().timeIntervalSince(start.date))))
+        let outcome = PasskeyRequestOutcome(style: start.style,
+                                            type: type,
+                                            result: .init(error: error),
+                                            duration: .init(Date().timeIntervalSince(start.date)))
+        // The reporter's debouncing relies on a single thread, and the delegate isn't guaranteed to be called on main.
+        DispatchQueue.main.async {
+            outcomeReporter?.report(outcome)
+        }
     }
 }
 
@@ -317,14 +323,14 @@ extension NSObject {
 
     /// Reports the request's success before WebKit handles it.
     @objc dynamic fileprivate func swizzled_authorizationController(_ controller: ASAuthorizationController,
-                                                                  didCompleteWithAuthorization authorization: ASAuthorization) {
+                                                                    didCompleteWithAuthorization authorization: ASAuthorization) {
         WebKitPasskeyRequestCanceller.reportOutcome(of: controller, error: nil)
         swizzled_authorizationController(controller, didCompleteWithAuthorization: authorization) // calls the original method
     }
 
     /// Reports the request's failure before WebKit handles it.
     @objc dynamic fileprivate func swizzled_authorizationController(_ controller: ASAuthorizationController,
-                                                                  didCompleteWithError error: Error) {
+                                                                    didCompleteWithError error: Error) {
         WebKitPasskeyRequestCanceller.reportOutcome(of: controller, error: error as NSError)
         swizzled_authorizationController(controller, didCompleteWithError: error) // calls the original method
     }

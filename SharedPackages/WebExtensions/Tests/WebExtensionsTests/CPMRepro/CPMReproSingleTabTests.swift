@@ -59,6 +59,54 @@ final class CPMReproSingleTabTests: CPMReproTestCase {
         XCTAssertEqual(lost, 0)
     }
 
+    /// The embedded extension is installed mid-session (a feature flag turns on, or iOS installs it
+    /// once protected data becomes available). A tab navigates as soon as the context is loaded.
+    func testInstallDuringSessionInitIsDelivered() async throws {
+        var lost = 0
+        for iteration in 1...iterations {
+            let harness = try await makeHarness(Options())
+            harness.enabledTypes = []
+            await harness.coordinator.sync().value
+            let tab = harness.openTab()
+
+            harness.enabledTypes = [.embedded]
+            harness.log.add("installing the embedded extension mid-session")
+            let sync = harness.coordinator.sync()
+            _ = await harness.waitUntil(timeout: 5) { harness.manager.isAutoconsentExtensionLoaded }
+            let outcome = await harness.navigateAndMeasure(tab)
+            await sync.value
+            harness.log.add("iteration \(iteration): \(outcome)")
+            if outcome == .timedOut { lost += 1 }
+        }
+        print("INSTALL DURING SESSION: \(lost)/\(iterations) navigations got no CPM response")
+        XCTAssertEqual(lost, 0)
+    }
+
+    /// The embedded extension is upgraded mid-session while the previous version is still loaded.
+    /// A tab navigates as soon as the new version's context exists.
+    func testUpgradeDuringSessionInitIsDelivered() async throws {
+        var lost = 0
+        for iteration in 1...iterations {
+            let harness = try await makeHarness(Options(installationDirectory: temporaryInstallationDirectory()))
+            let tab = harness.openTab()
+            _ = await harness.navigateAndMeasure(tab)
+            let previous = try XCTUnwrap(harness.embeddedContext?.uniqueIdentifier)
+            try harness.markInstalledVersionAsOutdated()
+
+            harness.log.add("upgrading the embedded extension mid-session")
+            let sync = harness.coordinator.sync()
+            _ = await harness.waitUntil(timeout: 5) {
+                harness.manager.contexts.contains { $0.uniqueIdentifier != previous && $0.webExtension.duckDuckGoWebExtensionType == .embedded }
+            }
+            let outcome = await harness.navigateAndMeasure(tab)
+            await sync.value
+            harness.log.add("iteration \(iteration): \(outcome)")
+            if outcome == .timedOut { lost += 1 }
+        }
+        print("UPGRADE DURING SESSION: \(lost)/\(iterations) navigations got no CPM response")
+        XCTAssertEqual(lost, 0)
+    }
+
     /// App relaunch with the extension already installed: WebKit loads the background lazily.
     func testRelaunchColdStartInitIsDelivered() async throws {
         let directory = temporaryInstallationDirectory()

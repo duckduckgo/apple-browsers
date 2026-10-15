@@ -86,6 +86,9 @@ final class ReturnSessionWideEventData: WideEventData {
     var afterInactivitySettingsOpened: Bool
     var closeTabTapped: Bool
     var burnTabTapped: Bool
+    /// Recorded at session start and refreshed when it ends. Optional so flows pending from an older version decode.
+    var layout: UsageContext.Layout?
+    var hardwareKeyboard: Bool?
 
     init(landedOn: LandedOn,
          afterIdle: Bool,
@@ -126,6 +129,11 @@ final class ReturnSessionWideEventData: WideEventData {
         .keepPending
     }
 
+    func record(_ usageContext: UsageContext) {
+        layout = usageContext.layout
+        hardwareKeyboard = usageContext.hardwareKeyboard
+    }
+
     static let appTerminatedReason = "app_terminated"
 }
 
@@ -159,6 +167,8 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.afterInactivitySettingsOpened, afterInactivitySettingsOpened),
             (WideEventParameter.ReturnSessionFeature.closeTabTapped, closeTabTapped),
             (WideEventParameter.ReturnSessionFeature.burnTabTapped, burnTabTapped),
+            (WideEventParameter.ReturnSessionFeature.layout, layout?.rawValue),
+            (WideEventParameter.ReturnSessionFeature.hardwareKeyboard, hardwareKeyboard),
         ])
     }
 }
@@ -199,5 +209,7 @@ extension WideEventParameter {
         static let afterInactivitySettingsOpened = "feature.data.ext.after_inactivity_settings_opened"
         static let closeTabTapped = "feature.data.ext.close_tab_tapped"
         static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
+        static let layout = "feature.data.ext.layout"
+        static let hardwareKeyboard = "feature.data.ext.hardware_keyboard"
     }
 }

@@ -151,6 +151,17 @@
                 "key": "feature.data.ext.burn_tab_tapped",
                 "type": "boolean",
                 "description": "Whether the user burned the open tab from the escape hatch's menu during the session."
+            },
+            {
+                "key": "feature.data.ext.layout",
+                "type": "string",
+                "description": "Layout when the event was recorded: regular is the iPad tabs-bar layout (window 678pt or wider); compact is the phone layout, on every iPhone and on narrower iPad windows.",
+                "enum": ["regular", "compact"]
+            },
+            {
+                "key": "feature.data.ext.hardware_keyboard",
+                "type": "boolean",
+                "description": "True when a hardware keyboard was connected."
             }
         ]
     }

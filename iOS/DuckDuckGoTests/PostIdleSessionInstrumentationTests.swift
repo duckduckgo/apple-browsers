@@ -31,11 +31,17 @@ struct PostIdleSessionInstrumentationTests {
         func advance(by seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
     }
 
-    private func makeSUT() -> (DefaultPostIdleSessionInstrumentation, WideEventMock, MockClock) {
+    private final class MockUsageContextProvider: UsageContextProviding {
+        var currentContext = UsageContext(hardwareKeyboard: false, layout: .regular)
+        var currentWindowMode: UsageContext.WindowMode { .fullScreen }
+    }
+
+    private func makeSUT(usageContextProvider: UsageContextProviding = MockUsageContextProvider()) -> (DefaultPostIdleSessionInstrumentation, WideEventMock, MockClock) {
         let wideEvent = WideEventMock()
         let clock = MockClock()
         let sut = DefaultPostIdleSessionInstrumentation(
             wideEvent: wideEvent,
+            usageContextProvider: usageContextProvider,
             dateProvider: { clock.now }
         )
         return (sut, wideEvent, clock)
@@ -142,6 +148,40 @@ struct PostIdleSessionInstrumentationTests {
         #expect(startedData(wideEvent) == nil)
         #expect(startedReturnData(wideEvent)?.landedOn == .serp)
         #expect(startedReturnData(wideEvent)?.afterIdle == false)
+    }
+
+    @available(iOS 16, *)
+    @Test("The usage context at session start is reported on both flows", .timeLimit(.minutes(1)))
+    func usageContextIsReportedOnBothFlows() {
+        let provider = MockUsageContextProvider()
+        provider.currentContext = UsageContext(hardwareKeyboard: true, layout: .compact)
+        let (sut, wideEvent, _) = makeSUT(usageContextProvider: provider)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+
+        let returnParams = startedReturnData(wideEvent)?.jsonParameters()
+        let postIdleParams = startedData(wideEvent)?.jsonParameters()
+        for params in [returnParams, postIdleParams] {
+            #expect(params?["feature.data.ext.layout"] as? String == "compact")
+            #expect(params?["feature.data.ext.hardware_keyboard"] as? Bool == true)
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("The usage context when the session ends replaces the one from its start", .timeLimit(.minutes(1)))
+    func usageContextIsRefreshedOnCompletion() {
+        let provider = MockUsageContextProvider()
+        let (sut, wideEvent, _) = makeSUT(usageContextProvider: provider)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+
+        provider.currentContext = UsageContext(hardwareKeyboard: true, layout: .compact)
+        sut.sessionEnded(reason: .searchSubmitted)
+
+        let returnParams = lastReturnCompletion(wideEvent)?.0.jsonParameters()
+        let postIdleParams = lastCompletion(wideEvent)?.0.jsonParameters()
+        for params in [returnParams, postIdleParams] {
+            #expect(params?["feature.data.ext.layout"] as? String == "compact")
+            #expect(params?["feature.data.ext.hardware_keyboard"] as? Bool == true)
+        }
     }
 
     @available(iOS 16, *)

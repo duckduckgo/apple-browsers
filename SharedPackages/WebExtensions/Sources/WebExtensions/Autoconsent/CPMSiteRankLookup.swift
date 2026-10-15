@@ -20,7 +20,7 @@ import Foundation
 import os.log
 
 /// Coarse popularity bucket of a site, sent as the `siteRank` parameter of the CPM summary pixel.
-public enum CPMSiteRank: String, CaseIterable, Sendable {
+public enum CPMSiteRank: String, Sendable {
     /// The registrable domain of the site is in the bundled top 10k list.
     case top10k
     case other
@@ -28,8 +28,8 @@ public enum CPMSiteRank: String, CaseIterable, Sendable {
 
 /// Port of the embedded extension's lookup (`cpm-site-rank.js` and `shared-utils/domain-hashes.js` in
 /// duckduckgo-privacy-extension), which must give the same results. `site-buckets.json` is a copy of the extension's
-/// list, and a test checks that it matches the bundled extension.
-public final class CPMSiteRankLookup: Sendable {
+/// list.
+public struct CPMSiteRankLookup: Sendable {
 
     /// Sorted 32-bit FNV-1a hashes of the top sites' registrable domains.
     struct LookupData: Sendable {
@@ -58,7 +58,7 @@ public final class CPMSiteRankLookup: Sendable {
     private let data: @Sendable () -> LookupData?
 
     /// A lookup with the bundled data. Creating it is cheap: the data is loaded on the first lookup.
-    public convenience init() {
+    public init() {
         self.init { Self.bundledData }
     }
 

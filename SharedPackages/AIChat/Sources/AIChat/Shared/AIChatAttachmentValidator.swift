@@ -347,9 +347,10 @@ public struct AIChatAttachmentValidator {
         return messages.imageTurnLimit(maxImagesPerTurn)
     }
 
+    /// The FE lowers the text limit only when an image is attached; files keep the normal limit.
     public func promptValidationMessage(for text: String) -> String? {
         let promptLength = text.trimmingCharacters(in: .whitespacesAndNewlines).count
-        guard !(pendingFiles.isEmpty && pendingImageCount == 0),
+        guard pendingImageCount > 0,
               let maxInputCharsWithAttachments,
               promptLength > maxInputCharsWithAttachments else {
             return nil

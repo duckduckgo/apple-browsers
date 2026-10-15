@@ -44,6 +44,16 @@ struct PastedTextEditorView: View {
     private var isOverLimit: Bool { count > limit }
     private var canSave: Bool { !isOverLimit && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
+    private var footer: Text {
+        let secondary = Color(designSystemColor: .textSecondary)
+        guard isOverLimit else {
+            return Text(UserText.aiChatPastedTextCharacterCount(count)).foregroundColor(secondary)
+        }
+        return Text(UserText.aiChatPastedTextTooLong + " ").foregroundColor(secondary)
+            + Text(String(count)).foregroundColor(Color(designSystemColor: .destructivePrimary))
+            + Text(" / " + String(limit)).foregroundColor(secondary)
+    }
+
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 12) {
@@ -58,9 +68,8 @@ struct PastedTextEditorView: View {
                     .accessibilityIdentifier("PastedTextEditor.TextView")
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
 
-                Text(isOverLimit ? UserText.aiChatPastedTextOverLimit(count: count, limit: limit) : UserText.aiChatPastedTextCharacterCount(count))
+                footer
                     .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: isOverLimit ? .destructivePrimary : .textSecondary))
                     .accessibilityIdentifier("PastedTextEditor.Footer")
             }
             .padding(16)

@@ -442,29 +442,8 @@
 /* Footer of the pasted-text editor sheet showing how many characters the text has. Parameter is the count, without thousands separators */
 "aichat.pasted-text.character-count.other" = "%d characters";
 
-/* Footer message subtitle in the AI chat input when one pasted text is over the per-paste limit. Parameter is the limit, without thousands separators */
-"aichat.pasted-text.footer.single-too-long.subtitle" = "Tap it to shorten it to %d characters or fewer.";
-
-/* Footer message title in the AI chat input when one pasted text is over the per-paste limit */
-"aichat.pasted-text.footer.single-too-long.title" = "Pasted text is too long";
-
-/* Footer message subtitle in the AI chat input when the message plus pasted text is over the length limit */
-"aichat.pasted-text.footer.too-long.subtitle" = "Shorten your message or remove some pasted text.";
-
-/* Footer message title in the AI chat input when the message plus pasted text is over the length limit */
-"aichat.pasted-text.footer.too-long.title" = "Text is too long";
-
-/* Footer message subtitle in the AI chat input when pasted text and an attached file together exceed the text limit */
-"aichat.pasted-text.footer.with-file.subtitle" = "Remove the file or the pasted text.";
-
-/* Footer message title in the AI chat input when pasted text and an attached file together exceed the text limit for messages with files */
-"aichat.pasted-text.footer.with-file.title" = "Text is too long to send with a file";
-
-/* Footer message subtitle in the AI chat input when pasted text and an attached image together exceed the text limit */
-"aichat.pasted-text.footer.with-image.subtitle" = "Remove the image or the pasted text.";
-
-/* Footer message title in the AI chat input when pasted text and an attached image together exceed the text limit for messages with images */
-"aichat.pasted-text.footer.with-image.title" = "Text is too long to send with an image";
+/* Footer subtitle in the AI chat input when the message is too long: the current length and the limit, without spaces or thousands separators, e.g. 16800/16000 */
+"aichat.pasted-text.footer.count" = "%1$d/%2$d";
 
 /* Subtitle of the editor sheet for a long block of text the user pasted into AI chat */
 "aichat.pasted-text.formatting-note" = "Formatting may be inconsistent from source.";
@@ -472,11 +451,11 @@
 /* Accessibility label of an AI chat attachment chip for a long block of text the user pasted */
 "aichat.pasted-text.label" = "Pasted text";
 
-/* Footer of the pasted-text editor sheet when the text is over the allowed length. Parameters are the current count and the limit, without thousands separators */
-"aichat.pasted-text.over-limit" = "Max characters %1$d / %2$d";
-
 /* Title of the sheet that shows and edits a long block of text the user pasted into AI chat */
 "aichat.pasted-text.sheet.title" = "Pasted Text";
+
+/* Shown in the AI chat input footer and in the pasted-text editor when the message plus pasted text is over the length limit */
+"aichat.pasted-text.too-long" = "Please try a shorter message.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";

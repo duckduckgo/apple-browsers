@@ -266,8 +266,7 @@ final class IPadOmnibarAttachmentController {
             prompt: prompt,
             pastedTextLengths: attachments.compactMap(\.pastedText).filter { $0.id != excludedID }.map(\.length),
             hasImage: attachments.contains(where: \.isImage),
-            hasFile: attachments.contains { $0.fileAttachment != nil },
-            maxInputCharsWithAttachments: store.attachmentLimits?.images.maxInputCharsWithAttachments
+            maxInputCharsWithImages: store.attachmentLimits?.images.maxInputCharsWithAttachments
         )
     }
 

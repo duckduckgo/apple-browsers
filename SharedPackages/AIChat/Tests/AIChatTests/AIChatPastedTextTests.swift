@@ -108,25 +108,25 @@ struct AIChatPastedTextTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func promptPlusPastedTextOverTheInputLimitIsTooLong() {
+    func promptPlusPastedTextOverTheInputLimitReportsCountAndLimit() {
         #expect(AIChatPastedTextMessage(prompt: String(repeating: "a", count: 1_000), pastedTextLengths: [15_000]).violation == nil)
-        #expect(AIChatPastedTextMessage(prompt: String(repeating: "a", count: 1_001), pastedTextLengths: [15_000]).violation == .tooLong(limit: 16_000))
+        #expect(AIChatPastedTextMessage(prompt: String(repeating: "a", count: 1_001), pastedTextLengths: [15_000]).violation
+                == AIChatPastedTextLimitViolation(count: 16_001, limit: 16_000))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func singlePasteOverTheBackendCapWinsOverEveryOtherReason() {
-        let message = AIChatPastedTextMessage(prompt: "", pastedTextLengths: [16_001], hasImage: true, maxInputCharsWithAttachments: 4_500)
-        #expect(message.violation == .pastedTextTooLong(limit: 16_000))
+    func singlePasteOverTheBackendCapIsOverTheLimit() {
+        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [16_800]).violation
+                == AIChatPastedTextLimitViolation(count: 16_800, limit: 16_000))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func pastedTextWithAnImageOrFileUsesTheWithAttachmentsLimit() {
-        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [5_000], hasImage: true, maxInputCharsWithAttachments: 4_500).violation
-                == .tooLongWithImages(limit: 4_500))
-        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [5_000], hasFile: true, maxInputCharsWithAttachments: 4_500).violation
-                == .tooLongWithFiles(limit: 4_500))
+    func anImageLowersTheLimitButAFileDoesNot() {
+        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [5_000], hasImage: true, maxInputCharsWithImages: 4_500).violation
+                == AIChatPastedTextLimitViolation(count: 5_000, limit: 4_500))
+        #expect(AIChatPastedTextMessage(prompt: "", pastedTextLengths: [5_000], hasImage: false, maxInputCharsWithImages: 4_500).violation == nil)
     }
 
     @available(iOS 16, macOS 13, *)

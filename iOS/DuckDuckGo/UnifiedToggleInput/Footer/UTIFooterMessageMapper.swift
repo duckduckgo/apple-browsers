@@ -47,23 +47,11 @@ struct UTIFooterMessageMapper {
 
     /// Required and not dismissible: it explains why Send is disabled, and clears when the draft fits.
     func message(for violation: AIChatPastedTextLimitViolation) -> UTIFooterMessage {
-        let title: String
-        let subtitle: String
-        switch violation {
-        case .tooLong:
-            title = UserText.aiChatPastedTextTooLongTitle
-            subtitle = UserText.aiChatPastedTextTooLongSubtitle
-        case .pastedTextTooLong(let limit):
-            title = UserText.aiChatPastedTextSingleTooLongTitle
-            subtitle = UserText.aiChatPastedTextSingleTooLongSubtitle(limit: limit)
-        case .tooLongWithImages:
-            title = UserText.aiChatPastedTextTooLongWithImageTitle
-            subtitle = UserText.aiChatPastedTextTooLongWithImageSubtitle
-        case .tooLongWithFiles:
-            title = UserText.aiChatPastedTextTooLongWithFileTitle
-            subtitle = UserText.aiChatPastedTextTooLongWithFileSubtitle
-        }
-        return UTIFooterMessage(icon: .alert, title: title, subtitle: subtitle, primaryAction: nil, isDismissible: false)
+        UTIFooterMessage(icon: .alert,
+                         title: UserText.aiChatPastedTextTooLong,
+                         subtitle: UserText.aiChatPastedTextFooterCount(count: violation.count, limit: violation.limit),
+                         primaryAction: nil,
+                         isDismissible: false)
     }
 
     func message(for notice: CreateImageModelSwitchNotice) -> UTIFooterMessage {

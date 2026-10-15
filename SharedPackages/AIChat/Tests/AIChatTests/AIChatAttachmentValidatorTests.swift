@@ -199,6 +199,12 @@ final class AIChatAttachmentValidatorTests: XCTestCase {
         XCTAssertEqual(validator.promptValidationMessage(for: "123456"), "promptTooLong")
     }
 
+    func testPrompt_OverLimitWithOnlyAFile_ThenNil() {
+        let file = AIChatAttachmentValidator.FileDescriptor(mimeType: "application/pdf", fileSizeBytes: 100, pageCount: 1)
+        let validator = makeValidator(limits: makeLimits(maxInputChars: 5), pendingFiles: [file])
+        XCTAssertNil(validator.promptValidationMessage(for: "123456"), "The FE lowers the text limit for images only")
+    }
+
     // MARK: - Tier selection
 
     func testTierSelection() {

@@ -2572,21 +2572,12 @@ public struct UserText {
         let format = NSLocalizedString("aichat.pasted-text.character-count.other", value: "%d characters", comment: "Footer of the pasted-text editor sheet showing how many characters the text has. Parameter is the count, without thousands separators")
         return String(format: format, count)
     }
-    public static func aiChatPastedTextOverLimit(count: Int, limit: Int) -> String {
-        let format = NSLocalizedString("aichat.pasted-text.over-limit", value: "Max characters %1$d / %2$d", comment: "Footer of the pasted-text editor sheet when the text is over the allowed length. Parameters are the current count and the limit, without thousands separators")
+    /// The FE's DUCKCHAT_ERROR_MAX_CHARS wording, in a key of our own.
+    public static let aiChatPastedTextTooLong = NSLocalizedString("aichat.pasted-text.too-long", value: "Please try a shorter message.", comment: "Shown in the AI chat input footer and in the pasted-text editor when the message plus pasted text is over the length limit")
+    public static func aiChatPastedTextFooterCount(count: Int, limit: Int) -> String {
+        let format = NSLocalizedString("aichat.pasted-text.footer.count", value: "%1$d/%2$d", comment: "Footer subtitle in the AI chat input when the message is too long: the current length and the limit, without spaces or thousands separators, e.g. 16800/16000")
         return String(format: format, count, limit)
     }
-    public static let aiChatPastedTextTooLongTitle = NSLocalizedString("aichat.pasted-text.footer.too-long.title", value: "Text is too long", comment: "Footer message title in the AI chat input when the message plus pasted text is over the length limit")
-    public static let aiChatPastedTextTooLongSubtitle = NSLocalizedString("aichat.pasted-text.footer.too-long.subtitle", value: "Shorten your message or remove some pasted text.", comment: "Footer message subtitle in the AI chat input when the message plus pasted text is over the length limit")
-    public static let aiChatPastedTextSingleTooLongTitle = NSLocalizedString("aichat.pasted-text.footer.single-too-long.title", value: "Pasted text is too long", comment: "Footer message title in the AI chat input when one pasted text is over the per-paste limit")
-    public static func aiChatPastedTextSingleTooLongSubtitle(limit: Int) -> String {
-        let format = NSLocalizedString("aichat.pasted-text.footer.single-too-long.subtitle", value: "Tap it to shorten it to %d characters or fewer.", comment: "Footer message subtitle in the AI chat input when one pasted text is over the per-paste limit. Parameter is the limit, without thousands separators")
-        return String(format: format, limit)
-    }
-    public static let aiChatPastedTextTooLongWithImageTitle = NSLocalizedString("aichat.pasted-text.footer.with-image.title", value: "Text is too long to send with an image", comment: "Footer message title in the AI chat input when pasted text and an attached image together exceed the text limit for messages with images")
-    public static let aiChatPastedTextTooLongWithImageSubtitle = NSLocalizedString("aichat.pasted-text.footer.with-image.subtitle", value: "Remove the image or the pasted text.", comment: "Footer message subtitle in the AI chat input when pasted text and an attached image together exceed the text limit")
-    public static let aiChatPastedTextTooLongWithFileTitle = NSLocalizedString("aichat.pasted-text.footer.with-file.title", value: "Text is too long to send with a file", comment: "Footer message title in the AI chat input when pasted text and an attached file together exceed the text limit for messages with files")
-    public static let aiChatPastedTextTooLongWithFileSubtitle = NSLocalizedString("aichat.pasted-text.footer.with-file.subtitle", value: "Remove the file or the pasted text.", comment: "Footer message subtitle in the AI chat input when pasted text and an attached file together exceed the text limit")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")

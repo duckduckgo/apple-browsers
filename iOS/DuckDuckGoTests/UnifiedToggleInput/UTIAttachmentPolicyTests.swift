@@ -297,19 +297,28 @@ final class UTIAttachmentPolicyTests: XCTestCase {
     func test_promptValidation_allowsTextAtAttachmentLimit() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxInputCharsWithAttachments: 5),
-            pendingAttachments: [makeFileAttachment()]
+            pendingAttachments: [makeImage()]
         )
 
         XCTAssertNil(policy.promptValidationMessage(for: "12345"))
     }
 
-    func test_promptValidation_rejectsTextAboveAttachmentLimit() {
+    func test_promptValidation_rejectsTextAboveAttachmentLimitWithAnImage() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxInputCharsWithAttachments: 5),
+            pendingAttachments: [makeImage()]
+        )
+
+        XCTAssertEqual(policy.promptValidationMessage(for: "123456"), UserText.aiChatAttachmentPromptTooLong)
+    }
+
+    func test_promptValidation_allowsLongTextWithOnlyAFile() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxInputCharsWithAttachments: 5),
             pendingAttachments: [makeFileAttachment()]
         )
 
-        XCTAssertEqual(policy.promptValidationMessage(for: "123456"), UserText.aiChatAttachmentPromptTooLong)
+        XCTAssertNil(policy.promptValidationMessage(for: "123456"))
     }
 
     func test_fileSubmissionValidation_allowsFilesAtConversationLimit() {

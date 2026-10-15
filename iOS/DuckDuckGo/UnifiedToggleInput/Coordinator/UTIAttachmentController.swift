@@ -725,8 +725,7 @@ extension UTIAttachmentController {
             prompt: environment.currentText(),
             pastedTextLengths: attachments.compactMap(\.pastedText).filter { $0.id != excludedID }.map(\.length),
             hasImage: attachments.contains(where: \.isImage),
-            hasFile: attachments.contains { $0.fileAttachment != nil },
-            maxInputCharsWithAttachments: environment.attachmentLimits()?.images.maxInputCharsWithAttachments
+            maxInputCharsWithImages: environment.attachmentLimits()?.images.maxInputCharsWithAttachments
         )
     }
 

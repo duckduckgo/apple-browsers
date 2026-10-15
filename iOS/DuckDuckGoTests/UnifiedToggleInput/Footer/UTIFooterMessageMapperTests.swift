@@ -27,24 +27,16 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     private let sut = UTIFooterMessageMapper(resetDescriber: UTIFooterResetDescriber(locale: Locale(identifier: "en_US")))
 
-    func test_pastedTextLimitMessages_areRequiredAlertsNamingTheReason() {
-        let cases: [(AIChatPastedTextLimitViolation, String, String)] = [
-            (.tooLong(limit: 16_000), "Text is too long", "Shorten your message or remove some pasted text."),
-            (.pastedTextTooLong(limit: 16_000), "Pasted text is too long", "Tap it to shorten it to 16000 characters or fewer."),
-            (.tooLongWithImages(limit: 4_500), "Text is too long to send with an image", "Remove the image or the pasted text."),
-            (.tooLongWithFiles(limit: 4_500), "Text is too long to send with a file", "Remove the file or the pasted text."),
-        ]
-        for (violation, title, subtitle) in cases {
-            let message = sut.message(for: violation)
-            XCTAssertEqual(message.title, title)
-            XCTAssertEqual(message.subtitle, subtitle)
-            XCTAssertEqual(message.icon, .alert)
-            XCTAssertFalse(message.isDismissible, "It explains a disabled Send, so only fixing the draft clears it")
-        }
+    func test_pastedTextLimitMessage_usesTheFECopyAndCountsWithoutSeparators() {
+        let message = sut.message(for: AIChatPastedTextLimitViolation(count: 16_800, limit: 16_000))
+        XCTAssertEqual(message.title, "Please try a shorter message.")
+        XCTAssertEqual(message.subtitle, "16800/16000")
+        XCTAssertEqual(message.icon, .alert)
+        XCTAssertFalse(message.isDismissible, "It explains a disabled Send, so only fixing the draft clears it")
     }
 
     func test_pastedTextLimit_outranksTermsAndStaysVisibleWhileEditingASentPrompt() {
-        let limit = UTIFooterItem(id: .inputLimit, message: sut.message(for: .tooLong(limit: 16_000)))
+        let limit = UTIFooterItem(id: .inputLimit, message: sut.message(for: AIChatPastedTextLimitViolation(count: 16_001, limit: 16_000)))
         let terms = UTIFooterItem(id: .termsConsent, message: sut.termsOfServiceMessage())
 
         XCTAssertEqual(UTIFooterItem.visible(from: [terms, limit], isEditing: false).map(\.id), [.inputLimit, .termsConsent])

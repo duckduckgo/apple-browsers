@@ -66,17 +66,18 @@ public struct AIChatPastedText: Identifiable, Equatable, Sendable {
     }
 }
 
-/// Why a message carrying pasted text can't be sent. Only evaluated when pasted text is present, so
-/// typed-only prompts keep today's behaviour.
-public enum AIChatPastedTextLimitViolation: Equatable, Sendable {
-    /// One pasted text is over the backend's per-paste cap; removing other content can't fix it.
-    case pastedTextTooLong(limit: Int)
-    /// Pasted text with an image attached is over the with-attachments text limit.
-    case tooLongWithImages(limit: Int)
-    /// Pasted text with a file attached is over the with-attachments text limit.
-    case tooLongWithFiles(limit: Int)
-    /// Prompt plus pasted text is over the input limit.
-    case tooLong(limit: Int)
+/// A message carrying pasted text that is over its text limit. One reason covers every case (a long
+/// prompt, a single paste over the backend cap, pasted text with an image), as on the FE.
+/// Only evaluated when pasted text is present, so typed-only prompts keep today's behaviour.
+public struct AIChatPastedTextLimitViolation: Equatable, Sendable {
+    /// UTF-16 units of the typed prompt plus every pasted text.
+    public let count: Int
+    public let limit: Int
+
+    public init(count: Int, limit: Int) {
+        self.count = count
+        self.limit = limit
+    }
 }
 
 /// The text-length facts of a draft message, in UTF-16 units.
@@ -84,39 +85,31 @@ public struct AIChatPastedTextMessage: Equatable, Sendable {
     public let promptLength: Int
     public let pastedTextLengths: [Int]
     public let hasImage: Bool
-    public let hasFile: Bool
-    public let maxInputCharsWithAttachments: Int?
+    public let maxInputCharsWithImages: Int?
 
     public init(prompt: String,
                 pastedTextLengths: [Int],
                 hasImage: Bool = false,
-                hasFile: Bool = false,
-                maxInputCharsWithAttachments: Int? = nil) {
+                maxInputCharsWithImages: Int? = nil) {
         self.promptLength = prompt.trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
         self.pastedTextLengths = pastedTextLengths
         self.hasImage = hasImage
-        self.hasFile = hasFile
-        self.maxInputCharsWithAttachments = maxInputCharsWithAttachments
+        self.maxInputCharsWithImages = maxInputCharsWithImages
     }
 
     public var totalLength: Int { promptLength + pastedTextLengths.reduce(0, +) }
 
-    /// The text limit that applies: the with-attachments limit once an image or file is attached, else the input limit.
+    /// The FE lowers the limit only when an image is attached; a file keeps the input limit.
     public var effectiveLimit: Int {
-        if hasImage || hasFile, let maxInputCharsWithAttachments {
-            return min(maxInputCharsWithAttachments, AIChatPastedText.maxInputCharacters)
+        if hasImage, let maxInputCharsWithImages {
+            return min(maxInputCharsWithImages, AIChatPastedText.maxInputCharacters)
         }
         return AIChatPastedText.maxInputCharacters
     }
 
+    /// A single paste over the backend's 16,000 cap always puts the total over the limit too, so the total covers it.
     public var violation: AIChatPastedTextLimitViolation? {
-        guard !pastedTextLengths.isEmpty else { return nil }
-        if pastedTextLengths.contains(where: { $0 > AIChatPastedText.maxPastedTextCharacters }) {
-            return .pastedTextTooLong(limit: AIChatPastedText.maxPastedTextCharacters)
-        }
-        guard totalLength > effectiveLimit else { return nil }
-        if hasImage, maxInputCharsWithAttachments != nil { return .tooLongWithImages(limit: effectiveLimit) }
-        if hasFile, maxInputCharsWithAttachments != nil { return .tooLongWithFiles(limit: effectiveLimit) }
-        return .tooLong(limit: effectiveLimit)
+        guard !pastedTextLengths.isEmpty, totalLength > effectiveLimit else { return nil }
+        return AIChatPastedTextLimitViolation(count: totalLength, limit: effectiveLimit)
     }
 }

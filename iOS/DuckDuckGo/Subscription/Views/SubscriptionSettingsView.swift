@@ -71,6 +71,9 @@ struct SubscriptionSettingsViewV2: View {
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
 
+    @State private var preCancellationSheet: PreCancellationSheet?
+    @State private var pendingPreCancellationAction: PreCancellationFlowView.Action?
+
     var body: some View {
         optionsView
             .onFirstAppear {
@@ -213,8 +216,8 @@ struct SubscriptionSettingsViewV2: View {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         Task {
                             if active {
-                                viewModel.manageSubscription()
                                 PixelKit.fire(Pixel.Event.ddgSubscriptionManagementPlanBilling, frequency: .debounce(seconds: 1))
+                                await presentPreCancellationFlow()
                             } else if isEligibleForWinBackCampaign {
                                 takeWinBackOffer?()
                             } else {
@@ -486,6 +489,14 @@ struct SubscriptionSettingsViewV2: View {
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
         }
+        .sheet(item: $preCancellationSheet, onDismiss: handlePreCancellationDismiss) { sheet in
+            PreCancellationFlowView(context: sheet.context,
+                                    baseURL: settingsViewModel.subscriptionManager.url(for: .baseURL),
+                                    onAction: { action in
+                pendingPreCancellationAction = action
+                preCancellationSheet = nil
+            })
+        }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
                 dismiss()
@@ -704,6 +715,29 @@ extension SubscriptionSettingsViewV2 {
                 onRequestDuckAIChat: settingsViewModel.onRequestOnboardingDuckAIChat,
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = flow
+        }
+    }
+
+    @MainActor
+    private func presentPreCancellationFlow() async {
+        let entitlement = await settingsViewModel.subscriptionManager.getAllEntitlementStatus()
+        let checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        let context = PreCancellationContext.make(subscription: viewModel.state.subscriptionInfo,
+                                                  completedItems: viewModel.onboardingPersistor.completedItems,
+                                                  checklist: checklist)
+        preCancellationSheet = PreCancellationSheet(context: context)
+    }
+
+    private func handlePreCancellationDismiss() {
+        let action = pendingPreCancellationAction
+        pendingPreCancellationAction = nil
+        switch action {
+        case .finishSetup:
+            startOnboarding()
+        case .cancelSubscription:
+            viewModel.manageSubscription()
+        case nil:
+            break
         }
     }
 

@@ -27,7 +27,7 @@ protocol ModalPromptCoordinationManaging {
     /// appear. Returns `false`, keeping nothing, when no prompt is pending.
     func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool
 
-    /// Drops a handler that `runOnceModalPromptCloses(_:)` is still holding.
+    /// Drops a handler that `runOnceModalPromptCloses(while:_:)` is still holding.
     func cancelModalPromptCloseHandler()
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
@@ -134,7 +134,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     ///
     /// A held deferred slot is excluded: it means a promo owns the slot, not that the user saw
     /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt",
-    /// and, while a prompt is still on its way, tells `runOnceModalPromptCloses(_:)` whether it will come.
+    /// and, while a prompt is still on its way, tells `runOnceModalPromptCloses(while:_:)` whether it will come.
     var hasActiveOrPendingModalAttempt: Bool {
         if case .deferred = attemptState {
             return !legacyActiveAttemptIDs.isEmpty

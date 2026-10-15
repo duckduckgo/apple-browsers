@@ -84,7 +84,9 @@ struct PromoServiceFactory {
             duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver),
             autofillImport(observer: dependencies.autofillImportPromoObserver),
             syncSetupBookmarks(dependencies: dependencies),
-            syncSetupAutofill(dependencies: dependencies)
+            syncSetupAutofill(dependencies: dependencies),
+            bookmarksBarSync(dependencies: dependencies),
+            bookmarkAddedSync(dependencies: dependencies)
         ]
 
         if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {

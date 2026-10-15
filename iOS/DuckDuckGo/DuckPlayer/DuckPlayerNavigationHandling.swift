@@ -64,6 +64,16 @@ enum DuckPlayerNavigationHandlerURLChangeResult: Equatable {
     case notHandled(NotHandledResult)
 }
 
+/// Represents the result of handling a reload in the Duck Player navigation handler.
+enum DuckPlayerNavigationHandlerReloadResult: Equatable {
+
+    /// The caller should reload the web view.
+    case reload
+
+    /// Duck Player redirected to a different URL instead, so the caller must not reload.
+    case handled
+}
+
 /// Represents the direction of navigation in the Duck Player.
 enum DuckPlayerNavigationDirection {
     case back
@@ -103,10 +113,11 @@ protocol DuckPlayerNavigationHandling: AnyObject {
     /// - Parameter webView: The web view to navigate back in.
     func handleGoForward(webView: WKWebView)
 
-    /// Handles the reload action in the web view.
+    /// Prepares Duck Player for a reload of the web view. The caller performs the reload.
     ///
-    /// - Parameter webView: The web view to reload.
-    func handleReload(webView: WKWebView)
+    /// - Parameter webView: The web view about to be reloaded.
+    /// - Returns: Whether the caller should reload the web view.
+    func handleReload(webView: WKWebView) -> DuckPlayerNavigationHandlerReloadResult
 
     /// Performs actions when the handler is attached to a web view.
     ///

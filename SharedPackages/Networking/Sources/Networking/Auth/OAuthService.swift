@@ -87,11 +87,12 @@ public struct DefaultOAuthService: OAuthService {
     /// - Parameters:
     ///   - header: The header key
     ///   - httpResponse: The HTTP URL Response
+    ///   - missingValue: The value reported in the error thrown if the header is not present
     /// - Returns: The header value, throws an error if not present
-    func extract(header: String, from httpResponse: HTTPURLResponse) throws -> String {
+    func extract(header: String, from httpResponse: HTTPURLResponse, missingValue: OAuthMissingResponseValue) throws -> String {
         let headers = httpResponse.allHeaderFields
         guard let result = headers[header] as? String else {
-            throw OAuthServiceError.missingResponseValue(header)
+            throw OAuthServiceError.missingResponseValue(missingValue)
         }
         return result
     }
@@ -111,7 +112,7 @@ public struct DefaultOAuthService: OAuthService {
         if let error = extractError(from: response) {
             throw error
         } else {
-            throw OAuthServiceError.missingResponseValue("Body error")
+            throw OAuthServiceError.missingResponseValue(.bodyError)
         }
     }
 
@@ -148,7 +149,7 @@ public struct DefaultOAuthService: OAuthService {
         let response = try await fetch(request: request)
         guard let cookieValue = response.httpResponse.getCookie(withName: "ddg_auth_session_id")?.value,
               !cookieValue.isEmpty else {
-            throw OAuthServiceError.missingResponseValue("ddg_auth_session_id cookie")
+            throw OAuthServiceError.missingResponseValue(.authSessionIDCookie)
         }
         return cookieValue
     }
@@ -159,12 +160,12 @@ public struct DefaultOAuthService: OAuthService {
         let request = OAuthRequest.createAccount(baseURL: baseURL, authSessionID: authSessionID)
         let response = try await fetch(request: request)
         //  The redirect URI from the original Authorization request indicated by the ddg_auth_session_id in the provided Cookie header, with the authorization code needed for the Access Token request appended as a query param. The intention is that the client will intercept this redirect and extract the authorization code to make the Access Token request in the background.
-        let redirectURI = try extract(header: HTTPHeaderKey.location, from: response.httpResponse)
+        let redirectURI = try extract(header: HTTPHeaderKey.location, from: response.httpResponse, missingValue: .locationHeader)
         // Extract the code from the URL query params, example: com.duckduckgo:/authcb?code=NgNjnlLaqUomt9b5LDbzAtTyeW9cBNhCGtLB3vpcctluSZI51M9tb2ZDIZdijSPTYBr4w8dtVZl85zNSemxozv
         guard let authCode = URLComponents(string: redirectURI)?.queryItems?.first(where: { queryItem in
             queryItem.name == "code"
         })?.value else {
-            throw OAuthServiceError.missingResponseValue("Authorization Code in redirect URI")
+            throw OAuthServiceError.missingResponseValue(.authorizationCodeInRedirectURI)
         }
         return authCode
     }
@@ -174,10 +175,10 @@ public struct DefaultOAuthService: OAuthService {
         let request = OAuthRequest.login(baseURL: baseURL, authSessionID: authSessionID, method: method)
         let response = try await fetch(request: request)
         // Example: "com.duckduckgo:/authcb?code=eud8rNxyq2lhN4VFwQ7CAcir80dFBRIE4YpPY0gqeunTw4j6SoWkN4AA2c0TNO1sohqe84zubUtERkLLl94Qam"
-        guard let locationHeaderValue = try? extract(header: HTTPHeaderKey.location, from: response.httpResponse),
+        guard let locationHeaderValue = try? extract(header: HTTPHeaderKey.location, from: response.httpResponse, missingValue: .locationHeader),
               let redirectURL = URL(string: locationHeaderValue),
               let authCode = redirectURL.queryParameters()?["code"] else {
-            throw OAuthServiceError.missingResponseValue("Auth code")
+            throw OAuthServiceError.missingResponseValue(.authCodeInLoginRedirect)
         }
         return authCode
     }
@@ -200,7 +201,7 @@ public struct DefaultOAuthService: OAuthService {
         let request = OAuthRequest.logout(baseURL: baseURL, accessToken: accessToken)
         let response: LogoutResponse = try await fetch(request: request)
         guard response.status == "logged_out" else {
-            throw OAuthServiceError.missingResponseValue("LogoutResponse.status")
+            throw OAuthServiceError.missingResponseValue(.logoutStatus)
         }
     }
 

@@ -184,6 +184,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     private func migrateShared(to newPinnedTabsManager: PinnedTabsManager) {
         for tab in sharedPinnedTabsManager.tabCollection.tabs {
             let newTab = Tab(content: tab.content.resettingAIChatSource)
+            newTab.aiChat?.noteRecreated(as: .tabCopy)
             newPinnedTabsManager.pinTab(newTab, from: nil, firePixel: false)
         }
         sharedPinnedTabsManager.tabCollection.removeAll()

@@ -46,6 +46,14 @@ private final class HitTestableContainerView: NSView {
 
         return self
     }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let window, window.isMovableByWindowBackground else {
+            super.mouseDown(with: event)
+            return
+        }
+        window.performDrag(with: event)
+    }
 }
 
 /// Strokes the bottom edge and its two corner arcs, and nothing else.
@@ -1412,7 +1420,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if let stagedAttachmentKind {
             attachmentPrivacyPixelFirer.fireLearnMoreTapped(kind: stagedAttachmentKind)
         }
-        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatUploadFilesAndImagesPrivacy,
                                                               source: .ui,
                                                               newTab: true,
                                                               selected: true)

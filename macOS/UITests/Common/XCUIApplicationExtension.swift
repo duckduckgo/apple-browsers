@@ -1158,7 +1158,7 @@ extension XCUIApplication {
     }
 
     func resetPromo(withID promoID: String) {
-        let promoResetItem = promoQueueMenu
+        promoQueueMenu
             .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoMenuItem(promoID)]
             .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.undismissClearItem]
             .clickAfterExistenceTestSucceeds()

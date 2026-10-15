@@ -84,6 +84,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -117,6 +122,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -150,6 +160,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -183,6 +198,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -216,6 +236,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -249,6 +274,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -282,6 +312,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -315,6 +350,11 @@
             "background_ready_after",
             "cpm_open_tabs",
             "cpm_loading_tabs",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -374,5 +414,38 @@
                 "description": "The name of the pixel that was suppressed due to the storage write failure"
             }
         ]
+    },
+    "debug_web_extension_cpm_background_ready_context_load": {
+        "description": "Fires once daily when WebKit finishes or fails loading the first CPM background view of an extension context load (app launch, install, update or reload), reported on success as well as on failure.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "background_ready_after",
+            "cpm_app_state",
+            "context_load_to_background_view",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age"
+        ],
+        "expires": "2026-12-31"
+    },
+    "debug_web_extension_cpm_background_ready_wake": {
+        "description": "Fires once daily when WebKit finishes or fails loading a later CPM background view, created after WebKit evicted an idle background or its process died, reported on success as well as on failure.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "background_ready_after",
+            "cpm_app_state",
+            "cpm_low_power_mode",
+            "cpm_thermal_state",
+            "cpm_lockdown_mode",
+            "cpm_resume_age"
+        ],
+        "expires": "2026-12-31"
     }
 }

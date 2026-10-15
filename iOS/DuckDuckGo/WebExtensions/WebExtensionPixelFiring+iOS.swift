@@ -170,7 +170,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingStuck,
              .cpmMessagingRecoveredWithoutExtensionReload,
              .cpmMessagingRecoveredAfterExtensionReload,
-             .cpmMessagingExtensionReloadFailed:
+             .cpmMessagingExtensionReloadFailed,
+             .cpmBackgroundReady:
             fireCPMPixel(event)
         }
     }

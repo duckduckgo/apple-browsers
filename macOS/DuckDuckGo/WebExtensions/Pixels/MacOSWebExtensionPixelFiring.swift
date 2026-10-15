@@ -332,7 +332,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingStuck,
              .cpmMessagingRecoveredWithoutExtensionReload,
              .cpmMessagingRecoveredAfterExtensionReload,
-             .cpmMessagingExtensionReloadFailed:
+             .cpmMessagingExtensionReloadFailed,
+             .cpmBackgroundReady:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         }

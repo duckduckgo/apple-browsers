@@ -90,7 +90,8 @@ enum WebExtensionManagerFactory {
                 return nil
             },
             featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
-            appSession: Application.appDelegate.cpmAppSessionDiagnostics
+            appSession: Application.appDelegate.cpmAppSessionDiagnostics,
+            pixelFiring: pixelFiring
         ) : nil
 
         let installationStore = InstalledWebExtensionStore()

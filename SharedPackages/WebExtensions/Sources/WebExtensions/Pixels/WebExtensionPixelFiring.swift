@@ -73,6 +73,54 @@ public enum WebExtensionPixelEvent {
     case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource, details: CPMMessagingRecoveryDetails? = nil)
     /// The first CPM measurement using a successful extension-reload generation also failed.
     case cpmMessagingExtensionReloadFailed
+    /// WebKit finished (or failed) loading a CPM background, reported for every start, not only for failures.
+    case cpmBackgroundReady(CPMBackgroundReadyDetails)
+}
+
+/// How a CPM background start went, reported on success as well as on failure. Failure pixels alone have no
+/// denominator: this is the baseline that says how often a start is slow, and how slow.
+public struct CPMBackgroundReadyDetails: Equatable, Sendable {
+
+    public enum Kind: String, Sendable {
+        /// The first background view of a context load (app launch, install, update, extension reload).
+        case contextLoad = "context_load"
+        /// A later view, created after WebKit evicted an idle background or its process died.
+        case wake
+    }
+
+    public let kind: Kind
+    /// `.loaded` or `.failed`: the outcome of the load.
+    public let readiness: CPMBackgroundReadiness
+    public let applicationState: CPMAppSessionDiagnostics.ApplicationState?
+    /// Time from the start of the context load to the first background view; only for `.contextLoad`.
+    public let secondsFromContextLoadToBackgroundView: TimeInterval?
+    public let deviceState: CPMDeviceState?
+    public let secondsSinceResume: TimeInterval?
+
+    public init(kind: Kind,
+                readiness: CPMBackgroundReadiness,
+                applicationState: CPMAppSessionDiagnostics.ApplicationState? = nil,
+                secondsFromContextLoadToBackgroundView: TimeInterval? = nil,
+                deviceState: CPMDeviceState? = nil,
+                secondsSinceResume: TimeInterval? = nil) {
+        self.kind = kind
+        self.readiness = readiness
+        self.applicationState = applicationState
+        self.secondsFromContextLoadToBackgroundView = secondsFromContextLoadToBackgroundView
+        self.deviceState = deviceState
+        self.secondsSinceResume = secondsSinceResume
+    }
+
+    var pixelParameters: [String: String] {
+        typealias Name = CPMMessagingDiagnostics.ParameterName
+        var parameters: [String: String] = [:]
+        parameters[Name.backgroundReadyAfter] = CPMMessagingDiagnostics.readinessValue(readiness)
+        parameters[Name.applicationState] = applicationState?.rawValue
+        parameters[Name.contextLoadToBackgroundView] = secondsFromContextLoadToBackgroundView.map(CPMMessagingDiagnostics.contextLoadDelayBucket)
+        parameters.merge(deviceState?.pixelParameters ?? [:]) { _, device in device }
+        parameters[Name.resumeAge] = secondsSinceResume.map(CPMMessagingDiagnostics.resumeAgeBucket)
+        return parameters
+    }
 }
 
 /// Failure state of the episode immediately before recovery.
@@ -190,6 +238,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "debug_web_extension_cpm_messaging_extension_reload_failed"
             frequency = .dailyAndCount
             parameters = [:]
+        case .cpmBackgroundReady(let details):
+            name = "debug_web_extension_cpm_background_ready_\(details.kind.rawValue)"
+            frequency = .daily
+            parameters = details.pixelParameters
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,

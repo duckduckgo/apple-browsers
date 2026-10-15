@@ -713,7 +713,7 @@
     "cpm_app_state": {
         "key": "app_state",
         "type": "string",
-        "description": "App state when the CPM failure was recorded. Omitted when the app does not report its state.",
+        "description": "App state when the CPM background start or failure was recorded. On macOS, background means the screen was locked or asleep, inactive means another app was in front, and active means this app was in front. Omitted when the app does not report its state.",
         "enum": ["active", "inactive", "background"]
     },
     "background_view_age": {
@@ -739,6 +739,34 @@
         "type": "string",
         "description": "Bucketed number of those tabs whose web view was loading when the failure was recorded.",
         "enum": ["0", "1", "2", "3_to_5", "over_5"]
+    },
+    "context_load_to_background_view": {
+        "key": "ctx_load_to_view",
+        "type": "string",
+        "description": "Time bucket from the start of the CPM extension context load to the creation of its first background view. WebKit may clear website data for a new origin before it starts the background, so a slow start can happen before any view exists. Omitted when no background view has been created for the context.",
+        "enum": ["under_250ms", "250ms_to_1s", "1s_to_4s", "4s_to_10s", "over_10s"]
+    },
+    "cpm_low_power_mode": {
+        "key": "low_power_mode",
+        "type": "boolean",
+        "description": "Whether Low Power Mode was on when the CPM background start or failure was recorded. It throttles background work."
+    },
+    "cpm_thermal_state": {
+        "key": "thermal_state",
+        "type": "string",
+        "description": "The system's thermal state (ProcessInfo.thermalState) when the CPM background start or failure was recorded.",
+        "enum": ["nominal", "fair", "serious", "critical"]
+    },
+    "cpm_lockdown_mode": {
+        "key": "lockdown_mode",
+        "type": "boolean",
+        "description": "Whether Lockdown Mode was on (WKWebpagePreferences.isLockdownModeEnabled) when the CPM background start or failure was recorded. WebKit disables service workers in Lockdown Mode, so the CPM background cannot run."
+    },
+    "cpm_resume_age": {
+        "key": "resume_age",
+        "type": "string",
+        "description": "Time bucket since the device or app last resumed: the system woke (macOS) or the app became active (iOS). Omitted when it has not resumed since the app started.",
+        "enum": ["under_30s", "30s_to_2m", "2m_to_10m", "over_10m"]
     },
     "background_graveyard_enabled": {
         "key": "background_graveyard_enabled",

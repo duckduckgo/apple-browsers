@@ -37,6 +37,10 @@ final class CPMBackgroundReadinessObserver {
         }
     }
 
+    /// Called once for each observed view when its load ends, with `.loaded` or `.failed`. Not called for a view that
+    /// was replaced or no longer observed before its load ended.
+    var onLoadFinished: (@MainActor (CPMBackgroundReadiness) -> Void)?
+
     private weak var webView: WKWebView?
     private var readiness: CPMBackgroundReadiness?
     private let now: () -> Date
@@ -58,7 +62,9 @@ final class CPMBackgroundReadinessObserver {
             self.loadBackgroundContent(context) { [weak self, weak webView] error in
                 guard let self, let webView, self.webView === webView else { return }
                 let secondsAfterViewCreation = self.now().timeIntervalSince(createdAt)
-                self.readiness = error == nil ? .loaded(secondsAfterViewCreation: secondsAfterViewCreation) : .failed
+                let readiness: CPMBackgroundReadiness = error == nil ? .loaded(secondsAfterViewCreation: secondsAfterViewCreation) : .failed
+                self.readiness = readiness
+                self.onLoadFinished?(readiness)
             }
         }
     }

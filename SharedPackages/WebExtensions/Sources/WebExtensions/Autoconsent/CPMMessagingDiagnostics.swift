@@ -36,13 +36,17 @@ public struct CPMAppSessionDiagnostics {
     public let launchDate: Date
     /// Reads the app's current state; `nil` leaves it unreported.
     public let applicationState: (@MainActor () -> ApplicationState)?
+    /// Reads when the device or app last resumed (macOS: the system woke; iOS: the app became active); `nil` leaves it unreported.
+    public let lastResumeDate: (@MainActor () -> Date?)?
 
     public init(appVersionChange: VersionChange?,
                 launchDate: Date,
-                applicationState: (@MainActor () -> ApplicationState)? = nil) {
+                applicationState: (@MainActor () -> ApplicationState)? = nil,
+                lastResumeDate: (@MainActor () -> Date?)? = nil) {
         self.appVersionChange = appVersionChange
         self.launchDate = launchDate
         self.applicationState = applicationState
+        self.lastResumeDate = lastResumeDate
     }
 }
 
@@ -121,6 +125,13 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     /// Tabs in `WKWebExtensionContext.openTabs`, and how many of their web views were loading.
     public var openTabCount: Int?
     public var loadingTabCount: Int?
+    /// Seconds from the start of this context's load to the creation of its first background view. WebKit may clear
+    /// website data for a new origin before it starts the background, so a slow start can happen before any view exists.
+    public var secondsFromContextLoadToBackgroundView: TimeInterval?
+    /// Power, thermal and Lockdown Mode conditions at the snapshot; `nil` when the app does not read them.
+    public var deviceState: CPMDeviceState?
+    /// Seconds since the device or app last resumed; `nil` when it has not resumed since launch or is not reported.
+    public var secondsSinceResume: TimeInterval?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
     /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
     public var backgroundEvents: [BackgroundEvent] = []
@@ -186,6 +197,11 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         public static let backgroundReadyAfter = "bg_ready_after"
         public static let openTabs = "open_tabs"
         public static let loadingTabs = "loading_tabs"
+        public static let contextLoadToBackgroundView = "ctx_load_to_view"
+        public static let lowPowerMode = "low_power_mode"
+        public static let thermalState = "thermal_state"
+        public static let lockdownMode = "lockdown_mode"
+        public static let resumeAge = "resume_age"
     }
 
     /// Longest `bg_events` value; older events are dropped first.
@@ -229,6 +245,9 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         parameters[ParameterName.backgroundReadyAfter] = backgroundReadiness.map(Self.readinessValue)
         parameters[ParameterName.openTabs] = openTabCount.map(Self.tabCountBucket)
         parameters[ParameterName.loadingTabs] = loadingTabCount.map(Self.countBucket)
+        parameters[ParameterName.contextLoadToBackgroundView] = secondsFromContextLoadToBackgroundView.map(Self.contextLoadDelayBucket)
+        parameters.merge(deviceState?.pixelParameters ?? [:]) { _, device in device }
+        parameters[ParameterName.resumeAge] = secondsSinceResume.map(Self.resumeAgeBucket)
         return parameters
     }
 
@@ -279,6 +298,26 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
             case ..<30: return "10s_to_30s"
             default: return "over_30s"
             }
+        }
+    }
+
+    /// Around the 0.75-1.35 s that clearing a large cache before the first start was measured to add.
+    static func contextLoadDelayBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<0.25: return "under_250ms"
+        case ..<1: return "250ms_to_1s"
+        case ..<4: return "1s_to_4s"
+        case ..<10: return "4s_to_10s"
+        default: return "over_10s"
+        }
+    }
+
+    static func resumeAgeBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<30: return "under_30s"
+        case ..<120: return "30s_to_2m"
+        case ..<600: return "2m_to_10m"
+        default: return "over_10m"
         }
     }
 

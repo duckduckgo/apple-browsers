@@ -25,7 +25,6 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
     override var duckAIFeatureFlagLaunchArguments: [String] {
         [
             "-ff.aiChatChromeShortcutIPad", "true",
-            "-ff.iPadDuckAIBarControls", "true",
         ]
     }
 

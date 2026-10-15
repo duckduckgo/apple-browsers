@@ -57,9 +57,9 @@ final class SSLErrorTests: UITestCase {
     private var loadedSiteContent: XCUIElement {
         switch sslSiteHost {
         case "expired-rsa-dv.ssl.com":
-            return staticText(containing: "authenticated by SSL.com")
+            return staticText(containing: "test website")
         case "expired.sca1a.amazontrust.com":
-            return staticText(containing: "loads this page without warning")
+            return staticText(containing: "Amazon Root CA 1")
         default:
             return expiredSiteContent
         }
@@ -102,6 +102,9 @@ final class SSLErrorTests: UITestCase {
         addressBarTextField = app.addressBar
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Address bar should be available")
+        // Navigating before the home page has loaded replaces it in the history, so there is nothing to go back to
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "Home page should be loaded before the test navigates away")
     }
 
     override func tearDown() {

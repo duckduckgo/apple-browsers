@@ -50,7 +50,7 @@ final class ModalPromptCoordinationManagerTests {
     func exposureRequiresConfirmedPresentation(coordinated: Bool, completesPresentation: Bool) {
         let reporter = MockPromptExposureReporter()
         let provider = MockModalPromptProvider()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(exposureID: .winBackOffer, viewController: UIViewController())
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(exposureID: .subscriptionWinBackOffer, viewController: UIViewController())
         let manager = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
@@ -74,7 +74,7 @@ final class ModalPromptCoordinationManagerTests {
 
         schedulerMock.executeScheduledBlock()
 
-        #expect(reporter.shownPrompts == (completesPresentation ? [.winBackOffer] : []))
+        #expect(reporter.shownPrompts == (completesPresentation ? [.subscriptionWinBackOffer] : []))
         #expect(reporter.finishedPrompts == (coordinated && completesPresentation ? [.modal] : []))
     }
 

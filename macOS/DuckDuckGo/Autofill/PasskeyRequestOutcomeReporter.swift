@@ -18,7 +18,6 @@
 
 import AuthenticationServices
 import Foundation
-import os.log
 import PixelKit
 
 /// How a WebKit passkey request ended, as reported in pixels.
@@ -156,9 +155,6 @@ final class PasskeyRequestOutcomeReporter {
     }
 
     func report(_ outcome: PasskeyRequestOutcome) {
-        pendingFailure?.cancel()
-        pendingFailure = nil
-
         if outcome.isActiveUse {
             pixelFiring?.fire(PasskeyActiveUserPixel(), frequency: .daily)
         }
@@ -166,19 +162,29 @@ final class PasskeyRequestOutcomeReporter {
             pixelFiring?.fire(PasskeyStuckPixel(), frequency: .dailyAndCount)
         }
 
-        let pixel = PasskeyRequestOutcomePixel(outcome)
-        Logger.general.log("WebKit passkey request outcome: \(pixel.name, privacy: .public) \(pixel.parameters ?? [:], privacy: .public)")
+        // The outcome replaces the failure waiting to fire, if there's one.
+        pendingFailure?.cancel()
+        pendingFailure = nil
 
-        guard case .failure = outcome.result else {
-            pixelFiring?.fire(pixel, frequency: .dailyAndCount)
-            return
-        }
-        let fire = DispatchWorkItem { [weak self] in
-            self?.pendingFailure = nil
+        let fireNow = { [weak self] in
+            let pixel = PasskeyRequestOutcomePixel(outcome)
             self?.pixelFiring?.fire(pixel, frequency: .dailyAndCount)
         }
-        pendingFailure = fire
-        DispatchQueue.main.asyncAfter(deadline: .now() + failureDelay, execute: fire)
+
+        // Successes and cancellations are what the user sees, so they fire right away. Failures are noisy and are often
+        // intermediate states the user never sees, such as a request the page retries, so one fires only if no other
+        // outcome follows within `failureDelay`.
+        switch outcome.result {
+        case .success, .canceled:
+            fireNow()
+        case .failure:
+            let fireLater = DispatchWorkItem { [weak self] in
+                self?.pendingFailure = nil
+                fireNow()
+            }
+            pendingFailure = fireLater
+            DispatchQueue.main.asyncAfter(deadline: .now() + failureDelay, execute: fireLater)
+        }
     }
 }
 

@@ -121,7 +121,7 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "appLifecycleState"]
     },
-    "app-lifecycle_previous-launch-incomplete": {
+    "app-lifecycle_previous-launch-incomplete-2": {
         "description": "Fires at launch when the previous launch never reached Foreground or Background, e.g. a force-quit black screen, a hang or a crash. Background launches without a scene are not reported.",
         "owners": ["hassaanelgarem"],
         "triggers": ["startup"],

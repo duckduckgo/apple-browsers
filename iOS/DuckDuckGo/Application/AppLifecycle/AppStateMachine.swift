@@ -371,7 +371,7 @@ enum LaunchBreadcrumbPixel: PixelKit.Event {
 
     var name: String {
         switch self {
-        case .previousLaunchIncomplete: return "app-lifecycle_previous-launch-incomplete"
+        case .previousLaunchIncomplete: return "app-lifecycle_previous-launch-incomplete-2"
         case .eventDroppedDuringLaunch: return "app-lifecycle_event-dropped-during-launch"
         }
     }

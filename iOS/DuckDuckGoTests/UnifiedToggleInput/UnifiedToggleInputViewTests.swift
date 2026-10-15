@@ -298,6 +298,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.frame = CGRect(x: 0, y: 0, width: 402, height: UnifiedToggleInputView.aiTabCollapsedFooterHeight)
 
         let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+        let textEntry = try XCTUnwrap(buttons.superview as? SwitchBarTextEntryView)
 
         sut.applyCardLayout(.collapsed, animated: false)
         sut.layoutIfNeeded()
@@ -305,6 +306,8 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         sut.applyCardLayout(.flanked, animated: false)
         sut.layoutIfNeeded()
+        textEntry.setNeedsLayout()
+        textEntry.layoutIfNeeded()
         XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
     }
 

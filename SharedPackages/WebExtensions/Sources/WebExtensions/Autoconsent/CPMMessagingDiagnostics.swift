@@ -132,6 +132,18 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     public var deviceState: CPMDeviceState?
     /// Seconds since the device or app last resumed; `nil` when it has not resumed since launch or is not reported.
     public var secondsSinceResume: TimeInterval?
+
+    /// How far the extension got with the failing navigation's `init` message.
+    public enum InitStage: String, Sendable {
+        /// The extension reports progress, yet reported none for this navigation: `init` did not reach the background.
+        case none
+        case received
+        case responseSent = "response_sent"
+        case responseFailed = "response_failed"
+    }
+
+    /// `nil` when the extension does not report progress (older versions) or the navigation cannot be told apart.
+    public var initStage: InitStage?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
     /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
     public var backgroundEvents: [BackgroundEvent] = []
@@ -202,6 +214,7 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         public static let thermalState = "thermal_state"
         public static let lockdownMode = "lockdown_mode"
         public static let resumeAge = "resume_age"
+        public static let initStage = "init_stage"
     }
 
     /// Longest `bg_events` value; older events are dropped first.
@@ -248,6 +261,7 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         parameters[ParameterName.contextLoadToBackgroundView] = secondsFromContextLoadToBackgroundView.map(Self.contextLoadDelayBucket)
         parameters.merge(deviceState?.pixelParameters ?? [:]) { _, device in device }
         parameters[ParameterName.resumeAge] = secondsSinceResume.map(Self.resumeAgeBucket)
+        parameters[ParameterName.initStage] = initStage?.rawValue
         return parameters
     }
 

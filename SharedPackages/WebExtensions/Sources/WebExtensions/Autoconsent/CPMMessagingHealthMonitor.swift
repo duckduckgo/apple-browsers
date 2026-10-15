@@ -61,6 +61,8 @@ public enum CPMMessagingHealthEvent: Sendable {
     case tabClosed(tabIdentifier: String)
     case webContentProcessTerminated(tabIdentifier: String)
     case dashboardResponse(extensionTabIdentifier: Int?, url: URL)
+    /// The extension reported how far it got with a main frame's `init` message.
+    case initProgress(extensionTabIdentifier: Int?, url: URL, stage: CPMInitProgressStage)
     case extensionLifecycle(WebExtensionLifecycleEvent)
 }
 
@@ -110,6 +112,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         /// Set when a response arrived that could not be tied to this navigation's document, so
         /// neither outcome is provable for it. Survives until the next navigation starts.
         var didReceiveUnattributableResponse = false
+        /// When the current navigation started; progress marks from before it belong to an earlier document.
+        var navigationStartedAt: Date?
     }
 
     private enum MeasurementState: Equatable {
@@ -157,6 +161,13 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// identifier is learned from the first unambiguous response and retained only for correlation.
     private var tabs: [String: TabNavigationState] = [:]
     private var extensionTabMappings: [Int: String] = [:]
+
+    /// Progress marks the extension reported for recent navigations, oldest first. Consulted only when a failure is
+    /// reported, to say how far the failing navigation's `init` got.
+    private var initProgress: [CPMInitProgressRecord] = []
+    /// Whether the extension has ever reported progress, which an older extension does not.
+    private var hasReceivedInitProgress = false
+    private static let maximumInitProgressRecords = 32
 
     /// The first navigation begun with this generation measures whether the latest reload restored messaging.
     private var pendingExtensionReloadMeasurementGeneration: UInt?
@@ -225,6 +236,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             if !isCPMMessagingBreakageSimulationEnabled {
                 receiveDashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url)
             }
+        case .initProgress(let extensionTabIdentifier, let url, let stage):
+            receiveInitProgress(extensionTabIdentifier: extensionTabIdentifier, url: url, stage: stage)
         case .extensionLifecycle(let lifecycleEvent):
             handle(lifecycleEvent)
         }
@@ -239,6 +252,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         state.generation &+= 1
         state.extensionReloadGeneration = extensionReloadGeneration
         state.navigationKind = navigationKind
+        state.navigationStartedAt = now()
         state.committedURL = nil
         state.didReceiveResponse = false
         state.didReceiveUnattributableResponse = false
@@ -435,6 +449,36 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         // would pair a recovery with the failure its own tab is still about to report.
         guard !candidates.isEmpty else { return }
         closeEpisodeForCurrentGeneration()
+    }
+
+    /// Keeps a progress mark for later; nothing here changes how a navigation is measured.
+    private func receiveInitProgress(extensionTabIdentifier: Int?, url: URL, stage: CPMInitProgressStage) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else { return }
+        hasReceivedInitProgress = true
+        initProgress.append(CPMInitProgressRecord(extensionTabIdentifier: extensionTabIdentifier, url: url, stage: stage, receivedAt: now()))
+        if initProgress.count > Self.maximumInitProgressRecords {
+            initProgress.removeFirst(initProgress.count - Self.maximumInitProgressRecords)
+        }
+    }
+
+    /// How far the extension got with this tab's current navigation, or `nil` when that is not provable: the extension
+    /// reports no progress at all, the navigation is not known, or two extension tabs could both be the one asked about.
+    private func initStage(for tabIdentifier: String) -> CPMMessagingDiagnostics.InitStage? {
+        guard hasReceivedInitProgress,
+              let state = tabs[tabIdentifier],
+              let committedURL = state.committedURL,
+              let startedAt = state.navigationStartedAt else {
+            return nil
+        }
+        var marks = initProgress.filter { $0.receivedAt >= startedAt && $0.url.matchesCPMDiagnosticsDocument(committedURL) }
+        if let knownSender = extensionTabMappings.first(where: { $0.value == tabIdentifier })?.key {
+            marks = marks.filter { $0.extensionTabIdentifier == knownSender }
+        }
+        guard !marks.isEmpty else { return CPMMessagingDiagnostics.InitStage.none }
+        guard Set(marks.compactMap(\.extensionTabIdentifier)).count <= 1 else { return nil }
+        if marks.contains(where: { $0.stage == .responseFailed }) { return .responseFailed }
+        if marks.contains(where: { $0.stage == .responseSent }) { return .responseSent }
+        return .received
     }
 
     /// Records healthy CPM evidence and closes an episode without attributing the response to a tab.
@@ -682,6 +726,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                                      graveyardTreatmentEnabled: Bool? = nil,
                                      makeEvent: (CPMMessagingDiagnostics?) -> WebExtensionPixelEvent) {
         var diagnostics = diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
+        diagnostics?.initStage = initStage(for: tabIdentifier)
         diagnostics?.backgroundGraveyardTreatmentEnabled = graveyardTreatmentEnabled
         pixelFiring.fire(makeEvent(diagnostics))
     }
@@ -872,6 +917,8 @@ private extension CPMMessagingHealthEvent {
             return "webContentProcessTerminated tab=\(tabIdentifier)"
         case .dashboardResponse(let extensionTabIdentifier, _):
             return "dashboardResponse extensionTab=\(extensionTabIdentifier.logDescription)"
+        case .initProgress(let extensionTabIdentifier, _, let stage):
+            return "initProgress extensionTab=\(extensionTabIdentifier.logDescription) stage=\(stage.rawValue)"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
         }

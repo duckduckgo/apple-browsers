@@ -435,6 +435,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -475,6 +476,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -515,6 +517,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -555,6 +558,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -595,6 +599,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -635,6 +640,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -675,6 +681,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
@@ -715,6 +722,7 @@
             "cpm_thermal_state",
             "cpm_lockdown_mode",
             "cpm_resume_age",
+            "cpm_init_stage",
             "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"

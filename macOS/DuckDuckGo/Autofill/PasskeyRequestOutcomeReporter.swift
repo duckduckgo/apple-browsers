@@ -85,16 +85,20 @@ struct PasskeyRequestOutcome: Equatable {
 extension PasskeyRequestOutcome {
 
     /// Whether this request makes the user an active passkey user.
-    ///
-    /// Using a passkey counts, and so does seeing the passkey sheet, however it ends. AutoFill requests start on page
-    /// load for every visitor, so they count only when the user picks a passkey. A request the system refuses because
-    /// another one is still open never shows the sheet, so it doesn't count.
     var isActiveUse: Bool {
         switch (result, style) {
-        case (.success, _): return true
-        case (.failure(.requestInProgress), _): return false
-        case (_, .modal): return true
-        case (_, .autofill), (_, .unknown): return false
+        case (.success, _):
+            // The user used a passkey.
+            return true
+        case (.failure(.requestInProgress), _):
+            // The system refused the request because another one is still open, so no sheet was shown.
+            return false
+        case (_, .modal):
+            // The user saw the passkey sheet, however it ended.
+            return true
+        case (_, .autofill), (_, .unknown):
+            // AutoFill requests start on page load for every visitor, so only a passkey the user picked counts.
+            return false
         }
     }
 }

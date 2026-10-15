@@ -138,15 +138,32 @@ def _read_base64(path: Path) -> str:
 
 
 _STYLE = """
-:root { color-scheme: light dark; --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --border: #d1d9e0; --card: #f6f8fa; }
+:root { color-scheme: light dark; --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --border: #d1d9e0; --card: #f6f8fa; --link: #0969da; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0d1117; --fg: #f0f6fc; --muted: #9198a1; --border: #3d444d; --card: #151b23; }
+  :root { --bg: #0d1117; --fg: #f0f6fc; --muted: #9198a1; --border: #3d444d; --card: #151b23; --link: #4493f8; }
 }
-body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
+html { scroll-padding-top: 16px; }
+body { margin: 0; background: var(--bg); color: var(--fg);
        font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; box-sizing: border-box; padding: 16px;
+      border-right: 1px solid var(--border); background: var(--card); }
+nav ol { list-style: none; margin: 0; padding: 0; }
+nav > ol > li { margin: 0 0 12px; }
+nav ol ol { margin: 2px 0 0 12px; }
+nav a { color: var(--link); text-decoration: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-wrap: anywhere; }
+nav a:hover { text-decoration: underline; }
+nav a.test { font-weight: 600; }
+nav .suite { display: block; font-weight: 400; color: var(--muted); }
+nav .suite:empty { display: none; }
+nav ol ol a { color: var(--muted); }
+main { padding: 16px; min-width: 0; }
 h1 { font-size: 20px; margin: 0 0 4px; }
-h2 { font-size: 16px; margin: 32px 0 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
 p.meta { color: var(--muted); margin: 0 0 16px; }
+details.test { border-top: 1px solid var(--border); padding: 8px 0; }
+details.test > summary { cursor: pointer; }
+h2 { display: inline; font-size: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+.count { color: var(--muted); font-size: 12px; margin-left: 8px; }
 section.snapshot { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 12px 0; }
 h3 { font-size: 14px; margin: 0 0 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
 pre { color: var(--muted); margin: 0 0 8px; white-space: pre-wrap; font-size: 12px; }
@@ -154,33 +171,81 @@ pre { color: var(--muted); margin: 0 0 8px; white-space: pre-wrap; font-size: 12
 figure { margin: 0; }
 figcaption { font-weight: 600; margin-bottom: 4px; }
 figure img { display: block; width: 100%; height: auto; border: 1px solid var(--border); background: repeating-conic-gradient(#8883 0% 25%, transparent 0% 50%) 50% / 16px 16px; }
-@media (max-width: 700px) { .images { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  nav { position: static; height: auto; max-height: 40vh; border-right: 0; border-bottom: 1px solid var(--border); }
+  .images { grid-template-columns: 1fr; }
+}
+"""
+
+
+_SCRIPT = """
+function openTarget() {
+  const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const details = target && target.closest("details");
+  if (!details || details.open) return;
+  details.open = true;
+  target.scrollIntoView();
+}
+addEventListener("hashchange", openTarget);
+openTarget();
 """
 
 
 def _render(title: str, tests: list[dict]) -> str:
     snapshot_count = sum(len(t["snapshots"]) for t in tests)
+    for test_index, test in enumerate(tests, start=1):
+        test["anchor"] = f"test-{test_index}"
+        for snapshot_index, snapshot in enumerate(test["snapshots"], start=1):
+            snapshot["anchor"] = f"test-{test_index}-snapshot-{snapshot_index}"
+            snapshot.setdefault("name", f"Snapshot {snapshot_index}")
+
     parts = [
         "<!doctype html>",
         '<html lang="en"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         f"<title>{html.escape(title)}</title>",
         f"<style>{_STYLE}</style>",
-        "</head><body>",
+        '</head><body><div class="layout">',
+        _sidebar(tests),
+        "<main>",
         f"<h1>{html.escape(title)}</h1>",
         f'<p class="meta">{snapshot_count} snapshot(s) failed in {len(tests)} test(s).</p>',
     ]
-    for test in tests:
-        parts.append(f"<h2>{html.escape(test['test_identifier'])}</h2>")
-        for index, snapshot in enumerate(test["snapshots"], start=1):
-            parts.append(_snapshot_section(snapshot, index))
-    parts.append("</body></html>")
+    parts.extend(_test_section(test) for test in tests)
+    parts.append(f"</main></div><script>{_SCRIPT}</script></body></html>")
     return "\n".join(parts) + "\n"
 
 
-def _snapshot_section(snapshot: dict, index: int) -> str:
-    name = snapshot.get("name") or f"Snapshot {index}"
-    parts = ['<section class="snapshot">', f"<h3>{html.escape(name)}</h3>"]
+def _sidebar(tests: list[dict]) -> str:
+    parts = ['<nav aria-label="Failed tests"><ol>']
+    for test in tests:
+        suite, _, test_name = test["test_identifier"].rpartition("/")
+        parts.append(
+            f'<li><a class="test" href="#{test["anchor"]}">'
+            f'<span class="suite">{html.escape(suite)}</span>{html.escape(test_name)}</a>'
+            f'<span class="count">{len(test["snapshots"])}</span><ol>'
+        )
+        for snapshot in test["snapshots"]:
+            parts.append(f'<li><a href="#{snapshot["anchor"]}">{html.escape(snapshot["name"])}</a></li>')
+        parts.append("</ol></li>")
+    parts.append("</ol></nav>")
+    return "".join(parts)
+
+
+def _test_section(test: dict) -> str:
+    parts = [
+        f'<details class="test" id="{test["anchor"]}" open><summary>'
+        f'<h2>{html.escape(test["test_identifier"])}</h2>'
+        f'<span class="count">{len(test["snapshots"])} snapshot(s)</span></summary>'
+    ]
+    parts.extend(_snapshot_section(snapshot) for snapshot in test["snapshots"])
+    parts.append("</details>")
+    return "".join(parts)
+
+
+def _snapshot_section(snapshot: dict) -> str:
+    parts = [f'<section class="snapshot" id="{snapshot["anchor"]}">', f"<h3>{html.escape(snapshot['name'])}</h3>"]
     if snapshot.get("summary"):
         parts.append(f"<pre>{html.escape(snapshot['summary'])}</pre>")
     parts.append('<div class="images">')

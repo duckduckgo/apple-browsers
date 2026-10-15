@@ -86,9 +86,9 @@ public struct AIChatBonusRecord: Codable, Equatable, Sendable {
     }
 }
 
-// MARK: - Public
+// MARK: - Boost state
 
-public extension AIChatBonusRecord {
+extension AIChatBonusRecord {
 
     /// Returns `true` while the boost is on: claimed, confirmed by the server and not yet expired.
     ///
@@ -96,6 +96,16 @@ public extension AIChatBonusRecord {
     func isBoostActive(at date: Date) -> Bool {
         guard campaignName != nil, bonusId != nil, let terms else { return false }
         return terms.expiresAt > date.timeIntervalSince1970
+    }
+
+    /// Returns `true` once a granted boost has passed its expiry, so it should be ended.
+    ///
+    /// Not the same as `!isBoostActive(at:)`: a pending claim has no terms yet and isn't expired.
+    ///
+    /// - Parameter date: The moment to check against, usually now.
+    func hasBoostExpired(at date: Date) -> Bool {
+        guard bonusId != nil, let terms else { return false }
+        return terms.expiresAt <= date.timeIntervalSince1970
     }
 
 }

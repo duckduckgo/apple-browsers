@@ -217,7 +217,18 @@ final class SyncDialogController {
         guard await checkAuthenticated() else {
             return
         }
-        presentDialog(for: .deleteAccountV2(self.devices))
+        guard isImprovedPairingFlowEnabled else {
+            presentDialog(for: .deleteAccountV2(self.devices))
+            return
+        }
+        managementDialogModel.isImprovedPairingFlowEnabled = true
+        let devices = self.devices
+        let thisDevice = devices.first(where: \.isCurrent)
+            ?? SyncDevice(kind: .current, name: deviceNameProvider(), id: syncService.account?.deviceId ?? "")
+        pixelFiring?.fire(SyncTurnOffPixelKitEvent.dialogShown)
+        presentDialog(for: .turnOffSyncOptions(thisDevice: thisDevice,
+                                               devices: devices,
+                                               deletesServerDataByDefault: devices.count == 1))
     }
 
     // MARK: - Private Helper Methods
@@ -555,6 +566,23 @@ extension SyncDialogController: ManagementDialogModelDelegate {
                 PixelKit.fire(DebugEvent(GeneralPixel.syncDeleteAccountError(error: error)))
             }
         }
+    }
+
+    func turnOffSyncRemoveDeviceSelected() {
+        pixelFiring?.fire(SyncTurnOffPixelKitEvent.optionSelected(.thisDevice))
+    }
+
+    func turnOffSyncDeleteServerDataSelected() {
+        pixelFiring?.fire(SyncTurnOffPixelKitEvent.optionSelected(.allDevicesAndServerData))
+    }
+
+    func turnOffSyncDeleteServerDataConfirmed() {
+        pixelFiring?.fire(SyncTurnOffPixelKitEvent.deleteServerDataConfirmationConfirmed)
+        deleteAccount()
+    }
+
+    func turnOffSyncDeleteServerDataCancelled() {
+        pixelFiring?.fire(SyncTurnOffPixelKitEvent.deleteServerDataConfirmationDismissed)
     }
 
     func updateDeviceName(_ name: String) {

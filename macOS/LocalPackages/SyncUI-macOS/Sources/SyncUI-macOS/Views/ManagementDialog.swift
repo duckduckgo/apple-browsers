@@ -27,6 +27,7 @@ public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
     case deleteAccountV2(_ devices: [SyncDevice])
     case turnOffSync
+    case turnOffSyncOptions(thisDevice: SyncDevice, devices: [SyncDevice], deletesServerDataByDefault: Bool)
     case deviceDetails(_ device: SyncDevice)
     case deviceDetailsV2(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
@@ -95,6 +96,8 @@ public struct ManagementDialog: View {
             switch model.currentDialog {
             case .turnOffSync:
                 TurnOffSyncView()
+            case .turnOffSyncOptions(let thisDevice, let devices, let deletesServerDataByDefault):
+                TurnOffSyncOptionsView(thisDevice: thisDevice, devices: devices, isDeleteServerDataSelected: deletesServerDataByDefault)
             case .deviceDetails(let device):
                 DeviceDetailsView(device: device)
             case .deviceDetailsV2(let device):

@@ -28,6 +28,7 @@ public protocol ManagementViewModel: ObservableObject {
     var isAppVersionNotSupported: Bool { get }
     var isAIChatSyncEnabled: Bool { get }
     var isSimplifiedSyncSetupV2Enabled: Bool { get }
+    var isImprovedPairingFlowEnabled: Bool { get }
 
     var isSyncEnabled: Bool { get }
     var isSyncPaused: Bool { get }

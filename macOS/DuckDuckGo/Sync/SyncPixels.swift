@@ -133,6 +133,46 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     }
 }
 
+enum SyncTurnOffPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let option = "option"
+    }
+
+    enum Option: String {
+        case thisDevice = "this_device"
+        case allDevicesAndServerData = "all_devices_and_server_data"
+    }
+
+    case dialogShown
+    case optionSelected(Option)
+    case deleteServerDataConfirmationConfirmed
+    case deleteServerDataConfirmationDismissed
+
+    var name: String {
+        switch self {
+        case .dialogShown: return "sync_turn_off_sheet_shown_mac"
+        case .optionSelected: return "sync_turn_off_option_selected_mac"
+        case .deleteServerDataConfirmationConfirmed: return "sync_delete_server_data_confirmation_confirmed_mac"
+        case .deleteServerDataConfirmationDismissed: return "sync_delete_server_data_confirmation_dismissed_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .optionSelected(let option):
+            return [ParameterKey.option: option.rawValue]
+        case .dialogShown, .deleteServerDataConfirmationConfirmed, .deleteServerDataConfirmationDismissed:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
 enum SyncDeviceNamePixel: PixelKit.Event {
     case computerNameUnavailable
 

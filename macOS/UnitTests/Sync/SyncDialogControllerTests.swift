@@ -1661,6 +1661,110 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledWithOtherDevices_presentsTurnOffSyncOptionsWithDeleteServerDataOff() async {
+        enableImprovedPairingFlow()
+        let testDevices = [
+            SyncDevice(kind: .current, name: "Work Laptop", id: "current"),
+            SyncDevice(kind: .mobile, name: "Androidz", id: "mobile")
+        ]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog,
+                       .turnOffSyncOptions(thisDevice: testDevices[0], devices: testDevices, deletesServerDataByDefault: false))
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_turn_off_sheet_shown_mac"])
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledWithOnlyThisDevice_presentsTurnOffSyncOptionsWithDeleteServerDataOn() async {
+        enableImprovedPairingFlow()
+        let testDevices = [SyncDevice(kind: .current, name: "Work Laptop", id: "current")]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog,
+                       .turnOffSyncOptions(thisDevice: testDevices[0], devices: testDevices, deletesServerDataByDefault: true))
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledAndDevicesNotLoaded_usesDeviceNameAndKeepsDeleteServerDataOff() async {
+        enableImprovedPairingFlow()
+        syncDialogController.devices = []
+
+        await syncDialogController.presentDeleteAccount()
+
+        guard case .turnOffSyncOptions(let thisDevice, let devices, let deletesServerDataByDefault) = managementDialogModel.currentDialog else {
+            return XCTFail("Expected turnOffSyncOptions dialog")
+        }
+        XCTAssertEqual(thisDevice.name, "Test Mac")
+        XCTAssertTrue(thisDevice.isCurrent)
+        XCTAssertEqual(devices, [])
+        XCTAssertFalse(deletesServerDataByDefault)
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledAndAuthenticationCancelled_doesNotPresentDialogOrFirePixel() async {
+        enableImprovedPairingFlow()
+        authenticator.stubAuthenticateUser = .failure
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Work Laptop", id: "current")]
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "sync_turn_off_sheet_shown_mac" })
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowDisabled_presentsDeleteAccountV2() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        let testDevices = [SyncDevice(kind: .current, name: "Work Laptop", id: "current")]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deleteAccountV2(testDevices))
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "sync_turn_off_sheet_shown_mac" })
+    }
+
+    func testTurnOffSyncRemoveDeviceSelected_firesOptionPixelWithoutTurningOffSync() {
+        syncDialogController.turnOffSyncRemoveDeviceSelected()
+
+        XCTAssertFalse(ddgSyncing.disconnectCalled)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_turn_off_option_selected_mac"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters?["option"], "this_device")
+    }
+
+    func testTurnOffSyncDeleteServerDataSelected_firesOptionPixelWithoutDeletingAccount() {
+        var didDeleteAccount = false
+        ddgSyncing.deleteAccountCallback = { didDeleteAccount = true }
+
+        syncDialogController.turnOffSyncDeleteServerDataSelected()
+
+        XCTAssertFalse(didDeleteAccount)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_turn_off_option_selected_mac"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters?["option"], "all_devices_and_server_data")
+    }
+
+    func testTurnOffSyncDeleteServerDataConfirmed_firesConfirmedPixelAndDeletesAccount() async {
+        let expectation = expectation(description: "account deleted")
+        ddgSyncing.deleteAccountCallback = { expectation.fulfill() }
+
+        syncDialogController.turnOffSyncDeleteServerDataConfirmed()
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "sync_delete_server_data_confirmation_confirmed_mac" })
+    }
+
+    func testTurnOffSyncDeleteServerDataCancelled_firesDismissedPixelWithoutDeletingAccount() {
+        var didDeleteAccount = false
+        ddgSyncing.deleteAccountCallback = { didDeleteAccount = true }
+
+        syncDialogController.turnOffSyncDeleteServerDataCancelled()
+
+        XCTAssertFalse(didDeleteAccount)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_delete_server_data_confirmation_dismissed_mac"])
+    }
+
     func testRecoveryCodeNextPressed_showsNowSyncing() {
         syncDialogController.recoveryCodeNextPressed()
 

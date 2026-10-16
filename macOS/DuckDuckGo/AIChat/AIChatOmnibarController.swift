@@ -317,6 +317,10 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarScreenshot)
     }
 
+    var isPasteImagesEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatPasteImages)
+    }
+
     @discardableResult
     func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
         guard !isImageGenerationMode else {

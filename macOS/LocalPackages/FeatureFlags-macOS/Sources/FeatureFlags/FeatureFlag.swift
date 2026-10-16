@@ -417,6 +417,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1215994572643392
     case aiChatNtpScreenshot
 
+    /// Duck.ai: pasting images and copied files into the address bar and prompt bar prompt.
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case aiChatPasteImages
+
+    /// Duck.ai: pasting images and copied files into the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case aiChatNtpPasteImages
+
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
     case aiChatNtpSuggestionsDeletion
@@ -933,6 +941,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
         case .aiChatNtpScreenshot:
             Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
+        case .aiChatPasteImages:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
+        case .aiChatNtpPasteImages:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:

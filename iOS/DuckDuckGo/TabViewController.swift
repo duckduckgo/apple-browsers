@@ -89,33 +89,8 @@ enum WebViewPreviewSnapshotGeometry {
 
 enum WebViewPreviewSnapshotPolicy {
 
-    static let timeout: TimeInterval = 1
-
     static func shouldCapture(isLoading: Bool) -> Bool {
         !isLoading
-    }
-
-    /// A frozen web content process never draws, so `takeSnapshot` never calls back and the tab switcher would wait
-    /// forever. Runs each attempt in turn while the previous one times out, ignores late results, and completes with
-    /// `nil` once all have timed out. Call on the main thread.
-    static func capture(timeout: TimeInterval = timeout,
-                        attempts: [(@escaping (UIImage?) -> Void) -> Void],
-                        completion: @escaping (UIImage?) -> Void) {
-        guard let attempt = attempts.first else {
-            completion(nil)
-            return
-        }
-        var didFinish = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
-            guard !didFinish else { return }
-            didFinish = true
-            capture(timeout: timeout, attempts: Array(attempts.dropFirst()), completion: completion)
-        }
-        attempt { image in
-            guard !didFinish else { return }
-            didFinish = true
-            completion(image)
-        }
     }
 }
 
@@ -3047,22 +3022,22 @@ extension TabViewController: WKNavigationDelegate {
     /// Captures a preview of the current web content via WebKit's asynchronous `takeSnapshot`, which
     /// renders out of process rather than blocking the main thread. Falls back to `preparePreviewSync`
     /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
-    func preparePreview(completion: @escaping (UIImage?, _ result: WebContentHealthPixel.SnapshotResult) -> Void) {
+    func preparePreview(completion: @escaping (UIImage?) -> Void) {
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
             guard let self, let webView else {
-                completion(nil, .skipped)
+                completion(nil)
                 return
             }
 
             guard WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: webView.isLoading) else {
-                completion(nil, .skipped)
+                completion(nil)
                 return
             }
 
             if jsAlertView?.isShown == true {
-                completion(preparePreviewSync(afterScreenUpdates: true), .skipped)
+                completion(preparePreviewSync(afterScreenUpdates: true))
                 return
             }
 
@@ -3072,36 +3047,16 @@ extension TabViewController: WKNavigationDelegate {
                 capturesFullBounds: capturesFullBounds
             )
             guard let visibleRect else {
-                completion(nil, .skipped)
+                completion(nil)
                 return
             }
 
-            func snapshot(afterScreenUpdates: Bool) -> (@escaping (UIImage?) -> Void) -> Void {
-                let configuration = makePreviewSnapshotConfiguration(
-                    rect: visibleRect,
-                    windowSize: webView.window?.bounds.size ?? visibleRect.size,
-                    afterScreenUpdates: afterScreenUpdates)
-                return { finish in
-                    webView.takeSnapshot(with: configuration) { image, _ in
-                        finish(image)
-                    }
-                }
-            }
-
-            // The retry doesn't wait for the page to draw, which a frozen page never does.
-            var result = WebContentHealthPixel.SnapshotResult.success
-            let retrySnapshot = snapshot(afterScreenUpdates: false)
-            let retry: (@escaping (UIImage?) -> Void) -> Void = { finish in
-                result = .retryTimeout
-                retrySnapshot { image in
-                    result = image == nil ? .retryNoImage : .retryImage
-                    finish(image)
-                }
-            }
-            // Skip normal snapshot if WebKit already reported as unresponsive, cause we assume it'll timeout
-            let attempts = freezeMonitor.isFrozen ? [retry] : [snapshot(afterScreenUpdates: true), retry]
-            WebViewPreviewSnapshotPolicy.capture(attempts: attempts) { image in
-                completion(image, result)
+            let configuration = makePreviewSnapshotConfiguration(
+                rect: visibleRect,
+                windowSize: webView.window?.bounds.size ?? visibleRect.size,
+                afterScreenUpdates: true)
+            webView.takeSnapshot(with: configuration) { image, _ in
+                completion(image)
             }
         }
     }
@@ -3170,7 +3125,7 @@ extension TabViewController: WKNavigationDelegate {
     private func updatePreview() {
         guard isTabCurrentlyPresented() else { return }
 
-        preparePreview { image, _ in
+        preparePreview { image in
             if let image = image {
                 self.delegate?.tab(self, didUpdatePreview: image)
             }
@@ -4791,11 +4746,6 @@ extension TabViewController: WKUIDelegate {
         freezeMonitor.processDidBecomeResponsive { completion in
             webView.evaluateJavaScript("1") { _, error in completion(error == nil) }
         }
-    }
-
-    /// The tab switcher waited past the timeout for this tab's preview; see `preparePreview`.
-    func previewSnapshotTimedOut(result: WebContentHealthPixel.SnapshotResult) {
-        freezeMonitor.previewSnapshotTimedOut(result: result)
     }
 
     /// The user asked to reload or leave the page; counted as an escape attempt while it is frozen.

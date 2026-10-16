@@ -73,7 +73,8 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         let hostingController = NSHostingController(rootView: AIChatScreenshotSourcePickerView(model: model))
 
         // Non-activating so it takes key over the prompt bar without activating the app.
-        let panel = NSPanel(contentRect: .zero, styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel], backing: .buffered, defer: false)
+        let panel = AIChatScreenshotSourcePickerPanel(contentRect: .zero, styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.onMoveSelection = { [weak model] in model?.moveSelection(by: $0) }
         panel.title = UserText.aiChatScreenshotSelectWindowOrDisplay
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
@@ -108,6 +109,22 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         panel = nil
         finish(.cancelled)
+    }
+}
+
+/// Arrow keys move the selection; Return and Esc reach the buttons through their shortcuts.
+private final class AIChatScreenshotSourcePickerPanel: NSPanel {
+
+    var onMoveSelection: ((Int) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        switch event.specialKey {
+        case .leftArrow: onMoveSelection?(-1)
+        case .rightArrow: onMoveSelection?(1)
+        case .upArrow: onMoveSelection?(-AIChatScreenshotSourcePickerView.columnCount)
+        case .downArrow: onMoveSelection?(AIChatScreenshotSourcePickerView.columnCount)
+        default: super.keyDown(with: event)
+        }
     }
 }
 
@@ -193,6 +210,15 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         onFinish?(.cancelled)
     }
 
+    /// Selects the first tile when nothing is selected yet; stops at either end.
+    func moveSelection(by offset: Int) {
+        guard let index = sources.firstIndex(where: { $0.id == selectedID }) else {
+            selectedID = sources.first?.id
+            return
+        }
+        selectedID = sources[min(max(index + offset, 0), sources.count - 1)].id
+    }
+
     /// `nil` keeps full size.
     static func image(of source: AIChatScreenshotSource, maxPixels: CGFloat?) async throws -> CGImage {
         var size = source.pixelSize
@@ -262,6 +288,8 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
 struct AIChatScreenshotSourcePickerView: View {
 
     static let tileSize = CGSize(width: 200, height: 125)
+    /// What fits in the 720 pt panel; arrow keys move up and down by it.
+    static let columnCount = 3
 
     @ObservedObject var model: AIChatScreenshotSourcePickerModel
 
@@ -308,6 +336,7 @@ struct AIChatScreenshotSourcePickerView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -315,14 +344,27 @@ struct AIChatScreenshotSourcePickerView: View {
         if model.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if model.sources.isEmpty {
+            Text(UserText.aiChatScreenshotPickerNoWindows)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: Self.tileSize.width), spacing: 16, alignment: .topLeading)], alignment: .leading, spacing: 16) {
-                    ForEach(model.sources) { source in
-                        tile(for: source)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16, alignment: .topLeading), count: Self.columnCount),
+                              alignment: .leading,
+                              spacing: 16) {
+                        ForEach(model.sources) { source in
+                            tile(for: source)
+                        }
                     }
+                    .padding(.vertical, 16)
                 }
-                .padding(.vertical, 16)
+                // Keeps the tile chosen with the arrow keys in view.
+                .onChange(of: model.selectedID) { id in
+                    guard let id else { return }
+                    proxy.scrollTo(id)
+                }
             }
         }
     }
@@ -357,6 +399,11 @@ struct AIChatScreenshotSourcePickerView: View {
         }
         .contentShape(Rectangle())
         .help(source.subtitle.map { "\($0) — \(source.title)" } ?? source.title)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(source.subtitle.map { "\($0), \(source.title)" } ?? source.title)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction { model.selectedID = source.id }
+        .accessibilityAction(named: Text(UserText.aiChatScreenshotPickerCapture)) { model.share(source.id) }
         // The first click selects right away; the second click of a double-click captures.
         .gesture(TapGesture(count: 2).onEnded { model.share(source.id) })
         .simultaneousGesture(TapGesture().onEnded { model.selectedID = source.id })

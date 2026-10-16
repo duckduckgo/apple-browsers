@@ -185,6 +185,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
+    private let sidebarKeyboardStyleSetting: AIChatContextualSidebarKeyboardStyleStoring
     private let persistentUTIHost: AIChatContextualUTIHost?
 
     /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
@@ -478,6 +479,7 @@ final class AIChatContextualSheetViewController: UIViewController {
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+         sidebarKeyboardStyleSetting: AIChatContextualSidebarKeyboardStyleStoring = AIChatContextualSidebarKeyboardStyleSetting(),
          opensOntoSubmittedChat: Bool = false) {
         self.usesRedesignedHeader = floatingInputFeature.isAvailable
         self.sessionState = sessionState
@@ -489,6 +491,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
+        self.sidebarKeyboardStyleSetting = sidebarKeyboardStyleSetting
         self.opensOntoSubmittedChat = opensOntoSubmittedChat
         self.isAwaitingSubmittedChat = opensOntoSubmittedChat
         super.init(nibName: nil, bundle: nil)
@@ -679,8 +682,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.layer.cornerRadius = isSheet ? SheetMetrics.cornerRadius : 0
         view.layer.shadowOpacity = isSheet ? Constants.shadowOpacity : 0
         topSeparator.isHidden = !isSheet
-        contextualInputViewController.compactsWhileKeyboardShows = !isSheet
-        if isSheet { setHeaderCompact(false) }
+        if isSheet {
+            contextualInputViewController.resetKeyboardAdaptation()
+            setHeaderCompact(false)
+        }
         headerTopConstraint?.constant = headerTopPadding
     }
 
@@ -777,7 +782,14 @@ private extension AIChatContextualSheetViewController {
 
     func showContextualInput() {
         contextualInputViewController.delegate = self
-        contextualInputViewController.compactsWhileKeyboardShows = surfaceStyle == .sidebar
+        contextualInputViewController.keyboardStyle = { [weak self] in
+            guard let self, surfaceStyle == .sidebar else { return .standard }
+            return sidebarKeyboardStyleSetting.keyboardStyle
+        }
+        contextualInputViewController.floatingSuggestionsColumn = { [weak self] in
+            guard let self, surfaceStyle == .sidebar else { return nil }
+            return view.superview
+        }
         contextualInputViewController.onCompactLayoutChange = { [weak self] isCompact in
             self?.setHeaderCompact(isCompact)
             self?.view.layoutIfNeeded()

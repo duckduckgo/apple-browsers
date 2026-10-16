@@ -128,6 +128,7 @@ final class BookmarkListViewController: NSViewController {
 
     private let syncPromoManager: SyncPromoManaging
     private let emptyStatePromo: BookmarksEmptyStatePromoPresenting
+    private let pixelFiring: (any PixelKitFiring)?
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
         let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
@@ -149,7 +150,8 @@ final class BookmarkListViewController: NSViewController {
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
-         emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate) {
+         emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
@@ -165,6 +167,7 @@ final class BookmarkListViewController: NSViewController {
         self.themeManager = themeManager
         self.syncPromoManager = syncPromoManager
         self.emptyStatePromo = emptyStatePromo
+        self.pixelFiring = pixelFiring
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -719,7 +722,7 @@ final class BookmarkListViewController: NSViewController {
 
     private func onEmptyStateSyncClicked() {
         let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
         guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
         emptyStatePromo.syncSetupStarted()
         deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in

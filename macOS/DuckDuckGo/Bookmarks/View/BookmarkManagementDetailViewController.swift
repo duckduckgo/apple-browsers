@@ -100,6 +100,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private let syncPromoManager: SyncPromoManaging
     private let emptyStatePromo: BookmarksEmptyStatePromoPresenting
+    private let pixelFiring: (any PixelKitFiring)?
 
     private lazy var syncPromoViewHostingView: NSView = {
         let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
@@ -140,7 +141,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
-        emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate
+        emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -152,6 +154,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.themeManager = themeManager
         self.syncPromoManager = syncPromoManager
         self.emptyStatePromo = emptyStatePromo
+        self.pixelFiring = pixelFiring
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(
             bookmarkManager: bookmarkManager,
             metrics: metrics,
@@ -471,7 +474,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func onEmptyStateSyncClicked() {
         let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
         guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
         emptyStatePromo.syncSetupStarted()
         deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in

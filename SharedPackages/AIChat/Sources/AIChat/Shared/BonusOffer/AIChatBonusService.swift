@@ -153,6 +153,16 @@ extension AIChatBonusService: AIChatBonusMessageHandling {
 
 }
 
+// MARK: - AIChatBonusStateProviding
+
+extension AIChatBonusService: AIChatBonusStateProviding {
+
+    public func isBoostActive(at date: Date) throws -> Bool {
+        try record()?.isBoostActive(at: date) ?? false
+    }
+
+}
+
 // MARK: - Private
 
 private extension AIChatBonusService {

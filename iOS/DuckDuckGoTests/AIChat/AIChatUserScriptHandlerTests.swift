@@ -23,6 +23,7 @@ import Common
 import FoundationExtensions
 import FeatureFlags_iOS
 import Core
+import JavaScriptCore
 import DDGSync
 import XCTest
 @testable import DuckDuckGo
@@ -316,6 +317,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.platform, "ios")
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
+        XCTAssertEqual(configValues?.supportsCanonicalChatFormat, true)
     }
     
     func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndNotInFireModeThenSupportsNativeStorageIsTrue() {
@@ -1125,6 +1127,50 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         )
         XCTAssertEqual(json, ["modelId": "claude-haiku-4-5"])
     }
+
+    // MARK: - Push Message: submitNativeInputFocused (native input focus → FE closes its dialogs)
+
+    @MainActor
+    func testWhenNativeInputFocusChangesThenFocusedFlagIsPushedToFrontEnd() async {
+        let webView = NativeInputFocusedRecordingWebView()
+        let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
+        let inputBox = MockAIChatInputBox()
+        let script = makeTestUserScript()
+        script.webView = webView
+        script.broker = broker
+        script.inputBoxHandler = inputBox
+        var pushed: [Bool] = []
+        let delivered = expectation(description: "Both focus changes reach the FE")
+        delivered.expectedFulfillmentCount = 2
+        webView.onFocused = { pushed.append($0); delivered.fulfill() }
+
+        inputBox.didChangeInputFocus.send(true)
+        inputBox.didChangeInputFocus.send(false)
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(pushed, [true, false])
+        withExtendedLifetime(broker) {}
+    }
+}
+
+@MainActor
+private final class NativeInputFocusedRecordingWebView: WKWebView {
+    var onFocused: ((Bool) -> Void)?
+    private let javaScriptContext = JSContext()!
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        javaScriptContext.evaluateScript("""
+            var capturedFocused = null;
+            var navigator = { duckduckgo: { messageHandlers: {
+                submitNativeInputFocused: function(event) { capturedFocused = event.params.focused; }
+            } } };
+            """)
+        javaScriptContext.evaluateScript(javaScriptString)
+        if let value = javaScriptContext.objectForKeyedSubscript("capturedFocused"), value.isBoolean {
+            onFocused?(value.toBool())
+        }
+        completionHandler?(nil, nil)
+    }
 }
 
 private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
@@ -1612,6 +1658,7 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
+    let didChangeInputFocus = PassthroughSubject<Bool, Never>()
 
     var persistedModelId: String?
     var persistedReasoningEffort: AIChatReasoningEffort?

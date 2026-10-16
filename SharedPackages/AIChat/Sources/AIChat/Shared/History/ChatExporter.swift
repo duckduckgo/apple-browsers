@@ -133,7 +133,7 @@ public struct ChatExporter {
             let message = messages[index]
             if (message["role"] as? String) == "user" {
                 let createdAt = message["createdAt"] as? String ?? ""
-                let userText = (message["content"] as? String) ?? ""
+                let userText = contentText(message: message)
                 let nextIsAssistant = index + 1 < messages.count
                     && (messages[index + 1]["role"] as? String) == "assistant"
                 let assistantText = nextIsAssistant ? extractAssistantText(message: messages[index + 1]) : ""
@@ -148,15 +148,27 @@ public struct ChatExporter {
 
     private static func extractAssistantText(message: [String: Any]) -> String {
         if let parts = message["parts"] as? [[String: Any]], !parts.isEmpty {
-            let textParts = parts.compactMap { part -> String? in
-                guard (part["type"] as? String) == "text" else { return nil }
-                return part["text"] as? String
-            }
+            let textParts = Self.textParts(parts)
             if !textParts.isEmpty {
                 return textParts.joined()
             }
         }
+        return contentText(message: message)
+    }
+
+    /// `content` is a string in legacy chats and an ordered array of typed parts in canonical ones.
+    private static func contentText(message: [String: Any]) -> String {
+        if let parts = message["content"] as? [[String: Any]] {
+            return textParts(parts).joined()
+        }
         return (message["content"] as? String) ?? ""
+    }
+
+    private static func textParts(_ parts: [[String: Any]]) -> [String] {
+        parts.compactMap { part -> String? in
+            guard (part["type"] as? String) == "text" else { return nil }
+            return part["text"] as? String
+        }
     }
 
     // MARK: - Helpers

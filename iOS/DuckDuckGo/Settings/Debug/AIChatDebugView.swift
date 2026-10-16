@@ -49,7 +49,7 @@ struct AIChatDebugView: View {
 #endif
 
             Section(header: Text(verbatim: "Message Policy Hostname"),
-                    footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
+                    footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
                     Text("Message policy hostname")
                 }

@@ -153,16 +153,16 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
     func testWhenResolvedThenBeginReturnsResultAndIsNoLongerShowing() async {
         let task = await startBegin()
 
-        sut.resolve(.actioned)
+        sut.resolve(.actioned())
 
         let result = await task.value
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertFalse(isShowing)
         XCTAssertFalse(sut.isActive)
     }
 
     func testWhenResolvedWhileNotActiveThenNothingHappensAndLaterBeginStillWaits() async {
-        sut.resolve(.actioned)
+        sut.resolve(.actioned())
         XCTAssertFalse(isShowing)
         XCTAssertFalse(sut.isActive)
 
@@ -205,19 +205,19 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
         let task = await startBegin()
 
         XCTAssertTrue(sut.isActive)
-        sut.resolve(.actioned)
+        sut.resolve(.actioned())
         let result = await task.value
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
     }
 
     func testWhenEndedAfterResolutionThenResultIsUnchanged() async {
         let task = await startBegin()
-        sut.resolve(.actioned)
+        sut.resolve(.actioned())
 
         sut.end()
 
         let result = await task.value
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertFalse(isShowing)
     }
 
@@ -231,9 +231,9 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
         XCTAssertTrue(isShowing, "second begin() did not reach its suspension point")
         XCTAssertTrue(sut.isActive)
 
-        sut.resolve(.actioned)
+        sut.resolve(.actioned())
         let secondResult = await second.value
-        XCTAssertEqual(secondResult, .actioned)
+        XCTAssertEqual(secondResult, .actioned())
         XCTAssertFalse(isShowing)
     }
 }

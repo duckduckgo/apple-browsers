@@ -91,6 +91,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
+    let didChangeInputFocus = PassthroughSubject<Bool, Never>()
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
@@ -222,6 +223,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var tabAttachmentContext: MultiTabAttachmentContext?
     private var tabAttachmentPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
     private var transferredTabAttachmentIDs = Set<UUID>()
+    private var tabsPreparingInitialPrompt = Set<TabUID>()
     private var isSynchronizingTabAttachments = false
     var browserTabAttachmentSourceProvider: ((TabUID) -> MultiTabAttachmentSource?)?
     private var tabAttachmentSource: MultiTabAttachmentSource?
@@ -607,6 +609,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
+        subscribeToTextInputFocus()
         subscribeToVoiceSearchTap()
         subscribeToAIVoiceChatTap()
         subscribeToClearButtonTap()
@@ -747,6 +750,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if previous == uid {
             restoreAttachmentsRetainedForDismiss()
             synchronizeTabAttachmentPreparations()
+            updateInitialPromptPreparationState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: already active, skipping re-apply")
             return
         }
@@ -766,6 +770,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             configureTabAttachments(source: sourceProvider(uid), feature: feature, synchronizesDraft: false)
         }
         applyState(stateStore.state(for: uid))
+        updateInitialPromptPreparationState()
     }
 
     func applyState(_ state: TabInputState) {
@@ -1450,6 +1455,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         inputMode = effectiveMode
+        updateInitialPromptPreparationState()
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
 
@@ -1492,6 +1498,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard didModeChange || needsViewSync else { return }
 
         inputMode = effectiveMode
+        updateInitialPromptPreparationState()
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
         if needsViewSync {
@@ -2012,6 +2019,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         guard case .available = tabAttachmentFeature?.state,
               host == .contextualChat || tabAttachmentSource?.currentTabID == currentTabUID else { return }
+        if let currentTabUID, tabsPreparingInitialPrompt.contains(currentTabUID) { return }
         let draftTabID = currentTabUID
         let candidateIDs = Set(tabAttachmentSource?.candidates().map(\.tabId) ?? [])
         for attachment in attachments where tabAttachmentPreparations[attachment.id] == nil && !transferredTabAttachmentIDs.contains(attachment.id) {
@@ -2194,6 +2202,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger) {
+        if mode == .aiChat, let currentTabUID, tabsPreparingInitialPrompt.contains(currentTabUID) { return }
         commitCurrentToggleState()
 
         switch mode {
@@ -2312,34 +2321,40 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         featureDiscovery.markDuckAIPromptSubmitted()
     }
 
+    private func updateInitialPromptPreparationState() {
+        let isPreparing = inputMode == .aiChat
+            && currentTabUID.map(tabsPreparingInitialPrompt.contains) == true
+        viewController.isPreparingInitialPrompt = isPreparing
+        viewController.isInputFrozenForInitialPromptPreparation = isPreparing
+    }
+
     private func prepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest) {
         guard let uid = currentTabUID, let delegate else {
             request.cancel()
             return
         }
-        let draft = snapshotCurrentState()
         persistDraftToStore()
+        tabsPreparingInitialPrompt.insert(uid)
+        updateInitialPromptPreparationState()
         delegate.unifiedToggleInputPrepareInitialPrompt(prompt, request: request) { [weak self] didPreparePrompt in
             guard let self else { return }
+            self.tabsPreparingInitialPrompt.remove(uid)
+            self.updateInitialPromptPreparationState()
             let isCurrentInput = self.currentTabUID == uid
             if didPreparePrompt {
-                let currentDraft = isCurrentInput ? self.snapshotCurrentState() : self.stateStore.state(for: uid)
-                // Do not clear edits made while preparation was pending.
-                if currentDraft == draft {
-                    if isCurrentInput {
-                        self.resetToolsSelection()
-                        self.clearStoreEntryAfterSubmission()
-                        self.clearAttachments()
-                        if self.isOmnibarNewAIChatPrompt {
-                            self.viewController.prepareToolbarSubmitStyleForDismissal()
-                        }
-                        self.markActiveChatPromptSubmitted()
-                        if self.isOmnibarSession { self.deactivateToOmnibar() } else { self.showCollapsed() }
-                    } else {
-                        var cleared = currentDraft
-                        cleared.clearDraft()
-                        self.stateStore.update(cleared, for: uid)
+                if isCurrentInput {
+                    self.resetToolsSelection()
+                    self.clearStoreEntryAfterSubmission()
+                    self.clearAttachments()
+                    if self.isOmnibarNewAIChatPrompt {
+                        self.viewController.prepareToolbarSubmitStyleForDismissal()
                     }
+                    self.markActiveChatPromptSubmitted()
+                    if self.isOmnibarSession { self.deactivateToOmnibar() } else { self.showCollapsed() }
+                } else {
+                    var cleared = self.stateStore.state(for: uid)
+                    cleared.clearDraft()
+                    self.stateStore.update(cleared, for: uid)
                 }
             }
             if isCurrentInput {
@@ -2539,6 +2554,7 @@ extension UnifiedToggleInputCoordinator {
 private extension UnifiedToggleInputCoordinator {
 
     func submitCurrentInputFromCoordinator() {
+        if inputMode == .aiChat, let currentTabUID, tabsPreparingInitialPrompt.contains(currentTabUID) { return }
         let hasText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasValidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains(where: \.isInvalid)
@@ -2840,6 +2856,14 @@ private extension UnifiedToggleInputCoordinator {
                 }
                 self.didPressCustomizeResponsesButton.send()
                 self.showCollapsed()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToTextInputFocus() {
+        viewController.handler.textInputFocusChangedPublisher
+            .sink { [weak self] isFocused in
+                self?.didChangeInputFocus.send(isFocused)
             }
             .store(in: &cancellables)
     }

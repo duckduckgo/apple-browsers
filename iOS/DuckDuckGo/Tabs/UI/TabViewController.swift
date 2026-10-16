@@ -1709,7 +1709,18 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
-        cancelPendingAIChatTabAttachmentPrompt()
+        load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
+    }
+
+    private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
+        if case .available = aiChatContextualAttachMoreTabsFeature.state {
+            if !shouldCancelPendingAIChatTabAttachmentPrompt,
+               initialAIChatTabAttachmentPrompt?.hasPendingPrompt == true {
+                awaitsInitialAIChatTabAttachmentNavigation = true
+            } else {
+                cancelPendingAIChatTabAttachmentPrompt()
+            }
+        }
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1944,7 +1955,7 @@ class TabViewController: UIViewController {
     }
     
     private func reissueNavigationWithSearchHeaderParams(for url: URL) {
-        load(url: url.applyingSearchHeaderParams())
+        load(url: url.applyingSearchHeaderParams(), shouldCancelPendingAIChatTabAttachmentPrompt: false)
     }
     
     private func shouldReissueSearch(for url: URL) -> Bool {
@@ -2612,8 +2623,8 @@ class TabViewController: UIViewController {
     private var awaitsInitialAIChatTabAttachmentNavigation = false
     private var aiChatTabAttachmentNavigation: WKNavigation?
 
-    var hasPendingInitialAIChatPromptPreparation: Bool {
-        initialAIChatPromptPreparation != nil
+    var isProtectedFromCacheEviction: Bool {
+        initialAIChatPromptPreparation != nil || initialAIChatTabAttachmentPrompt?.protectsRecipientFromEviction == true
     }
 
     func prepareInitialAIChatPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
@@ -4958,7 +4969,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
         
         requeryLogic.onRefresh()
         if isError || webView.url == nil, let url = url {
-            load(url: url)
+            load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: webView.url != nil)
         } else {
             reload()
         }
@@ -5785,7 +5796,10 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
-        self.present(promptViewController, animated: true, completion: nil)
+        self.present(promptViewController, animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.tab(self, didShowPrompt: .importPasswordsGoogle)
+        }
     }
 
     func presentAutofillExtensionPrompt() {
@@ -5815,7 +5829,10 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
-        self.present(promptViewController, animated: true, completion: nil)
+        self.present(promptViewController, animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.tab(self, didShowPrompt: .autofillExtensionPrompt)
+        }
 
     }
 

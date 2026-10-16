@@ -363,6 +363,18 @@
             }
         ]
     },
+    "sync_settings_sync_this_device_fallback_shown_mac": {
+        "description": "Fired when the dialog offering to sync only this computer is shown, after the user confirms closing the Sync with another device dialog while Sync is off, in the improved pairing flow.",
+        "owners": ["pballart"],
+        "triggers": ["impression"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_sync_this_device_fallback_sync_tapped_mac": {
+        "description": "Fired when the user taps 'Sync This Device' on the dialog offering to sync only this computer, in the improved pairing flow.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "sync_settings_authentication_cancelled_prompt_shown_mac": {
         "description": "Fired when the prompt asking the user to authenticate is shown after they cancel the device authentication prompt while setting up Sync in the simplified V2 setup.",
         "owners": ["pballart"],

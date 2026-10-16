@@ -205,6 +205,16 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.tabAttachmentsRequirePromptText = newValue }
     }
 
+    var isPreparingInitialPrompt: Bool {
+        get { inputBarView.isPreparingInitialPrompt }
+        set { inputBarView.isPreparingInitialPrompt = newValue }
+    }
+
+    var isInputFrozenForInitialPromptPreparation: Bool {
+        get { inputBarView.isInputFrozenForInitialPromptPreparation }
+        set { inputBarView.isInputFrozenForInitialPromptPreparation = newValue }
+    }
+
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
     /// controls that would offer one.
     var isInputBlockedByUsageLimit: Bool = false {

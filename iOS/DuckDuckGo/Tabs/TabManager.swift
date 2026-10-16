@@ -697,7 +697,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func add(url: URL?,
              inBackground: Bool = false,
              inheritedAttribution: AdClickAttributionLogic.State?,
-             in tabsModel: TabsModelManaging? = nil) -> TabViewController {
+             in tabsModel: TabsModelManaging? = nil,
+             prepareBeforeCaching: ((TabViewController) -> Void)? = nil) -> TabViewController {
 
         let model = tabsModel ?? currentTabsModel
         if !inBackground {
@@ -712,6 +713,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tab.viewed = true
         }
 
+        // Inserting the controller enforces cache capacity, so state that protects it from eviction goes first.
+        prepareBeforeCaching?(controller)
         addToCache(controller)
 
         _ = save()
@@ -814,7 +817,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
             let evictionCandidates = tabControllerCache.filter {
-                $0 !== currentController && !$0.hasPendingInitialAIChatPromptPreparation
+                $0 !== currentController && !$0.isProtectedFromCacheEviction
                     && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
             }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
@@ -1178,7 +1181,10 @@ extension TabManager {
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache
-                .filter { $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil }
+                .filter {
+                    $0 !== currentController && !$0.isProtectedFromCacheEviction
+                        && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+                }
                 .forEach { evictFromCache($0, reason: .memoryWarning) }
         }
         flushPendingSave()

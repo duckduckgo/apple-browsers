@@ -113,6 +113,18 @@ final class PromoHistoryStoreTests: XCTestCase {
         XCTAssertTrue(loaded.isPermanentlyDismissed)
     }
 
+    func testWhenRecordWasSavedBeforeLastActionedExisted_ThenItStillLoads() {
+        let legacyStore = InMemoryThrowingKeyValueStore()
+        let legacyJSON = #"{"legacy-promo":{"id":"legacy-promo","timesDismissed":2,"lastDismissed":1700000000,"actioned":true}}"#
+        legacyStore.underlyingDict["com.duckduckgo.promo.history"] = Data(legacyJSON.utf8)
+
+        let record = PromoHistoryStore(store: legacyStore, queue: nil).record(for: "legacy-promo")
+
+        XCTAssertEqual(record.timesDismissed, 2)
+        XCTAssertTrue(record.actioned)
+        XCTAssertNil(record.lastActioned)
+    }
+
     func testWhenBackingStoreIsCorrupt_ThenInitializesEmpty() {
         let corruptStore = InMemoryThrowingKeyValueStore()
         corruptStore.underlyingDict["com.duckduckgo.promo.history"] = Data("invalid json".utf8)

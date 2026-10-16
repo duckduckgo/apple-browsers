@@ -157,8 +157,10 @@ final class WebContentFreezeMonitor: NSObject {
 
     var isFrozen: Bool { startDate != nil }
 
-    func didBecomeUnresponsive(_ context: WebContentHealthPixel.PageContext) {
+    /// `context` is read only when the freeze is reported, so the caller does not build it for every callback.
+    func didBecomeUnresponsive(_ context: @autoclosure () -> WebContentHealthPixel.PageContext) {
         guard featureFlagger.isFeatureOn(.tabTerminationTelemetry), !isFrozen else { return }
+        let context = context()
         let now = date()
         if let lastAttemptDate, now.timeIntervalSince(lastAttemptDate) <= Self.attemptWindow {
             startDate = lastAttemptDate

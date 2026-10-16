@@ -918,12 +918,14 @@ extension SyncDialogController: SyncSettingsViewHandling {
         pixelFiring?.fire(device.isCurrent
                           ? SyncSettingsPixelKitEvent.thisDeviceDetailsScreenShown
                           : SyncSettingsPixelKitEvent.otherDeviceDetailsScreenShown)
+        managementDialogModel.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
         presentDialog(for: .deviceDetailsV2(device))
     }
 
     @MainActor
     func presentRemoveDevice(_ device: SyncDevice) {
         if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
+            managementDialogModel.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
             presentDialog(for: .removeDeviceV2(device))
         } else {
             presentDialog(for: .removeDevice(device))

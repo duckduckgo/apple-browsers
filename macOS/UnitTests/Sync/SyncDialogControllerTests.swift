@@ -870,6 +870,54 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     @MainActor
+    func testPresentDeviceDetails_whenImprovedPairingFlowEnabled_enablesImprovedPairingFlowOnDialogModel() async {
+        enableImprovedPairingFlow()
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenImprovedPairingFlowDisabled_disablesImprovedPairingFlowOnDialogModel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        managementDialogModel.isImprovedPairingFlowEnabled = true
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentRemoveDevice_whenImprovedPairingFlowEnabled_enablesImprovedPairingFlowOnDialogModel() {
+        enableImprovedPairingFlow()
+        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDevice(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentRemoveDevice_whenImprovedPairingFlowDisabled_disablesImprovedPairingFlowOnDialogModel() {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        managementDialogModel.isImprovedPairingFlowEnabled = true
+        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDevice(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
     func testPresentDeviceDetails_whenSimplifiedSyncSetupV2EnabledAndAuthenticationCancelled_doesNotShowDeviceDetailsV2AndEndsFlow() async {
         featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
         authenticator.stubAuthenticateUser = .failure

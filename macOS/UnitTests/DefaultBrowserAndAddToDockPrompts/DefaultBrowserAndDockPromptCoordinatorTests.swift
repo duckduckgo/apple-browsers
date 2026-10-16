@@ -1128,7 +1128,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // THEN
         wait(for: [expectation], timeout: 1)
         XCTAssertEqual(received?.type, .active(.popover))
-        XCTAssertEqual(received?.result, .actioned)
+        XCTAssertEqual(received?.result, .actioned())
     }
 
     func testWhenDismissActionUserInputForBannerNonPermanentThenEmitsIgnoredWithCooldown() {

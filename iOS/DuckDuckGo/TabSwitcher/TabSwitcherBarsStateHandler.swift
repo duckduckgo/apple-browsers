@@ -21,7 +21,6 @@ import UIKit
 import Core
 import BrowserServicesKit
 import DesignResourcesKitIcons
-import PixelKit
 
 enum TabSwitcherToolbarState: Equatable {
     case regularSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
@@ -75,6 +74,8 @@ protocol TabSwitcherBarsStateHandling {
     var onMenuButtonTapped: (() -> UIMenu?)? { get set }
     var onCloseTabsTapped: (() -> Void)? { get set }
     var onDuckChatTapped: (() -> Void)? { get set }
+    var onNewChatTapped: (() -> Void)? { get set }
+    var isNewChatAvailable: (() -> Bool)? { get set }
 
     func update(_ state: TabSwitcherToolbarState)
 
@@ -189,6 +190,8 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     var onMenuButtonTapped: (() -> UIMenu?)?
     var onCloseTabsTapped: (() -> Void)?
     var onDuckChatTapped: (() -> Void)?
+    var onNewChatTapped: (() -> Void)?
+    var isNewChatAvailable: (() -> Bool)?
 
     private static let buttonSize: CGFloat = 44
 
@@ -242,31 +245,12 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             return
         }
 
-        let menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "tab_switcher"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                                     PixelParameters.source: "tab_switcher"
-                                 ]))
-                                 self?.onNewFireTabTapped?()
-                             },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                                     PixelParameters.source: "tab_switcher"
-                                 ]))
-                                 self?.onNewNormalTabTapped?()
-                             }
-                ])
-            }
-        ])
-
-        button.menu = menu
+        button.menu = NewTabLongPressMenu.make(source: .tabSwitcher, actions: .init(
+            onNewFireTab: { [weak self] in self?.onNewFireTabTapped?() },
+            onNewTab: { [weak self] in self?.onNewNormalTabTapped?() },
+            onNewChat: { [weak self] in self?.onNewChatTapped?() },
+            isNewChatAvailable: { [weak self] in self?.isNewChatAvailable?() ?? false }
+        ))
         button.showsMenuAsPrimaryAction = false
     }
 

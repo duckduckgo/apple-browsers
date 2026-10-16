@@ -64,6 +64,7 @@ class PrivacyConfigurationDataTests: XCTestCase {
         if let subfeatures = exampleFeature?.features {
             XCTAssertEqual(subfeatures["disabledSubfeature"]?.state, "disabled")
             XCTAssertEqual(subfeatures["minSupportedSubfeature"]?.minSupportedVersion, "1.36.0")
+            XCTAssertEqual(subfeatures["maxSupportedSubfeature"]?.maxSupportedVersion, "2.16.0")
             XCTAssertEqual(subfeatures["enabledSubfeature"]?.state, "enabled")
             XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?.count, 3)
             XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?[0].name, "myExperimentControl")
@@ -181,6 +182,7 @@ class PrivacyConfigurationDataTests: XCTestCase {
         if let subfeatures = exampleFeature?.features {
             XCTAssertEqual(subfeatures["disabledSubfeature"]?.state, "disabled")
             XCTAssertEqual(subfeatures["minSupportedSubfeature"]?.minSupportedVersion, "1.36.0")
+            XCTAssertEqual(subfeatures["maxSupportedSubfeature"]?.maxSupportedVersion, "2.16.0")
             XCTAssertEqual(subfeatures["enabledSubfeature"]?.state, "enabled")
             XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?.count, 3)
             XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?[0].name, "myExperimentControl")

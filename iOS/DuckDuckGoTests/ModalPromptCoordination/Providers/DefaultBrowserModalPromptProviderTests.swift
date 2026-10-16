@@ -20,11 +20,22 @@
 import UIKit
 import Testing
 import SetDefaultBrowserUI
+import SetDefaultBrowserCore
 @testable import DuckDuckGo
 
 @MainActor
 @Suite("Modal Prompt Coordination - Default Browser Modal Prompt Provider")
 final class DefaultBrowserModalPromptProviderTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The default-browser variant determines its exposure ID", .timeLimit(.minutes(1)),
+          arguments: [DefaultBrowserPromptPresentationType.activeUserModal, .inactiveUserModal])
+    func exposureIDMatchesPresentationType(_ type: DefaultBrowserPromptPresentationType) throws {
+        let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: UIViewController(), presentationType: type)
+        let configuration = try #require(DefaultBrowserModalPromptProvider(presenter: presenter).provideModalPrompt())
+        let expectedID: PromptExposureID = type == .inactiveUserModal ? .reEngagementPrompt : .additionalDefaultBrowserPrompts
+        #expect(configuration.exposureID == expectedID)
+    }
 
     @Test("Check No Prompt Configuration Is Returned When Presenter Returns Nil")
     func whenPresenterReturnsNilThenProvideModalPromptReturnsNil() {
@@ -152,16 +163,18 @@ final class DefaultBrowserModalPromptProviderTests {
 @MainActor
 public final class MockDefaultBrowserPromptPresenter: DefaultBrowserPromptPresenting {
     private let viewControllerToReturn: UIViewController?
+    private let presentationType: DefaultBrowserPromptPresentationType
     public private(set) var didCallMakePresentDefaultModalPrompt = false
     public private(set) var makeCallCount = 0
 
-    public init(viewControllerToReturn: UIViewController?) {
+    public init(viewControllerToReturn: UIViewController?, presentationType: DefaultBrowserPromptPresentationType = .activeUserModal) {
         self.viewControllerToReturn = viewControllerToReturn
+        self.presentationType = presentationType
     }
 
-    public func makePresentDefaultModalPrompt() -> UIViewController? {
+    public func makePresentDefaultModalPrompt() -> (viewController: UIViewController, type: DefaultBrowserPromptPresentationType)? {
         didCallMakePresentDefaultModalPrompt = true
         makeCallCount += 1
-        return viewControllerToReturn
+        return viewControllerToReturn.map { ($0, presentationType) }
     }
 }

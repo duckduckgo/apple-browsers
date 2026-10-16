@@ -187,6 +187,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         customizeResponsesButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let textInputFocusChangedSubject = PassthroughSubject<Bool, Never>()
+    var textInputFocusChangedPublisher: AnyPublisher<Bool, Never> {
+        textInputFocusChangedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
     init(isVoiceSearchEnabled: Bool,
@@ -264,6 +269,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     func customizeResponsesButtonTapped() {
         customizeResponsesButtonTappedSubject.send()
+    }
+
+    func textInputFocusChanged(_ isFocused: Bool) {
+        textInputFocusChangedSubject.send(isFocused)
     }
 
     func updateBarPosition(isTop: Bool) {

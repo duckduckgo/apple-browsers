@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Common
 import FoundationExtensions
 import Configuration
@@ -71,6 +72,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
         profileStateManager: DBPProfileStateManaging,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        aiChatBonusStateProvider: AIChatBonusStateProviding,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
@@ -84,7 +86,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             profileStateManager: profileStateManager,
-            idleReturnEligibilityManager: idleReturnEligibilityManager
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
+            aiChatBonusStateProvider: aiChatBonusStateProvider
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

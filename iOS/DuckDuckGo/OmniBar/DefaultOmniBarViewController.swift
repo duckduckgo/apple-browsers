@@ -946,7 +946,7 @@ extension DefaultOmniBarViewController {
             origin: .ipadTogglePrompt,
             defaultMode: dependencies.aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: isFirstPromptNewInstall,
-            usageContext: UsageContextProvider().currentContext
+            usageContext: omniDelegate?.currentUsageContext()
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,

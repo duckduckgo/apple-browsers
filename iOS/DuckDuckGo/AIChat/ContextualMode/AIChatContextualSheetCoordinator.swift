@@ -97,6 +97,7 @@ final class AIChatContextualSheetCoordinator {
     private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
@@ -254,6 +255,7 @@ final class AIChatContextualSheetCoordinator {
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
@@ -278,6 +280,7 @@ final class AIChatContextualSheetCoordinator {
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
         self.onboardingActivationRecorder = onboardingActivationRecorder
         self.pixelHandler = pixelHandler
@@ -920,6 +923,8 @@ private extension AIChatContextualSheetCoordinator {
             usageLimitsStore: duckAiUsageLimitsStore,
             floatingUIManager: floatingUIManager,
             tabAttachmentSource: tabAttachmentSource,
+            duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                                  usageContextProvider: usageContextProvider),
             isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
         )
         host.onAttachRequested = { [weak self] in
@@ -1125,6 +1130,7 @@ private extension AIChatContextualSheetCoordinator {
             unifiedToggleInputFeature: contextualUTIFeature,
             isFireTab: isFireTab,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            usageContextProvider: usageContextProvider,
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }

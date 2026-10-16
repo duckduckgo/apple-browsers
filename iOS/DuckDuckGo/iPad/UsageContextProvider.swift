@@ -54,7 +54,7 @@ struct UsageContextProvider: UsageContextProviding {
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
     init(isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-         keyboardMonitor: HardwareKeyboardMonitor = .shared,
+         keyboardMonitor: HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
          isLargeWidth: @escaping () -> Bool = { AppWidthObserver.shared.isLargeWidth },
          windowAndScreenWidths: @escaping @MainActor () -> (window: CGFloat, screen: CGFloat)? = Self.keyWindowWidths) {
         self.isPad = isPad
@@ -103,8 +103,6 @@ extension UsageContext {
 /// GameController reports the hardware keyboard reliably only on the main thread, so pixels fired elsewhere
 /// read this copy, kept current by its connect and disconnect notifications. Create it on the main thread.
 final class HardwareKeyboardMonitor {
-
-    static let shared = HardwareKeyboardMonitor()
 
     private let lock = NSLock()
     private let isConnectedNow: () -> Bool

@@ -65,6 +65,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isFireTab: Bool
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
@@ -160,6 +161,7 @@ final class AIChatContextualWebViewController: UIViewController {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isFireTab: Bool = false,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          downloadHandler: DownloadHandling,
          getPageContext: PageContextAsyncProvider?,
          pixelHandler: AIChatContextualModePixelFiring,
@@ -175,6 +177,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isFireTab = isFireTab
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
@@ -184,7 +187,8 @@ final class AIChatContextualWebViewController: UIViewController {
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
-            pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: ContextualChatPromptPixelContext()),
+            pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: ContextualChatPromptPixelContext(),
+                                                         usageContextProvider: usageContextProvider),
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,
@@ -633,7 +637,8 @@ extension AIChatContextualWebViewController {
     }
 
     private func makeStandalonePromptFlowReporter() -> ContextualDuckAIPromptFlowReporting {
-        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                    usageContextProvider: usageContextProvider)
         return ContextualDuckAIPromptFlowReporter(instrumentation: instrumentation, isFireMode: isFireTab)
     }
 }

@@ -144,7 +144,8 @@ final class MainCoordinator {
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
          onboardingManager: OnboardingManaging,
-         eventHub: EventHubManaging
+         eventHub: EventHubManaging,
+         usageContextProvider: UsageContextProviding
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -238,6 +239,7 @@ final class MainCoordinator {
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                usageContextProvider: usageContextProvider,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
@@ -341,7 +343,8 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        promoCoordinationService: promoCoordinationService)
+                                        promoCoordinationService: promoCoordinationService,
+                                        usageContextProvider: usageContextProvider)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

@@ -695,6 +695,7 @@ class TabViewController: UIViewController {
                                    autoplaySettings: AutoplaySettings,
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                   usageContextProvider: UsageContextProviding,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
@@ -737,6 +738,7 @@ class TabViewController: UIViewController {
                                  autoplaySettings: autoplaySettings,
                                  duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                 usageContextProvider: usageContextProvider,
                                  adBlockingAvailability: adBlockingAvailability,
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
@@ -752,6 +754,7 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
+    let usageContextProvider: UsageContextProviding
 
     let eventHub: EventHubManaging
     let webExtensionManagerProvider: () -> WebExtensionManaging?
@@ -923,6 +926,7 @@ class TabViewController: UIViewController {
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            usageContextProvider: usageContextProvider,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
@@ -972,6 +976,7 @@ class TabViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
+         usageContextProvider: UsageContextProviding,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
@@ -1029,7 +1034,8 @@ class TabViewController: UIViewController {
         let duckAIPromptAttribution = DuckAIPromptAttribution()
         self.duckAIPromptAttribution = duckAIPromptAttribution
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
-                                                         pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: duckAIPromptAttribution),
+                                                         pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: duckAIPromptAttribution,
+                                                                                                       usageContextProvider: usageContextProvider),
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
                                                          onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
@@ -1044,6 +1050,7 @@ class TabViewController: UIViewController {
         self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
+        self.usageContextProvider = usageContextProvider
         self.eventHub = eventHub
         self.webExtensionManagerProvider = webExtensionManagerProvider
         self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider

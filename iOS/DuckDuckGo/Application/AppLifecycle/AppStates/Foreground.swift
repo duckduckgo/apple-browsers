@@ -219,7 +219,8 @@ struct Foreground: ForegroundHandling {
         DuckAISettingsStatePixelReporter(
             settings: appDependencies.aiChatSettings,
             featureFlagger: appDependencies.featureFlagger,
-            openDuckAITabCount: { tabManager.allTabsModel.tabs.filter(\.isAITab).count }
+            openDuckAITabCount: { tabManager.allTabsModel.tabs.filter(\.isAITab).count },
+            usageContextProvider: appDependencies.mainCoordinator.controller.usageContextProvider
         ).fireDaily()
     }
 

@@ -162,6 +162,7 @@ extension TabViewController {
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
+            usageContextProvider: usageContextProvider,
             adBlockingAvailability: adBlockingAvailability,
             eventHub: eventHub,
             webExtensionManagerProvider: webExtensionManagerProvider,

@@ -319,7 +319,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
-    let usageContextProvider: UsageContextProviding = UsageContextProvider()
+    let usageContextProvider: UsageContextProviding
     let newTabPageSessionInstrumentation: NewTabPageSessionInstrumentation
     /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
     /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
@@ -786,9 +786,11 @@ class MainViewController: UIViewController {
             & PromoCoordinationDiagnosticsProviding
             & PromoCoordinationCooldownResetting
             & AppRatingPromptGating)? = nil,
+        usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.pixelFiring = pixelFiring
+        self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
         self.remoteMessagingPixelReporter = remoteMessagingPixelReporter
@@ -830,7 +832,8 @@ class MainViewController: UIViewController {
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
-        self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                                    usageContextProvider: usageContextProvider)
         self.newTabPageSessionInstrumentation = DefaultNewTabPageSessionInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             isEnabled: { featureFlagger.isFeatureOn(.newTabPageSessionInstrumentation) },
@@ -842,7 +845,8 @@ class MainViewController: UIViewController {
         )
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            completeOrphanedFlowsOnInit: true
+            completeOrphanedFlowsOnInit: true,
+            usageContextProvider: usageContextProvider
         )
         self.duckAISessionInstrumentation = DefaultDuckAISessionInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -4934,6 +4938,10 @@ class MainViewController: UIViewController {
     /// resolving through the controller reports every NTP prompt as `unknown`.
     func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
         tabManager.currentTabsModel.currentTab?.promptPageType ?? .unknown
+    }
+
+    func currentUsageContext() -> UsageContext? {
+        usageContextProvider.currentContext
     }
 
     /// Voice requested from the address bar (iPad) or Unified Input.

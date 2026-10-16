@@ -159,10 +159,13 @@ private extension MainViewController {
         // WKWebView snaps to the new size in one frame while the outer layer animates; mask the
         // gap with a snapshot of the chat at its old visual state.
         let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
+        let coordinator = unifiedToggleInputCoordinator
+        coordinator?.expandAnimationWillBegin()
         animationStyle.perform({ [self] in
             applyAITabExpandedPose()
         }, completion: { _ in
             snapshotMask?.removeFromSuperview()
+            coordinator?.expandAnimationDidFinish()
         })
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
     }

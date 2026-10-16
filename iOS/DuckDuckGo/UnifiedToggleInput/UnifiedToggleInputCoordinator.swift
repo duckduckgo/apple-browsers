@@ -323,6 +323,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelFiring: createImagePixelFiring
     )
 
+    /// Input focus changes are held while the expand morph runs, so the FE hears about focus
+    /// only once the input has settled into its expanded layout.
+    private var expandAnimationsInFlight = 0
+    private var hasDeferredInputFocusChange = false
+
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
         intentSubject.eraseToAnyPublisher()
@@ -955,6 +960,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 self.viewController.selectAllText()
             }
         }
+    }
+
+    /// Called by the host when it starts animating the card into its expanded pose.
+    func expandAnimationWillBegin() {
+        expandAnimationsInFlight += 1
+    }
+
+    /// Called by the host when the expand animation ends. Sends the focus state the input
+    /// settled on if it changed while the animation ran.
+    func expandAnimationDidFinish() {
+        expandAnimationsInFlight = max(0, expandAnimationsInFlight - 1)
+        guard expandAnimationsInFlight == 0, hasDeferredInputFocusChange else { return }
+        hasDeferredInputFocusChange = false
+        boundUserScript?.submitNativeInputFocused(viewController.isInputFirstResponder)
     }
 
     func submitProgrammatic(text: String, trigger: TextSubmissionTrigger = .programmatic) {
@@ -2332,6 +2351,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeInputFocus isFocused: Bool) {
+        guard expandAnimationsInFlight == 0 else {
+            hasDeferredInputFocusChange = true
+            return
+        }
         boundUserScript?.submitNativeInputFocused(isFocused)
     }
 

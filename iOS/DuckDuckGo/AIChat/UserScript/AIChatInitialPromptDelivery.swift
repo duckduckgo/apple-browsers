@@ -23,13 +23,22 @@ import Foundation
 /// A prepared, recipient-owned prompt. Script replacement shares the same single-use value.
 @MainActor
 final class AIChatInitialPromptDelivery {
+    enum ConsumptionResult: Equatable {
+        case consumed
+        case timedOut
+        case cancelled
+    }
+
     private var prompt: AIChatNativePrompt?
     private var onConsumed: (() -> Void)?
     private let consumptionGate = AIChatFrontendReadinessGate()
+    private let consumptionTimeout: TimeInterval
     private var isCancelled = false
+    private var didTimeOut = false
 
-    init(prompt: AIChatNativePrompt, onConsumed: @escaping () -> Void) {
+    init(prompt: AIChatNativePrompt, consumptionTimeout: TimeInterval = 5, onConsumed: @escaping () -> Void) {
         self.prompt = prompt
+        self.consumptionTimeout = consumptionTimeout
         self.onConsumed = onConsumed
     }
 
@@ -44,10 +53,19 @@ final class AIChatInitialPromptDelivery {
     }
 
     /// Only subsequent pushes wait for the initial pull; the pull itself never waits.
-    func waitUntilConsumed() async -> Bool {
-        guard !isCancelled else { return false }
-        guard prompt != nil else { return true }
-        return await consumptionGate.waitUntilReady(timeout: nil)
+    func waitUntilConsumed() async -> ConsumptionResult {
+        guard !isCancelled, !Task.isCancelled else { return .cancelled }
+        guard !didTimeOut else { return .timedOut }
+        guard !consumptionGate.isReady else { return .consumed }
+        let completionSignalled = await consumptionGate.waitUntilReady(timeout: consumptionTimeout)
+        if isCancelled || Task.isCancelled { return .cancelled }
+        if didTimeOut { return .timedOut }
+        if completionSignalled || consumptionGate.isReady { return .consumed }
+        didTimeOut = true
+        prompt = nil
+        onConsumed = nil
+        consumptionGate.reset()
+        return .timedOut
     }
 
     func cancel() {

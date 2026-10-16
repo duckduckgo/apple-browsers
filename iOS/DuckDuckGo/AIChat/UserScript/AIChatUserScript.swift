@@ -512,7 +512,10 @@ final class AIChatUserScript: NSObject, Subfeature {
                 Task { @MainActor in request?.cancel() }
             })
             guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
-            if let initialDelivery, !(await initialDelivery.waitUntilConsumed()) { return }
+            if let initialDelivery {
+                let result = await initialDelivery.waitUntilConsumed()
+                guard self?.handleInitialPromptWaitResult(result, delivery: initialDelivery) == true else { return }
+            }
             guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
             let contexts = await withTaskCancellationHandler(operation: {
                 await request?.contexts() ?? []
@@ -538,6 +541,22 @@ final class AIChatUserScript: NSObject, Subfeature {
                 request?.didConsume()
                 didSubmit?()
             }
+        }
+    }
+
+    @MainActor
+    private func handleInitialPromptWaitResult(_ result: AIChatInitialPromptDelivery.ConsumptionResult,
+                                               delivery: AIChatInitialPromptDelivery) -> Bool {
+        switch result {
+        case .consumed:
+            return true
+        case .timedOut:
+            if initialPromptDelivery === delivery {
+                initialPromptDelivery = nil
+            }
+            return true
+        case .cancelled:
+            return false
         }
     }
 

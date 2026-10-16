@@ -475,8 +475,8 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         script.setInitialTabAttachmentPrompt(delivery)
         let cancelled = expectation(description: "Stop cancels prepared delivery")
         let waiter = Task {
-            let wasConsumed = await delivery.waitUntilConsumed()
-            XCTAssertFalse(wasConsumed)
+            let result = await delivery.waitUntilConsumed()
+            XCTAssertEqual(result, .cancelled)
             cancelled.fulfill()
         }
         defer { waiter.cancel() }
@@ -550,6 +550,33 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertEqual(result, first)
         XCTAssertTrue(initialWasConsumed)
         XCTAssertEqual(webView.prompts, [.queryPrompt("second", autoSubmit: true)])
+    }
+
+    func testInitialPromptTimeoutDiscardsLatePullAndDispatchesQueuedPrompts() async throws {
+        let script = makeScript()
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("first", autoSubmit: true), consumptionTimeout: 0.05) {
+            XCTFail("Timed-out initial prompt must not be consumed")
+        }
+        script.setInitialTabAttachmentPrompt(delivery)
+        defer { script.cancelPendingTabContextSubmission() }
+        let pushed = expectation(description: "Queued prompts dispatched after initial pull times out")
+        pushed.expectedFulfillmentCount = 2
+        webView.onPrompt = { _ in pushed.fulfill() }
+
+        script.submitPrompt("second", images: nil, modelId: nil, tools: nil, tabAttachmentRequest: nil)
+        script.submitPrompt("third", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { [] }, didConsume: {}))
+
+        await fulfillment(of: [pushed], timeout: 1)
+        XCTAssertEqual(webView.prompts, [
+            .queryPrompt("second", autoSubmit: true),
+            .queryPrompt("third", autoSubmit: true)
+        ])
+        let result = await delivery.waitUntilConsumed()
+        XCTAssertEqual(result, .timedOut)
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let latePull = try await handler([:], .mock())
+        XCTAssertNil(latePull)
     }
 
     func testOrdinaryContextSubmissionStillCancelsAfterInitialPromptDetachment() async {

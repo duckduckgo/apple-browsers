@@ -263,9 +263,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
+        launchDate = now()
         self.eventsListener.onBrowsingActivity = { [weak self] in
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
+                self?.fireAPICompatibilityGapsIfDue()
+            }
+        }
+        apiCompatibilityHandler.onIssue = { [weak self] issue, url in
+            MainActor.assumeIsolated {
+                guard let identifier = self?.extensionContext(for: url)?.uniqueIdentifier else { return }
+                self?.recordAPICompatibilityIssue(issue, for: identifier)
             }
         }
         privacySettings?.onDefaultPasswordManagerSet = { [weak self] identifier in
@@ -944,6 +952,51 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// When the Bitwarden daily pixel was last sent, to skip checking again within the hour.
     private var lastBitwardenDailyActiveDate: Date?
 
+    /// When this manager was created, at launch or when web extensions are turned back on.
+    private var launchDate = Date.distantPast
+    /// When the gap counts were last reported, to skip reporting again within the hour.
+    private var lastAPICompatibilityGapsDate: Date?
+    /// The distinct missing APIs and Chrome pages each installation ran into since launch, by identifier.
+    private var apiCompatibilityGaps: [String: (missingAPIs: Set<String>, unsupportedURLs: Set<String>)] = [:]
+
+    /// Counts what the compatibility log takes. A permission WebKit dropped is not an API the extension
+    /// used, a stub stands in for its API, and a call WebKit rejected for its arguments is not a missing
+    /// API, so none of them counts.
+    @MainActor
+    func recordAPICompatibilityIssue(_ issue: WebExtensionAPICompatibilityClassifier.Issue, for identifier: String) {
+        switch issue.kind {
+        case .missing:
+            guard !issue.api.hasPrefix(WebExtensionAPICompatibilityClassifier.permissionPrefix) else { return }
+            apiCompatibilityGaps[identifier, default: ([], [])].missingAPIs.insert(issue.api)
+        case .unsupportedURL:
+            apiCompatibilityGaps[identifier, default: ([], [])].unsupportedURLs.insert(issue.api)
+        case .stubbed, .invalidArgs:
+            return
+        }
+    }
+
+    /// Reports each loaded catalog extension's gap counts since launch, zeros included, once the app has
+    /// been running for an hour, so the counts cover some use. It runs on browsing activity at most once
+    /// an hour; each pixel is daily, so each extension reports once a day.
+    @MainActor
+    private func fireAPICompatibilityGapsIfDue() {
+        let date = now()
+        guard date.timeIntervalSince(launchDate) >= 60 * 60 else { return }
+        if let lastAPICompatibilityGapsDate, date.timeIntervalSince(lastAPICompatibilityGapsDate) < 60 * 60 {
+            return
+        }
+        lastAPICompatibilityGapsDate = date
+        for installedExtension in installationStore.installedExtensions {
+            guard let context = context(for: installedExtension.uniqueIdentifier),
+                  case .catalog(let catalogEntry) = pixelExtension(for: installedExtension.storeIdentity) else { continue }
+            let gaps = apiCompatibilityGaps[installedExtension.uniqueIdentifier]
+            pixelFiring.fire(.apiCompatibilityGaps(extension: catalogEntry,
+                                                   version: WebExtensionPixelExtension.version(context.webExtension.version),
+                                                   missingAPICount: gaps?.missingAPIs.count ?? 0,
+                                                   unsupportedURLCount: gaps?.unsupportedURLs.count ?? 0))
+        }
+    }
+
     /// Reports that Bitwarden is loaded while the browser is in use, and whether it's the default password
     /// manager. It runs on browsing activity, which is frequent; the pixel is daily, so each device counts once a day.
     @MainActor
@@ -1037,10 +1090,14 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
             if windowTabProvider.openChromePage(url, for: extensionContext) {
                 return nil
             }
+            let page = "chrome://" + (url.host ?? "") + url.path
             compatibilityReporter.report(kind: .unsupportedURL,
-                                         api: "chrome://" + (url.host ?? "") + url.path,
+                                         api: page,
                                          extensionName: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.displayName),
                                          version: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.version))
+#if os(macOS)
+            recordAPICompatibilityIssue(.init(kind: .unsupportedURL, api: page), for: extensionContext.uniqueIdentifier)
+#endif
             return nil
         }
         return try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)

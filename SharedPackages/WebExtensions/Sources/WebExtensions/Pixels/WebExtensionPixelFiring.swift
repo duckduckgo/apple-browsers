@@ -40,6 +40,16 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
         ExtensionsCatalogSubfeature.allCases.map(Self.catalog) + [.other]
     }
 
+    /// The version pixels send for an extension: its manifest version when it has Chrome's format,
+    /// one to four numbers separated by dots, or `other`, so no other text from the manifest is sent.
+    public static func version(_ manifestVersion: String?) -> String {
+        guard let manifestVersion,
+              manifestVersion.range(of: #"^[0-9]{1,9}(\.[0-9]{1,9}){0,3}$"#, options: .regularExpression) != nil else {
+            return "other"
+        }
+        return manifestVersion
+    }
+
     /// The value pixels send, matching the `extension` parameter in the pixel definitions.
     public var parameterValue: String {
         switch self {
@@ -101,6 +111,9 @@ public enum WebExtensionPixelEvent {
     case bitwardenDailyActive(isDefault: Bool)
     /// The user clicked an extension's toolbar button.
     case toolbarButtonClicked(extension: WebExtensionPixelExtension)
+    /// How many distinct missing APIs a catalog extension used, and Chrome pages it tried to open,
+    /// since launch, with its version. Fired once a day.
+    case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 }
 
 /// Failure state of the episode immediately before recovery.
@@ -189,7 +202,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
              .defaultPasswordManagerSet, .bitwardenDailyActive,
-             .toolbarButtonClicked:
+             .toolbarButtonClicked, .apiCompatibilityGaps:
             return nil
         }
     }

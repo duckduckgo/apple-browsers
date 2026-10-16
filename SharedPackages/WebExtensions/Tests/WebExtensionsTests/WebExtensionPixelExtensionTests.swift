@@ -27,4 +27,13 @@ final class WebExtensionPixelExtensionTests: XCTestCase {
         XCTAssertEqual(WebExtensionPixelExtension.allCases.map(\.parameterValue),
                        ["bitwarden", "onePassword", "lastPass", "other"])
     }
+
+    func testOnlyAChromeFormatVersionIsSent() {
+        XCTAssertEqual(WebExtensionPixelExtension.version("2026.10.1"), "2026.10.1")
+        XCTAssertEqual(WebExtensionPixelExtension.version("1.2.3.4"), "1.2.3.4")
+        XCTAssertEqual(WebExtensionPixelExtension.version("1.2.3.4.5"), "other")
+        XCTAssertEqual(WebExtensionPixelExtension.version("1.0 beta"), "other")
+        XCTAssertEqual(WebExtensionPixelExtension.version(""), "other")
+        XCTAssertEqual(WebExtensionPixelExtension.version(nil), "other")
+    }
 }

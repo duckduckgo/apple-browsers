@@ -394,6 +394,48 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
+    "web_extension_api_gaps_bitwarden_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the Bitwarden extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_onepassword_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the 1Password extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_lastpass_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the LastPass extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
     "web_extension_state_checked_macos": {
         "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
         "owners": ["miasma13"],

@@ -778,7 +778,8 @@ final class WebExtensionManagerTests: XCTestCase {
 
         date += 60
         eventsListenerMock.onBrowsingActivity?()
-        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
+        XCTAssertEqual(pixels.events.filter { !$0.hasPrefix("gaps") },
+                       ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
     }
 
     /// Only a loaded Bitwarden counts: an installed Bitwarden that isn't loaded, or another catalog extension
@@ -812,6 +813,56 @@ final class WebExtensionManagerTests: XCTestCase {
         _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller)
         eventsListenerMock.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
+    }
+
+    /// Each loaded catalog extension reports its version and distinct gaps once the app has run for an
+    /// hour, zeros included; stubs, dropped permissions and rejected arguments don't count, and
+    /// extensions outside the catalog don't report.
+    @MainActor
+    func testWhenBrowsingAnHourAfterLaunch_ThenEachLoadedCatalogExtensionReportsItsGapCounts() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let lastPassStoreID = String(repeating: "l", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        var date = Date(timeIntervalSince1970: 0)
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "lastPass", filename: "lastPass", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: lastPassStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "sideloaded", filename: "sideloaded", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: nil)
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          eventsListener: eventsListenerMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          now: { date })
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden, lastPassStoreID: .lastPass])
+        for identifier in ["bitwarden", "lastPass", "sideloaded"] {
+            _ = try await loadRealContext(identifier: identifier, into: manager.controller)
+        }
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "js:Object.groupBy"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .stubbed, api: "chrome.offscreen.createDocument"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "permission:offscreen"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .invalidArgs, api: "chrome.tabs.query"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .unsupportedURL, api: "chrome://password-manager/settings"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "sideloaded")
+
+        date += 59 * 60
+        eventsListenerMock.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events.filter { $0.hasPrefix("gaps") }, [], "Too soon after launch")
+
+        date += 60
+        eventsListenerMock.onBrowsingActivity?()
+        XCTAssertEqual(Set(pixels.events.filter { $0.hasPrefix("gaps") }),
+                       ["gaps bitwarden 1.0.0: 2 apis, 1 urls", "gaps lastPass 1.0.0: 0 apis, 0 urls"])
     }
 
     @MainActor
@@ -1122,6 +1173,8 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("default set: \(pixelExtension.parameterValue)")
         case .toolbarButtonClicked(let pixelExtension):
             events.append("toolbar click: \(pixelExtension.parameterValue)")
+        case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
+            events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
         default:
             break
         }

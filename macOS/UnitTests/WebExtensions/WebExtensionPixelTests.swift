@@ -17,6 +17,7 @@
 //
 
 import PixelKit
+import PrivacyConfig
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -52,6 +53,19 @@ final class WebExtensionPixelTests: XCTestCase {
 
         XCTAssertEqual(pixel.name, "web_extension_toolbar_button_clicked_macos")
         XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"])
+        XCTAssertEqual(pixel.namePrefix, .none)
+    }
+
+    func testAPICompatibilityGapsPixelsAreNamedPerCatalogExtension() {
+        let names = ExtensionsCatalogSubfeature.allCases.map {
+            WebExtensionPixel.apiCompatibilityGaps(extension: $0, version: "1", missingAPICount: 0, unsupportedURLCount: 0).name
+        }
+        let pixel = WebExtensionPixel.apiCompatibilityGaps(extension: .bitwarden, version: "2026.10.1", missingAPICount: 31, unsupportedURLCount: 2)
+
+        XCTAssertEqual(names, ["web_extension_api_gaps_bitwarden_macos",
+                               "web_extension_api_gaps_onepassword_macos",
+                               "web_extension_api_gaps_lastpass_macos"])
+        XCTAssertEqual(pixel.parameters, ["extension_version": "2026.10.1", "missing_api_count": "31", "unsupported_url_count": "2"])
         XCTAssertEqual(pixel.namePrefix, .none)
     }
 }

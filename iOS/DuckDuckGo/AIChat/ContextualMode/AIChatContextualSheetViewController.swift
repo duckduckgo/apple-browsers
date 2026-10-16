@@ -31,6 +31,7 @@ import PrivacyConfig
 import SwiftUI
 import UIKit
 import FeatureFlags_iOS
+import LocalAI
 
 /// Delegate protocol for contextual sheet related actions
 @MainActor
@@ -189,6 +190,10 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
+
+    /// PoC: an on-device answer shown in place of the web view (`.localAIContextualActions`).
+    private var localAIResultViewController: LocalAIResultViewController?
+    private lazy var localAIService = LocalAIContextualService.shared
 
     private var isCurrentlyMediumDetent: Bool {
         sheetPresentationController?.selectedDetentIdentifier == .medium
@@ -571,6 +576,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         if isBeingDismissed {
             persistentUTIHost?.endEditMode()
             prepareForDismissal()
+            dismissLocalAIResult()
+            if featureFlagger.isFeatureOn(.localAIContextualActions) {
+                localAIService.sheetDidDismiss()
+            }
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
         }
     }
@@ -996,6 +1005,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         cancelSuggestionSubmission()
         delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
+        if localAIService.handlesLocally(suggestionID: suggestion.id, featureFlagger: featureFlagger) {
+            runSubmission { [weak self] in
+                guard let self else { return true }
+                return await self.deliverSuggestionLocally(suggestion, actsOnSelection: actsOnSelection)
+            }
+            return
+        }
         runSubmission { [weak self] in
             guard let self else { return true }
             let didDeliver = if actsOnSelection {
@@ -1090,6 +1106,59 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
         submitSuggestionPrompt(suggestion.prompt)
         return true
+    }
+
+    /// PoC: attaches context like the Duck.ai path, then answers on the device instead of waiting for the
+    /// frontend. Without usable context it falls back to Duck.ai.
+    private func deliverSuggestionLocally(_ suggestion: ContextualSuggestedPrompt, actsOnSelection: Bool) async -> Bool {
+        if !actsOnSelection {
+            await delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
+        }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+
+        let page: AIChatPageContextData? = if case .attached(let context) = sessionState.chipState { context.contextData } else { nil }
+        guard let request = localAIService.request(suggestionID: suggestion.id, page: page, selections: sessionState.attachedSelections),
+              let engine = localAIService.currentEngine else {
+            return await deliverSuggestionToDuckAI(suggestion, actsOnSelection: actsOnSelection)
+        }
+        showLocalAIResult(request: request, engine: engine, suggestion: suggestion, actsOnSelection: actsOnSelection)
+        return true
+    }
+
+    private func deliverSuggestionToDuckAI(_ suggestion: ContextualSuggestedPrompt, actsOnSelection: Bool) async -> Bool {
+        if actsOnSelection {
+            return await deliverSelectionSuggestionPrompt(suggestion)
+        }
+        return await deliverSuggestionPrompt(suggestion)
+    }
+
+    private func showLocalAIResult(request: LocalAIRequest, engine: LocalAIEngine, suggestion: ContextualSuggestedPrompt, actsOnSelection: Bool) {
+        view.endEditing(true)
+        let resultViewController = LocalAIResultViewController(request: request, engine: engine) { [weak self] in
+            self?.continueInDuckAI(suggestion, actsOnSelection: actsOnSelection)
+        }
+        removeCurrentChildViewController()
+        isWebViewVisible = false
+        embedChildViewController(resultViewController)
+        localAIResultViewController = resultViewController
+    }
+
+    /// Sends the same suggestion down the unchanged Duck.ai path. Context is already attached. Waiting
+    /// for the first response again is what reveals the web view once Duck.ai starts answering.
+    private func continueInDuckAI(_ suggestion: ContextualSuggestedPrompt, actsOnSelection: Bool) {
+        dismissLocalAIResult()
+        beginWaitingForInitialPromptResponseStateIfNeeded()
+        runSubmission { [weak self] in
+            guard let self else { return true }
+            return await self.deliverSuggestionToDuckAI(suggestion, actsOnSelection: actsOnSelection)
+        }
+    }
+
+    private func dismissLocalAIResult() {
+        guard let localAIResultViewController else { return }
+        localAIResultViewController.stop()
+        self.localAIResultViewController = nil
+        showNativeInputUI()
     }
 
     /// A sheet promoted for a submission that never arrived would sit on the web view with no input at

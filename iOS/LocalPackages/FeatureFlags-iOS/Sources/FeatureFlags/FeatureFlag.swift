@@ -330,6 +330,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218266695612921?focus=true
     case contextualPagePlaceholder
 
+    /// PoC (never merged): answer contextual-sheet Summarize/Translate with an on-device model.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1219478232812805
+    case localAIContextualActions
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
@@ -867,6 +871,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+        case .localAIContextualActions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.localAIContextualActions))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:

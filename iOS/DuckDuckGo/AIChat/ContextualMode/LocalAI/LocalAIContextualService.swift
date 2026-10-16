@@ -1,0 +1,145 @@
+//
+//  LocalAIContextualService.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import Combine
+import FeatureFlags_iOS
+import Foundation
+import LocalAI
+import LocalAIMLX
+import PrivacyConfig
+import UIKit
+
+/// PoC: decides whether a contextual-sheet suggestion is answered on the device, and owns the engines
+/// and the downloaded models. Everything is behind `.localAIContextualActions` and debug settings.
+@MainActor
+final class LocalAIContextualService: ObservableObject {
+
+    static let shared = LocalAIContextualService()
+
+    let modelStore = LocalAIModelStore()
+
+    @Published var engineKind: LocalAIEngineKind {
+        didSet {
+            defaults.set(engineKind.rawValue, forKey: Keys.engine)
+            if oldValue != engineKind { engine(for: oldValue)?.unload() }
+        }
+    }
+
+    /// Unloading on dismissal frees ~1.5 GB but makes every first token pay for a model load.
+    @Published var keepsModelLoaded: Bool {
+        didSet { defaults.set(keepsModelLoaded, forKey: Keys.keepsModelLoaded) }
+    }
+
+    @Published private(set) var enabledSuggestions: Set<LocalAISuggestion>
+
+    private let defaults: UserDefaults
+    private lazy var mlxEngine = MLXLocalAIEngine(store: modelStore)
+    private let stubEngine = StubLocalAIEngine()
+    private var foundationModelsEngine: LocalAIEngine?
+    private var cancellables = Set<AnyCancellable>()
+
+    private enum Keys {
+        static let engine = "localAI.engine"
+        static let keepsModelLoaded = "localAI.keepsModelLoaded"
+        static let disabledSuggestions = "localAI.disabledSuggestions"
+    }
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        #if targetEnvironment(simulator)
+        let defaultEngine = LocalAIEngineKind.stub
+        #else
+        let defaultEngine = LocalAIEngineKind.mlx
+        #endif
+        engineKind = defaults.string(forKey: Keys.engine).flatMap(LocalAIEngineKind.init(rawValue:)) ?? defaultEngine
+        keepsModelLoaded = defaults.bool(forKey: Keys.keepsModelLoaded)
+        let disabled = Set(defaults.stringArray(forKey: Keys.disabledSuggestions) ?? [])
+        enabledSuggestions = Set(LocalAISuggestion.allCases.filter { !disabled.contains($0.rawValue) })
+
+        if #available(iOS 26.0, *) {
+            foundationModelsEngine = FoundationModelsLocalAIEngine()
+        }
+        LocalAIInterruptedRunTracker.recordInterruptedRunIfAny(defaults: defaults)
+
+        NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)
+            .sink { [weak self] _ in self?.unloadModels() }
+            .store(in: &cancellables)
+        modelStore.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+    }
+
+    var currentEngine: LocalAIEngine? {
+        engine(for: engineKind)
+    }
+
+    func engine(for kind: LocalAIEngineKind) -> LocalAIEngine? {
+        switch kind {
+        case .mlx: mlxEngine
+        case .foundationModels: foundationModelsEngine
+        case .stub: stubEngine
+        }
+    }
+
+    func isEnabled(_ suggestion: LocalAISuggestion) -> Bool {
+        enabledSuggestions.contains(suggestion)
+    }
+
+    func setEnabled(_ enabled: Bool, for suggestion: LocalAISuggestion) {
+        if enabled {
+            enabledSuggestions.insert(suggestion)
+        } else {
+            enabledSuggestions.remove(suggestion)
+        }
+        let disabled = LocalAISuggestion.allCases.filter { !enabledSuggestions.contains($0) }.map(\.rawValue)
+        defaults.set(disabled, forKey: Keys.disabledSuggestions)
+    }
+
+    /// Whether to try answering `suggestionID` locally. Context is checked later, once it's attached.
+    func handlesLocally(suggestionID: String, featureFlagger: FeatureFlagger) -> Bool {
+        guard featureFlagger.isFeatureOn(.localAIContextualActions),
+              let suggestion = LocalAISuggestion(rawValue: suggestionID),
+              isEnabled(suggestion),
+              let currentEngine else { return false }
+        return currentEngine.unavailableReason == nil
+    }
+
+    func request(suggestionID: String, page: AIChatPageContextData?, selections: [AIChatSelectionContextData]) -> LocalAIRequest? {
+        LocalAIRequest(suggestionID: suggestionID,
+                       language: Self.userLanguageName,
+                       page: page.map { LocalAIPage(title: $0.title, url: $0.url, content: $0.content) },
+                       selections: selections.map(\.content))
+    }
+
+    func sheetDidDismiss() {
+        guard !keepsModelLoaded else { return }
+        unloadModels()
+    }
+
+    func unloadModels() {
+        LocalAIEngineKind.allCases.forEach { engine(for: $0)?.unload() }
+    }
+
+    /// English name of the UI language: models follow English instructions best.
+    static var userLanguageName: String {
+        let code = Locale.current.language.languageCode?.identifier ?? "en"
+        return Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "English"
+    }
+}

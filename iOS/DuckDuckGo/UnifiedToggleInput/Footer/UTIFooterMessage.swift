@@ -34,7 +34,7 @@ struct CreateImageModelSwitchNotice: Equatable {
 
 struct UTIFooterItem: Equatable, Identifiable {
     enum ID: Int, CaseIterable {
-        /// First so a message that blocks sending outranks everything else.
+        /// Persistent error: shows alone, in place of every Required message except Out of usage.
         case inputLimit
         case termsConsent
         case outOfUsage
@@ -46,6 +46,8 @@ struct UTIFooterItem: Equatable, Identifiable {
     }
 
     enum MessageType {
+        /// ⛔📌 Persistent error. Not dismissible; clears only when its cause does.
+        case error
         case required
         case action
         case informational
@@ -53,7 +55,8 @@ struct UTIFooterItem: Equatable, Identifiable {
 
     var type: MessageType {
         switch id {
-        case .inputLimit, .termsConsent: return .required
+        case .inputLimit: return .error
+        case .termsConsent: return .required
         case .outOfUsage, .attachmentPrivacy: return .required
         case .modelSwitch: return .action
         case .usageWarning, .highUsage, .multiTabPromotion: return .informational
@@ -67,6 +70,12 @@ struct UTIFooterItem: Equatable, Identifiable {
         // Editing a sent prompt hides the footer, but a reason Send is disabled must still show.
         guard !isEditing else { return items.filter { $0.id == .inputLimit } }
         let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
+        // Out of usage already explains why Send is disabled, so a persistent error waits behind it.
+        // Otherwise the error temporarily replaces Required messages (ToS, File upload privacy);
+        // nothing stacks with it, and they return once it clears.
+        if !ordered.contains(where: { $0.id == .outOfUsage }), let error = ordered.first(where: { $0.type == .error }) {
+            return [error]
+        }
         let required = ordered.filter { $0.type == .required }
         return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
     }

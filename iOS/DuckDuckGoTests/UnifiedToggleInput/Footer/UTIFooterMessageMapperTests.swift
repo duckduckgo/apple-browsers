@@ -35,11 +35,29 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertFalse(message.isDismissible, "It explains a disabled Send, so only fixing the draft clears it")
     }
 
-    func test_pastedTextLimit_outranksTermsAndStaysVisibleWhileEditingASentPrompt() {
+    func test_pastedTextLimit_replacesRequiredMessagesAndTheyReturnWhenItClears() {
+        let limit = UTIFooterItem(id: .inputLimit, message: sut.message(for: AIChatPastedTextLimitViolation(count: 16_001, limit: 16_000)))
+        let terms = UTIFooterItem(id: .termsConsent, message: sut.termsOfServiceMessage())
+        let privacy = UTIFooterItem(id: .attachmentPrivacy, message: sut.attachmentPrivacyMessage())
+
+        XCTAssertEqual(UTIFooterItem.visible(from: [terms, limit], isEditing: false).map(\.id), [.inputLimit])
+        XCTAssertEqual(UTIFooterItem.visible(from: [terms, privacy, limit], isEditing: false).map(\.id), [.inputLimit])
+        XCTAssertEqual(UTIFooterItem.visible(from: [terms, privacy], isEditing: false).map(\.id), [.termsConsent, .attachmentPrivacy])
+    }
+
+    func test_pastedTextLimit_waitsBehindOutOfUsage() {
+        let limit = UTIFooterItem(id: .inputLimit, message: sut.message(for: AIChatPastedTextLimitViolation(count: 16_001, limit: 16_000)))
+        let outOfUsage = UTIFooterItem(id: .outOfUsage, message: sut.termsOfServiceMessage())
+
+        let visible = UTIFooterItem.visible(from: [limit, outOfUsage], isEditing: false).map(\.id)
+        XCTAssertFalse(visible.contains(.inputLimit))
+        XCTAssertTrue(visible.contains(.outOfUsage))
+    }
+
+    func test_pastedTextLimit_staysVisibleWhileEditingASentPrompt() {
         let limit = UTIFooterItem(id: .inputLimit, message: sut.message(for: AIChatPastedTextLimitViolation(count: 16_001, limit: 16_000)))
         let terms = UTIFooterItem(id: .termsConsent, message: sut.termsOfServiceMessage())
 
-        XCTAssertEqual(UTIFooterItem.visible(from: [terms, limit], isEditing: false).map(\.id), [.inputLimit, .termsConsent])
         XCTAssertEqual(UTIFooterItem.visible(from: [terms, limit], isEditing: true).map(\.id), [.inputLimit])
         XCTAssertEqual(UTIFooterItem.visible(from: [terms], isEditing: true).map(\.id), [])
     }

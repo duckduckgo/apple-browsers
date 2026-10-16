@@ -5796,7 +5796,10 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
-        self.present(promptViewController, animated: true, completion: nil)
+        self.present(promptViewController, animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.tab(self, didShowPrompt: .importPasswordsGoogle)
+        }
     }
 
     func presentAutofillExtensionPrompt() {
@@ -5826,7 +5829,10 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
-        self.present(promptViewController, animated: true, completion: nil)
+        self.present(promptViewController, animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.tab(self, didShowPrompt: .autofillExtensionPrompt)
+        }
 
     }
 

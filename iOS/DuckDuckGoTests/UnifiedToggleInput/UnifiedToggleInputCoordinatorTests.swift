@@ -2193,6 +2193,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func testWhenTextInputFocusChangesThenEachChangeIsForwardedToTheChat() {
+        var received: [Bool] = []
+        sut.didChangeInputFocus
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        sut.viewController.handler.textInputFocusChanged(true)
+        sut.viewController.handler.textInputFocusChanged(false)
+
+        XCTAssertEqual(received, [true, false])
+    }
+
     func test_customizeResponsesTap_collapsesInput() {
         sut.showExpanded()
         XCTAssertEqual(sut.displayState, .aiTab(.expanded))

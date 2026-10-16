@@ -815,6 +815,7 @@ private final class MultiTabInputBox: AIChatInputBoxHandling {
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
+    let didChangeInputFocus = PassthroughSubject<Bool, Never>()
     var persistedModelId: String?
     var persistedReasoningEffort: AIChatReasoningEffort?
     var isSubmitBlockedByRecoveryCard = false

@@ -21,6 +21,7 @@ import UIKit
 import Core
 import BrowserServicesKit
 import FeatureFlags_iOS
+import PixelKit
 
 enum FloatingSwipePreviewGeometry {
 
@@ -92,6 +93,7 @@ class SwipeTabsCoordinator: NSObject {
     private let isPaidAIChatEnabledProvider: () -> Bool
     private let allowsSubscriptionUpsellProvider: () -> Bool
     private let hasInlineSearchInput: (Tab?) -> Bool
+    private let pixelFiring: PixelFiring?
 
     let selectTab: (Tab) -> Void
     let newTab: () -> Void
@@ -127,6 +129,7 @@ class SwipeTabsCoordinator: NSObject {
          isPaidAIChatEnabledProvider: @escaping () -> Bool,
          allowsSubscriptionUpsellProvider: @escaping () -> Bool,
          hasInlineSearchInput: @escaping (Tab?) -> Bool = { _ in false },
+         pixelFiring: PixelFiring? = PixelKit.shared,
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
@@ -141,6 +144,7 @@ class SwipeTabsCoordinator: NSObject {
         self.isPaidAIChatEnabledProvider = isPaidAIChatEnabledProvider
         self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.hasInlineSearchInput = hasInlineSearchInput
+        self.pixelFiring = pixelFiring
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
@@ -943,6 +947,17 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         default: break
         }
+    }
+
+    // A drag released on a page boundary with no velocity (e.g. dragged back to the start)
+    // never decelerates, so `scrollViewDidEndDecelerating` wouldn't fire and the swipe overlay
+    // would stay up over the live UI.
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        guard !decelerate else { return }
+        if case .swiping = state {
+            pixelFiring?.fire(SwipeTabsPixel.stuckSwipeRecovered, frequency: .dailyAndCount)
+        }
+        scrollViewDidEndDecelerating(scrollView)
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {

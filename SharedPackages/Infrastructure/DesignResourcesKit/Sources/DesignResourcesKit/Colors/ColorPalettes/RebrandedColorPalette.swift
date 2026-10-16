@@ -105,6 +105,9 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
         switch singleUseColor {
         case .groupedListContentBackground:
             return dynamicColor(for: DesignSystemColor.surfaceTertiary)
+        case .newTabPageSearchCardBackground:
+            return DynamicColor(lightColor: dynamicColor(for: DesignSystemColor.surfaceSecondary).lightColor,
+                                darkColor: RebrandingColor.Pondwater.pondwater100)
         default:
             return DefaultColorPalette.dynamicColor(for: singleUseColor)
         }

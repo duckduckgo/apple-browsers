@@ -444,7 +444,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         sut.syncSetupStarted()
         syncService.authState = .active
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
         XCTAssertEqual(recordedResults.map(\.promoID), [PromoServiceFactory.bookmarkAddedSyncPromoID])
         await eligibility(of: sut, becomes: false)
     }
@@ -456,7 +456,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         sut.syncSetupStarted()
         syncService.authState = .addingNewDevice
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
         XCTAssertEqual(recordedResults.map(\.promoID), [PromoServiceFactory.bookmarkAddedSyncPromoID])
     }
 
@@ -470,7 +470,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
     }
 
     func testWhenSurfaceClosesAfterSetupStartedAndSyncTurnsOnLaterThenActionedIsRecorded() async {
@@ -486,7 +486,7 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
 
         syncService.authState = .active
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
         XCTAssertEqual(recordedResults.map(\.promoID), [PromoServiceFactory.bookmarkAddedSyncPromoID])
     }
 

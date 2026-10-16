@@ -1952,6 +1952,10 @@ private extension UnifiedToggleInputView {
             self.delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
         }
 
+        textEntryView.onTextInputFocusChanged = { [weak self] isFocused in
+            self?.handler.textInputFocusChanged(isFocused)
+        }
+
         textEntryView.onAIChatShortcutTapped = { [weak self] in
             self?.onAIChatShortcutTapped?()
         }

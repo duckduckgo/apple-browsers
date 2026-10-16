@@ -3577,6 +3577,7 @@ extension TabViewController: WKNavigationDelegate {
         // Content Blocking retry below, so that retry does not wait on extension startup twice.
         if #available(iOS 18.4, *),
            navigationAction.isTargetingMainFrame,
+           ["http", "https"].contains(navigationAction.request.url?.scheme?.lowercased() ?? ""),
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
             webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
                 guard !Task.isCancelled else {

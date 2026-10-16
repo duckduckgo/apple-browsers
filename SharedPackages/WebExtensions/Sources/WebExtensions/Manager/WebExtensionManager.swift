@@ -315,10 +315,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.
                 if self.embeddedBackgroundStartupContext === context {
-                    self.embeddedBackgroundStartupCompletion?.finish()
-                    self.embeddedBackgroundStartup = nil
-                    self.embeddedBackgroundStartupContext = nil
-                    self.embeddedBackgroundStartupCompletion = nil
+                    self.clearEmbeddedBackgroundStartup()
                 }
                 Task { @MainActor [weak self] in
                     await self?.recoverEmbeddedBackgroundLoadFailure(error, context: context)
@@ -481,6 +478,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
+        clearEmbeddedBackgroundStartup(identifier: identifier)
         do {
             try permissionController?.forget(identifier)
         } catch {
@@ -714,12 +712,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
-    public func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter? {
+    public func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? {
         guard let context = embeddedBackgroundContextForNavigation, context.webExtension.hasBackgroundContent else { return nil }
-        return { [weak self] in
-            self?.navigationWaitContexts.insert(context.uniqueIdentifier)
-            await self?.loadEmbeddedExtensionBackgroundContent(in: context)
-        }
+        navigationWaitContexts.insert(context.uniqueIdentifier)
+        return startEmbeddedBackgroundContent(in: context)
     }
 
     @MainActor
@@ -730,13 +726,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     private func loadEmbeddedExtensionBackgroundContent(in context: WKWebExtensionContext) async {
-        guard self.context(for: context.uniqueIdentifier) === context, context.webExtension.hasBackgroundContent else { return }
+        await startEmbeddedBackgroundContent(in: context)?.value
+    }
+
+    @MainActor
+    private func startEmbeddedBackgroundContent(in context: WKWebExtensionContext) -> Task<Void, Never>? {
+        guard self.context(for: context.uniqueIdentifier) === context, context.webExtension.hasBackgroundContent else { return nil }
 
         if let startup = embeddedBackgroundStartup, embeddedBackgroundStartupContext === context {
-            await startup.value
-            return
+            return startup
         }
 
+        clearEmbeddedBackgroundStartup()
         let (completion, continuation) = AsyncStream<Void>.makeStream()
         let startup = Task<Void, Never> { for await _ in completion { } }
         embeddedBackgroundStartup = startup
@@ -763,10 +764,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                     self.recoveryInstrumentation.record(fix, outcome: .backgroundReady)
                 }
             }
+            if self?.embeddedBackgroundStartup == startup {
+                self?.clearEmbeddedBackgroundStartup()
+            }
             continuation.finish()
         }
-        await startup.value
-        guard embeddedBackgroundStartup == startup else { return }
+        return startup
+    }
+
+    @MainActor
+    private func clearEmbeddedBackgroundStartup(identifier: String? = nil) {
+        if let identifier, embeddedBackgroundStartupContext?.uniqueIdentifier != identifier { return }
+        embeddedBackgroundStartupCompletion?.finish()
         embeddedBackgroundStartup = nil
         embeddedBackgroundStartupContext = nil
         embeddedBackgroundStartupCompletion = nil
@@ -1012,7 +1021,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
         if case .willReload(let identifier, _, _) = event,
            embeddedBackgroundStartupContext?.uniqueIdentifier == identifier {
-            embeddedBackgroundStartupCompletion?.finish()
+            clearEmbeddedBackgroundStartup()
         }
         lifecycleEventsContinuation?.yield(event)
         cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))

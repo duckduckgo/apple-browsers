@@ -32,7 +32,7 @@ final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool = false
     var debugScriptEnabled: Bool = false
     var showInMenuBar: Bool = false
-    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> = []
+    var isManagedByExtension: Bool = false
 }
 
 final class UserAuthenticatorMock: UserAuthenticating {
@@ -150,72 +150,56 @@ final class AutofillPreferencesModelTests: XCTestCase {
         XCTAssertFalse(model.showSyncPromo)
     }
 
-    // MARK: - Extensions Managing Autofill
+    // MARK: - Extension Managing Autofill
 
     @MainActor
-    func testWhenOneExtensionManagesEverything_ThenItIsShownOnceWithAllKinds() throws {
+    func testWhenAnExtensionManagesAutofill_ThenItIsShown() throws {
         let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
-        let takeover = makeTakeover([.passwords: bitwarden, .addresses: bitwarden, .cards: bitwarden])
 
-        let model = try makeModel(takeover: takeover)
+        let model = try makeModel(takeover: makeTakeover(bitwarden))
 
-        XCTAssertEqual(model.managingExtension(for: .passwords), bitwarden)
-        XCTAssertEqual(model.kinds(managedBy: bitwarden), [.passwords, .addresses, .cards])
-        XCTAssertTrue(model.extensionsManagingOnlyAddressesOrCards.isEmpty)
+        XCTAssertEqual(model.managingExtension, bitwarden)
     }
 
     @MainActor
-    func testWhenAnotherExtensionManagesOnlyCards_ThenItIsShownSeparately() throws {
+    func testWhenTheUserUsesDuckDuckGoInstead_ThenAutofillIsGivenBack() throws {
+        var givenBackCount = 0
         let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
-        let cardsOnly = AutofillManagingExtension(identifier: "cards", name: "Cards", icon: nil)
-        let takeover = makeTakeover([.passwords: bitwarden, .cards: cardsOnly])
+        let model = try makeModel(takeover: makeTakeover(bitwarden) { givenBackCount += 1 })
 
-        let model = try makeModel(takeover: takeover)
+        model.useDuckDuckGoInstead()
 
-        XCTAssertEqual(model.kinds(managedBy: bitwarden), [.passwords])
-        XCTAssertEqual(model.extensionsManagingOnlyAddressesOrCards, [cardsOnly])
-    }
-
-    @MainActor
-    func testWhenTheUserUsesDuckDuckGoInstead_ThenEveryKindOfThatExtensionIsGivenBack() throws {
-        var clearedKinds: [ExtensionManagedAutofillKind] = []
-        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
-        let takeover = makeTakeover([.passwords: bitwarden, .cards: bitwarden]) { clearedKinds.append($0) }
-        let model = try makeModel(takeover: takeover)
-
-        model.useDuckDuckGoInstead(for: model.kinds(managedBy: bitwarden))
-
-        XCTAssertEqual(clearedKinds, [.passwords, .cards])
+        XCTAssertEqual(givenBackCount, 1)
     }
 
     @MainActor
     func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
         let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
-        var managing: WebExtensionAutofillTakeover.ManagingExtensions = [:]
+        var managing: AutofillManagingExtension?
         let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
                                                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                     notificationCenter: NotificationCenter(),
-                                                    readManagingExtensions: { managing },
-                                                    clearSetting: { _ in })
+                                                    readManagingExtension: { managing },
+                                                    clearSettings: {})
         let model = try makeModel(takeover: takeover)
-        XCTAssertNil(model.managingExtension(for: .passwords))
+        XCTAssertNil(model.managingExtension)
 
-        managing = [.passwords: bitwarden]
+        managing = bitwarden
         takeover.refresh()
         NotificationCenter.default.post(name: .autofillUserSettingsDidChange, object: nil)
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
-        XCTAssertEqual(model.managingExtension(for: .passwords), bitwarden)
+        XCTAssertEqual(model.managingExtension, bitwarden)
     }
 
     @MainActor
-    private func makeTakeover(_ managing: WebExtensionAutofillTakeover.ManagingExtensions,
-                              clearSetting: @escaping @MainActor (ExtensionManagedAutofillKind) -> Void = { _ in }) -> WebExtensionAutofillTakeover {
+    private func makeTakeover(_ managing: AutofillManagingExtension?,
+                              clearSettings: @escaping @MainActor () -> Void = {}) -> WebExtensionAutofillTakeover {
         let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
                                                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                     notificationCenter: NotificationCenter(),
-                                                    readManagingExtensions: { managing },
-                                                    clearSetting: clearSetting)
+                                                    readManagingExtension: { managing },
+                                                    clearSettings: clearSettings)
         takeover.refresh()
         return takeover
     }

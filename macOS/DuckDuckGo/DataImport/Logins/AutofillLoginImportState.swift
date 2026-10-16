@@ -50,9 +50,13 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
         }
     }
 
-    /// Whether DuckDuckGo autofills passwords: the user wants it, and no extension manages passwords.
+    /// Whether DuckDuckGo autofills passwords: the user wants it, and no extension manages autofill.
     public var isAutofillEnabled: Bool {
         autofillPreferences.isUsernamesAndPasswordsAutofillActive
+    }
+
+    public var isAutofillManagedByExtension: Bool {
+        autofillPreferences.isManagedByExtension
     }
 
     public var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool {

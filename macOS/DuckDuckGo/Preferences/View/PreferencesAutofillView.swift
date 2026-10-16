@@ -90,11 +90,11 @@ extension Preferences {
                         .foregroundColor(Color(.textSecondary))
                 }
 
-                if let passwordsExtension = model.managingExtension(for: .passwords) {
+                if let managingExtension = model.managingExtension {
                     // SECTION 1: Password Manager, taken over by an extension. Shown in every build,
-                    // since an extension can take passwords over in App Store builds too.
+                    // since an extension can take autofill over in App Store builds too.
                     PreferencePaneSection(UserText.autofillPasswordManager) {
-                        managingExtensionView(passwordsExtension)
+                        managingExtensionView(managingExtension)
                     }
                 } else if !NSApp.isSandboxed {
                     // SECTION 1: Password Manager
@@ -130,37 +130,24 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 2: Ask to Save. A kind an extension has taken over has no toggle: DuckDuckGo
-                // neither saves nor autofills it.
-                if ExtensionManagedAutofillKind.allCases.contains(where: { model.managingExtension(for: $0) == nil }) {
+                // SECTION 2: Ask to Save. Hidden while an extension manages autofill: DuckDuckGo neither
+                // saves nor autofills anything then.
+                if model.managingExtension == nil {
                     PreferencePaneSection {
                         TextMenuItemHeader(UserText.autofillAskToSave)
                         VStack(alignment: .leading, spacing: 6) {
-                            if model.managingExtension(for: .passwords) == nil {
-                                ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
-                            }
-                            if model.managingExtension(for: .addresses) == nil {
-                                ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
-                            }
-                            if model.managingExtension(for: .cards) == nil {
-                                ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
-                            }
+                            ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
+                            ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
+                            ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
                         }
                         TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                     }
                 }
 
-                // An extension that took addresses or cards over, but not passwords, which the
-                // Password Manager section above doesn't mention.
-                ForEach(model.extensionsManagingOnlyAddressesOrCards, id: \.identifier) { managingExtension in
-                    PreferencePaneSection(UserText.autofillAskToSave) {
-                        managingExtensionView(managingExtension)
-                    }
-                }
-
                 // SECTION 3: Reset excluded (aka never prompt to save) sites:
                 // This is only displayed if the user has never prompt sites saved & not using Bitwarden
-                if model.hasNeverPromptWebsites && model.passwordManager == .duckduckgo {
+                // or an extension, since DuckDuckGo saves nothing then
+                if model.hasNeverPromptWebsites && model.passwordManager == .duckduckgo && model.managingExtension == nil {
                     PreferencePaneSection {
                         TextMenuItemHeader(UserText.autofillExcludedSites)
                         TextMenuItemCaption(UserText.autofillExcludedSitesExplanation)
@@ -237,10 +224,9 @@ extension Preferences {
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
         }
 
-        /// An extension that took kinds of autofill data over: who, what, and a way to give them back.
+        /// The extension that took autofill over: who, and a way to give it back.
         @ViewBuilder
         private func managingExtensionView(_ managingExtension: AutofillManagingExtension) -> some View {
-            let kinds = model.kinds(managedBy: managingExtension)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     if let icon = managingExtension.icon {
@@ -250,9 +236,9 @@ extension Preferences {
                     }
                     Text(UserText.autofillManagedByExtension(managingExtension.name))
                 }
-                TextMenuItemCaption(UserText.autofillManagedByExtensionExplanation(managingExtension.name, kinds: kinds))
+                TextMenuItemCaption(UserText.autofillManagedByExtensionExplanation(managingExtension.name))
                 Button(UserText.autofillUseDuckDuckGoInstead) {
-                    model.useDuckDuckGoInstead(for: kinds)
+                    model.useDuckDuckGoInstead()
                 }
             }
         }

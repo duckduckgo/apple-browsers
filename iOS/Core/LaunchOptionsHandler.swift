@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import Configuration
 import Persistence
 import PrivacyConfig
 import Common
@@ -104,11 +103,6 @@ public final class LaunchOptionsHandler {
         let port = userDefaults.integer(forKey: Self.automationPort)
         guard UInt16(exactly: port) != nil, port > 0 else { return nil }
         return port
-    }
-
-    /// `-privacyConfigURL <url>`. Applied for internal users only.
-    public var privacyConfigurationOverride: PrivacyConfigurationOverrideCommand? {
-        PrivacyConfigurationOverrideCommand(userDefaults: userDefaults)
     }
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)

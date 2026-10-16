@@ -18,7 +18,6 @@
 //
 
 import XCTest
-import Configuration
 @testable import Core
 import Persistence
 import PrivacyConfig
@@ -426,28 +425,6 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
         configStore.removePersistentDomain(forName: "testing_configRollout")
-    }
-
-    // MARK: - privacyConfigURL
-
-    func testPrivacyConfigurationOverrideReadsURLLaunchArgument() {
-        userDefaults.set("http://localhost:8080/ios-config.json", forKey: "privacyConfigURL")
-        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
-
-        XCTAssertEqual(sut.privacyConfigurationOverride, .set(URL(string: "http://localhost:8080/ios-config.json")!))
-    }
-
-    func testPrivacyConfigurationOverrideIgnoresInvalidLaunchArgument() {
-        userDefaults.set("not a url", forKey: "privacyConfigURL")
-        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
-
-        XCTAssertNil(sut.privacyConfigurationOverride)
-    }
-
-    func testPrivacyConfigurationOverrideIsNilWithoutLaunchArgument() {
-        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
-
-        XCTAssertNil(sut.privacyConfigurationOverride)
     }
 
 }

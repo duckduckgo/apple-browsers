@@ -134,6 +134,34 @@ final class ChatExporterTests: XCTestCase {
         XCTAssertFalse(content.contains("secret"), "reasoning text is omitted")
     }
 
+    func testDiscussion_canonicalContentParts_renderUserAndAssistantText() throws {
+        // Canonical chats store every message's text as `content` parts instead of a string.
+        let json = """
+            {
+              "version": "1.2",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"id":"m1","role":"user","createdAt":"2026-05-15T14:00:00.000Z","content":[
+                  {"type":"text","text":"hi"}
+                ]},
+                {"id":"m2","role":"assistant","createdAt":"2026-05-15T14:00:01.000Z","content":[
+                  {"type":"reasoning-progress","id":"r1","partIndex":0,"text":"secret","complete":true},
+                  {"type":"text","text":"Ass"},
+                  {"type":"text","text":"uming you mean a dog breed."}
+                ]}
+              ]
+            }
+            """
+
+        let result = try exporter.export(rawJson: Data(json.utf8), chatType: .discussion, modelDisplay: gpt5MiniDisplay)
+
+        guard case .text(let content) = result else {
+            XCTFail("Expected `.text`, got \(result)"); return
+        }
+        XCTAssertTrue(content.contains("4:00:00 PM:\nhi\n\nGPT-5 mini:\nAssuming you mean a dog breed."))
+        XCTAssertFalse(content.contains("secret"), "reasoning text is omitted")
+    }
+
     // MARK: - Voice
 
     func testVoice_assistantPrefix_isTheLiteralVoiceChatLabel() throws {

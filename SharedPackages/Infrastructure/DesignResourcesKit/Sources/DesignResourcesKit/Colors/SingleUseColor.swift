@@ -82,6 +82,12 @@ public enum SingleUseColor {
     /// Native voice-mode chrome (header + status strip) background, matching the web voice background.
     case duckAIVoiceModeBackground
 
+    /// Fill over the frosted module background on the redesigned New Tab Page, tinted toward its pond background image.
+    case newTabPageModuleTint
+
+    /// Search input card on the redesigned New Tab Page; navy in dark mode to match its pond background image.
+    case newTabPageSearchCardBackground
+
     /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline
     case confettiMandarinFill
     case confettiMandarinStroke

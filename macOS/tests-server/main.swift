@@ -270,6 +270,9 @@ server.middleware = [{ request in
             return UInt8(truncatingIfNeeded: v)
         }
 
+        // Optional ?throttle=20MB caps the transfer rate (bytes per second) so a download stays in progress on fast machines
+        let bytesPerSecond = params["throttle"].flatMap { parseSizeString($0) }
+
         func writeBytes(writer: HttpResponseBodyWriter, start: Int64, length: Int64) {
             Logger.testsServer.info("download writing \(length, privacy: .public) bytes from offset \(start, privacy: .public)")
             let chunkSize = 64 * 1024
@@ -284,6 +287,9 @@ server.middleware = [{ request in
                 do {
                     try writer.write(Data(bytes: buffer, count: toWrite))
                     written += Int64(toWrite)
+                    if let bytesPerSecond, bytesPerSecond > 0 {
+                        Thread.sleep(forTimeInterval: Double(toWrite) / Double(bytesPerSecond))
+                    }
                 } catch {
                     Logger.testsServer.error(
                         "🔴 download write failed after \(written, privacy: .public) bytes: \(error.localizedDescription, privacy: .public)")

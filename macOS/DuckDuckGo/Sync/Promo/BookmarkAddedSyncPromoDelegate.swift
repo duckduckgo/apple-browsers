@@ -116,7 +116,7 @@ final class BookmarkAddedSyncPromoDelegate: InternalPromoDelegate, SyncDeviceBut
         guard authState == .active || authState == .addingNewDevice, didStartSetupFromPromo else { return }
         // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
         didStartSetupFromPromo = false
-        recordResult(PromoServiceFactory.bookmarkAddedSyncPromoID, .actioned)
+        recordResult(PromoServiceFactory.bookmarkAddedSyncPromoID, .actioned())
     }
 
     // MARK: - Promo queue display

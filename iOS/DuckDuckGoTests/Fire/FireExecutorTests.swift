@@ -983,6 +983,24 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertNotNil(eventData.clearAIChatHistoryWarmupWaitMilliseconds)
     }
 
+    func testWhenDataIsBurnedThenWideEventRecordsTheWebsiteDataWarmupAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.warmUpWebsiteDataStoreDuration?.end)
+    }
+
+    func testWhenBurnFinishesThenWideEventRecordsTheAppSwitcherSnapshotClearingAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAppSwitcherSnapshotsDuration?.end)
+    }
+
     func testWhenAIChatClearSucceededFirstTimeThenWideEventRecordsNoRetry() async throws {
         mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
         let executor = makeFireExecutor()

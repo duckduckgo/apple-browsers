@@ -346,6 +346,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeFieldBackground: return fireModeFieldBackground
         case .duckAIVoiceCellBackground: return duckAIVoiceCellBackground
         case .duckAIVoiceModeBackground: return duckAIVoiceModeBackground
+        case .newTabPageModuleTint:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.03), darkColor: .tint(0.06))
+        case .newTabPageSearchCardBackground:
+            return DynamicColor(lightColor: surfaceSecondary.lightColor, darkColor: RebrandingColor.Pondwater.pondwater100)
         case .confettiMandarinFill:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
         case .confettiMandarinStroke:

@@ -117,6 +117,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         UserText.creditCardsLimitExceededAction
     }
 
+    var isUserAuthenticationPromptNeeded: Bool {
+        !(userSession.isSessionValid && userAuthenticator.state == .loggedIn)
+    }
+
     func authenticateUser() async throws {
         return try await withCheckedThrowingContinuation { continuation in
             authenticateUser { error in
@@ -464,6 +468,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .anotherDevicePromptDismissed:
             pixelFiring?.fire(Pixel.Event.settingsSyncAnotherDevicePromptDismissed,
                               options: .parameters(uiVersionParameters))
+        case .authenticationResult(let result, let source):
+            pixelFiring?.fire(SyncSetupAuthenticationPixel.result(result, source: source))
         }
     }
 

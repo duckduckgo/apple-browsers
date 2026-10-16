@@ -1,0 +1,10 @@
+{
+    "swipe-tabs_stuck_swipe_recovered": {
+        "description": "Fires when a tab swipe on the address bar is released without deceleration, e.g. dragged back to the start. This used to leave the swipe overlay stuck on screen.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-11-20"
+    }
+}

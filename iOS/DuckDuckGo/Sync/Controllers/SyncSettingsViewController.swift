@@ -374,6 +374,14 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
             completion?()
             return
         }
+        guard !presentedViewController.isBeingDismissed else {
+            if let transitionCoordinator = presentedViewController.transitionCoordinator {
+                transitionCoordinator.animate(alongsideTransition: nil) { _ in completion?() }
+            } else {
+                completion?()
+            }
+            return
+        }
         presentingViewController.dismiss(animated: true, completion: completion)
     }
 
@@ -451,11 +459,31 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         guard let pairingInfo = self.pairingInfo else { return }
         Task {
             do {
-                try await authenticateUser()
+                try await authenticateUserForDeepLink()
                 await connectionController.startPairingMode(pairingInfo)
             }
         }
         self.pairingInfo = nil
+    }
+
+    private func authenticateUserForDeepLink() async throws {
+        let isPromptNeeded = isUserAuthenticationPromptNeeded
+        do {
+            try await authenticateUser()
+            if isPromptNeeded {
+                fireSyncSetupPixel(event: .authenticationResult(.succeeded, source: .deepLink))
+            }
+        } catch {
+            if isPromptNeeded {
+                let result: SyncSettingsViewModel.SetupAuthenticationResult
+                switch error as? SyncSettingsViewModel.UserAuthenticationError {
+                case .authUnavailable: result = .unconfigured
+                case .authFailed, nil: result = .failed
+                }
+                fireSyncSetupPixel(event: .authenticationResult(result, source: .deepLink))
+            }
+            throw error
+        }
     }
 
     private func startPairingV2DeepLink(_ pairingInfo: PairingInfo) {
@@ -463,7 +491,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
         Task {
             do {
-                try await authenticateUser()
+                try await authenticateUserForDeepLink()
             } catch {
                 return
             }

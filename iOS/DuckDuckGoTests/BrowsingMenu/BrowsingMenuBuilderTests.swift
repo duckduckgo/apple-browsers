@@ -543,8 +543,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             SitePermissionsDependencies(
                 store: store,
                 systemPermissionClient: SystemPermissionClient(
-                    locationManager: CLLocationManager(),
-                    locationServicesEnabled: { false },
+                    locationManager: DeniedLocationManager(),
                     avAuthorizationStatus: { _ in .authorized },
                     avRequestAccess: { _, completion in completion(true) },
                     notificationCenter: NotificationCenter()
@@ -686,6 +685,11 @@ private extension BrowsingMenuEntry {
     static func named(_ name: String) -> BrowsingMenuEntry {
         .regular(name: name, image: UIImage(), action: {})
     }
+}
+
+private final class DeniedLocationManager: CLLocationManager {
+
+    override var authorizationStatus: CLAuthorizationStatus { .denied }
 }
 
 private final class SitePermissionsMenuURLWebView: WKWebView {

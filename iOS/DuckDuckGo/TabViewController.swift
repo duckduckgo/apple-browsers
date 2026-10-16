@@ -4777,7 +4777,8 @@ extension TabViewController: WKUIDelegate {
     // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
     @objc(_webViewWebProcessDidBecomeUnresponsive:)
     func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
-        guard webView === self.webView else { return }
+        // A page showing alert(), confirm() or prompt() cannot answer WebKit either, but it is waiting on the user.
+        guard webView === self.webView, jsAlertView?.isShown != true else { return }
         freezeMonitor.didBecomeUnresponsive(freezePageContext(for: webView))
     }
 

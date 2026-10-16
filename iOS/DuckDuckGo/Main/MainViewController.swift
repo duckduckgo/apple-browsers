@@ -7460,6 +7460,7 @@ extension MainViewController: TabDelegate {
                                               inheritedAttribution: inheritingAttribution)
         newTab.openedByPage = true
         newTab.openingTab = tab
+        newTab.tabModel.duckAIEntrySource = reportDuckAIEntryForPageOpenedWindow(navigationAction, from: tab)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
         newTabAnimation {
@@ -7588,13 +7589,16 @@ extension MainViewController: TabDelegate {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        if !openedByPage {
+            recordUserOpenedTab()
+        }
         openNewTab(from: tab, url: url, openedByPage: openedByPage, inheritedAttribution: attribution)
     }
 
     func tab(_ tab: TabViewController,
              didRequestNewTabForFollowedLink url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        // A Duck.ai link opened in a new tab is still a followed link from this page.
+        // A link opened in a new tab is the user acting on the page, so the return session goes on.
         let entrySource = AIChatEntryPointSource.forInPageNavigation(from: tab.url, to: url, isLinkActivation: true)
         if let entrySource {
             reportDuckAIInPageEntry(entrySource, to: url, opensNewTab: true)
@@ -7606,6 +7610,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource?) {
+        recordUserOpenedTab()
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
         }
@@ -7626,6 +7631,18 @@ extension MainViewController: TabDelegate {
         }
     }
 
+    /// A `target=_blank` link or `window.open` into Duck.ai; the new tab has no page of its own to attribute it.
+    private func reportDuckAIEntryForPageOpenedWindow(_ navigationAction: WKNavigationAction,
+                                                      from tab: TabViewController) -> AIChatEntryPointSource? {
+        guard let url = navigationAction.request.url,
+              let entrySource = AIChatEntryPointSource.forInPageNavigation(
+                from: tab.url, to: url, isLinkActivation: navigationAction.navigationType == .linkActivated) else {
+            return nil
+        }
+        reportDuckAIInPageEntry(entrySource, to: url, opensNewTab: true)
+        return entrySource
+    }
+
     private func reportDuckAIInPageEntry(_ entrySource: AIChatEntryPointSource, to url: URL, opensNewTab: Bool) {
         fireAIChatEntryPointPixel(source: entrySource, opensNewTab: opensNewTab, hasPrompt: url.carriesDuckAIPrompt)
         if entrySource.isFollowedLink {
@@ -7638,9 +7655,7 @@ extension MainViewController: TabDelegate {
                             openedByPage: Bool,
                             inheritedAttribution attribution: AdClickAttributionLogic.State?,
                             completion: ((Tab) -> Void)? = nil) {
-        // A link that opens a tab is the user acting on the page, so it doesn't end the return session.
         if !openedByPage {
-            recordUserOpenedTab()
             recordDuckAISessionPendingExit(.newTabOpened)
         }
         _ = findInPageView?.resignFirstResponder()

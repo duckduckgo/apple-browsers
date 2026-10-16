@@ -3091,13 +3091,15 @@ extension TabViewController: WKNavigationDelegate {
             // The retry doesn't wait for the page to draw, which a frozen page never does.
             var result = WebContentHealthPixel.SnapshotResult.success
             let retrySnapshot = snapshot(afterScreenUpdates: false)
-            let attempts = [snapshot(afterScreenUpdates: true), { finish in
+            let retry: (@escaping (UIImage?) -> Void) -> Void = { finish in
                 result = .retryTimeout
                 retrySnapshot { image in
                     result = image == nil ? .retryNoImage : .retryImage
                     finish(image)
                 }
-            }]
+            }
+            // Skip normal snapshot if WebKit already reported as unresponsive, cause we assume it'll timeout
+            let attempts = freezeMonitor.isFrozen ? [retry] : [snapshot(afterScreenUpdates: true), retry]
             WebViewPreviewSnapshotPolicy.capture(attempts: attempts) { image in
                 completion(image, result)
             }

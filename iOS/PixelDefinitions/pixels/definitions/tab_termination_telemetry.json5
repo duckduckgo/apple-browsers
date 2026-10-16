@@ -214,7 +214,7 @@
         ]
     },
     "web-content_preview-snapshot-timeout": {
-        "description": "Fires when opening the tab switcher waited longer than the timeout for the current page's preview snapshot, which a frozen page never draws. Counts users stuck on a frozen page whether or not WebKit reported it, including those who never reloaded.",
+        "description": "Fires when opening the tab switcher waited longer than the timeout for the current page's preview snapshot, which a frozen page never draws. Counts users stuck on a frozen page whether or not WebKit reported it, including those who never reloaded. On a page WebKit has already reported as unresponsive the first snapshot is skipped and the fallback runs at once; the pixel still fires, with unresponsive=true.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

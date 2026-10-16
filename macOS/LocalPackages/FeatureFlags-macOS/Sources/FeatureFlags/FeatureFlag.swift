@@ -907,7 +907,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
         case .aiChatPageContextAutoAttach:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
         case .updatedCreateImage:

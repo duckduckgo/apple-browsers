@@ -39,7 +39,7 @@ struct TokenBackupStore {
         self.now = now
     }
 
-    /// Whether a refresh of `primary` should also mint a new backup.
+    /// Whether a refresh of `primary` should also mint a new backup. Expiry and age are both measured with `now`.
     /// - Parameter primary: The token container about to be refreshed.
     /// - Returns: `true` when there is no backup, or the stored one is expired, belongs to another account than `primary`,
     ///   or was issued more than `maxAge` ago. `false` when the backup is still usable or reading it fails.
@@ -52,9 +52,10 @@ struct TokenBackupStore {
             return false
         }
         guard let backup else { return true }
-        if backup.decodedRefreshToken.isExpired() { return true }
+        let now = now()
+        if backup.decodedRefreshToken.expirationDate <= now { return true }
         if backup.decodedAccessToken.externalID != primary.decodedAccessToken.externalID { return true }
-        return now().timeIntervalSince(backup.decodedRefreshToken.issuedAtDate) > maxAge
+        return now.timeIntervalSince(backup.decodedRefreshToken.issuedAtDate) > maxAge
     }
 
     /// Stores `backup`, replacing any previous one. A failure is logged and otherwise ignored.

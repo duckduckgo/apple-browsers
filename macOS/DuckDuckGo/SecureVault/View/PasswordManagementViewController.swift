@@ -43,9 +43,10 @@ protocol PasswordManagementDelegate: AnyObject {
 
 final class PasswordManagementViewController: NSViewController {
 
-    static func create(pinningManager: PinningManager) -> Self {
+    static func create(pinningManager: PinningManager, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> Self {
         let controller = Self(nibName: nil, bundle: nil)
         controller.pinningManager = pinningManager
+        controller.pixelFiring = pixelFiring
         // Calling loadView() directly won't send viewDidLoad()
         _ = controller.view
 
@@ -171,6 +172,7 @@ final class PasswordManagementViewController: NSViewController {
     private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
     private let syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
     private let emptyStatePromo: AutofillEmptyStatePromoPresenting = Application.appDelegate.autofillEmptyStatePromoDelegate
+    private var pixelFiring: (any PixelKitFiring)?
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
@@ -800,7 +802,7 @@ final class PasswordManagementViewController: NSViewController {
     @objc func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
         guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
         emptyStatePromo.syncSetupStarted()
         deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in

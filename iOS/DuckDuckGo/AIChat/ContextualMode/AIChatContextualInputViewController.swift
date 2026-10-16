@@ -77,6 +77,8 @@ final class AIChatContextualInputViewController: UIViewController {
         /// A hardware keyboard's shortcuts bar covers less than this, so it never compacts the layout.
         static let compactKeyboardOverlap: CGFloat = 150
         static let startActionsEdgeFadeLength: CGFloat = 24
+        /// Matches the floating chips' fade, so the two sets cross.
+        static let floatingHandOverDuration: TimeInterval = 0.18
         static let iPadBottomPadding: CGFloat = 16
         static let dimmedStartActionsAlpha: CGFloat = 0.4
     }
@@ -737,7 +739,7 @@ private extension AIChatContextualInputViewController {
             floatingSuggestionsView.hide(animated: animatesFloatingSuggestions, to: targetFrames) { [weak self] in
                 guard let self, isLandingFloatingSuggestions else { return }
                 isLandingFloatingSuggestions = false
-                updateStartActionsVisibility()
+                UIView.animate(withDuration: Constants.floatingHandOverDuration) { self.updateStartActionsVisibility() }
             }
         }
         guard wasCompact != isCompactLayout else {

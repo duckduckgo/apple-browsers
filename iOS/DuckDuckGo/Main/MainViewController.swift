@@ -3559,8 +3559,9 @@ class MainViewController: UIViewController {
 
     /// - Parameter animated: animate the UTI collapse; pass `false` when a full-screen surface (tab switcher / new tab) immediately follows.
     func dismissOmniBar(animated: Bool = true) {
-        hideSuggestionTray()
+        // Teardown first: hiding the tray reports a content change that would re-present a still-current surface.
         teardownPopoverSuggestions()
+        hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
         deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()

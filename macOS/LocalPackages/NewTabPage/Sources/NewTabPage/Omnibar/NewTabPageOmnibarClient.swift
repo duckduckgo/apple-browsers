@@ -201,7 +201,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
-            screenshotModes: screenshotProvider?.screenshotModes
+            screenshotModes: screenshotProvider?.screenshotModes,
+            enablePastedAttachments: screenshotProvider?.enablePastedAttachments
         )
     }
 
@@ -291,7 +292,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
-            screenshotModes: screenshotProvider?.screenshotModes
+            screenshotModes: screenshotProvider?.screenshotModes,
+            enablePastedAttachments: screenshotProvider?.enablePastedAttachments
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }

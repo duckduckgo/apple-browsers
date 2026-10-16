@@ -48,13 +48,18 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
         return [AIChatScreenshotMode.dragToSelect.rawValue, AIChatScreenshotMode.selectWindowOrDisplay.rawValue]
     }
 
+    var enablePastedAttachments: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpPasteImages)
+    }
+
     /// `map`, not `compactMap` like the neighbouring flag publishers: `nil` (flag off) must reach the
     /// page so an open New Tab Page hides Add Screenshot.
     var configChangesPublisher: AnyPublisher<Void, Never> {
-        featureFlagger.updatesPublisher
-            .map { [weak self] in self?.screenshotModes }
-            .prepend(screenshotModes)
-            .removeDuplicates()
+        let current = (screenshotModes, enablePastedAttachments)
+        return featureFlagger.updatesPublisher
+            .map { [weak self] in (self?.screenshotModes, self?.enablePastedAttachments ?? false) }
+            .prepend(current)
+            .removeDuplicates { $0 == $1 }
             .dropFirst()
             .map { _ in () }
             .eraseToAnyPublisher()

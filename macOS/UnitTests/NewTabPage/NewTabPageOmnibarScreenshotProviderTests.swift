@@ -64,6 +64,23 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     }
 
     @available(macOS 13, *)
+    @Test("Pasted attachments follow their own flag, and flipping it changes the config", .timeLimit(.minutes(1)))
+    func pastedAttachmentsFollowTheirFlag() {
+        let featureFlagger = MockFeatureFlagger()
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, firePixel: { _ in })
+        var changes = 0
+        let cancellable = provider.configChangesPublisher.sink { changes += 1 }
+        #expect(provider.enablePastedAttachments == false)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPasteImages]
+        featureFlagger.triggerUpdate()
+        #expect(provider.enablePastedAttachments == true)
+        #expect(provider.screenshotModes == nil)
+        #expect(changes == 1)
+        cancellable.cancel()
+    }
+
+    @available(macOS 13, *)
     @Test("A capture request with the flag off is a cancel and fires nothing", .timeLimit(.minutes(1)))
     func flagOffCaptureIsACancel() async {
         var pixels: [AIChatPixel] = []

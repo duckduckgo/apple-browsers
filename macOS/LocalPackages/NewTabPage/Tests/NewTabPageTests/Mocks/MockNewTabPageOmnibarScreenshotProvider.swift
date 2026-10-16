@@ -24,11 +24,14 @@ import WebKit
 final class MockNewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProviding {
 
     @Published var screenshotModes: [String]?
+    @Published var enablePastedAttachments = false
     var captureResponse = NewTabPageDataModel.OmnibarCaptureScreenshotResponse.cancelled
     private(set) var requestedModes: [String] = []
 
     var configChangesPublisher: AnyPublisher<Void, Never> {
-        $screenshotModes.dropFirst().map { _ in () }.eraseToAnyPublisher()
+        $screenshotModes.dropFirst().map { _ in () }
+            .merge(with: $enablePastedAttachments.dropFirst().map { _ in () })
+            .eraseToAnyPublisher()
     }
 
     func captureScreenshot(mode: String, requestingWebView: WKWebView?) async -> NewTabPageDataModel.OmnibarCaptureScreenshotResponse {

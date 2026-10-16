@@ -27,7 +27,10 @@ public protocol NewTabPageOmnibarScreenshotProviding: AnyObject {
     /// `nil` omits the field and hides the screenshot UI (flag off).
     var screenshotModes: [String]? { get }
 
-    /// Fires when the modes change, so an open New Tab Page updates without a reload.
+    /// Lets the page attach pasted images and copied files.
+    var enablePastedAttachments: Bool { get }
+
+    /// Fires when the modes or `enablePastedAttachments` change, so an open New Tab Page updates without a reload.
     var configChangesPublisher: AnyPublisher<Void, Never> { get }
 
     /// Replies once the capture is taken, fails or is cancelled, however long the user takes.

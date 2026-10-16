@@ -1349,6 +1349,25 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testGetConfigOmitsEnablePastedAttachmentsWithoutAProvider() async throws {
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertNil(config.enablePastedAttachments)
+    }
+
+    @MainActor
+    func testGetConfigPassesEnablePastedAttachmentsThrough() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        let helper = makeScreenshotClient(provider)
+
+        let off: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        XCTAssertEqual(off.enablePastedAttachments, false)
+
+        provider.enablePastedAttachments = true
+        let on: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        XCTAssertEqual(on.enablePastedAttachments, true)
+    }
+
+    @MainActor
     func testCaptureScreenshotReturnsTheProvidersResponse() async throws {
         let provider = MockNewTabPageOmnibarScreenshotProvider()
         provider.captureResponse = .init(image: .init(data: "AAAA", format: "png", kind: "window"))

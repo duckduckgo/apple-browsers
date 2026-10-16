@@ -311,6 +311,8 @@ public extension NewTabPageDataModel {
         /// Add Screenshot modes in display order (`dragToSelect`, `selectWindowOrDisplay`). Absent hides
         /// the screenshot UI; choosing a mode sends `omnibar_captureScreenshot`.
         var screenshotModes: [String]?
+        /// Lets the page attach pasted images and copied files; absent or `false` keeps a normal paste.
+        var enablePastedAttachments: Bool?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {

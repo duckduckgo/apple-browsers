@@ -61,7 +61,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
             Name.extensionContextErrors, Name.backgroundViewCreateCount, Name.backgroundViewAlive,
             Name.backgroundViewLeakedCount, Name.backgroundWebProcessAlive, Name.tabKnownToWebKit,
             Name.nativeMessageHandlerRegistered, Name.tabControllerMatchesContext, Name.tabHasExtensionUserScripts,
-            Name.backgroundWebProcessResponsive, Name.backgroundGraveyardTreatmentEnabled, Name.backgroundEvents
         ], [
             "context_loaded", "critical_memory_age", "network_restarted",
             "context_errors", "bg_view_creations", "bg_view_alive",
@@ -166,7 +165,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         diagnostics.tabControllerMatchesContext = false
         diagnostics.tabHasExtensionUserScripts = false
         diagnostics.backgroundWebProcessResponsive = false
-        diagnostics.backgroundGraveyardTreatmentEnabled = true
         diagnostics.hasBackgroundLoadError = true
         diagnostics.backgroundLoadErrorAppState = .background
         diagnostics.secondsFromBackgroundViewToLoadError = 30.2
@@ -184,7 +182,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
         XCTAssertEqual(diagnostics.pixelParameters, [
             Name.backgroundWebProcessResponsive: "false",
-            Name.backgroundGraveyardTreatmentEnabled: "true",
             Name.backgroundLoadErrorAppState: "background",
             Name.backgroundLoadErrorAfter: "25s_to_35s",
             Name.applicationState: "inactive",

@@ -328,11 +328,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmInitializationFailed,
-             .cpmMessagingStuck,
-             .cpmMessagingRecoveredWithoutExtensionReload,
-             .cpmMessagingRecoveredAfterExtensionReload,
-             .cpmMessagingExtensionReloadFailed:
+        case .cpmMessagingEpisode:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         }
@@ -350,7 +346,6 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 private extension CPMWebExtensionPixelFrequency {
     var pixelKitFrequency: PixelKit.Frequency {
         switch self {
-        case .daily: return .daily
         case .dailyAndCount: return .dailyAndCount
         }
     }

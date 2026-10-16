@@ -102,8 +102,6 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     // Observed through `CPMBackgroundWebViewDelegateProxy` on the background web view.
     /// `WKWebView._webProcessIsResponsive` for the background view: WebKit's hang-detection verdict at snapshot time.
     public var backgroundWebProcessResponsive: Bool?
-    /// Whether the background-process termination associated with this health episode had treatment enabled.
-    public var backgroundGraveyardTreatmentEnabled: Bool?
     /// App state when the most recent `BackgroundContentFailedToLoad` (error 6) was recorded for this context;
     /// `nil` when none was recorded or the app does not report its state.
     public var backgroundLoadErrorAppState: CPMAppSessionDiagnostics.ApplicationState?
@@ -139,11 +137,9 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         tabControllerMatchesContext: Bool? = nil,
         tabHasExtensionUserScripts: Bool? = nil,
         backgroundWebProcessResponsive: Bool? = nil,
-        backgroundGraveyardTreatmentEnabled: Bool? = nil,
         backgroundEvents: [BackgroundEvent] = []
     ) {
         self.backgroundWebProcessResponsive = backgroundWebProcessResponsive
-        self.backgroundGraveyardTreatmentEnabled = backgroundGraveyardTreatmentEnabled
         self.backgroundEvents = backgroundEvents
         self.extensionContextLoaded = extensionContextLoaded
         self.secondsSinceCriticalMemoryPressure = secondsSinceCriticalMemoryPressure
@@ -177,7 +173,6 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         public static let tabControllerMatchesContext = "tab_controller_match"
         public static let tabHasExtensionUserScripts = "tab_has_ext_scripts"
         public static let backgroundWebProcessResponsive = "bg_process_responsive"
-        public static let backgroundGraveyardTreatmentEnabled = "background_graveyard_enabled"
         public static let backgroundEvents = "bg_events"
         public static let backgroundLoadErrorAppState = "bg_load_error_app_state"
         public static let backgroundLoadErrorAfter = "bg_load_error_after"
@@ -210,7 +205,6 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         parameters[ParameterName.tabControllerMatchesContext] = tabControllerMatchesContext.map(String.init)
         parameters[ParameterName.tabHasExtensionUserScripts] = tabHasExtensionUserScripts.map(String.init)
         parameters[ParameterName.backgroundWebProcessResponsive] = backgroundWebProcessResponsive.map(String.init)
-        parameters[ParameterName.backgroundGraveyardTreatmentEnabled] = backgroundGraveyardTreatmentEnabled.map(String.init)
         if !backgroundEvents.isEmpty {
             parameters[ParameterName.backgroundEvents] = Self.backgroundEventsValue(backgroundEvents)
         }

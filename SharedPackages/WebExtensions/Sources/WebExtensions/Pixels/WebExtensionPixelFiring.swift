@@ -63,62 +63,88 @@ public enum WebExtensionPixelEvent {
     case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 
-    /// CPM did not return dashboard state before a navigation's grace period expired.
-    case cpmInitializationFailed(reason: CPMMessagingFailureReason, diagnostics: CPMMessagingDiagnostics? = nil)
-    /// A later eligible navigation confirmed the preceding initialization failure.
-    case cpmMessagingStuck(reason: CPMMessagingFailureReason, diagnostics: CPMMessagingDiagnostics? = nil)
-    /// CPM messaging recovered without an intervening successful extension reload.
-    case cpmMessagingRecoveredWithoutExtensionReload(from: CPMMessagingRecoverySource, details: CPMMessagingRecoveryDetails? = nil)
-    /// CPM messaging recovered after an embedded-extension reload.
-    case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource, details: CPMMessagingRecoveryDetails? = nil)
-    /// The first CPM measurement using a successful extension-reload generation also failed.
-    case cpmMessagingExtensionReloadFailed
+    /// One terminal report for a failure episode, on a valid dashboard response or the observation deadline.
+    /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
+    case cpmMessagingEpisode(CPMMessagingEpisodeReport)
 }
 
-/// Failure state of the episode immediately before recovery.
-public enum CPMMessagingRecoverySource: String, Sendable {
-    case initializationFailed = "initialization_failed"
-    case messagingStuck = "messaging_stuck"
-}
-
-/// How a recovery was observed: which navigation answered, and how long after the episode's first failure.
-public struct CPMMessagingRecoveryDetails: Equatable, Sendable {
-    public enum Document: String, Sendable {
-        /// The navigation that failed answered after its grace period: the response was late, not lost.
-        case failedNavigation = "failed_navigation"
-        /// A later navigation answered.
-        case laterNavigation = "later_navigation"
-        /// A response matched an open document but no single tab.
-        case unattributed
+/// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
+public struct CPMMessagingEpisodeReport: Equatable, Sendable {
+    public enum Outcome: String, Sendable {
+        /// A response completed the same measurement that previously timed out.
+        case failedMeasurementResponse = "failed_measurement_response"
+        /// A later measurement on a previously failing tab received a response; the document may differ.
+        case failedTabResponse = "failed_tab_response"
+        /// Another tab answered; this does not prove recovery of the failing tabs.
+        case otherTabResponse = "other_tab_response"
+        /// A response matched multiple current documents and could not be attributed to one tab.
+        case unattributedResponse = "unattributed_response"
+        /// No qualifying response was observed in the bounded window; this does not prove permanent failure.
+        case noResponseBeforeDeadline = "no_response_before_deadline"
     }
 
-    public let document: Document
-    public let secondsSinceFirstFailure: TimeInterval
+    public enum ReloadState: String, Sendable {
+        case none
+        case pending
+        /// The manager could not replace the extension context.
+        case failed
+        /// A replacement context loaded; messaging recovery is reported separately by the outcome.
+        case loaded
+        /// The first eligible measurement after a successful reload also timed out.
+        case responseTimedOut = "response_timed_out"
+    }
 
-    public init(document: Document, secondsSinceFirstFailure: TimeInterval) {
-        self.document = document
-        self.secondsSinceFirstFailure = secondsSinceFirstFailure
+    public let reason: CPMMessagingFailureReason
+    public let wasStuck: Bool
+    public let outcome: Outcome
+    public let reloadState: ReloadState
+    public let secondsToResponse: TimeInterval?
+    public let diagnostics: CPMMessagingDiagnostics?
+
+    public init(reason: CPMMessagingFailureReason, wasStuck: Bool, outcome: Outcome,
+                reloadState: ReloadState, secondsToResponse: TimeInterval?, diagnostics: CPMMessagingDiagnostics?) {
+        self.reason = reason
+        self.wasStuck = wasStuck
+        self.outcome = outcome
+        self.reloadState = reloadState
+        self.secondsToResponse = secondsToResponse
+        self.diagnostics = diagnostics
     }
 
     var pixelParameters: [String: String] {
-        ["recovery_document": document.rawValue, "recovery_after": Self.delayBucket(secondsSinceFirstFailure)]
-    }
-
-    /// A failure is reported 4 s after the navigation finished, so `under_4s` is a response within 8 s of it.
-    static func delayBucket(_ seconds: TimeInterval) -> String {
-        switch seconds {
-        case ..<4: return "under_4s"
-        case ..<10: return "4s_to_10s"
-        case ..<30: return "10s_to_30s"
-        case ..<120: return "30s_to_2m"
-        default: return "over_2m"
+        // Explicit allowlist of first-failure facts and the existing bounded lifecycle timeline.
+        // Later transitions never add a second snapshot or append another timeline to the report.
+        var parameters: [String: String] = [:]
+        parameters["context_loaded"] = diagnostics?.extensionContextLoaded.map(String.init)
+        parameters["bg_view_alive"] = diagnostics?.backgroundWebViewAlive.map(String.init)
+        parameters["bg_process_alive"] = diagnostics?.backgroundWebProcessAlive.map(String.init)
+        parameters["bg_process_responsive"] = diagnostics?.backgroundWebProcessResponsive.map(String.init)
+        parameters["tab_in_context"] = diagnostics?.tabKnownToWebKit.map(String.init)
+        parameters["handler_registered"] = diagnostics?.nativeMessageHandlerRegistered.map(String.init)
+        parameters["tab_controller_match"] = diagnostics?.tabControllerMatchesContext.map(String.init)
+        parameters["tab_has_ext_scripts"] = diagnostics?.tabHasExtensionUserScripts.map(String.init)
+        if let events = diagnostics?.backgroundEvents, !events.isEmpty {
+            parameters["bg_events"] = CPMMessagingDiagnostics.backgroundEventsValue(events)
         }
+        parameters["reason"] = reason.rawValue
+        parameters["was_stuck"] = String(wasStuck)
+        parameters["outcome"] = outcome.rawValue
+        parameters["reload_state"] = reloadState.rawValue
+        if outcome != .noResponseBeforeDeadline, let secondsToResponse {
+            switch secondsToResponse {
+            case ..<30: parameters["response_after"] = "under_30s"
+            case ..<60: parameters["response_after"] = "30s_to_1m"
+            default: parameters["response_after"] = "1m_to_deadline"
+            }
+        }
+        return parameters
     }
 }
 
-/// Reporting cadence shared by both platform CPM pixel adapters.
+/// One logical report per completed episode: `_daily` estimates affected installations per day,
+/// and `_count` counts episodes. PixelKit sends both requests on the first report of the day,
+/// then only `_count`; both legs contain the same terminal summary, not intermediate transitions.
 public enum CPMWebExtensionPixelFrequency: Equatable, Sendable {
-    case daily
     case dailyAndCount
 }
 
@@ -170,26 +196,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     @available(macOS 15.4, iOS 18.4, *)
     public init?(event: WebExtensionPixelEvent) {
         switch event {
-        case .cpmInitializationFailed(let reason, let diagnostics):
-            name = "debug_web_extension_cpm_initialization_failed_after_\(reason.rawValue)"
-            frequency = .daily
-            parameters = diagnostics?.pixelParameters ?? [:]
-        case .cpmMessagingStuck(let reason, let diagnostics):
-            name = "debug_web_extension_cpm_messaging_stuck_\(reason.rawValue)"
+        case .cpmMessagingEpisode(let report):
+            name = "web_extension_cpm_episode"
             frequency = .dailyAndCount
-            parameters = diagnostics?.pixelParameters ?? [:]
-        case .cpmMessagingRecoveredWithoutExtensionReload(let source, let details):
-            name = "debug_web_extension_cpm_messaging_recovered_without_extension_reload"
-            frequency = .dailyAndCount
-            parameters = (details?.pixelParameters ?? [:]).merging(["recovery_from": source.rawValue]) { _, source in source }
-        case .cpmMessagingRecoveredAfterExtensionReload(let source, let details):
-            name = "debug_web_extension_cpm_messaging_recovered_after_extension_reload"
-            frequency = .dailyAndCount
-            parameters = (details?.pixelParameters ?? [:]).merging(["recovery_from": source.rawValue]) { _, source in source }
-        case .cpmMessagingExtensionReloadFailed:
-            name = "debug_web_extension_cpm_messaging_extension_reload_failed"
-            frequency = .dailyAndCount
-            parameters = [:]
+            parameters = report.pixelParameters
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,

@@ -174,12 +174,15 @@ public final class WebExtensionLoader: WebExtensionLoading {
     /// shared by every extension, so each script checks the page's manifest and returns early in our own.
     /// They are only added once a third-party extension loads, so without one, no page ever runs them. They
     /// must be added before the context loads, because a user script only reaches documents created after it.
+    /// Only macOS adds them: Chrome extensions are supported there, and not on iOS.
     @MainActor
     private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
+#if os(macOS)
         if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
             installThirdPartyScriptsIfNeeded(on: controller)
             reportDroppedPermissions(of: context.webExtension)
         }
+#endif
 
         do {
             try controller.load(context)
@@ -189,6 +192,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
     }
 
+    @available(iOS, unavailable)
     private func installThirdPartyScriptsIfNeeded(on controller: WKWebExtensionController) {
         guard !areThirdPartyScriptsInstalled else { return }
         let userContentController = controller.configuration.webViewConfiguration.userContentController
@@ -199,6 +203,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     /// WebKit drops manifest permissions it does not implement; the compatibility log lists them.
+    @available(iOS, unavailable)
     private func reportDroppedPermissions(of webExtension: WKWebExtension) {
         let webKitPermissions = Set(webExtension.requestedPermissions.union(webExtension.optionalPermissions).map(\.rawValue))
         let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: webExtension.manifest,

@@ -32,6 +32,40 @@ protocol AutofillPreferencesPersistor {
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
     var showInMenuBar: Bool { get set }
+    /// The kinds of autofill data an extension has taken over, so DuckDuckGo leaves them alone.
+    /// Only `WebExtensionAutofillTakeover` writes it.
+    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> { get set }
+}
+
+extension AutofillPreferencesPersistor {
+
+    /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
+    /// no extension has taken passwords over.
+    var isUsernamesAndPasswordsAutofillActive: Bool {
+        isAutofillActive(for: .passwords)
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
+    /// has taken addresses over.
+    var isAddressesAutofillActive: Bool {
+        isAutofillActive(for: .addresses)
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
+    /// extension has taken cards over.
+    var isPaymentMethodsAutofillActive: Bool {
+        isAutofillActive(for: .cards)
+    }
+
+    func isAutofillActive(for kind: ExtensionManagedAutofillKind) -> Bool {
+        let isWanted: Bool
+        switch kind {
+        case .passwords: isWanted = askToSaveUsernamesAndPasswords
+        case .addresses: isWanted = askToSaveAddresses
+        case .cards: isWanted = askToSavePaymentMethods
+        }
+        return isWanted && !kindsManagedByExtension.contains(kind)
+    }
 }
 
 enum PasswordManager: String, CaseIterable {
@@ -89,6 +123,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 
     enum Key: String {
         case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
+        case kindsManagedByExtension = "preferences.autofill.kinds-managed-by-extension"
     }
 
     public var isAutoLockEnabled: Bool {
@@ -142,6 +177,16 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
             if oldValue != newValue {
                 NotificationCenter.default.post(name: .autofillShowInMenuBarDidChange, object: nil)
             }
+        }
+    }
+
+    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> {
+        get {
+            let rawValues = (try? keyValueStore.object(forKey: Key.kindsManagedByExtension.rawValue) as? [String]) ?? []
+            return Set(rawValues.compactMap(ExtensionManagedAutofillKind.init(rawValue:)))
+        }
+        set {
+            try? keyValueStore.set(newValue.map(\.rawValue).sorted(), forKey: Key.kindsManagedByExtension.rawValue)
         }
     }
 

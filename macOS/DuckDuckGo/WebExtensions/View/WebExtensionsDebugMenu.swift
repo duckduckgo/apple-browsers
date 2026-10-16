@@ -29,6 +29,10 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
+    /// Whether Bitwarden may be installed, read each time the menu opens.
+    private let isBitwardenEnabled: () -> Bool
+    private let installBitwardenSeparator = NSMenuItem.separator()
+    private let installBitwardenMenuItem = NSMenuItem(title: "Install Bitwarden", action: #selector(WebExtensionsDebugMenu.installBitwarden))
 
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
@@ -39,9 +43,12 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
 
-    init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
+    init(webExtensionManager: WebExtensionManaging,
+         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
+         isBitwardenEnabled: @escaping () -> Bool = { true }) {
         self.webExtensionManager = webExtensionManager
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
+        self.isBitwardenEnabled = isBitwardenEnabled
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -101,11 +108,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         browseItem.target = self
         submenu.addItem(browseItem)
 
-        submenu.addItem(.separator())
+        submenu.addItem(installBitwardenSeparator)
 
-        let bitwardenItem = NSMenuItem(title: "Install Bitwarden", action: #selector(installBitwarden))
-        bitwardenItem.target = self
-        submenu.addItem(bitwardenItem)
+        installBitwardenMenuItem.target = self
+        submenu.addItem(installBitwardenMenuItem)
+        updateInstallBitwardenMenuItem()
 
         return submenu
     }
@@ -121,6 +128,14 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.isEnabled = true
+        updateInstallBitwardenMenuItem()
+    }
+
+    /// The shortcut only opens Bitwarden's Web Store page, which offers no install while Bitwarden is off.
+    private func updateInstallBitwardenMenuItem() {
+        let isHidden = !isBitwardenEnabled()
+        installBitwardenSeparator.isHidden = isHidden
+        installBitwardenMenuItem.isHidden = isHidden
     }
 
     @objc func selectAndLoadWebExtension() {

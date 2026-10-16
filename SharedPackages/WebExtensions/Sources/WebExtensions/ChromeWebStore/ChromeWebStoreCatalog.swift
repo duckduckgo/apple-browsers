@@ -88,9 +88,13 @@ public extension ChromeWebStoreCatalogProviding {
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     private let configurationManager: PrivacyConfigurationManaging
+    private let isBitwardenEnabled: @MainActor () -> Bool
 
-    public init(configurationManager: PrivacyConfigurationManaging) {
+    /// - Parameter isBitwardenEnabled: Whether Bitwarden may be offered, on top of Privacy Config. Read
+    ///   each time the catalog is, so a change applies right away.
+    public init(configurationManager: PrivacyConfigurationManaging, isBitwardenEnabled: @escaping @MainActor () -> Bool = { true }) {
         self.configurationManager = configurationManager
+        self.isBitwardenEnabled = isBitwardenEnabled
     }
 
     public var extensionIDs: [String] {
@@ -108,8 +112,10 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
         // Each extension is its own subfeature, so Privacy Config evaluates its state,
         // rollout and minimum version. Subfeatures this build doesn't know are ignored.
+        let isBitwardenEnabled = isBitwardenEnabled()
         let entries: [(id: String, order: Double)] = ExtensionsCatalogSubfeature.allCases.compactMap { subfeature in
-            guard config.isSubfeatureEnabled(subfeature),
+            guard subfeature != .bitwarden || isBitwardenEnabled,
+                  config.isSubfeatureEnabled(subfeature),
                   let settingsJSON = config.settings(for: subfeature),
                   let data = settingsJSON.data(using: .utf8),
                   let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

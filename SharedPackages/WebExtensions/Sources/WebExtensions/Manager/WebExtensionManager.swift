@@ -137,6 +137,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
     /// The keyboard shortcuts the user picked for extension commands. `nil` without a key-value store.
     public let commandShortcuts: WebExtensionCommandShortcutStore?
+
+    /// The `chrome.privacy.services` values extensions set, which let one take over DuckDuckGo autofill.
+    /// `nil` without a key-value store.
+    public let privacySettings: WebExtensionPrivacySettingsStore?
 #endif
 
     /// Records the Chrome pages extensions try to open, which the browser doesn't have.
@@ -145,6 +149,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
+
+    /// Answers `chrome.privacy.services` calls for extension pages.
+    private let privacyHandler = WebExtensionPrivacyMessageHandler()
 #endif
 
     /// Pixel firing for analytics.
@@ -188,6 +195,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
+                isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
@@ -202,6 +210,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
+        // `chrome.privacy.services` settings are kept by the app, which decides who controls each one.
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            privacyHandler, contentWorld: .page, name: WebExtensionAPIStubScript.privacyMessageHandlerName)
 #endif
 
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -226,6 +237,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.nativeMessagingHandler = nativeMessagingHandler
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
+        self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
 #endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
@@ -241,6 +253,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
         idleHandler.isLoadedExtension = { [weak self] url in
             self?.extensionContext(for: url) != nil
+        }
+
+        privacyHandler.store = privacySettings
+        privacyHandler.extensionIdentifier = { [weak self] url in
+            self?.extensionContext(for: url)?.uniqueIdentifier
+        }
+        // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
+        privacySettings?.canControl = { [weak self] identifier in
+            isAutofillTakeoverEnabled()
+                && self?.context(for: identifier)?.webExtension.declaresPermission(WebExtensionPrivacySettingsStore.permission) == true
         }
 #endif
 
@@ -350,6 +372,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
 #if os(macOS)
                 commandShortcuts?.copyShortcutsForUpdate(from: oldIdentifier, to: identifier)
+                privacySettings?.copySettingsForUpdate(from: oldIdentifier, to: identifier)
 #endif
             }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
@@ -382,6 +405,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
 #if os(macOS)
             commandShortcuts?.removeShortcuts(for: identifier)
+            privacySettings?.removeSettings(for: identifier)
 #endif
             try? storageProvider.removeExtension(identifier: identifier)
 
@@ -431,6 +455,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 #if os(macOS)
         commandShortcuts?.removeShortcuts(for: identifier)
+        privacySettings?.removeSettings(for: identifier)
 #endif
         installationStore.remove(uniqueIdentifier: identifier)
         unloadedExtensionsCache.removeValue(forKey: identifier)
@@ -850,6 +875,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         idleHandler.reply(to: message, replyHandler: replyHandler)
     }
+
+    /// Answers a `chrome.privacy.services` call from an extension page in a tab, where the
+    /// controller's own message handlers are not installed.
+    @MainActor
+    public func handlePrivacyMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        privacyHandler.reply(to: message, replyHandler: replyHandler)
+    }
 #endif
 
     @MainActor
@@ -881,6 +913,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
+#if os(macOS)
+        // Only loaded extensions control settings, so loading or unloading one can change who does.
+        privacySettings?.notifyControlMayHaveChanged()
+#endif
     }
 }
 

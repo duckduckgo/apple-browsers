@@ -18,6 +18,7 @@
 
 import XCTest
 import Combine
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
@@ -30,6 +31,7 @@ final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool = false
     var debugScriptEnabled: Bool = false
     var showInMenuBar: Bool = false
+    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> = []
 }
 
 final class UserAuthenticatorMock: UserAuthenticating {
@@ -145,5 +147,82 @@ final class AutofillPreferencesModelTests: XCTestCase {
                                                  neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
 
         XCTAssertFalse(model.showSyncPromo)
+    }
+
+    // MARK: - Extensions Managing Autofill
+
+    @MainActor
+    func testWhenOneExtensionManagesEverything_ThenItIsShownOnceWithAllKinds() throws {
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+        let takeover = makeTakeover([.passwords: bitwarden, .addresses: bitwarden, .cards: bitwarden])
+
+        let model = try makeModel(takeover: takeover)
+
+        XCTAssertEqual(model.managingExtension(for: .passwords), bitwarden)
+        XCTAssertEqual(model.kinds(managedBy: bitwarden), [.passwords, .addresses, .cards])
+        XCTAssertTrue(model.extensionsManagingOnlyAddressesOrCards.isEmpty)
+    }
+
+    @MainActor
+    func testWhenAnotherExtensionManagesOnlyCards_ThenItIsShownSeparately() throws {
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+        let cardsOnly = AutofillManagingExtension(identifier: "cards", name: "Cards", icon: nil)
+        let takeover = makeTakeover([.passwords: bitwarden, .cards: cardsOnly])
+
+        let model = try makeModel(takeover: takeover)
+
+        XCTAssertEqual(model.kinds(managedBy: bitwarden), [.passwords])
+        XCTAssertEqual(model.extensionsManagingOnlyAddressesOrCards, [cardsOnly])
+    }
+
+    @MainActor
+    func testWhenTheUserUsesDuckDuckGoInstead_ThenEveryKindOfThatExtensionIsGivenBack() throws {
+        var clearedKinds: [ExtensionManagedAutofillKind] = []
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+        let takeover = makeTakeover([.passwords: bitwarden, .cards: bitwarden]) { clearedKinds.append($0) }
+        let model = try makeModel(takeover: takeover)
+
+        model.useDuckDuckGoInstead(for: model.kinds(managedBy: bitwarden))
+
+        XCTAssertEqual(clearedKinds, [.passwords, .cards])
+    }
+
+    @MainActor
+    func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+        var managing: WebExtensionAutofillTakeover.ManagingExtensions = [:]
+        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
+                                                    featureFlagger: MockFeatureFlagger(),
+                                                    notificationCenter: NotificationCenter(),
+                                                    readManagingExtensions: { managing },
+                                                    clearSetting: { _ in })
+        let model = try makeModel(takeover: takeover)
+        XCTAssertNil(model.managingExtension(for: .passwords))
+
+        managing = [.passwords: bitwarden]
+        takeover.refresh()
+        NotificationCenter.default.post(name: .autofillUserSettingsDidChange, object: nil)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertEqual(model.managingExtension(for: .passwords), bitwarden)
+    }
+
+    @MainActor
+    private func makeTakeover(_ managing: WebExtensionAutofillTakeover.ManagingExtensions,
+                              clearSetting: @escaping @MainActor (ExtensionManagedAutofillKind) -> Void = { _ in }) -> WebExtensionAutofillTakeover {
+        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
+                                                    featureFlagger: MockFeatureFlagger(),
+                                                    notificationCenter: NotificationCenter(),
+                                                    readManagingExtensions: { managing },
+                                                    clearSetting: clearSetting)
+        takeover.refresh()
+        return takeover
+    }
+
+    @MainActor
+    private func makeModel(takeover: WebExtensionAutofillTakeover) throws -> AutofillPreferencesModel {
+        try AutofillPreferencesModel(persistor: AutofillPreferencesPersistorMock(), userAuthenticator: UserAuthenticatorMock(),
+                                     neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
+                                     autofillTakeover: takeover)
     }
 }

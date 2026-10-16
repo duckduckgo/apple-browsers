@@ -124,6 +124,9 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
+            isAutofillTakeoverEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionBitwarden)
+            },
             scriptletConfiguration: scriptletConfiguration
         )
 
@@ -131,7 +134,9 @@ enum WebExtensionManagerFactory {
         if buildType.isSparkleBuild {
             manager.chromeWebStore = ChromeWebStoreService(
                 manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isBitwardenEnabled: {
+                    Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                }),
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
             )
         }

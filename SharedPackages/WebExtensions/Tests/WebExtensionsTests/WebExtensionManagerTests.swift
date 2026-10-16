@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import Persistence
 import XCTest
 import WebKit
 import ZIPFoundation
@@ -733,6 +734,55 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
 #if os(macOS)
+    // MARK: - Autofill Takeover Flag
+
+    /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
+    /// off hands autofill back and turning it on again restores what the extension chose.
+    @MainActor
+    func testWhenAutofillTakeoverIsTurnedOffAndOn_ThenAnExtensionsControlFollows() async throws {
+        var isTakeoverEnabled = true
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          eventsListener: eventsListenerMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          isAutofillTakeoverEnabled: { isTakeoverEnabled })
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        let store = try XCTUnwrap(manager.privacySettings)
+        XCTAssertTrue(store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+
+        isTakeoverEnabled = false
+
+        XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
+        XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "bitwarden").levelOfControl, .notControllable)
+        XCTAssertFalse(store.set(false, for: .autofillAddressEnabled, by: "bitwarden"))
+        store.clear(.passwordSavingEnabled, for: "bitwarden")
+
+        isTakeoverEnabled = true
+
+        XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
+    }
+
+    @MainActor
+    func testWhenAnExtensionDoesNotDeclarePrivacy_ThenItCannotTakeOverAutofill() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          eventsListener: eventsListenerMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        _ = try await loadRealContext(identifier: "other", into: manager.controller, permissions: ["storage"])
+        let store = try XCTUnwrap(manager.privacySettings)
+
+        XCTAssertFalse(store.set(false, for: .passwordSavingEnabled, by: "other"))
+        XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
+    }
+
     // MARK: - Zip to Folder Upgrade Tests
 
     /// Existing Dark Reader installs are stored as a zip, which WebKit unzips on the main thread on

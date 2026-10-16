@@ -45,7 +45,7 @@ extension NSAlert {
         return alert
     }
 
-    /// Shown when a Duck.ai screenshot needs Screen Recording and macOS won't prompt again.
+    /// Shown when a Duck.ai screenshot needs Screen Recording, before macOS is asked.
     /// `.OK` opens the Screen Recording pane of System Settings.
     static func screenRecordingPermission() -> NSAlert {
         let alert = NSAlert()

@@ -7224,6 +7224,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         recordNewTabPageSessionMenuEntry { $0.tapCustomize() }
     }
 
+    func newTabPageDidCloseCustomization(_ controller: any NewTabPage) {
+        recordNewTabPageSessionReturn()
+    }
+
     func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         self.onSelectFavorite(favorite)
     }
@@ -7249,7 +7253,11 @@ extension MainViewController: NewTabPageControllerDelegate {
             WidgetCenter.shared.reloadAllTimelines()
             self?.syncService.scheduler.notifyDataChanged()
         }
-        present(AddFavoriteViewController(model: model), animated: true)
+        let addFavoriteViewController = AddFavoriteViewController(model: model)
+        addFavoriteViewController.onDismissed = { [weak self] in
+            self?.recordNewTabPageSessionReturn()
+        }
+        present(addFavoriteViewController, animated: true)
     }
 
     func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {

@@ -179,6 +179,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             guard let self else { return }
             delegate?.newTabPageDidRequestSettings(self)
         }
+        customizationViewController.onDismissed = { [weak self] in
+            guard let self else { return }
+            delegate?.newTabPageDidCloseCustomization(self)
+        }
 
         delegate?.newTabPageDidOpenCustomization(self)
         present(customizationViewController, animated: true)

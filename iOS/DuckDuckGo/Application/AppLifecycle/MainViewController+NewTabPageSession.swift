@@ -191,6 +191,13 @@ extension MainViewController {
         newTabPageSessionInstrumentation.noteUserLeftForAnotherScreen()
     }
 
+    /// Marks that a screen opened over the New Tab Page was dismissed, so inactivity is measured
+    /// from now rather than only from the user's next action.
+    func recordNewTabPageSessionReturn() {
+        guard isNewTabPageVisible else { return }
+        newTabPageSessionInstrumentation.noteUserReturnedFromAnotherScreen()
+    }
+
     /// Ends the visit on the customizable toolbar button doing something other than burning.
     ///
     /// Where it leads is deliberately not distinguished: the button is one slot the user has

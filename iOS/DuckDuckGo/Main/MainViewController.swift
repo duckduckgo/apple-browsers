@@ -3197,6 +3197,7 @@ class MainViewController: UIViewController {
         }
 
         tab.tabModel.openedAfterIdle = false
+        tab.userDidRequestNavigation()
         request()
         lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()
@@ -5834,7 +5835,6 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
-        currentTab?.userDidRequestNavigation()
         // A search submission IS search mode — commit directly (see onPromptSubmitted).
         commitToggleMode(.search)
         if !daxDialogsManager.shouldShowFireButtonPulse {

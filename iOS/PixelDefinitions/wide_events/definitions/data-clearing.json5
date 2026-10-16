@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-data-clearing",
-            "version": "1.4"
+            "version": "1.5"
         },
         "feature": {
             "name": "data-clearing",
@@ -106,6 +106,8 @@
                                 "clear_website_data_fire_mode",
                                 "clear_autoconsent_management_cache_fire_mode",
                                 "forget_text_zoom_fire_mode",
+                                "warm_up_website_data_store",
+                                "clear_app_switcher_snapshots",
                                 "clear_visited_links",
                                 "clear_recently_closed",
                                 "clear_last_session_state",
@@ -279,6 +281,14 @@
                         "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
                     },
                     "forget_text_zoom_fire_mode_error": "dataClearingActionError",
+                    "warm_up_website_data_store_latency_ms": {
+                        "type": "integer",
+                        "description": "How long the Fire waited for website data storage to be ready before clearing it (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_app_switcher_snapshots_latency_ms": {
+                        "type": "integer",
+                        "description": "How long removing the app switcher snapshots took (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
                     "clear_website_data": {
                         "type": "object",
                         "description": "Per-sub-action results for website-data clearing (status, latency, and error for each website-data step).",

@@ -81,6 +81,12 @@ final class DataClearingWideEventService {
         persist()
     }
 
+    /// Ends an action that has no outcome of its own, such as a wait, so it no longer shows as interrupted.
+    func finish(_ action: DataClearingWideEventData.Action) {
+        eventData?[keyPath: action.durationPath]?.complete()
+        persist()
+    }
+
     /// Updates the wide event with an action result.
     ///
     /// Completes the action's duration interval and records success or failure status.

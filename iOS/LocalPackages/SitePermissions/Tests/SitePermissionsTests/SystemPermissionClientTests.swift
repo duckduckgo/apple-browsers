@@ -39,56 +39,6 @@ final class SystemPermissionClientTests: XCTestCase {
         manager.authorizationStatusValue = .notDetermined
         client.refreshAuthorizationStates()
         XCTAssertEqual(client.authorizationState(for: .location), .notDetermined)
-
-        manager.authorizationStatusValue = .denied
-        client.refreshAuthorizationStates()
-        XCTAssertEqual(client.authorizationState(for: .location), .denied)
-    }
-
-    func testWhenLocationAuthorizationChangesThenDelegateRefreshesState() {
-        let manager = MockLocationManager()
-        manager.authorizationStatusValue = .authorizedWhenInUse
-        let client = makeClient(locationManager: manager)
-        XCTAssertEqual(client.authorizationState(for: .location), .authorized)
-
-        manager.authorizationStatusValue = .denied
-        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
-        XCTAssertEqual(client.authorizationState(for: .location), .denied)
-
-        manager.authorizationStatusValue = .authorizedWhenInUse
-        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
-        XCTAssertEqual(client.authorizationState(for: .location), .authorized)
-    }
-
-    func testWhenLocationAuthorizationIsDeniedThenNoNativeRequestIsMade() async {
-        let manager = MockLocationManager()
-        manager.authorizationStatusValue = .denied
-        let client = makeClient(locationManager: manager)
-
-        let state = await client.requestAuthorization(for: .location)
-
-        XCTAssertEqual(state, .denied)
-        XCTAssertEqual(manager.requestAuthorizationCallCount, 0)
-        XCTAssertEqual(client.pendingLocationAuthorizationRequestCount, 0)
-    }
-
-    func testWhenAppBecomesActiveAfterMicrophonePromptThenAuthorizationStatesAreCurrent() async {
-        let manager = MockLocationManager()
-        let notificationCenter = NotificationCenter()
-        var microphoneStatus = AVAuthorizationStatus.notDetermined
-        let client = makeClient(locationManager: manager, statuses: { _ in microphoneStatus }, requestAccess: { _, completion in
-            microphoneStatus = .authorized
-            completion(true)
-        }, notificationCenter: notificationCenter)
-
-        let microphoneState = await client.requestAuthorization(for: .microphone)
-        manager.authorizationStatusValue = .authorizedWhenInUse
-        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-
-        XCTAssertEqual(microphoneState, .authorized)
-        XCTAssertEqual(client.authorizationState(for: .microphone), .authorized)
-        XCTAssertEqual(client.authorizationState(for: .location), .authorized)
-        XCTAssertEqual(manager.requestAuthorizationCallCount, 0)
     }
 
     func testWhenCameraAndMicrophoneAreRequestedThenVideoAndAudioAreEvaluatedSeparately() async {

@@ -916,6 +916,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
+        let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                                  userDefaults: .subs,
+                                                                  field: .backupTokenContainer) { accessType, error in
+            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
 
         let isAuthV2WideEventEnabled = {
 #if DEBUG
@@ -928,7 +933,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                     isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
+                                            backupStorage: backupTokenStorage)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,

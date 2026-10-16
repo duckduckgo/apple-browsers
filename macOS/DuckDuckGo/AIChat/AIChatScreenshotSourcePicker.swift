@@ -92,7 +92,7 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
 
         // Loaded once the panel is on screen, so the Entire Screen preview can leave it out.
         model.excludedWindowIDs.insert(CGWindowID(panel.windowNumber))
-        Task { await model.load() }
+        model.startRefreshing()
     }
 
     func cancel() {
@@ -102,6 +102,7 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
     private func finish(_ finish: AIChatScreenshotSourcePickerModel.Finish) {
         guard let continuation else { return }
         self.continuation = nil
+        model.stopRefreshing()
         panel?.delegate = nil
         panel?.close()
         panel = nil
@@ -158,6 +159,9 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
 
     /// Twice the 200 pt tile, for Retina.
     static let thumbnailMaxPixels: CGFloat = 400
+    /// ponytail: polls, since macOS has no live thumbnails and no notice when another app's window changes;
+    /// a shorter interval costs a capture of every tile each time.
+    static let refreshInterval: UInt64 = 2_000_000_000
 
     @Published var tab: Tab = .window {
         didSet { if tab != oldValue { selectedID = nil } }
@@ -171,7 +175,7 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
 
     var excludedWindowIDs: Set<CGWindowID>
     var onFinish: ((Finish) -> Void)?
-    private var thumbnailTask: Task<Void, Never>?
+    private var refreshTask: Task<Void, Never>?
 
     init(excludedWindowIDs: Set<CGWindowID>) {
         self.excludedWindowIDs = excludedWindowIDs
@@ -185,32 +189,58 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         sources.first { $0.id == selectedID }
     }
 
-    func load() async {
-        let content: SCShareableContent
-        do {
-            content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
-        } catch {
-            let error = error as NSError
-            Logger.aiChat.error("Duck.ai screenshot picker failed to list content: \(error.domain, privacy: .public) \(error.code, privacy: .public)")
-            onFinish?(.failed)
-            return
+    /// Lists windows and displays and takes their thumbnails, then again every `refreshInterval`
+    /// until `stopRefreshing()`, so closed windows leave and changed ones show what they look like now.
+    func startRefreshing() {
+        refreshTask = Task { [weak self] in
+            while let model = self, !Task.isCancelled {
+                do {
+                    try await model.refresh()
+                } catch {
+                    let error = error as NSError
+                    Logger.aiChat.error("Duck.ai screenshot picker failed to list content: \(error.domain, privacy: .public) \(error.code, privacy: .public)")
+                    // Only a picker that never listed anything ends; a later failure keeps the last list.
+                    if model.isLoading { model.onFinish?(.failed) }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: Self.refreshInterval)
+            }
         }
+    }
+
+    func stopRefreshing() {
+        refreshTask?.cancel()
+    }
+
+    /// Each thumbnail stays until its replacement is taken, so tiles don't flash empty.
+    private func refresh() async throws {
+        let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
 
         windows = Self.windowSources(from: content.windows, excluding: excludedWindowIDs)
         let excludedWindows = content.windows.filter { excludedWindowIDs.contains($0.windowID) }
         screens = content.displays.map { Self.screenSource(for: $0, excluding: excludedWindows) }
         isLoading = false
-        loadThumbnails()
+
+        // ponytail: one at a time, windows first, front to back; a task group if the grid fills in too slowly.
+        let sources = windows + screens
+        let ids = Set(sources.map(\.id))
+        thumbnails = thumbnails.filter { ids.contains($0.key) }
+        if let selectedID, !ids.contains(selectedID) {
+            self.selectedID = nil
+        }
+        for source in sources {
+            guard !Task.isCancelled else { return }
+            let image = try? await Self.image(of: source, maxPixels: Self.thumbnailMaxPixels)
+            thumbnails.updateValue(image, forKey: source.id)
+        }
     }
 
     func share(_ id: AIChatScreenshotSource.ID? = nil) {
         guard let source = sources.first(where: { $0.id == (id ?? selectedID) }) else { return }
-        thumbnailTask?.cancel()
         onFinish?(.picked(source))
     }
 
     func cancel() {
-        thumbnailTask?.cancel()
         onFinish?(.cancelled)
     }
 
@@ -231,18 +261,6 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
             size = CGSize(width: size.width * scale, height: size.height * scale)
         }
         return try await AIChatScreenshotStill.capture(source.filter, width: max(1, Int(size.width)), height: max(1, Int(size.height)))
-    }
-
-    /// ponytail: one at a time, windows first, front to back; a task group if the grid fills in too slowly.
-    private func loadThumbnails() {
-        let sources = windows + screens
-        thumbnailTask = Task { [weak self] in
-            for source in sources {
-                guard !Task.isCancelled else { return }
-                let image = try? await Self.image(of: source, maxPixels: Self.thumbnailMaxPixels)
-                self?.thumbnails.updateValue(image, forKey: source.id)
-            }
-        }
     }
 
     /// Normal-level, titled windows other than ours, front to back.

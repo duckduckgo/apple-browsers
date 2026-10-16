@@ -65,6 +65,15 @@ final class TokenBackupStoreTests: XCTestCase {
         XCTAssertTrue(makeStore(storage: storage).needsRenewal(for: primary))
     }
 
+    func testNeedsRenewal_backupExpiredByTheInjectedClock_isTrue() {
+        let issuedAt = Date()
+        let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
+                                                                                                 refreshTokenIssuedAt: issuedAt,
+                                                                                                 refreshTokenExpiresAt: issuedAt.addingTimeInterval(.days(1))))
+
+        XCTAssertTrue(makeStore(storage: storage, now: issuedAt.addingTimeInterval(.days(2))).needsRenewal(for: primary))
+    }
+
     func testNeedsRenewal_backupForAnotherAccount_isTrue() {
         let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "someone-else"))
 

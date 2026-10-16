@@ -2222,9 +2222,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func captureScreenshot(mode: AIChatScreenshotMode) async {
         let restoreSurface = clearSurfaceForScreenshot()
+        // The screenshot lands in the active tab's draft, so switching or closing the tab cancels it.
         let result = await AIChatScreenshotCaptureService.shared.capture(mode: mode,
                                                                           excluding: screenshotExcludedWindows,
-                                                                          returningFocusTo: view.window)
+                                                                          returningFocusTo: view.window,
+                                                                          cancellingOn: omnibarController.activeDraftChangesPublisher)
         restoreSurface()
         handleScreenshotResult(result)
         // The picker and the overlay hand focus back asynchronously, and the prompt bar would read

@@ -68,7 +68,19 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
     func captureScreenshot(mode: String, requestingWebView webView: WKWebView?) async -> NewTabPageDataModel.OmnibarCaptureScreenshotResponse {
         guard screenshotModes != nil, let mode = AIChatScreenshotMode(rawValue: mode) else { return .cancelled }
 
-        let result = await captureService.capture(mode: mode, excluding: [], returningFocusTo: webView?.window)
+        // A window's New Tab Pages share one web view, so the selected tab tells when the asking one is gone.
+        let window = webView?.window
+        let tabs = (window?.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel
+        let tabChanged = tabs?.$selectedTabViewModel
+            .map { $0.map(ObjectIdentifier.init) }
+            .removeDuplicates()
+            .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+        let result = await captureService.capture(mode: mode,
+                                                  excluding: [],
+                                                  returningFocusTo: window,
+                                                  cancellingOn: tabChanged ?? Empty().eraseToAnyPublisher())
         // The page reports taken and its own processing failures; native reports what fails before the page sees an image.
         if let reason = result.failureReason {
             firePixel(.aiChatNtpScreenshotFailed(reason: reason))

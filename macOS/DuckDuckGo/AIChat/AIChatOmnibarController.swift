@@ -321,6 +321,16 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatPasteImages)
     }
 
+    /// Fires when the active draft goes away: another tab is selected, or the active tab closes.
+    var activeDraftChangesPublisher: AnyPublisher<Void, Never> {
+        draftSource.currentDraftStorePublisher
+            .map { $0.map(ObjectIdentifier.init) }
+            .removeDuplicates()
+            .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
     @discardableResult
     func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
         guard !isImageGenerationMode else {

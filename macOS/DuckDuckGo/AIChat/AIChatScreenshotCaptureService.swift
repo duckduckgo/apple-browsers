@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 
 /// The one entry point for Duck.ai screenshots on every surface. One capture at a time, app-wide;
 /// captures stay in memory and never reach disk or the pasteboard.
@@ -27,6 +28,8 @@ final class AIChatScreenshotCaptureService {
 
     private(set) var isCapturing = false
     private let permission: AIChatScreenRecordingPermission
+    private var contextObservation: AnyCancellable?
+    private var dismissCapture: (() -> Void)?
 
     init(permission: AIChatScreenRecordingPermission = AIChatScreenRecordingPermission()) {
         self.permission = permission
@@ -34,26 +37,46 @@ final class AIChatScreenshotCaptureService {
 
     /// - Parameters:
     ///   - windows: our own windows kept out of the picker and the frozen frame.
-    ///   - focusWindow: made key again once the capture ends.
+    ///   - focusWindow: made key again once the capture ends. Closing it cancels the capture.
+    ///   - contextEnded: also cancels the capture, for when the tab that asked goes away.
     func capture(mode: AIChatScreenshotMode,
                  excluding windows: [NSWindow],
-                 returningFocusTo focusWindow: NSWindow?) async -> AIChatScreenshotCaptureResult {
+                 returningFocusTo focusWindow: NSWindow?,
+                 cancellingOn contextEnded: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()) async -> AIChatScreenshotCaptureResult {
         // A second request while one is up (a double pick, or the NTP and the omnibar at once) is dropped.
         guard !isCapturing else { return .cancelled }
 
         isCapturing = true
         defer {
             isCapturing = false
+            contextObservation = nil
+            dismissCapture = nil
             restoreFocus(to: focusWindow)
         }
 
         // Our own picker lists every window, so both modes need Screen Recording.
         guard permission.isGranted() else { return .permissionDenied }
 
-        let windowIDs = windows.map { CGWindowID($0.windowNumber) }
+        // The picker and the overlay are windows of their own, so nothing else closes them with the context.
+        var hasContextEnded = false
+        let windowClosed = focusWindow.map {
+            NotificationCenter.default.publisher(for: NSWindow.willCloseNotification, object: $0).map { _ in () }.eraseToAnyPublisher()
+        } ?? Empty().eraseToAnyPublisher()
+        contextObservation = windowClosed.merge(with: contextEnded).first().sink { [weak self] in
+            hasContextEnded = true
+            self?.dismissCapture?()
+        }
+
+        let result = await captureImage(mode: mode, excludingWindowIDs: windows.map { CGWindowID($0.windowNumber) })
+        return hasContextEnded ? .cancelled : result
+    }
+
+    private func captureImage(mode: AIChatScreenshotMode, excludingWindowIDs windowIDs: [CGWindowID]) async -> AIChatScreenshotCaptureResult {
         switch mode {
         case .selectWindowOrDisplay:
-            switch await AIChatScreenshotSourcePicker(excludingWindowIDs: windowIDs).capture() {
+            let picker = AIChatScreenshotSourcePicker(excludingWindowIDs: windowIDs)
+            dismissCapture = picker.cancel
+            switch await picker.capture() {
             case .cancelled:
                 return .cancelled
             case .failed(let reason):
@@ -63,7 +86,9 @@ final class AIChatScreenshotCaptureService {
             }
 
         case .dragToSelect:
-            switch await AIChatScreenshotRegionCapturer().capture(excludingWindowIDs: windowIDs) {
+            let capturer = AIChatScreenshotRegionCapturer()
+            dismissCapture = capturer.cancel
+            switch await capturer.capture(excludingWindowIDs: windowIDs) {
             case .cancelled:
                 return .cancelled
             case .failed(let reason):

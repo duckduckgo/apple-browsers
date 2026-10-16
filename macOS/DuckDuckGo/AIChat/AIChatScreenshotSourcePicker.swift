@@ -95,6 +95,10 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         Task { await model.load() }
     }
 
+    func cancel() {
+        finish(.cancelled)
+    }
+
     private func finish(_ finish: AIChatScreenshotSourcePickerModel.Finish) {
         guard let continuation else { return }
         self.continuation = nil

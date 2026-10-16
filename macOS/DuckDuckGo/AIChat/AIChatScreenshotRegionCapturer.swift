@@ -65,6 +65,7 @@ final class AIChatScreenshotRegionCapturer {
     private var panels: [AIChatRegionSelectionPanel] = []
     private var continuation: CheckedContinuation<Outcome, Never>?
     private var observers: [(center: NotificationCenter, token: NSObjectProtocol)] = []
+    private var isCancelled = false
 
     func capture(excludingWindowIDs windowIDs: [CGWindowID]) async -> Outcome {
         let frames: [(screen: NSScreen, image: CGImage)]
@@ -73,6 +74,8 @@ final class AIChatScreenshotRegionCapturer {
         } catch {
             return .failed(.failed)
         }
+        // Cancelled while the displays froze: there is no overlay yet for `cancel()` to close.
+        guard !isCancelled else { return .cancelled }
         guard !frames.isEmpty else { return .failed(.unavailable) }
 
         return await withCheckedContinuation { continuation in
@@ -152,6 +155,11 @@ final class AIChatScreenshotRegionCapturer {
         let distributedCenter = DistributedNotificationCenter.default()
         observers.append((distributedCenter, distributedCenter.addObserver(forName: Notification.Name("com.apple.screenIsLocked"),
                                                                            object: nil, queue: .main, using: cancel)))
+    }
+
+    func cancel() {
+        isCancelled = true
+        finish(.cancelled)
     }
 
     /// The result is taken before the panels close, so their resigning key can't turn it into a cancel.

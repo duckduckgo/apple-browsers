@@ -50,6 +50,10 @@ final class AIChatInitialPromptDelivery {
         self.onConsumed = onConsumed
     }
 
+    var hasPendingPrompt: Bool {
+        prompt != nil
+    }
+
     /// The prompt lives only in the recipient's controller, so evicting it loses the prompt. The protection
     /// is bounded so a page that never pulls the prompt doesn't pin its tab in the cache.
     var protectsRecipientFromEviction: Bool {

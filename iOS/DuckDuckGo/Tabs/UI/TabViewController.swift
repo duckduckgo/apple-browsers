@@ -1709,7 +1709,18 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
-        cancelPendingAIChatTabAttachmentPrompt()
+        load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
+    }
+
+    private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
+        if case .available = aiChatContextualAttachMoreTabsFeature.state {
+            if !shouldCancelPendingAIChatTabAttachmentPrompt,
+               initialAIChatTabAttachmentPrompt?.hasPendingPrompt == true {
+                awaitsInitialAIChatTabAttachmentNavigation = true
+            } else {
+                cancelPendingAIChatTabAttachmentPrompt()
+            }
+        }
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1944,7 +1955,7 @@ class TabViewController: UIViewController {
     }
     
     private func reissueNavigationWithSearchHeaderParams(for url: URL) {
-        load(url: url.applyingSearchHeaderParams())
+        load(url: url.applyingSearchHeaderParams(), shouldCancelPendingAIChatTabAttachmentPrompt: false)
     }
     
     private func shouldReissueSearch(for url: URL) -> Bool {
@@ -4958,7 +4969,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
         
         requeryLogic.onRefresh()
         if isError || webView.url == nil, let url = url {
-            load(url: url)
+            load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: webView.url != nil)
         } else {
             reload()
         }

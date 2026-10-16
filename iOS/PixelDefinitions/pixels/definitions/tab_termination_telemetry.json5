@@ -187,6 +187,11 @@
                 "enum": ["foreground", "background"]
             },
             {
+                "key": "left_tab",
+                "description": "Whether the user left the frozen tab or the app during the freeze: WebKit stopped waiting on the page without the page answering, well before the freeze ended",
+                "type": "boolean"
+            },
+            {
                 "key": "surface",
                 "description": "search: DuckDuckGo search results. duckai: Duck.ai. other: any other page",
                 "enum": ["search", "duckai", "other"]

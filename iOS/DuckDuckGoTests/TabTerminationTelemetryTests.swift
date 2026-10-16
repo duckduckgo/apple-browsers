@@ -272,7 +272,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
         XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive-2", "web-content_unresponsive-result"])
         XCTAssertEqual(pixelFiring.calls[1].event.parameters,
-                       ["outcome": "recovered", "duration": "5-15", "attempts": "2", "app_state": "foreground",
+                       ["outcome": "recovered", "duration": "5-15", "attempts": "2", "app_state": "foreground", "left_tab": "false",
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
         XCTAssertEqual(pixelFiring.calls.map { $0.frequency }, [.dailyAndCount, .dailyAndCount])
         XCTAssertFalse(monitor.isFrozen)
@@ -374,6 +374,58 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] ?? $0.event.name }, ["web-content_unresponsive-2", "fire"])
     }
 
+    func testWhenPageRecoversRightAfterResponsiveReportThenUserDidNotLeave() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 5
+        monitor.processDidBecomeResponsive { $0(true) }
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["left_tab"], "false")
+    }
+
+    func testWhenTabIsTornDownRightAfterResponsiveReportThenUserDidNotLeave() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 5
+        monitor.processDidBecomeResponsive { _ in } // Teardown: the page never answers.
+        date += 0.5
+        monitor.end(.closed)
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["left_tab"], "false")
+    }
+
+    func testWhenUserLeavesAndComesBackToCloseTheTabThenLeftTabIsReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 5
+        monitor.processDidBecomeResponsive { _ in } // The app went to the background; the page never answers.
+        date += 30
+        monitor.end(.closed)
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["left_tab"], "true")
+    }
+
+    func testWhenPageRecoversWhileUserIsAwayThenLeftTabIsReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+        var probeCompletion: ((Bool) -> Void)?
+
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 5
+        monitor.processDidBecomeResponsive { probeCompletion = $0 } // The app went to the background.
+        date += 20
+        probeCompletion?(true) // The loop ended while the user was away.
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["outcome"], "recovered")
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["left_tab"], "true")
+    }
+
     func testWhenProcessTerminatesDuringFreezeThenOutcomeIsTerminated() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, applicationState: .background)
@@ -382,7 +434,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
         monitor.end(.terminated)
 
         XCTAssertEqual(pixelFiring.calls.last?.event.parameters,
-                       ["outcome": "terminated", "duration": "0-2", "attempts": "0", "app_state": "background",
+                       ["outcome": "terminated", "duration": "0-2", "attempts": "0", "app_state": "background", "left_tab": "false",
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
     }
 
@@ -465,7 +517,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
         XCTAssertEqual(launchPixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive-result"])
         XCTAssertEqual(launchPixelFiring.calls[0].event.parameters,
-                       ["outcome": "app-ended", "duration": "15-30", "attempts": "1", "app_state": "background",
+                       ["outcome": "app-ended", "duration": "15-30", "attempts": "1", "app_state": "background", "left_tab": "true",
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
     }
 
@@ -483,7 +535,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
                                                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabTerminationTelemetry]))
 
         XCTAssertEqual(launchPixelFiring.calls.last?.event.parameters,
-                       ["outcome": "app-ended", "duration": "unknown", "attempts": "0", "app_state": "foreground",
+                       ["outcome": "app-ended", "duration": "unknown", "attempts": "0", "app_state": "foreground", "left_tab": "false",
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
     }
 

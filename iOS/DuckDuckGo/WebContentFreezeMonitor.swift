@@ -131,7 +131,11 @@ final class WebContentFreezeMonitor: NSObject {
     /// WebKit reports a hang 3 seconds after the message it is waiting on, so an attempt this recent is the one that
     /// triggered the report and marks when the user actually got stuck; the extra second covers a late callback.
     private static let attemptWindow: TimeInterval = 4
+    /// A "responsive" callback that does not end the freeze within this time was not a recovery: the user left the
+    /// tab or the app.
+    private static let leaveThreshold: TimeInterval = 2
     private var lastAttemptDate: Date?
+    private var lastResponsiveDate: Date?
     private var startDate: Date?
     private var context: WebContentHealthPixel.PageContext?
     private var attempts = 0
@@ -189,6 +193,7 @@ final class WebContentFreezeMonitor: NSObject {
     /// goes to the background, so recovery counts only once the page answers a trivial script.
     func processDidBecomeResponsive(probe: (@escaping (Bool) -> Void) -> Void) {
         guard isFrozen else { return }
+        lastResponsiveDate = date()
         let probedFreeze = startDate
         probe { [weak self] answered in
             guard answered, let self, startDate == probedFreeze else { return }
@@ -205,10 +210,13 @@ final class WebContentFreezeMonitor: NSObject {
         self.startDate = nil
         notificationCenter.removeObserver(self)
         let duration = DurationBucket(seconds: date().timeIntervalSince(startDate))
+        let leftTab = lastResponsiveDate.map { date().timeIntervalSince($0) > Self.leaveThreshold } ?? false
+        lastResponsiveDate = nil
         pixelFiring?.fire(WebContentHealthPixel.unresponsiveResult(outcome: outcome,
                                                                    duration: duration,
                                                                    attempts: AttemptsBucket(attempts),
                                                                    appState: appState,
+                                                                   leftTab: leftTab,
                                                                    context: context),
                           frequency: .dailyAndCount)
     }
@@ -231,6 +239,7 @@ final class WebContentFreezeMonitor: NSObject {
             return
         }
         let backgroundDate = record.backgroundDate
+        let isBackground = backgroundDate != nil
         let attempts = record.attempts
         record.clear()
         guard featureFlagger.isFeatureOn(.tabTerminationTelemetry) else { return }
@@ -238,7 +247,8 @@ final class WebContentFreezeMonitor: NSObject {
         pixelFiring?.fire(WebContentHealthPixel.unresponsiveResult(outcome: .appEnded,
                                                                    duration: duration,
                                                                    attempts: AttemptsBucket(attempts),
-                                                                   appState: backgroundDate == nil ? "foreground" : "background",
+                                                                   appState: isBackground ? "background" : "foreground",
+                                                                   leftTab: isBackground,
                                                                    context: context),
                           frequency: .dailyAndCount)
     }

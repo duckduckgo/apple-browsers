@@ -417,6 +417,7 @@ enum WebContentHealthPixel: PixelKit.Event {
                             duration: WebContentFreezeMonitor.DurationBucket,
                             attempts: WebContentFreezeMonitor.AttemptsBucket,
                             appState: String,
+                            leftTab: Bool,
                             context: PageContext)
     case previewSnapshotTimeout(result: SnapshotResult, unresponsive: Bool, appState: String)
 
@@ -435,11 +436,12 @@ enum WebContentHealthPixel: PixelKit.Event {
             return ["outcome": outcome.rawValue, "recovery": recovery.rawValue]
         case .unresponsive(let context, let appState):
             return context.parameters.merging(["app_state": appState]) { $1 }
-        case .unresponsiveResult(let outcome, let duration, let attempts, let appState, let context):
+        case .unresponsiveResult(let outcome, let duration, let attempts, let appState, let leftTab, let context):
             return context.parameters.merging(["outcome": outcome.rawValue,
                                                "duration": duration.rawValue,
                                                "attempts": attempts.rawValue,
-                                               "app_state": appState]) { $1 }
+                                               "app_state": appState,
+                                               "left_tab": String(leftTab)]) { $1 }
         case .previewSnapshotTimeout(let result, let unresponsive, let appState):
             return ["result": result.rawValue, "unresponsive": String(unresponsive), "app_state": appState]
         }

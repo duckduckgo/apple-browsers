@@ -22,17 +22,8 @@ import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
-protocol AutofillEmptyStatePromoPresenting: AnyObject {
-    var isPromoActive: Bool { get }
-    var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
-    @MainActor func importStarted()
-    @MainActor func importFinished()
-    @MainActor func syncSetupStarted()
-    @MainActor func syncSetupFinished()
-}
-
 /// Shows the import/sync CTAs of the Passwords panel empty states through the promo queue.
-final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, AutofillEmptyStatePromoPresenting {
+final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncEmptyStatePromoPresenting {
 
     private let featureFlagger: FeatureFlagger
     private let isAnyCategoryEmptyProvider: () -> Bool

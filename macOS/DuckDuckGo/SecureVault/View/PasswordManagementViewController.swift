@@ -171,7 +171,7 @@ final class PasswordManagementViewController: NSViewController {
 
     private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
     private let syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
-    private let emptyStatePromo: AutofillEmptyStatePromoPresenting = Application.appDelegate.autofillEmptyStatePromoDelegate
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting = Application.appDelegate.autofillEmptyStatePromoDelegate
     private var pixelFiring: (any PixelKitFiring)?
 
     private let emailManager = EmailManager()

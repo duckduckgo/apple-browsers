@@ -764,6 +764,8 @@
 		9F387DDF2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
 		9F387DE02EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
 		9F387DE62EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */; };
+		9779792DA0E1FBC83614599A /* PromptExposureReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D8842091A128B60F2A2F832 /* PromptExposureReporterTests.swift */; };
+		0DEF4580CDFED306C0BFCC93 /* PromptExposurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28860B1AE6C68B7AEA08496 /* PromptExposurePixelTests.swift */; };
 		9F387DE82EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */; };
 		9F387DE92EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */; };
 		9F387DEA2EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */; };
@@ -1964,6 +1966,8 @@
 		9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManagerTests.swift; sourceTree = "<group>"; };
 		9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownMocks.swift; sourceTree = "<group>"; };
 		9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerTests.swift; sourceTree = "<group>"; };
+		4D8842091A128B60F2A2F832 /* PromptExposureReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptExposureReporterTests.swift; sourceTree = "<group>"; };
+		B28860B1AE6C68B7AEA08496 /* PromptExposurePixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptExposurePixelTests.swift; sourceTree = "<group>"; };
 		9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptProvider.swift; sourceTree = "<group>"; };
 		9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptPresenter.swift; sourceTree = "<group>"; };
 		9F387DF22EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerIntegrationTests.swift; sourceTree = "<group>"; };
@@ -4291,6 +4295,8 @@
 				9F387E052EA9A1D8006861F8 /* Providers */,
 				806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */,
 				9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */,
+				4D8842091A128B60F2A2F832 /* PromptExposureReporterTests.swift */,
+				B28860B1AE6C68B7AEA08496 /* PromptExposurePixelTests.swift */,
 				806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */,
 				B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */,
 				B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */,
@@ -6453,6 +6459,8 @@
 				98E563122DE8AF3100E6E75F /* CombineTestUtilities.swift in Sources */,
 				98E563162DE8AF3100E6E75F /* TestDataLoader.swift in Sources */,
 				9F387DE62EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift in Sources */,
+				9779792DA0E1FBC83614599A /* PromptExposureReporterTests.swift in Sources */,
+				0DEF4580CDFED306C0BFCC93 /* PromptExposurePixelTests.swift in Sources */,
 				B6A7C21A31A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift in Sources */,
 				B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */,
 				B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */,

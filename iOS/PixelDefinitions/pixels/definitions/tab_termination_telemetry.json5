@@ -221,9 +221,9 @@
         "parameters": [
             "appVersion",
             {
-                "key": "retry",
-                "description": "image: the fallback snapshot returned an image. no-image: it returned without one. timeout: it also timed out",
-                "enum": ["image", "no-image", "timeout"]
+                "key": "result",
+                "description": "How the fallback snapshot, which does not wait for the page to draw, ended after the first one timed out: it returned an image, returned without one, or also timed out",
+                "enum": ["retry-image", "retry-no-image", "retry-timeout"]
             },
             {
                 "key": "unresponsive",

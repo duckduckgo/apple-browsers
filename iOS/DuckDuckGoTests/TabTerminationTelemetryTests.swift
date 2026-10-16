@@ -384,7 +384,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
         monitor.didBecomeUnresponsive(makeContext())
         monitor.didAttemptNavigation()
-        monitor.previewSnapshotTimedOut(retry: .timeout)
+        monitor.previewSnapshotTimedOut(result: .retryTimeout)
         monitor.end(.recovered)
 
         XCTAssertTrue(pixelFiring.calls.isEmpty)
@@ -459,15 +459,29 @@ final class TabTerminationTelemetryTests: XCTestCase {
         let pixelFiring = MockTabTerminationPixelFiring()
         let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
 
-        monitor.previewSnapshotTimedOut(retry: .timeout)
+        monitor.previewSnapshotTimedOut(result: .retryTimeout)
         monitor.didBecomeUnresponsive(makeContext())
-        monitor.previewSnapshotTimedOut(retry: .image)
+        monitor.previewSnapshotTimedOut(result: .retryImage)
 
         let calls = pixelFiring.calls.filter { $0.event.name == "web-content_preview-snapshot-timeout" }
         XCTAssertEqual(calls.map { $0.event.parameters },
-                       [["retry": "timeout", "unresponsive": "false", "app_state": "foreground"],
-                        ["retry": "image", "unresponsive": "true", "app_state": "foreground"]])
+                       [["result": "retry-timeout", "unresponsive": "false", "app_state": "foreground"],
+                        ["result": "retry-image", "unresponsive": "true", "app_state": "foreground"]])
         XCTAssertEqual(calls.map { $0.frequency }, [.dailyAndCount, .dailyAndCount])
+    }
+
+    func testWhenAppIsNotActiveThenSnapshotTimeoutIsNotReported() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, applicationState: .background)
+
+        monitor.previewSnapshotTimedOut(result: .retryImage)
+
+        XCTAssertTrue(pixelFiring.calls.isEmpty)
+    }
+
+    func testOnlyRetryResultsCountAsSnapshotTimeouts() {
+        XCTAssertEqual([WebContentHealthPixel.SnapshotResult.skipped, .success, .retryImage, .retryNoImage, .retryTimeout].map(\.isTimeout),
+                       [false, false, true, true, true])
     }
 
     func testFreezeDurationBuckets() {

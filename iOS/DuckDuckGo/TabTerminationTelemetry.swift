@@ -390,11 +390,25 @@ enum WebContentHealthPixel: PixelKit.Event {
         }
     }
 
-    /// How the preview snapshot retry (`afterScreenUpdates = false`) ended after the first attempt timed out.
-    enum SnapshotRetry: String {
-        case image
-        case noImage = "no-image"
-        case timeout
+    /// How a preview snapshot ended.
+    enum SnapshotResult: String {
+        /// No timed snapshot was taken.
+        case skipped
+        /// The first attempt (`afterScreenUpdates = true`) answered in time.
+        case success
+        /// The first attempt timed out; the fallback (`afterScreenUpdates = false`) returned an image.
+        case retryImage = "retry-image"
+        /// The first attempt timed out; the fallback returned without an image.
+        case retryNoImage = "retry-no-image"
+        /// The first attempt timed out and so did the fallback.
+        case retryTimeout = "retry-timeout"
+
+        var isTimeout: Bool {
+            switch self {
+            case .skipped, .success: return false
+            case .retryImage, .retryNoImage, .retryTimeout: return true
+            }
+        }
     }
 
     case terminationReloadResult(outcome: TerminationReloadMonitor.Outcome, recovery: TerminationReloadMonitor.Recovery)
@@ -404,7 +418,7 @@ enum WebContentHealthPixel: PixelKit.Event {
                             attempts: WebContentFreezeMonitor.AttemptsBucket,
                             appState: String,
                             context: PageContext)
-    case previewSnapshotTimeout(retry: SnapshotRetry, unresponsive: Bool, appState: String)
+    case previewSnapshotTimeout(result: SnapshotResult, unresponsive: Bool, appState: String)
 
     var name: String {
         switch self {
@@ -426,8 +440,8 @@ enum WebContentHealthPixel: PixelKit.Event {
                                                "duration": duration.rawValue,
                                                "attempts": attempts.rawValue,
                                                "app_state": appState]) { $1 }
-        case .previewSnapshotTimeout(let retry, let unresponsive, let appState):
-            return ["retry": retry.rawValue, "unresponsive": String(unresponsive), "app_state": appState]
+        case .previewSnapshotTimeout(let result, let unresponsive, let appState):
+            return ["result": result.rawValue, "unresponsive": String(unresponsive), "app_state": appState]
         }
     }
 

@@ -35,7 +35,7 @@ final class RemoteConfigurationService {
         // Having both in `didBecomeActive` can sometimes cause the exception when running on a physical device, so registration happens here.
         AppConfigurationFetch.registerBackgroundRefreshTaskHandler()
 
-        let reporter = PrivacyConfigurationOverrideReporter(
+        let handler = PrivacyConfigurationOverrideHandler(
             privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
             urlProvider: AppDependencyProvider.shared.configurationURLProvider,
             overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults())
@@ -43,7 +43,7 @@ final class RemoteConfigurationService {
 
         // Runs on every cold launch, including one that goes straight to background, so the override is set before any refresh.
         let argument = UserDefaults.app.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
-        reporter.handle(argument: argument) {
+        handler.handle(argument: argument) {
             try await AppDependencyProvider.shared.configurationManager.fetchPrivacyConfiguration()
         }
     }

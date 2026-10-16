@@ -258,6 +258,7 @@ extension TabViewController {
             voiceSearchHelper: MockVoiceSearchHelper(),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
+            usageContextProvider: UsageContextProvider(),
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub(),
             webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,

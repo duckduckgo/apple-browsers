@@ -377,13 +377,14 @@ final class UTIPixelReporterTests: XCTestCase {
     func testReportQuerySubmittedFiresDailyWithResolvedSurfacePageTypeAndToggleVisibility() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .serp) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI, queryType: .search)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "surface": "address_bar",
             "page_type": "serp",
             "toggle_visible": "true",
+            "query_type": "search",
             "default_mode": "duckAI"
         ])
     }
@@ -391,7 +392,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testWhenQuerySubmittedWithToggleHiddenThenToggleVisibleIsFalse() {
         let reporter = makeReporter { self.context(isToggleVisible: false) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search, queryType: .search)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["toggle_visible"], "false")
     }
@@ -399,7 +400,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search, queryType: .search)
         let queryParams = pixelKitMock.actualFireCalls.last?.additionalParameters ?? [:]
 
         reporter.reportPromptSubmitted(hasText: true,

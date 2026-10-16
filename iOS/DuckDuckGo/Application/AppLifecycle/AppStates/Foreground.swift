@@ -213,6 +213,17 @@ struct Foreground: ForegroundHandling {
         ]))
     }
 
+    /// Sent on leaving the foreground: the hardware keyboard only registers shortly after launch.
+    private func fireDuckAISettingsStateDailyPixel() {
+        let tabManager = appDependencies.mainCoordinator.tabManager
+        DuckAISettingsStatePixelReporter(
+            settings: appDependencies.aiChatSettings,
+            featureFlagger: appDependencies.featureFlagger,
+            openDuckAITabCount: { tabManager.allTabsModel.tabs.filter(\.isAITab).count },
+            usageContextProvider: appDependencies.mainCoordinator.controller.usageContextProvider
+        ).fireDaily()
+    }
+
     private func configureAppearance() {
         UILabel.appearance(whenContainedInInstancesOf: [UIAlertController.self]).numberOfLines = 0
     }
@@ -274,6 +285,7 @@ extension Foreground {
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
+        fireDuckAISettingsStateDailyPixel()
         keyboardPresenter.foregroundDidEnd()
         return Background(stateContext: StateContext(appDependencies: appDependencies,
                                                      sceneDependencies: sceneDependencies),

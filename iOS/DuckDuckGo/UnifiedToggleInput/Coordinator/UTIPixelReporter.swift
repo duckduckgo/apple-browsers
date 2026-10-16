@@ -270,13 +270,14 @@ final class UTIPixelReporter {
         }
     }
 
-    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode, queryType: UnifiedToggleInputQueryType) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
                 surface: $0.surface,
                 pageType: $0.pageType,
                 isToggleVisible: $0.isToggleVisible,
                 defaultMode: defaultOmnibarMode,
+                queryType: queryType,
                 firing: firing
             )
         }

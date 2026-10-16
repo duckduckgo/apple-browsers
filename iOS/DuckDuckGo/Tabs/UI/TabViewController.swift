@@ -593,6 +593,7 @@ class TabViewController: UIViewController {
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
     /// Seeded from the stored link so a recreated controller's reload isn't a chat change.
     private lazy var lastCommittedDuckAIChatID: String? = viewModel.currentAIChatId
+    let duckAIPromptAttribution: DuckAIPromptAttribution
 
     var emailManager: EmailManager? {
         return (parent as? MainViewController)?.emailManager
@@ -694,6 +695,7 @@ class TabViewController: UIViewController {
                                    autoplaySettings: AutoplaySettings,
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                   usageContextProvider: UsageContextProviding,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
@@ -736,6 +738,7 @@ class TabViewController: UIViewController {
                                  autoplaySettings: autoplaySettings,
                                  duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                 usageContextProvider: usageContextProvider,
                                  adBlockingAvailability: adBlockingAvailability,
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
@@ -751,6 +754,7 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
+    let usageContextProvider: UsageContextProviding
 
     let eventHub: EventHubManaging
     let webExtensionManagerProvider: () -> WebExtensionManaging?
@@ -922,6 +926,7 @@ class TabViewController: UIViewController {
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            usageContextProvider: usageContextProvider,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
@@ -971,6 +976,7 @@ class TabViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
+         usageContextProvider: UsageContextProviding,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
@@ -1025,7 +1031,11 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
+        let duckAIPromptAttribution = DuckAIPromptAttribution()
+        self.duckAIPromptAttribution = duckAIPromptAttribution
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: duckAIPromptAttribution,
+                                                                                                       usageContextProvider: usageContextProvider),
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
                                                          onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
@@ -1040,6 +1050,7 @@ class TabViewController: UIViewController {
         self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
+        self.usageContextProvider = usageContextProvider
         self.eventHub = eventHub
         self.webExtensionManagerProvider = webExtensionManagerProvider
         self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
@@ -2011,7 +2022,7 @@ class TabViewController: UIViewController {
             }
             if openingTab != nil {
                 stashReopenableStateOnOpener()
-                delegate?.tabDidRequestClose(self)
+                delegate?.tabDidRequestCloseOnBack(self)
                 return
             }
         }
@@ -2040,7 +2051,7 @@ class TabViewController: UIViewController {
 
         if openingTab != nil {
             stashReopenableStateOnOpener()
-            delegate?.tabDidRequestClose(self)
+            delegate?.tabDidRequestCloseOnBack(self)
         }
 
     }
@@ -2053,7 +2064,7 @@ class TabViewController: UIViewController {
             chromeDelegate?.omniBar.endEditing()
         } else if openingTab != nil {
             stashReopenableStateOnOpener()
-            delegate?.tabDidRequestClose(self)
+            delegate?.tabDidRequestCloseOnBack(self)
         } else if let url {
             load(url: url)
         }
@@ -2668,6 +2679,8 @@ extension TabViewController: WKNavigationDelegate {
 
         // Before `url = webView.url` — its didSet rewrites `tabModel.link`, poisoning the lazy seed.
         let committedChatID = webView.url?.duckAIChatID
+        duckAIPromptAttribution.pageDidCommit(isDuckAI: webView.url?.isDuckAIURL == true,
+                                              entrySource: tabModel.takeDuckAIEntrySourceForPageLoad())
         let didChangeDuckAIChat = committedChatID != lastCommittedDuckAIChatID
         lastCommittedDuckAIChatID = committedChatID
 
@@ -3462,6 +3475,10 @@ extension TabViewController: WKNavigationDelegate {
         lastError = error
         let error = error as NSError
         pageSignalsMonitor.didFailProvisionalNavigation(to: error.failedUrl, with: error)
+        // A cancellation is usually the next load replacing this one, which may already carry its own door.
+        if error.code != NSURLErrorCancelled {
+            tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
+        }
 
         // Ignore Frame Load Interrupted that will be caused when a download starts
         if error.code == 102 && error.domain == "WebKitErrorDomain" {
@@ -3797,10 +3814,7 @@ extension TabViewController: WKNavigationDelegate {
             if modifierFlags.contains(.command) {
                 if modifierFlags.contains(.shift) {
                     wrappedHandler(.cancel)
-                    delegate?.tab(self,
-                                  didRequestNewTabForUrl: url,
-                                  openedByPage: false,
-                                  inheritingAttribution: adClickAttributionLogic.state)
+                    delegate?.tab(self, didRequestNewTabForFollowedLink: url, inheritingAttribution: adClickAttributionLogic.state)
                     return
                 } else {
                     wrappedHandler(.cancel)

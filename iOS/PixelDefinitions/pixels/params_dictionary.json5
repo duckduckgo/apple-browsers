@@ -33,6 +33,77 @@
         "description": "Where the tab was originally selected, including when it is later removed through another control.",
         "enum": ["recent_tabs", "tab_picker", "mention"]
     },
+    "usage_layout": {
+        "key": "layout",
+        "type": "string",
+        "description": "Layout when the pixel fired: regular is the iPad tabs-bar layout (window 678pt or wider); compact is the phone layout, on every iPhone and on narrower iPad windows.",
+        "enum": ["regular", "compact"]
+    },
+    "usage_hardware_keyboard": {
+        "key": "hardware_keyboard",
+        "type": "boolean",
+        "description": "Whether a hardware keyboard was connected when the pixel fired."
+    },
+    "usage_window_mode": {
+        "key": "window_mode",
+        "type": "string",
+        "description": "full_screen when the app window spans the screen width; partial for Split View, Slide Over or a narrower Stage Manager window. Always full_screen on iPhone.",
+        "enum": ["full_screen", "partial"]
+    },
+    "aichat_prompt_source": {
+        "key": "source",
+        "type": "string",
+        "description": "The door that opened the Duck.ai page the prompt was sent from, as an m_aichat_entry_point source value, set once when the page loads. A reload, back/forward or any other load without a door reports unattributed; Duck.ai's in-page New chat keeps the door.",
+        "enum": [
+            "address_bar_prompt",
+            "address_bar_icon",
+            "address_bar_shortcut_chip",
+            "address_bar_editing_state",
+            "suggestion_ask_ai",
+            "ipad_toggle_prompt",
+            "browsing_menu_ntp",
+            "browsing_menu_webpage",
+            "browsing_menu_duckai",
+            "duck_ai_new_chat",
+            "tab_switcher",
+            "tabs_bar_button",
+            "chat_history_new_chat",
+            "chat_history_open_chat",
+            "chat_history_view_all",
+            "voice",
+            "onboarding",
+            "subscription_onboarding",
+            "paid_settings",
+            "direct_url",
+            "serp",
+            "icon_shortcut",
+            "contextual_chat",
+            "widget_quick_actions",
+            "widget_quick_actions_medium",
+            "widget_favorite",
+            "widget_lock_screen",
+            "widget_control_center",
+            "siri",
+            "deep_link_other",
+            "return_to_chat_card",
+            "tab_switcher_existing_chat",
+            "ddg_homepage",
+            "tabs_bar_existing_chat",
+            "unattributed"
+        ]
+    },
+    "aichat_prompt_surface": {
+        "key": "surface",
+        "type": "string",
+        "description": "Where the chat is shown: address_bar when the address bar handed the prompt to the Duck.ai page, contextual_chat for any prompt in the Ask about page sheet, otherwise duck_ai.",
+        "enum": ["address_bar", "duck_ai", "contextual_chat"]
+    },
+    "aichat_menu_source": {
+        "key": "source",
+        "type": "string",
+        "description": "Which button opened the Duck.ai menu: address_bar or the iPad tabs_bar_button. Absent before the tabs-bar button was told apart.",
+        "enum": ["address_bar", "tabs_bar_button"]
+    },
     "aichat_first_prompt_new_install": {
         "key": "first_prompt_new_install",
         "type": "boolean",

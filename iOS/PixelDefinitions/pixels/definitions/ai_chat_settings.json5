@@ -149,5 +149,40 @@
                 "type": "string"
             }
         ]
+    },
+    "aichat_settings_state": {
+        "description": "Daily snapshot of the Duck.ai settings, mirroring macOS aichat_settings_state_macos. Fired when the app leaves the foreground rather than on launch, because the hardware keyboard only registers shortly after launch; triggers is other because no value covers moving to the background. The per-setting pixels only cover users who change a setting; this sizes each setting's base and the share of iPad users in narrow windows or with a hardware keyboard.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            { "key": "duckai_enabled", "description": "Whether Duck.ai is enabled in AI Features settings.", "type": "boolean" },
+            {
+                "key": "addressbar_toggle",
+                "description": "Whether the Search/Duck.ai toggle is shown in the address bar.",
+                "type": "boolean"
+            },
+            {
+                "key": "tabbar_button",
+                "description": "Whether the iPad tabs bar offers a Duck.ai button: the shortcut is available on this device, the Tab Bar setting is on and the user hasn't hidden the button. The tabs bar only shows in the regular layout. Always false on iPhone.",
+                "type": "boolean"
+            },
+            {
+                "key": "default_mode",
+                "description": "Which address-bar mode the app starts in: search, duckAI, or the last used one. Same values as default_mode on m_aichat_unified_input_*.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
+            },
+            {
+                "key": "duckai_tabs_open",
+                "description": "How many Duck.ai tabs are open, bucketed.",
+                "type": "string",
+                "enum": ["0", "1", "2+"]
+            },
+            "usage_layout",
+            "usage_window_mode",
+            "usage_hardware_keyboard"
+        ]
     }
 }

@@ -143,6 +143,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
                                     darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                                    usageContextProvider: UsageContextProvider(),
                                     adBlockingAvailability: StubAdBlockingAvailability(),
                                     eventHub: StubEventHub()
         )
@@ -223,7 +224,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 privacyStats: MockPrivacyStats(),
                 whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
                 darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                onboardingManager: OnboardingManagerMock()
+                onboardingManager: OnboardingManagerMock(),
+                usageContextProvider: UsageContextProvider()
             )
         }
         sut = makeHost(homePageConfiguration)

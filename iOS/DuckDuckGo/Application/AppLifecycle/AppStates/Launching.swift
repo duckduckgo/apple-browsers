@@ -326,6 +326,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
+        let usageContextProvider = UsageContextProvider()
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -362,7 +363,8 @@ struct Launching: LaunchingHandling {
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
                                               onboardingManager: onboardingManager,
-                                              eventHub: eventHubService.eventHub
+                                              eventHub: eventHubService.eventHub,
+                                              usageContextProvider: usageContextProvider
         )
         launchBreadcrumb.mark(.mainCoordinator)
 

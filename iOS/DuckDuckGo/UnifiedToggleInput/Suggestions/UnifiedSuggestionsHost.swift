@@ -71,6 +71,7 @@ final class UnifiedSuggestionsHost {
             inputsPublisher: config.inputsPublisher,
             listViewModel: listViewModel
         )
+        viewModel.onDuckAISuggestionsShown = { AutocompleteSuggestionsPixels().fireDuckAIShownPixel() }
     }
 
     // MARK: - Container-facing surface

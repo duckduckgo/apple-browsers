@@ -319,6 +319,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
+    let usageContextProvider: UsageContextProviding
     let newTabPageSessionInstrumentation: NewTabPageSessionInstrumentation
     /// Set by the data clearing path so the New Tab Page it lands on is attributed to the
     /// Fire button rather than to an ordinary new tab. Consumed by the next visit start.
@@ -340,7 +341,7 @@ class MainViewController: UIViewController {
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
-    private let pixelFiring: (any PixelKitFiring)?
+    let pixelFiring: (any PixelKitFiring)?
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -785,9 +786,11 @@ class MainViewController: UIViewController {
             & PromoCoordinationDiagnosticsProviding
             & PromoCoordinationCooldownResetting
             & AppRatingPromptGating)? = nil,
+        usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.pixelFiring = pixelFiring
+        self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
         self.remoteMessagingPixelReporter = remoteMessagingPixelReporter
@@ -829,7 +832,8 @@ class MainViewController: UIViewController {
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
-        self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                                    usageContextProvider: usageContextProvider)
         self.newTabPageSessionInstrumentation = DefaultNewTabPageSessionInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             isEnabled: { featureFlagger.isFeatureOn(.newTabPageSessionInstrumentation) },
@@ -841,7 +845,8 @@ class MainViewController: UIViewController {
         )
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            completeOrphanedFlowsOnInit: true
+            completeOrphanedFlowsOnInit: true,
+            usageContextProvider: usageContextProvider
         )
         self.duckAISessionInstrumentation = DefaultDuckAISessionInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -1253,6 +1258,7 @@ class MainViewController: UIViewController {
             if tab !== tabManager.currentTabsModel.currentTab {
                 pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
+                postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
                 currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
                 selectTab(tab)
             }
@@ -1262,6 +1268,7 @@ class MainViewController: UIViewController {
 
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
+            self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
@@ -2413,6 +2420,15 @@ class MainViewController: UIViewController {
         request.source == .escapeHatch
     }
 
+    /// Escape-hatch burns are excluded: they record `burnTabTapped` and keep the return session going.
+    private func endSessionsWithDataClearing(_ request: FireRequest) {
+        guard request.trigger == .manualFire, !isEscapeHatchBurn(request) else { return }
+        if request.deletesDuckAIChats {
+            recordDuckAISessionPendingExit(.chatDeleted)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .dataCleared)
+    }
+
     private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
         guard openedAfterIdle else { return nil }
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
@@ -2896,6 +2912,26 @@ class MainViewController: UIViewController {
         loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
     }
 
+    private func loadDroppedURLInNewTab(_ url: URL) {
+        recordUserOpenedTab()
+        let entrySource = reportDuckAIDirectNavigation(to: url, via: .drop, opensNewTab: true)
+        loadUrlInNewTab(url, inheritedAttribution: nil, completion: stampingDuckAIEntrySource(entrySource, then: nil))
+    }
+
+    /// A link another app asked the browser to open.
+    func loadExternalLinkInNewTab(_ url: URL) {
+        guard url.isDuckAIURL else {
+            loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+            return
+        }
+        // Mirrors the reuse order in `loadUrlInNewTab`: a tab already on the URL is only selected, nothing loads.
+        let reusesOpenTab = tabManager.first(withUrl: url) != nil
+        let opensNewTab = !reusesOpenTab && tabManager.firstHomeTab() == nil
+        let entrySource = reportDuckAIDirectNavigation(to: url, via: .external, opensNewTab: opensNewTab)
+        loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true,
+                        completion: reusesOpenTab ? nil : stampingDuckAIEntrySource(entrySource, then: nil))
+    }
+
     /// Load URL in a new tab, with option to reuse an existing tab.
     ///
     /// - Note: New user-initiated entry paths should route through `loadUrlRespectingAIBoundary` first so the Duck.ai ↔ web boundary rule is honored. Direct callers must justify the bypass.
@@ -3095,7 +3131,7 @@ class MainViewController: UIViewController {
         showKeyboardIfAllowed { _ in }
     }
 
-    func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {
+    func loadQuery(_ query: String, via: DuckAINavigationVia? = nil, completion: ((Tab) -> Void)? = nil) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.shortDescription ?? "<nil>", privacy: .public)\"")
             return
@@ -3103,7 +3139,7 @@ class MainViewController: UIViewController {
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
         skipSERPFlow = false
         endNewTabPageSessionWithLoad(of: url)
-        loadUrlRespectingAIBoundary(url, completion: completion)
+        loadUrlRespectingAIBoundary(url, via: via, completion: completion)
     }
 
     func postIdleSubmissionReason(for query: String) -> ReturnSessionWideEventData.StatusReason {
@@ -3523,8 +3559,9 @@ class MainViewController: UIViewController {
 
     /// - Parameter animated: animate the UTI collapse; pass `false` when a full-screen surface (tab switcher / new tab) immediately follows.
     func dismissOmniBar(animated: Bool = true) {
-        hideSuggestionTray()
+        // Teardown first: hiding the tray reports a content change that would re-present a still-current surface.
         teardownPopoverSuggestions()
+        hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
         deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()
@@ -4473,7 +4510,7 @@ class MainViewController: UIViewController {
     /// - Returns: Always `true`; a `weak self` caller sees `false` only once `self` is deallocated.
     func requestOnboardingDuckAIChat(modelID: String?) -> Bool {
         dismiss(animated: true) {
-            self.openAIChat(source: .onboarding, flowType: .mobileAppOnboarding, modelId: modelID)
+            self.openAIChat(source: .subscriptionOnboarding, flowType: .mobileAppOnboarding, modelId: modelID)
         }
         return true
     }
@@ -4860,7 +4897,8 @@ class MainViewController: UIViewController {
                     reportsNewTab: Bool? = nil,
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
-                    termsAccepted: Bool = false) {
+                    termsAccepted: Bool = false,
+                    nativePromptFlow: DuckAIPromptFlowStart? = nil) {
 
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
@@ -4880,7 +4918,8 @@ class MainViewController: UIViewController {
             reportsNewTab: reportsNewTab,
             forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink,
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            nativePromptFlow: nativePromptFlow
         )
     }
 
@@ -4902,8 +4941,17 @@ class MainViewController: UIViewController {
         tabManager.currentTabsModel.currentTab?.promptPageType ?? .unknown
     }
 
+    func currentUsageContext() -> UsageContext? {
+        usageContextProvider.currentContext
+    }
+
+    /// Voice requested from the address bar (iPad) or Unified Input.
     func onDuckAIVoiceModeRequested() {
-        PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.ntp.rawValue]))
+        startDuckAIVoiceMode(from: .addressBar)
+    }
+
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
+        pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -4996,7 +5044,8 @@ class MainViewController: UIViewController {
                                  reportsNewTab: Bool? = nil,
                                  forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false,
-                                 termsAccepted: Bool = false) {
+                                 termsAccepted: Bool = false,
+                                 nativePromptFlow: DuckAIPromptFlowStart? = nil) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
@@ -5049,7 +5098,8 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] tab in
-                tab.duckAIEntrySource = source
+                self?.prepareTabForDuckAILoad(tab, source: source, query: query, autoSend: autoSend,
+                                              hasAttachments: hasAttachments, nativePromptFlow: nativePromptFlow)
                 if let modelId {
                     self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
                 }
@@ -5060,12 +5110,82 @@ class MainViewController: UIViewController {
             return
         }
 
-        stampDuckAIEntrySourceOnCurrentTab(source)
+        prepareTabForDuckAILoad(tabManager.currentTabsModel.currentTab, source: source, query: query, autoSend: autoSend,
+                                hasAttachments: images?.isEmpty == false || files?.isEmpty == false,
+                                nativePromptFlow: nativePromptFlow)
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
         }
+    }
+
+    /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
+    private func prepareTabForDuckAILoad(_ tab: Tab?,
+                                         source: AIChatEntryPointSource,
+                                         query: String?,
+                                         autoSend: Bool,
+                                         hasAttachments: Bool,
+                                         nativePromptFlow: DuckAIPromptFlowStart?) {
+        guard let tab else { return }
+        tab.duckAIEntrySource = source
+        markAddressBarPromptHandoverIfNeeded(source: source, query: query, autoSend: autoSend, hasAttachments: hasAttachments)
+        startNativeDuckAIPromptFlow(nativePromptFlow, in: tab, source: source)
+    }
+
+    /// The page reports the handed-over prompt as its own, so its prompt pixels need to know it came from the address bar.
+    private func markAddressBarPromptHandoverIfNeeded(source: AIChatEntryPointSource, query: String?, autoSend: Bool, hasAttachments: Bool) {
+        guard source.handsOverAddressBarPrompt,
+              Self.hasAutoSubmittedDuckAIPrompt(query: query, autoSend: autoSend, hasAttachments: hasAttachments) else { return }
+        currentTab?.duckAIPromptAttribution.addressBarWillHandOverPrompt()
+    }
+
+    /// Address-bar search submits outside Unified Input, which fires its own.
+    func fireAddressBarQuerySubmittedPixel(queryType: UnifiedToggleInputQueryType) {
+        guard !unifiedToggleInputFeature.isAvailable else { return }
+        UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+            surface: .addressBar,
+            pageType: currentPromptPageType(),
+            isToggleVisible: aiChatAddressBarExperience.shouldShowModeToggle,
+            defaultMode: aiChatSettings.defaultOmnibarMode,
+            queryType: queryType,
+            usageContext: usageContextProvider.currentContext
+        )
+    }
+
+    /// Classified by what the address bar loads for the text, so it matches the navigation.
+    private func addressBarQueryType(for query: String) -> UnifiedToggleInputQueryType {
+        URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url)
+            .map(UnifiedToggleInputQueryType.init(loading:)) ?? .search
+    }
+
+    private func fireAddressBarSubmissionPixel(for suggestion: Suggestion) {
+        switch suggestion {
+        case .phrase, .unknown:
+            fireAddressBarQuerySubmittedPixel(queryType: .search)
+        case .website, .bookmark, .historyEntry, .internalPage, .openTab:
+            fireAddressBarQuerySubmittedPixel(queryType: .url)
+        case .askAIChat:
+            break
+        }
+    }
+
+    /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
+    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+        UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+            hasText: true,
+            selectedTool: nil,
+            attachments: [],
+            reasoningMode: nil,
+            modelId: nil,
+            surface: .addressBar,
+            pageType: currentPromptPageType(),
+            origin: .suggestionAskAI,
+            defaultMode: aiChatSettings.defaultOmnibarMode,
+            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
+            usageContext: usageContextProvider.currentContext
+        )
+        featureDiscovery.markDuckAIPromptSubmitted()
     }
 
     /// Executes the closure if the current tab is an AI tab
@@ -5608,18 +5728,24 @@ extension MainViewController: BrowserChromeDelegate {
             executeBookmarklet(url)
         } else {
             endNewTabPageSessionWithLoad(of: url)
-            loadUrlRespectingAIBoundary(url)
+            loadUrlRespectingAIBoundary(url, via: .favorite)
         }
         showHomeRowReminder()
     }
 
-    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false, completion: ((Tab) -> Void)? = nil) {
+    /// `via` names how the user reached the address, so a duck.ai load reports itself as a direct navigation.
+    func loadUrlRespectingAIBoundary(_ url: URL,
+                                     fromExternalLink: Bool = false,
+                                     via: DuckAINavigationVia? = nil,
+                                     completion: ((Tab) -> Void)? = nil) {
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,
             currentHasContent: currentTab?.tabModel.link != nil,
             targetIsAI: url.isDuckAIURL,
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         )
+        let directEntrySource = via.flatMap { reportDuckAIDirectNavigation(to: url, via: $0, opensNewTab: decision == .openInNewTab) }
+        let completion = stampingDuckAIEntrySource(directEntrySource, then: completion)
         switch decision {
         case .openInNewTab:
             // Dismiss contextual onboarding before duck.ai opens via UTI.
@@ -5637,6 +5763,14 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
+    private func stampingDuckAIEntrySource(_ source: AIChatEntryPointSource?, then completion: ((Tab) -> Void)?) -> ((Tab) -> Void)? {
+        guard let source else { return completion }
+        return { tab in
+            tab.duckAIEntrySource = source
+            completion?(tab)
+        }
+    }
+
     private func postIdleSubmissionReason(for suggestion: Suggestion) -> ReturnSessionWideEventData.StatusReason {
         switch suggestion {
         case .phrase, .unknown: return .searchSubmitted
@@ -5646,6 +5780,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func handleSuggestionSelected(_ suggestion: Suggestion) {
+        fireAddressBarSubmissionPixel(for: suggestion)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -5671,14 +5806,14 @@ extension MainViewController: BrowserChromeDelegate {
             if url.isBookmarklet() {
                 executeBookmarklet(url)
             } else {
-                loadUrlRespectingAIBoundary(url)
+                loadUrlRespectingAIBoundary(url, via: .suggestion)
             }
 
         case .bookmark(_, url: let url, _, _):
-            loadUrlRespectingAIBoundary(url)
+            loadUrlRespectingAIBoundary(url, via: .bookmark)
 
         case .historyEntry(_, url: let url, _):
-            loadUrlRespectingAIBoundary(url)
+            loadUrlRespectingAIBoundary(url, via: .history)
 
         case .openTab(title: _, url: let url, tabId: let tabId, _):
             if newTabPageViewController != nil, let tab = tabManager.currentTabsModel.currentTab {
@@ -5690,7 +5825,9 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            openAIChat(source: .suggestionAskAI, value, autoSend: true)
+            fireAskDuckAISuggestionPromptSubmittedPixel()
+            openAIChat(source: .suggestionAskAI, value, autoSend: true,
+                       nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
@@ -5728,7 +5865,8 @@ extension MainViewController: OmniBarDelegate {
                    reasoningEffort: controlValues.selectedReasoningEffort,
                    images: controlValues.selectedImages,
                    files: controlValues.selectedFiles,
-                   termsAccepted: termsAccepted)
+                   termsAccepted: termsAccepted,
+                   nativePromptFlow: DuckAIPromptFlowStart(controlValues: controlValues, tools: tools))
     }
 
     func onChatHistorySelected(url: URL) {
@@ -5802,7 +5940,12 @@ extension MainViewController: OmniBarDelegate {
         return suggestionTrayController?.selectedSuggestion
     }
 
+    /// A suggestion picked with the arrow keys and Return.
     func onOmniSuggestionSelected(_ suggestion: Suggestion) {
+        AutocompleteSuggestionsPixels().fireClickPixels(
+            for: suggestion,
+            isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         autocomplete(selectedSuggestion: suggestion)
     }
 
@@ -5839,6 +5982,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
+        fireAddressBarQuerySubmittedPixel(queryType: addressBarQueryType(for: query))
         // A search submission IS search mode — commit directly (see onPromptSubmitted).
         commitToggleMode(.search)
         if !daxDialogsManager.shouldShowFireButtonPulse {
@@ -5860,7 +6004,7 @@ extension MainViewController: OmniBarDelegate {
         if postIdleSubmissionReason(for: query) == .searchSubmitted {
             recordDuckAISessionPendingExit(.searchStarted)
         }
-        loadQuery(query)
+        loadQuery(query, via: .typed)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
         fireOnboardingCustomSearchPixelIfNeeded(query: query)
@@ -6207,7 +6351,7 @@ extension MainViewController: OmniBarDelegate {
             },
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
-                self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+                self?.closeTabOnUserRequest(tab.tabModel)
             }
         ))
     }
@@ -6346,6 +6490,10 @@ extension MainViewController: OmniBarDelegate {
 
     func newChatLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        openNewChatTabFromLongPressMenu()
+    }
+
+    func openNewChatTabFromLongPressMenu() {
         // The tab is created here, so `openAIChat` would see it blank and report no new tab.
         newTab(allowingKeyboard: false)
         openAIChat(source: .newTabLongPressMenu, reportsNewTab: true)
@@ -6378,12 +6526,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if tapped {
-            let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
-            fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
-                                     serp: .addressBarClickOnSERP,
-                                     website: .addressBarClickOnWebsite,
-                                     aiChat: .addressBarClickOnAIChat,
-                                     additionalParameters: modeParam)
+            fireAddressBarClickPixel()
             recordNewTabPageSessionAction { $0.tapInputBar() }
         }
 
@@ -6531,10 +6674,17 @@ extension MainViewController: OmniBarDelegate {
             }
         )
 
+        fireAddressBarButtonPixels(for: source)
+        featureDiscovery.setWasUsedBefore(.aiChat)
+    }
+
+    /// The tabs-bar button shares this path, but its entry pixel already reports `tabs_bar_button`.
+    private func fireAddressBarButtonPixels(for source: AIChatEntryPointSource) {
+        guard source != .tabsBarButton else { return }
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarAichatButtonPressed, frequency: .dailyAndCount)
         }
-        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
+        pixelFiring?.fire(Pixel.Event.openAIChatFromAddressBar, options: .parameters(featureDiscovery.addToParams([:], forFeature: .aiChat)))
     }
 
     private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
@@ -6689,14 +6839,19 @@ extension MainViewController: OmniBarDelegate {
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
         revealFloatingChromeImmediately()
-        let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         ViewHighlighter.hideAll()
+        fireAddressBarClickPixel()
+        recordNewTabPageSessionAction { $0.tapInputBar() }
+    }
+
+    /// A tap on the address bar, or ⌘L, by the kind of page it was opened over.
+    func fireAddressBarClickPixel() {
+        let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
                                  serp: .addressBarClickOnSERP,
                                  website: .addressBarClickOnWebsite,
                                  aiChat: .addressBarClickOnAIChat,
                                  additionalParameters: modeParam)
-        recordNewTabPageSessionAction { $0.tapInputBar() }
     }
 
     func onExperimentalAddressBarClearPressed() {
@@ -6849,11 +7004,16 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
             onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chat.chatId))
         case .url(let suggestion):
+            AutocompleteSuggestionsPixels().fireDuckAIClickPixel(for: suggestion)
             handleSuggestionSelected(suggestion)
         case .searchDuckDuckGo(let query):
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
-            viewCoordinator.omniBar.setSelectedTextEntryMode(.search)
-            loadQuery(query)
+            fireAddressBarQuerySubmittedPixel(queryType: addressBarQueryType(for: query))
+            postIdleSessionInstrumentation.sessionEnded(reason: .searchSubmitted)
+            recordDuckAISessionPendingExit(.searchStarted)
+            viewCoordinator.omniBar.endEditingInSearchMode()
+            dismissOmniBar()
+            loadQuery(query, via: .typed)
         case .viewAllChats:
             onViewAllChatsSelected()
         }
@@ -7312,6 +7472,7 @@ extension MainViewController: TabDelegate {
                                               inheritedAttribution: inheritingAttribution)
         newTab.openedByPage = true
         newTab.openingTab = tab
+        newTab.tabModel.duckAIEntrySource = reportDuckAIEntryForPageOpenedWindow(navigationAction, from: tab)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
         newTabAnimation {
@@ -7324,6 +7485,10 @@ extension MainViewController: TabDelegate {
         }
 
         return newTab.webView
+    }
+
+    func tabDidRequestCloseOnBack(_ tab: TabViewController) {
+        closeTabOnUserRequest(tab.tabModel)
     }
 
     func tabDidRequestClose(_ tab: Tab,
@@ -7374,6 +7539,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewTab(_ tab: TabViewController) {
+        recordUserOpenedTab()
         endNewTabPageSessionWithMenuItem()
         _ = findInPageView?.resignFirstResponder()
         newTab()
@@ -7435,12 +7601,28 @@ extension MainViewController: TabDelegate {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        if !openedByPage {
+            recordUserOpenedTab()
+        }
         openNewTab(from: tab, url: url, openedByPage: openedByPage, inheritedAttribution: attribution)
+    }
+
+    func tab(_ tab: TabViewController,
+             didRequestNewTabForFollowedLink url: URL,
+             inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        // A link opened in a new tab is the user acting on the page, so the return session goes on.
+        let entrySource = AIChatEntryPointSource.forInPageNavigation(from: tab.url, to: url, isLinkActivation: true)
+        if let entrySource {
+            reportDuckAIInPageEntry(entrySource, to: url, opensNewTab: true)
+        }
+        openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: attribution,
+                   completion: stampingDuckAIEntrySource(entrySource, then: nil))
     }
 
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource?) {
+        recordUserOpenedTab()
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
         }
@@ -7451,14 +7633,32 @@ extension MainViewController: TabDelegate {
              entrySource: AIChatEntryPointSource,
              opensNewTab: Bool,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        let hasPrompt = url.getParameter(named: AIChatURLParameters.promptQueryName)?.isEmpty == false
-        fireAIChatEntryPointPixel(source: entrySource, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
+        reportDuckAIInPageEntry(entrySource, to: url, opensNewTab: opensNewTab)
         guard opensNewTab else {
             tab.tabModel.duckAIEntrySource = entrySource
             return
         }
         openNewTab(from: tab, url: url, openedByPage: true, inheritedAttribution: attribution) {
             $0.duckAIEntrySource = entrySource
+        }
+    }
+
+    /// A `target=_blank` link or `window.open` into Duck.ai; the new tab has no page of its own to attribute it.
+    private func reportDuckAIEntryForPageOpenedWindow(_ navigationAction: WKNavigationAction,
+                                                      from tab: TabViewController) -> AIChatEntryPointSource? {
+        guard let url = navigationAction.request.url,
+              let entrySource = AIChatEntryPointSource.forInPageNavigation(
+                from: tab.url, to: url, isLinkActivation: navigationAction.navigationType == .linkActivated) else {
+            return nil
+        }
+        reportDuckAIInPageEntry(entrySource, to: url, opensNewTab: true)
+        return entrySource
+    }
+
+    private func reportDuckAIInPageEntry(_ entrySource: AIChatEntryPointSource, to url: URL, opensNewTab: Bool) {
+        fireAIChatEntryPointPixel(source: entrySource, opensNewTab: opensNewTab, hasPrompt: url.carriesDuckAIPrompt)
+        if entrySource.isFollowedLink {
+            fireDuckAIDirectNavigationPixel(via: .link)
         }
     }
 
@@ -7827,6 +8027,27 @@ extension MainViewController: TabDelegate {
         present(alert, animated: true)
     }
 
+    /// Closes a tab the user asked to close; leaving the current tab ends the return session.
+    func closeTabOnUserRequest(_ tab: Tab, refreshInPlace: Bool = false) {
+        if tab === tabManager.currentTabsModel.currentTab {
+            postIdleSessionInstrumentation.sessionEnded(reason: .tabClosed)
+        }
+        closeTab(tab, refreshInPlace: refreshInPlace)
+    }
+
+    /// A tab the user opened, which takes them off the current page.
+    func recordUserOpenedTab() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabOpened)
+    }
+
+    /// A tab picked from the tabs bar or a keyboard shortcut, once it is on screen.
+    func recordDirectTabSelection(of tab: Tab) {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
+        if tab.isAITab {
+            fireAIChatEntryPointPixel(source: .tabsBarExistingChat, opensNewTab: false, hasPrompt: false)
+        }
+    }
+
     func selectTab(_ tab: Tab) {
         if tab.uid != tabManager.currentTabsModel.currentTab?.uid {
             newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
@@ -7978,6 +8199,9 @@ extension MainViewController: TabSwitcherDelegate {
 
     /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
     func notifyTabsWillClose(_ tabs: [Tab]) {
+        if tabs.contains(where: { $0 === tabManager.currentTabsModel.currentTab }) {
+            postIdleSessionInstrumentation.sessionEnded(reason: .tabClosed)
+        }
         recordDuckAISessionCloseIfNeeded(closingTabs: tabs)
         discardNewTabPageSessionIfHostingTabClosed(tabs)
 
@@ -8101,7 +8325,8 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
-        newTab(allowingKeyboard: false)
+        // It shows Duck.ai, not a New Tab Page, so it starts no New Tab Page visit.
+        newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
         openAIChat(source: .tabSwitcher, reportsNewTab: true)
     }
 
@@ -8133,7 +8358,7 @@ extension MainViewController: BookmarksDelegate {
             executeBookmarklet(url)
         } else {
             endNewTabPageSessionWithLoad(of: url)
-            loadUrlRespectingAIBoundary(url)
+            loadUrlRespectingAIBoundary(url, via: .bookmark)
         }
     }
 }
@@ -8277,6 +8502,7 @@ extension MainViewController {
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
+        endSessionsWithDataClearing(request)
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
@@ -8848,12 +9074,12 @@ extension MainViewController: UIDropInteractionDelegate {
         
         if session.canLoadObjects(ofClass: URL.self) {
             _ = session.loadObjects(ofClass: URL.self) { urls in
-                urls.forEach { self.loadUrlInNewTab($0, inheritedAttribution: nil) }
+                urls.forEach { self.loadDroppedURLInNewTab($0) }
             }
             
         } else if session.canLoadObjects(ofClass: String.self) {
             _ = session.loadObjects(ofClass: String.self) { strings in
-                self.loadQuery(strings[0])
+                self.loadQuery(strings[0], via: .drop)
             }
             
         }
@@ -8959,6 +9185,10 @@ extension MainViewController: OmniBarFocuser {
 // MARK: - AIChatContentHandlingDelegate
 extension MainViewController: AIChatContentHandlingDelegate {
 
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {
+        reportDuckAIChatStatusOutsideUnifiedInput(status, for: handler)
+    }
+
     func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler:
                                                            AIChatContentHandling) {
         if let controller = tabSwitcherController {
@@ -9002,7 +9232,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     private func closeCurrentTab() {
         guard let tab = currentTab?.tabModel else { return }
-        closeTab(tab)
+        closeTabOnUserRequest(tab)
     }
 
 }
@@ -9263,6 +9493,7 @@ extension MainViewController {
             self.closeTab(tab, behavior: .createEmptyTabAtSamePosition)
 
         case .newTab:
+            self.recordUserOpenedTab()
             self.newTab()
 
         case .fire:
@@ -9297,7 +9528,7 @@ extension MainViewController {
             showTextZoomEditorIfPossible()
 
         case .duckAIVoice:
-            PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
+            pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
             self.openAIChatInVoiceMode()
 
         default:
@@ -9376,6 +9607,7 @@ extension MainViewController {
             closeTab(tab, behavior: .createEmptyTabAtSamePosition)
 
         case .newTab:
+            recordUserOpenedTab()
             newTab()
 
         case .bookmarks:
@@ -9391,7 +9623,7 @@ extension MainViewController {
             segueToDownloads()
 
         case .duckAIVoice:
-            PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
+            pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
             openAIChatInVoiceMode()
 
         default:
@@ -9448,6 +9680,35 @@ extension MainViewController {
 
     fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
         currentTab.map { .tab($0.tabModel.uid) }
+    }
+
+    var currentDuckAIUserTier: AIChatUserTier {
+        unifiedToggleInputCoordinator?.subscriptionState.userTier ?? omniBar.iPadDuckAIControlValues.userTier
+    }
+
+    /// Native submits outside Unified Input (iPad address bar, Ask Duck.ai row) start their flow on the receiving tab.
+    fileprivate func startNativeDuckAIPromptFlow(_ start: DuckAIPromptFlowStart?, in tab: Tab, source: AIChatEntryPointSource) {
+        guard let start else { return }
+        duckAIWideEventInstrumentation.submissionStarted(scope: .tab(tab.uid),
+                                                         modelId: start.modelId,
+                                                         userTier: start.userTier,
+                                                         reasoningEffort: start.reasoningEffort,
+                                                         entryPoint: .omnibar,
+                                                         origin: source,
+                                                         inputMode: .keyboard,
+                                                         fireMode: tab.fireTab,
+                                                         isFirstPrompt: true,
+                                                         frontendDeliveryPath: .urlAutoSubmit,
+                                                         hasPageContext: false,
+                                                         toolsSelected: start.toolsSelected,
+                                                         attachmentsSelected: start.attachmentsSelected)
+    }
+
+    /// Unified Input feeds chat status to its own flows; everywhere else the tab's page does.
+    fileprivate func reportDuckAIChatStatusOutsideUnifiedInput(_ status: AIChatStatusValue, for handler: AIChatContentHandling) {
+        guard !unifiedToggleInputFeature.isAvailable,
+              let tab = tabManager.currentTabsModel.tabs.first(where: { tabManager.controller(for: $0)?.aiChatContentHandler === handler }) else { return }
+        duckAIWideEventInstrumentation.chatStatusChanged(status, scope: .tab(tab.uid))
     }
 
     fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {

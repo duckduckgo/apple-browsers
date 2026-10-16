@@ -179,6 +179,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let toggleModeStorage: ToggleModeStoring
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private weak var controllerPendingTerminationRecovery: TabViewController?
     let isSitePermissionsEnabled: Bool
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
@@ -264,6 +265,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
@@ -276,6 +278,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -469,6 +472,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                              usageContextProvider: usageContextProvider,
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
@@ -617,6 +621,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                              usageContextProvider: usageContextProvider,
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },

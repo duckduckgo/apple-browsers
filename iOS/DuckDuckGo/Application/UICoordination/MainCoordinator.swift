@@ -144,7 +144,8 @@ final class MainCoordinator {
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
          onboardingManager: OnboardingManaging,
-         eventHub: EventHubManaging
+         eventHub: EventHubManaging,
+         usageContextProvider: UsageContextProviding
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -238,6 +239,7 @@ final class MainCoordinator {
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                usageContextProvider: usageContextProvider,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
@@ -341,7 +343,8 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        promoCoordinationService: promoCoordinationService)
+                                        promoCoordinationService: promoCoordinationService,
+                                        usageContextProvider: usageContextProvider)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -777,7 +780,7 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadExternalLinkInNewTab(url)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {

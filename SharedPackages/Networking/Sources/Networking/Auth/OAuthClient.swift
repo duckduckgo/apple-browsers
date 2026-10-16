@@ -131,10 +131,10 @@ public protocol OAuthClient {
 
     // MARK: Logout
 
-    /// Logout by invalidating the current access token
+    /// Removes the backup token container, if any, then the current one, and asks the server to invalidate the current access token.
     func logout() async throws
 
-    /// Remove the tokens container stored locally
+    /// Removes the current token container. A backup token container, if any, is kept.
     func removeLocalAccount() throws
 }
 
@@ -456,6 +456,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
+    /// Removes the current token container. A backup token container, if any, is kept.
     public func removeLocalAccount() throws {
         Logger.OAuthClient.log("Removing local account")
         try tokenStorage.saveTokenContainer(nil)

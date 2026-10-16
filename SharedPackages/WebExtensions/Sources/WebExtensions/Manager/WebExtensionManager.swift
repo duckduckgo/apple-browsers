@@ -163,6 +163,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
+    private let now: () -> Date
 
     // MARK: - AsyncStream
 
@@ -198,7 +199,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
                 scriptletConfiguration: ScriptletConfiguration? = nil,
-                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
+                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL },
+                now: @escaping () -> Date = Date.init) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
@@ -230,6 +232,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
+        self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
@@ -938,10 +941,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
 #if os(macOS)
+    /// When the Bitwarden daily pixel was last sent, to skip checking again within the hour.
+    private var lastBitwardenDailyActiveDate: Date?
+
     /// Reports that Bitwarden is loaded while the browser is in use, and whether it's the default password
     /// manager. It runs on browsing activity, which is frequent; the pixel is daily, so each device counts once a day.
     @MainActor
     private func fireBitwardenDailyActiveIfLoaded() {
+        if let lastBitwardenDailyActiveDate, now().timeIntervalSince(lastBitwardenDailyActiveDate) < 60 * 60 {
+            return
+        }
         let bitwarden = installationStore.installedExtensions.first { installedExtension in
             context(for: installedExtension.uniqueIdentifier) != nil
                 && pixelExtension(for: installedExtension.storeIdentity) == .catalog(.bitwarden)
@@ -949,6 +958,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         guard let bitwarden else { return }
         let isDefault = privacySettings?.identifierTurningOff(.passwordSavingEnabled) == bitwarden.uniqueIdentifier
         pixelFiring.fire(.bitwardenDailyActive(isDefault: isDefault))
+        lastBitwardenDailyActiveDate = now()
     }
 #endif
 

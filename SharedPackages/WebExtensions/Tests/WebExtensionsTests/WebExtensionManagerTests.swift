@@ -743,6 +743,7 @@ final class WebExtensionManagerTests: XCTestCase {
     func testWhenBrowsingWithBitwardenLoaded_ThenItsDailyPixelReportsWhetherItIsTheDefaultPasswordManager() async throws {
         let bitwardenStoreID = String(repeating: "n", count: 32)
         let pixels = EventCapturingPixelFiring()
+        var date = Date(timeIntervalSince1970: 0)
         installedExtensionStoringMock.installedExtensions = [
             InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
                                   embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID))
@@ -755,7 +756,8 @@ final class WebExtensionManagerTests: XCTestCase {
                                           eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
-                                          keyValueStore: InMemoryThrowingKeyValueStore())
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          now: { date })
         let webStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
         manager.chromeWebStore = webStore
         _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
@@ -770,8 +772,12 @@ final class WebExtensionManagerTests: XCTestCase {
 
         let store = try XCTUnwrap(manager.privacySettings)
         store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        date += 59 * 60
         eventsListenerMock.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden"], "Activity within the hour isn't checked again")
 
+        date += 60
+        eventsListenerMock.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
     }
 

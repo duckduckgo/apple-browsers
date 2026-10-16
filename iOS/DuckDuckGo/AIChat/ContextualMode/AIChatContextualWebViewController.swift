@@ -209,7 +209,7 @@ final class AIChatContextualWebViewController: UIViewController {
         if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
-        promptFlowReporter = utiHost ?? makeStandalonePromptFlowReporterIfCompletable()
+        promptFlowReporter = utiHost ?? makeStandalonePromptFlowReporter()
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
@@ -632,9 +632,7 @@ extension AIChatContextualWebViewController {
         promptFlowReporter?.chatStatusChanged(status)
     }
 
-    /// The page reports response status only when native chat input is available; without it a flow could never complete.
-    private func makeStandalonePromptFlowReporterIfCompletable() -> ContextualDuckAIPromptFlowReporting? {
-        guard unifiedToggleInputFeature.isAvailable else { return nil }
+    private func makeStandalonePromptFlowReporter() -> ContextualDuckAIPromptFlowReporting {
         let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         return ContextualDuckAIPromptFlowReporter(instrumentation: instrumentation, isFireMode: isFireTab)
     }

@@ -317,6 +317,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.platform, "ios")
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
+        // Native prompt flows on iPad complete from `responseState`, which the page sends only on request.
+        XCTAssertEqual(configValues?.supportsResponseStateReporting, true)
     }
     
     func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndNotInFireModeThenSupportsNativeStorageIsTrue() {

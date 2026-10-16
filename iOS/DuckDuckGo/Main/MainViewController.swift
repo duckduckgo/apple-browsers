@@ -5818,7 +5818,7 @@ extension MainViewController: BrowserChromeDelegate {
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
             fireAskDuckAISuggestionPromptSubmittedPixel()
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
-                       nativePromptFlow: nativeDuckAIPromptFlow(DuckAIPromptFlowStart(userTier: currentDuckAIUserTier)))
+                       nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
@@ -5857,7 +5857,7 @@ extension MainViewController: OmniBarDelegate {
                    images: controlValues.selectedImages,
                    files: controlValues.selectedFiles,
                    termsAccepted: termsAccepted,
-                   nativePromptFlow: nativeDuckAIPromptFlow(DuckAIPromptFlowStart(controlValues: controlValues, tools: tools)))
+                   nativePromptFlow: DuckAIPromptFlowStart(controlValues: controlValues, tools: tools))
     }
 
     func onChatHistorySelected(url: URL) {
@@ -9633,11 +9633,6 @@ extension MainViewController {
 
     fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
         currentTab.map { .tab($0.tabModel.uid) }
-    }
-
-    /// The Duck.ai page reports response status only to native chat input, so a flow started anywhere else could never complete.
-    private func nativeDuckAIPromptFlow(_ flow: DuckAIPromptFlowStart) -> DuckAIPromptFlowStart? {
-        unifiedToggleInputFeature.isAvailable ? flow : nil
     }
 
     var currentDuckAIUserTier: AIChatUserTier {

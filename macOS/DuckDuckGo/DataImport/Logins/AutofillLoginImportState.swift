@@ -28,6 +28,7 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
 
     private let userDefaults: UserDefaults
     private let featureFlagger: FeatureFlagger
+    private let autofillPreferences: AutofillPreferencesPersistor
 
     public var isEligibleDDGUser: Bool {
         guard !featureFlagger.isFeatureOn(.credentialsImportPromotionForExistingUsers) else {
@@ -49,8 +50,9 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
         }
     }
 
+    /// Whether DuckDuckGo autofills passwords: the user wants it, and no extension manages passwords.
     public var isAutofillEnabled: Bool {
-        AutofillPreferences().askToSaveUsernamesAndPasswords
+        autofillPreferences.isUsernamesAndPasswordsAutofillActive
     }
 
     public var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool {
@@ -69,9 +71,12 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
     // no-op on macOS
     public var credentialsImportPromptPresentationCount: Int = 0
 
-    init(userDefaults: UserDefaults = .standard, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(userDefaults: UserDefaults = .standard,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()) {
         self.userDefaults = userDefaults
         self.featureFlagger = featureFlagger
+        self.autofillPreferences = autofillPreferences
     }
 
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool {

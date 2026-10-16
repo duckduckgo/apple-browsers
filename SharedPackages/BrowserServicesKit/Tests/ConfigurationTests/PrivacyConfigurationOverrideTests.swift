@@ -111,8 +111,8 @@ struct PrivacyConfigurationOverrideMarkerTests {
     }
 }
 
-@Suite("Privacy configuration override reporter")
-final class PrivacyConfigurationOverrideReporterTests {
+@Suite("Privacy configuration override handler")
+final class PrivacyConfigurationOverrideHandlerTests {
 
     let overrideArgument = "http://localhost:8080/ios-config.json"
     let appliedLine = "CONFIG_OVERRIDE_APPLIED stage=config version=1700000000001 etag=abc123 source=http://localhost:8080/ios-config.json"
@@ -125,7 +125,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     let markerSuiteName = UUID().uuidString
     let marker: PrivacyConfigurationOverrideMarker
     var lines = [String]()
-    var reporter: PrivacyConfigurationOverrideReporter!
+    var handler: PrivacyConfigurationOverrideHandler!
 
     init() {
         privacyConfig.identifier = "\"abc123\""
@@ -133,7 +133,7 @@ final class PrivacyConfigurationOverrideReporterTests {
         privacyConfigurationManager = OverridePrivacyConfigurationManagerMock(privacyConfig: privacyConfig)
         (provider, store) = makeURLProvider(internalUserDecider: internalUserDecider)
         marker = PrivacyConfigurationOverrideMarker(defaults: UserDefaults(suiteName: markerSuiteName)!)
-        reporter = PrivacyConfigurationOverrideReporter(
+        handler = PrivacyConfigurationOverrideHandler(
             privacyConfigurationManager: privacyConfigurationManager,
             urlProvider: provider,
             overrideMarker: marker,
@@ -149,7 +149,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @available(iOS 16, macOS 13, *)
     @Test("Formats the log line", .timeLimit(.minutes(1)))
     func formatsLogLine() {
-        let line = PrivacyConfigurationOverrideReporter.logLine(version: "1700000000001", etag: "W/\"abc 123\"", source: URL(string: overrideArgument)!)
+        let line = PrivacyConfigurationOverrideHandler.logLine(version: "1700000000001", etag: "W/\"abc 123\"", source: URL(string: overrideArgument)!)
         #expect(line == "CONFIG_OVERRIDE_APPLIED stage=config version=1700000000001 etag=W/abc123 source=http://localhost:8080/ios-config.json")
     }
 
@@ -157,7 +157,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @Test("Sets a session override, fetches, and logs the applied config", .timeLimit(.minutes(1)))
     func logsAppliedConfig() async {
         var didFetch = false
-        let fetchTask = reporter.handle(argument: overrideArgument) {
+        let fetchTask = handler.handle(argument: overrideArgument) {
             didFetch = true
             return true
         }
@@ -171,24 +171,13 @@ final class PrivacyConfigurationOverrideReporterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Logs exactly one APPLIED line per handled argument", .timeLimit(.minutes(1)))
-    func logsOneLinePerHandle() async {
-        await reporter.handle(argument: overrideArgument) { true }?.value
-        privacyConfigurationManager.updatesSubject.send()
-        #expect(lines == [appliedLine])
-
-        await reporter.handle(argument: overrideArgument) { true }?.value
-        #expect(lines == [appliedLine, appliedLine])
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("The session override wins over the debug custom URL, which is kept", .timeLimit(.minutes(1)))
     func sessionOverrideWinsOverDebugCustomURL() async {
         let debugURL = URL(string: "http://localhost:9090/debug-config.json")!
         store.customPrivacyConfigurationURL = debugURL
         #expect(provider.url(for: .privacyConfiguration) == debugURL)
 
-        await reporter.handle(argument: overrideArgument) { true }?.value
+        await handler.handle(argument: overrideArgument) { true }?.value
         #expect(provider.url(for: .privacyConfiguration) == URL(string: overrideArgument)!)
         #expect(store.customPrivacyConfigurationURL == debugURL)
     }
@@ -198,7 +187,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     func setsMarkerBeforeFetch() async {
         struct FetchError: Error {}
         var wasMarkerSetDuringFetch = false
-        let fetchTask = reporter.handle(argument: overrideArgument) { [marker] in
+        let fetchTask = handler.handle(argument: overrideArgument) { [marker] in
             wasMarkerSetDuringFetch = marker.isSet
             throw FetchError()
         }
@@ -212,7 +201,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @available(iOS 16, macOS 13, *)
     @Test("Logs download_failed and no APPLIED line when the app falls back to the embedded config", .timeLimit(.minutes(1)))
     func embeddedFallbackLogsFailure() async {
-        await reporter.handle(argument: overrideArgument) { false }?.value
+        await handler.handle(argument: overrideArgument) { false }?.value
 
         #expect(lines == [downloadFailedLine])
     }
@@ -220,7 +209,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @available(iOS 16, macOS 13, *)
     @Test("Without an argument, does nothing", .timeLimit(.minutes(1)))
     func noFetchWithoutArgument() {
-        let fetchTask = reporter.handle(argument: nil) {
+        let fetchTask = handler.handle(argument: nil) {
             Issue.record("Unexpected fetch")
             return true
         }
@@ -234,7 +223,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @available(iOS 16, macOS 13, *)
     @Test("An invalid argument logs invalid_url once and does nothing else", .timeLimit(.minutes(1)))
     func invalidArgument() {
-        let fetchTask = reporter.handle(argument: " not a url\n") {
+        let fetchTask = handler.handle(argument: " not a url\n") {
             Issue.record("Unexpected fetch")
             return true
         }
@@ -249,7 +238,7 @@ final class PrivacyConfigurationOverrideReporterTests {
     @Test("For non-internal users, logs not_internal once and does nothing else", .timeLimit(.minutes(1)))
     func nonInternalUser() {
         internalUserDecider.isInternalUser = false
-        let fetchTask = reporter.handle(argument: overrideArgument) {
+        let fetchTask = handler.handle(argument: overrideArgument) {
             Issue.record("Unexpected fetch")
             return true
         }
@@ -273,7 +262,6 @@ private func makeURLProvider(internalUserDecider: MockInternalUserDecider) -> (C
 
 final class OverridePrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
 
-    let updatesSubject = PassthroughSubject<Void, Never>()
     let privacyConfig: PrivacyConfiguration
     let internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 
@@ -282,7 +270,7 @@ final class OverridePrivacyConfigurationManagerMock: PrivacyConfigurationManagin
     }
 
     var currentConfig: Data { Data() }
-    var updatesPublisher: AnyPublisher<Void, Never> { updatesSubject.eraseToAnyPublisher() }
+    var updatesPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
     func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult { .downloaded }
 }

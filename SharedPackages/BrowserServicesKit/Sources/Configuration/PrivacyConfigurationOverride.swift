@@ -78,11 +78,11 @@ public struct PrivacyConfigurationOverrideMarker {
 
 /// Handles the launch argument and logs one `CONFIG_OVERRIDE_APPLIED` or `CONFIG_OVERRIDE_FAILED` line for it.
 /// Local tooling waits for these lines.
-public final class PrivacyConfigurationOverrideReporter {
+public final class PrivacyConfigurationOverrideHandler {
 
-    public static let logPrefix = "CONFIG_OVERRIDE_APPLIED"
+    static let logPrefix = "CONFIG_OVERRIDE_APPLIED"
 
-    public static func logLine(version: String?, etag: String, source: URL) -> String {
+    static func logLine(version: String?, etag: String, source: URL) -> String {
         let fields = [
             "stage=config",
             "version=\(sanitized(version ?? "unknown"))",

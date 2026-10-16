@@ -1102,31 +1102,41 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         for isFloating in [false, true] {
             let barView = makeBarView(isFloatingUIEnabled: isFloating)
             let controller = UIViewController()
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.rootViewController = controller
             controller.view.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
 
             for isBottom in [false, true] {
                 barView.isUsingSmallTopSpacing = isBottom
                 barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+                window.layoutIfNeeded()
                 barView.layoutIfNeeded()
 
                 let field = try XCTUnwrap(barView.searchContainer)
-                let fieldFrame = barView.convert(field.bounds, from: field)
                 let container = try XCTUnwrap(barView.notificationContainer)
-                let containerFrame = barView.convert(container.bounds, from: container)
 
                 for type in types {
                     container.prepareAnimation(type, in: controller)
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    let fieldFrame = barView.convert(field.bounds, from: field)
+                    let containerFrame = barView.convert(container.bounds, from: container)
                     let notification = try XCTUnwrap(container.currentNotificationController).rootView
                     let verticalInset = (fieldFrame.height - notification.lozengeHeight) / 2
                     XCTAssertEqual(verticalInset, OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
                     XCTAssertEqual(containerFrame.minX, fieldFrame.minX, accuracy: 0.01)
-                    XCTAssertEqual(containerFrame.midY, fieldFrame.midY, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.midY, fieldFrame.midY, accuracy: 0.01,
+                                   "floating=\(isFloating), bottom=\(isBottom), type=\(type), field=\(fieldFrame), notification=\(containerFrame)")
                     barView.isExpandedPhoneLayout = true
+                    window.layoutIfNeeded()
                     barView.layoutIfNeeded()
                     let updatedNotification = try XCTUnwrap(container.currentNotificationController).rootView
                     XCTAssertEqual((field.bounds.height - updatedNotification.lozengeHeight) / 2,
                                    OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
                     barView.isExpandedPhoneLayout = false
+                    window.layoutIfNeeded()
                     barView.layoutIfNeeded()
                     container.removePreviousNotification()
                 }

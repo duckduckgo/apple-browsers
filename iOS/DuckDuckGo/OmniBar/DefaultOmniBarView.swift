@@ -2163,7 +2163,7 @@ extension DefaultOmniBarView {
         bottomGTE.isActive = false
         searchFieldBottomGTEConstraint = bottomGTE
 
-        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor)
         centerY.isActive = true
         searchAreaCenterYConstraint = centerY
 

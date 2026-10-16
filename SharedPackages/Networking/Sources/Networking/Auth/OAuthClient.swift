@@ -396,18 +396,22 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     /// Spends the refresh token of `source` once, or twice when the backup needs renewal.
     /// - Parameters:
     ///   - source: The token container to refresh.
-    ///   - refreshID: The identifier of the refresh, under which every refresh call reports its steps.
+    ///   - refreshID: The identifier of the refresh, under which the first refresh call reports its steps.
     /// - Returns: The new primary and, when two pairs were minted, the new backup. If the second call of a renewal fails,
     ///   the pair from the first call is returned as the primary and no backup.
-    /// - Throws: The error of the first refresh call, as `TokenRefreshing.refresh` throws it.
+    /// - Throws: The error of the first refresh call, as `TokenRefreshing.refresh` throws it, or
+    ///   `OAuthClientError.internalError` when `fork` returns a number of pairs other than two.
     private func refreshPossiblyForking(_ source: TokenContainer, refreshID: String) async throws -> (primary: TokenContainer, backup: TokenContainer?) {
         guard let backupStore, backupStore.needsRenewal(for: source) else {
             return (try await tokenRefresher.refresh(source, refreshID: refreshID), nil)
         }
         do {
             let minted = try await tokenRefresher.fork(source, count: 2, refreshID: refreshID)
-            return (minted[1], minted[0])
-        } catch .incomplete(let minted, let underlying) {
+            guard minted.count == 2, let backup = minted.first, let primary = minted.last else {
+                throw OAuthClientError.internalError("Fork returned \(minted.count) token pairs instead of 2")
+            }
+            return (primary, backup)
+        } catch TokenForkError.incomplete(let minted, let underlying) {
             guard let primary = minted.last else { throw underlying }
             Logger.OAuthClient.error("Backup token fork incomplete, keeping the minted pair as primary: \(String(describing: underlying), privacy: .public)")
             return (primary, nil)

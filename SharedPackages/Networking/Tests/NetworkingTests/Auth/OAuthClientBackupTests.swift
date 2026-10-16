@@ -51,11 +51,13 @@ final class OAuthClientBackupTests: XCTestCase {
         eventCapture = nil
     }
 
-    private func makeClient(primaryStorage: (any AuthTokenStoring)? = nil, backupStorage: (any AuthTokenStoring)?) -> DefaultOAuthClient {
+    private func makeClient(primaryStorage: (any AuthTokenStoring)? = nil,
+                            backupStorage: (any AuthTokenStoring)?,
+                            tokenRefresher: (any TokenRefreshing)? = nil) -> DefaultOAuthClient {
         DefaultOAuthClient(tokensStorage: primaryStorage ?? self.primaryStorage,
                            authService: mockOAuthService,
                            refreshEventMapping: eventCapture.eventMapping,
-                           tokenRefresher: refresher,
+                           tokenRefresher: tokenRefresher ?? refresher,
                            backupStorage: backupStorage)
     }
 
@@ -91,6 +93,16 @@ final class OAuthClientBackupTests: XCTestCase {
 
         _ = try await makeClient(backupStorage: nil).getTokens(policy: .localForceRefresh)
 
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
+    }
+
+    func testRefresh_backupUnreadable_refreshesOnce() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await refresher.setTestingDecodedTokenContainers([newPrimary])
+
+        let result = try await makeClient(backupStorage: FailingTokenStorage(failOnRead: true)).getTokens(policy: .localForceRefresh)
+
+        XCTAssertEqual(result, newPrimary)
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
     }
 
@@ -136,6 +148,21 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertNil(try backupStorage.getTokenContainer())
     }
 
+    func testRefresh_forkReturnsOnePair_failsWithInternalError() async throws {
+        let expired = OAuthTokensFactory.makeExpiredTokenContainer()
+        try primaryStorage.saveTokenContainer(expired)
+        let client = makeClient(backupStorage: backupStorage, tokenRefresher: SinglePairRefresher(pair: newPrimary))
+
+        do {
+            _ = try await client.getTokens(policy: .localForceRefresh)
+            XCTFail("Expected error")
+        } catch let error as OAuthClientError {
+            guard case .internalError = error else { return XCTFail("Unexpected error \(error)") }
+        }
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), expired)
+        XCTAssertNil(try backupStorage.getTokenContainer())
+    }
+
     func testRefresh_forkFirstCall11003_throwsInvalidTokenRequestAsToday() async throws {
         try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
         mockOAuthService.refreshAccessTokenResponse = .failure(OAuthTokensFactory.makeAuthAPIError(.invalidTokenRequest, tokenStatus: .reused))
@@ -160,6 +187,21 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshStarted(refreshID: "", trigger: .client),
                                                      .tokenRefreshRefreshingAccessToken(refreshID: ""),
                                                      .tokenRefreshRefreshedAccessToken(refreshID: ""),
+                                                     .tokenRefreshSavingTokens(refreshID: ""),
+                                                     .tokenRefreshSucceeded(refreshID: "")])
+    }
+
+    func testRefresh_partialFork_reportsASingleSuccessfulRefresh() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        mockOAuthService.refreshAccessTokenResponses = [
+            .success(OAuthTokensFactory.makeValidOAuthTokenResponse()),
+            .failure(URLError(.timedOut))
+        ]
+        await refresher.setTestingDecodedTokenContainers([newBackup])
+
+        _ = try await makeClient(backupStorage: backupStorage).getTokens(policy: .localForceRefresh)
+
+        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshStarted(refreshID: "", trigger: .client),
                                                      .tokenRefreshRefreshingAccessToken(refreshID: ""),
                                                      .tokenRefreshRefreshedAccessToken(refreshID: ""),
                                                      .tokenRefreshSavingTokens(refreshID: ""),
@@ -247,18 +289,42 @@ private final class RecordingTokenStorage: AuthTokenStoring {
 
 private final class FailingTokenStorage: AuthTokenStoring {
     private let stored: TokenContainer?
+    private let failOnRead: Bool
     private let failOnSave: Bool
 
-    init(stored: TokenContainer? = nil, failOnSave: Bool = false) {
+    init(stored: TokenContainer? = nil, failOnRead: Bool = false, failOnSave: Bool = false) {
         self.stored = stored
+        self.failOnRead = failOnRead
         self.failOnSave = failOnSave
     }
 
     func getTokenContainer() throws -> TokenContainer? {
+        if failOnRead { throw NSError(domain: "keychain", code: 1) }
         return stored
     }
 
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
         if failOnSave { throw NSError(domain: "keychain", code: 2) }
+    }
+}
+
+/// A refresher whose `fork` breaks its contract by returning a single pair whatever `count` is.
+private final class SinglePairRefresher: TokenRefreshing, @unchecked Sendable {
+    private let pair: TokenContainer
+
+    init(pair: TokenContainer) {
+        self.pair = pair
+    }
+
+    func decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> TokenContainer {
+        pair
+    }
+
+    func refresh(_ tokenContainer: TokenContainer, refreshID: String?) async throws -> TokenContainer {
+        pair
+    }
+
+    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+        [pair]
     }
 }

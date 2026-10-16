@@ -196,6 +196,8 @@ public enum KeyEquivalentElement: ExpressibleByStringLiteral, Hashable {
     public static let left = KeyEquivalentElement.charCode("\u{2190}")
     public static let right = KeyEquivalentElement.charCode("\u{2192}")
     public static let escape = KeyEquivalentElement.charCode("\u{1B}")
+    public static let pageUp = KeyEquivalentElement.charCode("\u{F72F}")
+    public static let pageDown = KeyEquivalentElement.charCode("\u{F72D}")
 
     public init(stringLiteral value: String) {
         self = .charCode(value)
@@ -210,6 +212,8 @@ extension NSEvent.KeyEquivalent: ExpressibleByStringLiteral, ExpressibleByUnicod
     public static let left: Self = [.left]
     public static let right: Self = [.right]
     public static let escape: Self = [.escape]
+    public static let pageUp: Self = [.pageUp]
+    public static let pageDown: Self = [.pageDown]
 
     public init(stringLiteral value: String) {
         self = [.charCode(value)]

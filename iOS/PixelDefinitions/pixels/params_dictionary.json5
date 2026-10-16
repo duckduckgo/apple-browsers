@@ -2,6 +2,24 @@
 // In your pixel definitions, you can reference these params by their key
 // See TEMPLATE.json for an example
 {
+    "promptDaysSinceInstall": {
+        "key": "days_since_install",
+        "type": "string",
+        "description": "Rolling 24-hour periods since install, grouped into install-week buckets.",
+        "enum": ["d0_6", "d7_13", "d14_20", "d21_27", "d28_plus"]
+    },
+    "promptExposureVersion": {
+        "key": "version",
+        "type": "string",
+        "description": "Version of the prompt exposure parameter meanings and session sampling rate.",
+        "enum": ["1"]
+    },
+    "petal": {
+        "key": "petal",
+        "type": "string",
+        "description": "Randomizes the timestamp used when processing the pixel.",
+        "enum": ["randomize"]
+    },
     "appVersion": {
         "key": "appVersion",
         "type": "string",
@@ -661,5 +679,30 @@
         "type": "string",
         "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "appLifecycleState": {
+        "key": "state",
+        "type": "string",
+        "description": "iOS app state machine state (AppState.name)",
+        "enum": ["initializing", "launching", "connected", "foreground", "background", "terminating", "simulated"]
+    },
+    "appLifecycleLaunchStep": {
+        "key": "step",
+        "type": "string",
+        "description": "Last launch step reached, in launch order. ui-attached: never started entering the foreground (usually a background launch). entering-foreground: never became active. none: launch had not started",
+        "enum": [
+            "none",
+            "launching-started",
+            "key-value-store",
+            "persistent-stores",
+            "sync",
+            "content-blocking",
+            "main-coordinator",
+            "launched",
+            "window-connected",
+            "ui-attached",
+            "entering-foreground",
+            "terminating"
+        ]
     }
 }

@@ -2757,7 +2757,7 @@ extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
                                                                     withDelegate: self,
                                                                     ctaCallback: { [weak self] didAddShortcut in
                 guard let self else { return }
-                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
+                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned() : .ignored())
                 if didAddShortcut {
                     pinningManager.pin(.autofill)
                 }

@@ -478,6 +478,7 @@ private final class TabsBarSelectionDelegate: NSObject, TabsBarDelegate {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController) {}
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController) {}

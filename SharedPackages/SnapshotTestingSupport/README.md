@@ -166,6 +166,7 @@ Each image name carries the recording environment as a suffix so references are 
 - Missing references are recorded automatically (`.missing` mode).
 - `record: true` on a specific call records that assertion.
 - `GENERATE_SNAPSHOTS=1` in the test scheme's env records everything.
+- `REQUIRE_SNAPSHOT_REFERENCES=1` turns off automatic recording (`.never` mode), so a missing reference fails the assertion on every attempt. The iOS and macOS PR checks set it through `TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES`; otherwise a missing reference recorded on the first attempt would make the `-retry-tests-on-failure` retry pass. `record: true` and `GENERATE_SNAPSHOTS` still take precedence.
 
 After re-recording, inspect every diff and commit only the intentional ones.
 

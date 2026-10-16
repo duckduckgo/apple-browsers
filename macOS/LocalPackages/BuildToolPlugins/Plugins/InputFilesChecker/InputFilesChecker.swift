@@ -93,8 +93,6 @@ let temporarilyAllowedMisplacedFiles: Set<String> = [
     "DuckDuckGo/AppIcons/AppIcon-Review.icon",
     "DuckDuckGo/AppIcons/AppIcon.icon",
     "DuckDuckGo/ContentBlocker/Resources/macos-config.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/privacypro_devices_legacy.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/sparkleloop_wide_legacy.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_loop.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_reveal.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-animation.json",

@@ -580,6 +580,7 @@ class MainViewController: UIViewController {
 
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
+    private let promptExposureReporter: PromptExposureReporting
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let promoCoordinationService:
@@ -785,7 +786,8 @@ class MainViewController: UIViewController {
             & PromoCoordinationDiagnosticsProviding
             & PromoCoordinationCooldownResetting
             & AppRatingPromptGating)? = nil,
-        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+        promptExposureReporter: PromptExposureReporting
     ) {
         self.pixelFiring = pixelFiring
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -858,6 +860,7 @@ class MainViewController: UIViewController {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
         self.promoCoordinationService = promoCoordinationService
+        self.promptExposureReporter = promptExposureReporter
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
@@ -4032,18 +4035,19 @@ class MainViewController: UIViewController {
         viewCoordinator.setNavBarContainerBottomToKeyboard()
     }
 
-    private func showNotification(title: String, message: String, dismissHandler: @escaping NotificationView.DismissHandler) {
-        guard notificationView == nil else { return }
+    private func showNotification(title: String, message: String, dismissHandler: @escaping NotificationView.DismissHandler) -> Bool {
+        guard notificationView == nil else { return false }
 
         let notificationView = NotificationView.loadFromNib(dismissHandler: dismissHandler)
         notificationView.setTitle(text: title)
         notificationView.setMessage(text: message)
 
-        showNotification(with: notificationView)
+        return showNotification(with: notificationView)
     }
 
-    private func showNotification(with contentView: UIView) {
-        guard viewCoordinator.topSlideContainer.subviews.isEmpty else { return }
+    @discardableResult
+    private func showNotification(with contentView: UIView) -> Bool {
+        guard viewCoordinator.topSlideContainer.subviews.isEmpty else { return false }
         viewCoordinator.topSlideContainer.addSubview(contentView)
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -4062,6 +4066,7 @@ class MainViewController: UIViewController {
         UIView.animate(withDuration: 0.3) {
             self.view.layoutIfNeeded()
         }
+        return true
     }
 
     func hideNotification() {
@@ -4082,11 +4087,14 @@ class MainViewController: UIViewController {
         guard !onboardingManager.userHasSeenAddToDockPromoDuringOnboarding else { return }
         let feature = HomeRowReminder()
         if feature.showNow() {
-            showNotification(title: UserText.homeRowReminderTitle, message: UserText.homeRowReminderMessage) { tapped in
+            let didShow = showNotification(title: UserText.homeRowReminderTitle, message: UserText.homeRowReminderMessage) { tapped in
                 if tapped {
                     self.segueToHomeRow()
                 }
                 self.hideNotification()
+            }
+            if didShow {
+                promptExposureReporter.reportPromptShown(.addToDockReminder)
             }
             feature.setShown()
         }
@@ -6344,6 +6352,13 @@ extension MainViewController: OmniBarDelegate {
         newTab()
     }
 
+    func newChatLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        // The tab is created here, so `openAIChat` would see it blank and report no new tab.
+        newTab(allowingKeyboard: false)
+        openAIChat(source: .newTabLongPressMenu, reportsNewTab: true)
+    }
+
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -7134,6 +7149,10 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAppRatingPrompt(_ tab: TabViewController) {
         promoCoordinationService?.didRequestAppRatingPrompt()
+    }
+
+    func tab(_ tab: TabViewController, didShowPrompt id: PromptExposureID) {
+        promptExposureReporter.reportPromptShown(id)
     }
 
 
@@ -8098,6 +8117,10 @@ extension MainViewController: TabSwitcherDelegate {
         openAIChat(source: .tabSwitcher, reportsNewTab: true)
     }
 
+    func tabSwitcherDidRequestNewChatFromLongPressMenu(tabSwitcher: TabSwitcherViewController) {
+        newChatLongPressMenuAction()
+    }
+
     private func tabSwitcherNewTabWithAnimation() {
         // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
         pendingTabSwitcherKeyboard = nil
@@ -8139,6 +8162,14 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
     func launchNewFireTab(_ button: TabSwitcherButton) {
         newFireTabLongPressMenuAction()
+    }
+
+    func launchNewChat(_ button: TabSwitcherButton) {
+        newChatLongPressMenuAction()
+    }
+
+    var isNewChatAvailable: Bool {
+        aiChatSettings.isAIChatEnabled
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {

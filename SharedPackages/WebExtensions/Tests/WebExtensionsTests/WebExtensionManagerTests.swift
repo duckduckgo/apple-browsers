@@ -775,6 +775,39 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
     }
 
+    /// Only a loaded Bitwarden counts: an installed Bitwarden that isn't loaded, or another catalog extension
+    /// that is, sends nothing.
+    @MainActor
+    func testWhenBitwardenIsNotLoaded_ThenBrowsingSendsNoDailyPixelEvenWithAnotherCatalogExtensionLoaded() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let onePasswordStoreID = String(repeating: "o", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "onePassword", filename: "onePassword", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: onePasswordStoreID))
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          eventsListener: eventsListenerMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden, onePasswordStoreID: .onePassword])
+        _ = try await loadRealContext(identifier: "onePassword", into: manager.controller)
+
+        eventsListenerMock.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, [])
+
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller)
+        eventsListenerMock.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
+    }
+
     @MainActor
     func testWhenAToolbarButtonIsClicked_ThenThePixelNamesTheExtensionsCatalogEntry() {
         let bitwardenStoreID = String(repeating: "n", count: 32)

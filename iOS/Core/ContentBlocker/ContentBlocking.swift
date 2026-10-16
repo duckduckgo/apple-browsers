@@ -85,21 +85,22 @@ public final class ContentBlocking {
     }
 
     /// A launch without `-privacyConfigURL` must not read a privacy configuration stored by an earlier override.
-    /// Runs before the privacy configuration manager reads the store.
+    /// Called from `init`, because it must run before the privacy configuration manager reads the store.
     /// After a reset it also clears the refresh throttle, so the first production fetch isn't delayed by up to 30 minutes.
     @discardableResult
     static func discardStoredPrivacyConfigurationFromEarlierOverride(
         markerDefaults: UserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
-        launchArguments: UserDefaults = .app,
+        argumentDefaults: UserDefaults = .app,
+        appDefaults: UserDefaults = .app,
         removeStoredConfiguration: () -> Void = {
             _ = FileStore().removeData(forFile: Configuration.privacyConfiguration.storeKey)
             UserDefaultsETagStorage().removeEtag(for: .privacyConfiguration)
         }
     ) -> Bool {
         let marker = PrivacyConfigurationOverrideMarker(defaults: markerDefaults)
-        return marker.resetIfNeeded(userDefaults: launchArguments) {
+        return marker.resetIfNeeded(userDefaults: argumentDefaults) {
             removeStoredConfiguration()
-            launchArguments.removeObject(forKey: UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue)
+            appDefaults.removeObject(forKey: UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue)
         }
     }
 

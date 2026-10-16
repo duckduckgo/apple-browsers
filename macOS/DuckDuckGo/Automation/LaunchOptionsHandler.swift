@@ -20,7 +20,6 @@ import AppKitExtensions
 
 import Foundation
 import Common
-import Configuration
 import FoundationExtensions
 
 /// Handles launch options and user defaults for automation and testing scenarios
@@ -54,11 +53,6 @@ public final class LaunchOptionsHandler {
 
     public var isInternalUserRequested: Bool {
         userDefaults.string(forKey: Self.isInternalUserKey)?.lowercased() == "true"
-    }
-
-    /// `-privacyConfigURL <url>`. Applied for internal users only.
-    public var privacyConfigurationOverride: PrivacyConfigurationOverrideCommand? {
-        PrivacyConfigurationOverrideCommand(userDefaults: userDefaults)
     }
 
     /// Returns the automation port if set, nil otherwise.

@@ -18,7 +18,6 @@
 
 import AppKitExtensions
 
-import Configuration
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -149,18 +148,6 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         )
 
         XCTAssertTrue(handler.acceptsInsecureCertificates)
-    }
-
-    func testPrivacyConfigurationOverrideReadsURLLaunchArgument() {
-        let handler = makeHandler(arguments: ["privacyConfigURL": "http://127.0.0.1:8080/macos-config.json"])
-
-        XCTAssertEqual(handler.privacyConfigurationOverride, .set(URL(string: "http://127.0.0.1:8080/macos-config.json")!))
-    }
-
-    func testPrivacyConfigurationOverrideIgnoresInvalidLaunchArgument() {
-        let handler = makeHandler(arguments: ["privacyConfigURL": "not a url"])
-
-        XCTAssertNil(handler.privacyConfigurationOverride)
     }
 
     private func makeHandler(

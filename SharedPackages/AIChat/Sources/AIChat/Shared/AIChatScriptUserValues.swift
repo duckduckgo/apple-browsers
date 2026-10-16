@@ -163,6 +163,10 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when native supports the Bonus offer messages, so Duck.ai
     /// shows the limit extension offer. Gated by the bonus offer feature flag.
     public let supportsBonusOffer: Bool
+    /// `true` when native's own readers of stored chats (chat history, suggestions, export) accept the
+    /// canonical chat format, so the web app may write canonical chats to native storage. Absent on
+    /// builds that predate it, which must keep receiving the legacy format.
+    public let supportsCanonicalChatFormat: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -241,7 +245,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsBrowserTools: Bool = false,
                 supportsAttachmentPrivacyDisplay: Bool = false,
                 supportsHomePageChatSuggestions: Bool = false,
-                supportsBonusOffer: Bool = false) {
+                supportsBonusOffer: Bool = false,
+                supportsCanonicalChatFormat: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -275,6 +280,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
         self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
         self.supportsBonusOffer = supportsBonusOffer
+        self.supportsCanonicalChatFormat = supportsCanonicalChatFormat
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

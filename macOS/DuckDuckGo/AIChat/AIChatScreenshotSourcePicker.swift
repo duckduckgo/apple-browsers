@@ -34,11 +34,14 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
     }
 
     private let model: AIChatScreenshotSourcePickerModel
+    private let sheetParent: NSWindow?
     private var panel: NSPanel?
     private var continuation: CheckedContinuation<AIChatScreenshotSourcePickerModel.Finish, Never>?
 
-    init(excludingWindowIDs windowIDs: [CGWindowID]) {
+    /// - Parameter sheetParent: the browser window the picker is a sheet on; `nil` floats it over every app.
+    init(excludingWindowIDs windowIDs: [CGWindowID], sheetParent: NSWindow?) {
         model = AIChatScreenshotSourcePickerModel(excludedWindowIDs: Set(windowIDs))
+        self.sheetParent = sheetParent
     }
 
     func capture() async -> Outcome {
@@ -72,8 +75,9 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
     private func present() {
         let hostingController = NSHostingController(rootView: AIChatScreenshotSourcePickerView(model: model))
 
-        // Non-activating so it takes key over the prompt bar without activating the app.
-        let panel = AIChatScreenshotSourcePickerPanel(contentRect: .zero, styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel], backing: .buffered, defer: false)
+        // Floating, it's non-activating so it takes key over the prompt bar without activating the app.
+        let styleMask: NSWindow.StyleMask = sheetParent == nil ? [.titled, .fullSizeContentView, .nonactivatingPanel] : [.titled, .fullSizeContentView]
+        let panel = AIChatScreenshotSourcePickerPanel(contentRect: .zero, styleMask: styleMask, backing: .buffered, defer: false)
         panel.onMoveSelection = { [weak model] in model?.moveSelection(by: $0) }
         panel.title = UserText.aiChatScreenshotSelectWindowOrDisplay
         panel.titleVisibility = .hidden
@@ -81,13 +85,17 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton].forEach { panel.standardWindowButton($0)?.isHidden = true }
         panel.contentViewController = hostingController
         panel.setContentSize(hostingController.view.fittingSize)
-        panel.level = .modalPanel
-        panel.hidesOnDeactivate = false
         panel.sharingType = .none
         panel.isReleasedWhenClosed = false
         panel.delegate = self
-        panel.center()
-        panel.makeKeyAndOrderFront(nil)
+        if let sheetParent {
+            sheetParent.beginSheet(panel)
+        } else {
+            panel.level = .modalPanel
+            panel.hidesOnDeactivate = false
+            panel.center()
+            panel.makeKeyAndOrderFront(nil)
+        }
         self.panel = panel
 
         // Loaded once the panel is on screen, so the Entire Screen preview can leave it out.
@@ -104,6 +112,9 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
         self.continuation = nil
         model.stopRefreshing()
         panel?.delegate = nil
+        if let panel, let parent = panel.sheetParent {
+            parent.endSheet(panel)
+        }
         panel?.close()
         panel = nil
         continuation.resume(returning: finish)

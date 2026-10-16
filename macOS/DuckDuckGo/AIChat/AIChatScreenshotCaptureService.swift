@@ -67,14 +67,21 @@ final class AIChatScreenshotCaptureService {
             self?.dismissCapture?()
         }
 
-        let result = await captureImage(mode: mode, excludingWindowIDs: windows.map { CGWindowID($0.windowNumber) })
+        let result = await captureImage(mode: mode,
+                                        excludingWindowIDs: windows.map { CGWindowID($0.windowNumber) },
+                                        presentingOn: focusWindow)
         return hasContextEnded ? .cancelled : result
     }
 
-    private func captureImage(mode: AIChatScreenshotMode, excludingWindowIDs windowIDs: [CGWindowID]) async -> AIChatScreenshotCaptureResult {
+    private func captureImage(mode: AIChatScreenshotMode,
+                              excludingWindowIDs windowIDs: [CGWindowID],
+                              presentingOn focusWindow: NSWindow?) async -> AIChatScreenshotCaptureResult {
         switch mode {
         case .selectWindowOrDisplay:
-            let picker = AIChatScreenshotSourcePicker(excludingWindowIDs: windowIDs)
+            // A browser window gets the picker as a sheet, like a native dialog; the prompt bar floats over
+            // other apps, and so does its picker.
+            let sheetParent = focusWindow.flatMap { $0.styleMask.contains(.nonactivatingPanel) ? nil : $0 }
+            let picker = AIChatScreenshotSourcePicker(excludingWindowIDs: windowIDs, sheetParent: sheetParent)
             dismissCapture = picker.cancel
             switch await picker.capture() {
             case .cancelled:

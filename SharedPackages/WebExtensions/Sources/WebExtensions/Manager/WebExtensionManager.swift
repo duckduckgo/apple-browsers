@@ -154,6 +154,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     /// Answers `chrome.privacy.services` calls for extension pages.
     private let privacyHandler = WebExtensionPrivacyMessageHandler()
+    private let permissionsHandler = WebExtensionPermissionsMessageHandler()
 #endif
 
     /// Pixel firing for analytics.
@@ -216,6 +217,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // `chrome.privacy.services` settings are kept by the app, which decides who controls each one.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             privacyHandler, contentWorld: .page, name: WebExtensionAPIStubScript.privacyMessageHandlerName)
+        // `chrome.permissions` asks the app for the permissions WebKit doesn't know, such as `privacy`.
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            permissionsHandler, contentWorld: .page, name: WebExtensionAPIStubScript.permissionsMessageHandlerName)
 #endif
 
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -262,6 +266,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
+        permissionsHandler.controller = permissionController
+        permissionsHandler.extensionContext = { [weak self] url in
+            self?.extensionContext(for: url)
+        }
+        // Granting `privacy` can make an extension's earlier setting count; taking it back hands autofill
+        // back to DuckDuckGo, so the extension's settings go too.
+        permissionController?.appPermissionsDidChange = { [weak self] identifier in
+            guard let self, let privacySettings else { return }
+            if permissionController?.isGranted(.privacy, to: identifier) != true {
+                privacySettings.removeSettings(for: identifier)
+            }
+            privacySettings.notifyControlMayHaveChanged()
+        }
         launchDate = now()
         listener.onBrowsingActivity = { [weak self] in
             MainActor.assumeIsolated {
@@ -280,10 +297,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let storeIdentity = installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity
             pixelFiring.fire(.defaultPasswordManagerSet(extension: pixelExtension(for: storeIdentity)))
         }
-        // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
+        // Only a loaded extension that declares `privacy` and that the user granted it can take over autofill,
+        // and only while the app allows it. Without a permission controller nothing is granted.
         privacySettings?.canControl = { [weak self] identifier in
-            isAutofillTakeoverEnabled()
-                && self?.context(for: identifier)?.webExtension.declaresPermission(WebExtensionPrivacySettingsStore.permission) == true
+            guard let self, isAutofillTakeoverEnabled(),
+                  context(for: identifier)?.webExtension.declaresPermission(WebExtensionPrivacySettingsStore.permission) == true else {
+                return false
+            }
+            return permissionController?.isGranted(.privacy, to: identifier) == true
         }
 #endif
 
@@ -908,6 +929,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func handlePrivacyMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         privacyHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    /// Answers a `chrome.permissions` call for an app permission from an extension page in a tab, where
+    /// the controller's own message handlers are not installed.
+    @MainActor
+    public func handlePermissionsMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        permissionsHandler.reply(to: message, replyHandler: replyHandler)
     }
 #endif
 

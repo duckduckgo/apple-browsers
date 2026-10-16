@@ -4,7 +4,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_catalog_extension"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
     },
     "m_mac_web_extension_install_error": {
         "description": "Fires when a web extension installation fails.",
@@ -19,7 +19,7 @@
             "underlyingErrorCode",
             "underlyingErrorDomain",
             "channel",
-            "web_extension_catalog_extension"
+            "web_extension"
         ]
     },
     "m_mac_web_extension_uninstalled": {
@@ -27,7 +27,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_catalog_extension"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
     },
     "m_mac_web_extension_uninstall_error": {
         "description": "Fires when a web extension uninstallation fails.",
@@ -385,14 +385,14 @@
         "description": "Fires when an extension turns off the browser's password saving through chrome.privacy, which makes it the default password manager.",
         "owners": ["diegoreymendez"],
         "triggers": ["feature_lifecycle"],
-        "parameters": ["appVersion", "pixelSource", "web_extension_catalog_extension", "channel"]
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
     "web_extension_toolbar_button_clicked_macos": {
         "description": "Fires when the user clicks a third-party extension's button in the navigation bar, which usually opens its popup.",
         "owners": ["diegoreymendez"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "web_extension_catalog_extension", "channel"]
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
     "web_extension_state_checked_macos": {
         "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",

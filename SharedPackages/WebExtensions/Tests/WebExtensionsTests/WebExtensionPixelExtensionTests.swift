@@ -21,7 +21,7 @@ import XCTest
 
 final class WebExtensionPixelExtensionTests: XCTestCase {
 
-    /// Pinned to the `web_extension_catalog_extension` enum in macOS `params_dictionary.json5`, so a new
+    /// Pinned to the `web_extension` enum in macOS `params_dictionary.json5`, so a new
     /// catalog entry can't ship without its value in the definition, which would reject the pixel.
     func testParameterValuesMatchThePixelDefinition() {
         XCTAssertEqual(WebExtensionPixelExtension.allCases.map(\.parameterValue),

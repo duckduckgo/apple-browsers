@@ -697,7 +697,7 @@
         "description": "Web extension type whose reload failed.",
         "enum": ["embedded", "darkMode", "adBlocking", "searchToken", "unknown"]
     },
-    "web_extension_catalog_extension": {
+    "web_extension": {
         "key": "extension",
         "type": "string",
         "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",

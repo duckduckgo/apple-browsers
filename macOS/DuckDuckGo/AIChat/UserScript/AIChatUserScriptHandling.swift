@@ -804,11 +804,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         hasAttachedPageContext = payload.enabled
+        let automaticEnabled = featureFlagger.isFeatureOn(.aiChatPageContextAutoAttach) || storage.shouldAutomaticallySendPageContext
         let pixel: PixelKit.Event = {
             if payload.enabled {
-                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: automaticEnabled)
             }
-            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: automaticEnabled)
         }()
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
 

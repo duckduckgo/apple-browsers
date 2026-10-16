@@ -214,9 +214,13 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             .scaledBy(x: Constants.hiddenScale, y: Constants.hiddenScale)
     }
 
-    /// Maps `chip` at its laid-out frame onto `source`, so it can start out where its twin was drawn.
+    /// Maps `chip` at its laid-out frame onto `source`. Measured from `center` and `bounds`, which ignore the
+    /// landing transform a chip keeps after flying home; `convert(_:to:)` would fold it into the target.
     private func transform(from source: CGRect, to chip: UIView, in host: UIView) -> CGAffineTransform {
-        let target = chip.convert(chip.bounds, to: host)
+        guard let container = chip.superview else { return tuckedTransform }
+        let center = container.convert(chip.center, to: host)
+        let size = chip.bounds.size
+        let target = CGRect(x: center.x - size.width / 2, y: center.y - size.height / 2, width: size.width, height: size.height)
         guard target.width > 0, target.height > 0 else { return tuckedTransform }
         let scale = source.height / target.height
         return CGAffineTransform(translationX: source.midX - target.midX, y: source.midY - target.midY)

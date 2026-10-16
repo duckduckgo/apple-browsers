@@ -296,6 +296,18 @@ final class PageContextTabExtension {
             }
             .store(in: &sidebarCancellables)
 
+        session.pageContextAddedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                // A re-add can be served from the stored context without a fresh collect, so `handle()`
+                // never resets this flag. Left set, the user's next remove would read as the FE's
+                // post-submit auto-clear and be ignored.
+                self.hasContextBeenConsumedByChat = false
+                self.resumeAutoAttachAfterUserAttach()
+            }
+            .store(in: &sidebarCancellables)
+
         session.pageContextRemovedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in

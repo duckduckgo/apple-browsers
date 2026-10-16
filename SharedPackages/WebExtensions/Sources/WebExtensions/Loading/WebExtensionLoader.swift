@@ -228,6 +228,8 @@ public final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.failedToFindContextForIdentifier(identifier: identifier)
         }
 
+        // WebKit crashes if an extension's popup finishes closing after the extension unloads.
+        context.action(for: nil)?.closePopup()
         try controller.unload(context)
         permissionController?.didUnload(identifier)
     }

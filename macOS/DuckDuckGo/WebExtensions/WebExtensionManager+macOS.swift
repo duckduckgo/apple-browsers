@@ -124,8 +124,9 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
+            // Bitwarden's catalog entry decides whether a password manager extension may replace DuckDuckGo autofill.
             isAutofillTakeoverEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
             },
             scriptletConfiguration: scriptletConfiguration
         )
@@ -134,9 +135,7 @@ enum WebExtensionManagerFactory {
         if buildType.isSparkleBuild {
             manager.chromeWebStore = ChromeWebStoreService(
                 manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isBitwardenEnabled: {
-                    Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionBitwarden)
-                }),
+                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
             )
         }

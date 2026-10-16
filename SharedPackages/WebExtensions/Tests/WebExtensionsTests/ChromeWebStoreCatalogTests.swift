@@ -53,24 +53,6 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertEqual(try makeCatalog(extensions: extensions).extensionIDs, [identifier, otherIdentifier])
     }
 
-    func testWhenBitwardenIsTurnedOff_ThenOnlyBitwardenIsLeftOutAndTurningItOnBringsItBack() throws {
-        var isBitwardenEnabled = false
-        let config = try makeConfiguration(extensions: [
-            "bitwarden": entry(identifier, order: 1),
-            "onePassword": entry(otherIdentifier, order: 2)
-        ])
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config,
-                                                                                                  internalUserDecider: internalUser),
-                                            isBitwardenEnabled: { isBitwardenEnabled })
-
-        XCTAssertEqual(catalog.extensionIDs, [otherIdentifier])
-        XCTAssertFalse(catalog.contains(identifier))
-
-        isBitwardenEnabled = true
-
-        XCTAssertEqual(catalog.extensionIDs, [identifier, otherIdentifier])
-    }
-
     func testUnknownSubfeaturesAndMalformedEntriesAreIgnored() throws {
         let catalog = try makeCatalog(extensions: [
             "bitwarden": entry(identifier),

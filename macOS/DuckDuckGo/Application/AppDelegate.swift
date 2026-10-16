@@ -784,7 +784,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
-        webExtensionAutofillTakeover = WebExtensionAutofillTakeover(featureFlagger: featureFlagger)
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover(privacyConfigurationManager: privacyConfigurationManager)
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(

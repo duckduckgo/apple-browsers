@@ -77,9 +77,34 @@ public final class WebExtensionLifecycleCoordinator {
     }
 
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
-        guard initialLoadGateEnabledProvider(), !isInitialLoadGateOpen else { return nil }
-        return { [weak self] in
-            await self?.waitOnInitialLoadAndSync()
+        guard initialLoadGateEnabledProvider() else { return nil }
+        guard isInitialLoadGateOpen else {
+            return { [weak self] in
+                await self?.waitOnInitialLoadAndSync()
+            }
+        }
+        guard let backgroundWaiter = manager.prepareEmbeddedBackgroundForNavigation() else { return nil }
+        let timeout = initialLoadTimeout
+        return {
+            guard !Task.isCancelled else { return }
+            // Waiting directly for Task.value in a timeout task group is not bounded when the
+            // underlying WebKit callback ignores cancellation. AsyncStream's iterator is cancellable;
+            // the shared background startup continues independently after this navigation is released.
+            let completion = AsyncStream<Void> { continuation in
+                Task { @MainActor in
+                    await backgroundWaiter()
+                    continuation.finish()
+                }
+            }
+            do {
+                try await withTimeout(timeout) {
+                    for await _ in completion { }
+                }
+            } catch {
+                if !Task.isCancelled {
+                    Logger.webExtensions.info("[CPM Background] Navigation wait released: \(String(describing: error), privacy: .public)")
+                }
+            }
         }
     }
 

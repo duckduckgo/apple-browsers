@@ -188,6 +188,67 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testNavigationAfterLaunchWaitsForBackgroundWake() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let backgroundWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        var completed = false
+        let task = Task { @MainActor in await backgroundWaiter(); completed = true }
+        while release == nil { await Task.yield() }
+        XCTAssertFalse(completed)
+        release?.resume()
+        await task.value
+        XCTAssertTrue(completed)
+    }
+
+    @MainActor
+    func testBackgroundWakeWaitIsBoundedWhenWebKitIgnoresCancellation() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 0.02, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let released = expectation(description: "Navigation released without the WebKit callback")
+        let task = Task { @MainActor in await waiter(); released.fulfill() }
+        await fulfillment(of: [released], timeout: 1)
+        XCTAssertNotNil(release, "The background load remains pending after the navigation deadline")
+        release?.resume()
+        await task.value
+    }
+
+    @MainActor
+    func testCancellingNavigationDoesNotWaitForBackgroundCallback() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let cancelled = expectation(description: "Cancelled navigation releases its waiter")
+        let task = Task { @MainActor in await waiter(); cancelled.fulfill() }
+        while release == nil { await Task.yield() }
+        task.cancel()
+        await fulfillment(of: [cancelled], timeout: 1)
+        release?.resume()
+        await task.value
+    }
+
+    @MainActor
+    func testDisabledGateDoesNotPrepareIdleBackground() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager,
+                                                   initialLoadGateEnabledProvider: { false },
+                                                   enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        manager.navigationBackgroundWaiter = { XCTFail("Disabled navigation protection must not wake background") }
+        XCTAssertNil(sut.initialLoadWaiter)
+    }
+
+    @MainActor
     func testNavigationGateTimesOutWithoutCancellingInitialLoad() async throws {
         let manager = RecordingWebExtensionManager()
         manager.suspendLoad = true
@@ -594,6 +655,11 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func resumeBackgroundContentLoad() {
         backgroundContentLoadContinuation?.resume()
         backgroundContentLoadContinuation = nil
+    }
+
+    var navigationBackgroundWaiter: WebExtensionInitialLoadWaiter?
+    @MainActor func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter? {
+        navigationBackgroundWaiter
     }
 
     // Unused protocol requirements

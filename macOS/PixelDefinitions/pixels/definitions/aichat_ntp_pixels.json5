@@ -15,6 +15,81 @@
             }
         ]
     },
+    "m_mac_aichat_ntp_screenshot_taken": {
+        "description": "Fired when the New Tab Page omnibar adds a screenshot from Add Screenshot as an image chip (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "kind",
+                "type": "string",
+                "description": "What was captured: a dragged region, a whole display, or a window",
+                "enum": ["selection", "screen", "window"]
+            }
+        ]
+    },
+    "m_mac_aichat_ntp_screenshot_removed": {
+        "description": "Fired when the user removes a screenshot chip from the New Tab Page omnibar (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_ntp_screenshot_failed": {
+        "description": "Fired when an Add Screenshot capture for the New Tab Page omnibar fails or Screen Recording is denied, or when the page can't process the returned image. Not fired when the user cancels",
+        "owners": ["jotaemepereira"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "denied: Screen Recording is off; unavailable: capture could not start; failed: the capture or its processing failed",
+                "enum": ["denied", "unavailable", "failed"]
+            }
+        ]
+    },
+    "m_mac_aichat_ntp_image_attached": {
+        "description": "Fired for every image chip added to the New Tab Page omnibar (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "How the image was added: the file picker, a paste, or Add Screenshot",
+                "enum": ["file", "paste", "screenshot"]
+            }
+        ]
+    },
+    "m_mac_aichat_ntp_image_removed": {
+        "description": "Fired for every image chip the user removes from the New Tab Page omnibar (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "How the removed image was added",
+                "enum": ["file", "paste", "screenshot"]
+            }
+        ]
+    },
     "m_mac_aichat_ntp_model_selected": {
         "description": "Fired when user selects a model from the New Tab Page model picker",
         "owners": ["tomasstrba"],

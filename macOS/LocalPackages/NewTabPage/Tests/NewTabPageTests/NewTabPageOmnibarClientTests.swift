@@ -1313,6 +1313,77 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertFalse(handlerCalled)
     }
 
+    // MARK: - screenshots
+
+    private var retainedScreenshotClient: NewTabPageOmnibarClient?
+
+    private func makeScreenshotClient(_ provider: MockNewTabPageOmnibarScreenshotProvider) -> MessageHelper<NewTabPageOmnibarClient.MessageName> {
+        let screenshotClient = NewTabPageOmnibarClient(configProvider: configProvider,
+                                                       suggestionsProvider: suggestionsProvider,
+                                                       aiChatsProvider: aiChatsProvider,
+                                                       modelsProvider: modelsProvider,
+                                                       actionHandler: actionHandler,
+                                                       tabsProvider: tabsProvider,
+                                                       subscriptionDialogPresenter: subscriptionDialogPresenter,
+                                                       screenshotProvider: provider)
+        let screenshotUserScript = NewTabPageUserScript()
+        screenshotClient.registerMessageHandlers(for: screenshotUserScript)
+        retainedScreenshotClient = screenshotClient
+        return MessageHelper(userScript: screenshotUserScript)
+    }
+
+    @MainActor
+    func testGetConfigOmitsScreenshotModesWithoutAProvider() async throws {
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertNil(config.screenshotModes)
+    }
+
+    @MainActor
+    func testGetConfigPassesScreenshotModesThrough() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        provider.screenshotModes = ["dragToSelect", "selectWindowOrDisplay"]
+        let helper = makeScreenshotClient(provider)
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.screenshotModes, ["dragToSelect", "selectWindowOrDisplay"])
+    }
+
+    @MainActor
+    func testCaptureScreenshotReturnsTheProvidersResponse() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        provider.captureResponse = .init(image: .init(data: "AAAA", format: "png", kind: "window"))
+        let helper = makeScreenshotClient(provider)
+
+        let response: NewTabPageDataModel.OmnibarCaptureScreenshotResponse = try await helper.handleMessage(named: .captureScreenshot,
+                                                                                                             parameters: ["mode": "selectWindowOrDisplay"])
+        XCTAssertEqual(response, provider.captureResponse)
+        XCTAssertEqual(provider.requestedModes, ["selectWindowOrDisplay"])
+    }
+
+    @MainActor
+    func testCaptureScreenshotWithBadParamsIsACancel() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        let helper = makeScreenshotClient(provider)
+
+        let response: NewTabPageDataModel.OmnibarCaptureScreenshotResponse = try await helper.handleMessage(named: .captureScreenshot,
+                                                                                                             parameters: ["unexpected": 1])
+        XCTAssertEqual(response, .cancelled)
+        XCTAssertTrue(provider.requestedModes.isEmpty)
+    }
+
+    @MainActor
+    func testCaptureScreenshotWithoutAProviderIsACancel() async throws {
+        let response: NewTabPageDataModel.OmnibarCaptureScreenshotResponse = try await messageHelper.handleMessage(named: .captureScreenshot,
+                                                                                                                    parameters: ["mode": "dragToSelect"])
+        XCTAssertEqual(response, .cancelled)
+    }
+
+    func testCancelledAndFailedResponsesEncodeAsThePageExpects() throws {
+        XCTAssertEqual(try JSONEncoder().encode(NewTabPageDataModel.OmnibarCaptureScreenshotResponse.cancelled), Data("{}".utf8))
+        let failed = try JSONSerialization.jsonObject(with: JSONEncoder().encode(NewTabPageDataModel.OmnibarCaptureScreenshotResponse.failed)) as? [String: String]
+        XCTAssertEqual(failed, ["error": "screenshotFailed"])
+    }
+
     // MARK: - Helpers
 
     private func availableEfforts(_ ids: [String]) -> [NewTabPageDataModel.AIModelReasoningEffort] {

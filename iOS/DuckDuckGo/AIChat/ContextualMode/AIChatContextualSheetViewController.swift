@@ -121,6 +121,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let titleSpacing: CGFloat = 4
         static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
+        /// The sidebar's header while the keyboard leaves it little room.
+        static let compactHeaderScale: CGFloat = 0.82
+        static let compactHeaderTopPadding: CGFloat = 4
+        static let compactContentTopPadding: CGFloat = 2
         static let dimmingAlpha = ContextualSurfaceScrim.alpha
         static let iPadPopoverWidth: CGFloat = 375
         static let iPadPopoverDefaultHeight: CGFloat = 520
@@ -195,6 +199,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
     private var headerTopConstraint: NSLayoutConstraint?
+    private var headerHeightConstraint: NSLayoutConstraint?
+    private var contentTopConstraint: NSLayoutConstraint?
+    private var isHeaderCompact = false
 
     /// The single web view controller for this sheet, created once and reused
     private var webViewController: AIChatContextualWebViewController?
@@ -670,7 +677,31 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.layer.cornerRadius = isSheet ? SheetMetrics.cornerRadius : 0
         view.layer.shadowOpacity = isSheet ? Constants.shadowOpacity : 0
         topSeparator.isHidden = !isSheet
-        headerTopConstraint?.constant = isSheet ? Constants.headerTopPadding : Constants.sidebarHeaderTopPadding
+        contextualInputViewController.compactsWhileKeyboardShows = !isSheet
+        if isSheet { setHeaderCompact(false) }
+        headerTopConstraint?.constant = headerTopPadding
+    }
+
+    private var headerTopPadding: CGFloat {
+        if isHeaderCompact { return Constants.compactHeaderTopPadding }
+        return surfaceStyle == .sheet ? Constants.headerTopPadding : Constants.sidebarHeaderTopPadding
+    }
+
+    /// Shrinks the header in place: each pill keeps its outer edge, the title its centre.
+    private func setHeaderCompact(_ isCompact: Bool) {
+        isHeaderCompact = isCompact
+        let scale = isCompact ? Constants.compactHeaderScale : 1
+        let headerHeight = Constants.headerHeight * scale
+        headerTopConstraint?.constant = headerTopPadding
+        headerHeightConstraint?.constant = headerHeight
+        contentTopConstraint?.constant = isCompact ? Constants.compactContentTopPadding : Constants.contentTopPadding
+
+        let shrink = CGAffineTransform(scaleX: scale, y: scale)
+        let leftInset = leftButtonContainer.bounds.width * (1 - scale) / 2
+        let rightInset = rightButtonContainer.bounds.width * (1 - scale) / 2
+        leftButtonContainer.transform = shrink.concatenating(CGAffineTransform(translationX: -leftInset, y: 0))
+        rightButtonContainer.transform = shrink.concatenating(CGAffineTransform(translationX: rightInset, y: 0))
+        titleHostView.transform = shrink
     }
 
     private func configureSheetPresentation() {
@@ -744,6 +775,11 @@ private extension AIChatContextualSheetViewController {
 
     func showContextualInput() {
         contextualInputViewController.delegate = self
+        contextualInputViewController.compactsWhileKeyboardShows = surfaceStyle == .sidebar
+        contextualInputViewController.onCompactLayoutChange = { [weak self] isCompact in
+            self?.setHeaderCompact(isCompact)
+            self?.view.layoutIfNeeded()
+        }
         embedChildViewController(contextualInputViewController)
     }
 
@@ -1601,6 +1637,10 @@ private extension AIChatContextualSheetViewController {
         contentContainerBottomConstraint = contentBottomConstraint
         let headerTop = headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Constants.headerTopPadding)
         headerTopConstraint = headerTop
+        let headerHeight = headerView.heightAnchor.constraint(equalToConstant: Constants.headerHeight)
+        headerHeightConstraint = headerHeight
+        let contentTop = contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Constants.contentTopPadding)
+        contentTopConstraint = contentTop
 
         NSLayoutConstraint.activate([
 
@@ -1612,7 +1652,7 @@ private extension AIChatContextualSheetViewController {
             headerTop,
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            headerView.heightAnchor.constraint(equalToConstant: Constants.headerHeight),
+            headerHeight,
 
             aiChatEditHeaderView.topAnchor.constraint(equalTo: headerView.topAnchor),
             aiChatEditHeaderView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
@@ -1638,7 +1678,7 @@ private extension AIChatContextualSheetViewController {
             rightButtonStack.trailingAnchor.constraint(equalTo: rightButtonContainer.contentView.trailingAnchor),
             rightButtonStack.bottomAnchor.constraint(equalTo: rightButtonContainer.contentView.bottomAnchor),
 
-            contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Constants.contentTopPadding),
+            contentTop,
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentBottomConstraint,

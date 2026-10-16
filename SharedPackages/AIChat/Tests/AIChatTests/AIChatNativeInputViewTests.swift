@@ -303,5 +303,50 @@ final class AIChatNativeInputViewTests: XCTestCase {
             return matches
         }
     }
+
+    // MARK: - Compact Tests
+
+    private func fittingHeight() -> CGFloat {
+        sut.systemLayoutSizeFitting(CGSize(width: 360, height: 0),
+                                    withHorizontalFittingPriority: .required,
+                                    verticalFittingPriority: .fittingSizeLevel).height
+    }
+
+    func testWhenCompactWithContextChipThenChipMovesBesideSubmitAndSavesItsRow() {
+        sut.showContextChip(UIView())
+        let regularHeight = fittingHeight()
+
+        sut.isCompact = true
+
+        XCTAssertEqual(fittingHeight(), regularHeight - 44)
+        XCTAssertTrue(sut.isContextChipVisible)
+    }
+
+    func testWhenCompactWithoutContextChipThenHeightIsUnchanged() {
+        let regularHeight = fittingHeight()
+
+        sut.isCompact = true
+
+        XCTAssertEqual(fittingHeight(), regularHeight)
+    }
+
+    func testWhenNoLongerCompactThenContextChipReturnsToItsRow() {
+        sut.showContextChip(UIView())
+        let regularHeight = fittingHeight()
+        sut.isCompact = true
+
+        sut.isCompact = false
+
+        XCTAssertEqual(fittingHeight(), regularHeight)
+    }
+
+    func testWhenContextChipIsShownWhileCompactThenItTakesNoExtraRow() {
+        let emptyHeight = fittingHeight()
+        sut.isCompact = true
+
+        sut.showContextChip(UIView())
+
+        XCTAssertEqual(fittingHeight(), emptyHeight)
+    }
 }
 #endif

@@ -55,6 +55,7 @@ public final class AIChatNativeInputView: UIView {
         static let textViewMaxHeight: CGFloat = 200
         static let chipHeight: CGFloat = 44
         static let chipContainerPadding: CGFloat = 8
+        static let compactChipTrailingSpacing: CGFloat = 4
     }
 
     // MARK: - Properties
@@ -103,6 +104,15 @@ public final class AIChatNativeInputView: UIView {
 
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
+
+    /// Moves the context chip into the bottom bar, beside the submit button, to save a row when space is short.
+    /// Set inside an animation block, then lay out the superview, to animate the move.
+    public var isCompact = false {
+        didSet {
+            guard isCompact != oldValue else { return }
+            applyChipPlacement()
+        }
+    }
 
         // MARK: - UI Components
 
@@ -196,6 +206,8 @@ public final class AIChatNativeInputView: UIView {
     private var isShowingClearButton = false
     private var chipHeightConstraint: NSLayoutConstraint?
     private var submitButtonContainerWidthConstraint: NSLayoutConstraint?
+    private var chipRowConstraints: [NSLayoutConstraint] = []
+    private var chipInBottomBarConstraints: [NSLayoutConstraint] = []
 
     // MARK: - Initialization
 
@@ -250,7 +262,7 @@ public final class AIChatNativeInputView: UIView {
         ])
 
         isContextChipVisible = true
-        chipHeightConstraint?.constant = Constants.chipHeight
+        applyChipPlacement()
         delegate?.nativeInputViewNeedsLayout(self)
     }
 
@@ -259,7 +271,7 @@ public final class AIChatNativeInputView: UIView {
         guard isContextChipVisible else { return }
 
         isContextChipVisible = false
-        chipHeightConstraint?.constant = 0
+        applyChipPlacement()
         delegate?.nativeInputViewNeedsLayout(self)
 
         currentChipView?.removeFromSuperview()
@@ -333,12 +345,9 @@ private extension AIChatNativeInputView {
             topRightButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             topRightButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            chipContainer.topAnchor.constraint(equalTo: textView.bottomAnchor),
             chipContainer.leadingAnchor.constraint(equalTo: mainContainer.leadingAnchor),
-            chipContainer.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
             chipHeightConstraint!,
 
-            bottomBar.topAnchor.constraint(equalTo: chipContainer.bottomAnchor),
             bottomBar.leadingAnchor.constraint(equalTo: mainContainer.leadingAnchor),
             bottomBar.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
             bottomBar.bottomAnchor.constraint(equalTo: mainContainer.bottomAnchor, constant: -Constants.bottomBarHorizontalPadding),
@@ -355,6 +364,28 @@ private extension AIChatNativeInputView {
                                                 constant: Constants.minimumButtonHitSize - Constants.buttonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.minimumButtonHitSize),
         ])
+
+        chipRowConstraints = [
+            chipContainer.topAnchor.constraint(equalTo: textView.bottomAnchor),
+            chipContainer.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
+            bottomBar.topAnchor.constraint(equalTo: chipContainer.bottomAnchor),
+        ]
+        chipInBottomBarConstraints = [
+            chipContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
+            chipContainer.trailingAnchor.constraint(equalTo: submitButtonContainer.leadingAnchor,
+                                                    constant: -Constants.compactChipTrailingSpacing),
+            bottomBar.topAnchor.constraint(equalTo: textView.bottomAnchor),
+        ]
+        NSLayoutConstraint.activate(chipRowConstraints)
+    }
+
+    func applyChipPlacement() {
+        chipHeightConstraint?.constant = isContextChipVisible ? Constants.chipHeight : 0
+        let (outgoing, incoming) = isCompact
+            ? (chipRowConstraints, chipInBottomBarConstraints)
+            : (chipInBottomBarConstraints, chipRowConstraints)
+        NSLayoutConstraint.deactivate(outgoing)
+        NSLayoutConstraint.activate(incoming)
     }
 
     func updatePlaceholderVisibility() {

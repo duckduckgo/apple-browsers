@@ -97,5 +97,28 @@ final class AIChatQuickActionsViewTests: XCTestCase {
         XCTAssertNil(selectedAction) // Not called yet
         XCTAssertNotNil(sut.onActionSelected)
     }
+
+    // MARK: - Axis Tests
+
+    func testWhenAxisIsHorizontalThenChipsLayOutInOneRow() {
+        sut.configure(with: [.testAction1, .testAction2])
+        let stacked = sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+
+        sut.axis = .horizontal
+        let row = sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+
+        XCTAssertLessThan(row.height, stacked.height)
+        XCTAssertGreaterThan(row.width, stacked.width)
+    }
+
+    func testWhenAxisReturnsToVerticalThenChipsStackAgain() {
+        sut.configure(with: [.testAction1, .testAction2])
+        let stacked = sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+
+        sut.axis = .horizontal
+        sut.axis = .vertical
+
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize), stacked)
+    }
 }
 #endif

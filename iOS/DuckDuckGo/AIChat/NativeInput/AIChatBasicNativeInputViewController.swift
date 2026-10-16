@@ -65,6 +65,11 @@ final class AIChatBasicNativeInputViewController: UIViewController {
         nativeInputView.isContextChipVisible
     }
 
+    var isCompact: Bool {
+        get { nativeInputView.isCompact }
+        set { nativeInputView.isCompact = newValue }
+    }
+
     var submitButtonTitle: String? {
         get { nativeInputView.submitButtonTitle }
         set { nativeInputView.submitButtonTitle = newValue }

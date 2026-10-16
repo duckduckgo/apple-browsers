@@ -146,7 +146,7 @@ private extension FreemiumDBPPromotionViewCoordinator {
             })
 
             showFreemiumDBP()
-            onUserAction?(.actioned)
+            onUserAction?(.actioned())
         }
     }
 

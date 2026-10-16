@@ -71,6 +71,8 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     case recoveryConfirmedTapped
     case anotherDevicePromptShown
     case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case syncThisDeviceFallbackShown
+    case syncThisDeviceFallbackSyncTapped
     case authenticationCancelledPromptShown
     case authenticationCancelledPromptRetryTapped
     case authenticationCancelledPromptDismissed
@@ -95,6 +97,8 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
         case .recoveryConfirmedTapped: return "sync_settings_recovery_confirmed_tapped_mac"
         case .anotherDevicePromptShown: return "sync_settings_another_device_prompt_shown_mac"
         case .anotherDevicePromptOptionTapped: return "sync_settings_another_device_prompt_option_tapped_mac"
+        case .syncThisDeviceFallbackShown: return "sync_settings_sync_this_device_fallback_shown_mac"
+        case .syncThisDeviceFallbackSyncTapped: return "sync_settings_sync_this_device_fallback_sync_tapped_mac"
         case .authenticationCancelledPromptShown: return "sync_settings_authentication_cancelled_prompt_shown_mac"
         case .authenticationCancelledPromptRetryTapped: return "sync_settings_authentication_cancelled_prompt_retry_tapped_mac"
         case .authenticationCancelledPromptDismissed: return "sync_settings_authentication_cancelled_prompt_dismissed_mac"
@@ -205,6 +209,7 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
         static let linking = "linking"
         static let v1 = "v1"
         static let v2 = "v2"
+        static let v2Point1 = "v2.1"
         static let alreadyPaired = "already_paired"
         static let scanningCancelled = "scanning_cancelled"
         static let syncConfirmationDenied = "sync_confirmation_denied"
@@ -380,6 +385,27 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
             return [.pixelSource]
         }
     }
+}
+
+struct SyncJoinReportPixel: PixelKit.Event {
+    let report: PairingV2JoinReport
+
+    var name: String {
+        let outcome = report.didSucceed ? "success" : "failed"
+        return "sync_setup_joiner_recovery_code_done_\(outcome)_mac"
+    }
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var parameters: [String: String]? {
+        ["host_has_account": String(report.hostHasAccount),
+         "host_kind": report.hostKind.rawValue,
+         "joiner_has_account": String(report.joinerHasAccount),
+         "joiner_kind": report.joinerKind.rawValue,
+         "protocol_version": report.protocolVersion]
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
 
 private extension SyncSetupSource {

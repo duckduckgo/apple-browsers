@@ -91,6 +91,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
+    let didChangeInputFocus = PassthroughSubject<Bool, Never>()
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
@@ -603,6 +604,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
+        subscribeToTextInputFocus()
         subscribeToVoiceSearchTap()
         subscribeToAIVoiceChatTap()
         subscribeToClearButtonTap()
@@ -1209,6 +1211,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func activateFromOmnibar(prefilledText: String? = nil,
                              inputMode: TextEntryMode = .search,
                              cardPosition: UnifiedToggleInputCardPosition = .top,
+                             allowsInactiveFocus: Bool = false,
                              isFocusRequestValid: @escaping () -> Bool = { true },
                              onFocus: ((Bool) -> Void)? = nil) {
         restoreAttachmentsRetainedForDismiss()
@@ -1261,7 +1264,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             keyboardMonitor.scheduleFallback()
         }
 
-        requestOmnibarInputFocus(isRequestValid: isFocusRequestValid, completion: onFocus, allowsInactive: false)
+        requestOmnibarInputFocus(isRequestValid: isFocusRequestValid, completion: onFocus, allowsInactive: allowsInactiveFocus)
     }
 
     /// Resumes the existing editor without resetting its draft, mode, tools, or entrance presentation.
@@ -2725,6 +2728,14 @@ private extension UnifiedToggleInputCoordinator {
                 }
                 self.didPressCustomizeResponsesButton.send()
                 self.showCollapsed()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToTextInputFocus() {
+        viewController.handler.textInputFocusChangedPublisher
+            .sink { [weak self] isFocused in
+                self?.didChangeInputFocus.send(isFocused)
             }
             .store(in: &cancellables)
     }

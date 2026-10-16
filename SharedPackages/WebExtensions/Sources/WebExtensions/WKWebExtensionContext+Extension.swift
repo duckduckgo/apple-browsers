@@ -109,6 +109,12 @@ public extension WKWebExtension {
         WebExtensionMetadata(manifest: manifest).type
     }
 
+    /// Whether the extension is a third-party one, which gets the Chrome-compatibility behavior
+    /// such as native messaging pass-through. Extensions that declare `browser_specific_settings.duckduckgo` are ours.
+    var needsChromeCompatibility: Bool {
+        !declaresDuckDuckGoSettings(inManifest: manifest)
+    }
+
     /// Returns whether the extension declares a toolbar action in its manifest.
     ///
     /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
@@ -148,6 +154,11 @@ public extension WKWebExtensionContext {
     /// Convenience proxy to the underlying web extension's type.
     var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
         webExtension.duckDuckGoWebExtensionType
+    }
+
+    /// Convenience proxy to `WKWebExtension.needsChromeCompatibility`.
+    var needsChromeCompatibility: Bool {
+        webExtension.needsChromeCompatibility
     }
 
     /// Convenience proxy to the underlying web extension's toolbar action declaration.

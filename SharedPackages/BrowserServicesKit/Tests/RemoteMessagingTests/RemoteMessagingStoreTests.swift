@@ -1104,7 +1104,11 @@ private extension RemoteMessagingStoreTests {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: self.defaults),
                 surveyActionMapper: MockRemoteMessagingSurveyActionMapper(),

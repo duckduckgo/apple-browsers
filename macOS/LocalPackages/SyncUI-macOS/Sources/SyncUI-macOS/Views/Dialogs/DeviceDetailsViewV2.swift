@@ -41,15 +41,33 @@ struct DeviceDetailsViewV2: View {
         switch device.kind {
         case .current, .desktop:
             return Image(.desktopSyncAddedFeature128)
-        case .mobile, .thirdParty:
+        case .mobile:
             return Image(.mobileSyncAddedFeature128)
+        case .thirdParty, .unknown:
+            return Image(.browserV2SyncedFeature128)
         }
     }
 
     private var title: String {
         guard device.isCurrent else { return device.name }
-        let name = trimmedDeviceName.isEmpty ? device.name : trimmedDeviceName
-        return "\(name) (\(UserText.thisDevice))"
+        return "\(displayedName) (\(UserText.thisDevice))"
+    }
+
+    private var displayedName: String {
+        trimmedDeviceName.isEmpty ? device.name : trimmedDeviceName
+    }
+
+    @ViewBuilder
+    private var header: some View {
+        if device.isCurrent && model.isImprovedPairingFlowEnabled {
+            (Text(displayedName).bold()
+             + Text(verbatim: " (\(UserText.thisDevice))").foregroundColor(Color(designSystemColor: .textSecondary)))
+                .font(.system(size: 17))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+        } else {
+            SyncUIViews.TextHeader(text: title)
+        }
     }
 
     var body: some View {
@@ -58,7 +76,7 @@ struct DeviceDetailsViewV2: View {
                 illustration
                     .accessibilityHidden(true)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViews.TextHeader(text: title)
+                    header
                     SyncUIViewsV2.TextCaption(text: UserText.deviceDetailsSyncedStatusV2)
                 }
                 if device.isCurrent {
@@ -93,8 +111,15 @@ struct DeviceDetailsViewV2: View {
         .syncRoundedBorder(cornerRadius: 12)
     }
 
+    private var destructiveButtonTitle: String {
+        guard device.isCurrent, !model.isImprovedPairingFlowEnabled else {
+            return UserText.deviceDetailsRemoveDeviceButtonV2
+        }
+        return UserText.deviceDetailsTurnOffSyncButtonV2
+    }
+
     private var destructiveButton: some View {
-        Button(device.isCurrent ? UserText.deviceDetailsTurnOffSyncButtonV2 : UserText.deviceDetailsRemoveDeviceButtonV2) {
+        Button(destructiveButtonTitle) {
             model.delegate?.presentRemoveDeviceConfirmation(device)
         }
         .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),
@@ -138,5 +163,14 @@ struct DeviceDetailsViewV2: View {
 #Preview("Other Device") {
     DeviceDetailsViewV2(device: SyncDevice(kind: .mobile, name: "Pixel 8", id: "mobile-device"))
         .environmentObject(ManagementDialogModel())
+}
+
+#Preview("This Device - Improved Pairing Flow") {
+    DeviceDetailsViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+        .environmentObject({
+            let model = ManagementDialogModel()
+            model.isImprovedPairingFlowEnabled = true
+            return model
+        }())
 }
 #endif

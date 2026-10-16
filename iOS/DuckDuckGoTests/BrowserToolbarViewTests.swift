@@ -21,9 +21,123 @@ import XCTest
 import SitePermissions
 @testable import DuckDuckGo
 
+final class FloatingMaterialRefreshSchedulerTests: XCTestCase {
+
+    func testWhenRefreshesAreScheduledTogetherThenOnlyLatestRuns() {
+        let scheduler = FloatingMaterialRefreshScheduler(canRefresh: { true })
+        var values: [Int] = []
+
+        for value in 0..<10 {
+            scheduler.schedule { values.append(value) }
+        }
+        drainMainQueue()
+
+        XCTAssertEqual(values, [9])
+    }
+
+    func testWhenSceneIsInactiveThenLatestRefreshWaitsForActivation() {
+        let notificationCenter = NotificationCenter()
+        var isActive = false
+        let scheduler = FloatingMaterialRefreshScheduler(notificationCenter: notificationCenter, canRefresh: { isActive })
+        var values: [Int] = []
+
+        scheduler.schedule { values.append(1) }
+        scheduler.schedule { values.append(2) }
+        notificationCenter.post(name: UIScene.didActivateNotification, object: nil)
+        drainMainQueue()
+        XCTAssertTrue(values.isEmpty)
+
+        isActive = true
+        notificationCenter.post(name: UIScene.didActivateNotification, object: nil)
+        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        drainMainQueue()
+        XCTAssertEqual(values, [2])
+
+        notificationCenter.post(name: UIScene.didActivateNotification, object: nil)
+        drainMainQueue()
+        XCTAssertEqual(values, [2])
+    }
+
+    func testWhenSceneBecomesInactiveBeforeQueuedRefreshThenRefreshWaitsForActivation() {
+        let notificationCenter = NotificationCenter()
+        var isActive = true
+        let scheduler = FloatingMaterialRefreshScheduler(notificationCenter: notificationCenter, canRefresh: { isActive })
+        var refreshCount = 0
+        scheduler.schedule { refreshCount += 1 }
+
+        isActive = false
+        drainMainQueue()
+        XCTAssertEqual(refreshCount, 0)
+
+        isActive = true
+        notificationCenter.post(name: UIScene.didActivateNotification, object: nil)
+        drainMainQueue()
+        XCTAssertEqual(refreshCount, 1)
+    }
+
+    func testWhenSchedulerIsReleasedThenQueuedRefreshDoesNotRun() {
+        var scheduler: FloatingMaterialRefreshScheduler? = FloatingMaterialRefreshScheduler(canRefresh: { true })
+        var refreshCount = 0
+        scheduler?.schedule { refreshCount += 1 }
+
+        scheduler = nil
+        drainMainQueue()
+
+        XCTAssertEqual(refreshCount, 0)
+    }
+
+    func testWhenSynchronousRefreshIsAllowedThenItIsNotScheduled() {
+        let scheduler = FloatingMaterialRefreshScheduler(canRefresh: { true })
+        var refreshCount = 0
+
+        XCTAssertFalse(scheduler.deferIfNeeded { refreshCount += 1 })
+        drainMainQueue()
+
+        XCTAssertEqual(refreshCount, 0)
+    }
+
+    func testWhenSynchronousRefreshIsDeferredThenItRunsAfterActivation() {
+        let notificationCenter = NotificationCenter()
+        var isActive = false
+        let scheduler = FloatingMaterialRefreshScheduler(notificationCenter: notificationCenter, canRefresh: { isActive })
+        var refreshCount = 0
+
+        XCTAssertTrue(scheduler.deferIfNeeded { refreshCount += 1 })
+        drainMainQueue()
+        XCTAssertEqual(refreshCount, 0)
+
+        isActive = true
+        notificationCenter.post(name: UIScene.didActivateNotification, object: nil)
+        drainMainQueue()
+
+        XCTAssertEqual(refreshCount, 1)
+    }
+
+    private func drainMainQueue() {
+        let drained = expectation(description: "Main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+    }
+}
+
 final class BrowserToolbarViewTests: XCTestCase {
 
     private let omnibarHeight: CGFloat = 60
+
+    func testWhenCollapsedOmnibarIsRefreshedThenExpandedButtonsBecomeVisibleAgain() throws {
+        let sut = makeSUT(embeddedOmnibar: true)
+        let button = UIView()
+        sut.setToolbarButtons([button])
+        let stack = try XCTUnwrap(button.superview as? UIStackView)
+        sut.setButtonRowCollapseProgress(1, reduceMotion: false)
+        XCTAssertEqual(stack.alpha, 0)
+
+        sut.setOmnibarView(UIView(), height: omnibarHeight)
+        sut.setButtonRowCollapseProgress(0, reduceMotion: false)
+
+        XCTAssertEqual(stack.alpha, 1)
+        XCTAssertEqual(stack.transform, .identity)
+    }
 
     private final class SuperviewTrackingView: UIView {
         private(set) var superviewChangeCount = 0

@@ -33,6 +33,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let tabsPreferences: TabsPreferences
     private let historyCoordinator: HistoryCoordinating
     private let aiChatDeleter: AIChatDeleting
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKit.Event) -> Void
@@ -52,6 +53,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
          tabsPreferences: TabsPreferences,
          historyCoordinator: HistoryCoordinating,
          aiChatDeleter: AIChatDeleting,
+         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
@@ -62,6 +64,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         self.tabsPreferences = tabsPreferences
         self.historyCoordinator = historyCoordinator
         self.aiChatDeleter = aiChatDeleter
+        self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
@@ -72,7 +75,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
             return
         }
 
@@ -83,18 +86,39 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             return
         }
 
-        guard let url = URL.makeURL(from: term) else {
+        guard let url = Self.searchBoxURL(for: term) else {
             Logger.newTabPageOmnibar.error("Failed to create URL from term: \(term)")
             return
         }
 
         NewTabPageLinkOpener.open(
             url,
-            source: .ui,
+            source: Self.searchBoxSource(for: url),
             sender: .userScript,
             target: target.linkOpenTarget,
             sourceWindow: mainWindowController.window
         )
+    }
+
+    /// A Duck.ai URL is built as the web view will report it: HTTPS (Duck.ai serves nothing else), a lowercase
+    /// host and a root path. When the tab's URL differs from the web view's, the tab replaces its content with
+    /// the web view's URL and drops the source the chat was opened with.
+    static func searchBoxURL(for term: String) -> URL? {
+        guard let url = URL.makeURL(from: term) else { return nil }
+        guard url.isDuckAIURL, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        if url.isHttp, url.port == nil {
+            components.scheme = URL.NavigationalScheme.https.rawValue
+        }
+        components.host = components.host?.lowercased()
+        if components.path.isEmpty {
+            components.path = "/"
+        }
+        return components.url ?? url
+    }
+
+    /// Duck.ai reached from the search box is a direct navigation; the box's Duck.ai mode is a separate path.
+    private static func searchBoxSource(for url: URL) -> TabContent.URLSource {
+        url.isDuckAIURL ? .attributedUI(.directNewTabPage) : .ui
     }
 
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
@@ -130,7 +154,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                 }
                 NewTabPageLinkOpener.open(
                     suggestionUrl,
-                    source: .ui,
+                    source: Self.searchBoxSource(for: suggestionUrl),
                     sender: .userScript,
                     target: target.linkOpenTarget,
                     sourceWindow: mainWindowController.window
@@ -147,8 +171,12 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     toolChoice: [String]?,
                     reasoningEffort: String?,
                     pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
-                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
+                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool) {
         firePixel(NewTabPagePixel.promptSubmitted)
+
+        // The NTP sends `aiTermsAccepted` only for an Ask click with its disclaimer on screen.
+        termsOfServiceDisclaimer.acceptIfShown(aiTermsAccepted)
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -204,7 +232,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                                                           pageContext: pageContextPayload,
                                                           mode: mode,
                                                           reasoningEffort: nativeReasoningEffort)
-        promptHandler.setData(nativePrompt)
+        // Marks an Ask click, like the address bar's input; the bridge turns it into the `termsAccepted` duck.ai reads.
+        promptHandler.setData(nativePrompt.withTermsAccepted(aiTermsAccepted))
     }
 
     /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
@@ -268,7 +297,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     @MainActor
     func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
         AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireLearnMoreTapped(kind: .init(kind))
-        windowControllersManager.show(url: .aiChatPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
+        windowControllersManager.show(url: .aiChatUploadFilesAndImagesPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor
@@ -287,6 +316,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
         customizeResponsesModal = modal
         modal.present(over: window)
+    }
+
+    @MainActor
+    func openPrivacyTerms() {
+        windowControllersManager.show(url: .aiChatPrivacyTerms, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor

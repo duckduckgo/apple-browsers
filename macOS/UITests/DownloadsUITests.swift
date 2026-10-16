@@ -935,8 +935,9 @@ class DownloadsUITests: UITestCase {
         }
 
         // Serve a larger file locally to keep the download in progress without an external connection.
+        // Throttled because an unthrottled local transfer takes seconds on a fast machine, finishing before the test closes the window.
         let filename = "(MMA)-10GB.zip"
-        let url = URL.testsDownload(size: "10GB", filename: filename)
+        let url = URL.testsDownload(size: "10GB", filename: filename, throttle: "20MB")
         openSiteForDownloadingFile(url: url.absoluteString)
 
         // Track both the final file and the temporary .duckload file

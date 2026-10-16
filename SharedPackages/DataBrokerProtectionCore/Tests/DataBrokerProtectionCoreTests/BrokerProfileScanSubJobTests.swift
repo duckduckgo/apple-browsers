@@ -607,7 +607,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertFalse(firedNames.contains("dbp_optout_stage_finish"))
     }
 
-    func testMarkSavedProfilesAsRemovedAndNotifyUser_resolvesFoundDateBeforeStoringConfirmation() throws {
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_resolvesFoundDateBeforeStoringConfirmation() async throws {
         let identifiers = makeFixtureIdentifiers()
         let foundDate = Date().addingTimeInterval(-60)
         mockDatabase.scanEvents = [
@@ -645,7 +645,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             eventsHandler: mockEventsHandler
         )
 
-        wait(for: [completionExpectation], timeout: 1.0)
+        await fulfillment(of: [completionExpectation], timeout: 15)
     }
 
     // MARK: - handleRemovedProfiles

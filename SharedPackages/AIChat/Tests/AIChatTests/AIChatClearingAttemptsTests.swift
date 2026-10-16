@@ -79,11 +79,12 @@ final class AIChatClearingAttemptsTests: XCTestCase {
 
         XCTAssertTrue(isTransient(ClearError.timeout))
         XCTAssertTrue(isTransient(ClearError.failedFromScript(.init(payload: [:]))))
-        XCTAssertTrue(isTransient(ClearError.scriptNeverReady))
         XCTAssertTrue(isTransient(ClearError.navigationTimeout))
         XCTAssertTrue(isTransient(ClearError.webContentProcessTerminated))
         XCTAssertTrue(isTransient(NSError(domain: "WebKitErrorDomain", code: 102)))
         XCTAssertFalse(isTransient(ClearError.notReady))
+        XCTAssertFalse(isTransient(ClearError.scriptNeverReady))
+        XCTAssertFalse(isTransient(ClearError.failedFromScript(.init(payload: ["stage": "indexedDB", "errorName": "IndexedDBDisabled"]))))
         XCTAssertFalse(isTransient(WebViewAIChatJSDataCleaner.CleanerError.operationInProgress))
     }
 }

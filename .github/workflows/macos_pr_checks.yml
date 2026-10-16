@@ -15,12 +15,6 @@ on:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - '.github/**'
-      - '.xcode-version'
-      - 'SharedPackages/**'
-      - 'macOS/**'
-      - 'scripts/translation-pr-checks/**'
   schedule:
     - cron: '10,40 4,5 * * *'
   workflow_call:
@@ -71,6 +65,13 @@ jobs:
   should-run-checks:
     name: Determine if checks should run
     uses: ./.github/workflows/should_run_pr_checks.yml
+    with:
+      paths: |
+        .github/**
+        .xcode-version
+        SharedPackages/**
+        macOS/**
+        scripts/translation-pr-checks/**
 
   shellcheck:
 
@@ -306,6 +307,8 @@ jobs:
 
     - name: Run unit tests
       id: run-unit-tests
+      env:
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
       run: |
         export OS_ACTIVITY_MODE=debug
         mkdir -p DerivedData/Logs/Test
@@ -513,6 +516,15 @@ jobs:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
         path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
+
+    - name: Report snapshot failures
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: macOS
+        xcresult: DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
+        report-name: macos-${{ matrix.flavor }}-snapshot-failures.html
+        title: macOS ${{ matrix.flavor }} Snapshot Failures
 
     - name: Upload crash reports
       uses: actions/upload-artifact@v6
@@ -885,3 +897,20 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+  # The only job required by branch protection for this workflow.
+  # It always runs and fails if any job it depends on failed or was cancelled, so skipped jobs pass
+  # and a failing should-run-checks blocks the merge instead of skipping the tests unnoticed.
+  # `tests` is a matrix: needs.tests.result is a single result covering every matrix entry.
+  pr-checks-result:
+    name: macOS PR Checks Result
+    needs: [should-run-checks, tests, release-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether a required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        working-directory: .
+        run: |
+          echo "Required job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1

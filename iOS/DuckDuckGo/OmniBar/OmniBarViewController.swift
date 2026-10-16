@@ -344,6 +344,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         refreshState(state.onBrowsingStartedState)
     }
 
+    func startBrowsingIfNeeded() {
+        let browsingState = state.onBrowsingStartedState
+        guard state.requiresUpdate(transitioningInto: browsingState) else { return }
+        refreshState(browsingState)
+    }
+
     func stopBrowsing() {
         refreshState(state.onBrowsingStoppedState)
     }

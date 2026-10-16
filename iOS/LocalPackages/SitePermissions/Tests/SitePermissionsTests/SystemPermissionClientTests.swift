@@ -26,7 +26,7 @@ import XCTest
 @MainActor
 final class SystemPermissionClientTests: XCTestCase {
 
-    func testWhenAuthorizationStatesAreReadThenAllFiveStatesRemainDistinct() {
+    func testWhenAuthorizationStatesAreReadThenMediaAndLocationStatesRemainDistinct() {
         let manager = MockLocationManager()
         manager.authorizationStatusValue = .restricted
         let statuses: [AVMediaType: AVAuthorizationStatus] = [.video: .authorized, .audio: .denied]
@@ -39,9 +39,6 @@ final class SystemPermissionClientTests: XCTestCase {
         manager.authorizationStatusValue = .notDetermined
         client.refreshAuthorizationStates()
         XCTAssertEqual(client.authorizationState(for: .location), .notDetermined)
-
-        let unavailableClient = makeClient(locationServicesEnabled: { false })
-        XCTAssertEqual(unavailableClient.authorizationState(for: .location), .unavailable)
     }
 
     func testWhenCameraAndMicrophoneAreRequestedThenVideoAndAudioAreEvaluatedSeparately() async {
@@ -267,12 +264,10 @@ final class SystemPermissionClientTests: XCTestCase {
     }
 
     private func makeClient(locationManager: MockLocationManager = MockLocationManager(),
-                            locationServicesEnabled: @escaping () -> Bool = { true },
                             statuses: @escaping (AVMediaType) -> AVAuthorizationStatus = { _ in .notDetermined },
                             requestAccess: @escaping (AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void = { _, _ in },
                             notificationCenter: NotificationCenter = NotificationCenter()) -> SystemPermissionClient {
         SystemPermissionClient(locationManager: locationManager,
-                               locationServicesEnabled: locationServicesEnabled,
                                avAuthorizationStatus: statuses,
                                avRequestAccess: requestAccess,
                                notificationCenter: notificationCenter)

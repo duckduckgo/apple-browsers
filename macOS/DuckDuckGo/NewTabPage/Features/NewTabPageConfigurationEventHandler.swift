@@ -54,6 +54,26 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
             case .newTabPageTelemetry(.omnibarReasoningPickerUpgradeShown):
                 Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpReasoningPickerUpgradeShown, .newTabPageReasoningDropdown)
+
+            // Image and screenshot chips: the page owns them, so its telemetry is the only signal.
+            case .newTabPageTelemetry(.omnibarImageAttached(let rawSource)):
+                guard let source = AIChatImageAttachmentSource(rawValue: rawSource) else { return }
+                Self.fireDailyAndCount(AIChatPixel.aiChatNtpImageAttached(source: source))
+
+            case .newTabPageTelemetry(.omnibarImageRemoved(let rawSource)):
+                guard let source = AIChatImageAttachmentSource(rawValue: rawSource) else { return }
+                Self.fireDailyAndCount(AIChatPixel.aiChatNtpImageRemoved(source: source))
+
+            case .newTabPageTelemetry(.omnibarScreenshotTaken(let rawKind)):
+                guard let kind = AIChatScreenshotKind(rawValue: rawKind) else { return }
+                Self.fireDailyAndCount(AIChatPixel.aiChatNtpScreenshotTaken(kind: kind))
+
+            case .newTabPageTelemetry(.omnibarScreenshotRemoved):
+                Self.fireDailyAndCount(AIChatPixel.aiChatNtpScreenshotRemoved)
+
+            case .newTabPageTelemetry(.omnibarScreenshotFailed(let rawReason)):
+                guard let reason = AIChatScreenshotFailureReason(rawValue: rawReason) else { return }
+                Self.fireDailyAndCount(AIChatPixel.aiChatNtpScreenshotFailed(reason: reason))
             }
         }
     }
@@ -64,6 +84,10 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
     private static func fireOmnibarPickerImpression(_ makePixel: (String) -> AIChatPixel,
                                                     _ origin: SubscriptionFunnelOrigin) {
-        PixelKit.fire(makePixel(origin.rawValue), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        fireDailyAndCount(makePixel(origin.rawValue))
+    }
+
+    private static func fireDailyAndCount(_ pixel: AIChatPixel) {
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 }

@@ -23,7 +23,6 @@ final class AutoconsentManagement {
 
     var sitesNotifiedCache = Set<String>()
 
-    /// Summary event counts per site rank, under `nil` when the site rank data could not be loaded.
     var pixelCounter = [CPMSiteRank?: [String: Int]]()
 
     var detectedByPatternsCache = Set<String>()

@@ -619,6 +619,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}
+    @MainActor func reportToolbarButtonClick(identifier: String) {}
     @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] {
         stubbedAdBlockingScriptletsFetched
             ? [ScriptletDebugInfo(extensionType: .adBlockingExtension, cachedVersion: "1.0", installedVersion: nil, scriptletPaths: [])]
@@ -629,6 +630,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 @available(macOS 15.4, iOS 18.4, *)
 private final class RecordingEventsListener: WebExtensionEventsListening {
     var droppedCallbacksCount = 0
+    var onBrowsingActivity: (() -> Void)?
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
     func didFocusWindow(_ window: WKWebExtensionWindow) {}

@@ -28,11 +28,38 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
     private let keyValueStore = InMemoryThrowingKeyValueStore()
     private var date = Date(timeIntervalSince1970: 1_000)
     private var allowed: Set<String> = ["bitwarden", "other"]
+    private var changes: [String] = []
 
     private func makeStore() -> WebExtensionPrivacySettingsStore {
         let store = WebExtensionPrivacySettingsStore(keyValueStore: keyValueStore, now: { [unowned self] in self.date })
         store.canControl = { [unowned self] in self.allowed.contains($0) }
+        store.onDefaultPasswordManagerSet = { [unowned self] identifier in
+            changes.append("\(identifier) set")
+        }
         return store
+    }
+
+    // MARK: - Default Password Manager Changes
+
+    func testWhenAnExtensionTurnsPasswordSavingOff_ThenItBecomesTheDefaultOncePerChange() {
+        let store = makeStore()
+
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        store.set(true, for: .passwordSavingEnabled, by: "bitwarden")
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+
+        XCTAssertEqual(changes, ["bitwarden set", "bitwarden set"])
+    }
+
+    func testWhenAnotherSettingChangesOrASetIsRefused_ThenTheDefaultPasswordManagerDoesNotChange() {
+        let store = makeStore()
+
+        store.set(false, for: .autofillAddressEnabled, by: "bitwarden")
+        store.clearAll(.autofillAddressEnabled)
+        store.set(false, for: .passwordSavingEnabled, by: "undeclared")
+
+        XCTAssertEqual(changes, [])
     }
 
     // MARK: - Control

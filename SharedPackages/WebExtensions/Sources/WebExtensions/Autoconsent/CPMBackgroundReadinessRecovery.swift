@@ -50,28 +50,6 @@ struct WebExtensionCPMRecoveryInstrumentation: CPMRecoveryInstrumentation {
     }
 }
 
-/// A document-start boolean records interaction without inspecting or sending field values.
-/// Missing instrumentation fails closed, including views created before the feature was enabled.
-@available(macOS 15.4, iOS 18.4, *)
-public enum CPMDocumentRecoverySafety {
-    private static let source = """
-        (() => {
-            const state = { document, interacted: false };
-            Object.defineProperty(globalThis, '__ddgCPMRecoverySafety', { value: state });
-            for (const event of ['pointerdown', 'keydown', 'beforeinput', 'input', 'change', 'focusin']) {
-                document.addEventListener(event, () => { state.interacted = true; }, true);
-            }
-        })();
-        """
-
-    @MainActor
-    public static func install(in controller: WKUserContentController) {
-        guard !controller.userScripts.contains(where: { $0.source == source }) else { return }
-        controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart,
-                                             forMainFrameOnly: true, in: .defaultClient))
-    }
-}
-
 /// Repairs only a document committed during a known, unfinished background startup. The normal
 /// navigation deadline remains unchanged. A missing dashboard response and a successful background
 /// callback are both required. Navigation changes, errors and context replacement invalidate work.
@@ -232,8 +210,8 @@ final class CPMBackgroundReadinessRecovery {
 
 @available(macOS 15.4, iOS 18.4, *)
 extension CPMBackgroundReadinessRecovery {
-    /// Never resubmit a POST or reload a changed/loading document. Forms, shadow content and any
-    /// recorded interaction veto recovery; mutable default values cannot prove a document safe.
+    /// Never resubmit a POST or reload a changed/loading document. The boolean script checks for
+    /// edits without transferring any field values to native code or telemetry.
     func registerDocument(in tab: String, webView: WKWebView, isGET: Bool) {
         Logger.webExtensions.debug("[CPM Recovery] Document registration GET=\(isGET), historyItem=\(webView.backForwardList.currentItem != nil)")
         guard isGET, let item = webView.backForwardList.currentItem else { return }
@@ -244,10 +222,11 @@ extension CPMBackgroundReadinessRecovery {
             Logger.webExtensions.debug("[CPM Recovery] Checking unchanged GET document")
             let documentID = self.documents[tab]?.identifier
             let pristine = try? await webView.evaluateJavaScript("""
-                globalThis.__ddgCPMRecoverySafety?.document === document &&
-                globalThis.__ddgCPMRecoverySafety.interacted === false &&
-                !document.querySelector('form,input,textarea,select,[contenteditable]:not([contenteditable="false"])') &&
-                !Array.from(document.querySelectorAll('*')).some(e => e.shadowRoot || e.localName.includes('-'))
+                !document.querySelector('[contenteditable]:not([contenteditable="false"])') &&
+                !document.activeElement?.matches('input,textarea,select') &&
+                !Array.from(document.querySelectorAll('input,textarea,select')).some(e =>
+                    e.tagName === 'SELECT' ? Array.from(e.options).some(o => o.selected !== o.defaultSelected) :
+                    (e.type === 'checkbox' || e.type === 'radio') ? e.checked !== e.defaultChecked : e.value !== e.defaultValue)
                 """, in: nil, contentWorld: .defaultClient) as? Bool
             Logger.webExtensions.debug("[CPM Recovery] Document pristine=\(pristine == true)")
             guard pristine == true, self.isEnabled(), !self.isApplicationInBackground(),

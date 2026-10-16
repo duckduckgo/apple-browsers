@@ -17,8 +17,10 @@
 //
 
 import BrowserServicesKit
+import Combine
 import FeatureFlags_macOS
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -65,6 +67,94 @@ final class PasswordManagementItemListModelTests: XCTestCase {
         XCTAssertEqual(unfilteredAccounts.count, 10)
         XCTAssertEqual(unfilteredAccounts[0].domain, "domain0")
         XCTAssertEqual(unfilteredAccounts[9].domain, "domain9")
+    }
+
+    // MARK: - Sync promo row
+
+    func testWhenSyncPromoIsInactiveThenPromoRowIsNotDisplayed() {
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected)
+
+        model.update(items: [makeAccount(id: 1)])
+
+        XCTAssertTrue(model.canShowSyncPromoRow)
+        XCTAssertFalse(model.shouldDisplaySyncPromoRow)
+    }
+
+    func testWhenSyncPromoBecomesActiveWithNothingSelectedThenPromoRowIsDisplayedAndSelected() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    syncPromoManager: syncPromoManager)
+        model.update(items: [makeAccount(id: 1)])
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertTrue(model.shouldDisplaySyncPromoRow)
+        XCTAssertTrue(model.syncPromoSelected)
+    }
+
+    func testWhenSyncPromoBecomesActiveWithAnItemSelectedThenSelectionIsKept() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    syncPromoManager: syncPromoManager)
+        let account = makeAccount(id: 1)
+        model.update(items: [account])
+        model.select(item: account)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertTrue(model.shouldDisplaySyncPromoRow)
+        XCTAssertFalse(model.syncPromoSelected)
+        XCTAssertNotNil(model.selected)
+    }
+
+    func testWhenSelectedSyncPromoIsRetractedThenFirstItemIsSelected() {
+        let syncPromoManager = MockSyncPromoManager()
+        syncPromoManager.isPromoActiveSubject.send(true)
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    syncPromoManager: syncPromoManager)
+        model.update(items: [makeAccount(id: 1)])
+        model.selectFirst()
+        XCTAssertTrue(model.syncPromoSelected)
+
+        syncPromoManager.isPromoActiveSubject.send(false)
+
+        XCTAssertFalse(model.syncPromoSelected)
+        XCTAssertNotNil(model.selected)
+    }
+
+    func testWhenSyncForCardsOrIdentitiesIsDisabledThenPromoRowCannotBeShownInThatCategory() {
+        let config = MockPrivacyConfiguration()
+        config.isSubfeatureEnabledCheck = { subfeature, _ in
+            subfeature.rawValue != SyncSubfeature.syncCreditCards.rawValue
+        }
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
+        let card = SecureVaultModels.CreditCard(id: 2, title: nil, cardNumber: "4111111111111111", cardholderName: nil,
+                                               cardSecurityCode: nil, expirationMonth: nil, expirationYear: nil)
+        let identity = SecureVaultModels.Identity(id: 3, created: Date(), lastUpdated: Date())
+        model.update(items: [makeAccount(id: 1), .card(card), .identity(identity)])
+
+        model.sortDescriptor = .init(category: .cards, parameter: .title, order: .ascending)
+        XCTAssertFalse(model.canShowSyncPromoRow)
+
+        model.sortDescriptor = .init(category: .identities, parameter: .title, order: .ascending)
+        XCTAssertTrue(model.canShowSyncPromoRow)
+    }
+
+    func testWhenBitwardenIsThePasswordManagerThenPromoRowCannotBeShownInAnyCategory() {
+        let passwordManagerCoordinator = PasswordManagerCoordinatingMock()
+        passwordManagerCoordinator.isEnabled = true
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    passwordManagerCoordinator: passwordManagerCoordinator)
+        let card = SecureVaultModels.CreditCard(id: 2, title: nil, cardNumber: "4111111111111111", cardholderName: nil,
+                                               cardSecurityCode: nil, expirationMonth: nil, expirationYear: nil)
+        let identity = SecureVaultModels.Identity(id: 3, created: Date(), lastUpdated: Date())
+        model.update(items: [makeAccount(id: 1), .card(card), .identity(identity)])
+
+        for category in [SecureVaultSorting.Category.allItems, .logins, .cards, .identities] {
+            model.sortDescriptor = .init(category: category, parameter: .title, order: .ascending)
+            XCTAssertFalse(model.canShowSyncPromoRow, "\(category)")
+        }
     }
 
     func testWhenAccountIsSelectedThenCallbackReceivesOldAndNewVersion() {
@@ -295,11 +385,32 @@ extension PasswordManagementItemListModel {
 
     convenience init(onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
                      onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void,
-                     featureFlagger: FeatureFlagger? = nil) {
-        self.init(passwordManagerCoordinator: PasswordManagerCoordinatingMock(), syncPromoManager: SyncPromoManager(),
+                     featureFlagger: FeatureFlagger? = nil,
+                     syncPromoManager: SyncPromoManaging = MockSyncPromoManager(),
+                     privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
+                     passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinatingMock()) {
+        self.init(passwordManagerCoordinator: passwordManagerCoordinator, syncPromoManager: syncPromoManager,
                   featureFlagger: featureFlagger,
+                  privacyConfigurationManager: privacyConfigurationManager,
                   onItemSelected: onItemSelected,
                   onAddItemSelected: onAddItemSelected)
     }
 
+}
+
+final class MockSyncPromoManager: SyncPromoManaging {
+
+    let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
+
+    var isPromoActive: Bool {
+        isPromoActiveSubject.value
+    }
+
+    var isPromoActivePublisher: AnyPublisher<Bool, Never> {
+        isPromoActiveSubject.eraseToAnyPublisher()
+    }
+
+    func goToSyncSettings(for touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func promoDismissed() {}
 }

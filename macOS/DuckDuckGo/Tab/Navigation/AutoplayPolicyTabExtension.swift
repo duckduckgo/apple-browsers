@@ -18,8 +18,7 @@
 
 import Combine
 import Foundation
-import FeatureFlags_macOS
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import UserScript
 import WebKit
@@ -32,7 +31,6 @@ extension UserScripts: WebTelemetryUserScriptProvider {}
 final class AutoplayPolicyTabExtension {
 
     private let autoplayPreferences: AutoplayPreferences
-    private let featureFlagger: FeatureFlagger
     private let permissionManager: PermissionManagerProtocol
     private let permissionSeeder: AutoplayPermissionSeeder
 
@@ -43,14 +41,12 @@ final class AutoplayPolicyTabExtension {
 
     init(
         autoplayPreferences: AutoplayPreferences,
-        featureFlagger: FeatureFlagger,
         permissionManager: PermissionManagerProtocol,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         permissionSeeder: AutoplayPermissionSeeder? = nil,
         telemetryScriptPublisher: some Publisher<some WebTelemetryUserScriptProvider, Never>
     ) {
         self.autoplayPreferences = autoplayPreferences
-        self.featureFlagger = featureFlagger
         self.permissionManager = permissionManager
         self.permissionSeeder = permissionSeeder ?? AutoplayPermissionSeeder(
             autoplayPreferences: autoplayPreferences,
@@ -97,7 +93,7 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
 private extension AutoplayPolicyTabExtension {
 
     func mustApplyAutoplayPolicy(url: URL) -> Bool {
-        featureFlagger.isFeatureOn(.autoplayPolicy) && url.isHttpOrHttps
+        url.isHttpOrHttps
     }
 
     func initializeSeededDomainIfNeeded(url: URL) {
@@ -141,19 +137,11 @@ private extension AutoplayPolicyTabExtension {
 extension AutoplayPolicyTabExtension: WebTelemetryUserScriptDelegate {
     @MainActor
     func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoPlaybackIn webView: WKWebView?) {
-        guard featureFlagger.isFeatureOn(.autoplayPolicy) else {
-            return
-        }
-
         videoPlaybackDetected = true
     }
 
     @MainActor
     func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoAutoplayIn webView: WKWebView?) {
-        guard featureFlagger.isFeatureOn(.autoplayPolicy) else {
-            return
-        }
-
         videoAutoplayDetected = true
     }
 }

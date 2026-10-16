@@ -48,54 +48,6 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_debug_recreate-tmp-attempt-failed-": {
-        "description": "Fires when temp directory recreation fails on a specific attempt during app startup",
-        "owners": ["jaceklyp"],
-        "triggers": ["startup"],
-        "suffixes": [
-            {
-                "key": "attempt",
-                "description": "The attempt number that failed (0-4)",
-                "type": "integer"
-            },
-            "platform",
-            "form_factor"
-        ],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"],
-        "expires": "2025-11-08"
-    },
-    "m_debug_recreate-tmp-success-on-retry-": {
-        "description": "Fires when temp directory recreation succeeds on a retry attempt during app startup",
-        "owners": ["jaceklyp"],
-        "triggers": ["startup"],
-        "suffixes": [
-            {
-                "key": "attempt",
-                "description": "The retry attempt number that succeeded (1-4)",
-                "type": "integer"
-            },
-            "platform",
-            "form_factor"
-        ],
-        "parameters": ["appVersion"],
-        "expires": "2025-11-08"
-    },
-    "m_debug_recreate-tmp-webview-fallback-succeeded": {
-        "description": "Fires when WKWebView fallback successfully recreates temp directory during app startup",
-        "owners": ["jaceklyp"],
-        "triggers": ["startup"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2025-11-08"
-    },
-    "m_debug_recreate-tmp-webview-fallback-failed": {
-        "description": "Fires when WKWebView fallback fails to recreate temp directory during app startup",
-        "owners": ["jaceklyp"],
-        "triggers": ["startup"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2025-11-08"
-    },
     "m_debug_content-blocking-compilation-failed-missing-tmp-dir": {
         "description": "Fires when content blocking compilation is aborted due to missing temp directory",
         "owners": ["jaceklyp"],
@@ -105,7 +57,7 @@
         "expires": "2025-11-08"
     },
     "m_debug_tmp-dir-still-missing-after-recreation": {
-        "description": "Fires when temp directory is still missing after all recreation attempts during app startup",
+        "description": "Fires when temp directory is still missing after recreation during app startup",
         "owners": ["jaceklyp"],
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
@@ -152,6 +104,65 @@
                 "key": "windowChanged",
                 "description": "Whether the window instance changed between consecutive willConnectToWindow calls",
                 "type": "boolean"
+            }
+        ]
+    },
+    "app-lifecycle_active-without-main-ui": {
+        "description": "Fires when a scene becomes active but no visible window shows app UI (main UI, app lock or blank snapshot), so the user sees a black screen.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "app-lifecycle_scene-did-disconnect": {
+        "description": "Fires when iOS disconnects the app's scene, with the app state at that moment.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "appLifecycleState"]
+    },
+    "app-lifecycle_previous-launch-incomplete-2": {
+        "description": "Fires at launch when the previous launch never reached Foreground or Background, e.g. a force-quit black screen, a hang or a crash. Background launches without a scene are not reported.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "appLifecycleLaunchStep"]
+    },
+    "app-lifecycle_event-dropped-during-launch": {
+        "description": "Fires when the app drops a lifecycle event while initializing or launching. step shows where launch was stuck; a dropped willConnectToWindow leaves a black screen.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "event",
+                "type": "string",
+                "description": "The dropped event",
+                "enum": [
+                    "didFinishLaunching",
+                    "didBecomeActive",
+                    "didEnterBackground",
+                    "willResignActive",
+                    "willEnterForeground",
+                    "willConnectToWindow"
+                ]
+            },
+            "appLifecycleState",
+            "appLifecycleLaunchStep"
+        ]
+    },
+    "app-lifecycle_critical-alert-shown": {
+        "description": "Fires when the app shows a critical alert before terminating because a store could not be loaded at launch.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "Why the alert was shown",
+                "enum": ["insufficient-disk-space", "unrecoverable-state"]
             }
         ]
     }

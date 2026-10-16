@@ -102,11 +102,11 @@ struct SubscriptionOnboardingSetupCard: View {
 private struct SubscriptionOnboardingSetupCardPreview: View {
     var body: some View {
         ScrollView {
-            // PIR unavailable, so the checklist is four items and these read 3/4 and 1/4.
+            // PIR unavailable, so the checklist is three items.
             VStack(spacing: 24) {
-                card(completed: [.vpn, .vpnWidget, .idtr])
+                card(completed: [.vpn, .idtr])
                 card(completed: [.vpn])
-                card(completed: [.vpn, .vpnWidget, .idtr, .duckAI], completedThisSession: true)
+                card(completed: [.vpn, .idtr, .duckAI], completedThisSession: true)
             }
             .padding()
         }
@@ -127,23 +127,17 @@ private struct SubscriptionOnboardingSetupCardPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingSetupCardPreview()
-    }
+    SubscriptionOnboardingSetupCardPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingSetupCardPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingSetupCardPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingSetupCardPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingSetupCardPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

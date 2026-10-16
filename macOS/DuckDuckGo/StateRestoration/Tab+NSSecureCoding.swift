@@ -44,7 +44,7 @@ extension Tab: NSSecureCoding {
 
     func makeRestorationData() -> TabRestorationData {
         let restorableContent: Tab.TabContent = {
-            guard case .url(let url, let credential, _) = content else { return content }
+            guard case .url(let url, let credential, _) = content else { return content.resettingAIChatSource }
             return .url(url, credential: credential, source: .pendingStateRestoration)
         }()
 
@@ -98,7 +98,7 @@ extension Tab.TabContent {
             guard let videoID = videoID else { return nil }
             self = .url(.duckPlayer(videoID, timestamp: timestamp), source: .pendingStateRestoration)
         case .dataBrokerProtection:
-            self = .dataBrokerProtection
+            self = .dataBrokerProtection(.subscribed)
         case .subscription:
             guard let url = url else { return nil }
             self = .subscription(url)

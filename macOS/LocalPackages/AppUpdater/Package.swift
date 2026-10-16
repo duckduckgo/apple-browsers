@@ -35,7 +35,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
-                .product(name: "Navigation", package: "BrowserServicesKit"),
+                .product(name: "DDGNavigation", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),

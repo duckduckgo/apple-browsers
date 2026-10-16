@@ -25,12 +25,20 @@ import PrivacyConfig
 /// The owning view controller passes itself as the `EscapeHatchActionRouter`.
 struct EscapeHatchModelBuilder {
 
+    let previewsSource: TabPreviewsSource
     let tabManager: TabManager
     let lastActiveTabStore: LastActiveTabStoring
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let instrumentation: NTPAfterIdleInstrumentation
+
+    /// A cold start loses the card model; warm returns must preserve the page's existing or consumed state.
+    func makeAfterIdleHatchForKeptNewTabPage(isFirstForeground: Bool, router: EscapeHatchActionRouter) -> EscapeHatchModel? {
+        guard isFirstForeground,
+              let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil else { return nil }
+        return makeAfterIdleHatch(router: router)
+    }
 
     /// The hatch to show on an after-idle New Tab Page, or `nil` when none applies.
     func makeAfterIdleHatch(router: EscapeHatchActionRouter) -> EscapeHatchModel? {
@@ -104,6 +112,7 @@ struct EscapeHatchModelBuilder {
             tabType: tabType,
             domain: domain,
             targetTab: targetTab,
+            thumbnail: targetTab.fireTab ? nil : previewsSource.preview(for: targetTab),
             tabsSource: tabManager,
             router: router,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,

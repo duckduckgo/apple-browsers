@@ -20,7 +20,7 @@
 import Swifter
 import XCTest
 
-private extension XCUIElement {
+extension XCUIElement {
 
     func waitForHittable(timeout: TimeInterval) -> Bool {
         let predicate = NSPredicate(format: "exists == true AND isHittable == true")
@@ -346,6 +346,31 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertChromeButtonsAreUsable()
     }
 
+    func verifyScrollingPerformance() {
+        let environment = ProcessInfo.processInfo.environment
+        if let url = environment["FLOATING_UI_PERFORMANCE_URL"],
+           let heading = environment["FLOATING_UI_PERFORMANCE_HEADING"] {
+            searchField.tap()
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout))
+            searchField.typeText("\(url)\r")
+            let pageHeading = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", heading)).firstMatch
+            XCTAssertTrue(pageHeading.waitForExistence(timeout: timeout))
+        } else {
+            openPage(path: "/long-page", heading: Page.longHeading)
+        }
+        let webView = app.webViews.firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: timeout))
+        let options = XCTMeasureOptions()
+        options.iterationCount = 5
+
+        measure(metrics: [XCTOSSignpostMetric.scrollingAndDecelerationMetric], options: options) {
+            webView.swipeUp(velocity: .fast)
+            webView.swipeDown(velocity: .fast)
+        }
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        assertConfiguredBarPosition()
+    }
+
     func verifyCollapsedChromeTransitions() {
         openPage(path: "/long-page", heading: Page.longHeading)
         collapseChrome()
@@ -561,7 +586,8 @@ class FloatingUIXCUITestCase: XCTestCase {
             "isRunningUITests",
             "-isOnboardingCompleted", "true",
             "-isInternalUser", "true",
-            "-ff.floatingUIAugust2026", "true",
+            "-ff.floatingUIiOS26", "true",
+            "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
@@ -947,6 +973,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
+    func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }
     func testTabSwitcherRotation() { verifyTabSwitcherRotation() }
     func testChromeDuringSlowLoading() { verifyChromeDuringSlowLoading() }
@@ -979,6 +1006,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
+    func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }
     func testTabSwitcherRotation() { verifyTabSwitcherRotation() }
     func testChromeDuringSlowLoading() { verifyChromeDuringSlowLoading() }

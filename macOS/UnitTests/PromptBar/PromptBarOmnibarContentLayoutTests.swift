@@ -56,15 +56,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
                        "The gap between the prompt and the controls row has moved")
     }
 
-    func testWhenRebrandedThenThePanelBudgetsTheControlsRowItLaysOut() {
-        content = makeContent(isAppRebranded: true)
-
-        let gap = layOutAndMeasureGap(prompt: "what is a duck")
-
-        XCTAssertEqual(gap, expectedPromptToControlsGap, accuracy: 1,
-                       "The rebranded panel budgets a different controls row height than it lays out")
-    }
-
     func testWhenThePromptGrowsToMoreLinesThenTheGapBelowItDoesNotChange() {
         let oneLine = layOutAndMeasureGap(prompt: "what is a duck")
         let twoLines = layOutAndMeasureGap(prompt: String(repeating: "what is a duck ", count: 8))
@@ -85,7 +76,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     /// layout catches up — the bar visibly jumping while you type.
     func testWhenTheHeightIsReadBeforeLayoutHasSettledThenItAlreadyMatchesTheSettledHeight() {
         let view = content.view
-        guard let textView = firstDescendant(of: view, ofType: NSTextView.self) else {
+        guard let textView = promptTextView(in: view) else {
             return XCTFail("No prompt text view in the hierarchy")
         }
         textView.string = String(repeating: "what is a duck ", count: 20)
@@ -107,7 +98,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
         XCTAssertEqual(containerViewController.suggestionsHeight, 0,
                        "This measurement only isolates the controls row while nothing sits below it")
-        XCTAssertEqual(containerViewController.additionalContentHeight, 0,
+        XCTAssertEqual(containerViewController.additionalContentHeight, expectedContainerTopPadding,
                        "This measurement only isolates the controls row while nothing sits below it")
 
         let buttons = controlsRowButtons(in: view)
@@ -124,7 +115,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     }
 
     func testWhenSuggestionsAreCollapsedThenTheSubmitButtonClearsTheBottomEdgeByItsTrailingInset() {
-        content = makeContent(isAppRebranded: true)
         _ = layOutAndMeasureGap(prompt: "what is a duck")
 
         XCTAssertEqual(containerViewController.suggestionsHeight, 0,
@@ -167,8 +157,19 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     /// Exact rather than a lower bound: a panel that over-budgets the controls row shows up here as
     /// extra slack, which `>=` waves through.
+    /// Mirrors `AIChatOmnibarContainerViewController.Constants.containerTopPadding`: the only extra height with no attachments or usage warning.
+    private let expectedContainerTopPadding: CGFloat = 5
+
     private var expectedPromptToControlsGap: CGFloat {
         8 + containerViewController.additionalContentHeight
+    }
+
+    /// By identifier: the usage-warning card carries its own `NSTextView`, so the first one in the
+    /// tree isn't necessarily the prompt.
+    private func promptTextView(in host: NSView) -> NSTextView? {
+        descendants(of: host)
+            .compactMap { $0 as? NSTextView }
+            .first { $0.accessibilityIdentifier() == "AIChatOmnibarTextContainerViewController.textView" }
     }
 
     private func duckAILogo(in host: NSView) -> NSImageView? {
@@ -198,7 +199,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         view.frame = NSRect(origin: .zero, size: content.preferredWindowContentSize)
         view.layoutSubtreeIfNeeded()
 
-        guard let textView = firstDescendant(of: view, ofType: NSTextView.self) else {
+        guard let textView = promptTextView(in: view) else {
             XCTFail("No prompt text view in the hierarchy")
             return (0, 0)
         }
@@ -268,9 +269,9 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     // MARK: - Assembly
 
-    private func makeContent(isAppRebranded: Bool = false) -> PromptBarOmnibarContentViewController {
+    private func makeContent() -> PromptBarOmnibarContentViewController {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = isAppRebranded
+        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = true
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

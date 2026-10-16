@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import AIChat
 import BrowserServicesKit
 import WideEvent
 
@@ -77,6 +78,13 @@ final class DataClearingWideEventService {
     /// - Parameter action: The action that is about to execute.
     func start(_ action: DataClearingWideEventData.Action) {
         eventData?[keyPath: action.durationPath] = .startingNow()
+        persist()
+    }
+
+    /// Ends an action that has no outcome of its own, such as a wait, so it no longer shows as interrupted.
+    func finish(_ action: DataClearingWideEventData.Action) {
+        eventData?[keyPath: action.durationPath]?.complete()
+        persist()
     }
 
     /// Updates the wide event with an action result.
@@ -93,9 +101,10 @@ final class DataClearingWideEventService {
         case .success:
             eventData?[keyPath: action.statusPath] = .success
         case .failure(let error):
-            eventData?[keyPath: action.statusPath] = .failure
+            eventData?[keyPath: action.statusPath] = .init(failure: error)
             eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error)
         }
+        persist()
     }
 
     /// Updates the wide event with an action result including pre-measured interval.
@@ -113,9 +122,32 @@ final class DataClearingWideEventService {
         case .success:
             eventData?[keyPath: action.statusPath] = .success
         case .failure(let error):
-            eventData?[keyPath: action.statusPath] = .failure
+            eventData?[keyPath: action.statusPath] = .init(failure: error)
             eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error)
         }
+        persist()
+    }
+
+    /// Saves the event as it progresses, so an orphaned journey still shows how far it got.
+    private func persist() {
+        guard let eventData else { return }
+        wideEvent.updateFlow(eventData)
+    }
+
+    /// Records how the Duck.ai clear went beyond its status: whether it was retried, and where the first attempt spent its time.
+    func recordAIChatClearing(_ report: AIChatClearingReport) {
+        eventData?.clearAIChatHistoryRetried = report.wasRetried
+        eventData?.clearAIChatHistoryFirstAttemptError = report.firstAttemptError.map { WideEventErrorData(error: $0) }
+        eventData?.clearAIChatHistoryPageLoadMilliseconds = report.firstAttemptTimings.pageLoadMilliseconds
+        eventData?.clearAIChatHistoryScriptReadyMilliseconds = report.firstAttemptTimings.scriptReadyMilliseconds
+        eventData?.clearAIChatHistoryScriptReplyMilliseconds = report.firstAttemptTimings.scriptReplyMilliseconds
+        persist()
+    }
+
+    /// Records how long the Duck.ai clear waited for the storage warm-up, to measure the warm-up's effect on failures.
+    func recordAIChatWarmupWait(milliseconds: Int) {
+        eventData?.clearAIChatHistoryWarmupWaitMilliseconds = milliseconds
+        persist()
     }
 
     // MARK: - Completing Wide Event

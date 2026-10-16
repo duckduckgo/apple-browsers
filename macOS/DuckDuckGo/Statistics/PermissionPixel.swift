@@ -26,13 +26,24 @@ enum PermissionPixel: PixelKit.Event {
     // MARK: - Authorization Flow
 
     /**
-     * Event Trigger: User selects an option in the permission authorization dialog.
+     * Event Trigger: User selects an option in the legacy Allow / Deny permission authorization dialog.
      *
      * Parameters:
      * - permissionType: The type of permission (camera, microphone, geolocation, etc.)
      * - decision: The user's decision (allow, deny)
      */
     case authorizationDecision(permissionType: PermissionType, decision: AuthorizationDecision)
+
+    /**
+     * Event Trigger: User answers the Website Permissions prompt, or closes it with the X button.
+     * Mirrors the Windows `permission_authorization_<kind>_<action>` pixel. Windows marks its new prompt with `v2=1`;
+     * here the name already tells it apart from the legacy `m_mac_permission_authorization` pixel.
+     *
+     * Parameters:
+     * - permissionType: The type of permission (camera, microphone, geolocation, etc.)
+     * - action: What the prompt resolved to (always, allow_once, never, deny_once, cancel)
+     */
+    case authorizationAction(permissionType: PermissionType, action: AuthorizationAction)
 
     // MARK: - Permission Center
 
@@ -64,12 +75,51 @@ enum PermissionPixel: PixelKit.Event {
      */
     case systemPreferencesOpened(permissionType: PermissionType)
 
+    // MARK: - Website Permissions Settings
+
+    /**
+     * Event Trigger: User opens a category's detail page in Settings > Website Permissions.
+     *
+     * Parameters:
+     * - category: The permission category whose detail page is opened
+     */
+    case settingsDetailOpened(category: WebsitePermissionCategory)
+
+    /**
+     * Event Trigger: User changes a category's default decision in Settings > Website Permissions.
+     *
+     * Parameters:
+     * - category: The permission category whose default is changed
+     * - to: The new default decision
+     */
+    case settingsDefaultChanged(category: WebsitePermissionCategory, to: PersistedPermissionDecision)
+
+    /**
+     * Event Trigger: User changes a site's decision in Settings > Website Permissions, from Recents or a detail page.
+     *
+     * Parameters:
+     * - permissionType: The type of permission being changed
+     * - to: The new decision
+     */
+    case settingsSiteChanged(permissionType: PermissionType, to: PersistedPermissionDecision)
+
+    /**
+     * Event Trigger: User removes a site's decision in Settings > Website Permissions, from Recents or a detail page.
+     *
+     * Parameters:
+     * - permissionType: The type of permission being removed
+     */
+    case settingsSiteRemoved(permissionType: PermissionType)
+
     // MARK: - PixelKit.Event
 
     var name: String {
         switch self {
         case .authorizationDecision(let permissionType, let decision):
             return "m_mac_permission_authorization_\(permissionType.pixelName)_\(decision.pixelName)"
+
+        case .authorizationAction(let permissionType, let action):
+            return "permission_authorization_\(permissionType.pixelName)_\(action.rawValue)_macos"
 
         case .permissionCenterChanged(let permissionType, _, let to):
             return "m_mac_permission_center_changed_\(permissionType.pixelName)_to_\(to.pixelName)"
@@ -79,6 +129,18 @@ enum PermissionPixel: PixelKit.Event {
 
         case .systemPreferencesOpened(let permissionType):
             return "m_mac_permission_system_preferences_\(permissionType.pixelName)"
+
+        case .settingsDetailOpened(let category):
+            return "permission_settings_detail_\(category.pixelName)_macos"
+
+        case .settingsDefaultChanged(let category, let to):
+            return "permission_settings_default_\(category.pixelName)_\(to.pixelName)_macos"
+
+        case .settingsSiteChanged(let permissionType, let to):
+            return "permission_settings_site_changed_\(permissionType.pixelName)_to_\(to.pixelName)_macos"
+
+        case .settingsSiteRemoved(let permissionType):
+            return "permission_settings_removed_\(permissionType.pixelName)_macos"
         }
     }
 
@@ -95,6 +157,10 @@ enum PermissionPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? {
         return [.pixelSource]
     }
+
+    /// Every name is already complete: the older cases spell out `m_mac_`, and the Website
+    /// Permissions prompt and settings cases end in `_macos` so they reach the server without `m_mac_`.
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 // MARK: - Authorization Decision
@@ -108,6 +174,27 @@ extension PermissionPixel {
 
         var pixelName: String {
             return rawValue
+        }
+    }
+
+    /// What the Website Permissions prompt resolved to, named as on Windows
+    enum AuthorizationAction: String {
+        case always
+        case allowOnce = "allow_once"
+        case never
+        case denyOnce = "deny_once"
+        case cancel
+
+        /// A choice that can't be saved for `permissionType` only applies to this visit, as on Windows
+        init(decision: PermissionPromptDecision, permissionType: PermissionType) {
+            switch decision {
+            case .allowThisVisit:
+                self = .allowOnce
+            case .alwaysAllow:
+                self = permissionType.canPersistGrantedDecision ? .always : .allowOnce
+            case .neverAllow:
+                self = permissionType.canPersistDeniedDecision ? .never : .denyOnce
+            }
         }
     }
 }
@@ -133,6 +220,29 @@ extension PermissionType {
             return "external-scheme"
         case .autoplayPolicy:
             return "autoplay-policy"
+        }
+    }
+}
+
+extension WebsitePermissionCategory {
+
+    /// Returns a lowercase string suitable for use in pixel names, matching `PermissionType.pixelName`
+    var pixelName: String {
+        switch self {
+        case .notifications:
+            return PermissionType.notification.pixelName
+        case .location:
+            return PermissionType.geolocation.pixelName
+        case .camera:
+            return PermissionType.camera.pixelName
+        case .microphone:
+            return PermissionType.microphone.pixelName
+        case .externalApps:
+            return PermissionType.externalScheme(scheme: "").pixelName
+        case .popups:
+            return PermissionType.popups.pixelName
+        case .autoplay:
+            return PermissionType.autoplayPolicy.pixelName
         }
     }
 }

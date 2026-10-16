@@ -57,7 +57,7 @@ extension Preferences {
                 PreferencePaneSection {
                     if emailManager.isSignedIn {
                         if let userEmail = emailManager.userEmail {
-                            Text(UserText.autofillEnabledFor) + Text(" \(userEmail)").bold()
+                            Text(UserText.autofillEnabledFor) + Text(verbatim: " \(userEmail)").bold()
                         }
                         Button(UserText.emailOptionsMenuManageAccountSubItem + "…") {
                             openNewTab(with: EmailUrls().emailProtectionAccountLink)

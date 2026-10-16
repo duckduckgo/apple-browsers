@@ -35,12 +35,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerTrailingOffset: CGFloat = 77.0
         static let dividerTopOffset: CGFloat = -10.0
         static let placeholderLeadingOffset: CGFloat = 10
-        static let placeholderLegacyLeadingOffset: CGFloat = 9
         static let textLeadingOffset: CGFloat = 10
         static let duckAILogoSize: CGFloat = 24
         static let duckAILogoToTextSpacing: CGFloat = 12
         static let duckAILogoLeadingOffset: CGFloat = 5
-        static let duckAILogoLegacyLeadingOffset: CGFloat = 3
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -209,8 +207,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
-        let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
-
         let showsDuckAILogo = omnibarController.surface.showsDuckAILogo
         if showsDuckAILogo {
             setUpDuckAILogo()
@@ -243,7 +239,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.dividerTopOffset),
             dividerView.heightAnchor.constraint(equalToConstant: 1),
 
-            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
+            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: Constants.placeholderLeadingOffset),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
     }
@@ -257,10 +253,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         duckAILogoView.setAccessibilityElement(false)
         containerView.addSubview(duckAILogoView)
 
-        let leadingConstant = themeManager.isAppRebranded ? Constants.duckAILogoLeadingOffset : Constants.duckAILogoLegacyLeadingOffset
-
         NSLayoutConstraint.activate([
-            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.duckAILogoLeadingOffset),
             duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
             duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)
@@ -461,8 +455,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-        // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on screen.
-        // The arrow / Enter cases need a real (non-empty-state) selection, so they're gated
+        // Mention picker takes first crack at arrow up/down/Enter/Tab/Esc when it's on screen.
+        // Tab accepts like Enter, as in most autocomplete UIs; otherwise it would move focus
+        // away and close the picker.
+        // The arrow / Enter / Tab cases need a real (non-empty-state) selection, so they're gated
         // on `canHandleKeyCommands`; Esc dismisses regardless so the user can keep typing
         // without the panel covering content. The picker only matters when it has already
         // been instantiated and presented — bind once via `if let` so we don't lazy-allocate
@@ -478,11 +474,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             case #selector(NSResponder.moveUp(_:)) where coordinator.canHandleKeyCommands:
                 coordinator.moveHighlightUp()
                 return true
-            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)):
+            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)), #selector(NSResponder.insertTab(_:)):
                 if coordinator.canHandleKeyCommands, coordinator.acceptHighlighted() {
                     return true
                 }
-                // No real selection — fall through to the normal Enter path below.
+                // No real selection — fall through to the normal Enter / Tab path below.
             default:
                 break
             }
@@ -812,6 +808,16 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 1, let window, window.isMovableByWindowBackground else {
+            handleMouseDown(event)
+            return
+        }
+        window.dragOrClick {
+            handleMouseDown(event)
+        }
+    }
+
+    private func handleMouseDown(_ event: NSEvent) {
         if window?.firstResponder != self {
             /// Refocus click: make this the first responder so the refocus flow (via `becomeFirstResponder` →
             /// `onDidBecomeFirstResponder` callback → `focusTextViewRestoringCursorPosition`) can restore the

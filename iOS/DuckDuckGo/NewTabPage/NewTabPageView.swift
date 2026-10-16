@@ -143,7 +143,7 @@ private extension NewTabPageView {
                 .background(Color(designSystemColor: .background))
             }
             .if(dismissKeyboardOnScroll, transform: {
-                $0.withScrollKeyboardDismiss()
+                $0.scrollDismissesKeyboardIfAvailable()
             })
         }
         .if(dismissKeyboardOnScroll, transform: {
@@ -188,7 +188,7 @@ private extension NewTabPageView {
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 }
                 .if(dismissKeyboardOnScroll, transform: {
-                    $0.withScrollKeyboardDismiss()
+                    $0.scrollDismissesKeyboardIfAvailable()
                 })
             }
         }
@@ -206,7 +206,7 @@ private extension NewTabPageView {
     }
 
     /// The unified toggle input design lets the hatch fill the same content span as favorites.
-    /// Legacy NTP keeps its existing max widths so the flag-off UI remains unchanged.
+    /// With unified toggle input disabled, the NTP keeps its existing maximum widths.
     private var escapeHatchMaxWidth: CGFloat {
         if layoutConfiguration.expandsEscapeHatchToAvailableWidth {
             return .infinity
@@ -264,16 +264,6 @@ private extension NewTabPageView {
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func withScrollKeyboardDismiss() -> some View {
-        if #available(iOS 16, *) {
-            scrollDismissesKeyboard(.immediately)
-        } else {
-            self
-        }
-    }
-}
 
 private struct Metrics {
 

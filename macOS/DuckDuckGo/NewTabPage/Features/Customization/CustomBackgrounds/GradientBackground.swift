@@ -35,7 +35,7 @@ enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSch
 
     @ViewBuilder
     var view: some View {
-        TiledImageView(image: Image(nsImage: .homePageBackgroundGradientGrain), tileSize: CGSize(width: 100, height: 100)).opacity(0.15)
+        TiledImageView(image: Image(nsImage: NSImage(resource: .homePageBackgroundGradientGrain)), tileSize: CGSize(width: 100, height: 100)).opacity(0.15)
             .background(gradientImage)
     }
 

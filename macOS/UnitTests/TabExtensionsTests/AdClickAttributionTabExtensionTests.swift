@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Combine
 import ContentBlocking
-import Navigation
+import DDGNavigation
 import os.log
 import PrivacyConfig
 import PrivacyConfigTestsUtils

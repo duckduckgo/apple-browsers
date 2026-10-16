@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import Navigation
+import DDGNavigation
 
 public struct DidCancelError: Error {
     public let expectedNavigations: [ExpectedNavigation]?

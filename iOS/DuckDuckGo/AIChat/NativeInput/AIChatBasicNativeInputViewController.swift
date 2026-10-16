@@ -65,6 +65,11 @@ final class AIChatBasicNativeInputViewController: UIViewController {
         nativeInputView.isContextChipVisible
     }
 
+    var submitButtonTitle: String? {
+        get { nativeInputView.submitButtonTitle }
+        set { nativeInputView.submitButtonTitle = newValue }
+    }
+
     func setText(_ text: String) {
         nativeInputView.setText(text)
     }

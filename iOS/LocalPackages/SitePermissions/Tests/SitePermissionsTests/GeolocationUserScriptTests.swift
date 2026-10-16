@@ -458,7 +458,6 @@ final class GeolocationUserScriptTests: XCTestCase {
 
     func testFrameRegistrationRejectsForgedNonceAndOverwrite() throws {
         let store = GeolocationFrameRegistrationStore()
-        let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
         let webView = PolicyTestWebView()
         let frame = GeolocationNativeFrameIdentity(webViewID: ObjectIdentifier(webView),
                                                    scheme: "https",
@@ -470,11 +469,19 @@ final class GeolocationUserScriptTests: XCTestCase {
                                                         host: "frame.example.com",
                                                         port: 0,
                                                         isMainFrame: false)
-        XCTAssertTrue(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "page-document", constraints: constraints))
+        XCTAssertTrue(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "page-document"))
+        XCTAssertTrue(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "page-document"))
+        XCTAssertFalse(store.register(nonce: "native-nonce", frame: otherFrame, documentID: "isolated-document", pageDocumentID: "page-document"))
+        XCTAssertFalse(store.register(nonce: "native-nonce", frame: frame, documentID: "other-isolated-document", pageDocumentID: "page-document"))
+        XCTAssertFalse(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "other-page-document"))
+        XCTAssertEqual(store.count, 1)
 
         XCTAssertNil(store.registration(for: "forged-nonce", frame: frame))
         XCTAssertNil(store.registration(for: "native-nonce", frame: otherFrame))
-        XCTAssertEqual(try XCTUnwrap(store.registration(for: "native-nonce", frame: frame)).constraints, constraints)
+        let registration = try XCTUnwrap(store.registration(for: "native-nonce", frame: frame))
+        XCTAssertEqual(registration.frame, frame)
+        XCTAssertEqual(registration.documentID, "isolated-document")
+        XCTAssertEqual(registration.pageDocumentID, "page-document")
 
         store.removeAll()
         XCTAssertEqual(store.count, 0)

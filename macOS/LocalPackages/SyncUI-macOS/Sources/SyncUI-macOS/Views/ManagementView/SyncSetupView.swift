@@ -56,7 +56,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     fileprivate func syncWithAnotherDeviceView() -> some View {
         VStack(alignment: .center, spacing: 16) {
-            Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
+            Image(.syncPair96)
 
             VStack(alignment: .center, spacing: 8) {
                 SyncUIViews.TextHeader(text: UserText.beginSyncTitle)
@@ -70,12 +70,12 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
                     await model.syncWithAnotherDevicePressed()
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable, isAppRebranded: model.isAppRebranded))
+            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))
             .disabled(!model.isConnectingDevicesAvailable)
-            .padding(.bottom, model.isAppRebranded ? 10 : 0)
+            .padding(.bottom, 10)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: model.isAppRebranded ? 264 : 254)
+        .frame(height: 264)
         .roundedBorder()
         .padding(.top, 20)
     }
@@ -99,27 +99,15 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
 private struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
 
     public let enabled: Bool
-    public let isAppRebranded: Bool
 
-    public init(enabled: Bool, isAppRebranded: Bool) {
+    public init(enabled: Bool) {
         self.enabled = enabled
-        self.isAppRebranded = isAppRebranded
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor: Color
-        let disabledBackgroundColor: Color
-        let labelColor: Color
-
-        if isAppRebranded {
-            enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
-            disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
-            labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
-        } else {
-            enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)
-            disabledBackgroundColor = Color.gray.opacity(0.1)
-            labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
-        }
+        let enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
+        let disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+        let labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
 
         return configuration.label
             .lineLimit(1)
@@ -128,6 +116,6 @@ private struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
             .padding(.horizontal, 24)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)
-            .cornerRadius(isAppRebranded ? 16 : 8)
+            .cornerRadius(16)
     }
 }

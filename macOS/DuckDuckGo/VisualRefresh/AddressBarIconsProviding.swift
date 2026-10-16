@@ -24,11 +24,6 @@ protocol AddressBarCookiesIconsProviding {
     var cookiesBiteIcon: NSImage { get }
 }
 
-final class LegacyAddressBarCookiesIconsProvider: AddressBarCookiesIconsProviding {
-    let cookiesIcon: NSImage = .cookie
-    let cookiesBiteIcon: NSImage = .cookieBite
-}
-
 final class CurrentAddressBarCookiesIconsProvider: AddressBarCookiesIconsProviding {
     let cookiesIcon: NSImage = DesignSystemImages.Glyphs.Size16.cookieWhole
     let cookiesBiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.cookie

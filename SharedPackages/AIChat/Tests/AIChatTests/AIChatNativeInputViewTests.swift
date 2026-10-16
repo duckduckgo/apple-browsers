@@ -143,6 +143,59 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertEqual(frame.height, 44, accuracy: 0.5)
     }
 
+    // MARK: - Submit Title Tests
+
+    func testWhenASubmitTitleIsSetThenTheButtonShowsItInsteadOfTheArrow() throws {
+        sut.text = "Hello"
+
+        sut.submitButtonTitle = "Ask"
+
+        let button = try XCTUnwrap(submitButton())
+        XCTAssertEqual(button.title(for: .normal), "Ask")
+        XCTAssertNil(button.image(for: .normal))
+        XCTAssertEqual(button.accessibilityLabel, "Ask")
+        XCTAssertTrue(button.isEnabled)
+    }
+
+    func testWhenASubmitTitleIsSetThenTheButtonWidensToFitIt() throws {
+        sut.frame = CGRect(x: 0, y: 0, width: 320, height: 160)
+        sut.text = "Hello"
+
+        sut.submitButtonTitle = "Ask"
+        sut.layoutIfNeeded()
+
+        let button = try XCTUnwrap(submitButton())
+        let titleWidth = try XCTUnwrap(button.titleLabel).intrinsicContentSize.width
+        XCTAssertGreaterThan(button.bounds.width, titleWidth)
+        XCTAssertLessThanOrEqual(button.convert(button.bounds, to: sut).maxX, sut.bounds.maxX)
+    }
+
+    func testWhenTheSubmitTitleIsClearedThenTheArrowReturns() throws {
+        let container = makeContainer()
+        sut.text = "Hello"
+        sut.submitButtonTitle = "Ask"
+        container.layoutIfNeeded()
+
+        sut.submitButtonTitle = nil
+        container.layoutIfNeeded()
+
+        let button = try XCTUnwrap(submitButton())
+        XCTAssertNil(button.title(for: .normal))
+        XCTAssertNotNil(button.image(for: .normal))
+        XCTAssertEqual(button.bounds.width, 44, accuracy: 0.5)
+    }
+
+    /// Only the send button carries the title; Return keeps adding new lines to the prompt.
+    func testWhenASubmitTitleIsSetThenReturnStillAddsANewLine() {
+        sut.submitButtonTitle = "Ask"
+        let textView = textViews(in: sut).first
+
+        let allowsEdit = textView.flatMap { $0.delegate?.textView?($0, shouldChangeTextIn: NSRange(location: 0, length: 0), replacementText: "\n") } ?? true
+
+        XCTAssertTrue(allowsEdit)
+        XCTAssertTrue(mockDelegate.didTapSubmitCalls.isEmpty)
+    }
+
     // MARK: - Context Chip Tests
 
     func testContextChipNotVisibleInitially() {
@@ -219,6 +272,26 @@ final class AIChatNativeInputViewTests: XCTestCase {
 
     private func submitButton() -> UIButton? {
         buttons(in: sut).first { $0.accessibilityIdentifier == "AIChatNativeInputView.submitButton" }
+    }
+
+    /// Hosts the view the way a screen does, so a later constraint change is laid out again.
+    private func makeContainer() -> UIView {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 160))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+        ])
+        container.layoutIfNeeded()
+        return container
+    }
+
+    private func textViews(in view: UIView) -> [UITextView] {
+        view.subviews.flatMap { subview -> [UITextView] in
+            (subview as? UITextView).map { [$0] } ?? textViews(in: subview)
+        }
     }
 
     private func buttons(in view: UIView) -> [UIButton] {

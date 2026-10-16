@@ -19,6 +19,7 @@
 
 import Foundation
 import Testing
+import UIKit
 @_spi(Testing) import WideEvent
 @testable import DuckDuckGo
 
@@ -148,6 +149,7 @@ struct NewTabPageSessionInstrumentationTests {
     func actionsWithoutActiveVisitAreNoops() {
         let (sut, wideEvent, _) = makeSUT()
 
+        sut.keyboardRaisedOnArrival()
         for action in actionCases() {
             action.invoke(sut)
         }
@@ -278,6 +280,56 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.started.count == 1)
     }
 
+    // MARK: - Keyboard raised on arrival
+
+    @available(iOS 16, *)
+    @Test("Arrival focus reports keyboard up without an interaction or resetting the timeout", .timeLimit(.minutes(1)))
+    func whenKeyboardRaisedOnArrivalThenVisitReportsKeyboardUp() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout - 5)
+        sut.keyboardRaisedOnArrival()
+        clock.advance(by: 6)
+        sut.visitBackgrounded()
+
+        let visit = lastCompletion(wideEvent)?.0
+        #expect(visit?.launchKeyboardMode == .up)
+        #expect(visit?.actionCount == 0)
+        #expect(visit?.firstInteractionInterval.end == nil)
+        #expect(visit?.terminalAction == .noActionTimeout)
+        #expect(wideEvent.updates.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("When the user acted first then a raised keyboard leaves the starting mode", .timeLimit(.minutes(1)))
+    func whenUserActedFirstThenRaisedKeyboardLeavesStartingMode() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: 0.1)
+        sut.scrollView()
+        sut.keyboardRaisedOnArrival()
+        sut.visitBackgrounded()
+
+        #expect(lastCompletion(wideEvent)?.0.launchKeyboardMode == .down)
+    }
+
+    @available(iOS 16, *)
+    @Test("When the visit already timed out then a raised keyboard still records up", .timeLimit(.minutes(1)))
+    func whenVisitTimedOutThenRaisedKeyboardStillRecordsUp() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout)
+        sut.keyboardRaisedOnArrival()
+        sut.visitBackgrounded()
+
+        let visit = lastCompletion(wideEvent)?.0
+        #expect(visit?.launchKeyboardMode == .up)
+        #expect(visit?.terminalAction == .noActionTimeout)
+    }
+
     // MARK: - Terminals
 
     @available(iOS 16, *)
@@ -337,19 +389,26 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(completion.0.firstInteractionInterval.end == firstStamp)
     }
 
-    @available(iOS 16, *)
-    @Test("visitEnded clears the active visit", .timeLimit(.minutes(1)))
-    func visitEndedClearsActiveVisit() {
+    @available(iOS 16, macOS 13, *)
+    @Test("An ended visit ignores another page's focus, actions, and terminal", .timeLimit(.minutes(1)),
+          arguments: [NewTabPageSessionWideEventData.TerminalAction.loadDuckai, .selectOtherTab, .swipeToOtherTab, .lastTabLoaded])
+    func visitEndedClearsActiveVisit(terminal: NewTabPageSessionWideEventData.TerminalAction) {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
-        sut.visitEnded(terminalAction: .loadDuckai)
-
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
         sut.tapInputBar()
+        sut.visitEnded(terminalAction: terminal)
+
+        sut.keyboardRaisedOnArrival()
+        sut.typeInInput()
         sut.visitEnded(terminalAction: .loadSerp)
         sut.visitBackgrounded()
 
+        #expect(wideEvent.started.count == 1)
         #expect(wideEvent.completions.count == 1)
-        #expect(lastCompletion(wideEvent)?.0.terminalAction == .loadDuckai)
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == terminal)
+        #expect(lastCompletion(wideEvent)?.0.launchKeyboardMode == .down)
+        #expect(lastCompletion(wideEvent)?.0.actionCount == 1)
+        #expect(lastCompletion(wideEvent)?.0.typeInInput == false)
     }
 
     @available(iOS 16, *)
@@ -822,5 +881,127 @@ struct NewTabPageSessionInstrumentationTests {
         // Replacing the visit is what removed it from the screen, so that is its end.
         #expect(lastCompletion(wideEvent)?.0.sessionInterval.durationMilliseconds == 60_000)
         #expect(wideEvent.started.count == 2)
+    }
+    // MARK: - Visible presentation
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Time behind App Lock is excluded from the visible visit", .timeLimit(.minutes(1)))
+    func visitWaitsForVisiblePage() async {
+        let (instrumentation, wideEvent, clock) = makeSUT()
+        var visible = false
+        let notifications = NotificationCenter()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { visible })
+        let page = NSObject()
+        var callbacks: [String] = []
+        coordinator.schedule(for: page, visit: {
+            callbacks.append("visit")
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: {
+            callbacks.append("shown")
+        }, focus: {
+            callbacks.append("focus")
+            instrumentation.keyboardRaisedOnArrival()
+            coordinator.recordIfVisible()
+        })
+
+        clock.advance(by: 60)
+        notifications.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.isEmpty)
+        #expect(callbacks.isEmpty)
+        #expect(!coordinator.hasPresentedPage)
+
+        visible = true
+        notifications.post(name: UIWindow.didBecomeKeyNotification, object: nil)
+        // App Lock makes its window key before hiding the browser in the same main-loop turn.
+        visible = false
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.isEmpty)
+        #expect(callbacks.isEmpty)
+
+        visible = true
+        notifications.post(name: UIWindow.didBecomeHiddenNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.launchKeyboardMode == .up)
+        #expect(coordinator.hasPresentedPage)
+        notifications.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        notifications.post(name: UIWindow.didBecomeKeyNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.count == 1)
+        #expect(callbacks == ["visit", "shown", "focus"])
+        coordinator.schedule(for: page, shown: { callbacks.append("visible") })
+        #expect(callbacks.last == "visible")
+
+        clock.advance(by: 2)
+        instrumentation.visitBackgrounded()
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .appBackgrounded)
+        #expect(lastCompletion(wideEvent)?.0.sessionInterval.durationMilliseconds == 2_000)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Replacing a hidden page drops its visit, presentation, and focus", .timeLimit(.minutes(1)))
+    func replacementDropsOldPageCallbacks() {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        var visible = false
+        var oldPageShown = false
+        var oldPageFocused = false
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
+        let oldPage = NSObject()
+        let newPage = NSObject()
+        coordinator.schedule(for: oldPage, visit: {
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: { oldPageShown = true }, focus: { oldPageFocused = true })
+        coordinator.schedule(for: newPage, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+
+        visible = true
+        coordinator.recordIfVisible()
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.trigger == .newTabOpened)
+        #expect(!oldPageShown)
+        #expect(!oldPageFocused)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancelled unlock retains the unseen card but starts only the next return's visit", .timeLimit(.minutes(1)))
+    func backgroundPreservesOnlyUnseenPresentation() {
+        let (instrumentation, wideEvent, clock) = makeSUT()
+        var visible = false
+        var shownCount = 0
+        var oldRequestFocused = false
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
+        let page = NSObject()
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: { shownCount += 1 }, focus: { oldRequestFocused = true })
+        coordinator.backgrounded()
+        instrumentation.visitBackgrounded()
+        clock.advance(by: 60)
+        #expect(wideEvent.started.isEmpty)
+        #expect(wideEvent.completions.isEmpty)
+        #expect(!coordinator.hasPresentedPage)
+
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+        visible = true
+        coordinator.recordIfVisible()
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.trigger == .appOpen)
+        #expect(shownCount == 1)
+        #expect(!oldRequestFocused)
     }
 }

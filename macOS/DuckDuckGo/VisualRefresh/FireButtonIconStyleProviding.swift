@@ -24,12 +24,7 @@ protocol FireButtonIconStyleProviding {
     var animationName: String { get }
 }
 
-final class LegacyFireButtonIconStyleProvider: FireButtonIconStyleProviding {
-    let icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
-    let animationName = "fire-button-mouse-over-legacy"
-}
-
-final class CurrentFireButtonIconStyleProvider: FireButtonIconStyleProviding {
+final class FireButtonIconStyleProvider: FireButtonIconStyleProviding {
     let icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
     let animationName: String  = "Flame-24"
 }

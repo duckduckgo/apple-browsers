@@ -108,7 +108,12 @@ extension PermissionType {
     }
 
     var editableDecisions: [PersistedPermissionDecision] {
-        canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
+        // Autoplay's three states are a scale rather than a grant, so they are ordered from most
+        // to least permissive, matching the Website Permissions design.
+        if case .autoplayPolicy = self {
+            return [.allow, .ask, .deny]
+        }
+        return canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
     }
 
     var isExternalScheme: Bool {
@@ -162,9 +167,9 @@ extension PermissionType {
     /// Whether this permission type requires system-level permission to be enabled
     var requiresSystemPermission: Bool {
         switch self {
-        case .geolocation, .notification:
+        case .camera, .microphone, .geolocation, .notification:
             return true
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .popups, .externalScheme, .autoplayPolicy:
             return false
         }
     }

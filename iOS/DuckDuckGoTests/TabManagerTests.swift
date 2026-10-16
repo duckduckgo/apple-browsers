@@ -27,6 +27,7 @@ import Core
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
+import WebKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -75,14 +76,11 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(0, tabsModel.currentIndex)
     }
 
-    func testWhenTabRemovedAndSnapshotClearingIsEnabledThenAppSwitcherSnapshotsAreCleared() async throws {
+    func testWhenTabRemovedThenAppSwitcherSnapshotsAreCleared() async throws {
         let tabsModel = TabsModel(desktop: false)
         let tab = try XCTUnwrap(tabsModel.tabs.first)
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.appSwitcherSnapshotClearing]
         let snapshotsCleared = expectation(description: "App switcher snapshots cleared")
         let manager = try makeManager(tabsModel,
-                                      featureFlagger: featureFlagger,
                                       clearAppSwitcherSnapshots: { snapshotsCleared.fulfill() })
 
         manager.remove(tab: tab)
@@ -97,9 +95,15 @@ final class TabManagerTests: XCTestCase {
         tabsModel.insert(tab: Tab(), placement: .atEnd, selectNewTab: false)
         fireModel.insert(tab: Tab(fireTab: true), placement: .atEnd, selectNewTab: false)
         let manager = try makeManager(tabsModel, fireModel: fireModel, previewsSource: mock)
+        let previewsCleanedUp = expectation(description: "Excess tab previews cleaned up")
+        mock.onRemovePreviewsWithIdNotIn = { previewsCleanedUp.fulfill() }
+
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-        try await Task.sleep(interval: 0.5)
+        // Only this post may find excess previews: the host app's own first activation can land while we await.
+        mock.totalStoredPreviewsReturnValue = nil
+        await fulfillment(of: [previewsCleanedUp], timeout: 5.0)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
+        mock.onRemovePreviewsWithIdNotIn = nil
 
         // This is just to keep a reference to the manager to supress the unused warning and keep it from being deinit
         manager.removeAll()
@@ -390,28 +394,15 @@ final class TabManagerTests: XCTestCase {
                                     "flushPendingSave should write synchronously without waiting for debounce")
     }
 
-    func testWhenMemoryWarningIsReceivedThenTabTerminationTelemetryIsNotified() throws {
-        let telemetry = MockTabTerminationTelemetry()
-        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
-
-        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
-
-        XCTAssertEqual(telemetry.memoryWarningCallCount, 1)
-        XCTAssertEqual(telemetry.memoryWarningActiveTabCounts, [0])
-        withExtendedLifetime(manager) {}
-    }
-
     func testWhenMemoryWarningIsReceivedInBackgroundThenNonCurrentControllersAreEvicted() throws {
         let tabs = (0..<3).map {
             Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
         }
         let model = TabsModel(tabs: tabs, desktop: false)
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
-        let telemetry = MockTabTerminationTelemetry()
         let cacheDelegate = MockTabControllerCacheDelegate()
         let manager = try makeManager(model,
                                       featureFlagger: featureFlagger,
-                                      tabTerminationTelemetry: telemetry,
                                       applicationState: { .background })
         manager.cacheDelegate = cacheDelegate
 
@@ -422,13 +413,43 @@ final class TabManagerTests: XCTestCase {
 
         NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
 
-        XCTAssertEqual(telemetry.memoryWarningActiveTabCounts, [3])
         XCTAssertNotNil(manager.controller(for: tabs[0]))
         XCTAssertNil(manager.controller(for: tabs[1]))
         XCTAssertNil(manager.controller(for: tabs[2]))
         XCTAssertEqual(cacheDelegate.evictionReasons, [.memoryWarning, .memoryWarning])
         XCTAssertEqual(model.tabs.count, 3)
         XCTAssertTrue(model.currentTab === tabs[0])
+    }
+
+    func testWhenMemoryWarningIsReceivedInBackgroundThenReservedControllerIsPreservedUntilRelease() throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      applicationState: { .background })
+        let currentController = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let source = try XCTUnwrap(currentController.tabAttachmentSource)
+        let reservation = try XCTUnwrap(source.acquirePage(tabs[1]))
+        defer { reservation.release() }
+        let reservedController = try XCTUnwrap(manager.controller(for: tabs[1]))
+        _ = try XCTUnwrap(manager.controller(for: tabs[2], createIfNeeded: true))
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertTrue(manager.controller(for: tabs[0]) === currentController)
+        XCTAssertTrue(manager.controller(for: tabs[1]) === reservedController)
+        XCTAssertNil(manager.controller(for: tabs[2]))
+        XCTAssertEqual(model.tabs.count, 3)
+
+        reservation.release()
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertTrue(manager.controller(for: tabs[0]) === currentController)
+        XCTAssertEqual(model.tabs.count, 3)
     }
 
     func testWhenMemoryWarningEvictionFlagIsDisabledThenControllersRemainCached() throws {
@@ -604,13 +625,120 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(model.tabs.count, 2)
     }
 
-    func testWhenWebContentProcessTerminatesThenTabTerminationTelemetryIsNotified() throws {
-        let telemetry = MockTabTerminationTelemetry()
-        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+    func testAttachmentReservationProtectsControllerDuringCreationAndUntilRelease() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let source = try XCTUnwrap(manager.current()?.tabAttachmentSource)
+        let capacityReservation = try XCTUnwrap(source.acquirePage(tabs[2]))
+        defer { capacityReservation.release() }
+        let current = manager.current()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        let reservation = try XCTUnwrap(source.acquirePage(tabs[1]))
+        XCTAssertNotNil(manager.controller(for: tabs[1]))
+        XCTAssertTrue(manager.current() === current)
+        XCTAssertTrue(manager.currentTabsModel.currentTab === tabs[0])
 
-        manager.webContentProcessDidTerminate()
+        reservation.release()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNotNil(manager.controller(for: tabs[0]))
+    }
 
-        XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
+    func testMultipleAttachmentReservationsReleaseIndependently() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let source = try XCTUnwrap(manager.current()?.tabAttachmentSource)
+        let capacityReservation = try XCTUnwrap(source.acquirePage(tabs[2]))
+        defer { capacityReservation.release() }
+        let first = try XCTUnwrap(source.acquirePage(tabs[1]))
+        let controller = try XCTUnwrap(manager.controller(for: tabs[1]))
+        let second = try XCTUnwrap(source.acquirePage(tabs[1]))
+        XCTAssertTrue(manager.controller(for: tabs[1]) === controller)
+
+        first.release()
+        first.release()
+        XCTAssertTrue(manager.controller(for: tabs[1]) === controller)
+        second.release()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+    }
+
+    func testControllerRemovalInvalidatesOldReservationsWithoutAffectingReplacement() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let source = try XCTUnwrap(manager.current()?.tabAttachmentSource)
+        let capacityReservation = try XCTUnwrap(source.acquirePage(tabs[2]))
+        defer { capacityReservation.release() }
+        let old = try XCTUnwrap(source.acquirePage(tabs[1]))
+        let controller = try XCTUnwrap(manager.controller(for: tabs[1]))
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+        XCTAssertNil(manager.controller(for: tabs[1]))
+
+        let replacement = try XCTUnwrap(source.acquirePage(tabs[1]))
+        let replacementController = try XCTUnwrap(manager.controller(for: tabs[1]))
+        XCTAssertFalse(replacementController === controller)
+        old.release()
+        XCTAssertTrue(manager.controller(for: tabs[1]) === replacementController)
+        replacement.release()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+    }
+
+    func testClosingProtectedTabRemovesControllerAndPreventsReacquisition() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let source = try XCTUnwrap(manager.current()?.tabAttachmentSource)
+        let reservation = try XCTUnwrap(source.acquirePage(tabs[1]))
+        manager.remove(tab: tabs[1])
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNil(source.acquirePage(tabs[1]))
+        reservation.release()
+    }
+
+    func testBurningProtectedTabsRemovesControllers() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let source = try XCTUnwrap(manager.current()?.tabAttachmentSource)
+        let reservation = try XCTUnwrap(source.acquirePage(tabs[1]))
+        _ = manager.removeAll(browsingMode: .normal)
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNil(source.acquirePage(tabs[1]))
+        reservation.release()
+    }
+
+    func testAttachmentAcquisitionRejectsWrongModeAndUnlistedTab() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let source = try XCTUnwrap(manager.current()?.tabAttachmentSource)
+        let fire = Tab(link: tabs[1].link, fireTab: true)
+        manager.tabsModel(for: .fire).insert(tab: fire, placement: .atEnd, selectNewTab: false)
+        XCTAssertNil(source.acquirePage(fire))
+        XCTAssertNil(manager.controller(for: fire))
+        let other = Tab(link: tabs[1].link)
+        XCTAssertNil(source.acquirePage(other))
+        XCTAssertNil(manager.controller(for: other))
+    }
+
+    func testAttachmentUsesSourceModeWithoutChangingSelectedMode() throws {
+        let normal = Tab(link: Link(title: "Normal", url: URL(string: "https://example.com")!))
+        let fire = Tab(link: normal.link, fireTab: true)
+        let origin = Tab(link: normal.link, fireTab: true)
+        let manager = try makeManager(TabsModel(tabs: [normal], desktop: false),
+                                      fireModel: TabsModel(tabs: [origin, fire], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let source = try XCTUnwrap(manager.controller(for: origin, createIfNeeded: true)?.tabAttachmentSource)
+        XCTAssertNil(manager.controller(for: fire))
+        let reservation = try XCTUnwrap(source.acquirePage(fire))
+        defer { reservation.release() }
+        let controller = try XCTUnwrap(manager.controller(for: fire))
+        XCTAssertTrue(controller.tabModel === fire)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        if #available(iOS 17, *) {
+            XCTAssertEqual(controller.webView.configuration.websiteDataStore.identifier,
+                           WKWebViewConfiguration.persistent(fireMode: true).websiteDataStore.identifier)
+        }
+    }
+
+    private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "Page \($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let manager = try makeManager(TabsModel(tabs: tabs, desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction]),
+                                      privacyConfigurationManager: makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}"))
+        _ = manager.current(createIfNeeded: true)
+        return (manager, tabs)
     }
 
     func testWhenTerminationThresholdIsReachedThenCurrentTabShowsErrorPage() throws {
@@ -634,6 +762,12 @@ final class TabManagerTests: XCTestCase {
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+
+        // The web view outlives its controller until WebKit's pending main run loop work finishes. Wait for it here,
+        // or its 4s dealloc assertion can fire in a later suite that does not spin the run loop in time.
+        let webViewReleased = XCTestExpectation(description: "Web view released")
+        controller.webView.onDeinit { webViewReleased.fulfill() }
+        addTeardownBlock { self.wait(for: [webViewReleased], timeout: 3.0) }
     }
 
     func testWhenReportingFromTabTerminationErrorPageThenDirectFeedbackFormEntryPointIsUsed() throws {
@@ -745,6 +879,50 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
     }
 
+    func testKeptNewTabPageRestoresPersistedFireTargetOnlyOnColdStart() throws {
+        let fireTab = Tab(link: Link(title: "Private page", url: URL(string: "https://example.com")!), fireTab: true)
+        let data = try NSKeyedArchiver.archivedData(withRootObject: [Tab(), Tab(), fireTab], requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? [Tab])
+        let store = MockKeyValueStore()
+        LastActiveTabStore(store: store).recordActiveTab(uid: fireTab.uid)
+        let manager = try makeManager(TabsModel(tabs: [restored[0], restored[1]], currentIndex: 1, desktop: false),
+                                      fireModel: TabsModel(tabs: [restored[2]], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode, .alwaysShowKeyboardOnNewTabPage]))
+        let eligibility = MockIdleReturnEligibilityManager()
+        eligibility.isFeatureAvailableResult = true
+        eligibility.isEligibleForNTPAfterIdleResult = true
+        let builder = EscapeHatchModelBuilder(
+            previewsSource: MockTabPreviewsSource(),
+            tabManager: manager,
+            lastActiveTabStore: LastActiveTabStore(store: store),
+            idleReturnEligibilityManager: eligibility,
+            afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .newTab, keyValueStore: MockKeyValueFileStore()),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore()),
+            instrumentation: DefaultNTPAfterIdleInstrumentation(eligibilityManager: eligibility, firePixel: { _ in }))
+        let router = EscapeHatchRouterStub()
+
+        XCTAssertNil(builder.makeAfterIdleHatchForKeptNewTabPage(isFirstForeground: false, router: router))
+        let hatch = try XCTUnwrap(builder.makeAfterIdleHatchForKeptNewTabPage(isFirstForeground: true, router: router))
+
+        XCTAssertTrue(hatch.targetTab === restored[2])
+        XCTAssertEqual(hatch.tabType, .fire)
+        XCTAssertEqual(hatch.title, UserText.escapeHatchFireTabTitle)
+        XCTAssertTrue(hatch.isReturnToTabCardVisible)
+        XCTAssertTrue(manager.currentTabsModel.currentTab === restored[1])
+        XCTAssertEqual(manager.currentTabsModel.count, 2)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        XCTAssertFalse(restored[1].openedAfterIdle)
+    }
+
+    private final class EscapeHatchRouterStub: EscapeHatchActionRouter {
+        func escapeHatchDidRequestSwitch(to tab: Tab) {}
+        func escapeHatchDidRequestClose(_ tab: Tab) {}
+        func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect) {}
+        func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {}
+        func escapeHatchDidRequestTabSwitcher() {}
+        func escapeHatchDidRequestAfterInactivitySettings() {}
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
@@ -752,7 +930,6 @@ final class TabManagerTests: XCTestCase {
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
                      normalStore: ThrowingKeyValueStoring? = nil,
-                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
                      tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
                      privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
                      applicationState: (@MainActor () -> UIApplication.State)? = nil,
@@ -799,7 +976,6 @@ final class TabManagerTests: XCTestCase {
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
                           adBlockingAvailability: StubAdBlockingAvailability(),
                           eventHub: StubEventHub(),
-                          tabTerminationTelemetry: tabTerminationTelemetry,
                           tabTerminationErrorPageDetector: tabTerminationErrorPageDetector,
                           applicationState: applicationState,
                           isPad: isPad,
@@ -839,22 +1015,6 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
-    }
-}
-
-@MainActor
-private final class MockTabTerminationTelemetry: TabTerminationTelemetry {
-    private(set) var memoryWarningCallCount = 0
-    private(set) var memoryWarningActiveTabCounts: [Int] = []
-    private(set) var webContentProcessTerminationActiveTabCounts: [Int] = []
-
-    func webContentProcessDidTerminate(activeTabCount: Int) {
-        webContentProcessTerminationActiveTabCounts.append(activeTabCount)
-    }
-
-    func didReceiveMemoryWarning(activeTabCount: Int) {
-        memoryWarningCallCount += 1
-        memoryWarningActiveTabCounts.append(activeTabCount)
     }
 }
 

@@ -134,15 +134,14 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
 
     func testADismissedNoticeStaysHiddenForThatResetPeriod() {
         let notice = notice(id: .approaching)
-        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice))
+        dismiss(notice)
 
         XCTAssertEqual(reason(snapshot(notice)), .dismissedUntilReset)
     }
 
-    /// Once the window rolls over, the record is stale and the message comes back — no threshold
-    /// ladder involved, because web decides when to send the next notice.
+    /// Once the window rolls over, the record is stale and the message comes back.
     func testADismissalDoesNotOutliveItsResetPeriod() {
-        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice(id: .approaching)))
+        dismiss(notice(id: .approaching))
 
         let nextPeriod = notice(id: .approaching, resetsAt: now.addingTimeInterval(2 * 24 * 3600))
         XCTAssertEqual(resolve(snapshot(nextPeriod))?.message, .approaching)
@@ -150,9 +149,39 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
 
     /// A dismissed approaching message must not hide the reached one that follows it.
     func testADismissalOnlyAppliesToItsOwnNotice() {
-        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice(id: .approaching)))
+        dismiss(notice(id: .approaching))
 
         XCTAssertEqual(resolve(snapshot(notice(id: .dailyReached, reached: true)))?.message, .dailyReached)
+    }
+
+    /// Web keeps sending `approaching` from 50 to 99, so the percentage is what brings it back.
+    func testWhenDailyUsageClimbsToTheNextRungThenADismissedMessageComesBack() {
+        dismiss(notice(id: .approaching, percentUsed: 75))
+
+        XCTAssertEqual(resolve(snapshot(notice(id: .approaching, percentUsed: 99)))?.percent, 99)
+    }
+
+    /// Web's daily ladder is 50 → 90 → 100, with no 75 rung.
+    func testWhenDailyUsageStaysBelowTheNextRungThenTheMessageStaysDismissed() {
+        dismiss(notice(id: .approaching, percentUsed: 50))
+
+        XCTAssertEqual(reason(snapshot(notice(id: .approaching, percentUsed: 75))), .dismissedUntilReset)
+    }
+
+    /// Web's weekly ladder is 50 → 75 → 90 → 100.
+    func testWhenWeeklyUsageReachesSeventyFivePercentThenADismissedMessageComesBack() {
+        let resetsAt = now.addingTimeInterval(3 * 24 * 3600)
+        dismiss(notice(id: .approaching, window: .weekly, percentUsed: 50, resetsAt: resetsAt))
+
+        let climbed = notice(id: .approaching, window: .weekly, percentUsed: 75, resetsAt: resetsAt)
+        XCTAssertEqual(resolve(snapshot(climbed))?.percent, 75)
+    }
+
+    /// On the last day of the week both windows reset at the same instant.
+    func testWhenTheOtherWindowWasDismissedThenTheMessageIsShown() {
+        dismiss(notice(id: .approaching, window: .weekly))
+
+        XCTAssertEqual(resolve(snapshot(notice(id: .approaching, window: .daily)))?.window, .daily)
     }
 
     // MARK: - Acting on a notice
@@ -205,6 +234,10 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
                                                    isTrialEligible: false,
                                                    now: now) else { return nil }
         return reason
+    }
+
+    private func dismiss(_ notice: DuckAiUsageNotice) {
+        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice), for: notice.window)
     }
 
     private func notice(id: DuckAiUsageNotice.ID,

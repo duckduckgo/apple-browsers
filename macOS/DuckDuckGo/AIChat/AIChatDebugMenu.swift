@@ -20,6 +20,7 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import ConcurrencyExtensions
 import os.log
 import Persistence
 
@@ -29,6 +30,28 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
+    @MainActor
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure {
+        AttachmentPrivacyDisclosure(
+            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
+        )
+    }
+
+    private lazy var attachmentPrivacyMenuItem = NSMenuItem(
+        title: "",
+        action: #selector(resetAttachmentPrivacyDisclosure),
+        target: self
+    )
+
+    /// Stands in for the web app until the front end writes this itself.
+    private lazy var attachmentPrivacyWebFlagMenuItem = NSMenuItem(
+        title: "Set Duck.ai's Attachment Privacy Flag",
+        action: #selector(setAttachmentPrivacyWebFlag),
+        target: self
+    )
+
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
@@ -59,30 +82,48 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
-            storageServerMenuItem
+            attachmentPrivacyMenuItem
 
-#if DEBUG
+            attachmentPrivacyWebFlagMenuItem
+
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Browser Tools Panel…", action: #selector(openBrowserToolsPanel))
+            NSMenuItem(title: "Terms of Service") {
+                NSMenuItem(title: "Reset Native Acceptance", action: #selector(resetNativeTermsOfServiceAcceptance))
+                    .targetting(self)
+                NSMenuItem(title: "Clear Web Acceptance (reload Duck.ai)", action: #selector(clearWebTermsOfServiceAcceptance))
+                    .targetting(self)
+            }
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
+            storageServerMenuItem
+
+#if DEBUG || REVIEW
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
                 .targetting(self)
 #endif
         }
     }
 
-#if DEBUG
+#if DEBUG || REVIEW
 
     // MARK: - Browser Tools
 
-    private var browserToolsPanel: BrowserToolsDebugPanel?
-
+    /// Opens the sidebar on the current tab with the browser tools panel in place of the chat.
+    /// Closing the sidebar brings the chat back next time; there is no persisted mode.
     @MainActor
-    @objc func openBrowserToolsPanel() {
-        let panel = browserToolsPanel
-            ?? BrowserToolsDebugPanel(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
-        browserToolsPanel = panel
-        panel.showWindow(nil)
-        panel.window?.makeKeyAndOrderFront(nil)
+    @objc private func showBrowserToolsPanel() {
+        let coordinator = NSApp.delegateTyped.windowControllersManager
+            .lastKeyMainWindowController?.mainViewController.aiChatCoordinator as? AIChatCoordinator
+        coordinator?.showBrowserToolsDebugPanel()
     }
 
 #endif
@@ -117,6 +158,42 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 
+    @objc private func resetLauncherPromo() {
+        DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    // MARK: - Terms of Service
+
+    /// While any chat exists, both acceptances come back on the next launch: delete all chats first.
+    @objc private func resetNativeTermsOfServiceAcceptance() {
+        DuckAiTermsOfServiceStore().resetForDebugging()
+    }
+
+    @MainActor
+    @objc private func clearWebTermsOfServiceAcceptance() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.deleteEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    @MainActor
+    @objc private func resetAttachmentPrivacyDisclosure() {
+        attachmentPrivacyDisclosure.reset()
+        updateAttachmentPrivacyMenuItemTitle()
+    }
+
+    @MainActor
+    @objc private func setAttachmentPrivacyWebFlag() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey,
+                                                                      value: true)
+    }
+
+    @MainActor
+    private func updateAttachmentPrivacyMenuItemTitle() {
+        attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
+            + (attachmentPrivacyDisclosure.hasShown ? "(shown)" : "(not shown)")
+    }
+
     private func sectionHeader(_ title: String) -> NSMenuItem {
         let item = NSMenuItem(title: title)
         item.isEnabled = false
@@ -144,7 +221,7 @@ final class AIChatDebugMenu: NSMenu {
     /// Brings back a message dismissed with its close button, and one whose CTA has been run.
     @objc private func clearUsageDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
-        store.setDismissal(nil)
+        DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
     }
 
@@ -222,6 +299,10 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        // Main thread only, and the title must be right before the menu draws, so not a Task.
+        MainActor.assumeMainThread {
+            updateAttachmentPrivacyMenuItemTitle()
+        }
     }
 
     @objc func setCustomURL() {

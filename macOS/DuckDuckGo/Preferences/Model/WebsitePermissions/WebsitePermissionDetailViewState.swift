@@ -22,6 +22,9 @@ import PrivacyConfig
 
 struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
+    /// Behaviour applied to websites with no saved decision of their own.
+    var defaultDecision: PersistedPermissionDecision = .ask
+    var availableDefaultDecisions: [PersistedPermissionDecision] = []
     var searchQuery = ""
     var sites: [SiteRow] = []
     var visibleSites: [SiteRow] = []
@@ -29,18 +32,23 @@ struct WebsitePermissionDetailViewState: Equatable {
         groupedByDomain(visibleSites)
     }
     var isEmpty: Bool {
-        sites.isEmpty
+        sites.isEmpty && !isSearching
     }
     var hasNoResults: Bool {
-        !sites.isEmpty && visibleSites.isEmpty
+        isSearching && visibleSites.isEmpty
+    }
+    private var isSearching: Bool {
+        !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     init(
         category: WebsitePermissionCategory = .notifications,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         sites: [SiteRow] = []
     ) {
         self.category = category
+        self.defaultDecision = defaultDecision
         self.searchQuery = searchQuery
         self.sites = sites
         self.visibleSites = sites
@@ -48,6 +56,7 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         entries: [WebsitePermissionEntry],
         featureFlagger: FeatureFlagger
@@ -66,14 +75,14 @@ struct WebsitePermissionDetailViewState: Equatable {
                 )
             }
             .sorted {
-                let domainComparison = $0.domain.localizedCaseInsensitiveCompare($1.domain)
+                let domainComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
                 if domainComparison != .orderedSame {
                     return domainComparison == .orderedAscending
                 }
                 return $0.permissionType.rawValue < $1.permissionType.rawValue
             }
 
-        self.init(category: category, searchQuery: searchQuery, sites: sites)
+        self.init(category: category, defaultDecision: defaultDecision, searchQuery: searchQuery, sites: sites)
     }
 
     /// Collapses rows into one group per domain, so a site holding several permissions is listed once.
@@ -105,8 +114,12 @@ extension WebsitePermissionDetailViewState {
             "\(domain)|\(permissionType.rawValue)"
         }
 
+        var displayName: String {
+            domain.permissionDisplayName
+        }
+
         var faviconURL: URL? {
-            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+            domain.permissionFaviconURL
         }
 
         /// Label for the row when it is listed under a domain heading, which already names the site.
@@ -125,6 +138,10 @@ extension WebsitePermissionDetailViewState {
 
         var id: String {
             domain
+        }
+
+        var displayName: String {
+            domain.permissionDisplayName
         }
 
         var faviconURL: URL? {

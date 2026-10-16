@@ -18,6 +18,8 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @MainActor
 struct SubscriptionOnboardingViewFactory {
@@ -37,12 +39,13 @@ struct SubscriptionOnboardingViewFactory {
 
     /// The PIR screen launched from the summary's checklist row.
     func pirLaunchScreen() -> AnyView {
-        AnyView(
+        let closePIR = { flow.isPresentingPIR = false }
+        return AnyView(
             SubscriptionOnboardingProtectionOverviewView(
                 content: .pir,
                 title: flow.title(for: .pir),
-                navigationButton: .close { flow.isPresentingPIR = false },
-                onLaunch: flow.pirScreen())
+                navigationButton: .close(closePIR),
+                onLaunch: PIRDestinationView(content: flow.pirScreen(), onClose: closePIR))
                 .subscriptionOnboardingNavigationContainer())
     }
 
@@ -51,10 +54,9 @@ struct SubscriptionOnboardingViewFactory {
             .onFirstAppear { reportShown(section) })
     }
 
-    /// `.vpnTips` is bundled with `.vpnWidget` and shares its pixel name — firing here too would
-    /// double-count a single "vpn_widget shown" impression.
+    /// `.vpnWidget` and `.vpnTips` share `.vpnActivation`'s pixel name ("vpn").
     func reportShown(_ section: SubscriptionOnboardingSection) {
-        guard section != .vpnTips else { return }
+        guard section != .vpnWidget, section != .vpnTips else { return }
         flow.instrumentation.stepShown(section)
     }
 
@@ -78,7 +80,7 @@ struct SubscriptionOnboardingViewFactory {
         case .welcome:
             return AnyView(SubscriptionOnboardingWelcomeView(
                 navigationButton: navigationButton,
-                features: SubscriptionOnboardingWelcomeView.displayedFeatures(entitledChecklist: flow.progress.checklist),
+                features: flow.progress.checklist,
                 onNext: { flow.sectionDidRequestAdvance() }))
 
         case .vpnActivation:
@@ -153,5 +155,28 @@ extension SubscriptionOnboardingViewFactory {
     init(flow: SubscriptionOnboardingFlowViewModel, forcedTrialLengthDays: Int?) {
         self.flow = flow
         self.forcedTrialLengthDays = forcedTrialLengthDays
+    }
+}
+
+// MARK: - PIR destination
+
+/// The pushed PIR screen's default back button, with its icon swapped to an X. Closes the whole PIR
+/// sheet directly.
+private struct PIRDestinationView<Content: View>: View {
+    let content: Content
+    let onClose: () -> Void
+
+    var body: some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .navigationBarBackground(Color(designSystemColor: .background))
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onClose) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                    }
+                    .accessibilityLabel(UserText.subscriptionOnboardingCloseButtonAccessibilityLabel)
+                }
+            }
     }
 }

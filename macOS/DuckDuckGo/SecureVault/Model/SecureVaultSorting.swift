@@ -52,38 +52,16 @@ struct SecureVaultSorting: Equatable {
         }
 
         var backgroundColor: NSColor {
-            if AppRebrand.isAppRebranded() {
-                switch self {
-                case .allItems:
-                    return NSColor(designSystemColor: .controlsFillPrimary)
-                default:
-                    return NSColor(designSystemColor: .accentAltPrimary)
-                }
-            }
-
             switch self {
             case .allItems:
-                return .secureVaultCategoryDefault
-            case .logins:
-                return .logins
-            case .identities:
-                return .identities
-            case .cards:
-                return .cards
+                return NSColor(designSystemColor: .controlsFillPrimary)
+            default:
+                return NSColor(designSystemColor: .accentAltPrimary)
             }
         }
 
         var foregroundColor: NSColor? {
-            if AppRebrand.isAppRebranded() {
-                return NSColor(designSystemColor: .textPrimary)
-            }
-
-            switch self {
-            case .allItems: return nil // Show white or black depending on system appearance
-            case .logins: return .black
-            case .identities: return .black
-            case .cards: return .white
-            }
+            NSColor(designSystemColor: .textPrimary)
         }
     }
 

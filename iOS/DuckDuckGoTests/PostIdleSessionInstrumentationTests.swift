@@ -91,10 +91,11 @@ struct PostIdleSessionInstrumentationTests {
     @Test("When no active session then non-terminal updates are no-ops", .timeLimit(.minutes(1)))
     func nonTerminalUpdatesWithoutActiveSessionAreNoop() {
         let (sut, wideEvent, _) = makeSUT()
+        sut.keyboardRaisedOnArrival()
         sut.pageEngaged()
         sut.toggleUsed()
         sut.backPressed()
-        sut.openingScreenChanged()
+        sut.afterInactivitySettingsOpened()
         sut.closeTabTapped()
         sut.burnTabTapped()
         #expect(wideEvent.updates.isEmpty)
@@ -204,6 +205,47 @@ struct PostIdleSessionInstrumentationTests {
         #expect(startedReturnData(wideEvent)?.afterIdle == false)
     }
 
+    // MARK: - Arrival focus
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Automatic arrival focus updates only the return context, once, without an interaction", .timeLimit(.minutes(1)))
+    func arrivalFocusUpdatesContextOnly() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: .lut, focused: false)
+        let startedAt = clock.now
+        clock.advance(by: 0.1)
+
+        sut.keyboardRaisedOnArrival()
+        sut.keyboardRaisedOnArrival()
+
+        #expect(wideEvent.updates.count == 1)
+        #expect(lastReturnUpdate(wideEvent)?.focused == true)
+        #expect(lastReturnUpdate(wideEvent)?.landedOn == .ntpUserInitiated)
+        #expect(lastReturnUpdate(wideEvent)?.afterIdle == true)
+        #expect(lastReturnUpdate(wideEvent)?.firstInteractionInterval.end == nil)
+        #expect(lastReturnUpdate(wideEvent)?.sessionInterval.start == startedAt)
+        #expect(lastReturnUpdate(wideEvent)?.sessionInterval.end == nil)
+        #expect(lastUpdate(wideEvent) == nil)
+        #expect(wideEvent.completions.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Arrival focus does not change the landing context after user interaction", .timeLimit(.minutes(1)))
+    func arrivalFocusAfterInteractionIsIgnored() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: nil, focused: false)
+        sut.backPressed()
+        let firstInteractionDate = clock.now
+        clock.advance(by: 0.1)
+
+        sut.keyboardRaisedOnArrival()
+
+        #expect(wideEvent.updates.count == 1)
+        #expect(lastReturnUpdate(wideEvent)?.focused == false)
+        #expect(lastReturnUpdate(wideEvent)?.backPressed == true)
+        #expect(lastReturnUpdate(wideEvent)?.firstInteractionInterval.end == firstInteractionDate)
+    }
+
     // MARK: - Non-terminal updates
 
     @available(iOS 16, *)
@@ -261,15 +303,17 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("openingScreenChanged sets flag and marks first interaction", .timeLimit(.minutes(1)))
-    func openingScreenChangedSetsFlagsAndFirstInteraction() {
+    @Test("afterInactivitySettingsOpened sets the flag and marks first interaction without ending the session", .timeLimit(.minutes(1)))
+    func afterInactivitySettingsOpenedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
         clock.advance(by: 0.75)
-        sut.openingScreenChanged()
+        sut.afterInactivitySettingsOpened()
 
-        #expect(lastUpdate(wideEvent)?.openingScreenChanged == true)
+        #expect(lastUpdate(wideEvent)?.afterInactivitySettingsOpened == true)
         #expect(lastUpdate(wideEvent)?.firstInteractionInterval.end == clock.now)
+        #expect(lastReturnUpdate(wideEvent)?.afterInactivitySettingsOpened == true)
+        #expect(wideEvent.completions.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -537,9 +581,12 @@ struct PostIdleSessionInstrumentationTests {
         sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
         sut.sessionEnded(reason: .searchSubmitted)
         // Subsequent signals should be no-ops.
+        sut.keyboardRaisedOnArrival()
         sut.pageEngaged()
         sut.sessionEnded(reason: .returnToPageTapped)
         #expect(wideEvent.completions.count == 2)
+        #expect(wideEvent.updates.isEmpty)
+        #expect(lastReturnCompletion(wideEvent)?.0.focused == false)
     }
 
     // MARK: - Cancellation
@@ -570,8 +617,11 @@ struct PostIdleSessionInstrumentationTests {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
         sut.sessionCancelledByBackground()
+        sut.keyboardRaisedOnArrival()
         sut.sessionCancelledByBackground()
         #expect(wideEvent.completions.count == 2)
+        #expect(wideEvent.updates.isEmpty)
+        #expect(lastReturnCompletion(wideEvent)?.0.focused == false)
     }
 
     // MARK: - Orphan cleanup

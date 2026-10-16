@@ -22,8 +22,8 @@ import Foundation
 import UniformTypeIdentifiers
 
 /// iOS adapter over the shared `AIChatAttachmentValidator`. Keeps the UIKit-bound
-/// `UnifiedToggleInputAttachment` representation and injects iOS `UserText` strings; the limit
-/// arithmetic itself lives in the shared validator so iOS and macOS stay in lockstep.
+/// `UnifiedToggleInputAttachment` representation and injects iOS `UserText` strings for uploads.
+/// Tab context uses a separate per-message limit shared with the pending current page.
 struct UTIAttachmentPolicy {
 
     typealias FileValidationFailureReason = AIChatAttachmentValidator.FileValidationFailureReason
@@ -33,6 +33,22 @@ struct UTIAttachmentPolicy {
     let attachmentUsage: AIChatAttachmentUsage?
     let pendingAttachments: [UnifiedToggleInputAttachment]
     let model: AIChatModel?
+    var maximumTabAttachmentCount: Int?
+    var currentPageTabID: TabUID?
+    var isCurrentPageAttached = false
+
+    var selectedTabIDs: Set<TabUID> {
+        var ids = Set(pendingAttachments.compactMap { $0.tabAttachment?.tabId })
+        if isCurrentPageAttached, let currentPageTabID {
+            ids.insert(currentPageTabID)
+        }
+        return ids
+    }
+
+    func canAttachTab(withID id: TabUID) -> Bool {
+        guard let maximumTabAttachmentCount else { return false }
+        return !selectedTabIDs.contains(id) && selectedTabIDs.count < maximumTabAttachmentCount
+    }
 
     private var validator: AIChatAttachmentValidator {
         AIChatAttachmentValidator(
@@ -112,6 +128,8 @@ struct UTIAttachmentPolicy {
 
     func isAttachmentSupported(_ attachment: UnifiedToggleInputAttachment) -> Bool {
         switch attachment {
+        case .tab:
+            return true
         case .image:
             return model?.supportsImageUpload == true
         case .file(let fileAttachment):

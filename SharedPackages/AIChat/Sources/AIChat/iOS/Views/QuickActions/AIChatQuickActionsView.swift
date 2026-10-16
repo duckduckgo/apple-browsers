@@ -69,7 +69,9 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
 
     // MARK: - Configuration
 
-    public func configure(with actions: [Action]) {
+    public func configure(with actions: [Action],
+                          isEnabled: (Action) -> Bool = { _ in true },
+                          isSelected: (Action) -> Bool = { _ in false }) {
         stackView.arrangedSubviews
             .filter { $0 !== loadingView }
             .forEach {
@@ -81,6 +83,11 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             let chipView = AIChatQuickActionChipView()
             chipView.backgroundStyle = chipBackgroundStyle
             chipView.configure(with: action)
+            let enabled = isEnabled(action)
+            chipView.isUserInteractionEnabled = enabled
+            chipView.alpha = enabled ? 1 : 0.4
+            if !enabled { chipView.accessibilityTraits.insert(.notEnabled) }
+            if isSelected(action) { chipView.accessibilityTraits.insert(.selected) }
             chipView.onTap = { [weak self] in
                 self?.onActionSelected?(action)
             }

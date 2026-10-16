@@ -24,8 +24,11 @@ import AIChat
 final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
     private(set) var submissionStartedModelIds: [String?] = []
+    private(set) var submissionStartedPageContextFlags: [Bool] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []
     private(set) var promptInterpretedAsURLScopes: [DuckAIWideEventFlowScope] = []
+    private(set) var promptDeliveryUpdates: [(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?)] = []
+    var onPromptDeliveryUpdated: ((Bool?) -> Void)?
 
     func submissionStarted(scope: DuckAIWideEventFlowScope,
                            modelId: String?,
@@ -42,8 +45,12 @@ final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
                            attachmentsSelected: Bool) {
         submissionStartedScopes.append(scope)
         submissionStartedModelIds.append(modelId)
+        submissionStartedPageContextFlags.append(hasPageContext)
     }
-    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {}
+    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {
+        promptDeliveryUpdates.append((scope, wasQueued, didSendBridgeMessage))
+        onPromptDeliveryUpdated?(didSendBridgeMessage)
+    }
     func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {}
     func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope) {}
     func stopGeneratingTapped(scope: DuckAIWideEventFlowScope) {}

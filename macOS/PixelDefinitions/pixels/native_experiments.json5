@@ -61,7 +61,7 @@
                 }
             }
         },
-        "onboardingNonBlocking": {
+        "onboardingNonBlockingV2": {
             "cohorts": ["control", "treatment"],
             "metrics": {
                 "importRequested": {

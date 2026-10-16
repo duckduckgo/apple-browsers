@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppUpdaterShared
 @_spi(Testing) import Persistence
 import XCTest

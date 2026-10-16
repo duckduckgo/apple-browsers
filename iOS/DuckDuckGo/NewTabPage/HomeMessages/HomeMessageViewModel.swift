@@ -163,6 +163,7 @@ struct HomeMessageViewModel {
     
     let onDidClose: (ButtonAction?) async -> Void
     let onDidAppear: () -> Void
+    let onDidDisappear: () -> Void
     let onAttachAdditionalParameters: ((_ useCase: SubscriptionDataReportingUseCase, _ params: [String: String]) -> [String: String])?
 
     var viewIdentity: ViewIdentity {

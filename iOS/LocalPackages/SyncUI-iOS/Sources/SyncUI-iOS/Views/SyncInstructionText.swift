@@ -25,14 +25,15 @@ struct SyncInstructionText: View {
     let markdown: String
 
     var body: some View {
-        Text(attributed)
+        Text(Self.attributed(markdown: markdown))
             .daxSubheadRegular()
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private var attributed: AttributedString {
-        var result = (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+    static func attributed(markdown: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        var result = (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
         result.foregroundColor = Color(designSystemColor: .textSecondary)
         let emphasizedRanges = result.runs
             .filter { $0.inlinePresentationIntent == .stronglyEmphasized }

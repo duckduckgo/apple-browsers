@@ -23,6 +23,15 @@ import FoundationExtensions
 
 final class PassiveAddressBarTextField: NSTextField {
 
+    override class var cellClass: AnyClass? {
+        get {
+            PassiveAddressBarTextFieldCell.self
+        }
+        set {
+            // NO-OP
+        }
+    }
+
     weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
             subscribeToSelectedTabViewModel()

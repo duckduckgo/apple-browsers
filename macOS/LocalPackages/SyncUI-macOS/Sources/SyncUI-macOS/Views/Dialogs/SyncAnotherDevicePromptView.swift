@@ -24,7 +24,7 @@ struct SyncAnotherDevicePromptView: View {
     @EnvironmentObject var model: ManagementDialogModel
 
     private var isBusy: Bool {
-        model.isConnecting
+        model.isBusy
     }
 
     var body: some View {
@@ -32,8 +32,8 @@ struct SyncAnotherDevicePromptView: View {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPairFeature128)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViewsV2.TextHeader(text: UserText.syncAnotherDevicePromptTitleV2)
-                    SyncUIViewsV2.TextDetailSecondary(text: UserText.syncAnotherDevicePromptSubtitleV2)
+                    SyncUIViewsV2.TextHeader(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptTitleImproved : UserText.syncAnotherDevicePromptTitleV2)
+                    SyncUIViewsV2.TextDetailSecondary(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptSubtitleImproved : UserText.syncAnotherDevicePromptSubtitleV2)
                 }
             }
         } buttons: {
@@ -55,7 +55,9 @@ struct SyncAnotherDevicePromptView: View {
             .disabled(isBusy)
 
             Button {
-                model.delegate?.syncWithAnotherDeviceFromPrompt()
+                Task {
+                    await model.delegate?.syncWithAnotherDeviceFromPrompt()
+                }
             } label: {
                 HStack(spacing: 6) {
                     if model.isConnectingAnotherDevice {
@@ -76,9 +78,17 @@ struct SyncAnotherDevicePromptView: View {
 
 #if DEBUG
 #Preview("Default") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return SyncAnotherDevicePromptView()
+    SyncAnotherDevicePromptView()
         .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Improved Pairing Flow") {
+    SyncAnotherDevicePromptView()
+        .environmentObject({
+            let model = ManagementDialogModel()
+            model.isImprovedPairingFlowEnabled = true
+            return model
+        }())
 }
 
 #Preview("Connecting") {

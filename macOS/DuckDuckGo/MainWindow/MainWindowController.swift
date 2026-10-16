@@ -167,15 +167,12 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
-    /// Automation runs and overridden onboarding would enrol without being real first runs, and a
-    /// reinstalling user is not a new user.
+    /// Automation runs and overridden onboarding would enrol without being real first runs.
     private var isEligibleForNonBlockingExperiment: Bool {
         let launchOptions = LaunchOptionsHandler()
         guard !launchOptions.isAutomationSession,
               case .notOverridden = launchOptions.onboardingStatus else { return false }
-
-        let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
-        return !reinstallDetector.isReinstallingUser
+        return true
     }
 
     private func startOnboardingIfNeeded() {
@@ -318,7 +315,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
-    private var isClosingAndBurning = false
+    private(set) var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher

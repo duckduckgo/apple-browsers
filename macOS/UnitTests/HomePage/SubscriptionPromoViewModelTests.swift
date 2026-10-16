@@ -91,7 +91,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
-    // MARK: - Dismiss Cooldown (fallback when PromoQueue is off)
+    // MARK: - Dismiss Cooldown (enforced by the view model for external promos)
 
     func testWhenDismissedWithinCooldown_ThenDoesNotShowPromo() {
         persistor.fireTabVisitCount = 3

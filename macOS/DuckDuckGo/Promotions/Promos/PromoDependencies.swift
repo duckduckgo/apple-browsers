@@ -47,4 +47,11 @@ struct PromoDependencies {
     let updateNotificationBridge: UpdateNotificationPromoBridge?
     let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
     let quitSurveyPromoObserver: QuitSurveyPromoObserver
+    let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
+    let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
+    let autofillImportPromoObserver: AutofillImportPromoObserver
+    let syncSetupBookmarksPromoManager: SyncPromoManager
+    let syncSetupAutofillPromoManager: SyncPromoManager
+    let bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate
+    let bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate
 }

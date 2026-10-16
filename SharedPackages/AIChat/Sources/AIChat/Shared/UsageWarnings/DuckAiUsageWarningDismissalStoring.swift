@@ -19,7 +19,8 @@
 import Foundation
 import Persistence
 
-/// Scoped to the reset period it was dismissed in, so the message comes back once `resetsAt` moves on.
+/// Scoped to one window's reset period and ladder rung, like web's `duckaiUsageLimitBannerDismissal`,
+/// so the message comes back once `resetsAt` moves on or usage climbs to the next rung.
 public struct DuckAiUsageWarningDismissal: Equatable, Codable {
 
     /// Raw, so a message web adds later can still be recorded as dismissed.
@@ -28,21 +29,44 @@ public struct DuckAiUsageWarningDismissal: Equatable, Codable {
     /// Whole seconds: this is compared for equality, and `Codable` can drift a `Date`.
     public let resetsAtEpochSeconds: Int
 
-    public init(noticeID: String, resetsAt: Date) {
+    public let threshold: Int
+
+    public init(noticeID: String, resetsAt: Date, threshold: Int) {
         self.noticeID = noticeID
         self.resetsAtEpochSeconds = Self.epochSeconds(for: resetsAt)
+        self.threshold = threshold
     }
 
     public init(notice: DuckAiUsageNotice) {
-        self.init(noticeID: notice.id.rawValue, resetsAt: notice.resetsAt)
+        self.init(noticeID: notice.id.rawValue,
+                  resetsAt: notice.resetsAt,
+                  threshold: notice.window.redisplayThreshold(forPercent: notice.percentUsed))
     }
 
     public func applies(to notice: DuckAiUsageNotice) -> Bool {
-        noticeID == notice.id.rawValue && resetsAtEpochSeconds == Self.epochSeconds(for: notice.resetsAt)
+        noticeID == notice.id.rawValue
+            && resetsAtEpochSeconds == Self.epochSeconds(for: notice.resetsAt)
+            && notice.window.redisplayThreshold(forPercent: notice.percentUsed) <= threshold
     }
 
     private static func epochSeconds(for date: Date) -> Int {
         Int(date.timeIntervalSince1970.rounded())
+    }
+}
+
+extension DuckAiUsageWindow {
+
+    /// Web's `redisplayByWindow`. Web keeps sending `approaching` all the way to 99%, so without it a
+    /// message dismissed at 50% would stay hidden until the reset.
+    var redisplayLadder: [Int] {
+        switch self {
+        case .daily: return [50, 90, 100]
+        case .weekly: return [50, 75, 90, 100]
+        }
+    }
+
+    func redisplayThreshold(forPercent percent: Int) -> Int {
+        redisplayLadder.last { percent >= $0 } ?? 0
     }
 }
 
@@ -65,8 +89,8 @@ public struct DuckAiUsageWarningActedSnapshot: Equatable, Codable {
 }
 
 public protocol DuckAiUsageWarningDismissalStoring {
-    func dismissal() -> DuckAiUsageWarningDismissal?
-    func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?)
+    func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal?
+    func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?, for window: DuckAiUsageWindow)
     func actedSnapshot() -> DuckAiUsageWarningActedSnapshot?
     func setActedSnapshot(_ actedSnapshot: DuckAiUsageWarningActedSnapshot?)
 }
@@ -74,9 +98,17 @@ public protocol DuckAiUsageWarningDismissalStoring {
 public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStoring {
 
     private enum Key: String {
-        // One notice at a time, so a single key replaces the earlier per-window pair.
-        case dismissal = "aichat.usage-warning.dismissal"
+        // One per window, so dismissing the daily message can't bring back a weekly one.
+        case dailyDismissal = "aichat.usage-warning.dismissal.daily"
+        case weeklyDismissal = "aichat.usage-warning.dismissal.weekly"
         case actedSnapshot = "aichat.usage-warning.acted-snapshot"
+
+        static func dismissal(for window: DuckAiUsageWindow) -> Self {
+            switch window {
+            case .daily: return .dailyDismissal
+            case .weekly: return .weeklyDismissal
+            }
+        }
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -85,12 +117,12 @@ public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStori
         self.keyValueStore = keyValueStore
     }
 
-    public func dismissal() -> DuckAiUsageWarningDismissal? {
-        read(DuckAiUsageWarningDismissal.self, forKey: .dismissal)
+    public func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal? {
+        read(DuckAiUsageWarningDismissal.self, forKey: .dismissal(for: window))
     }
 
-    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?) {
-        write(dismissal, forKey: .dismissal)
+    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?, for window: DuckAiUsageWindow) {
+        write(dismissal, forKey: .dismissal(for: window))
     }
 
     public func actedSnapshot() -> DuckAiUsageWarningActedSnapshot? {
@@ -119,14 +151,16 @@ public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStori
 /// For tests and any caller that wants dismissals to die with the session.
 public final class InMemoryDuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStoring {
 
-    private var storedDismissal: DuckAiUsageWarningDismissal?
+    private var storedDismissals: [DuckAiUsageWindow: DuckAiUsageWarningDismissal] = [:]
     private var storedActedSnapshot: DuckAiUsageWarningActedSnapshot?
 
     public init() {}
 
-    public func dismissal() -> DuckAiUsageWarningDismissal? { storedDismissal }
+    public func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal? { storedDismissals[window] }
 
-    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?) { storedDismissal = dismissal }
+    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?, for window: DuckAiUsageWindow) {
+        storedDismissals[window] = dismissal
+    }
 
     public func actedSnapshot() -> DuckAiUsageWarningActedSnapshot? { storedActedSnapshot }
 

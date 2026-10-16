@@ -741,6 +741,35 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(updated["onchangeEvents"] as? Int, 1)
     }
 
+    func testPermissionStatusNameBeforeAndAfterGeolocationRequest() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        let result = try await javaScriptDictionary(in: harness.webView, body: """
+        const before = await navigator.permissions.query({ name: "geolocation" });
+        const nameBefore = before.name;
+        const request = await new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+            () => resolve("success"),
+            () => resolve("error")
+        ));
+        const after = await navigator.permissions.query({ name: "geolocation" });
+        return { nameBefore, nameAfter: after.name, originalNameAfter: before.name, request };
+        """)
+
+        XCTAssertEqual(result["nameBefore"] as? String, "geolocation")
+        XCTAssertEqual(result["nameAfter"] as? String, "geolocation")
+        XCTAssertEqual(result["originalNameAfter"] as? String, "geolocation")
+        XCTAssertEqual(result["request"] as? String, "success")
+        XCTAssertEqual(delegate.permissionQueryCount, 2)
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+    }
+
     private func exerciseGeolocation(in webView: WKWebView) async throws -> [String: Any] {
         try await javaScriptDictionary(in: webView, body: """
         const policy = document.permissionsPolicy ?? document.featurePolicy;

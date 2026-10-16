@@ -50,6 +50,9 @@ struct PreferencesWebsitePermissionsView: View {
         .task {
             model.send(action: .onAppear)
         }
+        .onDisappear {
+            model.send(action: .onDisappear)
+        }
     }
 
     private var overview: some View {
@@ -79,7 +82,7 @@ struct PreferencesWebsitePermissionsView: View {
 
     private func recentRow(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
         PreferencesWebsitePermissionSiteRowView(
-            domain: row.domain,
+            domain: row.displayName,
             faviconURL: row.faviconURL,
             permissionType: row.permissionType,
             permissionTitle: row.permissionTitle,
@@ -162,10 +165,16 @@ struct PreferencesWebsitePermissionsView: View {
 import PrivacyConfig
 
 @MainActor
-private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
+private func previewModel(entries: [WebsitePermissionEntry] = [],
+                          defaultDecision: PersistedPermissionDecision = .ask) -> WebsitePermissionsViewModel {
     let permissionManager = PermissionManagerMock()
     permissionManager.setPersistedPermissions(entries)
-    return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: MockFeatureFlagger())
+    let defaults = WebsitePermissionDefaultsMock(
+        decisions: WebsitePermissionCategory.allCases.reduce(into: [:]) { $0[$1] = defaultDecision }
+    )
+    return WebsitePermissionsViewModel(permissionManager: permissionManager,
+                                       featureFlagger: MockFeatureFlagger(),
+                                       defaults: defaults)
 }
 
 private let previewEntries: [WebsitePermissionEntry] = [

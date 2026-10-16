@@ -17,9 +17,7 @@
 //  limitations under the License.
 //
 
-import Combine
 import SwiftUI
-import UIKit
 import DesignResourcesKit
 import UIComponents
 
@@ -31,7 +29,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
         static let infoCardStackSpacing: CGFloat = 8
         static let onInfoCardsSpacing: CGFloat = 12
         static let featureRowSpacing: CGFloat = 10
-        static let newIPCardSlideOffset: CGFloat = -16
+        static let revealSlideOffset: CGFloat = -16
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
@@ -40,10 +38,9 @@ struct SubscriptionOnboardingVPNActivationView: View {
     private let navigationButton: SubscriptionOnboardingNavigationButton?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
     @State private var isShowingInfoSheet = false
-    @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
+    @State private var featureRowsOffset: CGFloat = 0
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
          title: String? = nil,
@@ -58,36 +55,13 @@ struct SubscriptionOnboardingVPNActivationView: View {
             title: title,
             navigationButton: navigationButton,
             header: header,
-            footer: footer) {
+            footer: footer,
+            footerBlur: true) {
             content
         }
         .onAppear { viewModel.onAppear() }
-        .onDisappear {
-            viewModel.onDisappear()
-            tapAllowHintWindow.hide()
-            tapAllowHint.disappeared()
-        }
+        .onDisappear { viewModel.onDisappear() }
         .subscriptionOnboardingInfoSheet(.vpn, isPresented: $isShowingInfoSheet)
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-            tapAllowHint.appWillResignActive(isVPNConfigured: viewModel.isVPNConfigured)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            tapAllowHint.appDidBecomeActive(isVPNConfigured: viewModel.isVPNConfigured)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            tapAllowHint.appDidEnterBackground()
-        }
-        .onReceive(viewModel.$didDenyVPNPermission) { didDeny in
-            guard didDeny else { return }
-            tapAllowHint.permissionDenied()
-        }
-        .onReceive(tapAllowHint.$shouldShowHint) { shouldShow in
-            if shouldShow {
-                tapAllowHintWindow.show()
-            } else {
-                tapAllowHintWindow.hide()
-            }
-        }
     }
 }
 
@@ -158,7 +132,7 @@ private extension SubscriptionOnboardingVPNActivationView {
                                                       location: viewModel.vpnLocationText,
                                                       nearestIndicator: viewModel.vpnLocationNearestIndicator,
                                                       isAvailable: viewModel.isVPNInfoAvailable)
-                        .transition(.offset(y: Metrics.newIPCardSlideOffset).combined(with: .opacity))
+                        .transition(.offset(y: Metrics.revealSlideOffset).combined(with: .opacity))
                 }
                 footnote(UserText.subscriptionOnboardingVPNActivationOnFootnote)
             }
@@ -166,22 +140,20 @@ private extension SubscriptionOnboardingVPNActivationView {
         }
     }
 
-    @ViewBuilder
     var featureRows: some View {
-        if viewModel.connectionState == .on {
-            VStack(spacing: Metrics.featureRowSpacing) {
-                ForEach(VPNProtection.allCases, id: \.self) { protection in
-                    SubscriptionOnboardingListItemView(text: protection.text, status: .active)
-                }
+        VStack(spacing: Metrics.featureRowSpacing) {
+            ForEach(VPNProtection.allCases, id: \.self) { protection in
+                SubscriptionOnboardingListItemView(text: protection.text,
+                                                   status: viewModel.connectionState == .on ? .active : .inactive)
             }
-            .transition(.move(edge: .trailing).combined(with: .opacity))
-        } else {
-            VStack(spacing: Metrics.featureRowSpacing) {
-                ForEach(VPNProtection.allCases, id: \.self) { protection in
-                    SubscriptionOnboardingListItemView(text: protection.text, status: .inactive)
-                }
+        }
+        .offset(y: featureRowsOffset)
+        .onChange(of: viewModel.connectionState) { newValue in
+            guard newValue == .on, !reduceMotion else { return }
+            featureRowsOffset = Metrics.revealSlideOffset
+            withAnimation(.easeOut(duration: 0.4)) {
+                featureRowsOffset = 0
             }
-            .transition(.move(edge: .leading).combined(with: .opacity))
         }
     }
 
@@ -197,24 +169,31 @@ private extension SubscriptionOnboardingVPNActivationView {
 // MARK: - Footer
 
 private extension SubscriptionOnboardingVPNActivationView {
+    func startVPN() {
+        Task {
+            await viewModel.turnOnVPN()
+        }
+    }
+
     var footer: SubscriptionOnboardingFooter {
         switch viewModel.connectionState {
-        case .off:
-            let startVPN: () -> Void = {
-                tapAllowHint.startTapped()
-                Task {
-                    await viewModel.turnOnVPN()
-                    tapAllowHint.turnOnFinished()
-                }
-            }
-            guard viewModel.didFailActivation else {
-                return .single(.init(UserText.subscriptionOnboardingVPNActivationTurnOnButton, action: startVPN))
-            }
-            return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
+        case .off where viewModel.didFailActivation:
+            return .double(primary: primaryButton,
                            secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton) { viewModel.advance() })
+        case .off:
+            return .single(primaryButton)
         case .on:
             return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton) { viewModel.advance() })
         }
+    }
+
+    /// "Turn On VPN"/"Try Again", replaced with a spinner while activating either way.
+    var primaryButton: SubscriptionOnboardingFooterButton {
+        let title = viewModel.didFailActivation ? UserText.subscriptionOnboardingVPNActivationTryAgainButton : UserText.subscriptionOnboardingVPNActivationTurnOnButton
+        guard viewModel.isActivating else {
+            return .init(title, action: startVPN)
+        }
+        return .init(content: SwiftUI.ProgressView(), isDisabled: true, action: startVPN)
     }
 }
 
@@ -244,87 +223,71 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
                                original: SubscriptionOnboardingConnectionInfo?,
                                vpn: SubscriptionOnboardingConnectionInfo? = nil,
                                didDeny: Bool = false,
-                               didFailToStart: Bool = false) -> some View {
+                               didFailToStart: Bool = false,
+                               isActivating: Bool = false) -> some View {
     SubscriptionOnboardingVPNActivationView(
         viewModel: .preview(state: state,
                             originalConnectionInfo: original,
                             vpnConnectionInfo: vpn,
                             didDenyVPNPermission: didDeny,
-                            didFailToStartVPN: didFailToStart),
+                            didFailToStartVPN: didFailToStart,
+                            isActivating: isActivating),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
     .graphicLottieRenderer(.app)
 }
 
 #Preview("Off - Light") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid)
-    }
+    activationPreview(state: .off, original: .madrid)
 }
 
 #Preview("Off - loading") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: nil)
-    }
+    activationPreview(state: .off, original: nil)
 }
 
 #Preview("Off - denied") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didDeny: true)
-    }
+    activationPreview(state: .off, original: .madrid, didDeny: true)
 }
 
 #Preview("Off - denied - Dark") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didDeny: true)
-    }
-    .preferredColorScheme(.dark)
+    activationPreview(state: .off, original: .madrid, didDeny: true)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Off - denied - Large Text") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didDeny: true)
-    }
-    .dynamicTypeSize(.accessibility5)
+    activationPreview(state: .off, original: .madrid, didDeny: true)
+        .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("Off - start failed") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didFailToStart: true)
-    }
+    activationPreview(state: .off, original: .madrid, didFailToStart: true)
+}
+
+#Preview("Off - activating") {
+    activationPreview(state: .off, original: .madrid, isActivating: true)
 }
 
 #Preview("On - Light") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: .valencia)
-    }
+    activationPreview(state: .on, original: .madrid, vpn: .valencia)
 }
 
 #Preview("On - loading") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: nil)
-    }
+    activationPreview(state: .on, original: .madrid, vpn: nil)
 }
 
 #Preview("On - no original IP") {
-    RebrandedPreview {
-        // Direct on-state entry: no original (pre-VPN) IP, so its card shows the placeholders.
-        activationPreview(state: .on, original: nil, vpn: .valencia)
-    }
+    // Direct on-state entry: no original (pre-VPN) IP, so its card shows the placeholders.
+    activationPreview(state: .on, original: nil, vpn: .valencia)
 }
 
 #Preview("On - Dark") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: .valencia)
-    }
-    .preferredColorScheme(.dark)
+    activationPreview(state: .on, original: .madrid, vpn: .valencia)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("On - Large Text") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: .valencia)
-    }
-    .dynamicTypeSize(.accessibility5)
+    activationPreview(state: .on, original: .madrid, vpn: .valencia)
+        .dynamicTypeSize(.accessibility5)
 }
 
 /// Exercises the off→on reveal: re-run the preview (⌥⌘P) to replay, or tap "Turn On VPN" in a Live Preview.
@@ -346,9 +309,7 @@ private struct VPNRevealPreview: View {
 }
 
 #Preview("On - reveal") {
-    RebrandedPreview {
-        VPNRevealPreview()
-    }
+    VPNRevealPreview()
 }
 
 #endif

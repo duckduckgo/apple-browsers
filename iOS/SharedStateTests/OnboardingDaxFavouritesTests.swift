@@ -72,7 +72,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             featureFlagger: MockFeatureFlagger()
         )
 
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -159,6 +159,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
                                         appSettings: AppSettingsMock(),
+                                        sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: MockAIChatSyncCleaning())
         makeHost = { homePageConfiguration in
             MainViewController(
@@ -204,7 +205,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                     featureFlagger: featureFlagger,
                     runPrerequisitesDelegate: nil,
-                    subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                    subscriptionManager: SubscriptionManagerMock(),
                     freemiumPIRDebugSettings: freemiumPIRDebugSettings
                 ),
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings,
@@ -222,7 +223,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 privacyStats: MockPrivacyStats(),
                 whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
                 darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                onboardingManager: OnboardingManagerMock()
+                onboardingManager: OnboardingManagerMock(),
+                promptExposureReporter: MockPromptExposureReporter()
             )
         }
         sut = makeHost(homePageConfiguration)
@@ -253,7 +255,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let legacyConfiguration = HomePageConfiguration(
             remoteMessagingStore: legacyStore,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
-            isStillOnboarding: { false }
+            isStillOnboarding: { false },
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let legacyHost = makeHost(legacyConfiguration)
         let legacyTray = makeSuggestionTraySpy(for: legacyHost, websiteURL: websiteURL)
@@ -273,7 +276,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: coordinatedStore,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         XCTAssertTrue(coordinatedConfiguration.homeMessages.isEmpty)
         XCTAssertTrue(coordinatedStore.fetchedTriggerFilters.isEmpty)
@@ -310,7 +314,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
@@ -335,7 +340,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
@@ -359,7 +365,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -382,7 +389,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
             promoGate: gate,
-            isRMFAdmissionEnabled: false
+            isRMFAdmissionEnabled: false,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -405,7 +413,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
             promoGate: gate,
-            isRMFAdmissionEnabled: false
+            isRMFAdmissionEnabled: false,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -429,7 +438,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let mainHost = makeHost(configuration)
         let conditionalHost = UnifiedInputContentContainerViewController(
@@ -454,7 +464,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
         host.tabManager.currentTabsModel.currentTab?.openedAfterIdle = true
@@ -476,7 +487,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
             promoGate: gate,
-            isRMFAdmissionEnabled: false
+            isRMFAdmissionEnabled: false,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -645,6 +657,7 @@ private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
     func dismissRemoteMessage(withID id: String) async {}
     func fetchDismissedRemoteMessageIDs() -> [String] { [] }
     func updateRemoteMessage(withID id: String, asShown shown: Bool) async {}
+    func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult { .notRecorded }
     func resetRemoteMessages() async {}
 }
 
@@ -668,7 +681,7 @@ private final class InactiveConditionalHostSwitchBarHandler: SwitchBarHandling {
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }

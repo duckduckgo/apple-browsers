@@ -31,11 +31,11 @@ jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
     needs: setup-matrix
-    runs-on: macos-26
+    runs-on: ["image:osx-tahoe-27", general-purpose]
     timeout-minutes: 30
 
     env:
-      RUNS_ON: macos-26 # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
 
     steps:
     - name: Register SSH keys for private repos
@@ -85,6 +85,7 @@ jobs:
         preferred-versions: "26.5"
 
     - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
       uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex

@@ -28,6 +28,8 @@ struct PreparingToSyncViewV2: View {
     }
 
     let state: State
+    var isAnimationPaused = false
+    var onAnimationFinished: @MainActor () -> Void = {}
 
     var body: some View {
         VStack(spacing: 20) {
@@ -58,7 +60,15 @@ struct PreparingToSyncViewV2: View {
             LottieView {
                 try await DotLottieFile.named("SyncLock", bundle: .module)
             }
-            .playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+            .playbackMode(isAnimationPaused
+                          ? .paused(at: .progress(0))
+                          : .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+            .animationDidFinish { finished in
+                guard finished else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    onAnimationFinished()
+                }
+            }
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 96, height: 72)
@@ -85,12 +95,10 @@ struct PreparingToSyncViewV2: View {
 
 #if DEBUG
 #Preview("Connecting") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return PreparingToSyncViewV2(state: .connecting)
+    PreparingToSyncViewV2(state: .connecting)
 }
 
 #Preview("Waiting for Other Device") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return PreparingToSyncViewV2(state: .waitingForOtherDevice)
+    PreparingToSyncViewV2(state: .waitingForOtherDevice)
 }
 #endif

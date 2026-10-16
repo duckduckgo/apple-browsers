@@ -54,6 +54,9 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
     @Published var chromeInsetTop: CGFloat = 0
+    /// Floating chrome clearance comes from UIKit's keyboard-bounded host, independently of
+    /// SwiftUI's transient coordinate origins during the omnibar handoff.
+    @Published var logoViewportFrame: CGRect?
     /// The search-surface list VM. On the single-host path the duck.ai surface adds its own
     /// (see `duckAIListViewModel`); the view picks between them by content kind.
     let listViewModel: SuggestionsListViewModel
@@ -120,7 +123,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         return false
     }
 
-    /// True while the focused content is fading out (drives `DismissFade`).
+    /// True while the focused content is fading out (drives `FocusedContentDismissFade`).
     var isFadingOut: Bool { dismissBehavior == .fadeOut }
 
     /// List/logo→favorites (or recents) collapse: fade the focused content out.
@@ -136,7 +139,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     /// Resets the dismiss state on each focus so the next session starts clean. The reset snaps
-    /// (`DismissFade` only animates the fade-out), so it never replays a fade-in as the logo reappears.
+    /// (`FocusedContentDismissFade` only animates the fade-out), so it never replays a fade-in as the logo reappears.
     func prepareForActivation() {
         dismissBehavior = .none
         hasResolvedSinceActivation = false

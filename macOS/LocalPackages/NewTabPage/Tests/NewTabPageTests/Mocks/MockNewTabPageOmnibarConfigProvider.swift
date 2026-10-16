@@ -89,6 +89,80 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         refreshUsageLimitsCallCount += 1
     }
 
+    var usageLimitsResult: NewTabPageDataModel.OmnibarUsageLimits?
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? {
+        usageLimitsResult
+    }
+
+    private(set) var dismissUsageLimitsCallCount = 0
+    @MainActor
+    func dismissUsageLimits() {
+        dismissUsageLimitsCallCount += 1
+    }
+
+    var selectUsageLimitsCtaOutcome = NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome.handled
+    private(set) var selectUsageLimitsCtaModelIds: [String?] = []
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome {
+        selectUsageLimitsCtaModelIds.append(modelId)
+        return selectUsageLimitsCtaOutcome
+    }
+
+    let usageLimitsSubject = PassthroughSubject<Void, Never>()
+    var usageLimitsPublisher: AnyPublisher<Void, Never> {
+        usageLimitsSubject.eraseToAnyPublisher()
+    }
+
+    @MainActor
+    var showAttachmentPrivacyDisclaimer = false
+
+    private(set) var attachmentPrivacyDisclaimerShownKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        attachmentPrivacyDisclaimerShownKinds.append(kind)
+    }
+
+    let attachmentPrivacySubject = PassthroughSubject<Void, Never>()
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> {
+        attachmentPrivacySubject.eraseToAnyPublisher()
+    }
+
+    var launcherPromoResult: NewTabPageDataModel.OmnibarLauncherPromo?
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
+        launcherPromoResult
+    }
+
+    private(set) var launcherPromoShownCallCount = 0
+    @MainActor
+    func launcherPromoShown() {
+        launcherPromoShownCallCount += 1
+    }
+
+    private(set) var selectLauncherPromoCtaCallCount = 0
+    @MainActor
+    func selectLauncherPromoCta() {
+        selectLauncherPromoCtaCallCount += 1
+    }
+
+    private(set) var dismissLauncherPromoCallCount = 0
+    @MainActor
+    func dismissLauncherPromo() {
+        dismissLauncherPromoCallCount += 1
+    }
+
+    private(set) var launcherPromoIgnoredCallCount = 0
+    @MainActor
+    func launcherPromoIgnored() {
+        launcherPromoIgnoredCallCount += 1
+    }
+
+    let launcherPromoSubject = PassthroughSubject<Void, Never>()
+    var launcherPromoPublisher: AnyPublisher<Void, Never> {
+        launcherPromoSubject.eraseToAnyPublisher()
+    }
+
     @Published var isAttachTabsEnabled: Bool = false
 
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
@@ -136,5 +210,11 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var requiresAiTermsAcceptance: Bool = false
+
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        $requiresAiTermsAcceptance.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }
 }

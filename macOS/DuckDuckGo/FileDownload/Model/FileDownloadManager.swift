@@ -20,7 +20,7 @@ import AppKit
 import Combine
 import Common
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import UniformTypeIdentifiers
 import os.log
 

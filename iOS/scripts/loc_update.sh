@@ -63,15 +63,17 @@ update_localizable_strings() {
 	echo "  Updated ${target_strings}"
 }
 
+update_localizable_strings "${base_dir}/DuckDuckGo" "${base_dir}/DuckDuckGo/UserInterfaceResources/en.lproj"
+
 # Add target sub-directories here when needed
-set -- "${base_dir}/DuckDuckGo" "${base_dir}/Widgets" "${base_dir}/PacketTunnelProvider"
+set -- "${base_dir}/Widgets" "${base_dir}/PacketTunnelProvider"
 
 for dir in "$@"; do
 	update_localizable_strings "${dir}" "${dir}/en.lproj"
 done
 
 # Add LocalPackages sub-directories here when needed
-set -- "${base_dir}/LocalPackages/SyncUI-iOS/Sources/SyncUI-iOS"
+set -- "${base_dir}/LocalPackages/SyncUI-iOS/Sources/SyncUI-iOS" "${base_dir}/LocalPackages/SitePermissions/Sources/SitePermissions"
 
 for dir in "$@"; do
 	update_localizable_strings "${dir}" "${dir}/Resources/en.lproj"

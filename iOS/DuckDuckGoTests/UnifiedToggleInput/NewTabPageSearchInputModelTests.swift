@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo
 
@@ -69,6 +70,46 @@ final class NewTabPageSearchInputModelTests: XCTestCase {
             XCTAssertEqual(model.settings.isVoiceSearchEnabled, enabled)
             XCTAssertEqual(model.textEntryMode, .aiChat)
         }
+    }
+
+    func testWhenLastUsedModeChangesThenRefreshingRetainedInputUsesLatestMode() {
+        var lastUsedMode: TextEntryMode = .search
+        let model = NewTabPageSearchInputModel(readSettings: {
+            .init(isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true,
+                  defaultTextEntryMode: DefaultOmnibarMode.lastUsed.resolvedTextEntryMode { lastUsedMode })
+        })
+        XCTAssertEqual(model.textEntryMode, .search)
+
+        lastUsedMode = .aiChat
+        model.refreshSettings()
+        XCTAssertEqual(model.textEntryMode, .aiChat)
+
+        lastUsedMode = .search
+        model.refreshSettings()
+        XCTAssertEqual(model.textEntryMode, .search)
+    }
+
+    func testWhenDefaultModeIsFixedThenRefreshingInputRestoresThatMode() {
+        for mode in [TextEntryMode.search, .aiChat] {
+            let model = NewTabPageSearchInputModel(readSettings: {
+                .init(isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: mode)
+            })
+            model.textEntryMode = mode == .search ? .aiChat : .search
+
+            model.refreshSettings()
+
+            XCTAssertEqual(model.textEntryMode, mode)
+        }
+    }
+
+    func testWhenToggleIsHiddenThenRefreshingInputKeepsSearchSelected() {
+        let model = NewTabPageSearchInputModel(readSettings: {
+            .init(isModeToggleShown: false, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .aiChat)
+        })
+
+        model.refreshSettings()
+
+        XCTAssertEqual(model.textEntryMode, .search)
     }
 
     func testNotificationSubscriptionsDoNotRetainInput() {

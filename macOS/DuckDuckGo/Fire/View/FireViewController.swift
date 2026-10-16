@@ -39,16 +39,12 @@ final class FireViewController: NSViewController {
         let renderingEngine: Lottie.RenderingEngineOption
 
         static var current: Settings {
-            guard DesignSystemRebrand.isAppRebranded() else {
-                return Settings(animationName: "01_Fire_really_small", animationSpeed: 1.2, animationBeginning: 0.1, animationEnd: 0.63, renderingEngine: .mainThread)
-            }
-
             /// # Important
             ///     We're switching the renderingEngine back to `.coreAnimation`, as the `.mainThread` alternative is choppy.
             ///     This was initially switched due to a high CPU usage bug, in Lottie 4.4 circa 2024.
             ///
             ///     Ref.: https://github.com/duckduckgo/macos-browser/pull/2598
-            return Settings(animationName: "02_Fire_rebranded", animationSpeed: 1, animationBeginning: 0, animationEnd: 1, renderingEngine: .coreAnimation)
+            Settings(animationName: "02_Fire_rebranded", animationSpeed: 1, animationBeginning: 0, animationEnd: 1, renderingEngine: .coreAnimation)
         }
     }
 
@@ -67,7 +63,7 @@ final class FireViewController: NSViewController {
     // UI Elements
     private lazy var transparentBackgroundView: ColorView = {
         // Clicks used to fall through to the page and tab bar while a burn was in progress.
-        let view = ColorView(frame: .zero, backgroundColor: .fireBackground, interceptClickEvents: true)
+        let view = ColorView(frame: .zero, backgroundColor: NSColor(resource: .fireBackground), interceptClickEvents: true)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -91,7 +87,7 @@ final class FireViewController: NSViewController {
         // The legacy dialog keeps its fixed background color, which its design was made for.
         let backgroundColor: NSColor = featureFlagger.isFeatureOn(.fireDialogSimplified)
             ? .init(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette)
-            : .newTabPageBackground
+            : NSColor(resource: .newTabPageBackground)
         let view = ColorView(frame: .zero, backgroundColor: backgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.cornerRadius = featureFlagger.isFeatureOn(.fireDialogSimplified) ? 24 : 8
@@ -142,7 +138,7 @@ final class FireViewController: NSViewController {
     private lazy var fakeFireButtonIconView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
+        imageView.image = NSImage(resource: .burnAlert)
         return imageView
     }()
 
@@ -323,7 +319,7 @@ final class FireViewController: NSViewController {
         animationView.animationSpeed = settings.animationSpeed
 
         fakeFireButton.wantsLayer = true
-        fakeFireButton.layer?.backgroundColor = NSColor.buttonMouseDown.cgColor
+        fakeFireButton.layer?.backgroundColor = NSColor(resource: .buttonMouseDown).cgColor
 
         fakeFireButton.setAccessibilityIdentifier("FireViewController.fakeFireButton")
         subscribeToIsBurning()

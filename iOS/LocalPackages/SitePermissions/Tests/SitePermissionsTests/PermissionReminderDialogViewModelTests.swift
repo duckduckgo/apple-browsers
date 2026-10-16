@@ -46,6 +46,15 @@ final class PermissionReminderDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .cancel])
     }
 
+    func testLocationSiteReminderUsesLocationCopy() throws {
+        let viewModel = try XCTUnwrap(PermissionReminderDialogViewModel(sitePermissionTypes: [.location]))
+
+        XCTAssertEqual(viewModel.title, "DuckDuckGo needs to access your location")
+        XCTAssertEqual(viewModel.body, "Location permissions are needed if you want to use location features on this site.")
+        XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .cancel])
+        XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary])
+    }
+
     func testVoiceSearchReminderUsesPrimarySettingsActionAndHideAction() {
         let viewModel = PermissionReminderDialogViewModel.voiceSearch
 
@@ -53,6 +62,16 @@ final class PermissionReminderDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.body, "Microphone permissions are needed if you want to use our Private Voice Search.")
         XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .hideVoiceSearch, .cancel])
         XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary, .secondary])
+    }
+
+    func testWhenVoiceSearchIsEnabledFromSettingsThenReminderUsesPrivateVoiceCopyAndSettingsActions() {
+        let viewModel = PermissionReminderDialogViewModel.voiceSearchSettings
+
+        XCTAssertEqual(viewModel.title, "DuckDuckGo needs to access your microphone")
+        XCTAssertEqual(viewModel.body, "Microphone permissions are needed if you want to use our private voice features.")
+        XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .cancel])
+        XCTAssertEqual(viewModel.actions.map(\.title), ["Change Permissions", "Cancel"])
+        XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary])
     }
 
     func testVoiceChatReminderUsesDuckAICopyWithoutHideVoiceSearch() {
@@ -69,13 +88,15 @@ final class PermissionReminderDialogViewModelTests: XCTestCase {
                        "DuckDuckGo couldn’t give camera access to this site")
         XCTAssertEqual(PermissionReminderDialogViewModel.sitePermissionToastMessage(for: [.microphone]),
                        "DuckDuckGo couldn’t give microphone access to this site")
+        XCTAssertEqual(PermissionReminderDialogViewModel.sitePermissionToastMessage(for: [.location]),
+                       "DuckDuckGo couldn’t share location with this site")
         XCTAssertEqual(PermissionReminderDialogViewModel.sitePermissionToastMessage(for: [.camera, .microphone]),
                        "DuckDuckGo couldn’t give camera and microphone access to this site")
     }
 
     func testUnsupportedSitePermissionVariantsAreRejected() {
         XCTAssertNil(PermissionReminderDialogViewModel(sitePermissionTypes: []))
-        XCTAssertNil(PermissionReminderDialogViewModel(sitePermissionTypes: [.location]))
+        XCTAssertNil(PermissionReminderDialogViewModel(sitePermissionTypes: [.camera, .location]))
         XCTAssertNil(PermissionReminderDialogViewModel.sitePermissionToastMessage(for: []))
     }
 

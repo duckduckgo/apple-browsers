@@ -23,6 +23,7 @@ import SwiftUIExtensions
 
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 enum Const {
@@ -100,13 +101,13 @@ struct ManagementView_Previews: PreviewProvider {
             .init(name: "Enabled", state: .enabled)
         ],
         configure: { model in
-            DesignSystemRebrand.isAppRebranded = { true }
-            return ScrollView {
+            ScrollView {
                 ManagementView(model: model)
                     .padding()
             }
             .frame(width: 600, height: 900)
             .background(Color(nsColor: .windowBackgroundColor))
+            .applyRebranding()
         }
     )
 }

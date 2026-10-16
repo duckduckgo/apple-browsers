@@ -48,7 +48,7 @@ public struct DuckAiUsageWarningResolver {
                         now: Date) -> Outcome {
         guard let notice = snapshot.notice else { return .none(reason: .noNotice) }
 
-        if let dismissal = dismissalStore.dismissal(), dismissal.applies(to: notice) {
+        if let dismissal = dismissalStore.dismissal(for: notice.window), dismissal.applies(to: notice) {
             return .none(reason: .dismissedUntilReset)
         }
 

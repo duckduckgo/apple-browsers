@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppKit
 import Combine
 import Common
@@ -188,6 +190,15 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             }
             shouldResetClickCountForNextEventOfTypes = nil
         }
+
+        // Extension keyboard shortcuts need a command, control or option modifier.
+        if #available(macOS 15.4, *),
+           event.type == .keyDown,
+           !event.modifierFlags.isDisjoint(with: [.command, .control, .option]),
+           delegateTyped.webExtensionManager?.performCommand(for: event) == true {
+            return
+        }
+
         super.sendEvent(event)
     }
 

@@ -356,35 +356,35 @@
             "channel"
         ]
     },
-    "web_extension_state_checked_macos": {
+    "m_mac_web_extension_state_checked_macos": {
         "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_embedded_not_loaded_macos": {
+    "m_mac_web_extension_embedded_not_loaded_macos": {
         "description": "Fires when the embedded (autoconsent) extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_dark_reader_not_loaded_macos": {
+    "m_mac_web_extension_dark_reader_not_loaded_macos": {
         "description": "Fires when the Dark Reader extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_ad_blocking_not_loaded_macos": {
+    "m_mac_web_extension_ad_blocking_not_loaded_macos": {
         "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_ad_blocking_scriptlets_not_fetched_macos": {
+    "m_mac_web_extension_ad_blocking_scriptlets_not_fetched_macos": {
         "description": "Fires when the ad-blocking extension is expected but its scriptlets have not been fetched.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
@@ -423,6 +423,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -450,6 +451,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -477,6 +479,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -504,6 +507,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -531,6 +535,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -558,6 +563,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -585,6 +591,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]
@@ -612,6 +619,7 @@
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
             "background_events",
+            "background_graveyard_enabled",
             "cpm_app_version_change",
             "cpm_app_launch_age"
         ]

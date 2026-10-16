@@ -96,7 +96,7 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         sut.clear()
 
         XCTAssertNil(sut.warning)
-        XCTAssertNil(dismissalStore.dismissal())
+        XCTAssertNil(dismissalStore.dismissal(for: .daily))
         XCTAssertNil(dismissalStore.actedSnapshot())
     }
 
@@ -110,7 +110,24 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         sut.dismiss()
 
         XCTAssertNil(sut.warning)
-        XCTAssertEqual(dismissalStore.dismissal()?.noticeID, "approaching")
+        XCTAssertEqual(dismissalStore.dismissal(for: .daily)?.noticeID, "approaching")
+    }
+
+    func testWhenADailyMessageIsDismissedThenAnEarlierWeeklyDismissalStillHolds() {
+        let weekly = notice(id: .approaching, window: .weekly, resetsAt: now.addingTimeInterval(3 * 24 * 3600))
+        let sut = makeSUT()
+        snapshotProvider.snapshot = snapshot(weekly)
+        sut.refresh()
+        sut.dismiss()
+
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching, window: .daily))
+        sut.refresh()
+        sut.dismiss()
+
+        snapshotProvider.snapshot = snapshot(weekly)
+        sut.refresh()
+
+        XCTAssertNil(sut.warning)
     }
 
     func testDismissIsANoOpForAStickyMessage() {
@@ -121,7 +138,7 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         sut.dismiss()
 
         XCTAssertNotNil(sut.warning)
-        XCTAssertNil(dismissalStore.dismissal())
+        XCTAssertNil(dismissalStore.dismissal(for: .daily))
     }
 
     // MARK: - Actions

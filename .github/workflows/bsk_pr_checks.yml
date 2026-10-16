@@ -19,16 +19,6 @@ on:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - '.github/**'
-      - '.xcode-version'
-      - 'SharedPackages/BrowserServicesKit/**'
-      - 'SharedPackages/Common/**'
-      - 'SharedPackages/DDGError/**'
-      - 'SharedPackages/Networking/**'
-      - 'SharedPackages/Persistence/**'
-      - 'SharedPackages/PixelKit/**'
-      - 'SharedPackages/WideEvent/**'
   schedule:
     - cron: '10,30,50 4,5,6 * * *'
 
@@ -40,6 +30,17 @@ jobs:
   should-run-checks:
     name: Determine if checks should run
     uses: ./.github/workflows/should_run_pr_checks.yml
+    with:
+      paths: |
+        .github/**
+        .xcode-version
+        SharedPackages/BrowserServicesKit/**
+        SharedPackages/Common/**
+        SharedPackages/DDGError/**
+        SharedPackages/Networking/**
+        SharedPackages/Persistence/**
+        SharedPackages/PixelKit/**
+        SharedPackages/WideEvent/**
 
   unit-tests:
 
@@ -48,11 +49,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-tahoe-27, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -207,11 +208,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-tahoe-27, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
@@ -260,7 +261,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "26.5"
+          preferred-versions: "27.0"
 
       - name: Resolve package dependencies
         run: |
@@ -413,7 +414,7 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-tahoe-27, general-purpose]
       timeout-minutes: 30
 
       defaults:
@@ -655,3 +656,19 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+  # The only job required by branch protection for this workflow.
+  # It always runs and fails if any job it depends on failed or was cancelled, so skipped jobs pass
+  # and a failing should-run-checks blocks the merge instead of skipping the tests unnoticed.
+  pr-checks-result:
+    name: BSK PR Checks Result
+    needs: [should-run-checks, unit-tests, unit-tests-ios, shared-package-unit-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether a required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        working-directory: .
+        run: |
+          echo "Required job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1

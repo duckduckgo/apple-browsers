@@ -272,10 +272,10 @@ extension SharedColorPaletteDefinition {
             return lines
         case .spinnerStart:
             // Non-specialized, we'll always use the default
-            return FigmaColorPalette.spinnerStart
+            return LatestColorPalette.spinnerStart
         case .spinnerFinal:
             // Non-specialized, we'll always use the default
-            return FigmaColorPalette.spinnerFinal
+            return LatestColorPalette.spinnerFinal
 
         /// Shadow Colors
         case .shadowPrimary:
@@ -286,6 +286,10 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Status
+        case .statusWarningContentPrimary:
+            return statusWarningContentPrimary
+        case .statusWarningFillPrimary:
+            return statusWarningFillPrimary
         case .statusYellowPrimary:
             return statusYellowPrimary
         case .statusYellowSecondary:

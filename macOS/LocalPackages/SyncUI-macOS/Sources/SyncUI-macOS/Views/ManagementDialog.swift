@@ -35,9 +35,11 @@ public enum ManagementDialogKind: Equatable {
     case prepareToSync(PreparingToSyncMode)
     case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
+    case pairingSuccess
     case nowSyncing
     case syncWithServer
     case syncAnotherDevicePrompt
+    case syncThisDeviceFallback
     case syncAuthenticationCancelled
     case enterRecoveryCode(stringForQRCode: String)
     case recoverSyncedData
@@ -113,7 +115,9 @@ public struct ManagementDialog: View {
                 }
             case .prepareToSync(let mode):
                 if model.isSimplifiedSyncSetupV2Enabled {
-                    PreparingToSyncViewV2(state: .connecting)
+                    PreparingToSyncViewV2(state: .connecting, isAnimationPaused: model.isPreparingToSyncAnimationPaused) {
+                        model.preparingToSyncAnimationDidFinish()
+                    }
                 } else {
                     PreparingToSyncView(mode: mode)
                 }
@@ -129,12 +133,16 @@ public struct ManagementDialog: View {
                 } else {
                     SaveRecoveryPDFView(code: code)
                 }
+            case .pairingSuccess:
+                SyncSuccessViewV2(code: nil)
             case .nowSyncing:
                 DeviceSyncedView()
             case .syncWithServer:
                 SyncWithServerView()
             case .syncAnotherDevicePrompt:
                 SyncAnotherDevicePromptView()
+            case .syncThisDeviceFallback:
+                SyncThisDeviceFallbackView()
             case .syncAuthenticationCancelled:
                 SyncAuthenticationCancelledView()
             case .enterRecoveryCode(let stringForQRCode):

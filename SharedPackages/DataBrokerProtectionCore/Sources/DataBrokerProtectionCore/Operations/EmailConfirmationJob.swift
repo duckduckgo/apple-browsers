@@ -254,12 +254,15 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 delegate: webRunner,
                 isFakeBroker: broker.isFakeBroker,
                 executionConfig: jobDependencies.executionConfig,
+                challengePixelDataBroker: broker.url,
+                challengePixelBrokerVersion: broker.version,
                 shouldContinueActionHandler: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
                 },
                 applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
-                contentBlocking: jobDependencies.contentBlocking
+                contentBlocking: jobDependencies.contentBlocking,
+                pixelHandler: jobDependencies.pixelHandler
             )
         } else {
             assertionFailure("webRunner must conform to CCFCommunicationDelegate")

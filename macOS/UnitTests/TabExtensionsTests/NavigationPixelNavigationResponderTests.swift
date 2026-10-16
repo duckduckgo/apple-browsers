@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 @_spi(Testing) import SharedTestUtilities

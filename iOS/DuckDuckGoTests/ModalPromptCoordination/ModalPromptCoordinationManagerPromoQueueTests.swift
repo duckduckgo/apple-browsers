@@ -49,7 +49,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -69,7 +70,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -78,6 +80,41 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(provider.didCallProvideModalPrompt)
         #expect(!sut.hasActiveOrPendingModalAttempt)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Coordinated Close Handler Runs Once The Root Leaves The Screen", .timeLimit(.minutes(1)))
+    func whenCoordinatedRootLeavesTheScreenThenCloseHandlerRunsOnce() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let closeChecks = MockModalPromptScheduler()
+        sut = ModalPromptCoordinationManager(
+            providers: [MockModalPromptProvider()],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker,
+            closeCheckScheduling: closeChecks,
+            promptExposureReporter: MockPromptExposureReporter()
+        )
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: try acquireModalLease())
+        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
+
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        schedulerMock.executeScheduledBlock()
+        let root = try #require(presenterMock.capturedViewController)
+        attachmentChecker.markAttached(root)
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        // The attempt stays active until the next reconcile, but the root has gone.
+        attachmentChecker.attachedRoots.removeAll()
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 1)
+        #expect(sut.hasActiveOrPendingModalAttempt)
     }
 
     @available(iOS 16, *)
@@ -96,7 +133,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [ineligibleProvider, selectedProvider, lowerPriorityProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: false),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -127,7 +165,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: false),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -153,7 +192,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -183,7 +223,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: scheduler,
-            rootAttachmentChecker: attachmentChecker
+            rootAttachmentChecker: attachmentChecker,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
         weak var weakExactRoot: UIViewController?
@@ -191,7 +232,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         autoreleasepool {
             var exactRoot: UIViewController! = UIViewController()
             weakExactRoot = exactRoot
-            provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+            provider.modalConfigurationToReturn = ModalPromptConfiguration(exposureID: .remoteMessageModal, viewController: exactRoot)
             attachmentChecker.markAttached(exactRoot)
 
             sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)

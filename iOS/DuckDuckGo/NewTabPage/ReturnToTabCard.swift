@@ -26,6 +26,7 @@ struct ReturnToTabCard: View {
     @Environment(\.layoutDirection) private var layoutDirection
 
     @ObservedObject var model: EscapeHatchModel
+    var showsBackground = true
 
     /// Frames of the Fire button and the three-dots menu button in the key window's coordinate space.
     /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter expects
@@ -56,6 +57,11 @@ struct ReturnToTabCard: View {
         } preview: {
             contentView
                 .frame(width: width, height: Metrics.height)
+                .background {
+                    if !showsBackground {
+                        RedesignedNewTabPageModuleBackground()
+                    }
+                }
         }
         // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
         .clipShape(LeftCapsuleShape())
@@ -71,7 +77,7 @@ struct ReturnToTabCard: View {
         .frame(height: Metrics.height)
         .background(
             Capsule()
-                .fill(Color(designSystemColor: .controlsFillSecondary))
+                .fill(showsBackground ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
         )
     }
 
@@ -104,7 +110,7 @@ struct ReturnToTabCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
         .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
-        .accessibilityIdentifier("NTP.escapeHatch.card")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.card")
     }
 
     /// Trailing controls: when enabled, the Fire (delete tab) button sits to the left of the three-dots menu.
@@ -127,7 +133,7 @@ struct ReturnToTabCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
-        .accessibilityIdentifier("NTP.escapeHatch.fireButton")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.fireButton")
         .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { fireButtonFrameInWindow = $0 }
     }
 
@@ -148,7 +154,7 @@ struct ReturnToTabCard: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
-        .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.moreButton")
         .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
     }
 
@@ -163,7 +169,7 @@ struct ReturnToTabCard: View {
             )
             destructiveActionButtons
             Section {
-                afterInactivityPicker
+                afterInactivitySettingsButton
                 MenuActionButton(
                     text: UserText.escapeHatchMenuHideTheseShortcuts,
                     icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
@@ -188,22 +194,16 @@ struct ReturnToTabCard: View {
         }
     }
 
-    private var afterInactivityPicker: some View {
-        Picker(selection: model.afterInactivityOptionBinding) {
-            ForEach(AfterInactivityOption.allCases, id: \.self) { option in
-                Text(option.description)
-                    .tag(option)
-            }
-        } label: {
+    private var afterInactivitySettingsButton: some View {
+        Button(action: model.openAfterInactivitySettingsFromMenu) {
             Text(UserText.settingsAfterInactivityLabel)
-            Text(model.afterInactivityOptionBinding.wrappedValue.description)
+            Text(model.afterInactivityOption.description)
                 .foregroundColor(.secondary)
                 .font(.subheadline)
 
             Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
                 .foregroundColor(Color(designSystemColor: .icons))
         }
-        .pickerStyle(.menu)
     }
 
     private var swipeableActionsView: some View {
@@ -280,7 +280,7 @@ struct ReturnToTabCard: View {
 }
 
 /// Holds FaviconViewModel in @StateObject so it's created once per domain instead of on every body.
-private struct DomainFaviconView: View {
+struct DomainFaviconView: View {
     let domain: String
 
     @StateObject private var viewModel: FaviconViewModel

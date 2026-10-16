@@ -225,8 +225,6 @@ extension UserDefaults {
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
         case syncCurrentCreditCardsPausedError = "sync.current-credit-cards-paused-error"
         case syncCurrentIdentitiesPausedError = "sync.current-identities-paused-error"
-        case syncPromoBookmarksDismissed = "sync.promotion-bookmarks-dismissed"
-        case syncPromoPasswordsDismissed = "sync.promotion-passwords-dismissed"
 
         // Subscription
 
@@ -286,7 +284,7 @@ struct UserDefaultsWrapper<T> {
     }
 
     static var sharedDefaults: UserDefaults {
-#if DEBUG && !(NETP_SYSTEM_EXTENSION && NETWORK_EXTENSION) // Avoid looking up special user defaults when running inside the system extension
+#if DEBUG
         if case .normal = AppVersion.runType {
             return .standard
         } else {

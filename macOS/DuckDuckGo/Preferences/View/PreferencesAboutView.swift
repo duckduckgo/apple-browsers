@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppUpdaterShared
 import DesignResourcesKit
 import PreferencesUI_macOS
@@ -178,10 +180,10 @@ extension Preferences {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
                             .background(
-                                RoundedRectangle(cornerRadius: DesignSystemRebrand.isAppRebranded() ? 11 : 4)
-                                    .fill(DesignSystemRebrand.isAppRebranded() ? Color(designSystemColor: .statusYellowTertiary) : Color.betaLabelBackground)
+                                RoundedRectangle(cornerRadius: 11)
+                                    .fill(Color(designSystemColor: .statusYellowTertiary))
                             )
-                            .foregroundColor(Color.betaLabelForeground)
+                            .foregroundColor(Color(.betaLabelForeground))
                     }
                 }
 
@@ -298,19 +300,19 @@ extension Preferences {
         private var statusIcon: some View {
             switch model.updateState {
             case .upToDate:
-                Image(nsImage: .check)
+                Image(nsImage: NSImage(resource: .check))
                     .foregroundColor(.green)
             case .updateCycle(let progress):
                 if hasPendingUpdate {
                     if hasCriticalUpdate {
-                        Image(nsImage: .criticalUpdateNotificationInfo)
+                        Image(nsImage: NSImage(resource: .criticalUpdateNotificationInfo))
                             .foregroundColor(.red)
                     } else {
-                        Image(nsImage: .updateNotificationInfo)
+                        Image(nsImage: NSImage(resource: .updateNotificationInfo))
                             .foregroundColor(.blue)
                     }
                 } else if progress.isFailed {
-                    Image(nsImage: .criticalUpdateNotificationInfo)
+                    Image(nsImage: NSImage(resource: .criticalUpdateNotificationInfo))
                         .foregroundColor(.red)
                 } else {
                     if #available(macOS 13.0, *) {
@@ -326,7 +328,7 @@ extension Preferences {
         @ViewBuilder
         private var lastCheckedText: some View {
             let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-            Text("\(UserText.lastChecked): \(lastChecked)")
+            Text(verbatim: "\(UserText.lastChecked): \(lastChecked)")
                 .foregroundColor(.secondary)
         }
 
@@ -469,7 +471,7 @@ extension Preferences {
                 }
             }
             .padding()
-            .background(Color.unsupportedOSWarning)
+            .background(Color(.unsupportedOSWarning))
             .cornerRadius(8)
             .fixedSize(horizontal: false, vertical: true)
             .frame(minWidth: 320, maxWidth: 510)
@@ -494,22 +496,10 @@ struct UpdateButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor: Color
-        let disabledBackgroundColor: Color
-        let labelColor: Color
-        let cornerRadius: CGFloat
-
-        if DesignSystemRebrand.isAppRebranded() {
-            enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
-            disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
-            labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
-            cornerRadius = 14
-        } else {
-            enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)
-            disabledBackgroundColor = Color.gray.opacity(0.1)
-            labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
-            cornerRadius = 8
-        }
+        let enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
+        let disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+        let labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
+        let cornerRadius: CGFloat = 14
 
         return configuration.label
             .lineLimit(1)

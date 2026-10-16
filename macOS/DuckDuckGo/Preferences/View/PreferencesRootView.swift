@@ -73,6 +73,8 @@ enum Preferences {
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
+        let aiChatTabOpener: AIChatTabOpening
+        let aiChatConversationSourceHandler: AIChatConversationSourceHandler
         let wideEvent: WideEventManaging
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
@@ -103,8 +105,11 @@ enum Preferences {
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
+            websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
+            aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
+            aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
             blackFridayCampaignProvider: BlackFridayCampaignProviding = NSApp.delegateTyped.blackFridayCampaignProvider,
             pixelHandler: @escaping (SubscriptionPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
@@ -116,9 +121,12 @@ enum Preferences {
             self.featureFlagger = featureFlagger
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
+            self.aiChatTabOpener = aiChatTabOpener
+            self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
             self.wideEvent = wideEvent
             self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
-                                                                                                 featureFlagger: featureFlagger))
+                                                                                                 featureFlagger: featureFlagger,
+                                                                                                 defaults: websitePermissionDefaults))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
@@ -159,6 +167,14 @@ enum Preferences {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onReceive(model.$websitePermissionTarget) { category in
+                guard let category else { return }
+                DispatchQueue.main.async {
+                    guard model.selectedPane == .websitePermissions, model.websitePermissionTarget == category else { return }
+                    websitePermissionsModel.send(action: .openDetail(category))
+                    model.resetWebsitePermissionRequest()
+                }
+            }
             .onChange(of: model.selectedPane) { selectedPane in
                 guard selectedPane != .websitePermissions else { return }
                 websitePermissionsModel.send(action: .closeDetail)
@@ -202,7 +218,8 @@ enum Preferences {
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 autoplayModel: NSApp.delegateTyped.autoplayPreferences,
-                                dockModel: model.dockPreferences)
+                                dockModel: model.dockPreferences,
+                                showWebsitePermissions: { model.selectPane(.websitePermissions) })
                 case .sync:
                     SyncView()
                 case .appearance:
@@ -311,7 +328,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         pixelHandler(.subscriptionPersonalInformationRemovalSettings, .standard)
-                        showTab(.dataBrokerProtection)
+                        showTab(.dataBrokerProtection(.subscribed))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -331,7 +348,8 @@ enum Preferences {
                      case .openAIC:
                          pixelHandler(.subscriptionPaidAIChatSettings, .standard)
                          let aiChatURL = self.aiChatURLSettings.aiChatURL
-                         showTab(.url(aiChatURL, source: .ui))
+                         self.aiChatConversationSourceHandler.setData(.settings)
+                         self.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:

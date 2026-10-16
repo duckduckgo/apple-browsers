@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import Foundation
+import PixelKit
 import PrivacyConfig
 
 @MainActor
@@ -27,21 +28,47 @@ final class WebsitePermissionsViewModel: ObservableObject {
         static let maximumRecentRows = 3
     }
 
+    private struct PermissionKey: Hashable {
+        let domain: String
+        let permissionType: PermissionType
+
+        init(_ entry: WebsitePermissionEntry) {
+            domain = entry.domain
+            permissionType = entry.permissionType
+        }
+
+        init(_ row: WebsitePermissionsViewState.RecentRow) {
+            domain = row.domain
+            permissionType = row.permissionType
+        }
+    }
+
     @Published
     private(set) var viewState = WebsitePermissionsViewState()
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let defaults: WebsitePermissionDefaultsProtocol
+    private let pixelFiring: PixelFiring?
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
+    /// Recents changed on this page stay pinned to their previous date until the page closes.
+    private var pinnedRecentSortDates = [PermissionKey: Date]()
 
     private var nativeVoiceFlowEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
     }
 
-    init(permissionManager: PermissionManagerProtocol, featureFlagger: FeatureFlagger) {
+    init(
+        permissionManager: PermissionManagerProtocol,
+        featureFlagger: FeatureFlagger,
+        defaults: WebsitePermissionDefaultsProtocol,
+        pixelFiring: PixelFiring? = PixelKit.shared
+    ) {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
+        self.defaults = defaults
+        self.pixelFiring = pixelFiring
     }
 
     // MARK: - Public
@@ -51,21 +78,30 @@ final class WebsitePermissionsViewModel: ObservableObject {
         case .onAppear:
             setupObserver()
 
+        case .onDisappear:
+            unpinRecents()
+
         case .changeRecentDecision(let row, let decision):
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled),
                   decision != row.decision else { return }
+            pinRecent(row)
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
+            pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: row.permissionType, to: decision), frequency: .dailyAndCount)
 
         case .removeRecent(let row):
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled) else { return }
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
+            pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: row.permissionType), frequency: .dailyAndCount)
 
         case .openDetail(let category):
             viewState.detailModel = WebsitePermissionDetailViewModel(
                 initialState: makeDetailInitialState(for: category),
                 permissionManager: permissionManager,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                defaults: defaults,
+                pixelFiring: pixelFiring
             )
+            pixelFiring?.fire(PermissionPixel.settingsDetailOpened(category: category), frequency: .dailyAndCount)
 
         case .closeDetail:
             viewState.detailModel = nil
@@ -83,21 +119,41 @@ final class WebsitePermissionsViewModel: ObservableObject {
             .sink { [weak self] entries, _ in
                 guard let self else { return }
                 latestEntries = entries
-                let editableEntries = entries.filter {
-                    $0.permissionType.isUserEditable(forDomain: $0.domain, nativeVoiceFlowEnabled: self.nativeVoiceFlowEnabled)
-                }
-                viewState = WebsitePermissionsViewState(
-                    recents: makeRecentRows(from: editableEntries),
-                    rows: makeRows(from: editableEntries),
-                    detailModel: viewState.detailModel
-                )
+                let persistedKeys = Set(entries.map(PermissionKey.init))
+                pinnedRecentSortDates = pinnedRecentSortDates.filter { persistedKeys.contains($0.key) }
+                updateViewState()
             }
     }
 
+    private func updateViewState() {
+        let editableEntries = latestEntries.filter {
+            $0.permissionType.isUserEditable(forDomain: $0.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled)
+        }
+        viewState = WebsitePermissionsViewState(
+            recents: makeRecentRows(from: editableEntries),
+            rows: makeRows(from: editableEntries),
+            detailModel: viewState.detailModel
+        )
+    }
+
+    private func pinRecent(_ row: WebsitePermissionsViewState.RecentRow) {
+        let key = PermissionKey(row)
+        guard pinnedRecentSortDates[key] == nil,
+              let lastModified = latestEntries.first(where: { PermissionKey($0) == key })?.lastModified else { return }
+        pinnedRecentSortDates[key] = lastModified
+    }
+
+    private func unpinRecents() {
+        guard !pinnedRecentSortDates.isEmpty else { return }
+        pinnedRecentSortDates = [:]
+        updateViewState()
+    }
+
     private func makeRecentRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.RecentRow] {
-        entries
+        let categories = visibleCategories
+        return entries
             .filter { entry in
-                entry.lastModified != nil && WebsitePermissionCategory.category(for: entry.permissionType) != nil
+                entry.lastModified != nil && categories.contains { $0.contains(entry.permissionType) }
             }
             .sorted(by: isOrderedBefore)
             .prefix(Constants.maximumRecentRows)
@@ -113,13 +169,19 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private func isOrderedBefore(_ first: WebsitePermissionEntry, _ second: WebsitePermissionEntry) -> Bool {
-        if first.lastModified != second.lastModified {
-            return (first.lastModified ?? .distantPast) > (second.lastModified ?? .distantPast)
+        let firstDate = sortDate(of: first)
+        let secondDate = sortDate(of: second)
+        if firstDate != secondDate {
+            return (firstDate ?? .distantPast) > (secondDate ?? .distantPast)
         } else if first.domain != second.domain {
             return first.domain < second.domain
         } else {
             return first.permissionType.rawValue < second.permissionType.rawValue
         }
+    }
+
+    private func sortDate(of entry: WebsitePermissionEntry) -> Date? {
+        pinnedRecentSortDates[PermissionKey(entry)] ?? entry.lastModified
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {
@@ -137,8 +199,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
         return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
     }
 
+    private var visibleCategories: [WebsitePermissionCategory] {
+        WebsitePermissionCategory.allCases
+    }
+
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {
-        WebsitePermissionCategory.allCases.map { category in
+        visibleCategories.map { category in
             WebsitePermissionsViewState.Row(
                 category: category,
                 count: entries.count { category.contains($0.permissionType) }
@@ -150,6 +216,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
 extension WebsitePermissionsViewModel {
     enum Action {
         case onAppear
+        case onDisappear
         case changeRecentDecision(WebsitePermissionsViewState.RecentRow, PersistedPermissionDecision)
         case removeRecent(WebsitePermissionsViewState.RecentRow)
         case openDetail(WebsitePermissionCategory)

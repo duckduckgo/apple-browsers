@@ -4,14 +4,56 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the delete came from.",
+                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all"]
+            },
+            {
+                "key": "retried",
+                "description": "Whether the Duck.ai web data clear was retried once after a transient failure.",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "first_attempt_error_code",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
+            }
+        ]
     },
     "m_aichat_history_delete_failed": {
-        "description": "Fired when Duck.ai chat history fails to be deleted (single chat, multi-select, or delete-all). The error parameters identify the failure cause (e.g. no storage space)",
+        "description": "Fired when Duck.ai chat history fails to be deleted (single chat, multi-select, or delete-all). The error parameters identify the failure cause (e.g. no storage space). When the Duck.ai web data clear fails, errorDomain is com.duckduckgo.aiChatDataClearing and errorCode is: 1 clearing script unavailable, 2 script listening but no reply, 3 script reported a failure (underlyingErrorDomain com.duckduckgo.aiChatDataClearing.script, underlyingErrorCode = stage 100 localStorage / 200 IndexedDB / 300 unexpected + error name 1 UnknownError, 2 QuotaExceededError, 3 InvalidStateError, 4 AbortError, 5 NotFoundError, 6 VersionError, 7 DataError, 8 TransactionInactiveError, 9 SecurityError, 10 TypeError, 11 SyntaxError; 0 when the script sends no reason), 4 script never became ready, 5 page never finished loading, 6 web content process terminated. The clear is retried once before failing.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Where the delete came from.",
+                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all"]
+            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            {
+                "key": "retried",
+                "description": "Whether the Duck.ai web data clear was retried once after a transient failure.",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "first_attempt_error_code",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
+            }
+        ]
     },
     "m_aichat_settings_chat_suggestions_turned_on": {
         "description": "Fired when the user enables Chat Suggestions in AI Chat settings",
@@ -46,14 +88,46 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "retried",
+                "description": "Whether the Duck.ai web data clear was retried once after a transient failure.",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "first_attempt_error_code",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
+            }
+        ]
     },
     "m_aichat_single_delete_failed": {
-        "description": "Fired when a single AI chat deletion fails",
+        "description": "Fired when a single AI chat deletion fails. The error parameters identify the cause (codes as in m_aichat_history_delete_failed).",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            {
+                "key": "retried",
+                "description": "Whether the Duck.ai web data clear was retried once after a transient failure.",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "first_attempt_error_code",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
+            }
+        ]
     },
     "m_aichat_is_enabled_daily": {
         "description": "Daily pixel fired on foreground to record whether AI Chat is enabled or disabled for the user",

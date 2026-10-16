@@ -61,13 +61,13 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
             Name.extensionContextErrors, Name.backgroundViewCreateCount, Name.backgroundViewAlive,
             Name.backgroundViewLeakedCount, Name.backgroundWebProcessAlive, Name.tabKnownToWebKit,
             Name.nativeMessageHandlerRegistered, Name.tabControllerMatchesContext, Name.tabHasExtensionUserScripts,
-            Name.backgroundWebProcessResponsive, Name.backgroundEvents
+            Name.backgroundWebProcessResponsive, Name.backgroundGraveyardTreatmentEnabled, Name.backgroundEvents
         ], [
             "context_loaded", "critical_memory_age", "network_restarted",
             "context_errors", "bg_view_creations", "bg_view_alive",
             "bg_view_leaked_count", "bg_process_alive", "tab_in_context",
             "handler_registered", "tab_controller_match", "tab_has_ext_scripts",
-            "bg_process_responsive", "bg_events"
+            "bg_process_responsive", "background_graveyard_enabled", "bg_events"
         ])
     }
 
@@ -147,6 +147,7 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         diagnostics.tabControllerMatchesContext = false
         diagnostics.tabHasExtensionUserScripts = false
         diagnostics.backgroundWebProcessResponsive = false
+        diagnostics.backgroundGraveyardTreatmentEnabled = true
         diagnostics.backgroundEvents = [
             .init(token: "load", secondsBeforeSnapshot: 600.4),
             .init(token: "view", secondsBeforeSnapshot: 599),
@@ -156,6 +157,7 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
         XCTAssertEqual(diagnostics.pixelParameters, [
             Name.backgroundWebProcessResponsive: "false",
+            Name.backgroundGraveyardTreatmentEnabled: "true",
             Name.backgroundEvents: "load@15m,view@15m,died_crash@1m,error_background_failed_to_load:nsurlerrordomain:-1100@1m",
             Name.extensionContextLoaded: "true",
             Name.memoryPressureCritical: "1m",
@@ -410,6 +412,86 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         XCTAssertNil(releasedView)
         XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
         XCTAssertEqual(recorder.snapshot().leakedBackgroundWebViewCount, 0)
+    }
+
+    // WebKit vends `context.errors` as `WKNSError` proxies; bridging them with
+    // `as NSError` crashes on x86_64 only, so on arm64 these pass with or
+    // without the fix. To see them catch the crash, replace
+    // `.map(NSError.webKitSafe)` with `.map { $0 as NSError }` in
+    // CPMMessagingDiagnosticsRecorder and run only this suite under Rosetta
+    // (other suites install the `errors` swizzle, which also prevents the
+    // crash; WKWebExtensionCopyingErrorsTests covers the swizzle):
+    //   swift build --build-tests --arch x86_64 \
+    //     --scratch-path .build/x86_64
+    //   arch -x86_64 xcrun xctest \
+    //     -XCTest WebExtensionsTests.CPMMessagingDiagnosticsRecorderTests \
+    //     .build/x86_64/out/Products/Debug/WebExtensionsTests.xctest
+
+    func testWhenContextHasErrorsThenSnapshotIncludesCodes() async throws {
+        let recorder = makeRecorder()
+        let context = try await makeContextWithErrors()
+
+        recorder.contextWillLoad(context)
+
+        let errors = recorder.snapshot().extensionContextErrors
+        XCTAssertEqual(errors, [Self.missingMatchesError])
+    }
+
+    func testWhenErrorsDidUpdateThenRecorderRecordsCodes() async throws {
+        let recorder = makeRecorder()
+        let context = try await makeContextWithErrors()
+        recorder.contextWillLoad(context)
+
+        let name = WKWebExtensionContext.errorsDidUpdateNotification
+        NotificationCenter.default.post(name: name, object: context)
+        // Without a context, the snapshot only reports errors the
+        // notification observer recorded.
+        recorder.contextDidUnload(identifier: context.uniqueIdentifier)
+
+        let errors = recorder.snapshot().extensionContextErrors
+        XCTAssertEqual(errors, [Self.missingMatchesError])
+    }
+
+    /// Reported by WebKit for a content script without `matches`.
+    private static let missingMatchesError: String = {
+        let code = WKWebExtension.Error.Code.invalidManifestEntry.rawValue
+        return "\(WKWebExtension.errorDomain):\(code)"
+    }()
+
+    private func makeRecorder() -> CPMMessagingDiagnosticsRecorder {
+        CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false
+        )
+    }
+
+    private func makeContextWithErrors() async throws -> WKWebExtensionContext {
+        let fileManager = FileManager.default
+        let name = "CPMDiagnosticsTestExtension-\(UUID().uuidString)"
+        let dir = fileManager.temporaryDirectory.appendingPathComponent(name)
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "CPM Diagnostics Test Extension",
+            "description": "Test",
+            "version": "1.0.0",
+            "content_scripts": [ { "js": ["content.js"] } ]
+        }
+        """
+        try fileManager.createDirectory(
+            at: dir,
+            withIntermediateDirectories: true
+        )
+        let manifestURL = dir.appendingPathComponent("manifest.json")
+        try manifest.write(to: manifestURL, atomically: true, encoding: .utf8)
+        let scriptURL = dir.appendingPathComponent("content.js")
+        try "// test".write(to: scriptURL, atomically: true, encoding: .utf8)
+        createdTestExtensionDirs.append(dir)
+
+        let webExtension = try await WKWebExtension(resourceBaseURL: dir)
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = "cpm-diagnostics-test"
+        return context
     }
 
     private func makeContext() async throws -> WKWebExtensionContext {

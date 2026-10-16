@@ -78,12 +78,16 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         resolveAndPublish()
     }
 
-    /// Holds until web publishes a snapshot for the next reset period.
+    /// Holds for this window until its reset period ends or usage climbs to the next rung.
     public func dismiss() {
         guard let warning, warning.isDismissible, let notice = lastReadSnapshot.notice else { return }
 
-        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice))
-        Logger.aiChat.debug("Duck.ai usage warning dismissed: notice=\(notice.id.rawValue, privacy: .public)")
+        let dismissal = DuckAiUsageWarningDismissal(notice: notice)
+        dismissalStore.setDismissal(dismissal, for: notice.window)
+        Logger.aiChat.debug("""
+            Duck.ai usage warning dismissed: notice=\(notice.id.rawValue, privacy: .public) \
+            window=\(notice.window.rawValue, privacy: .public) threshold=\(dismissal.threshold, privacy: .public)
+            """)
         resolveAndPublish()
     }
 

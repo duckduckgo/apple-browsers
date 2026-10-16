@@ -396,9 +396,12 @@ public extension SubJobWebRunning {
                                                                                delegate: self,
                                                                                isFakeBroker: isFakeBroker,
                                                                                executionConfig: executionConfig,
+                                                                               challengePixelDataBroker: context.dataBroker.url,
+                                                                               challengePixelBrokerVersion: context.dataBroker.version,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
-                                                                               contentBlocking: contentBlocking)
+                                                                               contentBlocking: contentBlocking,
+                                                                               pixelHandler: pixelHandler)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

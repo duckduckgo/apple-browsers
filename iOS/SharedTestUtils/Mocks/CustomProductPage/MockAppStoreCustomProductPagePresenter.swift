@@ -38,6 +38,7 @@ final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCu
         files: [AIChat.AIChatNativePrompt.NativePromptFile]?,
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
-        fromDeepLink: Bool
+        fromDeepLink: Bool,
+        termsAccepted: Bool
     ) {}
 }

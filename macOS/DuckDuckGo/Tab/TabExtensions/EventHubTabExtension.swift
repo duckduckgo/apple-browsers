@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import EventHub
 import Foundation
-import Navigation
+import DDGNavigation
 import os.log
 
 /// Bridges this tab's lifecycle into `EventHub`: owns the tab's `WebEventsHandler` (constructed with

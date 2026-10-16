@@ -337,13 +337,14 @@ extension WebCacheManager {
     private func clearFireproofableDataForNonFireproofDomains(fromStore dataStore: some DDGWebsiteDataStore,
                                                               usingFireproofing fireproofing: Fireproofing,
                                                               scope: Scope) async -> Result<Void, Error> {
-        let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+        let fireproofableTypesExceptCookies = Self.fireproofableDataTypesExceptCookies
+        // Listing every type also queries the memory and disk caches, which is slow and unused here.
+        let allRecords = await dataStore.dataRecords(ofTypes: fireproofableTypesExceptCookies)
         let removableRecords = allRecords.filter { record in
             let fireproofed = fireproofing.isAllowed(fireproofDomain: record.displayName)
             return !fireproofed && scope.dataRecordsEvaluator(record.displayName)
         }
 
-        let fireproofableTypesExceptCookies = Self.fireproofableDataTypesExceptCookies
         await dataStore.removeData(ofTypes: fireproofableTypesExceptCookies, for: removableRecords)
         return .success(())
     }

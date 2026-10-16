@@ -4,13 +4,13 @@
         "description": "Fired when the AI Chat sidebar is opened",
         "owners": ["miasma13"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_standard"],
         "parameters": [
             "appVersion",
             "pixelSource",
             {
                 "key": "source",
-                "description": "What triggered the sidebar to open",
+                "description": "What triggered the sidebar to open. 'ask-about-page' and 'open-sidebar' are the same item in the tab-bar Ask Duck.ai menu: 'ask-about-page' on a web page that can be attached, 'open-sidebar' on a page that can't, such as the New Tab Page, where the item reads Open Sidebar.",
                 "type": "string",
                 "enum": [
                     "address-bar-button",
@@ -20,7 +20,9 @@
                     "translation",
                     "attach-selection",
                     "tabbar-button",
-                    "ask-about-page"
+                    "ask-about-page",
+                    "open-sidebar",
+                    "main-menu-ask-about-page"
                 ]
             },
             {
@@ -47,8 +49,32 @@
         "description": "Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar",
         "owners": ["miasma13"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_summarize_text": {
+        "description": "Fired when the AI Chat summarization action was triggered",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "How the user triggered summarization",
+                "type": "string",
+                "enum": ["context-menu", "keyboard-shortcut"]
+            }
+        ]
+    },
+    "m_mac_aichat_summarize_source_link_clicked": {
+        "description": "Fired when user clicks the website link on a summarization prompt in Duck.ai tab or sidebar",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_attach_selection": {
         "description": "Fired when the user attaches a text selection to Duck.ai via the 'Attach to Duck.ai' context-menu action",
@@ -93,22 +119,70 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_start_new_conversation": {
-        "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
+        "description": "Fired when user submits their first prompt in a new Duck.ai conversation. The _daily copy fires once a day, for the day's first new chat, with that chat's params.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "aiChatConversationSource",
+            "aiChatPromptSurface",
+            "aiChatFirstPromptNewInstall",
+            {
+                "key": "isOpenedFromAskDuckAiButton",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'), or from Ask About Page in the main menu. False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar, tab-bar-chats, main-menu-ask-about-page) and kept only for continuity with dashboards that predate `source`.",
+                "type": "boolean"
+            },
+            {
+                "key": "hasPageContext",
+                "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_start_new_conversation.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "aichat_entry_point_macos": {
+        "description": "Fired when a native surface opens Duck.ai, once per open. Not fired when the surface finds Duck.ai already open and only focuses or reuses it, nor for direct navigation to duck.ai.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             "channel",
             "aiChatConversationSource",
             {
-                "key": "isOpenedFromAskDuckAiButton",
-                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar) and kept only for continuity with dashboards that predate `source`.",
+                "key": "target",
+                "description": "Where Duck.ai opened: the current tab, a new tab, a new window, or the sidebar.",
+                "type": "string",
+                "enum": ["current_tab", "new_tab", "new_window", "sidebar"]
+            }
+        ]
+    },
+    "aichat_duck_ai_direct_navigation_macos": {
+        "description": "Fired when a tab loads Duck.ai through a navigation the user started toward it, rather than from a Duck.ai surface: typed in the address bar or picked from its suggestions, typed in the New Tab Page search box, a bookmark or favorite, a history entry, a link from another app, or a link on a web page. A page that redirects to Duck.ai, such as a search engine's link wrapper, counts as the navigation that led to it. Not fired in the sidebar, for links from Duck.ai or duckduckgo.com, for chats the duckduckgo.com homepage hands over, for restored or reloaded loads, or again when Duck.ai redirects within itself.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "via",
+                "description": "How the navigation started. 'typed' includes AI bang searches; 'suggestion' is a bookmark, history or website suggestion picked in the address bar, including inline autocomplete; 'favorite' is a bookmark that is also a favorite, wherever it's opened from; 'external' is a link from another app; 'new_tab_page' is a Duck.ai URL typed in, or picked from the suggestions of, the New Tab Page search box.",
+                "type": "string",
+                "enum": ["typed", "suggestion", "bookmark", "favorite", "history", "external", "link", "new_tab_page"]
+            },
+            {
+                "key": "duckai_enabled",
+                "description": "Whether Duck.ai is enabled in AI Features settings.",
                 "type": "boolean"
             },
             {
-                "key": "hasPageContext",
-                "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_start_new_conversation.",
+                "key": "toggle_enabled",
+                "description": "Whether the address bar's Search/Duck.ai toggle setting is on. Always false when Duck.ai is disabled.",
                 "type": "boolean"
             }
         ]
@@ -122,9 +196,11 @@
             "pixelSource",
             "channel",
             "aiChatConversationSource",
+            "aiChatPromptSurface",
+            "aiChatFirstPromptNewInstall",
             {
                 "key": "isOpenedFromAskDuckAiButton",
-                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar) and kept only for continuity with dashboards that predate `source`.",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'), or from Ask About Page in the main menu. False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar, tab-bar-chats, main-menu-ask-about-page) and kept only for continuity with dashboards that predate `source`.",
                 "type": "boolean"
             },
             {
@@ -228,6 +304,13 @@
             "channel"
         ]
     },
+    "m_mac_aichat_sidebar_expanded": {
+        "description": "Fired when user clicks the button that moves the Duck.ai sidebar chat into a new tab",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_models_fetch_failed": {
         "description": "Fired when the models API fetch fails (endpoint unreachable or returns error)",
         "owners": ["tomasstrba"],
@@ -292,7 +375,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_new_chat_title_bar_menu": {
-        "description": "Fired when user picks New Chat from the tab-bar Ask Duck.ai menu (or middle-clicks the pill) to open a new chat tab",
+        "description": "Fired when user picks New Chat from the tab-bar Ask Duck.ai menu to open a new chat tab. Middle-click and ⌘-click on the button fire aichat_title_bar_middle_click_new_chat_macos instead.",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
@@ -303,6 +386,30 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_title_bar_menu_shown_macos": {
+        "description": "Fired when the user clicks the tab-bar Ask Duck.ai button and its menu opens, once per open, whether or not the user then picks an item. Not fired for middle-click or ⌘-click, which skip the menu, nor in the older split-button layout.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "sidebarEntry",
+                "description": "The sidebar item the menu offered, decided by whether a chat is open and whether the page can be attached: 'close-sidebar' when a chat is open, docked or floating; otherwise 'ask-about-page' on a web page that can be attached, or 'open-sidebar' on a page that can't, such as the New Tab Page.",
+                "type": "string",
+                "enum": ["ask-about-page", "open-sidebar", "close-sidebar"]
+            }
+        ]
+    },
+    "aichat_title_bar_middle_click_new_chat_macos": {
+        "description": "Fired when the user middle-clicks or ⌘-clicks the tab-bar Ask Duck.ai button, which opens a new chat tab without showing the menu. Picking New Chat from the menu fires m_mac_aichat_new_chat_title_bar_menu instead.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_tab_did_terminate": {
@@ -351,6 +458,58 @@
                 "enum": ["0", "1"]
             },
             "channel"
+        ]
+    },
+    "aichat_settings_state_macos": {
+        "description": "Daily snapshot of the Duck.ai settings, fired when the app becomes active. The per-setting pixels only cover users who change a setting; this sizes each setting's base.",
+        "owners": ["tomasstrba"],
+        "triggers": ["startup"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "duckai_enabled",
+                "description": "Whether Duck.ai is enabled in AI Features settings.",
+                "type": "boolean"
+            },
+            {
+                "key": "addressbar_toggle",
+                "description": "Whether the Search/Duck.ai toggle is shown in the address bar. Until the user sets it, it follows the older 'show Duck.ai while typing' setting.",
+                "type": "boolean"
+            },
+            {
+                "key": "tabbar_button",
+                "description": "Whether the Duck.ai button is shown in the tab bar, i.e. the user hasn't hidden it.",
+                "type": "boolean"
+            },
+            {
+                "key": "global_shortcut",
+                "description": "Whether the setting to open the Duck.ai floating window with a system-wide keyboard shortcut is on. Reports the setting even while Duck.ai is off, when the shortcut isn't registered.",
+                "type": "boolean"
+            },
+            {
+                "key": "menubar_icon",
+                "description": "Whether the setting to show the Duck.ai shortcut in the macOS menu bar is on. Reports the setting even while Duck.ai is off, when the icon is hidden.",
+                "type": "boolean"
+            },
+            {
+                "key": "ntp_search_box",
+                "description": "Whether the New Tab Page search box is shown. Omitted when the New Tab Page has no search box.",
+                "type": "boolean"
+            },
+            {
+                "key": "ntp_duckai",
+                "description": "Whether Duck.ai is offered in the New Tab Page search box: Duck.ai is enabled locally and remotely and its New Tab Page shortcut is on. Omitted when the New Tab Page has no search box.",
+                "type": "boolean"
+            },
+            {
+                "key": "ntp_mode",
+                "description": "The New Tab Page search box mode, as the user left it. 'search' whenever Duck.ai isn't offered there. Omitted when the New Tab Page has no search box.",
+                "type": "string",
+                "enum": ["search", "ai"]
+            }
         ]
     },
     "m_mac_aichat_voice_chat_start_failed": {

@@ -23,7 +23,7 @@ import ContentScopeScripts
 import Foundation
 import FoundationExtensions
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import os
 import PixelKit
 import PrivacyConfig

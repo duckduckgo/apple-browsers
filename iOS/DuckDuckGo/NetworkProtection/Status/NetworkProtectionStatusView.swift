@@ -139,7 +139,7 @@ struct NetworkProtectionStatusView: View {
             header()
         }
         .increaseHeaderProminence()
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
         Section {
             if #available(iOS 18.0, *) {
@@ -154,7 +154,7 @@ struct NetworkProtectionStatusView: View {
                     .padding(.horizontal, 3)
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -254,7 +254,7 @@ struct NetworkProtectionStatusView: View {
             Text(statusModel.isNetPEnabled ? UserText.vpnLocationConnected : UserText.vpnLocationSelected)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
         Section {
             if #available(iOS 18.0, *) {
@@ -263,7 +263,7 @@ struct NetworkProtectionStatusView: View {
                     .padding(.horizontal, 3)
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -318,7 +318,7 @@ struct NetworkProtectionStatusView: View {
         } header: {
             Text(UserText.netPStatusViewConnectionDetails).foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -335,7 +335,7 @@ struct NetworkProtectionStatusView: View {
         } header: {
             Text(UserText.netPStatusViewSettingsSectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -363,7 +363,7 @@ struct NetworkProtectionStatusView: View {
         } header: {
             Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -606,7 +606,7 @@ private struct NetworkProtectionErrorView: View {
                     .foregroundColor(.primary)
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -623,7 +623,7 @@ private struct NetworkProtectionLocationItemView: View {
             Text(title)
                 .daxBodyRegular()
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -641,7 +641,7 @@ private struct NetworkProtectionConnectionDetailView: View {
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -671,7 +671,7 @@ private struct NetworkProtectionThroughputItemView: View {
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 

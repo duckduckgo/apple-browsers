@@ -336,6 +336,33 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertTrue(pixelFiring.calls.isEmpty)
     }
 
+    func testWhenAnAttemptPrecededTheReportThenDurationRunsFromTheAttempt() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didAttemptNavigation() // The reload WebKit is about to time out on.
+        date += 3
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 1
+        monitor.end(.recovered)
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["duration"], "2-5")
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["attempts"], "0")
+    }
+
+    func testWhenNoRecentAttemptPrecededTheReportThenDurationRunsFromTheReport() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didAttemptNavigation()
+        date += 60
+        monitor.didBecomeUnresponsive(makeContext())
+        date += 1
+        monitor.end(.recovered)
+
+        XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["duration"], "0-2")
+    }
+
     func testWhenProcessTerminatesDuringFreezeThenOutcomeIsTerminated() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, applicationState: .background)

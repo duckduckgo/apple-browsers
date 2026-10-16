@@ -160,7 +160,7 @@
         ]
     },
     "web-content_unresponsive-result": {
-        "description": "Fires once per web-content_unresponsive when the freeze ends. Duration is measured from WebKit reporting the hang; for app-ended it runs until the app went to the background, or is unknown if it never did. Attempts counts reloads and navigations the user tried while frozen. The page parameters are those recorded when the hang was reported.",
+        "description": "Fires once per web-content_unresponsive when the freeze ends. Duration is measured from the reload or navigation the user made just before WebKit reported the hang, or from the report when there was none; for app-ended it runs until the app went to the background, or is unknown if it never did. Attempts counts reloads and navigations the user tried while frozen. The page parameters are those recorded when the hang was reported.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -173,7 +173,7 @@
             },
             {
                 "key": "duration",
-                "description": "Seconds from WebKit reporting the hang to the freeze ending",
+                "description": "Seconds from the user getting stuck (their reload or navigation, else WebKit's report) to the freeze ending",
                 "enum": ["0-2", "2-5", "5-15", "15-30", "30-60", "60-plus", "unknown"]
             },
             {

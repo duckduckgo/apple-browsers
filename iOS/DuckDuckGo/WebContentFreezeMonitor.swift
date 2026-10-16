@@ -126,6 +126,10 @@ final class WebContentFreezeMonitor: NSObject {
     private let applicationState: @MainActor () -> UIApplication.State
     private let notificationCenter: NotificationCenter
     private let date: () -> Date
+    /// WebKit reports a hang 3 seconds after the message it is waiting on, so an attempt this recent is the one that
+    /// triggered the report and marks when the user actually got stuck; the extra second covers a late callback.
+    private static let attemptWindow: TimeInterval = 4
+    private var lastAttemptDate: Date?
     private var startDate: Date?
     private var context: WebContentHealthPixel.PageContext?
     private var attempts = 0
@@ -150,10 +154,14 @@ final class WebContentFreezeMonitor: NSObject {
     func didBecomeUnresponsive(_ context: WebContentHealthPixel.PageContext) {
         guard featureFlagger.isFeatureOn(.tabTerminationTelemetry), !isFrozen else { return }
         let now = date()
-        startDate = now
+        if let lastAttemptDate, now.timeIntervalSince(lastAttemptDate) <= Self.attemptWindow {
+            startDate = lastAttemptDate
+        } else {
+            startDate = now
+        }
         self.context = context
         attempts = 0
-        record.startDate = now
+        record.startDate = startDate
         record.backgroundDate = applicationState() == .background ? now : nil
         record.attempts = 0
         record.context = context
@@ -162,9 +170,13 @@ final class WebContentFreezeMonitor: NSObject {
         pixelFiring?.fire(WebContentHealthPixel.unresponsive(context: context, appState: appState), frequency: .dailyAndCount)
     }
 
-    /// A reload or navigation the user started while the page was frozen.
+    /// A reload or navigation the user started. Counted as an escape attempt while the page is frozen; otherwise
+    /// remembered, since it may be the one WebKit is about to report a hang for.
     func didAttemptNavigation() {
-        guard isFrozen else { return }
+        guard isFrozen else {
+            lastAttemptDate = date()
+            return
+        }
         attempts += 1
         record.attempts = attempts
     }

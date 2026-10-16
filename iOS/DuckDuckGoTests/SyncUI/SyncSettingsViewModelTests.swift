@@ -294,7 +294,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.setup(.pairing)])
         XCTAssertTrue(delegate.continueAfterPreservedAccountRemovalContinuations.isEmpty)
 
-        sut.startAutoRestoreSecondaryAction()
+        await sut.startAutoRestoreSecondaryAction()
         XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.setup(.pairing)])
         XCTAssertEqual(delegate.showRecoveryCodeEntryCallCount, 0)
     }
@@ -316,7 +316,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.recover])
         XCTAssertTrue(delegate.continueAfterPreservedAccountRemovalContinuations.isEmpty)
 
-        sut.startAutoRestoreSecondaryAction()
+        await sut.startAutoRestoreSecondaryAction()
 
         XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.recover])
         XCTAssertEqual(delegate.showRecoveryCodeEntryCallCount, 0)
@@ -742,26 +742,106 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [])
     }
 
-    func testWhenImprovedPairingFlowOnAndPreservedAccountPromptNeededThenAuthenticatesUpFrontAndNotAgainOnChoice() async {
+    func testWhenImprovedPairingFlowOnAndPreservedAccountPromptNeededThenPromptIsShownWithoutAuthentication() async {
         let delegate = MockSyncSettingsViewModelDelegate()
         delegate.isPreservedAccountPromptNeededValue = true
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
-        let promptShownExpectation = expectation(description: "Auto-restore ready prompt shown")
-        delegate.onShowAutoRestoreReady = {
-            promptShownExpectation.fulfill()
+
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+        XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.setup(.simplifiedToggle)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreResumedThenAuthenticatesBeforeRestoring() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        let restoreShownExpectation = expectation(description: "Recovering data auto-restore flow shown")
+        delegate.onShowRecoveringDataAutoRestore = {
+            restoreShownExpectation.fulfill()
         }
 
-        sut.enableSyncToggleTapped()
-        await fulfillment(of: [promptShownExpectation], timeout: 1.0)
-        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        sut.startAutoRestore()
 
-        sut.startAutoRestoreSecondaryAction()
+        await fulfillment(of: [restoreShownExpectation], timeout: 1.0)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .sessionRestore)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreResumeAuthenticationFailsThenRestoreDoesNotStart() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+        let authenticationFinished = expectation(description: "Authentication finished")
+        delegate.onAuthenticateUserFinished = { authenticationFinished.fulfill() }
+
+        sut.startAutoRestore()
+
+        await fulfillment(of: [authenticationFinished], timeout: 1.0)
+        await Task.yield()
+        XCTAssertEqual(delegate.showRecoveringDataAutoRestoreCallCount, 0)
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreSkippedFromToggleThenAuthenticatesOnlyOnChoice() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+
+        await sut.startAutoRestoreSecondaryAction()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+        XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.setup(.simplifiedToggle)])
+
         sut.isBusy = false
         sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
         await sut.syncThisDeviceOnlyFromConnectingSheet()
 
         XCTAssertEqual(delegate.authenticateUserCallCount, 1)
         XCTAssertEqual(delegate.simplifiedCreateAccountAndStartSyncingCallCount, 1)
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreSkippedFromRecoverThenAuthenticatesBeforeContinuing() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await beginRecoverFlowAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+
+        await sut.startAutoRestoreSecondaryAction()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.recover])
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .sessionRestore)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreSkippedFromRecoverAndAuthenticationFailsThenDoesNotContinue() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await beginRecoverFlowAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+
+        await sut.startAutoRestoreSecondaryAction()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertTrue(delegate.continueAfterPreservedAccountRemovalContinuations.isEmpty)
+    }
+
+    func testWhenImprovedPairingFlowOffAndPreservedAccountPromptNeededThenAuthenticatesUpFront() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: false)
+
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
     }
 
     func testWhenImprovedPairingFlowOnAndBeginRecoverFlowThenRecoverSheetIsShownWithoutAuthentication() async {
@@ -1251,6 +1331,28 @@ final class SyncSettingsViewModelTests: XCTestCase {
         sut.beginPairingFlow()
 
         await fulfillment(of: [pairingExpectation], timeout: 1.0)
+    }
+
+    private func enableSyncAndWaitForAutoRestorePrompt(_ sut: SyncSettingsViewModel, delegate: MockSyncSettingsViewModelDelegate) async {
+        let promptShownExpectation = expectation(description: "Auto-restore ready prompt shown")
+        delegate.onShowAutoRestoreReady = {
+            promptShownExpectation.fulfill()
+        }
+
+        sut.enableSyncToggleTapped()
+
+        await fulfillment(of: [promptShownExpectation], timeout: 1.0)
+    }
+
+    private func beginRecoverFlowAndWaitForAutoRestorePrompt(_ sut: SyncSettingsViewModel, delegate: MockSyncSettingsViewModelDelegate) async {
+        let promptShownExpectation = expectation(description: "Auto-restore ready prompt shown")
+        delegate.onShowAutoRestoreReady = {
+            promptShownExpectation.fulfill()
+        }
+
+        sut.beginRecoverFlow()
+
+        await fulfillment(of: [promptShownExpectation], timeout: 1.0)
     }
 
     private func beginRecoverFlowAndWaitForSheet(_ sut: SyncSettingsViewModel) async {

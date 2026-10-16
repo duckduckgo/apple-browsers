@@ -19,6 +19,59 @@
 
 import UIKit
 
+final class FloatingMaterialRefreshScheduler: NSObject {
+    private let notificationCenter: NotificationCenter
+    private let canRefresh: () -> Bool
+    private var pendingRefresh: (() -> Void)?
+    private var isScheduled = false
+
+    init(notificationCenter: NotificationCenter = .default, canRefresh: @escaping () -> Bool) {
+        self.notificationCenter = notificationCenter
+        self.canRefresh = canRefresh
+        super.init()
+        notificationCenter.addObserver(self, selector: #selector(schedulePendingRefresh), name: UIScene.didActivateNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(schedulePendingRefresh), name: UIApplication.didBecomeActiveNotification, object: nil)
+    }
+
+    convenience init(view: UIView) {
+        self.init { [weak view] in
+            guard let view else { return false }
+            if let scene = view.window?.windowScene {
+                return scene.activationState == .foregroundActive
+            }
+            return UIApplication.shared.applicationState != .background
+        }
+    }
+
+    deinit {
+        notificationCenter.removeObserver(self)
+    }
+
+    func schedule(_ refresh: @escaping () -> Void) {
+        pendingRefresh = refresh
+        schedulePendingRefresh()
+    }
+
+    @objc private func schedulePendingRefresh() {
+        guard pendingRefresh != nil, canRefresh(), !isScheduled else { return }
+        isScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            isScheduled = false
+            guard canRefresh() else { return }
+            let refresh = pendingRefresh
+            pendingRefresh = nil
+            refresh?()
+        }
+    }
+
+    func deferIfNeeded(_ refresh: @escaping () -> Void) -> Bool {
+        guard !canRefresh() else { return false }
+        schedule(refresh)
+        return true
+    }
+}
+
 enum FloatingOmnibarSwipeDirection: Equatable {
     case left
     case right
@@ -196,6 +249,8 @@ final class BrowserToolbarView: UIView {
         }
     }()
     private var materialInterfaceStyle: UIUserInterfaceStyle?
+    private var appliedMaterialInterfaceStyle: UIUserInterfaceStyle?
+    private lazy var materialRefreshScheduler = FloatingMaterialRefreshScheduler(view: self)
 
     private let buttonStack: UIStackView = {
         let stack = UIStackView()
@@ -631,6 +686,14 @@ final class BrowserToolbarView: UIView {
     func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
         guard isFloatingStyleEnabled else { return }
         materialInterfaceStyle = interfaceStyle
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshPendingMaterialAppearance() }) else { return }
+        applyMaterialAppearanceIfNeeded()
+        scheduleHostedOmnibarMaterialRefresh()
+    }
+
+    private func applyMaterialAppearanceIfNeeded() {
+        guard let interfaceStyle = materialInterfaceStyle, appliedMaterialInterfaceStyle != interfaceStyle else { return }
+        appliedMaterialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
             if #available(iOS 26.0, *) {
                 materialBackgroundView.overrideUserInterfaceStyle = .unspecified
@@ -641,19 +704,21 @@ final class BrowserToolbarView: UIView {
             }
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
-            materialBackgroundView.layoutIfNeeded()
+            materialBackgroundView.setNeedsLayout()
         }
-        scheduleHostedOmnibarMaterialRefresh()
     }
 
     private func scheduleHostedOmnibarMaterialRefresh() {
         guard isFloatingStyleEnabled else { return }
-        let omnibarView = hostedOmnibarView as? DefaultOmniBarView
-        let interfaceStyle = materialInterfaceStyle
-        DispatchQueue.main.async { [weak self, weak omnibarView] in
-            guard let self, let omnibarView, hostedOmnibarView === omnibarView else { return }
-            omnibarView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        materialRefreshScheduler.schedule { [weak self] in
+            self?.refreshPendingMaterialAppearance()
         }
+    }
+
+    private func refreshPendingMaterialAppearance() {
+        guard isFloatingStyleEnabled else { return }
+        applyMaterialAppearanceIfNeeded()
+        (hostedOmnibarView as? DefaultOmniBarView)?.refreshMaterialAppearance(interfaceStyle: materialInterfaceStyle)
     }
 
     func isHostingOmnibarView(_ view: UIView) -> Bool {
@@ -1053,6 +1118,7 @@ final class BrowserToolbarView: UIView {
     }
 
     private func applyCurrentStyle(animated: Bool) {
+        appliedMaterialInterfaceStyle = nil
         let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
             self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0

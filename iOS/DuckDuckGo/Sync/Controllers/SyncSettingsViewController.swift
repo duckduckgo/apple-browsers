@@ -374,6 +374,14 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
             completion?()
             return
         }
+        guard !presentedViewController.isBeingDismissed else {
+            if let transitionCoordinator = presentedViewController.transitionCoordinator {
+                transitionCoordinator.animate(alongsideTransition: nil) { _ in completion?() }
+            } else {
+                completion?()
+            }
+            return
+        }
         presentingViewController.dismiss(animated: true, completion: completion)
     }
 

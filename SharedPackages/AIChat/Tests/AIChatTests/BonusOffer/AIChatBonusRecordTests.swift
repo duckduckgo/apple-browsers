@@ -162,4 +162,41 @@ private extension AIChatBonusRecordTests {
         return try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
+    // MARK: - Boost active
+
+    @Test(
+        "Check a boost is active only with terms that haven't expired",
+        arguments: [
+            (AIChatBonusRecordMock.active, true),
+            (AIChatBonusRecordMock.pending, false),
+            (AIChatBonusRecordMock.ended, false),
+            (AIChatBonusRecordMock.dismissedOnly, false),
+            (AIChatBonusRecord(), false)
+        ]
+    )
+    func boostIsActiveOnlyWithUnexpiredTerms(record: AIChatBonusRecord, isActive: Bool) {
+        // GIVEN
+        let beforeExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt - 1)
+
+        // WHEN
+        let result = record.isBoostActive(at: beforeExpiry)
+
+        // THEN
+        #expect(result == isActive)
+    }
+
+    @Test(
+        "Check a boost is no longer active from its expiry",
+        arguments: [0, 1] as [TimeInterval]
+    )
+    func boostIsNotActiveFromItsExpiry(secondsAfterExpiry: TimeInterval) {
+        // GIVEN
+        let date = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt + secondsAfterExpiry)
+
+        // WHEN
+        let result = AIChatBonusRecordMock.active.isBoostActive(at: date)
+
+        // THEN
+        #expect(result == false)
+    }
 }

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Common
 import FoundationExtensions
 import Core
@@ -49,7 +50,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
         profileStateManager: DBPProfileStateManaging,
-        idleReturnEligibilityManager: IdleReturnEligibilityManaging
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        onboardingSearchExperience: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
+        aiChatBonusStateProvider: AIChatBonusStateProviding
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -64,6 +68,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.profileStateManager = profileStateManager
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.aiChatSettings = aiChatSettings
+        self.onboardingSearchExperience = onboardingSearchExperience
+        self.aiChatBonusStateProvider = aiChatBonusStateProvider
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -79,6 +86,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let profileStateManager: DBPProfileStateManaging
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let aiChatSettings: AIChatSettingsProvider
+    let onboardingSearchExperience: OnboardingSearchExperienceProvider
+    let aiChatBonusStateProvider: AIChatBonusStateProviding
+
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -180,6 +191,12 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let ntpAfterIdleState = idleReturnEligibilityManager.ntpAfterIdleState().rawValue
 
+        let isReturningUser = statisticsStore.variant == VariantIOS.returningUser.name
+        // `nil` when the bonus record can't be read, so a rule using it fails rather than assuming no boost.
+        let isAIChatBoostActive = try? aiChatBonusStateProvider.isBoostActive()
+        let isAIChatEnabled = aiChatSettings.isAIChatEnabled
+        let hasTriedAIChatDuringOnboarding = onboardingSearchExperience.didStartAIChatDuringOnboarding
+
         let hardwareCanUpgradeOS = SupportedOSChecker().osUpgradeCapability.canUpgradeOS
         let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
 
@@ -217,7 +234,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isFreemiumPIRActivated: didActivateFreemiumPIR,
                                                        freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
                                                        isCurrentPIRUser: isCurrentPIRUser,
-                                                       ntpAfterIdleState: ntpAfterIdleState),
+                                                       ntpAfterIdleState: ntpAfterIdleState,
+                                                       isReturningUser: isReturningUser,
+                                                       isAIChatEnabled: isAIChatEnabled,
+                                                       triedAIChatDuringOnboarding: hasTriedAIChatDuringOnboarding,
+                                                       isAIChatBoostActive: isAIChatBoostActive),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

@@ -335,6 +335,68 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 0, fallback: nil)), .fail)
     }
 
+    func testWhenIsReturningUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isReturningUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenIsReturningUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isReturningUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenIsReturningUserIsUnknownThenReturnFail() throws {
+        setUpUserAttributeMatcher(isReturningUser: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: true, fallback: nil)), .fail)
+    }
+
+    func testWhenIsDuckAIEnabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isAIChatEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenIsDuckAIEnabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isAIChatEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenIsDuckAIDisabledAndRuleExpectsDisabledThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isAIChatEnabled: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .match)
+    }
+
+    func testWhenTriedDuckAIDuringOnboardingMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(triedAIChatDuringOnboarding: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenTriedDuckAIDuringOnboardingDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(triedAIChatDuringOnboarding: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenDidNotTryDuckAIDuringOnboardingAndRuleExpectsNotTriedThenReturnMatch() throws {
+        setUpUserAttributeMatcher(triedAIChatDuringOnboarding: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .match)
+    }
+
+    func testWhenIsDuckAIBoostActiveMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isAIChatBoostActive: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenIsDuckAIBoostActiveDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isAIChatBoostActive: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenIsDuckAIBoostActiveIsUnknownThenReturnFail() throws {
+        setUpUserAttributeMatcher(isAIChatBoostActive: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: true, fallback: nil)), .fail)
+    }
+
     // MARK: - Dismissed Messages
 
     func testWhenOneDismissedMessageIdMatchesThenReturnMatch() throws {
@@ -463,7 +525,13 @@ class CommonUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], shownMessageIds: [String] = [], enabledFeatureFlags: [String] = []) {
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
+                                           shownMessageIds: [String] = [],
+                                           enabledFeatureFlags: [String] = [],
+                                           isReturningUser: Bool? = nil,
+                                           isAIChatEnabled: Bool = false,
+                                           triedAIChatDuringOnboarding: Bool = false,
+                                           isAIChatBoostActive: Bool? = nil) {
         matcher = CommonUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -487,7 +555,11 @@ class CommonUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 }

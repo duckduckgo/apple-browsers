@@ -1265,15 +1265,39 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
     }
 
-    func testWhenTopMaterialAppearanceRefreshesThenGlassViewIsRebuilt() throws {
+    func testWhenTopMaterialAppearanceIsUnchangedThenRefreshPreservesGlassViewAndConstraints() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.layoutIfNeeded()
         let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        let constraints = barView.searchContainer.constraints.filter { $0.firstItem as? UIView === glassView }
 
-        barView.refreshMaterialAppearance()
+        for _ in 0..<10 {
+            barView.refreshMaterialAppearance()
+        }
 
-        XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+        XCTAssertFalse(constraints.isEmpty)
+        XCTAssertTrue(constraints.allSatisfy { $0.isActive })
+    }
+
+    func testWhenInterfaceStyleChangesThenGlassViewIsRebuiltOnce() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.overrideUserInterfaceStyle = .light
+        window.addSubview(barView)
+        window.layoutIfNeeded()
+        barView.refreshMaterialAppearance(interfaceStyle: .light)
+        let originalGlass = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        window.overrideUserInterfaceStyle = .dark
+        window.layoutIfNeeded()
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        let updatedGlass = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        XCTAssertFalse(originalGlass === updatedGlass)
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === updatedGlass)
     }
 
     func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {

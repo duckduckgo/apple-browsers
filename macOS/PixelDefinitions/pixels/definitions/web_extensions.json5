@@ -394,23 +394,6 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "web_extension_catalog_extension", "channel"]
     },
-    "web_extension_default_password_manager_removed_macos": {
-        "description": "Fires when an extension stops being the default password manager: it turns password saving back on, or the user gives passwords back to DuckDuckGo in Settings.",
-        "owners": ["diegoreymendez"],
-        "triggers": ["feature_lifecycle", "user_interaction"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "web_extension_catalog_extension",
-            {
-                "key": "source",
-                "type": "string",
-                "description": "What ended it: the extension turned password saving back on (extension), or the user chose Use DuckDuckGo Instead in Settings (settings)",
-                "enum": ["extension", "settings"]
-            },
-            "channel"
-        ]
-    },
     "web_extension_state_checked_macos": {
         "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
         "owners": ["miasma13"],

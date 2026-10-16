@@ -1081,8 +1081,6 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("bitwarden dau, default: \(isDefault)")
         case .defaultPasswordManagerSet(let pixelExtension):
             events.append("default set: \(pixelExtension.parameterValue)")
-        case .defaultPasswordManagerRemoved(let pixelExtension, let source):
-            events.append("default removed: \(pixelExtension.parameterValue) by \(source.rawValue)")
         case .toolbarButtonClicked(let pixelExtension):
             events.append("toolbar click: \(pixelExtension.parameterValue)")
         default:

@@ -62,15 +62,9 @@ public final class WebExtensionPrivacySettingsStore {
     /// Whether an installation may control settings: it is loaded and declares `privacy`.
     public var canControl: (String) -> Bool = { _ in false }
 
-    /// Called when an installation turns password saving off, which makes it the default password manager,
-    /// or stops doing so, with what made it stop. For usage pixels.
-    public var onDefaultPasswordManagerChange: (_ identifier: String, _ change: DefaultPasswordManagerChange) -> Void = { _, _ in }
-
-    /// A change to whether an installation is the default password manager.
-    public enum DefaultPasswordManagerChange: Equatable {
-        case set
-        case removed(WebExtensionDefaultPasswordManagerRemovalSource)
-    }
+    /// Called when an installation turns password saving off, which makes it the default password manager.
+    /// For usage pixels.
+    public var onDefaultPasswordManagerSet: (_ identifier: String) -> Void = { _ in }
 
     private let keyValueStore: any ThrowingKeyValueStoring
     private let now: () -> Date
@@ -111,8 +105,8 @@ public final class WebExtensionPrivacySettingsStore {
         update { overrides in
             overrides[identifier, default: [:]][setting.rawValue] = Override(value: value, date: now())
         }
-        if setting == .passwordSavingEnabled, wasTurnedOff == value {
-            onDefaultPasswordManagerChange(identifier, value ? .removed(.extension) : .set)
+        if setting == .passwordSavingEnabled, !value, !wasTurnedOff {
+            onDefaultPasswordManagerSet(identifier)
         }
         return true
     }
@@ -121,29 +115,17 @@ public final class WebExtensionPrivacySettingsStore {
     /// Does nothing when the extension may not control settings, so its value is kept for when it may again.
     public func clear(_ setting: WebExtensionPrivacySetting, for identifier: String) {
         guard canControl(identifier) else { return }
-        let wasTurnedOff = isTurnedOff(setting, by: identifier)
         update { overrides in
             overrides[identifier]?[setting.rawValue] = nil
             if overrides[identifier]?.isEmpty == true {
                 overrides[identifier] = nil
             }
         }
-        if setting == .passwordSavingEnabled, wasTurnedOff {
-            onDefaultPasswordManagerChange(identifier, .removed(.extension))
-        }
     }
 
     /// Removes the value every extension set for `setting`, so it goes back to its default rather than
     /// to the next extension that set it.
     public func clearAll(_ setting: WebExtensionPrivacySetting) {
-        let identifiersTurningOff = loadOverrides().compactMap { identifier, settings in
-            settings[setting.rawValue]?.value == false ? identifier : nil
-        }
-        defer {
-            if setting == .passwordSavingEnabled {
-                identifiersTurningOff.forEach { onDefaultPasswordManagerChange($0, .removed(.settings)) }
-            }
-        }
         update { overrides in
             for identifier in overrides.keys {
                 overrides[identifier]?[setting.rawValue] = nil

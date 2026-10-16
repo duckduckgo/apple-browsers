@@ -265,15 +265,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 self?.fireBitwardenDailyActiveIfLoaded()
             }
         }
-        privacySettings?.onDefaultPasswordManagerChange = { [weak self] identifier, change in
+        privacySettings?.onDefaultPasswordManagerSet = { [weak self] identifier in
             guard let self else { return }
-            let pixelExtension = pixelExtension(for: installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity)
-            switch change {
-            case .set:
-                pixelFiring.fire(.defaultPasswordManagerSet(extension: pixelExtension))
-            case .removed(let source):
-                pixelFiring.fire(.defaultPasswordManagerRemoved(extension: pixelExtension, source: source))
-            }
+            let storeIdentity = installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity
+            pixelFiring.fire(.defaultPasswordManagerSet(extension: pixelExtension(for: storeIdentity)))
         }
         // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
         privacySettings?.canControl = { [weak self] identifier in

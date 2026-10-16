@@ -29,14 +29,6 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
     case fallbackLoad = "fallback_load"
 }
 
-/// What made an extension stop being the default password manager.
-public enum WebExtensionDefaultPasswordManagerRemovalSource: String, Sendable {
-    /// The extension turned password saving back on itself.
-    case `extension`
-    /// The user gave passwords back to DuckDuckGo in Settings.
-    case settings
-}
-
 /// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
 /// catalog doesn't list. Pixels take this instead of a string, so an extension's own identifier or
 /// name can't reach a pixel.
@@ -105,8 +97,6 @@ public enum WebExtensionPixelEvent {
 
     /// An extension turned password saving off, which makes it the default password manager.
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
-    /// An extension stopped being the default password manager.
-    case defaultPasswordManagerRemoved(extension: WebExtensionPixelExtension, source: WebExtensionDefaultPasswordManagerRemovalSource)
     /// Bitwarden is installed and loaded. Fired once a day.
     case bitwardenDailyActive(isDefault: Bool)
     /// The user clicked an extension's toolbar button.
@@ -198,7 +188,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
-             .defaultPasswordManagerSet, .defaultPasswordManagerRemoved, .bitwardenDailyActive,
+             .defaultPasswordManagerSet, .bitwardenDailyActive,
              .toolbarButtonClicked:
             return nil
         }

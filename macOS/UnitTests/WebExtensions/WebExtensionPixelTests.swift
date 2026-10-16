@@ -39,16 +39,12 @@ final class WebExtensionPixelTests: XCTestCase {
         XCTAssertEqual(pixel.namePrefix, .none)
     }
 
-    func testDefaultPasswordManagerPixels() {
-        let set = WebExtensionPixel.defaultPasswordManagerSet(extension: .catalog(.bitwarden))
-        let removed = WebExtensionPixel.defaultPasswordManagerRemoved(extension: .catalog(.bitwarden), source: .settings)
+    func testDefaultPasswordManagerSetPixel() {
+        let pixel = WebExtensionPixel.defaultPasswordManagerSet(extension: .catalog(.bitwarden))
 
-        XCTAssertEqual(set.name, "web_extension_default_password_manager_set_macos")
-        XCTAssertEqual(set.parameters, ["extension": "bitwarden"])
-        XCTAssertEqual(set.namePrefix, .none)
-        XCTAssertEqual(removed.name, "web_extension_default_password_manager_removed_macos")
-        XCTAssertEqual(removed.parameters, ["extension": "bitwarden", "source": "settings"])
-        XCTAssertEqual(removed.namePrefix, .none)
+        XCTAssertEqual(pixel.name, "web_extension_default_password_manager_set_macos")
+        XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"])
+        XCTAssertEqual(pixel.namePrefix, .none)
     }
 
     func testToolbarButtonClickedPixel() {

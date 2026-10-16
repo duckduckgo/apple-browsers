@@ -830,6 +830,7 @@ class TabViewController: UIViewController {
     private let pixelFiring: (any PixelKitFiring)?
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
     private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
+    private let freezeMonitor: WebContentFreezeMonitor
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -1010,6 +1011,7 @@ class TabViewController: UIViewController {
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
         self.pixelFiring = pixelFiring
+        self.freezeMonitor = WebContentFreezeMonitor(pixelFiring: pixelFiring, featureFlagger: featureFlagger)
         self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
             ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
@@ -1756,6 +1758,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        freezeMonitor.end(.fire)
         cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
@@ -1956,6 +1959,7 @@ class TabViewController: UIViewController {
     }
 
     private func handlePullToRefresh() {
+        userDidRequestNavigation()
         reload()
         delegate?.tabDidRequestRefresh(tab: self)
         PixelKit.fire(Pixel.Event.pullToRefresh)
@@ -1989,6 +1993,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -2063,6 +2068,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -2577,8 +2583,9 @@ class TabViewController: UIViewController {
             }
         }
         // Tab removal closes synchronously; this also covers controllers released outside the tab cache.
-        Task { @MainActor [sitePermissionsState] in
+        Task { @MainActor [sitePermissionsState, freezeMonitor] in
             sitePermissionsState.close()
+            freezeMonitor.end(.closed)
         }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
         eventHub.onTabClosed(tabID: eventHubTabID)
@@ -4686,6 +4693,7 @@ extension TabViewController: WKUIDelegate {
 
         if webView === self.webView {
             cancelWebExtensionNavigationWait()
+            freezeMonitor.end(.terminated)
         }
 
         pageContextProcessTerminated = true
@@ -4727,8 +4735,35 @@ extension TabViewController: WKUIDelegate {
     // WebKit's hang detector calls this when the web content process stops answering for a few seconds.
     @objc(_webViewWebProcessDidBecomeUnresponsive:)
     func webViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
-        let appState = UIApplication.shared.applicationState == .background ? "background" : "foreground"
-        pixelFiring?.fire(WebContentHealthPixel.unresponsive(appState: appState), frequency: .dailyAndCount)
+        // A page showing alert(), confirm() or prompt() cannot answer WebKit either, but it is waiting on the user.
+        guard webView === self.webView, jsAlertView?.isShown != true else { return }
+        freezeMonitor.didBecomeUnresponsive(freezePageContext(for: webView))
+    }
+
+    @objc(_webViewWebProcessDidBecomeResponsive:)
+    func webViewWebProcessDidBecomeResponsive(_ webView: WKWebView) {
+        guard webView === self.webView else { return }
+        freezeMonitor.processDidBecomeResponsive { completion in
+            webView.evaluateJavaScript("1") { _, error in completion(error == nil) }
+        }
+    }
+
+    /// The user asked to reload or leave the page; counted as an escape attempt while it is frozen.
+    func userDidRequestNavigation() {
+        freezeMonitor.didAttemptNavigation()
+    }
+
+    private func freezePageContext(for webView: WKWebView) -> WebContentHealthPixel.PageContext {
+        let url = webView.url
+        var hasWebExtension = false
+        if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+            hasWebExtension = !webExtensionManager.loadedExtensions.isEmpty
+        }
+        return .init(surface: .init(url: url),
+                     isLoading: webView.isLoading && !wasLoadingStoppedExternally,
+                     isDesktopMode: tabModel.isDesktop,
+                     isProtected: privacyConfigurationManager.privacyConfig.isProtected(domain: url?.host),
+                     hasWebExtension: hasWebExtension)
     }
     
     func webView(_ webView: WKWebView,
@@ -4864,6 +4899,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func refresh() {
+        userDidRequestNavigation()
         let url: URL?
         if isError || webView.url == nil {
             url = self.url

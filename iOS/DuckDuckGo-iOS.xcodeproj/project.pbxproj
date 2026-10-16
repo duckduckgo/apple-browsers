@@ -355,6 +355,7 @@
 		75FA22045AC409B996F2A204 /* SyncSettingsViewControllerPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E979526F6A54D9214F20EA13 /* SyncSettingsViewControllerPixelTests.swift */; };
 		78BBBA6B2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78BBBA6A2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift */; };
 		7A0308260000000000000002 /* TabTerminationTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308260000000000000001 /* TabTerminationTelemetry.swift */; };
+		E5D2BACE058263DAFD3B881D /* WebContentFreezeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D475FD42497C5F4252EC7FD /* WebContentFreezeMonitor.swift */; };
 		7A0308260000000000000004 /* TabTerminationTelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */; };
 		7A0308270000000000000002 /* TabTerminationErrorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308270000000000000001 /* TabTerminationErrorPage.swift */; };
 		7A0308270000000000000004 /* TabTerminationErrorPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */; };
@@ -2188,6 +2189,7 @@
 		6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherOpenDailyPixelTests.swift; sourceTree = "<group>"; };
 		78BBBA6A2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchFeedbackView_PreviewMocks.swift; sourceTree = "<group>"; };
 		7A0308260000000000000001 /* TabTerminationTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationTelemetry.swift; sourceTree = "<group>"; };
+		3D475FD42497C5F4252EC7FD /* WebContentFreezeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContentFreezeMonitor.swift; sourceTree = "<group>"; };
 		7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationTelemetryTests.swift; sourceTree = "<group>"; };
 		7A0308270000000000000001 /* TabTerminationErrorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationErrorPage.swift; sourceTree = "<group>"; };
 		7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationErrorPageTests.swift; sourceTree = "<group>"; };
@@ -7072,6 +7074,7 @@
 				7937BCABC8E8502EBC34083C /* TabNavigationDecision.swift */,
 				7A0308270000000000000001 /* TabTerminationErrorPage.swift */,
 				7A0308260000000000000001 /* TabTerminationTelemetry.swift */,
+				3D475FD42497C5F4252EC7FD /* WebContentFreezeMonitor.swift */,
 				F13B4BF51F18C75D00814661 /* Model */,
 				F13B4BF61F18C76600814661 /* UI */,
 			);
@@ -8977,6 +8980,7 @@
 				6FF9AD3F2CE63DD800C5A406 /* TabSwitcherOpenDailyPixel.swift in Sources */,
 				7A0308270000000000000002 /* TabTerminationErrorPage.swift in Sources */,
 				7A0308260000000000000002 /* TabTerminationTelemetry.swift in Sources */,
+				E5D2BACE058263DAFD3B881D /* WebContentFreezeMonitor.swift in Sources */,
 				859DB8162CE6263C001F7210 /* TextZoomEditorView.swift in Sources */,
 				D6E0C1832B7A2B1E00D5E1E9 /* DesktopDownloadView.swift in Sources */,
 				1E7A71172934EB6400B7EA19 /* OmniBarNotificationAnimator.swift in Sources */,

@@ -191,21 +191,36 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
     private let tokenRefresher: any TokenRefreshing
 
+    /// Creates a client that refreshes and decodes tokens through a `DefaultTokenRefresher` backed by `authService`.
     /// - Parameters:
     ///   - tokensStorage: Where the current token container is read from and saved to.
     ///   - authService: The auth API client.
     ///   - refreshEventMapping: Receives the token refresh step events.
-    ///   - tokenRefresher: Performs refreshes and decoding. When nil, a `DefaultTokenRefresher` using `authService` and `refreshEventMapping` is created.
     public init(tokensStorage: any AuthTokenStoring,
                 authService: OAuthService,
-                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
-                tokenRefresher: (any TokenRefreshing)? = nil) {
+                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?) {
+        self.init(tokensStorage: tokensStorage,
+                  authService: authService,
+                  refreshEventMapping: refreshEventMapping,
+                  tokenRefresher: DefaultTokenRefresher(authService: authService,
+                                                        clientID: Constants.clientID,
+                                                        refreshEventMapping: refreshEventMapping))
+    }
+
+    /// Creates a client that refreshes and decodes tokens through `tokenRefresher`.
+    /// - Parameters:
+    ///   - tokensStorage: Where the current token container is read from and saved to.
+    ///   - authService: The auth API client, used for every request other than refreshing and decoding.
+    ///   - refreshEventMapping: Receives the refresh events the client reports itself: started, saving, succeeded and failed.
+    ///   - tokenRefresher: Performs refreshes and decoding, and reports their steps.
+    init(tokensStorage: any AuthTokenStoring,
+         authService: OAuthService,
+         refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
+         tokenRefresher: any TokenRefreshing) {
         self.tokenStorage = tokensStorage
         self.authService = authService
         self.refreshEventMapping = refreshEventMapping
-        self.tokenRefresher = tokenRefresher ?? DefaultTokenRefresher(authService: authService,
-                                                                      clientID: Constants.clientID,
-                                                                      refreshEventMapping: refreshEventMapping)
+        self.tokenRefresher = tokenRefresher
     }
 
     // MARK: - Internal

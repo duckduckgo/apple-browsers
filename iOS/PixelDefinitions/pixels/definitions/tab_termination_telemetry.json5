@@ -219,7 +219,7 @@
         ]
     },
     "web-content_preview-snapshot-timeout": {
-        "description": "Fires when opening the tab switcher waited longer than the timeout for the current page's preview snapshot, which a frozen page never draws. Counts users stuck on a frozen page whether or not WebKit reported it, including those who never reloaded. On a page WebKit has already reported as unresponsive the first snapshot is skipped and the fallback runs at once; the pixel still fires, with unresponsive=true.",
+        "description": "Fires when opening the tab switcher waited more than a second for the current page's preview snapshot. Any page that does not draw within that time counts, so this includes short stalls and heavy pages as well as frozen ones; on its own it is an upper bound on users stuck on a page. unresponsive marks the pages WebKit had already reported as hung. Use web-content_unresponsive-result to size freezes. On a page WebKit has already reported, the first snapshot is skipped and the fallback runs at once; the pixel still fires, with unresponsive=true.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

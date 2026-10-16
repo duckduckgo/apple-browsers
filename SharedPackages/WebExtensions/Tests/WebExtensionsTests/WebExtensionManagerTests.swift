@@ -76,6 +76,8 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                              pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                             isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                             isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                              storageProvider: WebExtensionStorageProviding? = nil,
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
                                  XCTFail("Unexpected bundled extension lookup")
@@ -91,6 +93,8 @@ final class WebExtensionManagerTests: XCTestCase {
             lifecycleDelegate: lifecycleDelegateMock,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            isCPMMessagingHangRecoveryEnabled: isCPMMessagingHangRecoveryEnabled,
+            isApplicationInBackground: isApplicationInBackground,
             bundledExtensionURL: bundledExtensionURL
         )
         manager.unloadGuard = WebExtensionUnloadGuard(
@@ -148,6 +152,85 @@ final class WebExtensionManagerTests: XCTestCase {
         try JSONSerialization.data(withJSONObject: manifest).write(to: dir.appendingPathComponent("manifest.json"))
         createdTestExtensionDirs.append(dir)
         return dir
+    }
+
+    // MARK: - Background wake selection and recovery safety
+
+    @MainActor
+    private func loadEmbeddedContext(_ identifier: String, into manager: WebExtensionManager) async throws -> WKWebExtensionContext {
+        let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        try manager.controller.load(context)
+        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded))
+        return context
+    }
+
+    @MainActor
+    func testNavigationSelectsNewInstallationWhileOldContextStillExists() async throws {
+        let manager = makeManager()
+        let oldContext = try await loadEmbeddedContext("old", into: manager)
+        let replacement = try await loadEmbeddedContext("replacement", into: manager)
+        XCTAssertEqual(manager.controller.extensionContexts.count, 2)
+        XCTAssertTrue(manager.embeddedBackgroundContextForNavigation === replacement)
+        XCTAssertFalse(manager.embeddedBackgroundContextForNavigation === oldContext)
+        manager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testNavigationFallsBackWhenReplacementContextIsRemoved() async throws {
+        let manager = makeManager()
+        let original = try await loadEmbeddedContext("original", into: manager)
+        let replacement = try await loadEmbeddedContext("replacement", into: manager)
+        try manager.controller.unload(replacement)
+        installedExtensionStoringMock.remove(uniqueIdentifier: replacement.uniqueIdentifier)
+        XCTAssertTrue(manager.embeddedBackgroundContextForNavigation === original)
+        manager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testBackgroundRecoveryWithoutDiagnosticsSkipsBackgroundAndAllowsForeground() async throws {
+        var isBackground = true
+        let manager = makeManager(isApplicationInBackground: { isBackground })
+        let context = try await loadEmbeddedContext("embedded", into: manager)
+        let error = NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)
+        XCTAssertNil(manager.cpmDiagnosticsRecorder)
+        let skipped = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        XCTAssertFalse(skipped)
+        isBackground = false
+        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        XCTAssertTrue(scheduled, "Skipping in background must not consume the foreground retry")
+        let throttled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        XCTAssertFalse(throttled)
+        manager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testBackgroundRecoveryHonorsRuntimeKillSwitchWithoutDiagnostics() async throws {
+        var isEnabled = false
+        let manager = makeManager(isCPMMessagingHangRecoveryEnabled: { isEnabled })
+        let context = try await loadEmbeddedContext("embedded", into: manager)
+        let error = NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)
+        let skipped = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        XCTAssertFalse(skipped)
+        isEnabled = true
+        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        XCTAssertTrue(scheduled)
+        manager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testBackgroundRecoveryIgnoresSupersededContextDuringUpgrade() async throws {
+        let manager = makeManager()
+        let oldContext = try await loadEmbeddedContext("old", into: manager)
+        let replacement = try await loadEmbeddedContext("replacement", into: manager)
+        let error = NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)
+        let skipped = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: oldContext)
+        XCTAssertFalse(skipped)
+        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: replacement)
+        XCTAssertTrue(scheduled)
+        manager.unloadAllExtensions()
     }
 
     // MARK: - Install Extension Tests

@@ -532,4 +532,45 @@ final class OAuthClientTests: XCTestCase {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
     }
+
+    // MARK: - Token refresher injection
+
+    func testInit_withTokenRefresher_refreshesThroughIt() async throws {
+        let refreshed = OAuthTokensFactory.makeValidTokenContainer()
+        let stubRefresher = StubTokenRefresher(refreshed: refreshed)
+        let client = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                        authService: mockOAuthService,
+                                        refreshEventMapping: nil,
+                                        tokenRefresher: stubRefresher)
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+
+        let result = try await client.getTokens(policy: .localForceRefresh)
+
+        XCTAssertEqual(result, refreshed)
+        let refreshCount = await stubRefresher.refreshCount
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+    }
+}
+
+private actor StubTokenRefresher: TokenRefreshing {
+    private let refreshed: TokenContainer
+    private(set) var refreshCount = 0
+
+    init(refreshed: TokenContainer) {
+        self.refreshed = refreshed
+    }
+
+    func decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> TokenContainer {
+        refreshed
+    }
+
+    func refresh(_ tokenContainer: TokenContainer, refreshID: String?) async throws -> TokenContainer {
+        refreshCount += 1
+        return refreshed
+    }
+
+    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+        Array(repeating: refreshed, count: count)
+    }
 }

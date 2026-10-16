@@ -146,8 +146,7 @@ extension Preferences {
 
                 // SECTION 3: Reset excluded (aka never prompt to save) sites:
                 // This is only displayed if the user has never prompt sites saved & not using Bitwarden
-                // or an extension, since DuckDuckGo saves nothing then
-                if model.hasNeverPromptWebsites && model.passwordManager == .duckduckgo && model.managingExtension == nil {
+                if model.hasNeverPromptWebsites && model.passwordManager == .duckduckgo {
                     PreferencePaneSection {
                         TextMenuItemHeader(UserText.autofillExcludedSites)
                         TextMenuItemCaption(UserText.autofillExcludedSitesExplanation)

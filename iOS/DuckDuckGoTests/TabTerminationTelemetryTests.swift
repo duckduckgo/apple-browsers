@@ -390,6 +390,23 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertNil(store.object(forKey: "web-content-freeze.start-date"))
     }
 
+    func testWhenAnotherTabFreezesThenTheFirstNoLongerWritesTheRecord() {
+        let store = MockKeyValueStore()
+        let notificationCenter = NotificationCenter()
+        let first = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store, notificationCenter: notificationCenter)
+        let second = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store, notificationCenter: notificationCenter)
+
+        first.didBecomeUnresponsive(makeContext())
+        date += 1
+        second.didBecomeUnresponsive(makeContext())
+        first.didAttemptNavigation()
+        XCTAssertEqual(store.object(forKey: "web-content-freeze.attempts") as? Int, 0)
+
+        second.end(.recovered) // Clears the record; the first tab must not bring it back.
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertNil(store.object(forKey: "web-content-freeze.background-date"))
+    }
+
     func testWhenAnotherTabFreezesThenEndingTheFirstKeepsItsRecord() {
         let store = MockKeyValueStore()
         let first = makeFreezeMonitor(pixelFiring: MockTabTerminationPixelFiring(), store: store)

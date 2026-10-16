@@ -178,7 +178,9 @@ final class WebContentFreezeMonitor: NSObject {
             return
         }
         attempts += 1
-        record.attempts = attempts
+        if ownsRecord {
+            record.attempts = attempts
+        }
     }
 
     /// WebKit also reports "responsive" when it merely stops waiting, for example on tab teardown or when the app
@@ -195,7 +197,7 @@ final class WebContentFreezeMonitor: NSObject {
     func end(_ outcome: Outcome) {
         guard let startDate, let context else { return }
         // Another tab's freeze may have taken the record since.
-        if record.startDate == startDate {
+        if ownsRecord {
             record.clear()
         }
         self.startDate = nil
@@ -240,11 +242,18 @@ final class WebContentFreezeMonitor: NSObject {
     }
 
     @objc private func appDidEnterBackground() {
+        guard ownsRecord else { return }
         record.backgroundDate = date()
     }
 
     @objc private func appWillEnterForeground() {
+        guard ownsRecord else { return }
         record.backgroundDate = nil
+    }
+
+    /// The record is one slot for all tabs; a later freeze in another tab takes it over.
+    private var ownsRecord: Bool {
+        startDate != nil && record.startDate == startDate
     }
 
     private var appState: String {

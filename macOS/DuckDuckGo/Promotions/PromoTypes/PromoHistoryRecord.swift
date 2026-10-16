@@ -24,7 +24,7 @@ struct PromoHistoryRecord: Codable, Equatable {
     var lastDismissed: Date?
     var lastShown: Date?
     var nextEligibleDate: Date?
-    /// Permanently actioned via `.actioned()`. A repeatable `.actioned(cooldown:)` only sets `lastActioned`.
+    /// Permanently dismissed via `PromoResult.actioned()`. A repeatable `.actioned(cooldown:)` only sets `lastActioned`.
     var actioned: Bool
     var lastActioned: Date?
 

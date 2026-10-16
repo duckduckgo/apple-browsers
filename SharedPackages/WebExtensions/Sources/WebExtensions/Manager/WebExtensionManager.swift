@@ -260,7 +260,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
-        // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
+        self.eventsListener.onBrowsingActivity = { [weak self] in
+            MainActor.assumeIsolated {
+                self?.fireBitwardenDailyActiveIfLoaded()
+            }
+        }
         privacySettings?.onDefaultPasswordManagerChange = { [weak self] identifier, change in
             guard let self else { return }
             let name = pixelExtensionName(for: installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity)
@@ -271,6 +275,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 pixelFiring.fire(.defaultPasswordManagerRemoved(extensionName: name, source: source))
             }
         }
+        // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
         privacySettings?.canControl = { [weak self] identifier in
             isAutofillTakeoverEnabled()
                 && self?.context(for: identifier)?.webExtension.declaresPermission(WebExtensionPrivacySettingsStore.permission) == true
@@ -732,9 +737,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         notifyUpdate()
-#if os(macOS)
-        fireBitwardenDailyActiveIfLoaded()
-#endif
     }
 
     @MainActor
@@ -935,8 +937,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
 #if os(macOS)
-    /// Reports that Bitwarden is installed and loaded, and whether it's the default password manager.
-    /// The pixel is daily, so firing it on every load counts each device once a day.
+    /// Reports that Bitwarden is loaded while the browser is in use, and whether it's the default password
+    /// manager. It runs on browsing activity, which is frequent; the pixel is daily, so each device counts once a day.
     @MainActor
     private func fireBitwardenDailyActiveIfLoaded() {
         let bitwarden = installationStore.installedExtensions.first { installedExtension in

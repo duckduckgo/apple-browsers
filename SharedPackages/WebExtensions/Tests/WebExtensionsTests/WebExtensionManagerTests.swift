@@ -739,7 +739,7 @@ final class WebExtensionManagerTests: XCTestCase {
     /// Bitwarden is recognized by its Chrome Web Store catalog entry, so its pixels carry the catalog's name and
     /// never its identifier.
     @MainActor
-    func testWhenBitwardenLoads_ThenItsDailyPixelReportsWhetherItIsTheDefaultPasswordManager() async throws {
+    func testWhenBrowsingWithBitwardenLoaded_ThenItsDailyPixelReportsWhetherItIsTheDefaultPasswordManager() async throws {
         let bitwardenStoreID = String(repeating: "n", count: 32)
         let pixels = EventCapturingPixelFiring()
         installedExtensionStoringMock.installedExtensions = [
@@ -762,12 +762,14 @@ final class WebExtensionManagerTests: XCTestCase {
 
         webExtensionLoadingMock.mockLoadResults = [.success(loadResult)]
         await manager.loadInstalledExtensions()
+        XCTAssertEqual(pixels.events, [])
+
+        eventsListenerMock.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
 
         let store = try XCTUnwrap(manager.privacySettings)
         store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
-        webExtensionLoadingMock.mockLoadResults = [.success(loadResult)]
-        await manager.loadInstalledExtensions()
+        eventsListenerMock.onBrowsingActivity?()
 
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
     }

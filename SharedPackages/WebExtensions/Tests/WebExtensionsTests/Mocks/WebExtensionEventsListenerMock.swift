@@ -24,6 +24,7 @@ final class WebExtensionEventsListenerMock: WebExtensionEventsListening {
 
     var controller: WKWebExtensionController?
     var droppedCallbacksCount = 0
+    var onBrowsingActivity: (() -> Void)?
 
     var didOpenWindowCalled = false
     func didOpenWindow(_ window: WKWebExtensionWindow) {

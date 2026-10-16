@@ -630,6 +630,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 private final class RecordingEventsListener: WebExtensionEventsListening {
     var controller: WKWebExtensionController?
     var droppedCallbacksCount = 0
+    var onBrowsingActivity: (() -> Void)?
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
     func didFocusWindow(_ window: WKWebExtensionWindow) {}

@@ -255,7 +255,10 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             Scenario(stored: .allow, global: .deny, system: .authorized,
                      queryState: .granted, expectsPrompt: false, resolution: .grant),
             Scenario(stored: .allow, global: .ask, system: .notDetermined,
-                     queryState: .prompt, expectsPrompt: true, resolution: .grant),
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .notDetermined,
+                                                              timing: .preexisting)])),
             Scenario(stored: .allow, global: .ask, system: .denied,
                      queryState: .denied, expectsPrompt: false,
                      resolution: .deny(systemBlocks: [.init(permissionType: .location,
@@ -355,8 +358,6 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
                 switch sourceState {
                 case .storedDeny, .globalNever, .denyOnce:
                     expectedState = .denied
-                case .storedAllow where systemState == .notDetermined:
-                    expectedState = .prompt
                 case .storedAllow, .allowOnce:
                     expectedState = systemState == .authorized ? .granted : .denied
                 case .noDecision, .storedAsk:
@@ -1475,31 +1476,27 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(recovery, .reminder(permissionTypes: [.camera, .microphone]))
     }
 
-    func testWhenStoredAllowHasUndeterminedSystemStateThenSitePromptPrecedesAuthorizationRequest() async throws {
+    func testWhenStoredAllowHasUndeterminedSystemStateThenItDoesNotRequestAuthorization() throws {
         let harness = try Harness()
-        harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
-        harness.systemStates[.location] = .notDetermined
-        var promptCount = 0
-        var requestedTypes = [SitePermissionType]()
-        harness.authorizationRequester = { permissionType in
-            XCTAssertEqual(promptCount, 1, "Automatic Allow must not trigger the OS prompt before the site prompt")
-            requestedTypes.append(permissionType)
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.systemStates[.camera] = .notDetermined
+        harness.authorizationRequester = { _ in
+            XCTFail("Automatic Allow must not trigger the OS prompt")
             return .authorized
         }
-        let completion = expectation(description: "Request completes")
+        harness.recoveryHandler = { _, completion in
+            XCTFail("A preexisting notDetermined state has no recovery UI")
+            completion()
+        }
+        var resolution: SitePermissionResolution?
 
-        harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
-            promptCount += 1
-            respond(.allowWhileUsingSite)
-        }, completion: { resolution in
-            XCTAssertEqual(resolution, .grant)
-            completion.fulfill()
-        })
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
+            XCTFail("Stored Allow must not show another site prompt")
+        }, completion: { resolution = $0 })
 
-        await fulfillment(of: [completion], timeout: 1)
-        XCTAssertEqual(promptCount, 1)
-        XCTAssertEqual(requestedTypes, [.location])
-        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .allow)
+        XCTAssertEqual(resolution, .deny(systemBlocks: [
+            SitePermissionSystemBlock(permissionType: .camera, state: .notDetermined, timing: .preexisting)
+        ]))
     }
 
     func testWhenFreshSystemRequestIsDeniedThenRecoveryMarksItAsAfterRequest() async throws {

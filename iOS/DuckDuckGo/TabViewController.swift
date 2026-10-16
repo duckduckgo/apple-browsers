@@ -1783,6 +1783,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        freezeMonitor.end(.fire)
         cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil

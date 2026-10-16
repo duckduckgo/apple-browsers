@@ -168,8 +168,8 @@
             "appVersion",
             {
                 "key": "outcome",
-                "description": "How the freeze ended",
-                "enum": ["recovered", "closed", "terminated", "app-ended"]
+                "description": "How the freeze ended: the page answered again, the tab was closed or evicted, the user pressed Fire, the web process died, or the app exited during the freeze and the next launch reported it",
+                "enum": ["recovered", "closed", "fire", "terminated", "app-ended"]
             },
             {
                 "key": "duration",

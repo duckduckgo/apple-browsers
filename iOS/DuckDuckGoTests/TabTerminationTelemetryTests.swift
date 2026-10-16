@@ -363,6 +363,17 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertEqual(pixelFiring.calls.last?.event.parameters?["duration"], "0-2")
     }
 
+    func testWhenFireClearsAFrozenTabThenOutcomeIsFire() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let monitor = makeFreezeMonitor(pixelFiring: pixelFiring)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        monitor.end(.fire)
+        monitor.end(.closed) // The tab is torn down afterwards; nothing left to report.
+
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] ?? $0.event.name }, ["web-content_unresponsive", "fire"])
+    }
+
     func testWhenProcessTerminatesDuringFreezeThenOutcomeIsTerminated() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let monitor = makeFreezeMonitor(pixelFiring: pixelFiring, applicationState: .background)

@@ -74,6 +74,8 @@ final class WebContentFreezeMonitor: NSObject {
     enum Outcome: String {
         case recovered
         case closed
+        /// The user pressed Fire while the page was frozen.
+        case fire
         case terminated
         /// The app exited during the freeze; reported by the next launch.
         case appEnded = "app-ended"

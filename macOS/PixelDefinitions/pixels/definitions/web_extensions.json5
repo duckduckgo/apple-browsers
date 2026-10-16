@@ -18,6 +18,7 @@
             "errorDomain",
             "underlyingErrorCode",
             "underlyingErrorDomain",
+            "channel",
             "web_extension_catalog_extension"
         ]
     },
@@ -365,18 +366,17 @@
         ]
     },
     "web_extension_bitwarden_dau_macos": {
-        "description": "Fires once a day when the Bitwarden extension from the Chrome Web Store is installed and loaded, reporting whether it is the default password manager.",
+        "description": "Fires once a day, on the first tab switch or page navigation, when the Bitwarden extension from the Chrome Web Store is loaded, reporting whether it is the default password manager.",
         "owners": ["diegoreymendez"],
-        "triggers": ["feature_lifecycle"],
+        "triggers": ["user_interaction", "page_load"],
         "suffixes": ["daily"],
         "parameters": [
             "appVersion",
             "pixelSource",
             {
                 "key": "is_default",
-                "type": "string",
-                "description": "Whether Bitwarden is the default password manager, so DuckDuckGo leaves passwords to it (true/false)",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "Whether Bitwarden is the default password manager, so DuckDuckGo leaves passwords to it"
             },
             "channel"
         ]

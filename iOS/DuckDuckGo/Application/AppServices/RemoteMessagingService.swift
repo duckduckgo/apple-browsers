@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import BrowserServicesKit
 import Common
@@ -58,6 +59,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         aiChatBonusStateProvider: AIChatBonusStateProviding,
          dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
@@ -97,6 +99,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             profileStateManager: profileStateManager,
             idleReturnEligibilityManager: idleReturnEligibilityManager,
+            aiChatBonusStateProvider: aiChatBonusStateProvider,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()

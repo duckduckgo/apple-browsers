@@ -987,7 +987,7 @@ private final class InstallationPixelFiringMock: WebExtensionPixelFiring {
     private(set) var installErrors: [Error] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
-        if case .installError(let error) = event {
+        if case .installError(_, let error) = event {
             installErrors.append(error)
         }
     }

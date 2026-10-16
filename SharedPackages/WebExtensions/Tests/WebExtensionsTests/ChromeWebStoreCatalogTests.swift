@@ -53,6 +53,17 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertEqual(try makeCatalog(extensions: extensions).extensionIDs, [identifier, otherIdentifier])
     }
 
+    func testCatalogNamesAnExtensionByItsEntryEvenWhenItIsNotOffered() throws {
+        let catalog = try makeCatalog(extensions: [
+            "bitwarden": entry(identifier, state: "disabled", order: 1),
+            "onePassword": entry(otherIdentifier, order: 2)
+        ])
+
+        XCTAssertEqual(catalog.catalogName(of: identifier), "bitwarden")
+        XCTAssertEqual(catalog.catalogName(of: otherIdentifier), "onePassword")
+        XCTAssertNil(catalog.catalogName(of: thirdIdentifier))
+    }
+
     func testUnknownSubfeaturesAndMalformedEntriesAreIgnored() throws {
         let catalog = try makeCatalog(extensions: [
             "bitwarden": entry(identifier),

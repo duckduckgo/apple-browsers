@@ -4,21 +4,29 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_catalog_extension"]
     },
     "m_mac_web_extension_install_error": {
         "description": "Fires when a web extension installation fails.",
         "owners": ["tomasstrba"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            "web_extension_catalog_extension"
+        ]
     },
     "m_mac_web_extension_uninstalled": {
         "description": "Fires when a web extension is successfully uninstalled.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_catalog_extension"]
     },
     "m_mac_web_extension_uninstall_error": {
         "description": "Fires when a web extension uninstallation fails.",
@@ -352,6 +360,46 @@
                 "key": "analytics_enabled",
                 "type": "string",
                 "description": "Whether the user opted in to anonymous breakage reports for YouTube ad blocking (true/false)"
+            },
+            "channel"
+        ]
+    },
+    "web_extension_bitwarden_dau_macos": {
+        "description": "Fires once a day when the Bitwarden extension from the Chrome Web Store is installed and loaded, reporting whether it is the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_default",
+                "type": "string",
+                "description": "Whether Bitwarden is the default password manager, so DuckDuckGo leaves passwords to it (true/false)",
+                "enum": ["true", "false"]
+            },
+            "channel"
+        ]
+    },
+    "web_extension_default_password_manager_set_macos": {
+        "description": "Fires when an extension turns off the browser's password saving through chrome.privacy, which makes it the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "web_extension_catalog_extension", "channel"]
+    },
+    "web_extension_default_password_manager_removed_macos": {
+        "description": "Fires when an extension stops being the default password manager: it turns password saving back on, or the user gives passwords back to DuckDuckGo in Settings.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle", "user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_catalog_extension",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "What ended it: the extension turned password saving back on (extension), or the user chose Use DuckDuckGo Instead in Settings (settings)",
+                "enum": ["extension", "settings"]
             },
             "channel"
         ]

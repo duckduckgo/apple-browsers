@@ -28,12 +28,26 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
     case fallbackLoad = "fallback_load"
 }
 
+/// What made an extension stop being the default password manager.
+public enum WebExtensionDefaultPasswordManagerRemovalSource: String, Sendable {
+    /// The extension turned password saving back on itself.
+    case `extension`
+    /// The user gave passwords back to DuckDuckGo in Settings.
+    case settings
+}
+
 /// Events that can be fired for web extension management.
+///
+/// Events about a particular extension carry its catalog name, such as `bitwarden`, or
+/// `otherExtensionName`, so pixels never carry an extension's own identifier.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    case installed
-    case installError(error: Error)
-    case uninstalled
+    /// The name pixels use for an extension that isn't in the Chrome Web Store catalog.
+    public static let otherExtensionName = "other"
+
+    case installed(extensionName: String)
+    case installError(extensionName: String, error: Error)
+    case uninstalled(extensionName: String)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -73,6 +87,13 @@ public enum WebExtensionPixelEvent {
     case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource)
     /// The first CPM measurement using a successful extension-reload generation also failed.
     case cpmMessagingExtensionReloadFailed
+
+    /// An extension turned password saving off, which makes it the default password manager.
+    case defaultPasswordManagerSet(extensionName: String)
+    /// An extension stopped being the default password manager.
+    case defaultPasswordManagerRemoved(extensionName: String, source: WebExtensionDefaultPasswordManagerRemovalSource)
+    /// Bitwarden is installed and loaded. Fired once a day.
+    case bitwardenDailyActive(isDefault: Bool)
 }
 
 /// Failure state of the episode immediately before recovery.
@@ -159,7 +180,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
-             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError:
+             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
+             .defaultPasswordManagerSet, .defaultPasswordManagerRemoved, .bitwardenDailyActive:
             return nil
         }
     }

@@ -28,11 +28,61 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
     private let keyValueStore = InMemoryThrowingKeyValueStore()
     private var date = Date(timeIntervalSince1970: 1_000)
     private var allowed: Set<String> = ["bitwarden", "other"]
+    private var changes: [String] = []
 
     private func makeStore() -> WebExtensionPrivacySettingsStore {
         let store = WebExtensionPrivacySettingsStore(keyValueStore: keyValueStore, now: { [unowned self] in self.date })
         store.canControl = { [unowned self] in self.allowed.contains($0) }
+        store.onDefaultPasswordManagerChange = { [unowned self] identifier, change in
+            switch change {
+            case .set: changes.append("\(identifier) set")
+            case .removed(let source): changes.append("\(identifier) removed by \(source.rawValue)")
+            }
+        }
         return store
+    }
+
+    // MARK: - Default Password Manager Changes
+
+    func testWhenAnExtensionTurnsPasswordSavingOff_ThenItBecomesTheDefaultOnce() {
+        let store = makeStore()
+
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+
+        XCTAssertEqual(changes, ["bitwarden set"])
+    }
+
+    func testWhenTheExtensionTurnsPasswordSavingBackOnOrClearsIt_ThenItStopsBeingTheDefault() {
+        let store = makeStore()
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        store.set(false, for: .passwordSavingEnabled, by: "other")
+
+        store.set(true, for: .passwordSavingEnabled, by: "bitwarden")
+        store.clear(.passwordSavingEnabled, for: "other")
+
+        XCTAssertEqual(changes, ["bitwarden set", "other set", "bitwarden removed by extension", "other removed by extension"])
+    }
+
+    func testWhenTheUserGivesPasswordsBack_ThenEveryExtensionThatTurnedItOffStopsBeingTheDefault() {
+        let store = makeStore()
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        store.set(false, for: .passwordSavingEnabled, by: "other")
+        changes = []
+
+        store.clearAll(.passwordSavingEnabled)
+
+        XCTAssertEqual(Set(changes), ["bitwarden removed by settings", "other removed by settings"])
+    }
+
+    func testWhenAnotherSettingChangesOrASetIsRefused_ThenTheDefaultPasswordManagerDoesNotChange() {
+        let store = makeStore()
+
+        store.set(false, for: .autofillAddressEnabled, by: "bitwarden")
+        store.clearAll(.autofillAddressEnabled)
+        store.set(false, for: .passwordSavingEnabled, by: "undeclared")
+
+        XCTAssertEqual(changes, [])
     }
 
     // MARK: - Control

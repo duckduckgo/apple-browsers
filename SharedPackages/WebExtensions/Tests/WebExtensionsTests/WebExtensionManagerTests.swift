@@ -734,6 +734,44 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
 #if os(macOS)
+    // MARK: - Bitwarden Pixels
+
+    /// Bitwarden is recognized by its Chrome Web Store catalog entry, so its pixels carry the catalog's name and
+    /// never its identifier.
+    @MainActor
+    func testWhenBitwardenLoads_ThenItsDailyPixelReportsWhetherItIsTheDefaultPasswordManager() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID))
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          eventsListener: eventsListenerMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        let webStore = CatalogNamingWebStore(names: [bitwardenStoreID: "bitwarden"])
+        manager.chromeWebStore = webStore
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        let loadResult = WebExtensionLoadResult(identifier: "bitwarden", filename: "bitwarden", displayName: nil, version: "1")
+
+        webExtensionLoadingMock.mockLoadResults = [.success(loadResult)]
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
+
+        let store = try XCTUnwrap(manager.privacySettings)
+        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        webExtensionLoadingMock.mockLoadResults = [.success(loadResult)]
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
+    }
+
     // MARK: - Autofill Takeover Flag
 
     /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
@@ -1001,4 +1039,38 @@ private final class CapturingReloadErrorPixelFiring: WebExtensionPixelFiring {
             errorCode: metadata.parameters["e"] ?? "missing"
         ))
     }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
+    private(set) var events: [String] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        switch event {
+        case .bitwardenDailyActive(let isDefault):
+            events.append("bitwarden dau, default: \(isDefault)")
+        case .defaultPasswordManagerSet(let extensionName):
+            events.append("default set: \(extensionName)")
+        case .defaultPasswordManagerRemoved(let extensionName, let source):
+            events.append("default removed: \(extensionName) by \(source.rawValue)")
+        default:
+            break
+        }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class CatalogNamingWebStore: ChromeWebStoreManaging {
+    let names: [String: String]
+
+    init(names: [String: String]) {
+        self.names = names
+    }
+
+    var catalogExtensionIDs: [String] { [] }
+    func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
+    func install(identifier: String, downloadURL: URL) async -> Bool { false }
+    func remove(identifier: String) async -> Bool { false }
+    func catalogName(of identifier: String) -> String? { names[identifier] }
 }

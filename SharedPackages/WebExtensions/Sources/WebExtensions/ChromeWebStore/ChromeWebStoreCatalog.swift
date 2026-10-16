@@ -75,11 +75,19 @@ public protocol ChromeWebStoreCatalogProviding {
 
     /// Checks if the web extension with a given `identifier` is supported by the browser.
     func contains(_ identifier: String) -> Bool
+
+    /// The catalog's name for the extension with the Chrome Web Store `identifier`, such as `bitwarden`,
+    /// whether or not the catalog offers it right now. `nil` for an extension the catalog doesn't list.
+    func catalogName(of identifier: String) -> String?
 }
 
 public extension ChromeWebStoreCatalogProviding {
     func contains(_ identifier: String) -> Bool {
         ChromeWebStoreURL.isValidExtensionID(identifier) && extensionIDs.contains(identifier)
+    }
+
+    func catalogName(of identifier: String) -> String? {
+        nil
     }
 }
 
@@ -110,9 +118,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         // rollout and minimum version. Subfeatures this build doesn't know are ignored.
         let entries: [(id: String, order: Double)] = ExtensionsCatalogSubfeature.allCases.compactMap { subfeature in
             guard config.isSubfeatureEnabled(subfeature),
-                  let settingsJSON = config.settings(for: subfeature),
-                  let data = settingsJSON.data(using: .utf8),
-                  let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let settings = Self.settings(of: subfeature, in: config),
                   let id = settings["id"] as? String,
                   ChromeWebStoreURL.isValidExtensionID(id), !excluded.contains(id) else { return nil }
             return (id, (settings["order"] as? NSNumber)?.doubleValue ?? .infinity)
@@ -122,5 +128,18 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         return entries.enumerated()
             .sorted { ($0.element.order, $0.offset) < ($1.element.order, $1.offset) }
             .map(\.element.id)
+    }
+
+    public func catalogName(of identifier: String) -> String? {
+        let config = configurationManager.privacyConfig
+        return ExtensionsCatalogSubfeature.allCases.first { subfeature in
+            Self.settings(of: subfeature, in: config)?["id"] as? String == identifier
+        }?.rawValue
+    }
+
+    private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {
+        guard let settingsJSON = config.settings(for: subfeature),
+              let data = settingsJSON.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
     }
 }

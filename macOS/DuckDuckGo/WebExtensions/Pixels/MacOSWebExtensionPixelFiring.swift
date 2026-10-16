@@ -23,12 +23,13 @@ enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Installation
 
-    case installed
-    case installError(error: Error)
+    /// `extensionName` is the extension's catalog name, such as `bitwarden`, or `other`.
+    case installed(extensionName: String)
+    case installError(extensionName: String, error: Error)
 
     // MARK: - Uninstallation
 
-    case uninstalled
+    case uninstalled(extensionName: String)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -86,6 +87,12 @@ enum WebExtensionPixel: PixelKit.Event {
     // MARK: - Daily State
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
+    case bitwardenDailyActive(isDefault: Bool)
+
+    // MARK: - Default Password Manager
+
+    case defaultPasswordManagerSet(extensionName: String)
+    case defaultPasswordManagerRemoved(extensionName: String, source: WebExtensionDefaultPasswordManagerRemovalSource)
 
     // MARK: - Debug
 
@@ -163,6 +170,12 @@ enum WebExtensionPixel: PixelKit.Event {
             return "m_mac_web_extension_scriptlet_install_error"
         case .dailyAdBlockingState:
             return "m_mac_web_extension_daily_ad_blocking_state"
+        case .bitwardenDailyActive:
+            return "web_extension_bitwarden_dau_macos"
+        case .defaultPasswordManagerSet:
+            return "web_extension_default_password_manager_set_macos"
+        case .defaultPasswordManagerRemoved:
+            return "web_extension_default_password_manager_removed_macos"
         case .stateChecked:
             return "web_extension_state_checked_macos"
         case .embeddedNotLoaded:
@@ -206,6 +219,15 @@ enum WebExtensionPixel: PixelKit.Event {
             ]
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
+        case .installed(let extensionName),
+             .installError(let extensionName, _),
+             .uninstalled(let extensionName),
+             .defaultPasswordManagerSet(let extensionName):
+            return ["extension": extensionName]
+        case .defaultPasswordManagerRemoved(let extensionName, let source):
+            return ["extension": extensionName, "source": source.rawValue]
+        case .bitwardenDailyActive(let isDefault):
+            return ["is_default": isDefault ? "true" : "false"]
         case .debugCPM(let metadata):
             return metadata.parameters
         case .reloadError(let parameters):
@@ -217,7 +239,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError:
+        case .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .defaultPasswordManagerRemoved:
             return .none
         default:
             return .platformDefault
@@ -278,12 +300,12 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
         switch event {
-        case .installed:
-            pixel = .installed
-        case .installError(let error):
-            pixel = .installError(error: error)
-        case .uninstalled:
-            pixel = .uninstalled
+        case .installed(let extensionName):
+            pixel = .installed(extensionName: extensionName)
+        case .installError(let extensionName, let error):
+            pixel = .installError(extensionName: extensionName, error: error)
+        case .uninstalled(let extensionName):
+            pixel = .uninstalled(extensionName: extensionName)
         case .uninstallError(let error):
             pixel = .uninstallError(error: error)
         case .uninstalledAll:
@@ -335,7 +357,26 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingExtensionReloadFailed:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
+        case .defaultPasswordManagerSet(let extensionName):
+            pixel = .defaultPasswordManagerSet(extensionName: extensionName)
+        case .defaultPasswordManagerRemoved(let extensionName, let source):
+            pixel = .defaultPasswordManagerRemoved(extensionName: extensionName, source: source)
+        case .bitwardenDailyActive(let isDefault):
+            pixel = .bitwardenDailyActive(isDefault: isDefault)
         }
+        switch event {
+        case .bitwardenDailyActive:
+            frequency = .daily
+        case .defaultPasswordManagerSet, .defaultPasswordManagerRemoved:
+            frequency = .standard
+        default:
+            frequency = Self.frequency(of: event)
+        }
+        PixelKit.fire(pixel, frequency: frequency)
+    }
+
+    private static func frequency(of event: WebExtensionPixelEvent) -> PixelKit.Frequency {
+        let frequency: PixelKit.Frequency
         if case .reloadError = event {
             frequency = .dailyAndCount
         } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
@@ -343,7 +384,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         } else {
             frequency = .dailyAndStandard
         }
-        PixelKit.fire(pixel, frequency: frequency)
+        return frequency
     }
 }
 

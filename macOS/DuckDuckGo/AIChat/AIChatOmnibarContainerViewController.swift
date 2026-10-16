@@ -2277,6 +2277,32 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateAttachmentsLayout()
     }
 
+    /// A pasted bitmap has no file to reload from, so it's sized and encoded here like a screenshot.
+    /// - Returns: `true` when the paste was consumed, including when it was refused with an error.
+    func attachPastedImage(_ image: CGImage) -> Bool {
+        lastAttachmentError = nil
+        guard shouldShowImageUpload else {
+            lastAttachmentError = dropRejectionMessage(hasRejectedFiles: false)
+            updateAttachmentsLayout()
+            return true
+        }
+        guard let encoded = AIChatScreenshotImageProcessor.encode(image) else { return false }
+        let fileExtension = encoded.format == .png ? "png" : "jpg"
+        let attachment = AIChatImageAttachment(image: NSImage(cgImage: encoded.image, size: .zero),
+                                               fileName: "\(UserText.aiChatPastedImageAttachmentName).\(fileExtension)",
+                                               fileURL: nil,
+                                               skipResize: true)
+        guard omnibarController.addImageAttachmentToActiveTab(attachment) else {
+            lastAttachmentError = UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: omnibarController.maxImageAttachments)
+            updateAttachmentsLayout()
+            return true
+        }
+        imageAttachmentSources[attachment.id] = .paste
+        omnibarController.pixelHandler.fire(.imageAttached(source: .paste))
+        updateAttachmentsLayout()
+        return true
+    }
+
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
         // Confirming is a fresh pick action; a rejection from last time no longer applies.
         lastAttachmentError = nil
@@ -2293,11 +2319,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateAttachmentsLayout()
     }
 
-    /// Attaches dropped images and PDFs through the same validation as the picker. A file of a kind
+    /// Attaches dropped or pasted images and PDFs through the same validation as the picker. A file of a kind
     /// the omnibar attaches always consumes the drag, even when it can't be taken — letting it fall
     /// through would put its absolute path into the prompt as text.
     /// - Returns: `true` if the drop was consumed.
-    func addAttachmentsFromDrop(_ urls: [URL]) -> Bool {
+    func addAttachmentsFromDrop(_ urls: [URL], source: AIChatImageAttachmentSource = .drop) -> Bool {
         let dropped = urls.compactMap { url in UTType(filenameExtension: url.pathExtension.lowercased()).map { (url: url, type: $0) } }
         let images = dropped.filter { $0.type.conforms(to: .image) }
         let files = dropped.filter { !$0.type.conforms(to: .image) }
@@ -2321,7 +2347,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             updateAttachmentsLayout()
             return true
         }
-        addPickedAttachments(from: acceptedImages + acceptedFiles, source: .drop, rejection: rejection)
+        addPickedAttachments(from: acceptedImages + acceptedFiles, source: source, rejection: rejection)
         return true
     }
 

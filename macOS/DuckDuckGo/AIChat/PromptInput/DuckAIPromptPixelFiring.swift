@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-/// Raw values match the `source` pixel parameter. `paste` only comes from the New Tab Page page.
+/// Raw values match the `source` pixel parameter.
 enum AIChatImageAttachmentSource: String {
     case file
     case drop

@@ -103,7 +103,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_attached": {
-        "description": "Fired when an image chip is added to the duck.ai omnibar: picked, dropped, or captured with Add Screenshot",
+        "description": "Fired when an image chip is added to the duck.ai omnibar: picked, dropped, pasted, or captured with Add Screenshot",
         "owners": ["tomasstrba"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count"],
@@ -114,8 +114,8 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "How the image was added: the file picker, a drag and drop, or Add Screenshot",
-                "enum": ["file", "drop", "screenshot"]
+                "description": "How the image was added: the file picker, a drag and drop, a paste, or Add Screenshot",
+                "enum": ["file", "drop", "paste", "screenshot"]
             }
         ]
     },
@@ -132,7 +132,7 @@
                 "key": "source",
                 "type": "string",
                 "description": "How the removed image was added",
-                "enum": ["file", "drop", "screenshot"]
+                "enum": ["file", "drop", "paste", "screenshot"]
             }
         ]
     },

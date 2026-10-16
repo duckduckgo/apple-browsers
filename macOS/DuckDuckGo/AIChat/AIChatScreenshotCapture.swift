@@ -77,14 +77,19 @@ enum AIChatScreenshotImageProcessor {
     static let jpegQuality = 0.85
 
     static func process(_ image: CGImage, kind: AIChatScreenshotKind) -> AIChatProcessedScreenshot? {
+        encode(image).map { AIChatProcessedScreenshot(image: $0.image, data: $0.data, format: $0.format, kind: kind) }
+    }
+
+    /// Also used for pasted images.
+    static func encode(_ image: CGImage) -> (image: CGImage, data: Data, format: AIChatScreenshotImageFormat)? {
         guard let scaled = downscaled(image) else { return nil }
 
         let bitmap = NSBitmapImageRep(cgImage: scaled)
         if let png = bitmap.representation(using: .png, properties: [:]), png.count <= pngByteLimit {
-            return AIChatProcessedScreenshot(image: scaled, data: png, format: .png, kind: kind)
+            return (scaled, png, .png)
         }
         guard let jpeg = bitmap.representation(using: .jpeg, properties: [.compressionFactor: jpegQuality]) else { return nil }
-        return AIChatProcessedScreenshot(image: scaled, data: jpeg, format: .jpeg, kind: kind)
+        return (scaled, jpeg, .jpeg)
     }
 
     /// Never upscales.

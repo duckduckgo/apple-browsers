@@ -685,8 +685,8 @@ final class MainMenu: NSMenu {
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
                             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                            isBitwardenEnabled: { [featureFlagger] in
-                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                            isBitwardenEnabled: { [privacyConfigurationManager] in
+                                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
                             }
                         ))
                 }

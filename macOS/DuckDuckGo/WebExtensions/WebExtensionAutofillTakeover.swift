@@ -18,7 +18,6 @@
 
 import AppKit
 import Combine
-import FeatureFlags_macOS
 import PrivacyConfig
 import WebExtensions
 
@@ -64,7 +63,7 @@ struct AutofillManagingExtension: Equatable {
 ///
 /// The kinds are read again when:
 /// - extensions load or unload, or an extension changes its setting (`.webExtensionPrivacySettingsDidChange`);
-/// - the `webExtensionBitwarden` flag changes;
+/// - Bitwarden's catalog entry (`extensionsCatalog.bitwarden`) is turned on or off remotely;
 /// - web extensions become unavailable (`extensionsDidBecomeUnavailable()`).
 ///
 /// Handing it a new extension manager doesn't read them: its extensions haven't loaded yet, and
@@ -87,11 +86,11 @@ final class WebExtensionAutofillTakeover {
 
     /// - Parameters:
     ///   - preferences: Where the managed kinds are saved for autofill to read.
-    ///   - featureFlagger: Decides whether an extension may take autofill over.
+    ///   - privacyConfigurationManager: Its Bitwarden catalog entry decides whether an extension may take autofill over.
     ///   - readManagingExtensions: Which loaded extension manages each kind. Reads `manager` when `nil`.
     ///   - clearSetting: Removes every extension's control of a kind. Uses `manager` when `nil`.
     init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
-         featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          notificationCenter: NotificationCenter = .default,
          readManagingExtensions: (@MainActor () -> ManagingExtensions)? = nil,
          clearSetting: (@MainActor (ExtensionManagedAutofillKind) -> Void)? = nil) {
@@ -106,12 +105,12 @@ final class WebExtensionAutofillTakeover {
                 }
             }
         }
-        // Starts from the flag's current value, so only an actual change reads the kinds again.
-        flagCancellable = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensionBitwarden)
+        // Starts from the entry's current state, so only an actual change reads the kinds again.
+        flagCancellable = privacyConfigurationManager.updatesPublisher
+            .map { [privacyConfigurationManager] in
+                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
             }
-            .prepend(featureFlagger.isFeatureOn(.webExtensionBitwarden))
+            .prepend(privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden))
             .removeDuplicates()
             .dropFirst()
             .receive(on: DispatchQueue.main)

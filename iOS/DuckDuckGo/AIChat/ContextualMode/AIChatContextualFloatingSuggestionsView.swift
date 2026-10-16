@@ -34,7 +34,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         static let showDamping: CGFloat = 0.8
         static let hideDuration: TimeInterval = 0.24
         static let returnDuration: TimeInterval = 0.5
-        static let returnDamping: CGFloat = 0.9
+        static let returnDamping: CGFloat = 1
+        static let handOverDuration: TimeInterval = 0.18
         static let stagger: TimeInterval = 0.035
         static let dimmedAlpha: CGFloat = 0.4
     }
@@ -170,6 +171,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             return
         }
 
+        // Every chip has to land before the handover: they land in reverse order, so no single one marks the end.
+        let landings = DispatchGroup()
         for (index, chip) in chips.enumerated() {
             let isToColumn = index < targetFrames.count
             let landing = isToColumn ? transform(from: targetFrames[index], to: chip, in: host) : tuckedTransform
@@ -177,13 +180,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
                 chip.transform = landing
                 chip.alpha = isToColumn ? 1 : 0
             }
-            let landed: (Bool) -> Void = { [weak self] _ in
-                guard index == chips.count - 1 else { return }
-                if let self, !self.isShown {
-                    self.removeFromSuperview()
-                }
-                completion?()
-            }
+            landings.enter()
+            let landed: (Bool) -> Void = { _ in landings.leave() }
             // Last chip out is first back, so the stack unwinds the way it built.
             let delay = Double(chips.count - 1 - index) * Constants.stagger
             if isToColumn {
@@ -201,6 +199,25 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
                                animations: changes,
                                completion: landed)
             }
+        }
+        landings.notify(queue: .main) { [weak self] in
+            self?.handOver(completion: completion)
+        }
+    }
+
+    /// The glass chips cross-fade into the column's own, which the caller fades in from `completion`.
+    private func handOver(completion: (() -> Void)?) {
+        guard !isShown else {
+            completion?()
+            return
+        }
+        completion?()
+        UIView.animate(withDuration: Constants.handOverDuration, delay: 0, options: [.curveEaseOut]) {
+            self.alpha = 0
+        } completion: { [weak self] _ in
+            guard let self, !isShown else { return }
+            removeFromSuperview()
+            alpha = 1
         }
     }
 
@@ -222,7 +239,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         let size = chip.bounds.size
         let target = CGRect(x: center.x - size.width / 2, y: center.y - size.height / 2, width: size.width, height: size.height)
         guard target.width > 0, target.height > 0 else { return tuckedTransform }
-        let scale = source.height / target.height
+        // By width, so the larger glass text lines up with its twin's as it lands.
+        let scale = source.width / target.width
         return CGAffineTransform(translationX: source.midX - target.midX, y: source.midY - target.midY)
             .scaledBy(x: scale, y: scale)
     }

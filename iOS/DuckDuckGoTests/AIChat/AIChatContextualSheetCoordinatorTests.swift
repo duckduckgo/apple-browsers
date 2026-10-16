@@ -170,8 +170,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     /// Takes the sheet in as a child without loading its view, the way the iPad sidebar adopts it.
     private final class RecordingSidebarHost: UIViewController, AIChatContextualSidebarHosting {
         var canPresentContextualSidebar = true
+        /// Off, modal presentations are only counted. On, they really happen, which needs the host in a window.
+        var presentsModally = false
         var sidebarPresentations: [UIViewController] = []
         var sidebarDismissals: [UIViewController] = []
+        var sidebarDetachments: [UIViewController] = []
         var modalPresentationCount = 0
 
         func presentContextualSidebar(_ viewController: UIViewController) {
@@ -187,9 +190,19 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             completion?()
         }
 
+        func detachContextualSidebar(_ viewController: UIViewController, animated: Bool) {
+            sidebarDetachments.append(viewController)
+            viewController.willMove(toParent: nil)
+            viewController.removeFromParent()
+        }
+
         override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
             modalPresentationCount += 1
-            completion?()
+            guard presentsModally else {
+                completion?()
+                return
+            }
+            super.present(viewControllerToPresent, animated: false, completion: completion)
         }
     }
 
@@ -1338,6 +1351,126 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.modalPresentationCount, 1)
         XCTAssertTrue(sut.sheetViewController === sheet)
         XCTAssertEqual(sut.sheetViewController?.surfaceStyle, .sheet)
+    }
+
+    // MARK: - Window Resize Tests
+
+    @MainActor
+    func testWhenWindowShrinksPastTheSidebarThenTheChatLeavesItWithoutClosing() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        host.canPresentContextualSidebar = false
+
+        sut.parkSurfaceForResize(animated: true)
+
+        XCTAssertTrue(host.sidebarDetachments.first === sheet)
+        XCTAssertTrue(sut.hasParkedSurface)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
+    }
+
+    @MainActor
+    func testWhenParkedChatHasNoRoomForTheSidebarThenItCarriesOnAsASheet() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.adaptSurface(toPresenter: host)
+
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertEqual(sheet?.surfaceStyle, .sheet)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenAConversationMovesFromTheSidebarToASheetThenItKeepsItsFullHeight() async throws {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host, restoreURL: savedChatURL)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.adaptSurface(toPresenter: host)
+
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        XCTAssertEqual(sheet.sheetPresentationController?.selectedDetentIdentifier, .large)
+    }
+
+    @MainActor
+    func testWhenAChatYetToStartMovesFromTheSidebarToASheetThenItOpensAtHalfHeight() async throws {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.adaptSurface(toPresenter: host)
+
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        XCTAssertEqual(sheet.sheetPresentationController?.selectedDetentIdentifier, .medium)
+    }
+
+    @MainActor
+    func testWhenParkedChatIsDismissedThenItClosesAsIfItHadLeftTheScreen() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+        var didComplete = false
+
+        sut.dismissSheet { didComplete = true }
+
+        XCTAssertTrue(didComplete)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 1)
+    }
+
+    @MainActor
+    func testWhenChatIsClearedWhileParkedThenNothingIsLeftToPlace() async {
+        let host = RecordingSidebarHost()
+        await sut.presentSheet(from: host)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.clearActiveChat()
+        sut.adaptSurface(toPresenter: host)
+
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+    }
+
+    @MainActor
+    func testWhenWindowGrowsRoomForTheSidebarThenTheSheetMovesIntoIt() async throws {
+        let host = RecordingSidebarHost()
+        host.presentsModally = true
+        host.canPresentContextualSidebar = false
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1180, height: 820))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presented = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            sheet.presentingViewController != nil && !sheet.isBeingPresented
+        }, object: nil)
+        await fulfillment(of: [presented], timeout: 5)
+        host.canPresentContextualSidebar = true
+
+        sut.adaptSurface(toPresenter: host)
+
+        let movedIntoSidebar = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            host.sidebarPresentations.contains { $0 === sheet }
+        }, object: nil)
+        await fulfillment(of: [movedIntoSidebar], timeout: 5)
+        XCTAssertNil(sheet.presentingViewController)
+        XCTAssertEqual(sheet.surfaceStyle, .sidebar)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
     }
 
     // MARK: - originatingURLPublisher Tests

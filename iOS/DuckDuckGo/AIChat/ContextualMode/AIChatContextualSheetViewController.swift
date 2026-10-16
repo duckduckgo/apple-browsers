@@ -538,10 +538,23 @@ final class AIChatContextualSheetViewController: UIViewController {
         Logger.aiChat.debug("[SheetVC] Web VC created with URL: \(webVC.initialURL?.shortDescription ?? "nil")")
     }
 
+    /// Set while a window resize moves the surface between the sheet and the sidebar. The chat carries on, so leaving
+    /// one presentation and arriving in the other neither closes nor opens it.
+    private(set) var isChangingSurface = false
+
+    func beginSurfaceChange() {
+        isChangingSurface = true
+    }
+
+    func endSurfaceChange() {
+        isChangingSurface = false
+    }
+
     /// A sheet appears and disappears once per presentation. The sidebar's view can also leave the window under a
     /// full-screen modal and come back, which neither opens nor closes it.
     private var isOpeningOrClosing: Bool {
-        surfaceStyle == .sheet || isMovingToParent || isMovingFromParent
+        guard !isChangingSurface else { return false }
+        return surfaceStyle == .sheet || isMovingToParent || isMovingFromParent
     }
 
     /// Dismissed as a sheet, or taken out of the sidebar.
@@ -551,6 +564,8 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // The scrim belongs to the sheet presentation, so a sheet arriving from the sidebar brings one too.
+        showDimmingView(animated: animated)
         guard isOpeningOrClosing else { return }
 
         // Reclaims the input if another surface borrowed it while this sheet was away.
@@ -570,11 +585,12 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
-        showDimmingView(animated: animated)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        // A sheet handing its chat to the sidebar leaves at once, but the page brightens gradually as the chat moves.
+        hideDimmingView(animated: animated || isChangingSurface)
         guard isOpeningOrClosing else { return }
         if isClosing {
             prepareForDismissal()
@@ -582,7 +598,17 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.endEditing(true)
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
-        hideDimmingView(animated: animated)
+    }
+
+    /// Closes a surface that a resize took off screen and that was dismissed before it came back, as if it had left.
+    func closeWhileOffScreen() {
+        isChangingSurface = false
+        prepareForDismissal()
+        removeKeyboardObserver()
+        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
+        areSuggestionsVisible = false
+        persistentUTIHost?.endEditMode()
+        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -620,10 +646,11 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Sheet Configuration
 
     /// Applied per presentation only: UIKit re-runs appearance on a drag, which would overwrite it.
-    func prepareForPresentation() {
+    /// - Parameter expanded: Opens full height, as a sheet is once a chat gets going.
+    func prepareForPresentation(expanded: Bool = false) {
         setSurfaceStyle(.sheet)
         configureSheetPresentation()
-        sheetPresentationController?.selectedDetentIdentifier = opensOntoSubmittedChat ? .large : .medium
+        sheetPresentationController?.selectedDetentIdentifier = opensOntoSubmittedChat || expanded ? .large : .medium
     }
 
     /// The same surface can be a sheet one time and a sidebar the next, as its window is resized.

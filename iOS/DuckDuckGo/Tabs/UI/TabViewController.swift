@@ -2612,8 +2612,8 @@ class TabViewController: UIViewController {
     private var awaitsInitialAIChatTabAttachmentNavigation = false
     private var aiChatTabAttachmentNavigation: WKNavigation?
 
-    var hasPendingInitialAIChatPromptPreparation: Bool {
-        initialAIChatPromptPreparation != nil
+    var isProtectedFromCacheEviction: Bool {
+        initialAIChatPromptPreparation != nil || initialAIChatTabAttachmentPrompt?.protectsRecipientFromEviction == true
     }
 
     func prepareInitialAIChatPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,

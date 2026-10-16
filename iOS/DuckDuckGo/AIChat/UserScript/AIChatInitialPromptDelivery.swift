@@ -33,13 +33,27 @@ final class AIChatInitialPromptDelivery {
     private var onConsumed: (() -> Void)?
     private let consumptionGate = AIChatFrontendReadinessGate()
     private let consumptionTimeout: TimeInterval
+    private let evictionProtectionDeadline: Date
+    private let now: () -> Date
     private var isCancelled = false
     private var didTimeOut = false
 
-    init(prompt: AIChatNativePrompt, consumptionTimeout: TimeInterval = 5, onConsumed: @escaping () -> Void) {
+    init(prompt: AIChatNativePrompt,
+         consumptionTimeout: TimeInterval = 5,
+         evictionProtectionDuration: TimeInterval = 30,
+         now: @escaping () -> Date = Date.init,
+         onConsumed: @escaping () -> Void) {
         self.prompt = prompt
         self.consumptionTimeout = consumptionTimeout
+        self.evictionProtectionDeadline = now().addingTimeInterval(evictionProtectionDuration)
+        self.now = now
         self.onConsumed = onConsumed
+    }
+
+    /// The prompt lives only in the recipient's controller, so evicting it loses the prompt. The protection
+    /// is bounded so a page that never pulls the prompt doesn't pin its tab in the cache.
+    var protectsRecipientFromEviction: Bool {
+        prompt != nil && now() < evictionProtectionDeadline
     }
 
     func consume() -> AIChatNativePrompt? {

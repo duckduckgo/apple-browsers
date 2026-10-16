@@ -5170,8 +5170,10 @@ class MainViewController: UIViewController {
             let recipient: TabViewController
             if opensNewTab {
                 originatingTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: originatingTab)
-                // A blank background tab is preferred for cache eviction before it can receive the prompt.
-                recipient = self.tabManager.add(url: chatURL, inBackground: true, inheritedAttribution: nil, in: tabsModel)
+                // The prompt goes in before caching, or capacity enforcement could evict the recipient without it.
+                recipient = self.tabManager.add(url: chatURL, inBackground: true, inheritedAttribution: nil, in: tabsModel) {
+                    $0.setInitialAIChatTabAttachmentPrompt(delivery)
+                }
                 recipient.inferredOpenerContext = .external
                 if var state = self.unifiedInputStateStore?.state(for: recipient.tabModel.uid) {
                     state.selectedModelID = selectedModelID
@@ -5189,8 +5191,8 @@ class MainViewController: UIViewController {
             recipient.aiChatContentHandler.setPayload(payload: payload)
             if !opensNewTab {
                 recipient.load(url: chatURL)
+                recipient.setInitialAIChatTabAttachmentPrompt(delivery)
             }
-            recipient.setInitialAIChatTabAttachmentPrompt(delivery)
             if shouldPresent {
                 if opensNewTab {
                     self.selectTab(recipient.tabModel)

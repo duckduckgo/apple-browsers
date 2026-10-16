@@ -75,6 +75,7 @@ protocol PromoCoordinationCooldownResetting: AnyObject {
     func resetModalCooldown()
     func resetRemoteMessageCooldown()
     func resetAppRatingPrompt()
+    func resetPromptExposureState()
 }
 
 /// Coordinates app-launch modal prompts with the shared new-tab remote-message source.
@@ -85,6 +86,7 @@ final class PromoCoordinationService {
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private let promoQueueCooldownPolicy: PromoQueueCooldownPolicying
     private let appRatingPromptCoordinator: AppRatingPromptCoordinating
+    private let promptExposureReporter: PromptExposureReporting
 
     let mode: PromoCoordinationMode
 
@@ -94,7 +96,8 @@ final class PromoCoordinationService {
         mode: PromoCoordinationMode,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
         promoQueueCooldownPolicy: PromoQueueCooldownPolicying,
-        appRatingPromptCoordinator: AppRatingPromptCoordinating
+        appRatingPromptCoordinator: AppRatingPromptCoordinating,
+        promptExposureReporter: PromptExposureReporting
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
@@ -102,6 +105,7 @@ final class PromoCoordinationService {
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.promoQueueCooldownPolicy = promoQueueCooldownPolicy
         self.appRatingPromptCoordinator = appRatingPromptCoordinator
+        self.promptExposureReporter = promptExposureReporter
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
@@ -221,6 +225,7 @@ extension PromoCoordinationService: AppRatingPromptGating {
 
     func didRequestAppRatingPrompt() {
         appRatingPromptCoordinator.didRequestRating()
+        promptExposureReporter.reportPromptShown(.appRatingPrompt)
     }
 }
 
@@ -240,6 +245,10 @@ extension PromoCoordinationService: PromoCoordinationDiagnosticsProviding {
 }
 
 extension PromoCoordinationService: PromoCoordinationCooldownResetting {
+    func resetPromptExposureState() {
+        promptExposureReporter.reset()
+    }
+
     func resetModalCooldown() {
         promoQueueCooldownPolicy.resetModalCooldown()
     }

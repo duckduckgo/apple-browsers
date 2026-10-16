@@ -44,6 +44,40 @@ final class ModalPromptCoordinationManagerTests {
         presenterMock = MockModalPromptPresenter()
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Only confirmed presentations report exposure, with gaps only when coordinated", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func exposureRequiresConfirmedPresentation(coordinated: Bool, completesPresentation: Bool) {
+        let reporter = MockPromptExposureReporter()
+        let provider = MockModalPromptProvider()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(exposureID: .subscriptionWinBackOffer, viewController: UIViewController())
+        let manager = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: reporter
+        )
+        let presenter: ModalPromptPresenter = completesPresentation ? presenterMock : NonCompletingModalPromptPresenter()
+        let arbiter = PromoQueueLeaseArbiter()
+        if coordinated {
+            guard case .acquired(let lease) = arbiter.acquireModalLease() else {
+                Issue.record("Expected an available modal lease")
+                return
+            }
+            manager.presentModalPromptIfNeeded(from: presenter, with: lease)
+        } else {
+            manager.presentModalPromptIfNeeded(from: presenter)
+        }
+        #expect(reporter.shownPrompts.isEmpty)
+        #expect(reporter.finishedPrompts.isEmpty)
+
+        schedulerMock.executeScheduledBlock()
+
+        #expect(reporter.shownPrompts == (completesPresentation ? [.subscriptionWinBackOffer] : []))
+        #expect(reporter.finishedPrompts == (coordinated && completesPresentation ? [.modal] : []))
+    }
+
     // MARK: - Cooldown Period Tests
 
     @Test("Check Modal Is Not Presented When In Cooldown Period")
@@ -55,7 +89,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         #expect(!presenterMock.didCallPresent)
         #expect(!provider.didCallProvideModalPrompt)
@@ -79,7 +114,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         #expect(!presenterMock.didCallPresent)
 
@@ -110,7 +146,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -141,7 +178,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider, thirdProvider, fourthProvider, fifthProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -175,7 +213,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider, thirdProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -202,6 +241,7 @@ final class ModalPromptCoordinationManagerTests {
         viewController.modalTransitionStyle = .coverVertical
         viewController.isModalInPresentation = true
         provider.modalConfigurationToReturn = ModalPromptConfiguration(
+            exposureID: .remoteMessageModal,
             viewController: viewController,
             animated: true
         )
@@ -209,7 +249,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -234,6 +275,7 @@ final class ModalPromptCoordinationManagerTests {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
         provider.modalConfigurationToReturn = ModalPromptConfiguration(
+            exposureID: .remoteMessageModal,
             viewController: UIViewController(),
             animated: animated
         )
@@ -241,7 +283,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -263,7 +306,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -283,7 +327,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -310,7 +355,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
 
@@ -332,7 +378,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         sut.presentModalPromptIfNeeded(from: presenterMock)
         // Held up by the in-flight legacy attempt alone: UIKit has not presented anything yet.
@@ -361,7 +408,8 @@ final class ModalPromptCoordinationManagerTests {
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock,
             rootAttachmentChecker: attachmentChecker,
-            closeCheckScheduling: closeChecks
+            closeCheckScheduling: closeChecks,
+            promptExposureReporter: MockPromptExposureReporter()
         )
     }
 
@@ -467,7 +515,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -487,7 +536,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -507,7 +557,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -531,7 +582,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -553,7 +605,8 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN

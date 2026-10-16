@@ -290,6 +290,13 @@ struct Launching: LaunchingHandling {
         // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let backgroundDateStorage = lastBackgroundDateStorage
+        let promptExposureReporter = PromptExposureReporter(
+            storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+            installDateProvider: { StatisticsUserDefaults().installDate },
+            onboardingCompletedProvider: { daxDialogs.hasSeenOnboarding },
+            lastBackgroundDateProvider: { (try? backgroundDateStorage.lastBackgroundDate) ?? nil }
+        )
         let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -313,7 +320,8 @@ struct Launching: LaunchingHandling {
                 subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
                 subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
-                omniBarFocuser: omniBarFocuser
+                omniBarFocuser: omniBarFocuser,
+                promptExposureReporter: promptExposureReporter
             )
         )
 
@@ -362,7 +370,8 @@ struct Launching: LaunchingHandling {
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
                                               onboardingManager: onboardingManager,
-                                              eventHub: eventHubService.eventHub
+                                              eventHub: eventHubService.eventHub,
+                                              promptExposureReporter: promptExposureReporter
         )
         launchBreadcrumb.mark(.mainCoordinator)
 

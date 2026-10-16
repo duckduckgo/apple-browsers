@@ -768,7 +768,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           keyValueStore: InMemoryThrowingKeyValueStore(),
                                           isAutofillTakeoverEnabled: { isTakeoverEnabled })
@@ -795,7 +794,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           keyValueStore: InMemoryThrowingKeyValueStore())
         _ = try await loadRealContext(identifier: "other", into: manager.controller, permissions: ["storage"])

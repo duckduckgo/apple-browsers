@@ -308,10 +308,48 @@ public extension NewTabPageDataModel {
         /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
         var requiresAiTermsAcceptance: Bool?
         var launcherPromo: OmnibarLauncherPromo?
+        /// Add Screenshot modes in display order (`dragToSelect`, `selectWindowOrDisplay`). Absent hides
+        /// the screenshot UI; choosing a mode sends `omnibar_captureScreenshot`.
+        var screenshotModes: [String]?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - omnibar_captureScreenshot
+
+    struct OmnibarCaptureScreenshotRequest: Codable, Equatable {
+        let mode: String
+    }
+
+    /// `image` when a capture was taken, `error` when it failed; neither means the user cancelled,
+    /// and the page shows nothing.
+    struct OmnibarCaptureScreenshotResponse: Codable, Equatable {
+
+        public struct Image: Codable, Equatable {
+            /// Base64 without a data-URL prefix, at most 1024 px on the long side.
+            public let data: String
+            public let format: String
+            public let kind: String
+
+            public init(data: String, format: String, kind: String) {
+                self.data = data
+                self.format = format
+                self.kind = kind
+            }
+        }
+
+        public let image: Image?
+        public let error: String?
+
+        public init(image: Image? = nil, error: String? = nil) {
+            self.image = image
+            self.error = error
+        }
+
+        public static let cancelled = OmnibarCaptureScreenshotResponse()
+        public static let failed = OmnibarCaptureScreenshotResponse(error: "screenshotFailed")
     }
 
     // MARK: - Attachment privacy

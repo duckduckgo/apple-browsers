@@ -2331,6 +2331,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         pixelReporter.reportReasoningPickerShown()
     }
 
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeInputFocus isFocused: Bool) {
+        boundUserScript?.submitNativeInputFocused(isFocused)
+    }
+
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
         let previousTool = toolsController.selectedTool
         clearSelectedTool()

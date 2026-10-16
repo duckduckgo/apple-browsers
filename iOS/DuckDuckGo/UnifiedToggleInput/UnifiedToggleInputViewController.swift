@@ -46,6 +46,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeInputFocus isFocused: Bool)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didDismissFooter id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility ids: [UTIFooterItem.ID])
@@ -605,6 +606,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidShowReasoningPicker(self)
+    }
+
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, didChangeInputFocus isFocused: Bool) {
+        delegate?.unifiedToggleInputVC(self, didChangeInputFocus: isFocused)
     }
 }
 

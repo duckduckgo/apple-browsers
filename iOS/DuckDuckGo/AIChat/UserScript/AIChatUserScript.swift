@@ -59,9 +59,14 @@ final class AIChatUserScript: NSObject, Subfeature {
         case customizeResponsesAction
         case changeModelAction(modelId: String)
         case openChatProtectionAction
+        case nativeInputFocused(Bool)
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
+        }
+
+        struct NativeInputFocusedParams: Encodable {
+            let focused: Bool
         }
 
         var methodName: String {
@@ -88,6 +93,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitChangeModelAction"
             case .openChatProtectionAction:
                 return "submitOpenChatProtectionAction"
+            case .nativeInputFocused:
+                return "submitNativeInputFocused"
             }
         }
 
@@ -99,6 +106,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return status
             case .changeModelAction(let modelId):
                 return ChangeModelActionParams(modelId: modelId)
+            case .nativeInputFocused(let focused):
+                return NativeInputFocusedParams(focused: focused)
             default:
                 return nil
             }
@@ -576,6 +585,11 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func submitOpenChatProtectionAction() {
         push(.openChatProtectionAction)
+    }
+
+    /// Tells the web content whether the native input (UTI) has keyboard focus.
+    func submitNativeInputFocused(_ focused: Bool) {
+        push(.nativeInputFocused(focused))
     }
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).

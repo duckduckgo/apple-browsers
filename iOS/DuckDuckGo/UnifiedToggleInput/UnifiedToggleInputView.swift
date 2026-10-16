@@ -42,6 +42,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, didChangeInputFocus isFocused: Bool)
 }
 
 // MARK: - Card Position
@@ -1905,17 +1906,25 @@ private extension UnifiedToggleInputView {
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
 
+        setupTextEntryCallbacks()
+        setupConstraints()
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
+    }
+
+    private func setupTextEntryCallbacks() {
         textEntryView.onTextInputActivated = { [weak self] in
             guard let self, !self.isExpanded else { return }
             self.delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
         }
 
+        textEntryView.onTextInputFocusChanged = { [weak self] isFocused in
+            guard let self else { return }
+            self.delegate?.unifiedToggleInputView(self, didChangeInputFocus: isFocused)
+        }
+
         textEntryView.onAIChatShortcutTapped = { [weak self] in
             self?.onAIChatShortcutTapped?()
         }
-
-        setupConstraints()
-        applyFireModeAppearance(isFireTab: handler.isFireTab)
     }
 
     func setupConstraints() {

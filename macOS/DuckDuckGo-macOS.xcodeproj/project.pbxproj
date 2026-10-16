@@ -3484,6 +3484,8 @@
 		B64C853D26944B940048FEBE /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853C26944B940048FEBE /* PermissionStore.swift */; };
 		B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
 		B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
+		DD079D9E5EA4764FAA4AA638 /* NavigationBarOverflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD6E67B763E1B7643A68F32 /* NavigationBarOverflowTests.swift */; };
+		84977BD90B55347CC66EDB62 /* NavigationBarOverflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD6E67B763E1B7643A68F32 /* NavigationBarOverflowTests.swift */; };
 		B65211252B29A42C00B30633 /* BookmarkStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CDA25DDAB32009059CC /* BookmarkStoreMock.swift */; };
 		B65211262B29A42E00B30633 /* BookmarkStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CDA25DDAB32009059CC /* BookmarkStoreMock.swift */; };
 		B65349AA265CF45000DCC645 /* DispatchQueueExtensionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65349A9265CF45000DCC645 /* DispatchQueueExtensionsTests.swift */; };
@@ -6874,6 +6876,7 @@
 		B64C853726944B880048FEBE /* StoredPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredPermission.swift; sourceTree = "<group>"; };
 		B64C853C26944B940048FEBE /* PermissionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStore.swift; sourceTree = "<group>"; };
 		B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarTests.swift; sourceTree = "<group>"; };
+		0BD6E67B763E1B7643A68F32 /* NavigationBarOverflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarOverflowTests.swift; sourceTree = "<group>"; };
 		B65349A9265CF45000DCC645 /* DispatchQueueExtensionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtensionsTests.swift; sourceTree = "<group>"; };
 		B6553691268440D700085A79 /* WKProcessPool+GeolocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WKProcessPool+GeolocationProvider.swift"; sourceTree = "<group>"; };
 		B655369A268442EE00085A79 /* GeolocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeolocationProvider.swift; sourceTree = "<group>"; };
@@ -12760,6 +12763,7 @@
 			isa = PBXGroup;
 			children = (
 				B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */,
+				0BD6E67B763E1B7643A68F32 /* NavigationBarOverflowTests.swift */,
 				204C7ECD68D14598A90DFA93 /* BrowserTabViewControllerContentOverlayDismissalTests.swift */,
 				56A054322C205814007D8FAB /* OnboardingPageTests.swift */,
 				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
@@ -17904,6 +17908,7 @@
 				3706FEA5293F662100E42796 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				845063542DB76FC900A60B56 /* DownloadListCoordinatorTests.swift in Sources */,
 				B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */,
+				84977BD90B55347CC66EDB62 /* NavigationBarOverflowTests.swift in Sources */,
 				84E4A4962E79BDDC00D6A1E7 /* FireMock.swift in Sources */,
 				EEE0E1CD2C32F5690058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFB2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
@@ -17971,6 +17976,7 @@
 				B6F6B0022F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */,
 				845063532DB76FC900A60B56 /* DownloadListCoordinatorTests.swift in Sources */,
 				B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */,
+				DD079D9E5EA4764FAA4AA638 /* NavigationBarOverflowTests.swift in Sources */,
 				84E4A4972E79BDDC00D6A1E7 /* FireMock.swift in Sources */,
 				EEE0E1D12C32F8620058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFA2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,

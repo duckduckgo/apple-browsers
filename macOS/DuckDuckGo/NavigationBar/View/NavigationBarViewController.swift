@@ -1930,8 +1930,23 @@ final class NavigationBarViewController: NSViewController {
     // MARK: - Overflow menu
 
     var pinnedViews: [PinnableView] {
-        let allButtons: [PinnableView] = [.share, .downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
-        return allButtons.filter(pinningManager.isPinned)
+        PinnableView.allCases
+            .filter { pinningManager.isPinned($0) && !navBarButtonViews(for: $0).isEmpty }
+            .sorted { overflowOrder(of: $0) < overflowOrder(of: $1) }
+    }
+
+    /// Position of each pinned view in the overflow logic: the last visible one moves to the overflow menu first,
+    /// and the first one in the overflow menu is restored first.
+    private func overflowOrder(of view: PinnableView) -> Int {
+        switch view {
+        case .feedback: 0
+        case .share: 1
+        case .downloads: 2
+        case .autofill: 3
+        case .bookmarks: 4
+        case .networkProtection: 5
+        case .homeButton: 6
+        }
     }
 
     private var visiblePinnedItems: [PinnableView] {
@@ -1946,20 +1961,33 @@ final class NavigationBarViewController: NSViewController {
 
     private var visiblePinnedViewsRequiredWidth: CGFloat {
         let visiblePinnedViewsWidth = visiblePinnedItems.map(navBarWidth).reduce(0, +)
-        let overflowButtonWidth = overflowButton.isVisible ? overflowButton.bounds.width : 0
+        let overflowButtonWidth = overflowButton.isHidden ? 0 : overflowButton.bounds.width + menuButtons.spacing
         return visiblePinnedViewsWidth + overflowButtonWidth
     }
 
-    /// Width of displayed address bar buttons that add to the minimum width of the address bar (e.g. zoom, permissions)
-    private var addressBarButtonsAddedWidth: CGFloat = 0
-
     private var daxLogoWidth: CGFloat = 0
 
+    private var addressBarMinimumWidth: CGFloat {
+        let logoWidth = daxLogo.isHidden ? 0 : daxLogoWidth
+        let contentMinimumWidth = logoWidth + (addressBarViewController?.minimumWidth ?? 0)
+        return max(addressBarMinWidthConstraint?.constant ?? 0, contentMinimumWidth)
+    }
+
+    /// Width of everything in the button stacks that can't move to the overflow menu (back, forward, reload, options,
+    /// web extension buttons, unpinned buttons that are temporarily shown), including the gaps between them.
+    /// Gaps next to pinned views and the overflow button are counted in `visiblePinnedViewsRequiredWidth`.
+    private var nonOverflowableViewsWidth: CGFloat {
+        let overflowableViews = visiblePinnedItems.flatMap(navBarButtonViews) + [overflowButton]
+        return [navigationButtons, menuButtons].map { stack in
+            let views = stack.arrangedSubviews.filter { !$0.isHidden && !overflowableViews.contains($0) }
+            return views.map(\.bounds.width).reduce(0, +) + stack.spacing * CGFloat(max(views.count - 1, 0))
+        }.reduce(0, +)
+    }
+
     private var overflowThreshold: CGFloat {
-        let availableWidth = view.bounds.width - 24 // account for leading and trailing space
-        let alwaysVisibleButtonsWidth = [goBackButton, goForwardButton, refreshOrStopButton, optionsButton].map(\.bounds.width).reduce(0, +)
-        let addressBarMinWidth = (addressBarMinWidthConstraint?.constant ?? 0) + addressBarButtonsAddedWidth + 24 // account for leading and trailing space
-        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth - daxLogoWidth
+        let horizontalInsets = LayoutConstants.navigationButtonsLeading + LayoutConstants.menuButtonsTrailing
+        let addressBarSideSpacing = 2 * LayoutConstants.addressBarSideSpacing
+        return view.bounds.width - horizontalInsets - addressBarSideSpacing - nonOverflowableViewsWidth - addressBarMinimumWidth
     }
 
     private func setupOverflowMenu() {
@@ -1974,14 +2002,12 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToNavigationBarWidthChanges() {
-        addressBarViewController?.addressBarButtonsViewController?.$buttonsWidth
-            .sink { [weak self] totalWidth in
-                guard let self,
-                      let staticButton = addressBarViewController?.addressBarButtonsViewController?.privacyDashboardButton else { return }
+        guard let addressBarButtonsViewController = addressBarViewController?.addressBarButtonsViewController else { return }
 
-                let optionalButtonsWidth = totalWidth - staticButton.bounds.width
-                addressBarButtonsAddedWidth = optionalButtonsWidth
-                updateNavigationBarForCurrentWidth()
+        addressBarButtonsViewController.$buttonsWidth.removeDuplicates()
+            .merge(with: addressBarButtonsViewController.$trailingButtonsWidth.removeDuplicates())
+            .sink { [weak self] _ in
+                self?.updateNavigationBarForCurrentWidth()
             }
             .store(in: &cancellables)
     }
@@ -2046,7 +2072,11 @@ final class NavigationBarViewController: NSViewController {
 
     /// Returns the width of any navigation bar views related to the provided pinned view
     func navBarWidth(for viewType: PinnableView) -> CGFloat {
-        navBarButtonViews(for: viewType).map(\.bounds.width).reduce(0, +)
+        navBarButtonViews(for: viewType).map { $0.bounds.width + stackSpacing(for: $0) }.reduce(0, +)
+    }
+
+    private func stackSpacing(for view: NSView) -> CGFloat {
+        navigationButtons.arrangedSubviews.contains(view) ? navigationButtons.spacing : menuButtons.spacing
     }
 
     /// Moves the provided pinned view between the nav bar and overflow menu.

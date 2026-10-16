@@ -1811,14 +1811,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Handles `-privacyConfigURL` before starting scheduled refreshes, so they use the override URL.
     private func startConfigurationManager() {
-        let reporter = PrivacyConfigurationOverrideReporter(
+        let handler = PrivacyConfigurationOverrideHandler(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             urlProvider: configurationURLProvider,
             overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
         )
         let configurationManager = configurationManager
         let argument = UserDefaults.standard.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
-        reporter.handle(argument: argument) {
+        handler.handle(argument: argument) {
             try await configurationManager.fetchPrivacyConfiguration(isDebug: true)
         }
         configurationManager.start()

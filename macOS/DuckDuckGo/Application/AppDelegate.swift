@@ -419,7 +419,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator
     private var freemiumDBPScanResultPolling: FreemiumDBPScanResultPolling?
 
-    var configurationStore = ConfigurationStore()
+    var configurationStore: ConfigurationStore = {
+#if DEBUG
+        if AppVersion.runType == .integrationTests, ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION"] == "1" {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMAppConfiguration", isDirectory: true)
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            return ConfigurationStore(defaults: UserDefaultsWrapper<Any>.sharedDefaults, directory: directory)
+        }
+#endif
+        return ConfigurationStore()
+    }()
     var configurationManager: ConfigurationManager
     var configurationURLProvider: CustomConfigurationURLProviding
 
@@ -562,6 +571,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
     private var webExtensionLifecycleCoordinatorStorage: Any?
+#if DEBUG
+    private var integrationWebExtensionManagerFactory: Any?
+#endif
 
     @available(macOS 15.4, *)
     var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
@@ -2288,13 +2300,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if featureFlagger.isFeatureOn(.webExtensions) {
             // Create manager synchronously so it's available during state restoration.
             // Tabs restored before the manager exists won't have webExtensionController attached.
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(
-                keyValueStore: keyValueStore,
-                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-                autoconsentPreferences: cookiePopupProtectionPreferences,
-                darkReaderExcludedDomainsProvider: darkReaderSettings,
-                scriptletConfiguration: makeScriptletConfiguration()
-            )
+            let webExtensionManager = makeWebExtensionManager(darkReaderSettings: darkReaderSettings)
             self.webExtensionManager = webExtensionManager
 
             let coordinator = WebExtensionLifecycleCoordinator(
@@ -2323,13 +2329,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let webExtensionManager = WebExtensionManagerFactory.makeManager(
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            autoconsentPreferences: cookiePopupProtectionPreferences,
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
-            scriptletConfiguration: makeScriptletConfiguration()
-        )
+        let webExtensionManager = makeWebExtensionManager(darkReaderSettings: darkReaderFeatureSettings)
         self.webExtensionManager = webExtensionManager
 
         let coordinator = WebExtensionLifecycleCoordinator(
@@ -2350,6 +2350,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func syncEmbeddedExtensions() async {
         await webExtensionLifecycleCoordinator?.sync().value
     }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeWebExtensionManager(darkReaderSettings: DarkReaderExcludedDomainsProviding?) -> WebExtensionManager {
+#if DEBUG
+        if let factory = integrationWebExtensionManagerFactory as? (@MainActor () -> WebExtensionManager) {
+            return factory()
+        }
+#endif
+        return WebExtensionManagerFactory.makeManager(
+            keyValueStore: keyValueStore,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            autoconsentPreferences: cookiePopupProtectionPreferences,
+            darkReaderExcludedDomainsProvider: darkReaderSettings,
+            scriptletConfiguration: makeScriptletConfiguration()
+        )
+    }
+
+#if DEBUG
+    /// App-hosted integration tests keep the real lifecycle/flag callbacks while isolating extension
+    /// files and outgoing pixels. Unavailable outside the explicitly opted-in Integration Tests host.
+    @available(macOS 15.4, *)
+    @MainActor
+    func configureWebExtensionsForIntegrationTests(factory: (@MainActor () -> WebExtensionManager)?) {
+        precondition(AppVersion.runType == .integrationTests)
+        precondition(ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION"] == "1")
+        webExtensionFeatureFlagHandler = nil
+        webExtensionLifecycleCoordinator?.cancelAll()
+        webExtensionLifecycleCoordinator = nil
+        webExtensionManager?.unloadAllExtensions()
+        webExtensionManager = nil
+        integrationWebExtensionManagerFactory = factory
+        if factory != nil {
+            setupWebExtensions()
+        }
+    }
+#endif
 
     @available(macOS 15.4, *)
     private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {

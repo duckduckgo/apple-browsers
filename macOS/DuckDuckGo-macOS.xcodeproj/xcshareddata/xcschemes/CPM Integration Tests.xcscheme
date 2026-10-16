@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Review-only CPM app integration scheme; excluded from the production PR. -->
+<Scheme LastUpgradeVersion="2710" version="1.7">
+  <BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES">
+    <BuildActionEntries>
+      <BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="YES">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="AA585D7D248FD31100E9A3E2" BuildableName="DuckDuckGo.app" BlueprintName="DuckDuckGo Privacy Browser" ReferencedContainer="container:DuckDuckGo-macOS.xcodeproj"/>
+      </BuildActionEntry>
+      <BuildActionEntry buildForTesting="YES" buildForRunning="NO" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="NO">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="4B1AD89C25FC27E200261379" BuildableName="Integration Tests.xctest" BlueprintName="Integration Tests" ReferencedContainer="container:DuckDuckGo-macOS.xcodeproj"/>
+      </BuildActionEntry>
+    </BuildActionEntries>
+  </BuildAction>
+  <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.PosixSpawn" shouldUseLaunchSchemeArgsEnv="NO" language="en" testTimeoutsEnabled="YES" defaultTestExecutionTimeAllowance="240" maximumTestExecutionTimeAllowance="300">
+    <Testables>
+      <TestableReference skipped="NO" parallelizable="NO" testExecutionOrdering="lexical">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="4B1AD89C25FC27E200261379" BuildableName="Integration Tests.xctest" BlueprintName="Integration Tests" ReferencedContainer="container:DuckDuckGo-macOS.xcodeproj"/>
+        <SelectedTests>
+          <Test Identifier="CPMBackgroundRecoveryIntegrationTests"/>
+        </SelectedTests>
+      </TestableReference>
+    </Testables>
+    <EnvironmentVariables>
+      <EnvironmentVariable key="CPM_APP_INTEGRATION" value="1" isEnabled="YES"/>
+    </EnvironmentVariables>
+  </TestAction>
+  <LaunchAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.PosixSpawn" launchStyle="0" useCustomWorkingDirectory="NO" ignoresPersistentStateOnLaunch="YES" debugDocumentVersioning="YES" debugServiceExtension="internal" allowLocationSimulation="YES">
+    <BuildableProductRunnable runnableDebuggingMode="0">
+      <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="AA585D7D248FD31100E9A3E2" BuildableName="DuckDuckGo.app" BlueprintName="DuckDuckGo Privacy Browser" ReferencedContainer="container:DuckDuckGo-macOS.xcodeproj"/>
+    </BuildableProductRunnable>
+  </LaunchAction>
+  <AnalyzeAction buildConfiguration="Debug"/>
+</Scheme>

@@ -263,7 +263,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
         launchDate = now()
-        self.eventsListener.onBrowsingActivity = { [weak self] in
+        listener.onBrowsingActivity = { [weak self] in
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
                 self?.fireAPICompatibilityGapsIfDue()

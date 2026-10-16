@@ -236,7 +236,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // WebKit crashes if an extension's popup finishes closing after the extension unloads. The popup
         // can belong to the extension's default action or to a tab's own action.
         context.action(for: nil)?.closePopup()
-        for tab in context.openTabs {
+        for case let tab as any WKWebExtensionTab in context.openTabs {
             context.action(for: tab)?.closePopup()
         }
         try controller.unloadCopyingErrors(context)

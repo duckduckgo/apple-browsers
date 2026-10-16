@@ -72,12 +72,18 @@ public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
 
     @MainActor
     func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool)
+
+    @MainActor
+    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool)
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension CPMMessagingHealthMonitoring {
     @MainActor
     func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {}
+
+    @MainActor
+    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {}
 }
 
 /// Internal token tying a completed navigation to its eventual response or timeout.
@@ -106,6 +112,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     public func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {
         backgroundReadinessRecovery?.registerDocument(in: tabIdentifier, webView: webView, isGET: isGET)
+    }
+
+    public func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {
+        backgroundReadinessRecovery?.matchNavigationStarted(in: tabIdentifier, matches: matches)
     }
 
     private enum TimeoutOutcome: Sendable {

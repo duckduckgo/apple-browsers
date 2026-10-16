@@ -188,6 +188,25 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testLaunchTimeoutAlsoExpiresNavigationWaitForSameStartup() async throws {
+        let manager = RecordingWebExtensionManager()
+        manager.shareInitialBackgroundStartup = true
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 1, enabledTypesProvider: { [.embedded] })
+        let launch = sut.loadAndSync()
+        try await XCTUnwrap(sut.initialLoadWaiter)()
+        await launch.value
+        XCTAssertNotNil(release)
+        let released = expectation(description: "Launch already consumed the same startup deadline")
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let navigation = Task { @MainActor in await waiter(); released.fulfill() }
+        await fulfillment(of: [released], timeout: 0.2)
+        release?.resume()
+        await navigation.value
+    }
+
+    @MainActor
     func testNavigationAfterLaunchWaitsForBackgroundWake() async throws {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
@@ -700,7 +719,10 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func reloadInstalledExtensions() async {
         begin(.reload); try? await Task.sleep(for: opDelay); end(.reload)
     }
+    var shareInitialBackgroundStartup = false
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { navigationBackgroundStartup }
     func loadEmbeddedExtensionBackgroundContent() async {
+        if shareInitialBackgroundStartup { await prepareEmbeddedBackgroundForNavigation()?.value; return }
         backgroundContentLoadCallCount += 1
         guard suspendBackgroundContentLoad else { return }
         await withCheckedContinuation { backgroundContentLoadContinuation = $0 }

@@ -281,6 +281,11 @@ public final class WebExtensionLifecycleCoordinator {
     }
 
     private func openInitialLoadGate() {
+        if !isInitialLoadGateOpen, let startup = manager.pendingEmbeddedBackgroundStartup {
+            // The launch deadline already paid for this exact startup. A later navigation must
+            // not start another timeout while the same WebKit callback remains outstanding.
+            backgroundNavigationReadiness = (startup, Task {})
+        }
         isInitialLoadGateOpen = true
         initialLoadTimeoutTask?.cancel()
         initialLoadTimeoutTask = nil

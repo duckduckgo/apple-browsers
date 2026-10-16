@@ -712,6 +712,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { embeddedBackgroundStartup }
+
+    @MainActor
     public func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? {
         guard let context = embeddedBackgroundContextForNavigation, context.webExtension.hasBackgroundContent else { return nil }
         navigationWaitContexts.insert(context.uniqueIdentifier)

@@ -486,6 +486,9 @@ final class SyncDialogController {
                 presentDialog(for: .syncAuthenticationCancelled)
                 pixelFiring?.fire(SyncSettingsPixelKitEvent.authenticationCancelledPromptShown)
             } else {
+                managementDialogModel.currentDialog = nil
+                isFlowAuthenticationDeferred = false
+                isReturningToAnotherDevicePrompt = false
                 coordinationDelegate?.didEndFlow()
             }
             return false

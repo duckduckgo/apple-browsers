@@ -660,6 +660,40 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertFalse(managementDialogModel.isConnectingAnotherDevice)
     }
 
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndCancelledWithPromptLimitReached_clearsPromptAndEndsFlow() async {
+        enableImprovedPairingFlow()
+        mockKeyValueStore.set(2, forKey: "sync.authentication-cancelled-prompt.presented-count")
+        await syncDialogController.syncWithServerPressed()
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    func testSyncWithAnotherDevicePressed_afterDeferredAuthenticationCancelledWithPromptLimitReached_doesNotShowAnotherDevicePrompt() async {
+        enableImprovedPairingFlow()
+        mockKeyValueStore.set(2, forKey: "sync.authentication-cancelled-prompt.presented-count")
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+        var dialogDuringAuthentication: ManagementDialogKind?
+        authenticator.onAuthenticateUser = { [managementDialogModel] in
+            dialogDuringAuthentication = managementDialogModel?.currentDialog
+        }
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertNil(dialogDuringAuthentication)
+        XCTAssertNotEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+    }
+
     func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_showsCode() async throws {
         enableImprovedPairingFlow()
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false

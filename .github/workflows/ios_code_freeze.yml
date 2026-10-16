@@ -7,100 +7,33 @@ defaults:
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "New release version (calculated automatically if not provided)"
+      release_branch:
+        description: "Existing release branch to run the tests against"
         required: false
         type: string
-  schedule:
-    - cron: '0 1 * * 1' # 1AM UTC on Monday
+        default: release/ios/7.242.0
 
 concurrency:
-  group: 'ios-release'
+  group: 'ios-code-freeze-e2e-test'
   cancel-in-progress: false
 
 jobs:
 
-  check_automatic_freeze:
-    name: Check Automatic Code Freeze
+  create_release_branch:
+    name: Create Release Branch
+
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || vars.IOS_AUTOMATIC_CODE_FREEZE == '1'
     defaults:
       run:
         working-directory: .
-    steps:
-      - name: Code freeze is enabled
-        run: echo "Automatic code freeze is enabled or workflow was triggered manually"
-
-  upload_current_metadata:
-    needs: check_automatic_freeze
-    name: Upload Current iOS App Version Metadata
-    uses: ./.github/workflows/ios_upload_version_metadata.yml
-    secrets:
-      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-
-  create_release_branch:
-    needs: check_automatic_freeze
-
-    name: Create Release Branch
-
-    runs-on: [image:osx-tahoe-27, m4pro]
-    timeout-minutes: 10
 
     outputs:
       release_branch_name: ${{ steps.make_release_branch.outputs.release_branch_name }}
-      asana_task_id: ${{ steps.make_release_branch.outputs.asana_task_id }}
-      asana_task_url: ${{ steps.make_release_branch.outputs.asana_task_url }}
-      commit_sha: ${{ steps.make_release_branch.outputs.commit_sha }}
 
     steps:
-
-      - name: Check out the code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Print macOS version
-        run: sw_vers
-
-      - name: Assert main branch
-        run: |
-          if [ "${{ github.ref_name }}" != "main" ]; then
-            echo "👎 Not the main branch"
-            exit 1
-          fi
-
-      - name: Setup Ruby and dependencies
-        uses: ./.github/actions/setup-ruby
-        with:
-          working-directory: iOS
-          cache-key-prefix: ios-ruby
-
-      - name: Make release branch
+      - name: Use existing release branch
         id: make_release_branch
-        env:
-          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          bundle exec fastlane run start_new_release \
-            platform:"ios" \
-            version:"${{ inputs.version }}" \
-            github_handle:"${{ github.actor }}" \
-            target_section_id:"${{ vars.IOS_APP_BOARD_VALIDATION_SECTION_ID }}"
-
-  run_tests:
-    name: Run Tests
-
-    needs: create_release_branch
-    uses: ./.github/workflows/ios_pr_checks.yml
-    with:
-      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      skip-release: true
-    secrets: inherit
+        run: echo "release_branch_name=${{ inputs.release_branch }}" >> "$GITHUB_OUTPUT"
 
   end_to_end_tests:
     name: End-to-End Tests
@@ -118,40 +51,4 @@ jobs:
     uses: ./.github/workflows/ios_sync_end_to_end.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-    secrets: inherit
-
-  prepare_release:
-    name: Prepare Release
-    needs: [ create_release_branch, run_tests ]
-    uses: ./.github/workflows/ios_release.yml
-    with:
-      asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
-      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
-      measure-app-size: true
-    secrets: inherit
-
-  tag_and_merge:
-    name: Tag and Merge Branch
-    needs: [ create_release_branch, prepare_release ]
-    uses: ./.github/workflows/ios_tag_release_update_asana.yml
-    with:
-      asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
-      base-branch: ${{ github.ref_name }}
-      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
-      release-type: internal
-    secrets: inherit
-
-  report_failure:
-    name: Report Failure
-    needs: [ create_release_branch, run_tests, prepare_release, tag_and_merge ]
-    if: always() && (needs.run_tests.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
-    uses: ./.github/workflows/report_failed_release_workflow.yml
-    with:
-      asana-task-id: ${{ needs.create_release_branch.outputs.asana_task_id }}
-      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
-      platform: ios
-      workflow-name: "code freeze"
     secrets: inherit

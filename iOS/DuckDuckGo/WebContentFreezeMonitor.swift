@@ -212,6 +212,7 @@ final class WebContentFreezeMonitor: NSObject {
         let duration = DurationBucket(seconds: date().timeIntervalSince(startDate))
         let leftTab = lastResponsiveDate.map { date().timeIntervalSince($0) > Self.leaveThreshold } ?? false
         lastResponsiveDate = nil
+        guard featureFlagger.isFeatureOn(.tabTerminationTelemetry) else { return }
         pixelFiring?.fire(WebContentHealthPixel.unresponsiveResult(outcome: outcome,
                                                                    duration: duration,
                                                                    attempts: AttemptsBucket(attempts),

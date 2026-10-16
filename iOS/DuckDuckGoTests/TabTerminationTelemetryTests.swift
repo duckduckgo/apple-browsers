@@ -497,6 +497,21 @@ final class TabTerminationTelemetryTests: XCTestCase {
         XCTAssertFalse(monitor.isFrozen)
     }
 
+    func testWhenTelemetryIsDisabledDuringFreezeThenResultIsNotReportedAndStateIsCleared() {
+        let pixelFiring = MockTabTerminationPixelFiring()
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabTerminationTelemetry])
+        let store = MockKeyValueStore()
+        let monitor = makeFreezeMonitor(featureFlagger: featureFlagger, pixelFiring: pixelFiring, store: store)
+
+        monitor.didBecomeUnresponsive(makeContext())
+        featureFlagger.enabledFeatureFlags = []
+        monitor.end(.recovered)
+
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive-2"])
+        XCTAssertFalse(monitor.isFrozen)
+        XCTAssertNil(store.object(forKey: "web-content-freeze.start-date"))
+    }
+
     func testWhenAppExitsInBackgroundDuringFreezeThenNextLaunchReportsItWithDurationUntilBackground() {
         let store = MockKeyValueStore()
         let notificationCenter = NotificationCenter()
@@ -580,12 +595,13 @@ final class TabTerminationTelemetryTests: XCTestCase {
     }
 
     private func makeFreezeMonitor(featureEnabled: Bool = true,
+                                   featureFlagger: MockFeatureFlagger? = nil,
                                    pixelFiring: MockTabTerminationPixelFiring,
                                    store: KeyValueStoring = MockKeyValueStore(),
                                    applicationState: UIApplication.State = .active,
                                    notificationCenter: NotificationCenter = NotificationCenter()) -> WebContentFreezeMonitor {
         WebContentFreezeMonitor(pixelFiring: pixelFiring,
-                                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.tabTerminationTelemetry] : []),
+                                featureFlagger: featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.tabTerminationTelemetry] : []),
                                 record: .init(store: store),
                                 applicationState: { applicationState },
                                 notificationCenter: notificationCenter,

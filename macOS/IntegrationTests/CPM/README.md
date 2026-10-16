@@ -12,7 +12,9 @@ To run the app regressions:
 2. On macOS 15.4 or later, open `DuckDuckGo.xcworkspace` in Xcode.
 3. Select **CPM Integration Tests** and **My Mac**.
 4. Choose **Product → Test** (⌘U). Expect **8 passed, 0 failed, 0 skipped**. The scheme sets the opt-in and test flags automatically; leave the negative-control overrides unset.
-5. Return to the production PR when finished:
+5. Select **CPM Integration Tests - Fixes Disabled** and choose **Product → Test**. Expect exactly **6 failed, 0 passed, 0 skipped**. This scheme selects the six recovery tests and disables their production fix flags automatically; the expected failures are listed below.
+6. Select **CPM Integration Tests** again and choose **Product → Test**. All **8 tests must pass** again.
+7. Return to the production PR when finished:
    ```sh
    git switch --detach origin/alex/cpm-fix-init-loss
    ```
@@ -30,7 +32,18 @@ Run the **CPM Integration Tests** scheme on macOS 15.4 or later. It builds and s
 
 The seven WebKit scenarios use real AppDelegate lifecycle callbacks, windows, tabs, native handlers and system WebKit. The extension ZIP is unchanged. An extracted test copy delays worker startup and records actual `initResp` delivery; it does not fabricate messages or drop callbacks. Temporary extension files, nonpersistent WebKit stores and a loopback HTTP server isolate the fixture. External extension pixel delivery is intercepted; native health events are attached as JSON. Any stopped process is resumed during cleanup. The host must have no existing windows or pinned tabs.
 
-For a negative control, add `CPM_APP_INTEGRATION_DISABLE_P1_P2_FIXES=1` to the test environment. It disables the navigation gate in P1/install/upgrade and the background recovery flag in P2. Also set `CPM_APP_INTEGRATION_DISABLE_LATE_RECOVERY=1` when disabling all fixes. This second variable alone is the negative control for the two over-budget tests. `CPM_APP_INTEGRATION=1` is already set by the scheme and is required for the DEBUG-only app seams. The production flags are explicitly arranged and changed by the tests.
+The **CPM Integration Tests - Fixes Disabled** scheme sets `CPM_APP_INTEGRATION_DISABLE_P1_P2_FIXES=1` and `CPM_APP_INTEGRATION_DISABLE_LATE_RECOVERY=1`. These fixture overrides switch the actual production feature flags, without changing the app binary or remote configuration. No environment editing or manual test selection is needed. The edited-document veto and pixel-adapter tests are omitted from this scheme because disabling recovery should not make them fail.
+
+| Test selected by the disabled-fixes scheme | Production flag disabled | Expected failure |
+|---|---|---|
+| `testInstallDuringSessionInitIsDelivered` | `webExtensions.stateRestorationGate` | First document misses native dashboard/page `initResp` |
+| `testUpgradeDuringSessionInitIsDelivered` | `webExtensions.stateRestorationGate` | First replacement-context document misses its response |
+| `testSlowBackgroundWakeKeepsFirstNavigationHealthy` | `webExtensions.stateRestorationGate` | First navigation records a CPM response timeout |
+| `testBackgroundLoadFailureRecoversOriginalDocument` | `webExtensions.cpmMessagingHangRecovery` | Times out waiting for same-document recovery after real WebKit error 6 |
+| `testOverBudgetInstallRecoversFirstDocumentWithoutExtendingNavigationWait` | `webExtensions.cpmLateBackgroundDocumentRecovery` | Times out waiting for automatic first-document recovery |
+| `testOverBudgetUpgradeRecoversFirstDocumentWithoutExtendingNavigationWait` | `webExtensions.cpmLateBackgroundDocumentRecovery` | Times out waiting for automatic first-document recovery |
+
+Late document recovery is also disabled in the first four controls so that it cannot mask a disabled earlier fix. The two over-budget controls retain the 5-second navigation gate and isolate the late-recovery flag. A crashed host, skipped test or fixture-setup failure is not the expected result.
 
 Four additional methods in `WebExtensionLifecycleCoordinatorTests` validate navigation wake waiting, its timeout with a non-cancellable WebKit callback, cancellation, and the disabled flag. Five additional `WebExtensionManagerTests` check replacement selection during coexistence/removal, diagnostics-disabled background-to-foreground retry, the runtime kill switch, and ignoring a superseded context. The iOS factory supplies `UIApplication` state independently of the diagnostics flag. Run these suites and the existing related diagnostics/monitor checks with:
 

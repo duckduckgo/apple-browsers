@@ -108,6 +108,8 @@ final class SyncDialogController {
     private var cancellables = Set<AnyCancellable>()
     private var syncPromoSource: String?
     private var authenticationCancelledPromptContinuation: (@MainActor () -> Void)?
+    private var isFlowAuthenticationDeferred = false
+    private var isReturningToAnotherDevicePrompt = false
     private var pairingV2PeerKind: PairingV2DeviceKind?
     private var pairingV2ConfirmationRequest: PendingPairingConfirmation?
     private var pairingV2ConfirmationWasDismissedByController = false
@@ -484,11 +486,32 @@ final class SyncDialogController {
                 presentDialog(for: .syncAuthenticationCancelled)
                 pixelFiring?.fire(SyncSettingsPixelKitEvent.authenticationCancelledPromptShown)
             } else {
+                managementDialogModel.currentDialog = nil
+                isFlowAuthenticationDeferred = false
+                isReturningToAnotherDevicePrompt = false
                 coordinationDelegate?.didEndFlow()
             }
             return false
         }
         return true
+    }
+
+    private var isImprovedPairingFlowEnabled: Bool {
+        featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) && featureFlagger.isFeatureOn(.syncImprovedPairingFlow)
+    }
+
+    private func authenticateDeferredFlowIfNeeded(continueAfterPromptRetry: @escaping @MainActor () -> Void) async -> Bool {
+        guard isFlowAuthenticationDeferred else { return true }
+        managementDialogModel.isAuthenticating = true
+        defer { managementDialogModel.isAuthenticating = false }
+        let isAuthenticated = await checkAuthenticated(presentDialogOnCancel: true, continueAfterPromptRetry: { [weak self] in
+            self?.isFlowAuthenticationDeferred = false
+            continueAfterPromptRetry()
+        })
+        if isAuthenticated {
+            isFlowAuthenticationDeferred = false
+        }
+        return isAuthenticated
     }
 
     private func incrementAuthenticationCancelledPromptCountIfWithinLimit() -> Int? {
@@ -668,6 +691,10 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func syncAnotherDevicePromptDidAppear() {
+        guard !isReturningToAnotherDevicePrompt else {
+            isReturningToAnotherDevicePrompt = false
+            return
+        }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptShown)
     }
 
@@ -691,8 +718,20 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func syncThisDeviceOnlyFromPrompt() async {
-        guard !managementDialogModel.isConnecting else { return }
+        guard !managementDialogModel.isBusy else { return }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptOptionTapped(option: .thisDeviceOnly))
+        guard await authenticateDeferredFlowIfNeeded(continueAfterPromptRetry: { [weak self] in
+            guard let self else { return }
+            managementDialogModel.isConnectingThisDeviceOnly = true
+            returnToAnotherDevicePrompt()
+            Task { await self.createAccountForThisDeviceOnly() }
+        }) else {
+            return
+        }
+        await createAccountForThisDeviceOnly()
+    }
+
+    private func createAccountForThisDeviceOnly() async {
         managementDialogModel.isConnectingThisDeviceOnly = true
         defer { managementDialogModel.isConnectingThisDeviceOnly = false }
         do {
@@ -707,19 +746,38 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
     }
 
-    func syncWithAnotherDeviceFromPrompt() {
-        guard !managementDialogModel.isConnecting else { return }
+    func syncWithAnotherDeviceFromPrompt() async {
+        guard !managementDialogModel.isBusy else { return }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.anotherDevicePromptOptionTapped(option: .syncAnotherDevice))
-        managementDialogModel.isConnectingAnotherDevice = true
-        if syncService.account != nil {
-            startExchangeOrRecovery()
-        } else {
-            startPollingForRecoveryKey(isRecovery: false)
+        guard await authenticateDeferredFlowIfNeeded(continueAfterPromptRetry: { [weak self] in
+            guard let self else { return }
+            managementDialogModel.isConnectingAnotherDevice = true
+            returnToAnotherDevicePrompt()
+            startSyncWithAnotherDeviceFromPrompt()
+        }) else {
+            return
         }
+        startSyncWithAnotherDeviceFromPrompt()
     }
 
-    func enterRecoveryCodePressed() {
+    private func returnToAnotherDevicePrompt() {
+        isReturningToAnotherDevicePrompt = true
+        presentDialog(for: .syncAnotherDevicePrompt)
+    }
+
+    private func startSyncWithAnotherDeviceFromPrompt() {
+        managementDialogModel.isConnectingAnotherDevice = true
+        continueSyncWithAnotherDevice()
+    }
+
+    func enterRecoveryCodePressed() async {
+        guard !managementDialogModel.isAuthenticating else { return }
         pixelFiring?.fire(SyncSettingsPixelKitEvent.recoveryConfirmedTapped)
+        guard await authenticateDeferredFlowIfNeeded(continueAfterPromptRetry: { [weak self] in
+            self?.startPollingForRecoveryKey(isRecovery: true)
+        }) else {
+            return
+        }
         startPollingForRecoveryKey(isRecovery: true)
     }
 
@@ -797,6 +855,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
 
     func didEndFlow() {
         cancelHostDeviceWait()
+        isFlowAuthenticationDeferred = false
+        isReturningToAnotherDevicePrompt = false
         pendingSyncSuccessDialog = nil
         managementDialogModel.isPreparingToSyncAnimationPaused = false
         let controller = self.connectionController
@@ -855,6 +915,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
             syncPromoSource = source.rawValue
         }
 
+        isFlowAuthenticationDeferred = false
         guard await checkAuthenticated(presentDialogOnCancel: featureFlagger.isFeatureOn(.simplifiedSyncSetupV2),
                                        continueAfterPromptRetry: { [weak self] in self?.continueSyncWithAnotherDevice() }) else {
             return
@@ -875,6 +936,13 @@ extension SyncDialogController: SyncSettingsViewHandling {
     func syncWithServerPressed() async {
         pixelFiring?.fire(SyncSettingsPixelKitEvent.backUpThisDeviceTapped)
         let isSimplifiedSetupV2 = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
+        let isImprovedPairingFlowEnabled = self.isImprovedPairingFlowEnabled
+        managementDialogModel.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
+        isFlowAuthenticationDeferred = isImprovedPairingFlowEnabled
+        guard !isFlowAuthenticationDeferred else {
+            continueSyncWithServer(isSimplifiedSetupV2: isSimplifiedSetupV2)
+            return
+        }
         guard await checkAuthenticated(presentDialogOnCancel: isSimplifiedSetupV2,
                                        continueAfterPromptRetry: { [weak self] in
                                            self?.continueSyncWithServer(isSimplifiedSetupV2: isSimplifiedSetupV2)
@@ -896,6 +964,13 @@ extension SyncDialogController: SyncSettingsViewHandling {
     @MainActor
     func recoverDataPressed() async {
         pixelFiring?.fire(SyncSettingsPixelKitEvent.recoverSyncedDataTapped)
+        let isImprovedPairingFlowEnabled = self.isImprovedPairingFlowEnabled
+        managementDialogModel.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
+        isFlowAuthenticationDeferred = isImprovedPairingFlowEnabled
+        guard !isFlowAuthenticationDeferred else {
+            presentDialog(for: .recoverSyncedData)
+            return
+        }
         guard await checkAuthenticated() else {
             return
         }

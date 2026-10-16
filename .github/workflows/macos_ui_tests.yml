@@ -40,6 +40,11 @@ on:
         description: "Branch name"
         required: false
         type: string
+      use-prebuilt-app:
+        description: "Use the review app built earlier in the calling workflow run instead of building one"
+        required: false
+        type: boolean
+        default: false
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
@@ -87,7 +92,7 @@ jobs:
     name: Build Notarized Review app (${{ inputs.build-type }})
 
     needs: should-run-checks
-    if: needs.should-run-checks.outputs.should_run == 'true'
+    if: needs.should-run-checks.outputs.should_run == 'true' && !inputs.use-prebuilt-app
 
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
@@ -267,7 +272,7 @@ jobs:
   ui-tests-production:
     name: UI Tests
     needs: [create-notarized-app, setup-tests]
-    if: needs.setup-tests.outputs.run-production == 'true'
+    if: ${{ !cancelled() && contains(fromJSON('["success", "skipped"]'), needs.create-notarized-app.result) && needs.setup-tests.result == 'success' && needs.setup-tests.outputs.run-production == 'true' }}
     strategy:
       fail-fast: false
       # The matrix multiplies the runner configurations by the test classes. Keep the
@@ -292,7 +297,7 @@ jobs:
   ui-tests-internal:
     name: UI Tests
     needs: [create-notarized-app, setup-tests]
-    if: needs.setup-tests.outputs.run-internal == 'true'
+    if: ${{ !cancelled() && contains(fromJSON('["success", "skipped"]'), needs.create-notarized-app.result) && needs.setup-tests.result == 'success' && needs.setup-tests.outputs.run-internal == 'true' }}
     strategy:
       fail-fast: false
       # See the note on ui-tests-production for why the configurations are a matrix key, and not an

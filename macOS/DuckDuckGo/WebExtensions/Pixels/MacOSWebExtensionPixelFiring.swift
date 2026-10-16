@@ -174,7 +174,7 @@ enum WebExtensionPixel: PixelKit.Event {
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
         case .debugCPM(let metadata):
-            return metadata.name
+            return metadata.name == "web_extension_cpm_episode" ? metadata.name : metadata.name + "_macos"
         }
     }
 
@@ -273,6 +273,7 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(macOS 15.4, *)
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
+    var pixelFiring: PixelKitFiring? = PixelKit.shared
 
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
@@ -328,7 +329,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmMessagingEpisode:
+        case .cpmMessagingEpisode, .cpmRecovery:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         }
@@ -339,7 +340,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         } else {
             frequency = .dailyAndStandard
         }
-        PixelKit.fire(pixel, frequency: frequency)
+        pixelFiring?.fire(pixel, frequency: frequency)
     }
 }
 

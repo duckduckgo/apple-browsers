@@ -166,6 +166,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var isCPMMessagingRecoveryInProgress = false
     private var lastBackgroundLoadRecoveryAt: Date?
     private var backgroundLoadErrorObserver: NSObjectProtocol?
+    private var backgroundStartupFix: [String: CPMRecoveryFix] = [:]
+    private var navigationWaitContexts: Set<String> = []
+    @MainActor
+    private var backgroundRecovery: CPMBackgroundReadinessRecovery? {
+        (cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery
+    }
+    private var recoveryInstrumentation: CPMRecoveryInstrumentation {
+        WebExtensionCPMRecoveryInstrumentation(pixels: pixelFiring)
+    }
 
     // MARK: - AsyncStream
 
@@ -197,6 +206,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
+                isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -232,6 +242,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery = CPMBackgroundReadinessRecovery(
+            isEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
+            isApplicationInBackground: isApplicationInBackground,
+            instrumentation: WebExtensionCPMRecoveryInstrumentation(pixels: pixelFiring)
+        )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.isApplicationInBackground = isApplicationInBackground
@@ -673,6 +688,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     func trackEmbeddedBackgroundStartup(identifier: String) {
         guard let context = context(for: identifier), context.webExtension.hasBackgroundContent else { return }
+        backgroundRecovery?.invalidate()
+        backgroundStartupFix[identifier] = installationStore.installedExtensions.contains {
+            $0.embeddedType == .embedded && $0.uniqueIdentifier != identifier
+        } ? .upgradeReadiness : .installReadiness
         preferredEmbeddedBackgroundContext = context
         Task { @MainActor [weak self] in
             await self?.loadEmbeddedExtensionBackgroundContent(in: context)
@@ -698,6 +717,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter? {
         guard let context = embeddedBackgroundContextForNavigation, context.webExtension.hasBackgroundContent else { return nil }
         return { [weak self] in
+            self?.navigationWaitContexts.insert(context.uniqueIdentifier)
             await self?.loadEmbeddedExtensionBackgroundContent(in: context)
         }
     }
@@ -723,15 +743,25 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         embeddedBackgroundStartupContext = context
         embeddedBackgroundStartupCompletion = continuation
         let started = Date()
+        let startupID = UUID()
+        backgroundRecovery?.backgroundStarted(startupID)
         let identifier = context.uniqueIdentifier
+        let fix = backgroundStartupFix.removeValue(forKey: identifier) ?? .backgroundWake
         Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")
-        context.loadBackgroundContent { error in
+        context.loadBackgroundContent { [weak self, weak context] error in
             let elapsed = Date().timeIntervalSince(started)
             if elapsed >= 1 {
                 Logger.webExtensions.info("[CPM Background] Background callback for \(identifier, privacy: .public) after \(elapsed, privacy: .public)s")
             }
             if let error {
                 Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
+            }
+            if let self, let context, self.embeddedBackgroundContextForNavigation === context {
+                self.backgroundRecovery?.backgroundCompleted(startupID, succeeded: error == nil)
+                let didWaitForNavigation = self.navigationWaitContexts.remove(identifier) != nil
+                if error == nil, (elapsed >= 1 && didWaitForNavigation) || fix == .backgroundLoadRetry {
+                    self.recoveryInstrumentation.record(fix, outcome: .backgroundReady)
+                }
             }
             continuation.finish()
         }
@@ -761,6 +791,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // The existing confirmed-hang recovery remains the fallback if messaging stays stuck.
         Task { @MainActor [weak self] in
             guard let self, self.isCPMMessagingHangRecoveryEnabled(), !self.isApplicationInBackground() else { return }
+            self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
         }
         return true

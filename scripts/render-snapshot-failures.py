@@ -4,6 +4,8 @@ a single self-contained HTML page showing the reference, failure and
 difference images side by side. Writes nothing when there are no snapshot
 failures; otherwise appends `report=<path>` to $GITHUB_OUTPUT when it is set.
 """
+from __future__ import annotations
+
 import argparse
 import base64
 import html
@@ -71,9 +73,15 @@ def _collect(xcresult: str) -> list[dict]:
         if not manifest_path.is_file():
             return []
         manifest = json.loads(manifest_path.read_text())
+        failed_tests = _failed_tests(xcresult)
 
         tests: list[dict] = []
         for entry in manifest:
+            test_key = entry.get("testIdentifierURL") or entry["testIdentifier"]
+            if failed_tests is not None and test_key not in failed_tests:
+                if _has_snapshot_images(entry.get("attachments", [])):
+                    print(f"Skipping {entry['testIdentifier']}: its final result is not Failed.")
+                continue
             snapshots = _group_snapshots(entry.get("attachments", []), Path(export_dir))
             if not snapshots:
                 continue
@@ -83,6 +91,41 @@ def _collect(xcresult: str) -> list[dict]:
                     snapshot.update(detail)
             tests.append({"test_identifier": entry["testIdentifier"], "snapshots": snapshots})
         return tests
+
+
+def _failed_tests(xcresult: str) -> set[str] | None:
+    result = subprocess.run(
+        ["xcrun", "xcresulttool", "get", "test-results", "tests",
+         "--path", xcresult, "--format", "json"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print(
+            f"Could not read test results from {xcresult} (exit {result.returncode}); "
+            "reporting snapshots from every test, including ones that passed on retry.",
+            file=sys.stderr,
+        )
+        if result.stderr:
+            print(result.stderr.rstrip(), file=sys.stderr)
+        return None
+
+    failed: set[str] = set()
+    for node in _test_cases(json.loads(result.stdout).get("testNodes", [])):
+        if node.get("result") == "Failed":
+            failed.update(filter(None, (node.get("nodeIdentifierURL"), node.get("nodeIdentifier"))))
+    return failed
+
+
+def _test_cases(nodes: list[dict]):
+    for node in nodes:
+        if node.get("nodeType") == "Test Case":
+            yield node
+        else:
+            yield from _test_cases(node.get("children", []))
+
+
+def _has_snapshot_images(attachments: list[dict]) -> bool:
+    return any(_IMAGE_NAME.match(a.get("suggestedHumanReadableName", "")) for a in attachments)
 
 
 def _group_snapshots(attachments: list[dict], export_dir: Path) -> list[dict]:

@@ -21,8 +21,8 @@ import Foundation
 import os.log
 import Persistence
 
-/// A `chrome.privacy.services` setting an extension can take control of. Turning one off is how a
-/// password manager extension, such as Bitwarden, becomes the browser's password manager.
+/// A `chrome.privacy.services` setting an extension can take control of. Turning `passwordSavingEnabled`
+/// off is how a password manager extension, such as Bitwarden, becomes the browser's password manager.
 public enum WebExtensionPrivacySetting: String, CaseIterable, Codable {
     case passwordSavingEnabled
     case autofillAddressEnabled
@@ -77,7 +77,8 @@ public final class WebExtensionPrivacySettingsStore {
         controller(of: setting)?.identifier
     }
 
-    /// The installation that turned `setting` off, which DuckDuckGo then leaves to it, if any.
+    /// The installation that turned `setting` off, if any. For `passwordSavingEnabled`, it's the password
+    /// manager extension DuckDuckGo leaves autofill to.
     public func identifierTurningOff(_ setting: WebExtensionPrivacySetting) -> String? {
         guard let controller = controller(of: setting), !controller.override.value else { return nil }
         return controller.identifier

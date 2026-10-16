@@ -32,39 +32,29 @@ protocol AutofillPreferencesPersistor {
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
     var showInMenuBar: Bool { get set }
-    /// The kinds of autofill data an extension has taken over, so DuckDuckGo leaves them alone.
+    /// Whether a password manager extension has taken autofill over, so DuckDuckGo leaves all of it alone.
     /// Only `WebExtensionAutofillTakeover` writes it.
-    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> { get set }
+    var isManagedByExtension: Bool { get set }
 }
 
 extension AutofillPreferencesPersistor {
 
     /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
-    /// no extension has taken passwords over.
+    /// no extension has taken autofill over.
     var isUsernamesAndPasswordsAutofillActive: Bool {
-        isAutofillActive(for: .passwords)
+        askToSaveUsernamesAndPasswords && !isManagedByExtension
     }
 
     /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
-    /// has taken addresses over.
+    /// has taken autofill over.
     var isAddressesAutofillActive: Bool {
-        isAutofillActive(for: .addresses)
+        askToSaveAddresses && !isManagedByExtension
     }
 
     /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
-    /// extension has taken cards over.
+    /// extension has taken autofill over.
     var isPaymentMethodsAutofillActive: Bool {
-        isAutofillActive(for: .cards)
-    }
-
-    func isAutofillActive(for kind: ExtensionManagedAutofillKind) -> Bool {
-        let isWanted: Bool
-        switch kind {
-        case .passwords: isWanted = askToSaveUsernamesAndPasswords
-        case .addresses: isWanted = askToSaveAddresses
-        case .cards: isWanted = askToSavePaymentMethods
-        }
-        return isWanted && !kindsManagedByExtension.contains(kind)
+        askToSavePaymentMethods && !isManagedByExtension
     }
 }
 
@@ -123,7 +113,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 
     enum Key: String {
         case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
-        case kindsManagedByExtension = "preferences.autofill.kinds-managed-by-extension"
+        case isManagedByExtension = "preferences.autofill.managed-by-extension"
     }
 
     public var isAutoLockEnabled: Bool {
@@ -180,13 +170,12 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
         }
     }
 
-    var kindsManagedByExtension: Set<ExtensionManagedAutofillKind> {
+    var isManagedByExtension: Bool {
         get {
-            let rawValues = (try? keyValueStore.object(forKey: Key.kindsManagedByExtension.rawValue) as? [String]) ?? []
-            return Set(rawValues.compactMap(ExtensionManagedAutofillKind.init(rawValue:)))
+            (try? keyValueStore.object(forKey: Key.isManagedByExtension.rawValue) as? Bool) ?? false
         }
         set {
-            try? keyValueStore.set(newValue.map(\.rawValue).sorted(), forKey: Key.kindsManagedByExtension.rawValue)
+            try? keyValueStore.set(newValue, forKey: Key.isManagedByExtension.rawValue)
         }
     }
 

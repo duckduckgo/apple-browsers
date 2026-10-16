@@ -135,35 +135,30 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // Default values here are those that will result in a `true` value for credentialsImport. Override to test `false` case.
-    func testWhenDuckDuckGoDoesNotAutofillPasswords_ThenTheMenuDoesNotOpenOnLoginFields() {
-        importState.isAutofillEnabled = false
+    func testWhenAnExtensionManagesAutofill_ThenTheMenuDoesNotOpenOnAnyField() {
+        importState.isAutofillManagedByExtension = true
 
-        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\"}", for: "fill.dev"))
-        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.password.current\",\"credentialsImport\":true}",
-                                                                       for: "fill.dev"))
-        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.emailAddress\"}", for: "fill.dev"))
-        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"creditCards.cardNumber\"}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.emailAddress\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"creditCards.cardNumber\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("", for: "fill.dev"))
     }
 
-    func testWhenDuckDuckGoAutofillsPasswords_ThenTheMenuOpensOnLoginFields() {
-        importState.isAutofillEnabled = true
-
-        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\"}", for: "fill.dev"))
-    }
-
-    func testWhenAnExtensionManagesPasswords_ThenAutofillCountsAsDisabledForTheImportPromo() {
+    func testWhenAnExtensionManagesAutofill_ThenAutofillCountsAsDisabledForTheImportPromo() {
         let preferences = AutofillPreferencesPersistorMock()
         let state = AutofillLoginImportState(userDefaults: UserDefaults(suiteName: #function)!,
                                              featureFlagger: MockFeatureFlagger(),
                                              autofillPreferences: preferences)
         XCTAssertTrue(state.isAutofillEnabled)
+        XCTAssertFalse(state.isAutofillManagedByExtension)
 
-        preferences.kindsManagedByExtension = [.passwords]
+        preferences.isManagedByExtension = true
 
         XCTAssertFalse(state.isAutofillEnabled)
+        XCTAssertTrue(state.isAutofillManagedByExtension)
     }
 
+    // Default values here are those that will result in a `true` value for credentialsImport. Override to test `false` case.
     private func autofillUserScriptShouldShowPasswordImportDialogResult(credentials: [SecureVaultModels.WebsiteCredentials] = [],
                                                                         credentialsProvider: SecureVaultModels.CredentialsProvider = SecureVaultModels.CredentialsProvider(name: .duckduckgo, locked: false),
                                                                         totalCredentialsCount: Int = 49,
@@ -205,6 +200,8 @@ final class MockAutofillLoginImportState: AutofillLoginImportStateStoring, Autof
     var hasImportedLogins = false
 
     var isAutofillEnabled = false
+
+    var isAutofillManagedByExtension = false
 
     var stubHasNeverPromptWebsitesForDomain = false
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool {

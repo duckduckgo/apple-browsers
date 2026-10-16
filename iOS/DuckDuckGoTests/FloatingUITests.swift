@@ -1217,6 +1217,68 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
                        UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
     }
 
+    func testWhenFireModeStackConstraintsAreLostThenFieldInsetsAreRestored() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.isUsingSmallTopSpacing = true
+        barView.refreshFireMode(fireMode: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let stackView = try XCTUnwrap(firstSubview(of: DefaultOmniBarView.TopLevelStackView.self, in: barView))
+        NSLayoutConstraint.deactivate(stackView.constraints.filter { $0.identifier?.hasPrefix("UISV-") == true })
+        let host = UIView(frame: window.bounds)
+        window.addSubview(host)
+        host.addSubview(barView)
+        barView.frame.size.width = 430
+        barView.setNeedsLayout()
+        barView.layoutIfNeeded()
+
+        let fieldFrame = searchContainer.convert(searchContainer.bounds, to: barView)
+        XCTAssertEqual(fieldFrame.minX, 16, accuracy: 0.01)
+        XCTAssertEqual(barView.bounds.maxX - fieldFrame.maxX, 16, accuracy: 0.01)
+    }
+
+    func testWhenFireModeFieldReturnsFromLandscapeThenPortraitGeometryIsRestored() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.isUsingSmallTopSpacing = true
+        barView.refreshFireMode(fireMode: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let portraitFrame = searchContainer.frame
+        let portraitCornerRadius = searchContainer.layer.cornerRadius
+
+        barView.isExpandedPhoneLayout = true
+        barView.setFloatingMinimalChromeBar(true)
+        barView.setLayoutMode(.expandedPhone)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isExpandedPhoneLayout = false
+        barView.setFloatingMinimalChromeBar(false)
+        barView.setLayoutMode(.compact)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.restoreFloatingFieldAppearance()
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(searchContainer.frame, portraitFrame)
+        XCTAssertEqual(searchContainer.layer.cornerRadius, portraitCornerRadius)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+        XCTAssertEqual(barView.fieldContainerLayoutGuide.layoutFrame, contentHost.bounds)
+        let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: barView))
+        XCTAssertEqual(searchView.center.y, contentHost.bounds.midY, accuracy: 0.01)
+    }
+
     func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)

@@ -76,6 +76,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var searchAreaPreferredHeightConstraint: NSLayoutConstraint?
     private var stackViewLeadingConstraint: NSLayoutConstraint?
     private var stackViewTrailingConstraint: NSLayoutConstraint?
+    private var compactSearchAreaAlignmentConstraints: [NSLayoutConstraint] = []
 
     let fieldContainerLayoutGuide = UILayoutGuide()
 
@@ -246,9 +247,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func applyLayoutMode(_ newMode: OmniBarLayoutMode) {
         layoutMode = newMode
+        if newMode != .compact {
+            NSLayoutConstraint.deactivate(compactSearchAreaAlignmentConstraints)
+        }
         let showButtons = newMode != .compact
         leadingButtonsContainer.isHidden = !showButtons
         trailingButtonsContainer.isHidden = !showButtons
+        if newMode == .compact {
+            NSLayoutConstraint.activate(compactSearchAreaAlignmentConstraints)
+        }
         readableSearchAreaWidthConstraint?.isActive = showButtons && newMode == .expandedPad
         largeSizeSpacingConstraint?.isActive = showButtons
 
@@ -868,6 +875,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setUpAccessibility()
 
         setUpInitialState()
+        NSLayoutConstraint.activate(compactSearchAreaAlignmentConstraints)
         updateActiveState()
         updateVerticalSpacing()
     }
@@ -1119,7 +1127,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
         addSubview(activeOutlineView)
-        addLayoutGuide(fieldContainerLayoutGuide)
+        chromeContentContainerView.addLayoutGuide(fieldContainerLayoutGuide)
     }
 
     private func setUpConstraints() {
@@ -1146,6 +1154,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackViewLeadingConstraint = leadingConstraint
         stackViewTrailingConstraint = trailingConstraint
         if isFloatingUIEnabled {
+            compactSearchAreaAlignmentConstraints = [
+                searchAreaAlignmentView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor),
+                searchAreaAlignmentView.trailingAnchor.constraint(equalTo: stackView.trailingAnchor),
+                searchAreaAlignmentView.topAnchor.constraint(equalTo: stackView.topAnchor),
+                searchAreaAlignmentView.bottomAnchor.constraint(equalTo: stackView.bottomAnchor)
+            ]
             floatingHostToContainerConstraints = [
                 floatingGlassContentHostView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
                 floatingGlassContentHostView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
@@ -1782,7 +1796,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func applyOmnibarCornerStyle() {
         let cornerRadius: CGFloat
         if isFloatingUIEnabled && isUsingSmallTopSpacing {
-            cornerRadius = max(searchAreaContainerView.bounds.height / 2, Metrics.cornerRadius)
+            let fieldHeight = isBottomFloatingField && !isSearchAreaExpanded
+                ? Metrics.floatingEmbeddedHeight
+                : searchAreaContainerView.bounds.height
+            cornerRadius = max(fieldHeight / 2, Metrics.cornerRadius)
         } else {
             cornerRadius = Metrics.cornerRadius
         }
@@ -2086,10 +2103,12 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedSearchAreaConstraints() {
+        let chromeContentContainerView = self.chromeContentContainerView
+
         // Expanded, the text view stops above the button row (see `applyExpansionConstraints`); when
         // attachments are present this is swapped for `textViewBottomToStripConstraint` so it stops above the strip.
         let textBottomToContainer = aiChatTextView.bottomAnchor.constraint(
-            equalTo: searchAreaContainerView.bottomAnchor,
+            equalTo: chromeContentContainerView.bottomAnchor,
             constant: -Metrics.duckAITextViewBottomPadding
         )
         textViewBottomToContainerConstraint = textBottomToContainer
@@ -2110,8 +2129,8 @@ extension DefaultOmniBarView {
             aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
             textBottomToContainer,
 
-            aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
-            aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.bottomAnchor.constraint(equalTo: chromeContentContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButtonWidthConstraint,
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
 
@@ -2126,7 +2145,7 @@ extension DefaultOmniBarView {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
             reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
 
-            attachButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
+            attachButton.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
             attachButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
             attachButton.widthAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
             attachButton.heightAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
@@ -2140,8 +2159,8 @@ extension DefaultOmniBarView {
             selectedToolChipView.leadingAnchor.constraint(equalTo: toolPickerButton.trailingAnchor, constant: Metrics.toolPickerToSelectedToolChipSpacing),
             selectedToolChipView.trailingAnchor.constraint(lessThanOrEqualTo: reasoningPickerButton.leadingAnchor, constant: -Metrics.toolPickerToSelectedToolChipSpacing),
 
-            attachmentsStripView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            attachmentsStripView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            attachmentsStripView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
+            attachmentsStripView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
             attachmentsStripView.bottomAnchor.constraint(equalTo: aiChatSendButton.topAnchor, constant: -Metrics.attachmentsStripToButtonRowSpacing),
             stripHeight,
         ])
@@ -2157,7 +2176,7 @@ extension DefaultOmniBarView {
         toolPickerLeadingToAttachConstraint = toolPickerLeadingToAttach
 
         let toolPickerLeadingToContainer = toolPickerButton.leadingAnchor.constraint(
-            equalTo: searchAreaContainerView.leadingAnchor,
+            equalTo: chromeContentContainerView.leadingAnchor,
             constant: Metrics.duckAITextViewBottomPadding
         )
         toolPickerLeadingToContainerConstraint = toolPickerLeadingToContainer
@@ -2172,11 +2191,11 @@ extension DefaultOmniBarView {
         bottomGTE.isActive = false
         searchFieldBottomGTEConstraint = bottomGTE
 
-        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor)
         centerY.isActive = true
         searchAreaCenterYConstraint = centerY
 
-        let topPin = searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor)
+        let topPin = searchAreaView.topAnchor.constraint(equalTo: chromeContentContainerView.topAnchor)
         topPin.isActive = false
         searchAreaTopPinConstraint = topPin
 

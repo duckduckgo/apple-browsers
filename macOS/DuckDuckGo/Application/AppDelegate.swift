@@ -556,7 +556,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
-    /// Which kinds of autofill data an extension has taken over from DuckDuckGo.
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo.
     let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()

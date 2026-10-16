@@ -15477,7 +15477,7 @@
       }
     },
     "autofill.managed-by-extension" : {
-      "comment" : "Autofill settings: an installed browser extension, named in the parameter, manages the user's passwords instead of DuckDuckGo",
+      "comment" : "Autofill settings: an installed browser extension, named in the parameter, manages the user's passwords, addresses and credit cards instead of DuckDuckGo",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -15488,50 +15488,14 @@
         }
       }
     },
-    "autofill.managed-by-extension.explanation" : {
-      "comment" : "Autofill settings: the first parameter is the name of a browser extension, the second a list of the kinds of data it manages, such as 'passwords, addresses and credit cards'",
+    "autofill.managed-by-extension.explanation.all" : {
+      "comment" : "Autofill settings: the parameter is the name of a browser extension that manages the user's passwords, addresses and credit cards instead of DuckDuckGo",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ saves and fills your %2$@ instead of DuckDuckGo."
-          }
-        }
-      }
-    },
-    "autofill.managed-kind.addresses" : {
-      "comment" : "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "addresses"
-          }
-        }
-      }
-    },
-    "autofill.managed-kind.cards" : {
-      "comment" : "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "credit cards"
-          }
-        }
-      }
-    },
-    "autofill.managed-kind.passwords" : {
-      "comment" : "Autofill settings: a kind of data a browser extension manages, used in a list such as 'passwords, addresses and credit cards'",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "passwords"
+            "value" : "%@ saves and fills your passwords, addresses and credit cards instead of DuckDuckGo."
           }
         }
       }
@@ -17157,7 +17121,7 @@
       }
     },
     "autofill.use-duckduckgo-instead" : {
-      "comment" : "Autofill settings button: DuckDuckGo takes back saving and filling passwords from a browser extension",
+      "comment" : "Autofill settings button: DuckDuckGo takes back saving and filling passwords, addresses and credit cards from a browser extension",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

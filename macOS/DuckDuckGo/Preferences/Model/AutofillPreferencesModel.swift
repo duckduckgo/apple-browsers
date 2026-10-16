@@ -96,34 +96,13 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @Published private(set) var showSyncPromo: Bool = false
 
-    /// The extensions that have taken kinds of autofill data over from DuckDuckGo.
-    @Published private(set) var managingExtensions: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
+    /// The password manager extension that has taken autofill over from DuckDuckGo, if any.
+    @Published private(set) var managingExtension: AutofillManagingExtension?
 
-    func managingExtension(for kind: ExtensionManagedAutofillKind) -> AutofillManagingExtension? {
-        managingExtensions[kind]
-    }
-
-    /// The kinds `managingExtension` has taken over, in a fixed order.
-    func kinds(managedBy managingExtension: AutofillManagingExtension) -> [ExtensionManagedAutofillKind] {
-        ExtensionManagedAutofillKind.allCases.filter { managingExtensions[$0] == managingExtension }
-    }
-
-    /// Extensions that took addresses or cards over, but not passwords.
-    var extensionsManagingOnlyAddressesOrCards: [AutofillManagingExtension] {
-        var result: [AutofillManagingExtension] = []
-        for kind in [ExtensionManagedAutofillKind.addresses, .cards] {
-            guard let managingExtension = managingExtensions[kind],
-                  managingExtension != managingExtensions[.passwords],
-                  !result.contains(managingExtension) else { continue }
-            result.append(managingExtension)
-        }
-        return result
-    }
-
-    /// Gives `kinds` back to DuckDuckGo from the extensions that took them over.
+    /// Gives autofill back to DuckDuckGo from the extension that took it over.
     @MainActor
-    func useDuckDuckGoInstead(for kinds: [ExtensionManagedAutofillKind]) {
-        kinds.forEach(autofillTakeover.giveBackToDuckDuckGo)
+    func useDuckDuckGoInstead() {
+        autofillTakeover.giveBackToDuckDuckGo()
     }
 
     func authorizeAutoLockSettingsChange(
@@ -215,12 +194,12 @@ final class AutofillPreferencesModel: ObservableObject {
                 }
             }
 
-        updateManagingExtensions()
+        updateManagingExtension()
         autofillTakeoverCancellable = NotificationCenter.default.publisher(for: .autofillUserSettingsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 MainActor.assumeMainThread {
-                    self?.updateManagingExtensions()
+                    self?.updateManagingExtension()
                 }
             }
 
@@ -228,13 +207,10 @@ final class AutofillPreferencesModel: ObservableObject {
     }
 
     @MainActor
-    private func updateManagingExtensions() {
-        var updated: [ExtensionManagedAutofillKind: AutofillManagingExtension] = [:]
-        for kind in ExtensionManagedAutofillKind.allCases {
-            updated[kind] = autofillTakeover.managingExtension(for: kind)
-        }
-        if updated != managingExtensions {
-            managingExtensions = updated
+    private func updateManagingExtension() {
+        let updated = autofillTakeover.managingExtension
+        if updated != managingExtension {
+            managingExtension = updated
         }
     }
 

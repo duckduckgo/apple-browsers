@@ -40,6 +40,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func syncSuccessDonePressed()
     func syncThisDeviceOnlyFromPrompt() async
     func syncWithAnotherDeviceFromPrompt() async
+    func syncThisDeviceFromFallback() async
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
     func userPressedCancel(from dialog: ManagementDialogKind)

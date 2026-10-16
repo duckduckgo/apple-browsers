@@ -96,10 +96,10 @@ final class SyncDialogController {
         let device = deviceInfo()
         return syncService.createConnectionController(deviceName: device.name, deviceType: device.type, delegate: delegate)
     }
-    private static let defaultCloseSetupConfirmation: @MainActor () async -> Bool = {
-        NSAlert.syncCloseSetupConfirmation().runModal() == .alertFirstButtonReturn
+    private static let defaultCloseSetupConfirmation: @MainActor (Bool) async -> Bool = { isImprovedPairingFlowEnabled in
+        NSAlert.syncCloseSetupConfirmation(isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled).runModal() == .alertFirstButtonReturn
     }
-    private let confirmCloseSetup: @MainActor () async -> Bool
+    private let confirmCloseSetup: @MainActor (_ isImprovedPairingFlowEnabled: Bool) async -> Bool
     private let confirmPairingV2Setup: (@MainActor (String) async -> Bool)?
 
     private let connectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling
@@ -140,7 +140,7 @@ final class SyncDialogController {
         featureFlagger: FeatureFlagger? = nil,
         pixelFiring: PixelFiring? = PixelKit.shared,
         keyValueStore: KeyValueStoring = UserDefaults.standard,
-        confirmCloseSetup: (@MainActor () async -> Bool)? = nil,
+        confirmCloseSetup: (@MainActor (_ isImprovedPairingFlowEnabled: Bool) async -> Bool)? = nil,
         confirmPairingV2Setup: (@MainActor (String) async -> Bool)? = nil,
         deviceNameProvider: (@MainActor () -> String)? = nil
     ) {
@@ -823,7 +823,28 @@ extension SyncDialogController: ManagementDialogModelDelegate {
             return true
         }
 
-        return await confirmCloseSetup()
+        guard await confirmCloseSetup(isImprovedPairingFlowEnabled) else {
+            return false
+        }
+        guard isImprovedPairingFlowEnabled, syncService.account == nil else {
+            return true
+        }
+        await showSyncThisDeviceFallback(afterCancelling: dialog)
+        return false
+    }
+
+    private func showSyncThisDeviceFallback(afterCancelling dialog: ManagementDialogKind) async {
+        userPressedCancel(from: dialog)
+        cancelHostDeviceWait()
+        await connectionController.cancel()
+        presentDialog(for: .syncThisDeviceFallback)
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.syncThisDeviceFallbackShown)
+    }
+
+    func syncThisDeviceFromFallback() async {
+        guard !managementDialogModel.isBusy else { return }
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.syncThisDeviceFallbackSyncTapped)
+        await createAccountForThisDeviceOnly()
     }
 
     func switchAccountsCancelled() {

@@ -21,6 +21,7 @@ import SwiftUI
 public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
     case turnOffSync
+    case turnOffSyncOptions(thisDevice: SyncDevice, devices: [SyncDevice], deletesServerDataByDefault: Bool)
     case deviceDetails(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
@@ -85,6 +86,8 @@ public struct ManagementDialog: View {
             switch model.currentDialog {
             case .turnOffSync:
                 TurnOffSyncView()
+            case .turnOffSyncOptions(let thisDevice, let devices, let deletesServerDataByDefault):
+                TurnOffSyncOptionsView(thisDevice: thisDevice, devices: devices, isDeleteServerDataSelected: deletesServerDataByDefault)
             case .deviceDetails(let device):
                 DeviceDetailsView(device: device)
             case .removeDevice(let device):

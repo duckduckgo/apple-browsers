@@ -506,6 +506,40 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "sync_turn_off_sheet_shown_mac": {
+        "description": "Fired when the Turn Off Sync & Backup dialog is shown after the user clicks 'Turn Off Sync & Backup' in Sync settings and authenticates.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_turn_off_option_selected_mac": {
+        "description": "Fired when the user picks how to turn off Sync on the Turn Off Sync & Backup dialog, by clicking 'Remove Device' or 'Turn Off and Delete Server Data'.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "option",
+                "type": "string",
+                "description": "Which option the user chose: remove only this device, or turn off Sync for all devices and delete the server data.",
+                "enum": ["this_device", "all_devices_and_server_data"]
+            }
+        ]
+    },
+    "sync_delete_server_data_confirmation_confirmed_mac": {
+        "description": "Fired when the user confirms 'Turn Off and Delete Server Data' on the final confirmation of the Turn Off Sync & Backup dialog. The result is reported by sync_disabledanddeleted.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_delete_server_data_confirmation_dismissed_mac": {
+        "description": "Fired when the user cancels the final confirmation to turn off Sync and delete the server data, returning to the Turn Off Sync & Backup dialog.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "sync_setup_joiner_recovery_code_done_success_mac": {
         "description": "Fired by the joiner after successfully sending a recovery_code_done success report to the host.",
         "owners": ["amddg44"],

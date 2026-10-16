@@ -173,8 +173,7 @@ public extension AIChatBonusService {
 
     /// Deletes the record for good (e.g. App re-install).
     ///
-    /// Publishes nothing. If the delete fails, every later read or write retries it first, and throws while it
-    /// keeps failing, so the record is never returned again.
+    /// Publishes nothing. If the delete fails, every later read or write in this session retries it first, and throws while it keeps failing, so the record isn't returned while the app keeps running.
     ///
     /// - Throws: `AIChatBonusStoreError` when the record can't be deleted.
     func permanentlyDeleteRecord() throws {

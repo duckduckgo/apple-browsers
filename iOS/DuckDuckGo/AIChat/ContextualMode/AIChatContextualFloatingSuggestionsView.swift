@@ -35,7 +35,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         static let hideDuration: TimeInterval = 0.24
         static let returnDuration: TimeInterval = 0.5
         static let returnDamping: CGFloat = 1
-        static let handOverDuration: TimeInterval = 0.18
+        static let restyleDuration: TimeInterval = 0.3
+        static let restyleDelay: TimeInterval = 0.08
         static let stagger: TimeInterval = 0.035
         static let dimmedAlpha: CGFloat = 0.4
     }
@@ -46,6 +47,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
     }
 
     private(set) var isShown = false
+    private var actions: [ContextualSheetAction] = []
     private weak var column: UIView?
     private var keyboardTop: CGFloat = 0
 
@@ -76,6 +78,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
     }
 
     func configure(with actions: [ContextualSheetAction]) {
+        self.actions = actions
         chipsView.configure(with: actions)
         updateFrame()
     }
@@ -155,9 +158,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         layoutIfNeeded()
     }
 
-    /// Slides the chips back towards the column as they fade, then leaves the view hierarchy.
-    /// Flies each chip back onto the matching frame in `targetFrames` (in the column's superview), where its twin
-    /// rests once the keyboard is down; chips without one fade towards the column. `completion` runs as they land.
+    /// Flies each chip back onto its twin's frame in `targetFrames` (in the column's superview), or fades it.
+    /// `completion` runs once all have landed, when the column's own chips can take over.
     func hide(animated: Bool, to targetFrames: [CGRect] = [], completion: (() -> Void)? = nil) {
         guard isShown else {
             completion?()
@@ -173,52 +175,65 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
 
         // Every chip has to land before the handover: they land in reverse order, so no single one marks the end.
         let landings = DispatchGroup()
+        var standIns: [UIView] = []
         for (index, chip) in chips.enumerated() {
-            let isToColumn = index < targetFrames.count
-            let landing = isToColumn ? transform(from: targetFrames[index], to: chip, in: host) : tuckedTransform
-            let changes = {
-                chip.transform = landing
-                chip.alpha = isToColumn ? 1 : 0
-            }
-            landings.enter()
-            let landed: (Bool) -> Void = { _ in landings.leave() }
             // Last chip out is first back, so the stack unwinds the way it built.
             let delay = Double(chips.count - 1 - index) * Constants.stagger
-            if isToColumn {
-                UIView.animate(withDuration: Constants.returnDuration,
-                               delay: delay,
-                               usingSpringWithDamping: Constants.returnDamping,
-                               initialSpringVelocity: 0,
-                               options: [.beginFromCurrentState],
-                               animations: changes,
-                               completion: landed)
-            } else {
+            landings.enter()
+            let landed: (Bool) -> Void = { _ in landings.leave() }
+            guard index < targetFrames.count, index < actions.count else {
                 UIView.animate(withDuration: Constants.hideDuration,
                                delay: delay,
                                options: [.curveEaseIn, .beginFromCurrentState],
-                               animations: changes,
+                               animations: {
+                                   chip.transform = self.tuckedTransform
+                                   chip.alpha = 0
+                               },
                                completion: landed)
+                continue
+            }
+            let target = convert(targetFrames[index], from: host)
+            let standIn = makeColumnStyleStandIn(for: actions[index], over: chip)
+            standIns.append(standIn)
+            UIView.animate(withDuration: Constants.returnDuration,
+                           delay: delay,
+                           usingSpringWithDamping: Constants.returnDamping,
+                           initialSpringVelocity: 0,
+                           options: [.beginFromCurrentState],
+                           animations: {
+                               chip.transform = self.transform(from: targetFrames[index], to: chip, in: host)
+                               standIn.center = CGPoint(x: target.midX, y: target.midY)
+                               standIn.transform = .identity
+                           },
+                           completion: landed)
+            // The glass turns into the column's look on the way, so it lands as an exact copy of its twin.
+            UIView.animate(withDuration: Constants.restyleDuration, delay: delay + Constants.restyleDelay, options: [.curveEaseInOut]) {
+                chip.alpha = 0
+                standIn.alpha = 1
             }
         }
         landings.notify(queue: .main) { [weak self] in
-            self?.handOver(completion: completion)
+            completion?()
+            // The column's chips now sit exactly under the stand-ins, so removing them changes no pixel.
+            standIns.forEach { $0.removeFromSuperview() }
+            guard let self, !isShown else { return }
+            removeFromSuperview()
         }
     }
 
-    /// The glass chips cross-fade into the column's own, which the caller fades in from `completion`.
-    private func handOver(completion: (() -> Void)?) {
-        guard !isShown else {
-            completion?()
-            return
-        }
-        completion?()
-        UIView.animate(withDuration: Constants.handOverDuration, delay: 0, options: [.curveEaseOut]) {
-            self.alpha = 0
-        } completion: { [weak self] _ in
-            guard let self, !isShown else { return }
-            removeFromSuperview()
-            alpha = 1
-        }
+    /// A chip in the column's own style, scaled to cover `chip` and transparent until the restyle fades it in.
+    private func makeColumnStyleStandIn(for action: ContextualSheetAction, over chip: UIView) -> UIView {
+        let standIn = AIChatQuickActionChipView()
+        standIn.configure(with: action)
+        let size = standIn.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        standIn.bounds = CGRect(origin: .zero, size: size)
+        standIn.center = chip.superview?.convert(chip.center, to: self) ?? chip.center
+        let scale = size.width > 0 ? chip.bounds.width / size.width : 1
+        standIn.transform = CGAffineTransform(scaleX: scale, y: scale)
+        standIn.alpha = 0
+        standIn.isUserInteractionEnabled = false
+        addSubview(standIn)
+        return standIn
     }
 
     private var chipViews: [UIView] {

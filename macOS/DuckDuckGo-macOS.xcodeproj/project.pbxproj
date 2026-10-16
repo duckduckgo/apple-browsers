@@ -636,6 +636,7 @@
 		3706FB0A293F65D500E42796 /* NSPathControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CC53F327E8D4620028713D /* NSPathControlView.swift */; };
 		3706FB0E293F65D500E42796 /* FaviconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA512D1324D99D9800230283 /* FaviconManager.swift */; };
 		3706FB0F293F65D500E42796 /* ChromiumFaviconsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0AACAB28BC63ED001038AC /* ChromiumFaviconsReader.swift */; };
+		C7756742D5793274F2B14678 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D357A38BFBCB09E27DD941 /* ChromiumHistoryReader.swift */; };
 		3706FB10293F65D500E42796 /* SuggestionTableRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABEE6AA24ACA0F90043105B /* SuggestionTableRowView.swift */; };
 		3706FB11293F65D500E42796 /* DownloadsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CD54C327F2FDD100F1F7B9 /* DownloadsPreferences.swift */; };
 		3706FB12293F65D500E42796 /* PasswordManagementItemList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E6EF027AB5E5D00F51793 /* PasswordManagementItemList.swift */; };
@@ -1602,6 +1603,7 @@
 		4B0526612B1D55320054955A /* UnifiedFeedbackSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0526602B1D55320054955A /* UnifiedFeedbackSender.swift */; };
 		4B0A63E8289DB58E00378EF7 /* FirefoxFaviconsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0A63E7289DB58E00378EF7 /* FirefoxFaviconsReader.swift */; };
 		4B0AACAC28BC63ED001038AC /* ChromiumFaviconsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0AACAB28BC63ED001038AC /* ChromiumFaviconsReader.swift */; };
+		55D2EBF69E8BCE569B3FF333 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D357A38BFBCB09E27DD941 /* ChromiumHistoryReader.swift */; };
 		4B0AACAE28BC6FD0001038AC /* SafariFaviconsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0AACAD28BC6FD0001038AC /* SafariFaviconsReader.swift */; };
 		4B0BD7B72A9FE6E500EF609D /* NetworkProtectionOnboardingMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B05829D2A812AC000AC3F7C /* NetworkProtectionOnboardingMenu.swift */; };
 		4B0BD7B82A9FE6E600EF609D /* NetworkProtectionOnboardingMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B05829D2A812AC000AC3F7C /* NetworkProtectionOnboardingMenu.swift */; };
@@ -5788,6 +5790,7 @@
 		4B0526602B1D55320054955A /* UnifiedFeedbackSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedFeedbackSender.swift; sourceTree = "<group>"; };
 		4B0A63E7289DB58E00378EF7 /* FirefoxFaviconsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxFaviconsReader.swift; sourceTree = "<group>"; };
 		4B0AACAB28BC63ED001038AC /* ChromiumFaviconsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumFaviconsReader.swift; sourceTree = "<group>"; };
+		46D357A38BFBCB09E27DD941 /* ChromiumHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumHistoryReader.swift; sourceTree = "<group>"; };
 		4B0AACAD28BC6FD0001038AC /* SafariFaviconsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariFaviconsReader.swift; sourceTree = "<group>"; };
 		4B0DB5E428BD9D08007DD239 /* PinningManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinningManager.swift; sourceTree = "<group>"; };
 		4B11060425903E570039B979 /* CoreDataEncryptionTesting.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = CoreDataEncryptionTesting.xcdatamodel; sourceTree = "<group>"; };
@@ -9973,6 +9976,7 @@
 			children = (
 				4BB99CF926FE191E001E4761 /* ChromiumBookmarksReader.swift */,
 				4B0AACAB28BC63ED001038AC /* ChromiumFaviconsReader.swift */,
+				46D357A38BFBCB09E27DD941 /* ChromiumHistoryReader.swift */,
 				CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */,
 				4BB99CFA26FE191E001E4761 /* ImportedBookmarks.swift */,
 			);
@@ -16200,6 +16204,7 @@
 				3706FB0E293F65D500E42796 /* FaviconManager.swift in Sources */,
 				BB960BD42DD7890B002C46DD /* BookmarksIconsProviding.swift in Sources */,
 				3706FB0F293F65D500E42796 /* ChromiumFaviconsReader.swift in Sources */,
+				C7756742D5793274F2B14678 /* ChromiumHistoryReader.swift in Sources */,
 				C18194652C7DF7D600381092 /* FreemiumDBPPresenter.swift in Sources */,
 				4B0BD7B82A9FE6E600EF609D /* NetworkProtectionOnboardingMenu.swift in Sources */,
 				CC442CAC2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
@@ -18639,6 +18644,7 @@
 				BB8DD9EA2EDF73A900F75D8E /* QuitSurveyDecider.swift in Sources */,
 				7BB4BC632C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift in Sources */,
 				4B0AACAC28BC63ED001038AC /* ChromiumFaviconsReader.swift in Sources */,
+				55D2EBF69E8BCE569B3FF333 /* ChromiumHistoryReader.swift in Sources */,
 				AABEE6AB24ACA0F90043105B /* SuggestionTableRowView.swift in Sources */,
 				37CD54CB27F2FDD100F1F7B9 /* DownloadsPreferences.swift in Sources */,
 				84B9BDC02E2A94830068927C /* TabBarView.swift in Sources */,

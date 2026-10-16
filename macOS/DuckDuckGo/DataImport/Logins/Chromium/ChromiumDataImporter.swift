@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Foundation
+import History
 import PixelKit
 
 internal class ChromiumDataImporter: DataImporter {
@@ -26,27 +27,36 @@ internal class ChromiumDataImporter: DataImporter {
     private let bookmarkImporter: BookmarkImporter
     private let loginImporter: LoginImporter?
     private let faviconManager: FaviconManagement
+    private let historyCoordinator: HistoryCoordinating?
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
     }
 
-    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
+    init(
+        profile: DataImport.BrowserProfile,
+        loginImporter: LoginImporter?,
+        bookmarkImporter: BookmarkImporter,
+        faviconManager: FaviconManagement,
+        historyCoordinator: HistoryCoordinating? = nil
+    ) {
         self.profile = profile
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.historyCoordinator = historyCoordinator
     }
 
     convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter) {
         self.init(profile: profile,
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
-                  faviconManager: NSApp.delegateTyped.faviconManager)
+                  faviconManager: NSApp.delegateTyped.faviconManager,
+                  historyCoordinator: NSApp.delegateTyped.historyCoordinator)
     }
 
     var importableTypes: [DataImport.DataType] {
-        return [.passwords, .bookmarks]
+        historyCoordinator == nil ? [.passwords, .bookmarks] : [.passwords, .bookmarks, .history]
     }
 
     func importData(types: Set<DataImport.DataType>) -> DataImportTask {
@@ -92,7 +102,7 @@ internal class ChromiumDataImporter: DataImporter {
         }
 
         let passwordsFraction: Double = types.contains(.passwords) ? 0.5 : 0.0
-        if types.contains(.bookmarks)
+        bookmarksImport: if types.contains(.bookmarks)
             // don‘t proceed with bookmarks import on Keychain prompt denial
             && (summary[.passwords]?.error as? ChromiumLoginReader.ImportError)?.type != .userDeniedKeychainPrompt {
 
@@ -103,7 +113,7 @@ internal class ChromiumDataImporter: DataImporter {
 
             guard case .success(var importedBookmarks) = bookmarkResult else {
                 summary[.bookmarks] = .failure(bookmarkResult.error!)
-                return summary
+                break bookmarksImport
             }
 
             let newTabShortcuts = fetchShortcutsAsFavorites()
@@ -122,7 +132,36 @@ internal class ChromiumDataImporter: DataImporter {
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
 
+        if types.contains(.history), let historyCoordinator {
+            let historyFraction = dataTypeFraction * Double(types.intersection([.passwords, .bookmarks]).count)
+            try updateProgress(.importingHistory(numberOfVisits: nil, fraction: historyFraction))
+
+            let historySummary = await importHistory(into: historyCoordinator)
+            summary[.history] = historySummary
+
+            try updateProgress(.importingHistory(numberOfVisits: try? historySummary.get().successful,
+                                                 fraction: historyFraction + dataTypeFraction))
+        }
+
         return summary
+    }
+
+    private func importHistory(into historyCoordinator: HistoryCoordinating) async -> DataImportResult<DataImport.DataTypeSummary> {
+        let cutoff = Date.monthAgo
+        let historyReader = ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL)
+        switch historyReader.readVisits(since: cutoff) {
+        case .success(let rows):
+            do {
+                let importSummary = try await SafariHistoryImporter.importVisits(ChromiumHistoryImporter.parse(rows),
+                                                                                 into: historyCoordinator,
+                                                                                 cutoff: cutoff)
+                return .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: 0))
+            } catch {
+                return .failure(ChromiumHistoryReader.ImportError(type: .importVisits, underlyingError: error))
+            }
+        case .failure(let error):
+            return .failure(error)
+        }
     }
 
     private func importFavicons() async {

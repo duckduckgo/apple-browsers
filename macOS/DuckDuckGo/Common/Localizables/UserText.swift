@@ -1901,6 +1901,7 @@ struct UserText {
     static let importTypeSelectionTitleAll = NSLocalizedString("import.type-selection.title.all", value: "Import Bookmarks & Passwords", comment: "Title text for the button to select the type of data to import (e.g passwords, bookmarks)")
     static let importTypeSelectionTitleBookmarks = NSLocalizedString("import.type-selection.title.bookmarks", value: "Import Bookmarks", comment: "Title text for the button to select the type of data to import when bookmarks selected")
     static let importTypeSelectionTitlePasswords = NSLocalizedString("import.type-selection.title.passwords", value: "Import Passwords", comment: "Title text for the button to select the type of data to import when passwords selected")
+    static let importTypeSelectionTitleAllWithHistory = NSLocalizedString("import.type-selection.title.all-with-history", value: "Import Bookmarks, Passwords, and History", comment: "Title text for the button to select the type of data to import when bookmarks, passwords and history are selected")
 
     static let importChromeAllowKeychainIntructions = NSLocalizedString("import.chrome.allow-keychain.instructions", value: "Enter your device password and click **Allow** to complete the import. DuckDuckGo won't see your password.", comment: "Instructions shown to the user when Chrome needs to access their Keychain. Contains markdown for bold text.")
     static let importChromeAllowButtonTitle = NSLocalizedString("import.chrome.allow-keychain.allow.button.title", value: "Allow", comment: "Button title of example dialog demonstrating to the user what to click when the system needs to access their Keychain.")
@@ -1918,6 +1919,8 @@ struct UserText {
     static let importLoginsPasswordsExplainerEncrypted = NSLocalizedString("import.logins.passwords.explainer.encrypted", value: "Encrypted", comment: "Explanatory label stating that the passwords are encrypted")
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
+    static let importHistory = NSLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
+    static let importHistoryTimeRange = NSLocalizedString("import.history.time-range", value: "Last 30 days", comment: "Label next to the History import option explaining that only the last 30 days of browsing history are imported")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
@@ -1980,6 +1983,14 @@ struct UserText {
         let localized = NSLocalizedString("import.summary.credit.cards.imported.partial", value: "Credit Cards Imported: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
         return String(format: localized, successful, total)
     }
+    static func importSummaryHistoryImported(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.history.imported", value: "History Imported: %d (last 30 days)", comment: "Summary text showing number of browsing history visits imported from the last 30 days")
+        return String(format: localized, count)
+    }
+    static func importSummaryHistoryImportedPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.history.imported.partial", value: "History Imported: %d / %d (last 30 days)", comment: "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days")
+        return String(format: localized, successful, total)
+    }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")
         return String(format: localized, count)
@@ -2025,6 +2036,7 @@ struct UserText {
     static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
     static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
     static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
+    static let importCouldNotImportHistory = NSLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
     static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")
@@ -2112,6 +2124,15 @@ struct UserText {
             return String(format: localized, numberOfCreditCards)
         } else {
             return NSLocalizedString("import.credit-cards.indefinite.progress.text", value: "Importing credit cards…", comment: "Operation progress info message about indefinite number of passwords being imported")
+        }
+    }
+
+    static func importingHistory(_ numberOfVisits: Int?) -> String {
+        if let numberOfVisits, numberOfVisits > 0 {
+            let localized = NSLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
+            return String(format: localized, numberOfVisits)
+        } else {
+            return NSLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
         }
     }
 

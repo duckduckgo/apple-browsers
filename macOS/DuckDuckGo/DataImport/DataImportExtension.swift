@@ -203,6 +203,9 @@ extension DataImport {
                 return false
             case .creditCards:
                 return false
+            case .history:
+                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                return profileDirectoryContents.contains("History")
             }
         }
 
@@ -409,7 +412,9 @@ extension DataImport.Source {
 
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
+        case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
+            return [.bookmarks, .passwords, .history]
+        case .firefox, .yandex:
             return [.bookmarks, .passwords]
         case .safari, .safariTechnologyPreview:
             if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
@@ -464,6 +469,7 @@ extension DataImport.DataType {
         case .bookmarks: UserText.bookmarkImportBookmarks
         case .passwords: UserText.importLoginsPasswords
         case .creditCards: UserText.importCreditCards
+        case .history: UserText.importHistory
         }
     }
 
@@ -475,6 +481,7 @@ extension DataImport.DataType: @retroactive Comparable {
         case .bookmarks: return 0
         case .passwords: return 1
         case .creditCards: return 2
+        case .history: return 3
         }
     }
 

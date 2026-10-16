@@ -123,7 +123,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             showBookmarksBarStatus = isOn
         case .passwords:
             showPasswordsPinnedStatus = isOn
-        case .creditCards:
+        case .creditCards, .history:
             break
         }
         updateShortcutsState()
@@ -139,7 +139,7 @@ final class NewImportSummaryViewModel: ObservableObject {
                 items[index].setShortcutState(showBookmarksBarStatus)
             case .passwords:
                 items[index].setShortcutState(showPasswordsPinnedStatus)
-            case .creditCards:
+            case .creditCards, .history:
                 break
             }
         }
@@ -154,6 +154,8 @@ final class NewImportSummaryViewModel: ObservableObject {
                 return .failure(title: UserText.importCouldNotImportPasswords)
             case .creditCards:
                 return .failure(title: UserText.importCouldNotImportCreditCards)
+            case .history:
+                return .failure(title: UserText.importCouldNotImportHistory)
             }
         }
 
@@ -183,10 +185,18 @@ final class NewImportSummaryViewModel: ObservableObject {
             return DesignSystemImages.Color.Size24.keyCheck
         case .creditCards:
             return DesignSystemImages.Color.Size24.creditCardCheck
+        case .history:
+            return DesignSystemImages.Color.Size24.history
         }
     }
 
     private static func primaryText(for dataType: DataImport.DataType, summary: DataImport.DataTypeSummary) -> String {
+        if dataType == .history {
+            // History reports visits already in history as a count, without per-item details.
+            guard summary.duplicate > 0 else { return UserText.importSummaryHistoryImported(summary.successful) }
+            return UserText.importSummaryHistoryImportedPartial(summary.successful, summary.successful + summary.duplicate)
+        }
+
         let total = summary.successful + summary.duplicateItems.count + summary.failedItems.count
         let allImported = summary.duplicateItems.isEmpty && summary.failedItems.isEmpty
 
@@ -198,6 +208,8 @@ final class NewImportSummaryViewModel: ObservableObject {
                 return UserText.importSummaryPasswordsImported(summary.successful)
             case .creditCards:
                 return UserText.importSummaryCreditCardsImported(summary.successful)
+            case .history:
+                return UserText.importSummaryHistoryImported(summary.successful)
             }
         } else {
             switch dataType {
@@ -207,6 +219,8 @@ final class NewImportSummaryViewModel: ObservableObject {
                 return UserText.importSummaryPasswordsImportedPartial(summary.successful, total)
             case .creditCards:
                 return UserText.importSummaryCreditCardsImportedPartial(summary.successful, total)
+            case .history:
+                return UserText.importSummaryHistoryImportedPartial(summary.successful, total)
             }
         }
     }
@@ -227,7 +241,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             return ShortcutItem(title: UserText.importShortcutsBookmarksTitle, isOn: false)
         case .passwords:
             return ShortcutItem(title: UserText.importShortcutsPasswordsTitle, isOn: false)
-        case .creditCards:
+        case .creditCards, .history:
             return nil
         }
     }

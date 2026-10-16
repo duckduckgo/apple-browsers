@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import GRDB
 import History
 import PrivacyConfig
 import UniformTypeIdentifiers
@@ -162,7 +161,7 @@ final class HistoryDebugMenu: NSMenu {
             do {
                 let cutoff = Date.monthAgo
                 let rows = try await Task.detached {
-                    try Self.chromiumHistoryRows(at: url, since: cutoff)
+                    try ChromiumHistoryReader(chromiumDataDirectoryURL: url.deletingLastPathComponent()).readVisits(since: cutoff).get()
                 }.value
                 let summary = try await SafariHistoryImporter.importVisits(ChromiumHistoryImporter.parse(rows),
                                                                            into: historyCoordinator,
@@ -170,27 +169,6 @@ final class HistoryDebugMenu: NSMenu {
                 showSummaryAlert(title: "Chrome History Imported", summary: summary, skippedReasons: "redirects, subframes, non-web URLs")
             } catch {
                 showAlert(title: "Chrome History Import Failed", message: "\(error)")
-            }
-        }
-    }
-
-    /// Reads a copy of the database, since Chrome keeps it locked while running.
-    private static func chromiumHistoryRows(at url: URL, since cutoff: Date) throws -> [ChromiumHistoryImporter.Row] {
-        try url.withTemporaryFile { temporaryURL in
-            let queue = try DatabaseQueue(path: temporaryURL.path)
-            return try queue.read { database in
-                try GRDB.Row.fetchAll(database, sql: """
-                    SELECT urls.url, urls.title, visits.visit_time, visits.transition
-                    FROM visits JOIN urls ON urls.id = visits.url
-                    WHERE visits.visit_time >= ?
-                    """, arguments: [ChromiumHistoryImporter.chromiumTime(for: cutoff)])
-                .compactMap { row in
-                    guard let url: String = row["url"] else { return nil }
-                    return ChromiumHistoryImporter.Row(url: url,
-                                                       title: row["title"],
-                                                       visitTime: row["visit_time"],
-                                                       transition: row["transition"])
-                }
             }
         }
     }

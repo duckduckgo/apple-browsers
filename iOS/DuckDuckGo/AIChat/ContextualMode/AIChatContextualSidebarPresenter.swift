@@ -31,6 +31,9 @@ protocol AIChatContextualSidebarHosting: AnyObject {
 
     /// `completion` runs once `viewController` has left the sidebar, or straight away when it isn't in it.
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?)
+
+    /// Takes `viewController` out of the sidebar at once, so it can be presented elsewhere while the column closes.
+    func detachContextualSidebar(_ viewController: UIViewController, animated: Bool)
 }
 
 /// Slides a child view controller in and out of the iPad sidebar column. The page's trailing edge is pinned to the
@@ -69,6 +72,8 @@ final class AIChatContextualSidebarPresenter {
     }()
 
     private var animator: UIViewPropertyAnimator?
+    /// An image of a detached view controller, closing the column in its place.
+    private var standIn: UIView?
     private var pageSnapshot: UIView?
     private var pageDissolveAnimator: UIViewPropertyAnimator?
     private var dismissalCompletions: [() -> Void] = []
@@ -97,6 +102,7 @@ final class AIChatContextualSidebarPresenter {
         guard let parent, !(isPresenting && hostedViewController === viewController) else { return }
         // A different surface already filling the column is swapped in place rather than slid out and back.
         let isReplacingShownSurface = isPresenting
+        removeStandIn()
         removeHostedViewController()
         embed(viewController, in: parent)
         isPresenting = true
@@ -127,6 +133,30 @@ final class AIChatContextualSidebarPresenter {
             self?.finishDismissal()
             UIAccessibility.post(notification: .layoutChanged, argument: nil)
         }
+    }
+
+    /// The column slides out as usual, but with an image of `viewController` in it, so the view controller itself is
+    /// free straight away, for example to carry on as a sheet when a window shrinks past the sidebar.
+    func detach(_ viewController: UIViewController, animated: Bool) {
+        guard hostedViewController === viewController else { return }
+        guard animated, isPresenting, let image = container.snapshotView(afterScreenUpdates: false) else {
+            dismiss(viewController, animated: false, completion: nil)
+            return
+        }
+        image.frame = container.bounds
+        image.isUserInteractionEnabled = false
+        container.addSubview(image)
+        standIn = image
+        removeHostedViewController()
+        isPresenting = false
+        move(toShown: false, animated: true) { [weak self] in
+            self?.finishDismissal()
+        }
+    }
+
+    private func removeStandIn() {
+        standIn?.removeFromSuperview()
+        standIn = nil
     }
 
     private func embed(_ viewController: UIViewController, in parent: UIViewController) {
@@ -249,6 +279,7 @@ final class AIChatContextualSidebarPresenter {
         NSLayoutConstraint.activate([hiddenConstraint])
         parent?.view.layoutIfNeeded()
         container.isHidden = true
+        removeStandIn()
         removeHostedViewController()
     }
 

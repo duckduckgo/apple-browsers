@@ -364,6 +364,7 @@ class MainViewController: UIViewController {
     var duckAIMenuAnchor: UIView?
     /// iPad only: shows the contextual Duck.ai surface beside the page.
     lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
+    var isContextualSurfaceResizeCheckPending = false
     private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
@@ -3626,6 +3627,7 @@ class MainViewController: UIViewController {
         if needsWidthUpdate {
             applyWidth(for: size)
         }
+        contextualSurfaceWillTransition(with: coordinator)
 
         let isShowingToolbar = wasMinimalChrome && !isInMinimalChromeLayout
         if isShowingToolbar {
@@ -3760,7 +3762,6 @@ class MainViewController: UIViewController {
         } else {
             applySmallWidth()
         }
-        closeContextualSidebarIfItNoLongerFits()
 
         updateNewTabPageLayoutForCurrentChromeMode()
 

@@ -129,6 +129,9 @@ final class AIChatContextualSheetCoordinator {
     /// Where the sheet went the last time it opened beside the page instead of over it.
     private weak var sidebarHost: AIChatContextualSidebarHosting?
 
+    /// The sheet while a window resize carries it between the sidebar and a sheet: off screen, its chat still open.
+    private var parkedSheetViewController: AIChatContextualSheetViewController?
+
     /// The floating pre-submit input, when it is the current surface instead of the sheet.
     private(set) var floatingInputViewController: AIChatContextualFloatingInputViewController? {
         didSet { isFloatingInputPresented = floatingInputViewController != nil }
@@ -736,11 +739,106 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.parent != nil
     }
 
+    /// A window shrinking past the sidebar can't wait for the resize to end, or the column would squeeze the page to
+    /// nothing. The sheet steps out of it now and comes back in whatever presentation the settled window calls for.
+    func parkSurfaceForResize(animated: Bool) {
+        guard let sheetViewController, isSheetInSidebar, let sidebarHost else { return }
+        // Something the chat presented, like the Fire confirmation, would be left behind by the move.
+        sheetViewController.presentedViewController?.dismiss(animated: false)
+        sheetViewController.beginSurfaceChange()
+        parkedSheetViewController = sheetViewController
+        sidebarHost.detachContextualSidebar(sheetViewController, animated: animated)
+    }
+
+    /// The chat is between the sidebar and a sheet, waiting for `adaptSurface(toPresenter:)` to place it.
+    var hasParkedSurface: Bool {
+        parkedSheetViewController != nil
+    }
+
+    /// Once a resize settles, puts the open surface where the window's size calls for: the sidebar when there's room
+    /// for it, a sheet when there isn't. The chat, its draft and its page context carry over untouched.
+    func adaptSurface(toPresenter presentingVC: UIViewController) {
+        guard isSheetPresented, let sheetVC = sheetViewController else { return }
+        let host = sidebarHost(for: presentingVC)
+        if parkedSheetViewController === sheetVC {
+            parkedSheetViewController = nil
+            if let host {
+                moveIntoSidebar(sheetVC, host: host)
+            } else if presentingVC.presentedViewController == nil {
+                sidebarHost = nil
+                // A conversation keeps the full height it had in the sidebar; a chat yet to start opens like a new one.
+                sheetVC.prepareForPresentation(expanded: sessionState.hasActiveChat)
+                presentingVC.present(sheetVC, animated: true) { sheetVC.endSurfaceChange() }
+            } else {
+                // Something else holds the screen; the chat waits behind the Duck.ai button instead.
+                sheetVC.closeWhileOffScreen()
+            }
+        } else if let host,
+                  sheetVC.presentingViewController != nil,
+                  !sheetVC.isBeingPresented, !sheetVC.isBeingDismissed,
+                  sheetVC.presentedViewController == nil {
+            moveSheetIntoSidebar(sheetVC, host: host)
+        }
+    }
+
+    /// An image of the sheet sinks away while the chat itself slides in beside the page, so the two moves overlap
+    /// instead of the sidebar waiting out the sheet's dismissal.
+    private func moveSheetIntoSidebar(_ sheetVC: AIChatContextualSheetViewController, host: AIChatContextualSidebarHosting) {
+        sheetVC.beginSurfaceChange()
+        let sinkingSheet = makeSinkingImage(of: sheetVC)
+        sheetVC.dismiss(animated: false) { [weak self] in
+            guard let self, self.sheetViewController === sheetVC, self.isSheetPresented else {
+                sheetVC.endSurfaceChange()
+                return
+            }
+            self.moveIntoSidebar(sheetVC, host: host)
+        }
+        sinkingSheet?()
+    }
+
+    /// Puts an image of the presented sheet over the window and returns what slides it off the bottom.
+    private func makeSinkingImage(of sheetVC: AIChatContextualSheetViewController) -> (() -> Void)? {
+        guard let containerView = sheetVC.presentationController?.containerView,
+              let window = containerView.window,
+              let image = containerView.snapshotView(afterScreenUpdates: false) else { return nil }
+        image.frame = containerView.convert(containerView.bounds, to: window)
+        image.isUserInteractionEnabled = false
+        window.addSubview(image)
+        let sheetTop = sheetVC.presentationController?.presentedView?.frame.minY ?? 0
+        let travel = containerView.bounds.height - sheetTop
+        return {
+            UIView.animate(withDuration: Self.sheetSinkDuration, delay: 0, options: [.curveEaseIn]) {
+                image.transform = CGAffineTransform(translationX: 0, y: travel)
+            } completion: { _ in
+                image.removeFromSuperview()
+            }
+        }
+    }
+
+    private static let sheetSinkDuration: TimeInterval = 0.3
+
+    private func moveIntoSidebar(_ sheetVC: AIChatContextualSheetViewController, host: AIChatContextualSidebarHosting) {
+        sheetVC.prepareForSidebar()
+        sidebarHost = host
+        host.presentContextualSidebar(sheetVC)
+        // Its appearance in the sidebar finishes on the way out of this turn, still as part of the move.
+        DispatchQueue.main.async {
+            sheetVC.endSurfaceChange()
+        }
+    }
+
     /// Every route off screen funnels through here, because a sheet in the sidebar is not presented and
     /// `dismiss(animated:)` would reach whatever its parent is presenting instead.
     private func dismissSurface(of sheetViewController: AIChatContextualSheetViewController,
                                 animated: Bool = true,
                                 completion: (() -> Void)? = nil) {
+        if parkedSheetViewController === sheetViewController {
+            // Already off screen for a resize: nothing to animate away, only the chat to close.
+            parkedSheetViewController = nil
+            sheetViewController.closeWhileOffScreen()
+            completion?()
+            return
+        }
         guard sheetViewController.parent != nil, let sidebarHost else {
             sheetViewController.dismiss(animated: animated, completion: completion)
             return
@@ -769,6 +867,8 @@ final class AIChatContextualSheetCoordinator {
     // when adding side effects to handleSheetDismissed.
     func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
+        let parkedSheet = parkedSheetViewController
+        parkedSheetViewController = nil
         persistentUTIHost?.discardTabAttachments()
         selectionJourneyInstrumentation.selectionsCleared(reason: reason)
         sheetViewController?.notifySheetDismissed()
@@ -785,6 +885,7 @@ final class AIChatContextualSheetCoordinator {
         if let sheetInSidebar {
             dismissSurface(of: sheetInSidebar)
         }
+        parkedSheet?.closeWhileOffScreen()
     }
 
     func reloadIfNeeded() {
@@ -881,6 +982,10 @@ private extension AIChatContextualSheetCoordinator {
     func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController,
                               from presentingVC: UIViewController,
                               focusingInput: Bool = false) {
+        guard parkedSheetViewController !== sheetVC else {
+            adaptSurface(toPresenter: presentingVC)
+            return
+        }
         guard sheetVC.presentingViewController == nil, sheetVC.parent == nil else { return }
         let sidebarHost = sidebarHost(for: presentingVC)
         // UIKit silently drops present() if the presenter already has a presentedViewController;

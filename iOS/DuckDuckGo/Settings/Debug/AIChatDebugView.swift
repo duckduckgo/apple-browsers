@@ -37,6 +37,8 @@ struct AIChatDebugView: View {
         List {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
+            AIChatSidebarKeyboardStyleSection()
+
 #if DEBUG || ALPHA
             AIChatAttachmentPrivacySection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatMultiTabPromotionSection()
@@ -96,6 +98,37 @@ struct AIChatDebugView: View {
             }
         }
         .navigationTitle("AI Chat")
+    }
+}
+
+/// Picks how the iPad sidebar makes room for its suggestions while the keyboard is up; applies from the next keyboard.
+private struct AIChatSidebarKeyboardStyleSection: View {
+    private let setting: AIChatContextualSidebarKeyboardStyleStoring
+    @State private var selection: AIChatContextualSidebarKeyboardStyle
+
+    init(setting: AIChatContextualSidebarKeyboardStyleStoring = AIChatContextualSidebarKeyboardStyleSetting()) {
+        self.setting = setting
+        _selection = State(initialValue: setting.keyboardStyle)
+    }
+
+    var body: some View {
+        Section(header: Text("iPad Sidebar Keyboard Layout"), footer: Text(selection.summary)) {
+            ForEach(AIChatContextualSidebarKeyboardStyle.allCases, id: \.self) { style in
+                Button {
+                    setting.keyboardStyle = style
+                    selection = style
+                } label: {
+                    HStack {
+                        Text(style.title)
+                        Spacer()
+                        if selection == style {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                .foregroundColor(.primary)
+            }
+        }
     }
 }
 

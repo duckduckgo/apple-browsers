@@ -1096,6 +1096,7 @@
 		C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */; };
 		C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */; };
 		6C8CA89BA3AF098590F07253 /* AIChatContextualSidebarPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3916F27559A75B97D9D728F /* AIChatContextualSidebarPresenterTests.swift */; };
+		9AB844A702145BC77DB970C8 /* AIChatContextualSidebarKeyboardStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F439B907252618D93506994C /* AIChatContextualSidebarKeyboardStyleTests.swift */; };
 		C13EBC552EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC542EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
 		C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */; };
@@ -2473,6 +2474,7 @@
 		C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeatureTests.swift; sourceTree = "<group>"; };
 		C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinatorTests.swift; sourceTree = "<group>"; };
 		B3916F27559A75B97D9D728F /* AIChatContextualSidebarPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSidebarPresenterTests.swift; sourceTree = "<group>"; };
+		F439B907252618D93506994C /* AIChatContextualSidebarKeyboardStyleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSidebarKeyboardStyleTests.swift; sourceTree = "<group>"; };
 		C13EBC542EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualInputViewControllerTests.swift; sourceTree = "<group>"; };
 		C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModelTests.swift; sourceTree = "<group>"; };
@@ -3385,6 +3387,7 @@
 				C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */,
 				C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */,
 				B3916F27559A75B97D9D728F /* AIChatContextualSidebarPresenterTests.swift */,
+				F439B907252618D93506994C /* AIChatContextualSidebarKeyboardStyleTests.swift */,
 				C13EBC542EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift */,
 				F0E6B4C53D4E5F6A70819203 /* AIChatRecentChatsMenuViewModelTests.swift */,
 				E7971E90992B46FABF42A908 /* AIChatContextualWebViewControllerTests.swift */,
@@ -7619,6 +7622,7 @@
 				C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */,
 				C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */,
 				6C8CA89BA3AF098590F07253 /* AIChatContextualSidebarPresenterTests.swift in Sources */,
+				9AB844A702145BC77DB970C8 /* AIChatContextualSidebarKeyboardStyleTests.swift in Sources */,
 				E9D5A3B42C3D4E5F6A708192 /* AIChatRecentChatsMenuViewModelTests.swift in Sources */,
 				C590E41C21CD46E99C4A5B2E /* AIChatContextualWebViewControllerTests.swift in Sources */,
 				BBFF18B12C76448100C48D7D /* QuerySubmittedTests.swift in Sources */,

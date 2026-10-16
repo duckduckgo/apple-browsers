@@ -51,6 +51,11 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         }
     }
 
+    /// Which edge the stacked chips line up on. `.trailing` suits chips floating against a column to their right.
+    public var chipAlignment: UIStackView.Alignment = .leading {
+        didSet { applyAxis() }
+    }
+
     private var loadingView: AIChatSuggestionsLoadingView?
     private var hugsChipsWidthConstraint: NSLayoutConstraint?
 
@@ -113,6 +118,11 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         setLoading(false)
     }
 
+    /// The chips in display order, for a host animating them individually.
+    public var chipViews: [UIView] {
+        chips
+    }
+
     private var chips: [UIView] {
         stackView.arrangedSubviews.filter { $0 !== loadingView }
     }
@@ -159,8 +169,8 @@ private extension AIChatQuickActionsView {
     func applyAxis() {
         let isHorizontal = axis == .horizontal
         stackView.axis = axis
-        stackView.alignment = isHorizontal ? .center : .leading
-        hugsChipsWidthConstraint?.isActive = isHorizontal
+        stackView.alignment = isHorizontal ? .center : chipAlignment
+        hugsChipsWidthConstraint?.isActive = isHorizontal || chipAlignment == .trailing
     }
 
     /// Renders every chip's glass as one combined effect rather than each resolving its own backdrop.

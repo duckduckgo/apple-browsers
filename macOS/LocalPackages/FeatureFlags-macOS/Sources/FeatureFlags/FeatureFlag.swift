@@ -115,6 +115,7 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmDiagnosticsRecorder
 
     /// Opt-in one-document GET recovery after the five-second background-readiness wait expires.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588497257482
     case cpmLateBackgroundDocumentRecovery
 
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.

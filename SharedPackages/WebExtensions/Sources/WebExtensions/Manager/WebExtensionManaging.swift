@@ -177,10 +177,11 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func performSearchTokenRefresh()
 
-    /// Returns the background preparation needed before a main-frame navigation, including idle wakes.
+    /// Returns the shared startup task before a main-frame navigation, including idle wakes.
+    /// Its identity stays stable while the same WebKit operation is pending.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
-    func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter?
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>?
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -190,7 +191,7 @@ public extension WebExtensionManaging {
     func loadEmbeddedExtensionBackgroundContent() async {}
 
     @MainActor
-    func prepareEmbeddedBackgroundForNavigation() -> WebExtensionInitialLoadWaiter? { nil }
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

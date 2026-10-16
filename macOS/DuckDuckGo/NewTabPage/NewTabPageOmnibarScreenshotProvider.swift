@@ -81,11 +81,9 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
                                       kind: screenshot.kind.rawValue))
         case .cancelled:
             return .cancelled
-        case .permissionDenied(let showExplainer):
+        case .permissionDenied:
             // The alert explains, so the capture itself is a cancel and the page shows no error.
-            if showExplainer {
-                presentPermissionExplainer(on: webView?.window)
-            }
+            presentPermissionExplainer(on: webView?.window)
             return .cancelled
         case .failed:
             return .failed

@@ -125,12 +125,8 @@ struct NewTabPageOmnibarScreenshotProviderTests {
         return featureFlagger
     }
 
-    /// Screen Recording off and the system prompt already raised once, so a capture ends before any UI.
+    /// Screen Recording off, so a capture ends before any UI.
     private func makeDeniedCaptureService() -> AIChatScreenshotCaptureService {
-        let defaults = UserDefaults(suiteName: "NewTabPageOmnibarScreenshotProviderTests.\(UUID().uuidString)")!
-        defaults.set(true, forKey: AIChatScreenRecordingPermission.hasRequestedKey)
-        return AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false },
-                                                                                          requestAccess: {},
-                                                                                          userDefaults: defaults))
+        AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false }, requestAccess: {}))
     }
 }

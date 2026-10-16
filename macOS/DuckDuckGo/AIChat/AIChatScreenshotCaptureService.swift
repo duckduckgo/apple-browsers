@@ -48,14 +48,7 @@ final class AIChatScreenshotCaptureService {
         }
 
         // Our own picker lists every window, so both modes need Screen Recording.
-        switch permission.resolve() {
-        case .granted:
-            break
-        case .requestedSystemPrompt:
-            return .permissionDenied(showExplainer: false)
-        case .deniedShowExplainer:
-            return .permissionDenied(showExplainer: true)
-        }
+        guard permission.isGranted() else { return .permissionDenied }
 
         let windowIDs = windows.map { CGWindowID($0.windowNumber) }
         switch mode {

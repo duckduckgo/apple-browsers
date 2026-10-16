@@ -106,16 +106,20 @@ struct AIChatScreenshotCaptureTests {
     // MARK: - Screen Recording permission
 
     @available(macOS 13, *)
-    @Test("The system prompt is raised once; every later denial shows the explainer", .timeLimit(.minutes(1)))
-    func permissionPromptsOnceThenExplains() throws {
-        let defaults = try #require(UserDefaults(suiteName: "AIChatScreenshotCaptureTests.\(UUID().uuidString)"))
+    @Test("Without Screen Recording a capture is refused before macOS is asked, every time", .timeLimit(.minutes(1)))
+    @MainActor
+    func deniedCaptureNeverAsksMacOS() async {
         var requests = 0
-        let permission = AIChatScreenRecordingPermission(isGranted: { false }, requestAccess: { requests += 1 }, userDefaults: defaults)
-
-        #expect(permission.resolve() == .requestedSystemPrompt)
-        #expect(permission.resolve() == .deniedShowExplainer)
-        #expect(permission.resolve() == .deniedShowExplainer)
-        #expect(requests == 1)
+        let service = AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false },
+                                                                                                 requestAccess: { requests += 1 }))
+        for mode in [AIChatScreenshotMode.dragToSelect, .selectWindowOrDisplay, .dragToSelect] {
+            let result = await service.capture(mode: mode, excluding: [], returningFocusTo: nil)
+            guard case .permissionDenied = result else {
+                Issue.record("expected permissionDenied for \(mode)")
+                return
+            }
+        }
+        #expect(requests == 0)
     }
 
     @available(macOS 13, *)
@@ -127,17 +131,6 @@ struct AIChatScreenshotCaptureTests {
                                                          openURL: { events.append($0.absoluteString) })
         permission.openSystemSettings()
         #expect(events == ["request", URL.screenRecordingSystemSettings.absoluteString])
-    }
-
-    @available(macOS 13, *)
-    @Test("Granted permission never prompts", .timeLimit(.minutes(1)))
-    func grantedPermissionNeverPrompts() throws {
-        let defaults = try #require(UserDefaults(suiteName: "AIChatScreenshotCaptureTests.\(UUID().uuidString)"))
-        var requests = 0
-        let permission = AIChatScreenRecordingPermission(isGranted: { true }, requestAccess: { requests += 1 }, userDefaults: defaults)
-
-        #expect(permission.resolve() == .granted)
-        #expect(requests == 0)
     }
 
     // MARK: - Helpers

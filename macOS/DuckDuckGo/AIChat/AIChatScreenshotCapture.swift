@@ -55,8 +55,8 @@ struct AIChatProcessedScreenshot {
 enum AIChatScreenshotCaptureResult {
     case image(AIChatProcessedScreenshot)
     case cancelled
-    /// `showExplainer` is false when this attempt raised the system prompt, which is the UI for it.
-    case permissionDenied(showExplainer: Bool)
+    /// Screen Recording is off. The caller shows `NSAlert.screenRecordingPermission()`, which asks before macOS does.
+    case permissionDenied
     case failed(AIChatScreenshotFailureReason)
 
     /// The `screenshot_failed` reason; `nil` for an image or a cancel, which fire no failure.
@@ -119,37 +119,18 @@ enum AIChatScreenshotImageProcessor {
     }
 }
 
-/// Both screenshot modes need Screen Recording.
+/// Both screenshot modes need Screen Recording. macOS is only asked from our alert's Open System Settings,
+/// so the alert's explanation always comes first.
 struct AIChatScreenRecordingPermission {
-
-    enum Decision: Equatable {
-        case granted
-        /// macOS shows its own prompt only once per app; this attempt raised it.
-        case requestedSystemPrompt
-        /// macOS won't prompt again, so our alert explains where to turn it on.
-        case deniedShowExplainer
-    }
-
-    static let hasRequestedKey = "aichat.screenshot.has-requested-screen-recording"
 
     var isGranted: () -> Bool = { CGPreflightScreenCaptureAccess() }
     var requestAccess: () -> Void = { _ = CGRequestScreenCaptureAccess() }
     var openURL: (URL) -> Void = { NSWorkspace.shared.open($0) }
-    var userDefaults: UserDefaults = .standard
 
     /// Asks macOS first, so DuckDuckGo is listed in the Screen Recording pane even after it was removed
     /// from it; once the user has decided, asking is a no-op.
     func openSystemSettings() {
         requestAccess()
         openURL(.screenRecordingSystemSettings)
-    }
-
-    func resolve() -> Decision {
-        if isGranted() { return .granted }
-        guard !userDefaults.bool(forKey: Self.hasRequestedKey) else { return .deniedShowExplainer }
-
-        userDefaults.set(true, forKey: Self.hasRequestedKey)
-        requestAccess()
-        return .requestedSystemPrompt
     }
 }

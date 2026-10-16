@@ -18,8 +18,6 @@
 //
 
 import Foundation
-import BrowserServicesKit
-import Combine
 import Core
 import Configuration
 import BackgroundTasks
@@ -32,25 +30,20 @@ public extension NSNotification.Name {
 
 final class RemoteConfigurationService {
 
-    private let privacyConfigurationOverrideReporter: PrivacyConfigurationOverrideReporter
-
-    init(launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler()) {
+    init() {
         // Task handler registration needs to happen before the end of `didFinishLaunching`, otherwise submitting a task can throw an exception.
         // Having both in `didBecomeActive` can sometimes cause the exception when running on a physical device, so registration happens here.
         AppConfigurationFetch.registerBackgroundRefreshTaskHandler()
 
-        let contentBlockingManager = ContentBlocking.shared.contentBlockingManager
-        let contentBlockingUpdates = contentBlockingManager.updatesPublisher.map(\.completionTokens).eraseToAnyPublisher()
-        privacyConfigurationOverrideReporter = PrivacyConfigurationOverrideReporter(
+        let reporter = PrivacyConfigurationOverrideReporter(
             privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
             urlProvider: AppDependencyProvider.shared.configurationURLProvider,
-            contentBlockingUpdates: contentBlockingUpdates,
-            scheduleCompilation: { contentBlockingManager.scheduleCompilation() },
             overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults())
         )
 
         // Runs on every cold launch, including one that goes straight to background, so the override is set before any refresh.
-        privacyConfigurationOverrideReporter.handle(launchOptionsHandler.privacyConfigurationOverride) {
+        let argument = UserDefaults.app.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
+        reporter.handle(argument: argument) {
             try await AppDependencyProvider.shared.configurationManager.fetchPrivacyConfiguration()
         }
     }

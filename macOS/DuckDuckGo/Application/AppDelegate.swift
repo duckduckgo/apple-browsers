@@ -422,7 +422,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var configurationStore = ConfigurationStore()
     var configurationManager: ConfigurationManager
     var configurationURLProvider: CustomConfigurationURLProviding
-    private var privacyConfigurationOverrideReporter: PrivacyConfigurationOverrideReporter?
 
     // MARK: - VPN
 
@@ -1246,8 +1245,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
-            httpsUpgrade: privacyFeatures.httpsUpgrade,
-            configurationURLProvider: configurationURLProvider
+            httpsUpgrade: privacyFeatures.httpsUpgrade
         )
 
         onboardingContextualDialogsManager = ContextualDialogsManager(
@@ -1811,30 +1809,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Handles `-privacyConfigURL` before starting scheduled refreshes, so they can't race the override fetch.
+    /// Handles `-privacyConfigURL` before starting scheduled refreshes, so they use the override URL.
     private func startConfigurationManager() {
-        let contentBlockingManager = privacyFeatures.contentBlocking.contentBlockingManager
         let reporter = PrivacyConfigurationOverrideReporter(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             urlProvider: configurationURLProvider,
-            contentBlockingUpdates: contentBlockingManager.updatesPublisher.map(\.completionTokens).eraseToAnyPublisher(),
-            scheduleCompilation: { contentBlockingManager.scheduleCompilation() },
             overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
         )
-        privacyConfigurationOverrideReporter = reporter
-
         let configurationManager = configurationManager
-        let fetchTask = reporter.handle(launchOptionsHandler.privacyConfigurationOverride) {
-            try await configurationManager.fetchPrivacyConfigurationWithoutRecompiling(isDebug: true)
+        let argument = UserDefaults.standard.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
+        reporter.handle(argument: argument) {
+            try await configurationManager.fetchPrivacyConfiguration(isDebug: true)
         }
-        guard let fetchTask else {
-            configurationManager.start()
-            return
-        }
-        Task {
-            await fetchTask.value
-            configurationManager.start()
-        }
+        configurationManager.start()
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {

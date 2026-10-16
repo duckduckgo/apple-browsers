@@ -585,23 +585,6 @@ final class AIChatUsageWarningCardView: NSView {
         applyCloseButton(isVisible: true)
     }
 
-    /// Screen Recording is off and macOS won't prompt again; the action opens System Settings.
-    func updateForScreenRecordingPermission() {
-        showTitleLabel()
-        let title = UserText.screenRecordingPermissionPrompt
-        let subtitle = UserText.screenRecordingPermissionDisabled
-
-        applyGlyph(DesignSystemImages.Glyphs.Size16.screenShareBlocked)
-        titleLabel.maximumNumberOfLines = 2
-        titleLabel.attributedStringValue = Self.attributedModelSwitch(title: title, subtitle: subtitle)
-        titleLabel.setAccessibilityLabel("\(title). \(subtitle)")
-
-        actionButton.isHidden = false
-        actionButton.configure(title: UserText.screenRecordingPermissionOpenSettings, offersModelPicker: false, showsSwapIcon: false)
-
-        applyCloseButton(isVisible: true)
-    }
-
     private func applyGlyph(_ image: NSImage) {
         ringView.isHidden = true
         iconImageView.isHidden = false

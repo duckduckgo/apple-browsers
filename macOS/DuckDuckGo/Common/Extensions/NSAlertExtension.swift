@@ -49,10 +49,10 @@ extension NSAlert {
     /// `.OK` opens the Screen Recording pane of System Settings.
     static func screenRecordingPermission() -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.screenRecordingPermissionPrompt
-        alert.informativeText = UserText.screenRecordingPermissionDisabled
+        alert.messageText = UserText.screenRecordingPermissionTitle
+        alert.informativeText = UserText.screenRecordingPermissionMessage
         alert.addButton(withTitle: UserText.screenRecordingPermissionOpenSettings, response: .OK)
-        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        alert.addButton(withTitle: UserText.notNow, response: .cancel, keyEquivalent: .escape)
         return alert
     }
 

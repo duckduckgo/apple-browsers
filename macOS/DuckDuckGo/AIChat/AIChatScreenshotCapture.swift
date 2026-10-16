@@ -114,14 +114,14 @@ enum AIChatScreenshotImageProcessor {
     }
 }
 
-/// Drag to Select needs Screen Recording; Select Window or Display goes through the system picker and doesn't.
+/// Both screenshot modes need Screen Recording.
 struct AIChatScreenRecordingPermission {
 
     enum Decision: Equatable {
         case granted
         /// macOS shows its own prompt only once per app; this attempt raised it.
         case requestedSystemPrompt
-        /// macOS won't prompt again, so we explain where to turn it on.
+        /// macOS won't prompt again, so our alert explains where to turn it on.
         case deniedShowExplainer
     }
 

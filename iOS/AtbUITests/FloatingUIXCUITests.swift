@@ -346,6 +346,27 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertChromeButtonsAreUsable()
     }
 
+    func verifyBottomPinnedInputSurvivesKeyboardDismissal() {
+        openPage(path: "/bottom-pinned-chat", heading: "Bottom pinned chat")
+
+        let input = app.webViews.textViews["Message"]
+        let keyboard = app.keyboards.firstMatch
+        for cycle in 1...5 {
+            XCTAssertTrue(input.waitForHittable(timeout: timeout))
+            input.tap()
+            XCTAssertTrue(keyboard.waitForExistence(timeout: timeout))
+            XCTAssertTrue(waitUntil(timeout: timeout) {
+                keyboard.frame.intersects(self.app.frame) && input.frame.maxY <= keyboard.frame.minY + 1
+            }, "Message hidden by keyboard on cycle \(cycle)")
+            input.typeText("Message \(cycle)\nAnother line ")
+            app.webViews.buttons["Dismiss keyboard"].tap()
+            XCTAssertTrue(keyboard.waitForNonExistence(timeout: timeout))
+            XCTAssertTrue(input.waitForHittable(timeout: timeout))
+            assertClearsBottomChrome(input)
+        }
+        verifyUnifiedToggleInputKeyboardGeometry()
+    }
+
     func verifyScrollingPerformance() {
         let environment = ProcessInfo.processInfo.environment
         if let url = environment["FLOATING_UI_PERFORMANCE_URL"],
@@ -589,6 +610,7 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
         ]
@@ -610,6 +632,11 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarFire).exists)
         XCTAssertTrue(tabSwitcherButton.exists)
         XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarMenu).exists)
+        let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
+        if dismissButton.exists, dismissButton.isHittable {
+            dismissButton.tap()
+            XCTAssertTrue(dismissButton.waitForNotHittable(timeout: timeout))
+        }
         if barPosition == .bottom {
             moveAddressBar(to: .bottom)
         }
@@ -810,6 +837,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/edge-controls"] = { _ in
             .ok(.html(Self.edgeControlsHTML))
         }
+        server["/bottom-pinned-chat"] = { _ in
+            .ok(.html(Self.bottomPinnedChatHTML))
+        }
         server["/slow-page"] = { _ in
             Thread.sleep(forTimeInterval: 2)
             return .ok(.html(Self.slowPageHTML))
@@ -906,6 +936,31 @@ class FloatingUIXCUITestCase: XCTestCase {
     </html>
     """
 
+    private static let bottomPinnedChatHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>Bottom pinned chat</title>
+        <style>
+          body { margin: 0; font: 16px system-ui; background: #eef4ff; }
+          h1 { font-size: 24px; }
+          main { padding: 16px; }
+          footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)); background: white; }
+          textarea { box-sizing: border-box; width: 100%; min-height: 44px; font-size: 16px; }
+          button { min-height: 44px; font-size: 16px; }
+        </style>
+      </head>
+      <body>
+        <main>
+          <h1>Bottom pinned chat</h1>
+          <button onclick="document.activeElement.blur()">Dismiss keyboard</button>
+        </main>
+        <footer><textarea aria-label="Message" rows="2" placeholder="Type a message"></textarea></footer>
+      </body>
+    </html>
+    """
+
     private static let slowPageHTML = """
     <!doctype html>
     <html lang="en">
@@ -972,6 +1027,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
+    func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
     func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }
@@ -1005,6 +1061,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
+    func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
     func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }

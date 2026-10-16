@@ -165,6 +165,9 @@ final class PageContextTabExtension {
                 // can't be re-pushed to the sidebar before the new page is collected.
                 if case .url = tabContent {
                     self.autoAttachSuppression.navigatedToNewURL()
+                    // A forced collect belongs to the page it was asked on. One that never returned
+                    // would otherwise override the user's remove on every page after it.
+                    self.shouldForceContextCollection = false
                     self.cachedPageContext = nil
                     // Selections are tied to the page they were made on — drop any not-yet-flushed ones.
                     self.pendingSelectionContexts = []
@@ -504,7 +507,11 @@ final class PageContextTabExtension {
     private func scheduleCollectionTimeout() {
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.collectionTimeout) { [weak self] in
             guard let self else { return }
-            self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout).forEach { self.fire($0) }
+            let expired = self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout)
+            if expired.contains(where: { $0.trigger == .userRequest }) {
+                self.shouldForceContextCollection = false
+            }
+            expired.forEach { self.fire($0) }
         }
     }
 
@@ -538,6 +545,7 @@ final class PageContextTabExtension {
         guard let pageContextUserScript, webView != nil else {
             Logger.aiChat.debug("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
             fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            shouldForceContextCollection = false
             return
         }
         extractionResolver.requested(trigger: trigger)
@@ -572,6 +580,7 @@ final class PageContextTabExtension {
         guard let webView else {
             Logger.aiChat.debug("⚠️ PageContext gate: no webview, cannot read document host=\(url.host ?? "nil", privacy: .public)")
             fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil, contextType: .pdf)
+            shouldForceContextCollection = false
             return
         }
         guard Self.shouldRunDocumentCollect(trigger: trigger, webViewURL: webView.url, contentURL: url) else {

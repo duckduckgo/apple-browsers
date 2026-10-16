@@ -178,7 +178,7 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
-        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
@@ -673,10 +673,12 @@ final class MainCoordinator {
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,
+                                               featureFlagger: FeatureFlagger,
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager)
+                        dataStoreIDManager: dataStoreIDManager,
+                        featureFlagger: featureFlagger)
     }
 
     // MARK: - Public API

@@ -106,5 +106,50 @@
         "triggers": ["other"],
         "suffixes": ["time_bucket", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "fire_single-tab-burn_requested": {
+        "description": "Single-tab burn reached the executor, including requests dropped because another burn is in progress. Sent with either optimization flag state.",
+        "owners": ["brindy"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "optimization_enabled",
+                "type": "boolean",
+                "description": "singleTabBurnOptimization flag state when the executor receives the request."
+            },
+            {
+                "key": "dropped",
+                "type": "boolean",
+                "description": "Another burn was in progress and this request was dropped."
+            }
+        ]
+    },
+    "fire_single-tab-burn_finished": {
+        "description": "Single-tab executor finished all requested cleanup and delegate callbacks. Completion does not imply every cleanup operation succeeded. Sent with either optimization flag state.",
+        "owners": ["brindy"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "optimization_enabled",
+                "type": "boolean",
+                "description": "singleTabBurnOptimization flag state when the executor receives the request."
+            },
+            {
+                "key": "duration_ms",
+                "type": "string",
+                "enum": ["100", "250", "500", "1000", "2000", "5000", "10000", "30000", "60000", "120000", "300000", "more"],
+                "description": "Total executor duration, bucketed by inclusive upper bound in milliseconds; more means over 300000 ms."
+            },
+            {
+                "key": "tab_closure_ms",
+                "type": "string",
+                "enum": ["100", "250", "500", "1000", "2000", "5000", "10000", "30000", "60000", "120000", "300000", "more"],
+                "description": "Time from executor entry until tab closure and favicon cleanup return, bucketed by inclusive upper bound in milliseconds. Absent if closing tabs was not requested."
+            }
+        ]
     }
 }

@@ -34,6 +34,8 @@ struct NewTabPageSessionWideEventDataTests {
         "feature.data.ext.actions.hit_submit",
         "feature.data.ext.actions.choose_suggestion",
         "feature.data.ext.actions.tap_favorite",
+        "feature.data.ext.actions.tap_add_favorite",
+        "feature.data.ext.actions.tap_customize",
         "feature.data.ext.actions.tap_fire_button",
         "feature.data.ext.actions.tap_return_to_last",
         "feature.data.ext.actions.tap_tab_viewer_escape_hatch",
@@ -62,10 +64,12 @@ struct NewTabPageSessionWideEventDataTests {
     private func makeData(trigger: NewTabPageSessionWideEventData.Trigger = .appOpen,
                           launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode = .down,
                           toggleEnabled: Bool = false,
+                          pageDesign: NewTabPageSessionWideEventData.PageDesign = .legacy,
                           startedAt: Date = Date()) -> NewTabPageSessionWideEventData {
         NewTabPageSessionWideEventData(trigger: trigger,
                                        launchKeyboardMode: launchKeyboardMode,
                                        toggleEnabled: toggleEnabled,
+                                       pageDesign: pageDesign,
                                        startedAt: startedAt)
     }
 
@@ -78,6 +82,8 @@ struct NewTabPageSessionWideEventDataTests {
         data.hitSubmit = true
         data.chooseSuggestion = true
         data.tapFavorite = true
+        data.tapAddFavorite = true
+        data.tapCustomize = true
         data.tapFireButton = true
         data.tapReturnToLast = true
         data.tapTabViewerEscapeHatch = true
@@ -111,7 +117,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(NewTabPageSessionWideEventData.metadata.pixelName == "new_tab_page_session")
         #expect(NewTabPageSessionWideEventData.metadata.featureName == "new-tab-page-session")
         #expect(NewTabPageSessionWideEventData.metadata.type == "ios-new-tab-page-session")
-        #expect(NewTabPageSessionWideEventData.metadata.version == "1.1.0")
+        #expect(NewTabPageSessionWideEventData.metadata.version == "1.1.1")
     }
 
     @available(iOS 16, *)
@@ -131,6 +137,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(params["feature.data.ext.trigger"] as? String == "app_open")
         #expect(params["feature.data.ext.launch_keyboard_mode"] as? String == "down")
         #expect(params["feature.data.ext.toggle_enabled"] as? Bool == false)
+        #expect(params["feature.data.ext.page_design"] as? String == "legacy")
         #expect(params["feature.data.ext.action_count_bucketed"] as? String == "0")
         #expect(params["feature.data.ext.terminal_action"] == nil)
         #expect(params["feature.data.ext.session_duration_ms_bucketed"] == nil)
@@ -149,6 +156,13 @@ struct NewTabPageSessionWideEventDataTests {
     func keyboardUpModeEmitsUp() {
         let params = makeData(launchKeyboardMode: .up).jsonParameters()
         #expect(params["feature.data.ext.launch_keyboard_mode"] as? String == "up")
+    }
+
+    @available(iOS 16, *)
+    @Test("Redesigned page emits redesign", .timeLimit(.minutes(1)))
+    func redesignedPageEmitsRedesign() {
+        let params = makeData(pageDesign: .redesign).jsonParameters()
+        #expect(params["feature.data.ext.page_design"] as? String == "redesign")
     }
 
     @available(iOS 16, *)

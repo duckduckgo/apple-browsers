@@ -4,7 +4,7 @@
         "owners": ["dus7"],
         "meta": {
             "type": "ios-new-tab-page-session",
-            "version": "1.0"
+            "version": "1.1"
         },
         "feature": {
             "name": "new-tab-page-session",
@@ -30,9 +30,14 @@
                         "type": "boolean",
                         "description": "True if the user has the Search / Duck.ai input toggle enabled in settings ('Toggle between Search and Duck.ai' rather than 'Search only')"
                     },
+                    "page_design": {
+                        "type": "string",
+                        "description": "Which New Tab Page design the visit was shown. `legacy` = the original page; `redesign` = the redesigned page. Read from the page that was actually built rather than from the feature flag, so a visit is attributed to what the user saw.",
+                        "enum": ["legacy", "redesign"]
+                    },
                     "terminal_action": {
                         "type": "string",
-                        "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first twelve values (`load_serp` through `menu_item_selected`) map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `menu_item_selected` covers picking a top level browsing menu entry that has no terminal of its own, such as New Tab or Settings, which replaces the New Tab Page for good. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed. Steps that leave the user on the New Tab Page, or that lead to a screen the user comes back from, such as copying a private email address or opening Bookmarks from the menu, are recorded under `actions` instead and let the visit continue.",
+                        "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first twelve values (`load_serp` through `menu_item_selected`) map to SUCCESS. `custom_button` is the customizable toolbar button set to something other than Fire, reachable on the New Tab Page only while icon customization is enabled. `menu_item_selected` covers picking a top level browsing menu entry that has no terminal of its own, such as New Tab or Settings, which replaces the New Tab Page for good, and also All Settings picked from the New Tab Page customization sheet, which leads to the same Settings screen. `no_action_timeout` (the user took no action for 30 seconds) and `max_duration_exceeded` (the visit reached the 2 minute overall limit without ending) map to FAILURE. `app_backgrounded` maps to CANCELLED. `app_terminated` maps to UNKNOWN and is used for a visit recovered after the app was killed. Steps that leave the user on the New Tab Page, or that lead to a screen the user comes back from, such as copying a private email address or opening Bookmarks from the menu, are recorded under `actions` instead and let the visit continue.",
                         "enum": [
                             "load_serp",
                             "load_search_suggestion",
@@ -102,6 +107,14 @@
                             "tap_favorite": {
                                 "type": "boolean",
                                 "description": "True if the user tapped a favorite during the visit"
+                            },
+                            "tap_add_favorite": {
+                                "type": "boolean",
+                                "description": "True if the user opened the Add Favorite sheet from the New Tab Page during the visit"
+                            },
+                            "tap_customize": {
+                                "type": "boolean",
+                                "description": "True if the user opened the New Tab Page customization sheet during the visit"
                             },
                             "tap_fire_button": {
                                 "type": "boolean",

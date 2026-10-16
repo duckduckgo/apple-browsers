@@ -40,6 +40,8 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 
     func newTabPageDidRequestSettings(_ controller: any NewTabPage)
+    /// The customization sheet was opened over the page.
+    func newTabPageDidOpenCustomization(_ controller: any NewTabPage)
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
 }
@@ -51,6 +53,7 @@ extension NewTabPageControllerDelegate {
     func newTabPageDidScroll(_ controller: any NewTabPage) { }
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
+    func newTabPageDidOpenCustomization(_ controller: any NewTabPage) { }
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
 }

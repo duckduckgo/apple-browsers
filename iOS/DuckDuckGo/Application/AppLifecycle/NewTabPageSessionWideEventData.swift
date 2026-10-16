@@ -32,7 +32,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
         mobileMetaType: "ios-new-tab-page-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-new-tab-page-session",
-        version: "1.1.0"
+        version: "1.1.1"
     )
 
     enum Trigger: String, Codable, CaseIterable {
@@ -47,6 +47,12 @@ final class NewTabPageSessionWideEventData: WideEventData {
     enum LaunchKeyboardMode: String, Codable, CaseIterable {
         case up
         case down
+    }
+
+    /// Which New Tab Page design the visit was shown.
+    enum PageDesign: String, Codable, CaseIterable {
+        case legacy
+        case redesign
     }
 
     /// The single action that ended the visit.
@@ -65,7 +71,8 @@ final class NewTabPageSessionWideEventData: WideEventData {
         /// Only reachable while the New Tab Page icon customization flag is on.
         case customButton = "custom_button"
         /// A top level browsing menu entry with no terminal of its own, such as New Tab or
-        /// Settings. Those replace the New Tab Page for good, so the visit ends here.
+        /// Settings, or All Settings from the customization sheet. Those replace the New Tab
+        /// Page for good, so the visit ends here.
         case menuItemSelected = "menu_item_selected"
         case noActionTimeout = "no_action_timeout"
         case maxDurationExceeded = "max_duration_exceeded"
@@ -110,6 +117,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
     var trigger: Trigger
     var launchKeyboardMode: LaunchKeyboardMode
     var toggleEnabled: Bool
+    var pageDesign: PageDesign
 
     /// Carried explicitly rather than derived from `feature.status`, because the sender
     /// only writes a status reason for SUCCESS and UNKNOWN outcomes.
@@ -132,6 +140,8 @@ final class NewTabPageSessionWideEventData: WideEventData {
     var hitSubmit: Bool = false
     var chooseSuggestion: Bool = false
     var tapFavorite: Bool = false
+    var tapAddFavorite: Bool = false
+    var tapCustomize: Bool = false
     var tapFireButton: Bool = false
     var tapReturnToLast: Bool = false
     var tapTabViewerEscapeHatch: Bool = false
@@ -159,6 +169,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
     init(trigger: Trigger,
          launchKeyboardMode: LaunchKeyboardMode,
          toggleEnabled: Bool,
+         pageDesign: PageDesign,
          startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
@@ -166,6 +177,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
         self.trigger = trigger
         self.launchKeyboardMode = launchKeyboardMode
         self.toggleEnabled = toggleEnabled
+        self.pageDesign = pageDesign
         self.sessionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.firstInteractionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.lastActionAt = startedAt
@@ -216,6 +228,7 @@ extension NewTabPageSessionWideEventData {
             (WideEventParameter.NewTabPageSessionFeature.trigger, trigger.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.launchKeyboardMode, launchKeyboardMode.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.toggleEnabled, toggleEnabled),
+            (WideEventParameter.NewTabPageSessionFeature.pageDesign, pageDesign.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.terminalAction, terminalAction?.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.actionCountBucketed, String(Self.actionCountBucket(actionCount))),
             (WideEventParameter.NewTabPageSessionFeature.timeToFirstInteractionMsBucketed, firstInteractionInterval.stringValue(bucket)),
@@ -228,6 +241,8 @@ extension NewTabPageSessionWideEventData {
             (WideEventParameter.NewTabPageSessionFeature.hitSubmit, whenDone(hitSubmit)),
             (WideEventParameter.NewTabPageSessionFeature.chooseSuggestion, whenDone(chooseSuggestion)),
             (WideEventParameter.NewTabPageSessionFeature.tapFavorite, whenDone(tapFavorite)),
+            (WideEventParameter.NewTabPageSessionFeature.tapAddFavorite, whenDone(tapAddFavorite)),
+            (WideEventParameter.NewTabPageSessionFeature.tapCustomize, whenDone(tapCustomize)),
             (WideEventParameter.NewTabPageSessionFeature.tapFireButton, whenDone(tapFireButton)),
             (WideEventParameter.NewTabPageSessionFeature.tapReturnToLast, whenDone(tapReturnToLast)),
             (WideEventParameter.NewTabPageSessionFeature.tapTabViewerEscapeHatch, whenDone(tapTabViewerEscapeHatch)),
@@ -261,6 +276,7 @@ extension WideEventParameter {
         static let trigger = "feature.data.ext.trigger"
         static let launchKeyboardMode = "feature.data.ext.launch_keyboard_mode"
         static let toggleEnabled = "feature.data.ext.toggle_enabled"
+        static let pageDesign = "feature.data.ext.page_design"
         static let terminalAction = "feature.data.ext.terminal_action"
         static let actionCountBucketed = "feature.data.ext.action_count_bucketed"
         static let timeToFirstInteractionMsBucketed = "feature.data.ext.time_to_first_interaction_ms_bucketed"
@@ -274,6 +290,8 @@ extension WideEventParameter {
         static let hitSubmit = "feature.data.ext.actions.hit_submit"
         static let chooseSuggestion = "feature.data.ext.actions.choose_suggestion"
         static let tapFavorite = "feature.data.ext.actions.tap_favorite"
+        static let tapAddFavorite = "feature.data.ext.actions.tap_add_favorite"
+        static let tapCustomize = "feature.data.ext.actions.tap_customize"
         static let tapFireButton = "feature.data.ext.actions.tap_fire_button"
         static let tapReturnToLast = "feature.data.ext.actions.tap_return_to_last"
         static let tapTabViewerEscapeHatch = "feature.data.ext.actions.tap_tab_viewer_escape_hatch"

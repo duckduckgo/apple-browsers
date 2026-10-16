@@ -36,7 +36,8 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     /// The New Tab Page was displayed. Supersedes any visit still open.
     func visitStarted(trigger: NewTabPageSessionWideEventData.Trigger,
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
-                      toggleEnabled: Bool)
+                      toggleEnabled: Bool,
+                      pageDesign: NewTabPageSessionWideEventData.PageDesign)
 
     /// Updates the New Tab page's recorded starting keyboard state to `.up`.
     /// Use when the app shows the keyboard after the page appears, such as when the app opens.
@@ -56,6 +57,8 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     func hitSubmit()
     func chooseSuggestion()
     func tapFavorite()
+    func tapAddFavorite()
+    func tapCustomize()
     func tapFireButton()
 
     func tapReturnToLast()
@@ -177,7 +180,8 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
     func visitStarted(trigger: NewTabPageSessionWideEventData.Trigger,
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
-                      toggleEnabled: Bool) {
+                      toggleEnabled: Bool,
+                      pageDesign: NewTabPageSessionWideEventData.PageDesign) {
         // The only gate needed: with no visit open, every action and terminal already
         // no-ops on its `activeVisit` guard.
         guard isEnabled() else { return }
@@ -211,6 +215,7 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         let visit = NewTabPageSessionWideEventData(trigger: trigger,
                                                   launchKeyboardMode: launchKeyboardMode,
                                                   toggleEnabled: toggleEnabled,
+                                                  pageDesign: pageDesign,
                                                   startedAt: dateProvider(),
                                                   globalData: WideEventGlobalData(sampleRate: sampleRate()))
         activeVisit = visit
@@ -238,6 +243,8 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     func hitSubmit() { recordAction(\.hitSubmit) }
     func chooseSuggestion() { recordAction(\.chooseSuggestion) }
     func tapFavorite() { recordAction(\.tapFavorite) }
+    func tapAddFavorite() { recordAction(\.tapAddFavorite) }
+    func tapCustomize() { recordAction(\.tapCustomize) }
     func tapFireButton() { recordAction(\.tapFireButton) }
     func tapReturnToLast() { recordAction(\.tapReturnToLast) }
     func tapTabViewerEscapeHatch() { recordAction(\.tapTabViewerEscapeHatch) }

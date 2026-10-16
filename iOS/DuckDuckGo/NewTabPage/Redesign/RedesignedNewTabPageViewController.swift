@@ -180,6 +180,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             delegate?.newTabPageDidRequestSettings(self)
         }
 
+        delegate?.newTabPageDidOpenCustomization(self)
         present(customizationViewController, animated: true)
     }
 
@@ -265,6 +266,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.addSubview(backgroundImageView)
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
+        scrollView.delegate = self
         scrollView.addSubview(blocksStackView)
         contentContainerView.addSubview(customizeButton)
 
@@ -467,5 +469,14 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+    }
+}
+
+extension RedesignedNewTabPageViewController: UIScrollViewDelegate {
+
+    // A drag rather than every offset change, so restoring the resting scroll position does not
+    // count as the user scrolling.
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        delegate?.newTabPageDidScroll(self)
     }
 }

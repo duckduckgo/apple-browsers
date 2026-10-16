@@ -2672,10 +2672,15 @@ class MainViewController: UIViewController {
         // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
         // trip to the VPN screen it was taken for ended without coming back here.
         vpnConnectedWhenLeavingNewTabPage = nil
+        // Read from the page that was built rather than the feature flag: reading the flag enrols
+        // the device in the redesign experiment, and the page is what the user actually saw.
+        let pageDesign: NewTabPageSessionWideEventData.PageDesign =
+            newTabPageViewController is RedesignedNewTabPageViewController ? .redesign : .legacy
         newTabPageSessionInstrumentation.visitStarted(
             trigger: trigger,
             launchKeyboardMode: isInputFocused ? .up : .down,
-            toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+            toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            pageDesign: pageDesign
         )
     }
 
@@ -7210,7 +7215,13 @@ extension MainViewController: EscapeHatchActionRouter {
 extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) {
+        // Settings replaces the New Tab Page, the same as reaching it from the menu.
+        endNewTabPageSessionWithMenuItem()
         segueToSettings()
+    }
+
+    func newTabPageDidOpenCustomization(_ controller: any NewTabPage) {
+        recordNewTabPageSessionMenuEntry { $0.tapCustomize() }
     }
 
     func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
@@ -7231,6 +7242,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
+        recordNewTabPageSessionMenuEntry { $0.tapAddFavorite() }
         let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
         model.reportOpening()
         model.onSave = { [weak self] in

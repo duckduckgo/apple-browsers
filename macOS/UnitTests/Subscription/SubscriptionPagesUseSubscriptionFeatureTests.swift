@@ -409,6 +409,20 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
+    func testWhenMappingPlanChangeWideEventFunnelNameThenSubscriptionSettingsOriginsMapToAppSettings() {
+        XCTAssertEqual(
+            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionPlanChangeOrigin.subscriptionSettingsViewPlans.rawValue),
+            SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertEqual(
+            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionPlanChangeOrigin.subscriptionSettingsUpgradeToPro.rawValue),
+            SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertEqual(
+            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionFunnelOrigin.appMenu.rawValue),
+            SubscriptionFunnelOrigin.appMenu.rawValue)
+        XCTAssertEqual(SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: "funnel_web_origin"), "funnel_web_origin")
+        XCTAssertNil(SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: nil))
+    }
+
     // MARK: - GetSubscriptionTierOptions Tests
 
     func testGetSubscriptionTierOptions_WhenProTierEnabled_PassesTrueToIncludeProTier() async throws {
@@ -1017,6 +1031,38 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(started.purchasePlatform, .stripe)
         XCTAssertEqual(started.fromPlan, "stripe-plus-monthly")
         XCTAssertEqual(started.toPlan, "stripe-yearly-pro")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenOriginIsSubscriptionSettingsViewPlans_StartsWideEventWithAppSettingsFunnelName() async throws {
+        // Given
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_subscriptionsettings_macos__viewplans")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: [:], webView: webView)
+        let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]
+
+        let stripeSubscription = DuckDuckGoSubscription(
+            productId: "stripe-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        subscriptionManager.resultSubscription = .success(stripeSubscription)
+        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
     @MainActor

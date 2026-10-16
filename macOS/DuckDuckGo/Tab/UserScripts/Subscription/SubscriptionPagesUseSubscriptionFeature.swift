@@ -502,7 +502,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let message = original
         await setPixelOrigin(from: message)
-        let origin = await originFrom(originalMessage: message)
+        let funnelName = SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: await originFrom(originalMessage: message))
 
         // Debug: Log raw params received from frontend
         Logger.subscription.debug("[TierChange] Raw params received: \(String(describing: params), privacy: .public)")
@@ -524,7 +524,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let purchaseUpdate = await flowPerformer.performTierChange(
                 to: subscriptionSelection.id,
                 changeType: subscriptionSelection.change,
-                contextName: origin ?? ""
+                contextName: funnelName ?? ""
             )
             if let purchaseUpdate {
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -547,7 +547,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 changeType: changeType,
                 fromPlan: fromPlan,
                 toPlan: subscriptionSelection.id,
-                funnelName: origin
+                funnelName: funnelName
             )
             self.planChangeWideEventData = wideData
             wideEvent.startFlow(wideData)

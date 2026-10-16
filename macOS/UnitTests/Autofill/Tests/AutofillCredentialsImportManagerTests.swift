@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import BrowserServicesKit
@@ -135,6 +136,34 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     }
 
     // Default values here are those that will result in a `true` value for credentialsImport. Override to test `false` case.
+    func testWhenDuckDuckGoDoesNotAutofillPasswords_ThenTheMenuDoesNotOpenOnLoginFields() {
+        importState.isAutofillEnabled = false
+
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\"}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.password.current\",\"credentialsImport\":true}",
+                                                                       for: "fill.dev"))
+        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.emailAddress\"}", for: "fill.dev"))
+        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"creditCards.cardNumber\"}", for: "fill.dev"))
+    }
+
+    func testWhenDuckDuckGoAutofillsPasswords_ThenTheMenuOpensOnLoginFields() {
+        importState.isAutofillEnabled = true
+
+        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\"}", for: "fill.dev"))
+    }
+
+    func testWhenAnExtensionManagesPasswords_ThenAutofillCountsAsDisabledForTheImportPromo() {
+        let preferences = AutofillPreferencesPersistorMock()
+        let state = AutofillLoginImportState(userDefaults: UserDefaults(suiteName: #function)!,
+                                             featureFlagger: MockFeatureFlagger(),
+                                             autofillPreferences: preferences)
+        XCTAssertTrue(state.isAutofillEnabled)
+
+        preferences.kindsManagedByExtension = [.passwords]
+
+        XCTAssertFalse(state.isAutofillEnabled)
+    }
+
     private func autofillUserScriptShouldShowPasswordImportDialogResult(credentials: [SecureVaultModels.WebsiteCredentials] = [],
                                                                         credentialsProvider: SecureVaultModels.CredentialsProvider = SecureVaultModels.CredentialsProvider(name: .duckduckgo, locked: false),
                                                                         totalCredentialsCount: Int = 49,

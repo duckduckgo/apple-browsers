@@ -28,6 +28,7 @@ public protocol AutofillCredentialsImportPresentationDelegate: AnyObject {
 public protocol AutofillLoginImportStateProvider {
     var isEligibleDDGUser: Bool { get }
     var hasImportedLogins: Bool { get }
+    /// Whether DuckDuckGo autofills passwords: the user wants it, and no extension manages passwords.
     var isAutofillEnabled: Bool { get }
     var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool { get }
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool
@@ -49,7 +50,7 @@ final public class AutofillCredentialsImportManager {
 extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     private struct CredentialsImportInputContext: Decodable {
         var inputType: String
-        var credentialsImport: Bool
+        var credentialsImport: Bool?
     }
 
     public func autofillUserScriptDidRequestPasswordImportFlow(_ completion: @escaping () -> Void) {
@@ -79,7 +80,12 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {
         if let data = serializedInputContext.data(using: .utf8),
            let decoded = try? JSONDecoder().decode(CredentialsImportInputContext.self, from: data) {
-            if decoded.credentialsImport {
+            // A login field has nothing to show while DuckDuckGo doesn't autofill passwords, for example while
+            // an extension manages them. A page that loaded before that still asks, so the menu would open empty.
+            if decoded.inputType.hasPrefix("credentials"), !loginImportStateProvider.isAutofillEnabled {
+                return false
+            }
+            if decoded.credentialsImport == true {
                 return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
             }
         }

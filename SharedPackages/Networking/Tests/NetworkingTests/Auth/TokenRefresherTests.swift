@@ -113,7 +113,7 @@ final class TokenRefresherTests: XCTestCase {
         XCTAssertEqual(mockOAuthService.refreshAccessTokenRequestedTokens, ["r0", "r0"])
     }
 
-    func testFork_everyCallReportsItsSteps() async throws {
+    func testFork_onlyFirstCallReportsItsSteps() async throws {
         mockOAuthService.refreshAccessTokenResponses = [
             .success(OAuthTokensFactory.makeValidOAuthTokenResponse()),
             .failure(URLError(.timedOut))
@@ -123,8 +123,7 @@ final class TokenRefresherTests: XCTestCase {
         _ = try? await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: "r")
 
         XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r"),
-                                                     .tokenRefreshRefreshedAccessToken(refreshID: "r"),
-                                                     .tokenRefreshRefreshingAccessToken(refreshID: "r")])
+                                                     .tokenRefreshRefreshedAccessToken(refreshID: "r")])
         for event in eventCapture.capturedEvents {
             switch event {
             case .tokenRefreshRefreshingAccessToken(let refreshID), .tokenRefreshRefreshedAccessToken(let refreshID):

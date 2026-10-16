@@ -1054,6 +1054,11 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         )
         diagnostics.secondsSinceAppLaunch = 123
         diagnostics.appVersionChange = .updated
+        diagnostics.backgroundReadiness = .failed
+        diagnostics.secondsSinceBackgroundViewCreation = 32
+        diagnostics.hasBackgroundLoadError = true
+        diagnostics.secondsFromBackgroundViewToLoadError = 30.4
+        diagnostics.backgroundLoadErrorAppState = .background
         let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .failedMeasurementResponse,
                                                reloadState: .none, secondsToResponse: 12.345, diagnostics: diagnostics)
         XCTAssertEqual(report.pixelParameters, [
@@ -1061,7 +1066,8 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
             "reload_state": "none", "response_after": "under_30s", "context_loaded": "true", "bg_view_alive": "true",
             "bg_process_alive": "false", "bg_process_responsive": "false", "tab_in_context": "false",
             "handler_registered": "true", "tab_controller_match": "false", "tab_has_ext_scripts": "true",
-            "bg_events": "view@1m"
+            "bg_events": "view@1m", "bg_ready_after": "failed", "bg_view_age": "30s_to_2m",
+            "bg_load_error_after": "25s_to_35s", "bg_load_error_app_state": "background"
         ])
     }
 
@@ -1345,11 +1351,13 @@ final class CPMMessagingHealthMonitorDiagnosticsTests: XCTestCase {
         let provider = StubDiagnosticsProvider()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         monitor.diagnosticsProvider = provider
-        let initialDiagnostics = CPMMessagingDiagnostics(
+        var initialDiagnostics = CPMMessagingDiagnostics(
             extensionContextLoaded: false, tabKnownToWebKit: false,
             backgroundEvents: [.init(token: "load", secondsBeforeSnapshot: 42),
                                .init(token: "view", secondsBeforeSnapshot: 2)]
         )
+        initialDiagnostics.backgroundReadiness = .pending
+        initialDiagnostics.secondsSinceBackgroundViewCreation = 5
         provider.diagnostics = initialDiagnostics
 
         monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other))
@@ -1357,12 +1365,20 @@ final class CPMMessagingHealthMonitorDiagnosticsTests: XCTestCase {
             extensionContextLoaded: true, tabKnownToWebKit: true,
             backgroundEvents: [.init(token: "error_background_failed_to_load:E:6", secondsBeforeSnapshot: 1)]
         )
+        provider.diagnostics.backgroundReadiness = .failed
+        provider.diagnostics.hasBackgroundLoadError = true
+        provider.diagnostics.secondsFromBackgroundViewToLoadError = 30
+        provider.diagnostics.backgroundLoadErrorAppState = .background
         monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab-2", navigationKind: .other))
 
         XCTAssertTrue(pixelFiring.reports.isEmpty)
         monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other))
         XCTAssertEqual(pixelFiring.diagnostics, [initialDiagnostics])
         XCTAssertEqual(pixelFiring.metadata.first?.parameters["bg_events"], "load@1m,view@30s")
+        XCTAssertEqual(pixelFiring.metadata.first?.parameters["bg_ready_after"], "pending")
+        XCTAssertEqual(pixelFiring.metadata.first?.parameters["bg_view_age"], "4s_to_8s")
+        XCTAssertNil(pixelFiring.metadata.first?.parameters["bg_load_error_after"])
+        XCTAssertNil(pixelFiring.metadata.first?.parameters["bg_load_error_app_state"])
         XCTAssertEqual(provider.requests.map(\.tabIdentifier), ["tab-1"])
     }
 }

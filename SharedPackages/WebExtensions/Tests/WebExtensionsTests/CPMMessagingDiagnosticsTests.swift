@@ -61,12 +61,13 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
             Name.extensionContextErrors, Name.backgroundViewCreateCount, Name.backgroundViewAlive,
             Name.backgroundViewLeakedCount, Name.backgroundWebProcessAlive, Name.tabKnownToWebKit,
             Name.nativeMessageHandlerRegistered, Name.tabControllerMatchesContext, Name.tabHasExtensionUserScripts,
+            Name.backgroundWebProcessResponsive, Name.backgroundEvents
         ], [
             "context_loaded", "critical_memory_age", "network_restarted",
             "context_errors", "bg_view_creations", "bg_view_alive",
             "bg_view_leaked_count", "bg_process_alive", "tab_in_context",
             "handler_registered", "tab_controller_match", "tab_has_ext_scripts",
-            "bg_process_responsive", "background_graveyard_enabled", "bg_events"
+            "bg_process_responsive", "bg_events"
         ])
     }
 
@@ -131,23 +132,33 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         XCTAssertEqual(CPMMessagingDiagnostics.countBucket(6), "over_5")
     }
 
-    func testBackgroundReadinessIsBucketedAroundTheGracePeriodAndTheUnloadTimer() {
-        let values = [
-            CPMBackgroundReadiness.noBackground, .pending, .failed,
-            .loaded(secondsAfterViewCreation: 0.9), .loaded(secondsAfterViewCreation: 1),
-            .loaded(secondsAfterViewCreation: 4), .loaded(secondsAfterViewCreation: 10), .loaded(secondsAfterViewCreation: 30)
-        ].map(CPMMessagingDiagnostics.readinessValue)
-        XCTAssertEqual(values, ["none", "pending", "failed", "under_1s", "1s_to_4s", "4s_to_10s", "10s_to_30s", "over_30s"])
+    func testBackgroundReadinessBucketsCoverTheGraceAndUnloadBoundaries() {
+        let times: [TimeInterval] = [0, 0.999, 1, 3.999, 4, 9.999, 10, 29.999, 30]
+        XCTAssertEqual(times.map { CPMMessagingDiagnostics.readinessValue(.loaded(secondsAfterViewCreation: $0)) },
+                       ["under_1s", "under_1s", "1s_to_4s", "1s_to_4s", "4s_to_10s", "4s_to_10s", "10s_to_30s", "10s_to_30s", "over_30s"])
+        XCTAssertEqual([CPMBackgroundReadiness.noBackground, .pending, .failed].map(CPMMessagingDiagnostics.readinessValue),
+                       ["none", "pending", "failed"])
     }
 
-    func testBackgroundViewAgeIsBucketedFinerThanTheEventTimeline() {
-        let buckets = [0, 3.9, 4, 7.9, 8, 29.9, 30, 119.9, 120].map(CPMMessagingDiagnostics.backgroundViewAgeBucket)
-        XCTAssertEqual(buckets, ["under_4s", "under_4s", "4s_to_8s", "4s_to_8s", "8s_to_30s", "8s_to_30s", "30s_to_2m", "30s_to_2m", "over_2m"])
+    func testBackgroundAgeAndLoadErrorBucketsAtEveryBoundary() {
+        XCTAssertEqual([0, 3.999, 4, 7.999, 8, 29.999, 30, 119.999, 120].map(CPMMessagingDiagnostics.backgroundViewAgeBucket),
+                       ["under_4s", "under_4s", "4s_to_8s", "4s_to_8s", "8s_to_30s", "8s_to_30s", "30s_to_2m", "30s_to_2m", "over_2m"])
+        XCTAssertEqual([0, 4.999, 5, 24.999, 25, 34.999, 35].map(CPMMessagingDiagnostics.loadErrorDelayBucket),
+                       ["under_5s", "under_5s", "5s_to_25s", "5s_to_25s", "25s_to_35s", "25s_to_35s", "over_35s"])
     }
 
-    func testOpenTabCountsAreBucketed() {
-        let buckets = [0, 1, 2, 5, 6, 10, 11, 20, 21, 50, 51].map(CPMMessagingDiagnostics.tabCountBucket)
-        XCTAssertEqual(buckets, ["0", "1", "2_to_5", "2_to_5", "6_to_10", "6_to_10", "11_to_20", "11_to_20", "21_to_50", "21_to_50", "over_50"])
+    func testLoadErrorFieldsRequireAnAttributedErrorAndOmitUnknownFacts() {
+        var diagnostics = CPMMessagingDiagnostics()
+        diagnostics.backgroundLoadErrorAppState = .background
+        diagnostics.secondsFromBackgroundViewToLoadError = 30
+        for errorPresent in [nil, false, true] as [Bool?] {
+            diagnostics.hasBackgroundLoadError = errorPresent
+            let expected = errorPresent == true ? [Name.backgroundLoadErrorAppState: "background", Name.backgroundLoadErrorAfter: "25s_to_35s"] : [:]
+            XCTAssertEqual(diagnostics.backgroundLoadParameters, expected)
+        }
+        diagnostics.backgroundLoadErrorAppState = nil
+        diagnostics.secondsFromBackgroundViewToLoadError = nil
+        XCTAssertTrue(diagnostics.backgroundLoadParameters.isEmpty)
     }
 
     func testFullDiagnosticsRenderEveryParameter() {
@@ -165,14 +176,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         diagnostics.tabControllerMatchesContext = false
         diagnostics.tabHasExtensionUserScripts = false
         diagnostics.backgroundWebProcessResponsive = false
-        diagnostics.hasBackgroundLoadError = true
-        diagnostics.backgroundLoadErrorAppState = .background
-        diagnostics.secondsFromBackgroundViewToLoadError = 30.2
-        diagnostics.applicationState = .inactive
-        diagnostics.secondsSinceBackgroundViewCreation = 5
-        diagnostics.backgroundReadiness = .loaded(secondsAfterViewCreation: 4.5)
-        diagnostics.openTabCount = 12
-        diagnostics.loadingTabCount = 3
         diagnostics.backgroundEvents = [
             .init(token: "load", secondsBeforeSnapshot: 600.4),
             .init(token: "view", secondsBeforeSnapshot: 599),
@@ -182,13 +185,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
         XCTAssertEqual(diagnostics.pixelParameters, [
             Name.backgroundWebProcessResponsive: "false",
-            Name.backgroundLoadErrorAppState: "background",
-            Name.backgroundLoadErrorAfter: "25s_to_35s",
-            Name.applicationState: "inactive",
-            Name.backgroundViewAge: "4s_to_8s",
-            Name.backgroundReadyAfter: "4s_to_10s",
-            Name.openTabs: "11_to_20",
-            Name.loadingTabs: "3_to_5",
             Name.backgroundEvents: "load@15m,view@15m,died_crash@1m,error_background_failed_to_load:nsurlerrordomain:-1100@1m",
             Name.extensionContextLoaded: "true",
             Name.memoryPressureCritical: "1m",
@@ -271,196 +267,6 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         replacement.baseURL = try XCTUnwrap(URL(string: "webkit-extension://second/"))
         recorder.contextWillLoad(replacement)
         XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
-    }
-
-    func testWhenBackgroundLoadFailsThenAppStateAndDelayFromViewCreationAreReported() async throws {
-        var date = Date(timeIntervalSince1970: 1000)
-        let session = CPMAppSessionDiagnostics(appVersionChange: nil, launchDate: date) { .background }
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil },
-                                                       observesMemoryPressure: false,
-                                                       now: { date },
-                                                       appSession: session)
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundLoadErrorAppState], "none")
-        XCTAssertEqual(recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundLoadErrorAfter], "none")
-
-        recorder.didCreateBackgroundWebView(WKWebView(frame: .zero), for: context)
-        date += 30.4
-        recorder.recordContextErrors([NSError(domain: WKWebExtensionContext.errorDomain,
-                                              code: WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue)])
-
-        let parameters = recorder.snapshot().pixelParameters
-        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundLoadErrorAppState], "background")
-        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundLoadErrorAfter], "25s_to_35s")
-
-        recorder.contextWillLoad(try await makeContext())
-        XCTAssertEqual(recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundLoadErrorAfter], "none", "a new context starts clean")
-    }
-
-    func testBackgroundReadinessFollowsTheLoadOfTheCurrentView() async throws {
-        var date = Date(timeIntervalSince1970: 1000)
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date })
-        var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "none")
-        XCTAssertNil(recorder.snapshot().pixelParameters[Name.backgroundViewAge])
-
-        let webView = WKWebView(frame: .zero)
-        recorder.didCreateBackgroundWebView(webView, for: context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "pending")
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundViewAge], "under_4s")
-
-        await nextMainQueueTurn()
-        XCTAssertEqual(completions.count, 1, "the load is requested on the next turn, not from inside WebKit's callback")
-        date += 5.2
-        completions[0](nil)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "4s_to_10s")
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundViewAge], "4s_to_8s")
-    }
-
-    func testFailedBackgroundLoadIsReportedAsFailed() async throws {
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
-        var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        let webView = WKWebView(frame: .zero)
-        recorder.didCreateBackgroundWebView(webView, for: context)
-        await nextMainQueueTurn()
-
-        completions.first?(NSError(domain: WKWebExtensionContext.errorDomain,
-                                   code: WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue))
-
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "failed")
-    }
-
-    func testLoadOfAReplacedBackgroundViewDoesNotMarkTheNewOneReady() async throws {
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
-        var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        let firstView = WKWebView(frame: .zero)
-        recorder.didCreateBackgroundWebView(firstView, for: context)
-        await nextMainQueueTurn()
-        let secondView = WKWebView(frame: .zero)
-        recorder.didCreateBackgroundWebView(secondView, for: context)
-
-        completions.first?(nil)
-
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "pending")
-    }
-
-    func testReadinessIsOmittedWhenBackgroundObservationIsDisabled() async throws {
-        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundDelegateProxyEnabled: false)
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)
-        var loadRequests = 0
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, _ in loadRequests += 1 }
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        XCTAssertNil(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter])
-
-        let webView = WKWebView(frame: .zero)
-        recorder.didCreateBackgroundWebView(webView, for: context)
-        await nextMainQueueTurn()
-
-        XCTAssertNil(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter])
-        XCTAssertEqual(loadRequests, 0)
-    }
-
-    func testAppStateIsReportedWithEverySnapshot() {
-        let session = CPMAppSessionDiagnostics(appVersionChange: nil, launchDate: Date()) { .inactive }
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, appSession: session)
-
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.applicationState], "inactive")
-    }
-
-    /// Checks the tab counts the snapshot reports against tabs registered with a real controller: `open_tabs`
-    /// counts every tab WebKit knows for the context (even one without a web view), `loading_tabs` only those
-    /// whose web view is loading.
-    func testOpenAndLoadingTabsAreCounted() async throws {
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
-        let context = try await makeContext()
-        let controller = WKWebExtensionController(configuration: .nonPersistent())
-        try controller.load(context)
-        defer { try? controller.unload(context) }
-        recorder.contextWillLoad(context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.openTabs], "0")
-
-        let schemeHandler = NeverRespondingSchemeHandler()
-        let configuration = WKWebViewConfiguration()
-        configuration.setURLSchemeHandler(schemeHandler, forURLScheme: "cpm-test")
-        let loadingView = WKWebView(frame: .zero, configuration: configuration)
-        loadingView.load(URLRequest(url: try XCTUnwrap(URL(string: "cpm-test://page"))))
-        let tabs = [TestTab(webView: loadingView), TestTab(webView: WKWebView(frame: .zero)), TestTab(webView: nil)]
-        tabs.forEach { controller.didOpenTab($0) }
-        let started = expectation(description: "page load started")
-        schemeHandler.onStart = { started.fulfill() }
-        await fulfillment(of: [started], timeout: 5)
-
-        // WebKit holds tabs weakly, and an optimized build releases `tabs` after its last use.
-        let parameters = withExtendedLifetime(tabs) { recorder.snapshot().pixelParameters }
-        XCTAssertEqual(parameters[Name.openTabs], "2_to_5")
-        XCTAssertEqual(parameters[Name.loadingTabs], "1")
-    }
-
-    /// Pins the recorder's side of a contract: a snapshot is taken while CPM is failing, so the only thing it
-    /// may ask a tab for is its web view, once per snapshot (`WKWebExtensionTab.webView(for:)`). Anything
-    /// else it asked a tab could create state or do work in the middle of a failure. Whatever WebKit itself
-    /// asks for when listing `openTabs` is not the recorder's and is subtracted as a baseline.
-    ///
-    /// This only checks WHICH tab methods the recorder calls, against a test tab. It does not check that the
-    /// apps' own `webView(for:)` is harmless (returns a stored web view and creates or loads nothing): that
-    /// is the app side of the contract, tested on the real `Tab` in `macOS/UnitTests/WebExtensions/
-    /// TabWebExtensionTabTests.swift` and on the real `TabViewController` in
-    /// `iOS/DuckDuckGoTests/TabViewControllerWebExtensionTabTests.swift`.
-    func testSnapshotOnlyReadsTheWebViewOfEachOpenTab() async throws {
-        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
-        let context = try await makeContext()
-        let controller = WKWebExtensionController(configuration: .nonPersistent())
-        try controller.load(context)
-        defer { try? controller.unload(context) }
-        recorder.contextWillLoad(context)
-        let tabs = [RecordingTab(webView: WKWebView(frame: .zero)), RecordingTab(webView: nil)]
-        tabs.forEach { controller.didOpenTab($0) }
-        XCTAssertEqual(context.openTabs.count, tabs.count, "the tabs must be registered, or nothing below is exercised")
-
-        tabs.forEach { $0.forgetCalls() }
-        _ = context.openTabs
-        let callsListingOpenTabs = tabs.map(\.calls)
-
-        tabs.forEach { $0.forgetCalls() }
-        let first = recorder.snapshot().pixelParameters
-        let callsDuringFirstSnapshot = tabs.map(\.calls)
-        tabs.forEach { $0.forgetCalls() }
-        _ = recorder.snapshot()
-        let callsDuringSecondSnapshot = tabs.map(\.calls)
-        withExtendedLifetime(tabs) {}
-
-        let expected = callsListingOpenTabs.map { $0 + ["webView"] }
-        XCTAssertEqual(callsDuringFirstSnapshot, expected, "a snapshot may only read each tab's web view, once")
-        XCTAssertEqual(callsDuringSecondSnapshot, expected, "a repeated snapshot must not do more than the first")
-        XCTAssertEqual(first[Name.openTabs], "2_to_5")
-        XCTAssertEqual(first[Name.loadingTabs], "0", "a tab without a web view is open but not loading")
-    }
-
-    private typealias Name = CPMMessagingDiagnostics.ParameterName
-
-    private func nextMainQueueTurn() async {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.main.async { continuation.resume() }
-        }
-    }
-
-    func testLoadErrorDelayIsBucketedAroundTheBackgroundUnloadTimer() {
-        XCTAssertEqual(CPMMessagingDiagnostics.loadErrorDelayBucket(0.5), "under_5s")
-        XCTAssertEqual(CPMMessagingDiagnostics.loadErrorDelayBucket(5), "5s_to_25s")
-        XCTAssertEqual(CPMMessagingDiagnostics.loadErrorDelayBucket(25), "25s_to_35s")
-        XCTAssertEqual(CPMMessagingDiagnostics.loadErrorDelayBucket(34.9), "25s_to_35s")
-        XCTAssertEqual(CPMMessagingDiagnostics.loadErrorDelayBucket(35), "over_35s")
     }
 
     func testWhenContextErrorIsRecordedThenDescriptorCarriesCodesNotText() async throws {
@@ -655,95 +461,4 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         context.uniqueIdentifier = "cpm-diagnostics-test"
         return context
     }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-private final class TestTab: NSObject, WKWebExtensionTab {
-    private let webView: WKWebView?
-
-    init(webView: WKWebView?) {
-        self.webView = webView
-    }
-
-    func webView(for context: WKWebExtensionContext) -> WKWebView? {
-        webView
-    }
-}
-
-/// Records every question WebKit or the recorder asks of the tab.
-@available(macOS 15.4, iOS 18.4, *)
-private final class RecordingTab: NSObject, WKWebExtensionTab {
-    private let webView: WKWebView?
-    private(set) var calls: [String] = []
-
-    init(webView: WKWebView?) {
-        self.webView = webView
-    }
-
-    func forgetCalls() {
-        calls = []
-    }
-
-    func webView(for context: WKWebExtensionContext) -> WKWebView? {
-        calls.append("webView")
-        return webView
-    }
-
-    func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
-        calls.append("window")
-        return nil
-    }
-
-    func indexInWindow(for context: WKWebExtensionContext) -> UInt {
-        calls.append("indexInWindow")
-        return 0
-    }
-
-    func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
-        calls.append("parentTab")
-        return nil
-    }
-
-    func title(for context: WKWebExtensionContext) -> String? {
-        calls.append("title")
-        return nil
-    }
-
-    func url(for context: WKWebExtensionContext) -> URL? {
-        calls.append("url")
-        return nil
-    }
-
-    func pendingURL(for context: WKWebExtensionContext) -> URL? {
-        calls.append("pendingURL")
-        return nil
-    }
-
-    func isLoadingComplete(for context: WKWebExtensionContext) -> Bool {
-        calls.append("isLoadingComplete")
-        return true
-    }
-
-    func isSelected(for context: WKWebExtensionContext) -> Bool {
-        calls.append("isSelected")
-        return false
-    }
-
-    func isPinned(for context: WKWebExtensionContext) -> Bool {
-        calls.append("isPinned")
-        return false
-    }
-}
-
-/// Keeps a page load in progress: the request is never answered.
-private final class NeverRespondingSchemeHandler: NSObject, WKURLSchemeHandler {
-    var onStart: (() -> Void)?
-    private var tasks: [any WKURLSchemeTask] = []
-
-    func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
-        tasks.append(urlSchemeTask)
-        onStart?()
-    }
-
-    func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
 }

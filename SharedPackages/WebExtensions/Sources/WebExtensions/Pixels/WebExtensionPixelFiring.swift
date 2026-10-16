@@ -126,6 +126,8 @@ public struct CPMMessagingEpisodeReport: Equatable, Sendable {
         if let events = diagnostics?.backgroundEvents, !events.isEmpty {
             parameters["bg_events"] = CPMMessagingDiagnostics.backgroundEventsValue(events)
         }
+        // Load facts use the same first-failure snapshot; error fields exist only for its attributed error 6.
+        parameters.merge(diagnostics?.backgroundLoadParameters ?? [:]) { _, value in value }
         parameters["reason"] = reason.rawValue
         parameters["was_stuck"] = String(wasStuck)
         parameters["outcome"] = outcome.rawValue

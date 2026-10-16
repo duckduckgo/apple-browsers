@@ -23,7 +23,7 @@ import WebKit
 /// Records when WebKit finishes loading the CPM background, as `loadBackgroundContent` reports it.
 ///
 /// A background view exists from the moment WebKit starts a load, but its service worker may run seconds later; the
-/// completion fires once the worker has run, so it tells a slow start from a lost message.
+/// completion is load-readiness evidence, not proof of initResp delivery.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class CPMBackgroundReadinessObserver {
@@ -39,10 +39,13 @@ final class CPMBackgroundReadinessObserver {
 
     private weak var webView: WKWebView?
     private var readiness: CPMBackgroundReadiness?
+    private var generation: UInt = 0
     private let now: () -> Date
+    private let isEnabled: @MainActor () -> Bool
 
-    init(now: @escaping () -> Date) {
+    init(now: @escaping () -> Date, isEnabled: @escaping @MainActor () -> Bool = { true }) {
         self.now = now
+        self.isEnabled = isEnabled
     }
 
     /// Starts observing a background view WebKit has just created.
@@ -50,26 +53,38 @@ final class CPMBackgroundReadinessObserver {
     /// The view exists, so the request joins the load in progress rather than waking a background. WebKit announces the
     /// view from inside that load, so the request waits for the next run loop turn.
     func observe(_ webView: WKWebView, in context: WKWebExtensionContext) {
+        guard isEnabled() else { return }
+        generation &+= 1
+        let generation = generation
         self.webView = webView
         readiness = .pending
         let createdAt = now()
         DispatchQueue.main.async { [weak self, weak webView, weak context] in
-            guard let self, let webView, let context, self.webView === webView else { return }
+            guard let self, let webView, let context, self.webView === webView, self.generation == generation, self.isEnabled() else { return }
             self.loadBackgroundContent(context) { [weak self, weak webView] error in
-                guard let self, let webView, self.webView === webView else { return }
-                let secondsAfterViewCreation = self.now().timeIntervalSince(createdAt)
+                guard let self, let webView, self.webView === webView, self.generation == generation, self.isEnabled() else { return }
+                let secondsAfterViewCreation = max(0, self.now().timeIntervalSince(createdAt))
                 self.readiness = error == nil ? .loaded(secondsAfterViewCreation: secondsAfterViewCreation) : .failed
             }
         }
     }
 
     func stopObserving() {
+        generation &+= 1
         webView = nil
         readiness = nil
     }
 
+    /// Error 6 may be notified without completing loadBackgroundContent. Invalidate its callback so
+    /// a stale success cannot overwrite the observed failure of this load attempt.
+    func backgroundLoadFailed() {
+        guard webView != nil, readiness != nil else { return }
+        generation &+= 1
+        readiness = .failed
+    }
+
     /// Readiness of `webView`, or `nil` when it is not the observed view.
     func readiness(of webView: WKWebView) -> CPMBackgroundReadiness? {
-        self.webView === webView ? readiness : nil
+        isEnabled() && self.webView === webView ? readiness : nil
     }
 }

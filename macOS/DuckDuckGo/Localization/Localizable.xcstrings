@@ -15488,7 +15488,7 @@
         }
       }
     },
-    "autofill.managed-by-extension.explanation.all" : {
+    "autofill.managed-by-extension.explanation" : {
       "comment" : "Autofill settings: the parameter is the name of a browser extension that manages the user's passwords, addresses and credit cards instead of DuckDuckGo",
       "extractionState" : "extracted_with_value",
       "localizations" : {

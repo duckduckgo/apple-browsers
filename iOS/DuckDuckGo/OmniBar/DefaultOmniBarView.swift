@@ -739,7 +739,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private var omniBarLongPressPreviewImage: UIImage?
-    private var omniBarLongPressOriginalAlpha: CGFloat?
+    private var omniBarLongPressPreviewView: UIImageView?
+    private var omniBarLongPressOriginalIsHidden: Bool?
     private var omniBarLongPressPendingAction: ((UIImage?) -> Void)?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
@@ -833,6 +834,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        if window == nil {
+            omniBarLongPressPendingAction = nil
+            restoreAddressBarAfterLongPressMenu()
+            omniBarLongPressPreviewImage = nil
+        }
         reportFooterVisibility()
     }
 
@@ -1849,22 +1855,43 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     private func floatingAddressBarMenuPreview(for interaction: UIContextMenuInteraction) -> UITargetedPreview? {
         guard isFloatingUIEnabled,
               interaction === omniBarLongPressInteraction,
-              window != nil,
+              let window,
               !searchAreaContainerView.bounds.isEmpty else { return nil }
 
-        let bounds = searchAreaContainerView.bounds
-        // Snapshot keeps live controls in their glass host.
-        let image = omniBarLongPressPreviewImage ?? UIGraphicsImageRenderer(bounds: bounds).image { _ in
-            searchAreaContainerView.drawHierarchy(in: bounds, afterScreenUpdates: false)
-        }
+        window.layoutIfNeeded()
+        let fieldFrame = searchAreaContainerView.convert(searchAreaContainerView.bounds, to: window)
+        let bounds = CGRect(origin: .zero, size: fieldFrame.size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = window.traitCollection.displayScale
+        let image = omniBarLongPressPreviewImage ?? {
+            // Capture window; glass needs its backdrop.
+            let windowImage = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            return UIGraphicsImageRenderer(bounds: bounds, format: format).image { _ in
+                windowImage.draw(at: CGPoint(x: -fieldFrame.minX, y: -fieldFrame.minY))
+            }
+        }()
         omniBarLongPressPreviewImage = image
-        let snapshot = UIImageView(image: image)
+        let snapshot: UIImageView
+        if let preview = omniBarLongPressPreviewView {
+            snapshot = preview
+        } else {
+            snapshot = UIImageView(image: image)
+            snapshot.frame = fieldFrame
+            snapshot.layer.cornerRadius = bounds.height / 2
+            snapshot.clipsToBounds = true
+            snapshot.isUserInteractionEnabled = false
+            window.addSubview(snapshot)
+            omniBarLongPressPreviewView = snapshot
+            omniBarLongPressOriginalIsHidden = searchAreaContainerView.isHidden
+            searchAreaContainerView.isHidden = true
+        }
         let parameters = UIPreviewParameters()
         parameters.backgroundColor = .clear
-        parameters.visiblePath = UIBezierPath(roundedRect: bounds, cornerRadius: bounds.height / 2)
+        parameters.visiblePath = UIBezierPath(roundedRect: snapshot.bounds, cornerRadius: snapshot.bounds.height / 2)
 
-        let center = convert(CGPoint(x: bounds.midX, y: bounds.midY), from: searchAreaContainerView)
-        let target = UIPreviewTarget(container: self, center: center)
+        let target = UIPreviewTarget(container: window, center: snapshot.center)
         return UITargetedPreview(view: snapshot, parameters: parameters, target: target)
     }
 
@@ -1872,9 +1899,6 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
-        guard interaction === omniBarLongPressInteraction, omniBarLongPressPreviewImage != nil else { return }
-        omniBarLongPressOriginalAlpha = searchAreaContainerView.alpha
-        searchAreaContainerView.alpha = 0
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
@@ -1891,7 +1915,7 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     }
 
     func performAfterLongPressMenuDismissal(_ action: @escaping (UIImage?) -> Void) {
-        guard omniBarLongPressOriginalAlpha != nil else {
+        guard omniBarLongPressOriginalIsHidden != nil else {
             let preview = omniBarLongPressPreviewImage
             omniBarLongPressPreviewImage = nil
             action(preview)
@@ -1912,10 +1936,12 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     }
 
     private func restoreAddressBarAfterLongPressMenu() {
-        if let alpha = omniBarLongPressOriginalAlpha {
-            searchAreaContainerView.alpha = alpha
+        omniBarLongPressPreviewView?.removeFromSuperview()
+        omniBarLongPressPreviewView = nil
+        if let isHidden = omniBarLongPressOriginalIsHidden {
+            searchAreaContainerView.isHidden = isHidden
         }
-        omniBarLongPressOriginalAlpha = nil
+        omniBarLongPressOriginalIsHidden = nil
     }
 }
 

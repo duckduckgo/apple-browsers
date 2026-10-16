@@ -6217,18 +6217,28 @@ extension MainViewController: OmniBarDelegate {
         omniBar.prepareForMoveTransition()
 
         let snapshot: UIImageView?
-        if !UIAccessibility.isReduceMotionEnabled, view.window != nil, !view.bounds.isEmpty {
+        if !UIAccessibility.isReduceMotionEnabled, let window = view.window, !window.bounds.isEmpty {
             // Freeze glass before rehosting.
-            let image = UIGraphicsImageRenderer(bounds: view.bounds).image { _ in
-                view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
-                if let field = omniBar.barView.searchContainer {
-                    preview?.draw(in: field.convert(field.bounds, to: view))
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = window.traitCollection.displayScale
+            let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
+                if let preview, let field = omniBar.barView.searchContainer {
+                    let isHidden = field.isHidden
+                    field.isHidden = true
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                    field.isHidden = isHidden
+                    preview.draw(in: field.convert(field.bounds, to: window))
+                } else {
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                 }
             }
             snapshot = UIImageView(image: image)
-            snapshot?.frame = view.bounds
+            snapshot?.frame = window.bounds
             snapshot?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             snapshot?.isUserInteractionEnabled = true
+            if let snapshot {
+                window.addSubview(snapshot)
+            }
         } else {
             snapshot = nil
         }
@@ -6245,7 +6255,6 @@ extension MainViewController: OmniBarDelegate {
             isAddressBarMoveInProgress = false
             return
         }
-        view.addSubview(snapshot)
         UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut], animations: {
             snapshot.alpha = 0
         }) { [weak self] _ in

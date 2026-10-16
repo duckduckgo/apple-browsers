@@ -31,14 +31,18 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
 
     public var loadedExtensions: Set<WKWebExtensionContext> = []
     public var webExtensionIdentifiers: [String] = []
-    public lazy var controller = WKWebExtensionController()
     public lazy var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
+    public private(set) var attachedConfigurations = [WKWebViewConfiguration]()
     public var extensionsDirectory = FileManager.default.temporaryDirectory
     public var extensionUpdates = AsyncStream<Void> { $0.finish() }
     public var lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent> { $0.finish() }
     public var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring = NoOpCPMMessagingHealthMonitor()
 
     public init() {}
+
+    public func attachExtensions(to configuration: WKWebViewConfiguration) {
+        attachedConfigurations.append(configuration)
+    }
 
     public func loadInstalledExtensions() async {}
     public func reloadInstalledExtensions() async {}

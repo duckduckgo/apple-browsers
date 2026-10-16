@@ -22,7 +22,6 @@ import os.log
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionEventsListening {
 
-    var controller: WKWebExtensionController? { get set }
     var droppedCallbacksCount: Int { get }
     /// Called when the user switches tabs or a tab's page changes, which means the browser is in use.
     var onBrowsingActivity: (() -> Void)? { get set }
@@ -48,7 +47,9 @@ public protocol WebExtensionEventsListening {
 @available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
-    public weak var controller: WKWebExtensionController?
+    /// Set by `WebExtensionManager` when it starts loading extensions;
+    /// events before that are dropped.
+    weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
     public var onBrowsingActivity: (() -> Void)?
 

@@ -76,6 +76,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
     public init(storageProvider: WebExtensionStorageProviding,
                 isInspectable: Bool = false,
                 permissionController: WebExtensionPermissionController? = nil) {
+        // The loader creates every extension context, so its `errors` are
+        // safe before any of them exists.
+        WebExtensionErrorsSwizzling.install()
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
         self.permissionController = permissionController
@@ -112,7 +115,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
             for: extensionURL,
             installFolder: storageProvider.extensionsDirectory.appendingPathComponent(identifier))
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: loadableURL)
+        let webExtension = try await WKWebExtension.makeCopyingErrors(
+            at: loadableURL
+        )
 
         let context = try await makeContext(for: webExtension, identifier: identifier)
 
@@ -185,7 +190,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
 #endif
 
         do {
-            try controller.load(context)
+            try controller.loadCopyingErrors(context)
         } catch {
             permissionController?.didUnload(identifier)
             throw error
@@ -228,9 +233,13 @@ public final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.failedToFindContextForIdentifier(identifier: identifier)
         }
 
-        // WebKit crashes if an extension's popup finishes closing after the extension unloads.
+        // WebKit crashes if an extension's popup finishes closing after the extension unloads. The popup
+        // can belong to the extension's default action or to a tab's own action.
         context.action(for: nil)?.closePopup()
-        try controller.unload(context)
+        for tab in context.openTabs {
+            context.action(for: tab)?.closePopup()
+        }
+        try controller.unloadCopyingErrors(context)
         permissionController?.didUnload(identifier)
     }
 

@@ -84,8 +84,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let loader: WebExtensionLoading
     public let permissionController: WebExtensionPermissionController?
     public var chromeWebStore: ChromeWebStoreManaging?
-    public let controller: WKWebExtensionController
-    public var eventsListener: WebExtensionEventsListening
+    let controller: WKWebExtensionController
+    public var eventsListener: WebExtensionEventsListening { listener }
+    private let listener = WebExtensionEventsListener()
 
     /// Resolves shipped extension resources; tests can supply temporary fixtures.
     let bundledExtensionURL: (EmbeddedWebExtensionDescriptor) -> URL?
@@ -186,7 +187,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
                 permissionController: WebExtensionPermissionController? = nil,
                 loader: WebExtensionLoading? = nil,
-                eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
@@ -228,7 +228,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
                                                    permissionController: permissionController)
-        self.eventsListener = eventsListener
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
@@ -554,7 +553,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let type = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
             reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: .dataClearing))
             do {
-                try controller.unload(context)
+                try controller.unloadCopyingErrors(context)
                 permissionController?.didUnload(identifier)
                 cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
@@ -682,7 +681,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // Explicitly await WebKit's background startup so restored tabs cannot navigate before the
         // Web Extension has registered the listeners and scripts needed for that first document.
         do {
-            try await context.loadBackgroundContent()
+            try await context.loadBackgroundContentCopyingErrors()
         } catch {
             Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
         }
@@ -694,7 +693,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         isLoadingInstalledExtensions = true
         defer { isLoadingInstalledExtensions = false }
 
-        eventsListener.controller = controller
+        listener.controller = controller
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
 
@@ -813,7 +812,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let cachedExtensions = unloadedExtensionsCache
         unloadedExtensionsCache.removeAll()
 
-        eventsListener.controller = controller
+        listener.controller = controller
 
         var successCount = 0
         var failedExtensionIdentifiers: [String] = []
@@ -859,6 +858,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         await loadInstalledExtensions()
         guard !Task.isCancelled else { return }
         await syncEmbeddedExtensions(enabledTypes: enabledTypes)
+    }
+
+    // MARK: - Web view configuration
+
+    public func attachExtensions(to configuration: WKWebViewConfiguration) {
+        configuration.webExtensionController = controller
     }
 
     // MARK: - Lookups

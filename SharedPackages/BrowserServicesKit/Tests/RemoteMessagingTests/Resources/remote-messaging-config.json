@@ -338,6 +338,23 @@
               "value": true
           }
       }
+    },
+    {
+      "id": 12,
+      "attributes": {
+          "isReturningUser": {
+              "value": true
+          },
+          "isDuckAiEnabled": {
+              "value": true
+          },
+          "triedDuckAiDuringOnboarding": {
+              "value": false
+          },
+          "isDuckAiBoostActive": {
+              "value": false
+          }
+      }
     }
   ]
 }

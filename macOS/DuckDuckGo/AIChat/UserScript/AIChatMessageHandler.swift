@@ -159,7 +159,8 @@ extension AIChatMessageHandler {
                 : nil,
             supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools),
             supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure),
-            supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true
+            supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true,
+            supportsCanonicalChatFormat: true
         )
     }
 

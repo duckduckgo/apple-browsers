@@ -108,4 +108,17 @@ final class AIChatDataClearingUserScriptTests: XCTestCase {
         XCTAssertEqual(error.errorCode, 3)
         XCTAssertEqual(error.underlyingError as? ScriptFailure, failure)
     }
+
+    func testWhenScriptReportsIndexedDBDisabledThenTheClearIsSkipped() {
+        let failure = ScriptFailure(payload: ["stage": "indexedDB", "errorName": "IndexedDBDisabled"])
+        let error = ClearError.failedFromScript(failure)
+
+        XCTAssertEqual(failure.errorCode, 212)
+        XCTAssertTrue(error.skipsAction)
+    }
+
+    func testWhenScriptReportsAnyOtherFailureThenTheClearIsNotSkipped() {
+        XCTAssertFalse(ClearError.failedFromScript(ScriptFailure(payload: ["stage": "indexedDB", "errorName": "TypeError"])).skipsAction)
+        XCTAssertFalse(ClearError.timeout.skipsAction)
+    }
 }

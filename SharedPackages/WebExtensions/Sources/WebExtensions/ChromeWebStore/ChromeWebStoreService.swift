@@ -113,7 +113,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             let filename = archive.version.map { "\(identifier)-\($0).zip" } ?? "\(identifier).zip"
             let file = directory.appendingPathComponent(filename)
             try archive.data.write(to: file, options: .atomic)
-            let webExtension = try await WKWebExtension(resourceBaseURL: file)
+            let webExtension = try await WKWebExtension.makeCopyingErrors(at: file)
 
             guard webExtension.errors.isEmpty else {
                 throw ChromeWebStoreError.unsupportedManifest

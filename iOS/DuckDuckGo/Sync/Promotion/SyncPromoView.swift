@@ -81,7 +81,7 @@ struct SyncPromoView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .foregroundColor(Color(singleUseColor: .groupedListContentBackground))
+                .foregroundColor(Color(designSystemColor: .surfaceTertiary))
         )
         .padding(.horizontal, 20)
         .padding(.bottom, 12)

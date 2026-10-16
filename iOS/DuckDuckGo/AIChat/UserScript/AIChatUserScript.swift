@@ -59,9 +59,14 @@ final class AIChatUserScript: NSObject, Subfeature {
         case customizeResponsesAction
         case changeModelAction(modelId: String)
         case openChatProtectionAction
+        case nativeInputFocused(Bool)
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
+        }
+
+        struct NativeInputFocusedParams: Encodable {
+            let focused: Bool
         }
 
         var methodName: String {
@@ -88,6 +93,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitChangeModelAction"
             case .openChatProtectionAction:
                 return "submitOpenChatProtectionAction"
+            case .nativeInputFocused:
+                return "submitNativeInputFocused"
             }
         }
 
@@ -99,6 +106,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return status
             case .changeModelAction(let modelId):
                 return ChangeModelActionParams(modelId: modelId)
+            case .nativeInputFocused(let focused):
+                return NativeInputFocusedParams(focused: focused)
             default:
                 return nil
             }
@@ -371,6 +380,11 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         inputBoxHandler?.didPressCustomizeResponsesButton
             .sink(receiveValue: { [weak self] _ in self?.push(.customizeResponsesAction) })
+            .store(in: &inputBoxCancellables)
+
+        // Lets the FE close its own sheets (settings, subscriptions) so nobody prompts behind them.
+        inputBoxHandler?.didChangeInputFocus
+            .sink(receiveValue: { [weak self] focused in self?.push(.nativeInputFocused(focused)) })
             .store(in: &inputBoxCancellables)
 
         handler.setAIChatInputBoxHandler(inputBoxHandler)

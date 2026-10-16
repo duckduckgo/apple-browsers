@@ -27,7 +27,6 @@ import MaliciousSiteProtection
 import PrivacyConfig
 import PrivacyDashboard
 import WebKit
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import WebExtensions
 
@@ -340,10 +339,6 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToAddressBarDuckAIState() {
-        guard DesignSystemRebrand.isAppRebranded() else {
-            return
-        }
-
         tab.addressBarSharedTextState.$isInDuckAIMode
             .removeDuplicates()
             .dropFirst()
@@ -436,10 +431,6 @@ final class TabViewModel: NSObject {
     }
 
     private func placeholder(tabContent: TabContent, inDuckAIMode: Bool) -> NSAttributedString? {
-        guard DesignSystemRebrand.isAppRebranded() else {
-            return nil
-        }
-
         if inDuckAIMode {
             return .addressBarPlaceholderForDuckAI
         }
@@ -708,21 +699,21 @@ private extension NSAttributedString {
 
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
-    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : NSImage(resource: .settingsMulticolor16Legacy),
+    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.settings,
                                                                            title: UserText.settings)
-    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : NSImage(resource: .bookmarksFolder),
+    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.bookmarksNew,
                                                                             title: UserText.bookmarks)
-    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : NSImage(resource: .historyFaviconLegacy),
+    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.history,
                                                                           title: UserText.mainMenuHistory)
     static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .personalInformationRemovalMulticolor16),
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.subscription : NSImage(resource: .privacyProLegacy),
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.subscription,
                                                                                title: UserText.subscriptionName)
     static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .identityTheftRestorationMulticolor16),
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
     static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .duckPlayerSettings),
                                                                              title: UserText.duckPlayer)
-    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : NSImage(resource: .emailProtectionIconLegacy),
+    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.emailProtection,
                                                                                   title: UserText.emailProtectionPreferences)
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .releaseNotesIndicator),
                                                                                title: UserText.releaseNotesTitle)

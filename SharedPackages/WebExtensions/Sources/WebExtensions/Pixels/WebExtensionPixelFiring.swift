@@ -139,7 +139,7 @@ public struct WebExtensionReloadErrorPixelMetadata: Equatable, Sendable {
                 trigger: WebExtensionReloadTrigger,
                 phase: WebExtensionReloadFailurePhase,
                 error: Error) {
-        let nsError = error as NSError
+        let nsError = NSError.webKitSafe(error)
         var parameters = [
             "extension_type": type?.shortLabel ?? "unknown",
             "reload_trigger": trigger.pixelParameterValue,
@@ -147,7 +147,7 @@ public struct WebExtensionReloadErrorPixelMetadata: Equatable, Sendable {
             "d": nsError.domain,
             "e": String(nsError.code)
         ]
-        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+        if let underlying = nsError.underlyingError {
             parameters["ud"] = underlying.domain
             parameters["ue"] = String(underlying.code)
         }

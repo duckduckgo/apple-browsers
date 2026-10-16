@@ -22,6 +22,7 @@ import PrivacyConfig
 import WebKit
 import ZIPFoundation
 @testable import WebExtensions
+import WebExtensionsTestSupport
 
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionManagerTests: XCTestCase {
@@ -30,7 +31,6 @@ final class WebExtensionManagerTests: XCTestCase {
     var storageProvidingMock: WebExtensionStorageProvidingMock!
     var webExtensionLoadingMock: WebExtensionLoadingMock!
     var windowTabProviderMock: WebExtensionWindowTabProvidingMock!
-    var eventsListenerMock: WebExtensionEventsListenerMock!
     var lifecycleDelegateMock: WebExtensionLifecycleDelegateMock!
     var configurationMock: WebExtensionConfigurationProvidingMock!
     private var createdTestExtensionDirs: [URL] = []
@@ -48,7 +48,6 @@ final class WebExtensionManagerTests: XCTestCase {
         storageProvidingMock = WebExtensionStorageProvidingMock()
         webExtensionLoadingMock = WebExtensionLoadingMock()
         windowTabProviderMock = WebExtensionWindowTabProvidingMock()
-        eventsListenerMock = WebExtensionEventsListenerMock()
         lifecycleDelegateMock = WebExtensionLifecycleDelegateMock()
         configurationMock = WebExtensionConfigurationProvidingMock()
         recordedSleeps = []
@@ -66,11 +65,33 @@ final class WebExtensionManagerTests: XCTestCase {
         storageProvidingMock = nil
         webExtensionLoadingMock = nil
         windowTabProviderMock = nil
-        eventsListenerMock = nil
         lifecycleDelegateMock = nil
         configurationMock = nil
 
         super.tearDown()
+    }
+
+    // MARK: - Web view configuration
+
+    @MainActor
+    func testWhenExtensionsAreAttached_ThenConfigurationUsesController() {
+        let manager = makeManager()
+        let configuration = WKWebViewConfiguration()
+
+        configuration.attachWebExtensions(of: manager)
+
+        let attachedController = configuration.webExtensionController
+        XCTAssertIdentical(attachedController, manager.controller)
+    }
+
+    @MainActor
+    func testWhenOtherManagerIsAttached_ThenThatManagerAttaches() {
+        let manager = MockWebExtensionManaging()
+        let configuration = WKWebViewConfiguration()
+
+        configuration.attachWebExtensions(of: manager)
+
+        XCTAssertEqual(manager.attachedConfigurations, [configuration])
     }
 
     // MARK: - Helper
@@ -89,7 +110,6 @@ final class WebExtensionManagerTests: XCTestCase {
             storageProvider: storageProvider ?? storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: webExtensionLoadingMock,
-            eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
@@ -437,13 +457,15 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenLoadInstalledExtensions_ThenEventsListenerControllerIsSet() async {
+    func testWhenExtensionsLoad_ThenListenerForwardsToController() async {
         let manager = makeManager()
+        let listener = manager.eventsListener as? WebExtensionEventsListener
+        let message = "Events before the first load are dropped"
+        XCTAssertNil(listener?.controller, message)
 
         await manager.loadInstalledExtensions()
 
-        XCTAssertNotNil(eventsListenerMock.controller)
-        XCTAssertTrue(eventsListenerMock.controller === manager.controller)
+        XCTAssertIdentical(listener?.controller, manager.controller)
     }
 
     @MainActor
@@ -753,7 +775,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
                                           keyValueStore: InMemoryThrowingKeyValueStore(),
@@ -767,17 +788,17 @@ final class WebExtensionManagerTests: XCTestCase {
         await manager.loadInstalledExtensions()
         XCTAssertEqual(pixels.events, [])
 
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
 
         let store = try XCTUnwrap(manager.privacySettings)
         store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
         date += 59 * 60
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden"], "Activity within the hour isn't checked again")
 
         date += 60
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events.filter { !$0.hasPrefix("gaps") },
                        ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
     }
@@ -800,18 +821,17 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
                                           keyValueStore: InMemoryThrowingKeyValueStore())
         manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden, onePasswordStoreID: .onePassword])
         _ = try await loadRealContext(identifier: "onePassword", into: manager.controller)
 
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, [])
 
         _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller)
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
     }
 
@@ -837,7 +857,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
                                           keyValueStore: InMemoryThrowingKeyValueStore(),
@@ -856,11 +875,11 @@ final class WebExtensionManagerTests: XCTestCase {
         manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "sideloaded")
 
         date += 59 * 60
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events.filter { $0.hasPrefix("gaps") }, [], "Too soon after launch")
 
         date += 60
-        eventsListenerMock.onBrowsingActivity?()
+        manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(Set(pixels.events.filter { $0.hasPrefix("gaps") }),
                        ["gaps bitwarden 1.0.0: 2 apis, 1 urls", "gaps lastPass 1.0.0: 0 apis, 0 urls"])
     }
@@ -880,7 +899,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
                                           keyValueStore: InMemoryThrowingKeyValueStore())
@@ -904,7 +922,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           keyValueStore: InMemoryThrowingKeyValueStore(),
                                           isAutofillTakeoverEnabled: { isTakeoverEnabled })
@@ -931,7 +948,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
                                           loader: webExtensionLoadingMock,
-                                          eventsListener: eventsListenerMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           keyValueStore: InMemoryThrowingKeyValueStore())
         _ = try await loadRealContext(identifier: "other", into: manager.controller, permissions: ["storage"])
@@ -1089,7 +1105,6 @@ final class WebExtensionManagerTests: XCTestCase {
             storageProvider: storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: nil,
-            eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock
         )
     }

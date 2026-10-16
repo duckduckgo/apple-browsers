@@ -240,7 +240,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
     func testUnresponsivePixelNameAndParameters() {
         let context = WebContentHealthPixel.PageContext(surface: .search, isLoading: true, isDesktopMode: false, isProtected: true, hasWebExtension: false)
         let pixel = WebContentHealthPixel.unresponsive(context: context, appState: "foreground")
-        XCTAssertEqual(pixel.name, "web-content_unresponsive")
+        XCTAssertEqual(pixel.name, "web-content_unresponsive-2")
         XCTAssertEqual(pixel.parameters, ["app_state": "foreground",
                                           "surface": "search",
                                           "loading": "true",
@@ -270,7 +270,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
         monitor.end(.recovered)
         monitor.end(.recovered) // Nothing left to end.
 
-        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive", "web-content_unresponsive-result"])
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive-2", "web-content_unresponsive-result"])
         XCTAssertEqual(pixelFiring.calls[1].event.parameters,
                        ["outcome": "recovered", "duration": "5-15", "attempts": "2", "app_state": "foreground",
                         "surface": "other", "loading": "false", "desktop_mode": "false", "protections": "true", "web_extension": "false"])
@@ -288,7 +288,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
         probeCompletion?(false) // The script errored, so the page did not answer.
 
         XCTAssertTrue(monitor.isFrozen)
-        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive"])
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.name }, ["web-content_unresponsive-2"])
 
         date += 3
         monitor.end(.closed)
@@ -322,7 +322,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
         XCTAssertTrue(monitor.isFrozen)
         XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] ?? $0.event.name },
-                       ["web-content_unresponsive", "terminated", "web-content_unresponsive"])
+                       ["web-content_unresponsive-2", "terminated", "web-content_unresponsive-2"])
     }
 
     func testWhenNotFrozenThenResponsiveReportIsIgnored() {
@@ -371,7 +371,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
         monitor.end(.fire)
         monitor.end(.closed) // The tab is torn down afterwards; nothing left to report.
 
-        XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] ?? $0.event.name }, ["web-content_unresponsive", "fire"])
+        XCTAssertEqual(pixelFiring.calls.map { $0.event.parameters?["outcome"] ?? $0.event.name }, ["web-content_unresponsive-2", "fire"])
     }
 
     func testWhenProcessTerminatesDuringFreezeThenOutcomeIsTerminated() {

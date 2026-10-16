@@ -423,7 +423,7 @@ enum WebContentHealthPixel: PixelKit.Event {
     var name: String {
         switch self {
         case .terminationReloadResult: return "web-content_termination-reload-result"
-        case .unresponsive: return "web-content_unresponsive"
+        case .unresponsive: return "web-content_unresponsive-2"
         case .unresponsiveResult: return "web-content_unresponsive-result"
         case .previewSnapshotTimeout: return "web-content_preview-snapshot-timeout"
         }

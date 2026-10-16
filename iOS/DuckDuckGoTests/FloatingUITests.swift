@@ -906,7 +906,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 
 final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
 
-    func testWhenGlassHostIsTransformedThenPreviewUsesWindowGeometryWithoutInheritingTransform() throws {
+    func testWhenGlassHostIsTransformedThenDetachedPreviewMatchesWindowGeometry() throws {
         for isBottom in [false, true] {
             let menu = try makeDisplayedMenu(isBottom: isBottom, hostTransform: CGAffineTransform(scaleX: 0.9, y: 0.9))
             defer { menu.window.isHidden = true }
@@ -916,7 +916,7 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
             let frame = container.convert(container.bounds, to: menu.window)
             let image = try XCTUnwrap((preview.view as? UIImageView)?.image)
 
-            XCTAssertTrue(preview.view.superview === menu.window)
+            XCTAssertNil(preview.view.superview)
             XCTAssertTrue(preview.target.container === menu.window)
             XCTAssertEqual(preview.view.frame.minX, frame.minX, accuracy: 0.001)
             XCTAssertEqual(preview.view.frame.minY, frame.minY, accuracy: 0.001)
@@ -1093,13 +1093,16 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
             let contentHost = try XCTUnwrap(container.subviews.first { $0 is DefaultOmniBarView.FloatingGlassContentHostView
                 || $0 is UIVisualEffectView })
             let contentParent = contentHost.superview
+            let windowSubviews = window.subviews
 
             let highlight = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
-            XCTAssertTrue(highlight.view.superview === window)
+            XCTAssertNil(highlight.view.superview)
+            XCTAssertEqual(window.subviews, windowSubviews)
             XCTAssertEqual(highlight.view.frame, container.convert(container.bounds, to: window))
             XCTAssertTrue(container.isHidden)
             barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
             XCTAssertTrue(container.isHidden)
+            XCTAssertNil(highlight.view.superview)
             let dismissal = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
             XCTAssertTrue(highlight.view === dismissal.view)
             XCTAssertTrue((highlight.view as? UIImageView)?.image === (dismissal.view as? UIImageView)?.image)

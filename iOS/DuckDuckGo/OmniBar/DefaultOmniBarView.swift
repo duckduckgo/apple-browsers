@@ -1882,7 +1882,6 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
             snapshot.layer.cornerRadius = bounds.height / 2
             snapshot.clipsToBounds = true
             snapshot.isUserInteractionEnabled = false
-            window.addSubview(snapshot)
             omniBarLongPressPreviewView = snapshot
             omniBarLongPressOriginalIsHidden = searchAreaContainerView.isHidden
             searchAreaContainerView.isHidden = true

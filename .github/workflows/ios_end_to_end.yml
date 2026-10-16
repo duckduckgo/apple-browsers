@@ -22,9 +22,20 @@ on:
         type: string
         default: ""
         required: false
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
+      user_modes:
+        description: "User mode(s) to run: 'production', 'internal', or 'both'"
+        type: string
+        required: false
+        default: production
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-ios-end-to-end
   cancel-in-progress: true
 
 jobs:
@@ -47,6 +58,7 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Print macOS version
       run: sw_vers
@@ -147,7 +159,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
-        name: BuildLogs
+        name: BuildLogs-e2e
         path: |
           iOS/xcodebuild.log
           iOS/DerivedData/Logs/Test/*.xcresult
@@ -168,19 +180,15 @@ jobs:
         event="${{ github.event_name }}"
         input_modes="${{ inputs.user_modes }}"
         input_tags="${{ inputs.test_tags }}"
-        case "$event" in
-          schedule)
-            modes='["production", "internal"]'
-            ;;
-          workflow_dispatch)
-            case "$input_modes" in
-              internal) modes='["internal"]' ;;
-              both)     modes='["production", "internal"]' ;;
+        case "$input_modes" in
+          production) modes='["production"]' ;;
+          internal)   modes='["internal"]' ;;
+          both)       modes='["production", "internal"]' ;;
+          *)
+            case "$event" in
+              schedule) modes='["production", "internal"]' ;;
               *)        modes='["production"]' ;;
             esac
-            ;;
-          *)
-            modes='["production"]'
             ;;
         esac
         # iPhone tests exclude iPad-tagged tests; iPad tests exclude iPhone-tagged tests.
@@ -240,6 +248,8 @@ jobs:
 
     - name: Check out the code
       uses: actions/checkout@v6 # Don't need submodules here as this is only for the tests folder
+      with:
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Print macOS version
       run: sw_vers
@@ -281,7 +291,7 @@ jobs:
         MAESTRO_CLI_NO_ANALYTICS: "1"
         MAESTRO_API_KEY: ${{ secrets.ROBIN_API_KEY }}
         PROJECT_ID: ${{ vars.ROBIN_PROJECT_KEY }}
-        UPLOAD_NAME: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ github.sha }}
+        UPLOAD_NAME: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ inputs.branch || github.sha }}
         TEST_TAG: ${{ matrix.test-tag }}
         EXCLUDE_TAGS: ${{ matrix.exclude-tags }}
         DEVICE_MODEL: ${{ matrix.device-model }}
@@ -374,19 +384,19 @@ jobs:
           runner: ${{ env.RUNS_ON }}
 
     - name: Send Status Pixel
-      if: always() && github.ref_name == 'main'
+      if: always() && github.ref_name == 'main' && !inputs.branch
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_ios_e2e_${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device }}_${{ steps.upload.outcome }}
 
     - name: Mark user-mode failure (e2e)
-      if: (failure() || cancelled()) && github.ref_name == 'main'
+      if: (failure() || cancelled()) && github.ref_name == 'main' && !inputs.branch
       working-directory: ${{ github.workspace }}
       run: |
         mkdir -p failure-marker
         echo "e2e:${{ matrix.user-mode }}:${{ matrix.test-tag }}:${{ matrix.device }}" > failure-marker/marker.txt
     - name: Upload failure marker (e2e)
-      if: (failure() || cancelled()) && github.ref_name == 'main'
+      if: (failure() || cancelled()) && github.ref_name == 'main' && !inputs.branch
       uses: actions/upload-artifact@v6
       with:
         name: failure-marker-e2e-${{ matrix.user-mode }}-${{ matrix.test-tag }}-${{ matrix.device }}
@@ -395,7 +405,7 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' }}
+    if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' && !inputs.branch }}
     needs: [build-end-to-end-tests, setup-matrix, end-to-end-tests]
     runs-on: ubuntu-latest
 

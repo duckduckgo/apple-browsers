@@ -295,6 +295,11 @@ final class AppDependencyProvider: DependencyProvider {
                           frequency: .legacyDailyAndCount,
                           options: .parameters(parameters))
         }
+        let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                                  userDefaults: subscriptionUserDefaults,
+                                                                  field: .backupTokenContainer) { accessType, error in
+            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
 
         // Init V2 classes for migration
         let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
@@ -312,7 +317,8 @@ final class AppDependencyProvider: DependencyProvider {
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             authService: authService,
-                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
+                                            backupStorage: backupTokenStorage)
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 

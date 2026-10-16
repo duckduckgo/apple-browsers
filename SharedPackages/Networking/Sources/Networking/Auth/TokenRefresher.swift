@@ -41,7 +41,7 @@ public protocol TokenRefreshing: Sendable {
     /// - Parameters:
     ///   - tokenContainer: The container whose refresh token is spent.
     ///   - count: How many pairs to create. A value below 1 makes no calls and returns an empty array; in debug builds it is an assertion failure.
-    ///   - refreshID: The identifier of the refresh. Only the last call reports its steps on the refresh event mapping.
+    ///   - refreshID: The identifier of the refresh. When non-nil, every call reports its steps on the refresh event mapping under this identifier.
     /// - Returns: The new pairs, oldest first. The last one is the most recently minted.
     /// - Throws: `TokenForkError.incomplete` as soon as one call fails, carrying the pairs minted before it.
     func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer]
@@ -142,10 +142,9 @@ public actor DefaultTokenRefresher: TokenRefreshing {
             return []
         }
         var minted: [TokenContainer] = []
-        for index in 0..<count {
-            let isLast = index == count - 1
+        for _ in 0..<count {
             do {
-                minted.append(try await refresh(tokenContainer, refreshID: isLast ? refreshID : nil))
+                minted.append(try await refresh(tokenContainer, refreshID: refreshID))
             } catch {
                 throw TokenForkError.incomplete(minted: minted, underlying: error)
             }

@@ -89,7 +89,7 @@ final class AIChatScreenshotCaptureService {
         return .image(processed)
     }
 
-    /// The system picker can leave the app inactive. A non-activating panel (the prompt bar) takes
+    /// A capture can leave the app inactive. A non-activating panel (the prompt bar) takes
     /// key without activating, so the app stays where the user left it.
     private func restoreFocus(to window: NSWindow?) {
         guard let window, window.isVisible else { return }

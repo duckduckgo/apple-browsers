@@ -1,5 +1,5 @@
 //
-//  AIChatScreenshotWindowPicker.swift
+//  AIChatScreenshotStill.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,110 +16,10 @@
 //  limitations under the License.
 //
 
-import AIChat
 import AppKit
 import CoreMedia
-import os.log
 import ScreenCaptureKit
 import VideoToolbox
-
-/// Select Window or Display through the system's content-sharing picker.
-@available(macOS 14.0, *)
-final class AIChatScreenshotWindowPicker: NSObject, SCContentSharingPickerObserver {
-
-    enum Outcome {
-        case captured(image: CGImage, kind: AIChatScreenshotKind)
-        case cancelled
-        case failed(AIChatScreenshotFailureReason)
-    }
-
-    private enum Pick {
-        case picked(SCContentFilter)
-        case cancelled
-        case failed
-    }
-
-    private var continuation: CheckedContinuation<Pick, Never>?
-
-    /// The capture runs while the picker is still active, since the pick is what authorizes it.
-    @MainActor
-    func capture(excludingWindowIDs windowIDs: [Int]) async -> Outcome {
-        let picker = SCContentSharingPicker.shared
-        var configuration = SCContentSharingPickerConfiguration()
-        configuration.allowedPickerModes = [.singleWindow, .singleDisplay]
-        configuration.allowsChangingSelectedContent = false
-        configuration.excludedWindowIDs = windowIDs
-        picker.defaultConfiguration = configuration
-        picker.add(self)
-        picker.isActive = true
-        defer {
-            picker.isActive = false
-            picker.remove(self)
-        }
-
-        let pick = await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            picker.present()
-        }
-        switch pick {
-        case .cancelled:
-            return .cancelled
-        case .failed:
-            return .failed(.unavailable)
-        case .picked(let filter):
-            return await capture(filter)
-        }
-    }
-
-    @MainActor
-    private func capture(_ filter: SCContentFilter) async -> Outcome {
-        let kind: AIChatScreenshotKind
-        switch filter.style {
-        case .window: kind = .window
-        case .display: kind = .screen
-        default: return .failed(.failed)
-        }
-
-        let configuration = SCStreamConfiguration()
-        configuration.width = Int(filter.contentRect.width * CGFloat(filter.pointPixelScale))
-        configuration.height = Int(filter.contentRect.height * CGFloat(filter.pointPixelScale))
-        configuration.showsCursor = false
-        do {
-            // A stream, not `SCScreenshotManager`: the screenshot API ignores the pick and fails with
-            // `SCStreamError.userDeclined` without Screen Recording.
-            let image = try await AIChatScreenshotSingleFrameStream().capture(filter: filter, configuration: configuration)
-            return .captured(image: image, kind: kind)
-        } catch {
-            let error = error as NSError
-            Logger.aiChat.error("Duck.ai screenshot capture failed: \(error.domain, privacy: .public) \(error.code, privacy: .public)")
-            return .failed(.failed)
-        }
-    }
-
-    // MARK: - SCContentSharingPickerObserver
-
-    func contentSharingPicker(_ picker: SCContentSharingPicker, didUpdateWith filter: SCContentFilter, for stream: SCStream?) {
-        finish(.picked(filter))
-    }
-
-    func contentSharingPicker(_ picker: SCContentSharingPicker, didCancelFor stream: SCStream?) {
-        finish(.cancelled)
-    }
-
-    func contentSharingPickerStartDidFailWithError(_ error: Error) {
-        let error = error as NSError
-        Logger.aiChat.error("Duck.ai screenshot picker failed to start: \(error.domain, privacy: .public) \(error.code, privacy: .public)")
-        finish(.failed)
-    }
-
-    /// The observer is called off the main thread; the continuation resumes once.
-    private func finish(_ outcome: Pick) {
-        DispatchQueue.main.async { [weak self] in
-            self?.continuation?.resume(returning: outcome)
-            self?.continuation = nil
-        }
-    }
-}
 
 /// One still of `filter`. `SCScreenshotManager` is macOS 14+; before it, a one-frame stream.
 enum AIChatScreenshotStill {

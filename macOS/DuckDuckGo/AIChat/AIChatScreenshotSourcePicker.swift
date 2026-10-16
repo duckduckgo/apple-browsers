@@ -22,8 +22,8 @@ import os.log
 import ScreenCaptureKit
 import SwiftUI
 
-/// Select Window or Display through our own picker (the Windows approach). Listing windows needs
-/// Screen Recording, unlike the system picker.
+/// Select Window or Display through our own picker, laid out like Windows'. Listing windows needs
+/// Screen Recording.
 @MainActor
 final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
 

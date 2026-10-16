@@ -77,8 +77,6 @@ final class AIChatContextualInputViewController: UIViewController {
         /// A hardware keyboard's shortcuts bar covers less than this, so it never compacts the layout.
         static let compactKeyboardOverlap: CGFloat = 150
         static let startActionsEdgeFadeLength: CGFloat = 24
-        /// Matches the floating chips' fade, so the two sets cross.
-        static let floatingHandOverDuration: TimeInterval = 0.18
         static let iPadBottomPadding: CGFloat = 16
         static let dimmedStartActionsAlpha: CGFloat = 0.4
     }
@@ -732,14 +730,16 @@ private extension AIChatContextualInputViewController {
         } else if floatingSuggestionsView.isShown {
             let host = floatingSuggestionsColumn()?.superview
             let isColumnListReturning = returnsToColumn && adaptation == .none && basicNativeInputViewController.text.isEmpty
+            // The column is already laid out for the keyboard going down, so its chips' frames are where they will rest.
+            view.layoutIfNeeded()
             let targetFrames = isColumnListReturning && animatesFloatingSuggestions
-                ? host.map { host in restingStartActionFrames.map { view.convert($0, to: host) } } ?? []
+                ? host.map { host in quickActionsView.chipViews.map { $0.convert($0.bounds, to: host) } } ?? []
                 : []
             isLandingFloatingSuggestions = !targetFrames.isEmpty
             floatingSuggestionsView.hide(animated: animatesFloatingSuggestions, to: targetFrames) { [weak self] in
                 guard let self, isLandingFloatingSuggestions else { return }
                 isLandingFloatingSuggestions = false
-                UIView.animate(withDuration: Constants.floatingHandOverDuration) { self.updateStartActionsVisibility() }
+                updateStartActionsVisibility()
             }
         }
         guard wasCompact != isCompactLayout else {

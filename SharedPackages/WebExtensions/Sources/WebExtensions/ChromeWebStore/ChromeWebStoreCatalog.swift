@@ -76,9 +76,9 @@ public protocol ChromeWebStoreCatalogProviding {
     /// Checks if the web extension with a given `identifier` is supported by the browser.
     func contains(_ identifier: String) -> Bool
 
-    /// The catalog's name for the extension with the Chrome Web Store `identifier`, such as `bitwarden`,
+    /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// whether or not the catalog offers it right now. `nil` for an extension the catalog doesn't list.
-    func catalogName(of identifier: String) -> String?
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
 }
 
 public extension ChromeWebStoreCatalogProviding {
@@ -86,7 +86,7 @@ public extension ChromeWebStoreCatalogProviding {
         ChromeWebStoreURL.isValidExtensionID(identifier) && extensionIDs.contains(identifier)
     }
 
-    func catalogName(of identifier: String) -> String? {
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
         nil
     }
 }
@@ -130,11 +130,11 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
             .map(\.element.id)
     }
 
-    public func catalogName(of identifier: String) -> String? {
+    public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
         let config = configurationManager.privacyConfig
         return ExtensionsCatalogSubfeature.allCases.first { subfeature in
             Self.settings(of: subfeature, in: config)?["id"] as? String == identifier
-        }?.rawValue
+        }
     }
 
     private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {

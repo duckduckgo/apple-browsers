@@ -267,12 +267,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
         privacySettings?.onDefaultPasswordManagerChange = { [weak self] identifier, change in
             guard let self else { return }
-            let name = pixelExtensionName(for: installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity)
+            let pixelExtension = pixelExtension(for: installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity)
             switch change {
             case .set:
-                pixelFiring.fire(.defaultPasswordManagerSet(extensionName: name))
+                pixelFiring.fire(.defaultPasswordManagerSet(extension: pixelExtension))
             case .removed(let source):
-                pixelFiring.fire(.defaultPasswordManagerRemoved(extensionName: name, source: source))
+                pixelFiring.fire(.defaultPasswordManagerRemoved(extension: pixelExtension, source: source))
             }
         }
         // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
@@ -407,7 +407,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             reportLifecycleEvent(.loaded(identifier: identifier, type: embeddedType))
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
-            pixelFiring.fire(.installed(extensionName: pixelExtensionName(for: storeIdentity)))
+            pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity)))
 
             if let type = embeddedType {
                 await scriptletCoordinator?.onExtensionEnabled(for: type)
@@ -433,7 +433,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
 
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
-            pixelFiring.fire(.installError(extensionName: pixelExtensionName(for: storeIdentity), error: error))
+            pixelFiring.fire(.installError(extension: pixelExtension(for: storeIdentity), error: error))
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
@@ -491,7 +491,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
-        pixelFiring.fire(.uninstalled(extensionName: pixelExtensionName(for: installedExtension?.storeIdentity)))
+        pixelFiring.fire(.uninstalled(extension: pixelExtension(for: installedExtension?.storeIdentity)))
         notifyUpdate()
         if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
             NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
@@ -928,18 +928,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func reportToolbarButtonClick(identifier: String) {
         let storeIdentity = installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity
-        pixelFiring.fire(.toolbarButtonClicked(extensionName: pixelExtensionName(for: storeIdentity)))
+        pixelFiring.fire(.toolbarButtonClicked(extension: pixelExtension(for: storeIdentity)))
     }
 
-    /// The catalog name pixels report for an extension, such as `bitwarden`, or `other` for one the
-    /// Chrome Web Store catalog doesn't list. An extension's own identifier never reaches a pixel.
+    /// The extension pixels report: its Chrome Web Store catalog entry, or `other` for one the catalog
+    /// doesn't list.
     @MainActor
-    func pixelExtensionName(for storeIdentity: WebExtensionStoreIdentity?) -> String {
+    func pixelExtension(for storeIdentity: WebExtensionStoreIdentity?) -> WebExtensionPixelExtension {
         guard let storeIdentity, storeIdentity.store == .chromeWebStore,
-              let name = chromeWebStore?.catalogName(of: storeIdentity.id) else {
-            return WebExtensionPixelEvent.otherExtensionName
+              let entry = chromeWebStore?.catalogEntry(of: storeIdentity.id) else {
+            return .other
         }
-        return name
+        return .catalog(entry)
     }
 
 #if os(macOS)
@@ -949,7 +949,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private func fireBitwardenDailyActiveIfLoaded() {
         let bitwarden = installationStore.installedExtensions.first { installedExtension in
             context(for: installedExtension.uniqueIdentifier) != nil
-                && pixelExtensionName(for: installedExtension.storeIdentity) == ExtensionsCatalogSubfeature.bitwarden.rawValue
+                && pixelExtension(for: installedExtension.storeIdentity) == .catalog(.bitwarden)
         }
         guard let bitwarden else { return }
         let isDefault = privacySettings?.identifierTurningOff(.passwordSavingEnabled) == bitwarden.uniqueIdentifier

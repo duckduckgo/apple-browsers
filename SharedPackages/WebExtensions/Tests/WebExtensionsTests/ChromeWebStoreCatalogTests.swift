@@ -59,9 +59,9 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
             "onePassword": entry(otherIdentifier, order: 2)
         ])
 
-        XCTAssertEqual(catalog.catalogName(of: identifier), "bitwarden")
-        XCTAssertEqual(catalog.catalogName(of: otherIdentifier), "onePassword")
-        XCTAssertNil(catalog.catalogName(of: thirdIdentifier))
+        XCTAssertEqual(catalog.catalogEntry(of: identifier), .bitwarden)
+        XCTAssertEqual(catalog.catalogEntry(of: otherIdentifier), .onePassword)
+        XCTAssertNil(catalog.catalogEntry(of: thirdIdentifier))
     }
 
     func testUnknownSubfeaturesAndMalformedEntriesAreIgnored() throws {

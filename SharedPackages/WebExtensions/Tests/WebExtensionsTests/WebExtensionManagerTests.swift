@@ -18,6 +18,7 @@
 
 @_spi(Testing) import Persistence
 import XCTest
+import PrivacyConfig
 import WebKit
 import ZIPFoundation
 @testable import WebExtensions
@@ -755,7 +756,7 @@ final class WebExtensionManagerTests: XCTestCase {
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
                                           keyValueStore: InMemoryThrowingKeyValueStore())
-        let webStore = CatalogNamingWebStore(names: [bitwardenStoreID: "bitwarden"])
+        let webStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
         manager.chromeWebStore = webStore
         _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
         let loadResult = WebExtensionLoadResult(identifier: "bitwarden", filename: "bitwarden", displayName: nil, version: "1")
@@ -793,7 +794,7 @@ final class WebExtensionManagerTests: XCTestCase {
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
                                           keyValueStore: InMemoryThrowingKeyValueStore())
-        manager.chromeWebStore = CatalogNamingWebStore(names: [bitwardenStoreID: "bitwarden"])
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
 
         manager.reportToolbarButtonClick(identifier: "bitwarden")
         manager.reportToolbarButtonClick(identifier: "sideloaded")
@@ -1078,12 +1079,12 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .bitwardenDailyActive(let isDefault):
             events.append("bitwarden dau, default: \(isDefault)")
-        case .defaultPasswordManagerSet(let extensionName):
-            events.append("default set: \(extensionName)")
-        case .defaultPasswordManagerRemoved(let extensionName, let source):
-            events.append("default removed: \(extensionName) by \(source.rawValue)")
-        case .toolbarButtonClicked(let extensionName):
-            events.append("toolbar click: \(extensionName)")
+        case .defaultPasswordManagerSet(let pixelExtension):
+            events.append("default set: \(pixelExtension.parameterValue)")
+        case .defaultPasswordManagerRemoved(let pixelExtension, let source):
+            events.append("default removed: \(pixelExtension.parameterValue) by \(source.rawValue)")
+        case .toolbarButtonClicked(let pixelExtension):
+            events.append("toolbar click: \(pixelExtension.parameterValue)")
         default:
             break
         }
@@ -1093,15 +1094,15 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class CatalogNamingWebStore: ChromeWebStoreManaging {
-    let names: [String: String]
+    let entries: [String: ExtensionsCatalogSubfeature]
 
-    init(names: [String: String]) {
-        self.names = names
+    init(entries: [String: ExtensionsCatalogSubfeature]) {
+        self.entries = entries
     }
 
     var catalogExtensionIDs: [String] { [] }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }
-    func catalogName(of identifier: String) -> String? { names[identifier] }
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
 }

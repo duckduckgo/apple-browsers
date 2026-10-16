@@ -24,11 +24,11 @@ import XCTest
 final class WebExtensionPixelTests: XCTestCase {
 
     func testWhenAnExtensionIsInstalledOrUninstalled_ThenThePixelNamesItsCatalogEntry() {
-        XCTAssertEqual(WebExtensionPixel.installed(extensionName: "bitwarden").parameters, ["extension": "bitwarden"])
-        XCTAssertEqual(WebExtensionPixel.uninstalled(extensionName: "other").parameters, ["extension": "other"])
-        XCTAssertEqual(WebExtensionPixel.installError(extensionName: "lastPass", error: URLError(.badURL)).parameters,
+        XCTAssertEqual(WebExtensionPixel.installed(extension: .catalog(.bitwarden)).parameters, ["extension": "bitwarden"])
+        XCTAssertEqual(WebExtensionPixel.uninstalled(extension: .other).parameters, ["extension": "other"])
+        XCTAssertEqual(WebExtensionPixel.installError(extension: .catalog(.lastPass), error: URLError(.badURL)).parameters,
                        ["extension": "lastPass"])
-        XCTAssertEqual(WebExtensionPixel.installed(extensionName: "bitwarden").name, "m_mac_web_extension_installed")
+        XCTAssertEqual(WebExtensionPixel.installed(extension: .catalog(.bitwarden)).name, "m_mac_web_extension_installed")
     }
 
     func testBitwardenDailyActivePixel() {
@@ -40,8 +40,8 @@ final class WebExtensionPixelTests: XCTestCase {
     }
 
     func testDefaultPasswordManagerPixels() {
-        let set = WebExtensionPixel.defaultPasswordManagerSet(extensionName: "bitwarden")
-        let removed = WebExtensionPixel.defaultPasswordManagerRemoved(extensionName: "bitwarden", source: .settings)
+        let set = WebExtensionPixel.defaultPasswordManagerSet(extension: .catalog(.bitwarden))
+        let removed = WebExtensionPixel.defaultPasswordManagerRemoved(extension: .catalog(.bitwarden), source: .settings)
 
         XCTAssertEqual(set.name, "web_extension_default_password_manager_set_macos")
         XCTAssertEqual(set.parameters, ["extension": "bitwarden"])
@@ -52,7 +52,7 @@ final class WebExtensionPixelTests: XCTestCase {
     }
 
     func testToolbarButtonClickedPixel() {
-        let pixel = WebExtensionPixel.toolbarButtonClicked(extensionName: "bitwarden")
+        let pixel = WebExtensionPixel.toolbarButtonClicked(extension: .catalog(.bitwarden))
 
         XCTAssertEqual(pixel.name, "web_extension_toolbar_button_clicked_macos")
         XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"])

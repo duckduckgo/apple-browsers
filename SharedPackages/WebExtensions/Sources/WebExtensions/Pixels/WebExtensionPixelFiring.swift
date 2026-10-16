@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 
 /// Identifies the reload operation that failed before a replacement extension context became active.
 @available(macOS 15.4, iOS 18.4, *)
@@ -36,18 +37,32 @@ public enum WebExtensionDefaultPasswordManagerRemovalSource: String, Sendable {
     case settings
 }
 
+/// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
+/// catalog doesn't list. Pixels take this instead of a string, so an extension's own identifier or
+/// name can't reach a pixel.
+public enum WebExtensionPixelExtension: Equatable, CaseIterable {
+    case catalog(ExtensionsCatalogSubfeature)
+    case other
+
+    public static var allCases: [WebExtensionPixelExtension] {
+        ExtensionsCatalogSubfeature.allCases.map(Self.catalog) + [.other]
+    }
+
+    /// The value pixels send, matching the `extension` parameter in the pixel definitions.
+    public var parameterValue: String {
+        switch self {
+        case .catalog(let entry): entry.rawValue
+        case .other: "other"
+        }
+    }
+}
+
 /// Events that can be fired for web extension management.
-///
-/// Events about a particular extension carry its catalog name, such as `bitwarden`, or
-/// `otherExtensionName`, so pixels never carry an extension's own identifier.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    /// The name pixels use for an extension that isn't in the Chrome Web Store catalog.
-    public static let otherExtensionName = "other"
-
-    case installed(extensionName: String)
-    case installError(extensionName: String, error: Error)
-    case uninstalled(extensionName: String)
+    case installed(extension: WebExtensionPixelExtension)
+    case installError(extension: WebExtensionPixelExtension, error: Error)
+    case uninstalled(extension: WebExtensionPixelExtension)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -89,13 +104,13 @@ public enum WebExtensionPixelEvent {
     case cpmMessagingExtensionReloadFailed
 
     /// An extension turned password saving off, which makes it the default password manager.
-    case defaultPasswordManagerSet(extensionName: String)
+    case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     /// An extension stopped being the default password manager.
-    case defaultPasswordManagerRemoved(extensionName: String, source: WebExtensionDefaultPasswordManagerRemovalSource)
+    case defaultPasswordManagerRemoved(extension: WebExtensionPixelExtension, source: WebExtensionDefaultPasswordManagerRemovalSource)
     /// Bitwarden is installed and loaded. Fired once a day.
     case bitwardenDailyActive(isDefault: Bool)
     /// The user clicked an extension's toolbar button.
-    case toolbarButtonClicked(extensionName: String)
+    case toolbarButtonClicked(extension: WebExtensionPixelExtension)
 }
 
 /// Failure state of the episode immediately before recovery.

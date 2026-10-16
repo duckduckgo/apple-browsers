@@ -99,7 +99,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private var documentView = FlippedView()
 
     private let syncPromoManager: SyncPromoManaging
-    private let emptyStatePromo: BookmarksEmptyStatePromoPresenting
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting
     private let pixelFiring: (any PixelKitFiring)?
 
     private lazy var syncPromoViewHostingView: NSView = {
@@ -141,7 +141,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
-        emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
+        emptyStatePromo: ImportSyncEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.bookmarkManager = bookmarkManager

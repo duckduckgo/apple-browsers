@@ -22,7 +22,8 @@ import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
-protocol BookmarksEmptyStatePromoPresenting: AnyObject {
+protocol ImportSyncEmptyStatePromoPresenting: AnyObject {
+    var isPromoActive: Bool { get }
     var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
     @MainActor func importStarted()
     @MainActor func importFinished()
@@ -31,7 +32,7 @@ protocol BookmarksEmptyStatePromoPresenting: AnyObject {
 }
 
 /// Shows the message and import/sync CTAs of the "No bookmarks yet" empty state through the promo queue.
-final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, BookmarksEmptyStatePromoPresenting {
+final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncEmptyStatePromoPresenting {
 
     private let featureFlagger: FeatureFlagger
     private let hasTopLevelEntitiesProvider: () -> Bool
@@ -174,6 +175,10 @@ final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, BookmarksEm
     @MainActor
     func hide() {
         resolve(with: .noChange)
+    }
+
+    var isPromoActive: Bool {
+        isPromoActiveSubject.value
     }
 
     var isPromoActivePublisher: AnyPublisher<Bool, Never> {

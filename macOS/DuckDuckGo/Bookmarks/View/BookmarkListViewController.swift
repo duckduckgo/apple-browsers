@@ -127,7 +127,7 @@ final class BookmarkListViewController: NSViewController {
     private var outlineViewTopToDocumentTopConstraint: NSLayoutConstraint?
 
     private let syncPromoManager: SyncPromoManaging
-    private let emptyStatePromo: BookmarksEmptyStatePromoPresenting
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting
     private let pixelFiring: (any PixelKitFiring)?
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
@@ -150,7 +150,7 @@ final class BookmarkListViewController: NSViewController {
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
-         emptyStatePromo: BookmarksEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
+         emptyStatePromo: ImportSyncEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager

@@ -239,6 +239,9 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
         webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
             .navigationStarted(tabIdentifier: tabIdentifier, navigationKind: navigation.cpmMessagingNavigationKind)
         )
+        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabIdentifier) {
+            navigation.matches($0)
+        }
     }
 
     @MainActor

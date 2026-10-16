@@ -73,6 +73,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var searchAreaPreferredHeightConstraint: NSLayoutConstraint?
     private var stackViewLeadingConstraint: NSLayoutConstraint?
     private var stackViewTrailingConstraint: NSLayoutConstraint?
 
@@ -767,6 +768,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
     private var pageGlassInterfaceStyle: UIUserInterfaceStyle?
+    private lazy var materialRefreshScheduler = FloatingMaterialRefreshScheduler(view: self)
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
@@ -881,6 +883,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             makeOpaque()
             return
         }
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshMaterialAppearance() }) else { return }
         if isBottomFloatingField, !isFloatingMinimalChromeBar, fireMode {
             makeOpaque()
             return
@@ -942,7 +945,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 setFieldBackgroundColor(.clear)
             }
 
-            searchAreaContainerView.layoutIfNeeded()
+            searchAreaContainerView.setNeedsLayout()
         }
     }
 
@@ -975,7 +978,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if let interfaceStyle {
             pageGlassInterfaceStyle = interfaceStyle
         }
-        glassEffectConfiguration = nil
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshMaterialAppearance() }) else { return }
         updateFireModeAppearance()
     }
 
@@ -1155,6 +1158,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingHostToContainerConstraints = []
         }
         let chromeContentContainerView = self.chromeContentContainerView
+
+        if isFloatingUIEnabled {
+            let height = searchAreaView.heightAnchor.constraint(equalToConstant: OmniBarMetrics.itemSize).withPriority(.defaultHigh)
+            height.isActive = true
+            searchAreaPreferredHeightConstraint = height
+        }
 
         NSLayoutConstraint.activate([
             leadingConstraint,
@@ -1509,6 +1518,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         textAreaTopPaddingConstraint?.constant = topPadding
         textAreaBottomPaddingConstraint?.constant = -bottomPadding
+        searchAreaPreferredHeightConstraint?.constant = isBottomFloatingField ? Metrics.floatingEmbeddedHeight : OmniBarMetrics.itemSize
         updateFireModeAppearance()
     }
 

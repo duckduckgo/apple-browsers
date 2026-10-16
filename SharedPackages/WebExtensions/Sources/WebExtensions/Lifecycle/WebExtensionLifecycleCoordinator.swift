@@ -71,16 +71,52 @@ public final class WebExtensionLifecycleCoordinator {
     private let initialLoadTimeout: TimeInterval
     private var initialLoadTimeoutTask: Task<Void, Never>?
     private var initialLoadAndSyncWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
+    private var backgroundNavigationReadiness: (startup: Task<Void, Never>, wait: Task<Void, Never>)?
 
     var isInitialLoadAndSyncPending: Bool {
         initialLoadAndSync != nil
     }
 
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
-        guard initialLoadGateEnabledProvider(), !isInitialLoadGateOpen else { return nil }
-        return { [weak self] in
-            await self?.waitOnInitialLoadAndSync()
+        guard initialLoadGateEnabledProvider() else { return nil }
+        guard isInitialLoadGateOpen else {
+            return { [weak self] in
+                await self?.waitOnInitialLoadAndSync()
+            }
         }
+        guard let startup = manager.prepareEmbeddedBackgroundForNavigation() else { return nil }
+        if let readiness = backgroundNavigationReadiness, readiness.startup == startup {
+            return { await Self.waitForCompletion(of: readiness.wait) }
+        }
+        let timeout = initialLoadTimeout
+        // One deadline belongs to the shared startup, not to every navigation. Keep the completed
+        // wait after a timeout so later navigations bypass that same hung WebKit operation.
+        let wait = Task { @MainActor in
+            do {
+                try await withTimeout(timeout) {
+                    await Self.waitForCompletion(of: startup)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    Logger.webExtensions.info("[CPM Background] Navigation wait released: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+        backgroundNavigationReadiness = (startup, wait)
+        return { await Self.waitForCompletion(of: wait) }
+    }
+
+    private static func waitForCompletion(of task: Task<Void, Never>) async {
+        guard !Task.isCancelled else { return }
+        // Task.value ignores cancellation. The stream releases this caller without cancelling the
+        // shared startup or another navigation's wait, including when WebKit never calls back.
+        let completion = AsyncStream<Void> { continuation in
+            Task { @MainActor in
+                await task.value
+                continuation.finish()
+            }
+        }
+        for await _ in completion { }
     }
 
     /// Bumped by `cancelAll()`; every queued op captures the generation at enqueue time and bails if
@@ -190,6 +226,8 @@ public final class WebExtensionLifecycleCoordinator {
     /// feature-flag disable / teardown.
     public func cancelAll() {
         generation += 1
+        backgroundNavigationReadiness?.wait.cancel()
+        backgroundNavigationReadiness = nil
         initialLoadAndSync?.cancel()
         tail?.cancel()
         tail = nil

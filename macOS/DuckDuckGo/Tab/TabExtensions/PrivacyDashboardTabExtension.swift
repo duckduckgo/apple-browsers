@@ -39,6 +39,7 @@ final class PrivacyDashboardTabExtension {
     private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
     private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
     private let webExtensionNavigationGate: WebExtensionNavigationGate
+    private weak var recoveryWebView: WKWebView?
 
     var shouldDisableLongDecisionMakingChecks: Bool { true }
 
@@ -107,6 +108,7 @@ final class PrivacyDashboardTabExtension {
             }
         }.store(in: &cancellables)
 
+        webViewPublisher.sink { [weak self] in self?.recoveryWebView = $0 }.store(in: &cancellables)
         webViewPublisher.map {
             $0.publisher(for: \.serverTrust)
         }
@@ -241,7 +243,8 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), navigationAction.isForMainFrame,
+           ["http", "https"].contains(navigationAction.url.scheme?.lowercased() ?? "") {
             // Hold restored web content until the embedded extension's background listeners are
             // ready, matching the existing startup gates for user scripts and Content Blocking.
             await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
@@ -266,6 +269,12 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
             resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
         }
         guard #available(macOS 15.4, *), let webExtensionManager = webExtensionManagerProvider() else { return }
+        if let webView = recoveryWebView {
+            let action = navigation.redirectHistory.first ?? navigation.navigationAction
+            webExtensionManager.cpmMessagingHealthMonitor.registerReadinessRecoveryDocument(
+                tabIdentifier: tabIdentifier, webView: webView, isGET: action.request.httpMethod == "GET"
+            )
+        }
         webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
             tabIdentifier: tabIdentifier,
             url: navigation.url,

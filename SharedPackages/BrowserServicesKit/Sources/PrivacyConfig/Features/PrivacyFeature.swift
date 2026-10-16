@@ -882,6 +882,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    case cpmLateBackgroundDocumentRecovery
     case cpmMessagingHangRecovery
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment

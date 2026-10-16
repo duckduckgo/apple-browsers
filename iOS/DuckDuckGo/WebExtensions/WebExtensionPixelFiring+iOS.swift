@@ -84,6 +84,7 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
+    var pixelFiring: PixelKitFiring? = PixelKit.shared
 
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
@@ -166,14 +167,14 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             PixelKit.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmMessagingEpisode:
+        case .cpmMessagingEpisode, .cpmRecovery:
             fireCPMPixel(event)
         }
     }
 
     private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
         guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-        PixelKit.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
+        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
     }
 }
 

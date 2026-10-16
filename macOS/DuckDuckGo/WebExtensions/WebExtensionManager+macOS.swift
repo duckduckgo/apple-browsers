@@ -26,7 +26,7 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 @MainActor
-private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
+final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
     private let featureFlagger: FeatureFlagger
 
     init(featureFlagger: FeatureFlagger) {
@@ -115,6 +115,9 @@ enum WebExtensionManagerFactory {
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMMessagingHangRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,

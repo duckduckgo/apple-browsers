@@ -1543,6 +1543,9 @@ class TabViewController: UIViewController {
         )
         userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
+        if #available(iOS 18.4, *), configuration.webExtensionController != nil {
+            CPMDocumentRecoverySafety.install(in: userContentController)
+        }
         userContentController.delegate = self
 
         if let customWebView {
@@ -2874,6 +2877,9 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
                 .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabModel.uid) {
+                $0 === navigation
+            }
         }
         sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
         navigationPixelResponder.didStart(navigation)
@@ -4944,6 +4950,9 @@ extension TabViewController: UserContentControllerDelegate {
                                didInstallContentRuleLists contentRuleLists: [String: WKContentRuleList],
                                userScripts: UserScriptsProvider,
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
+        if #available(iOS 18.4, *), webView.configuration.webExtensionController != nil {
+            CPMDocumentRecoverySafety.install(in: userContentController)
+        }
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
         userScripts.trackerProtectionSubfeature.delegate = self

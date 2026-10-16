@@ -24,6 +24,7 @@ import Network
 import PrivacyConfig
 import UserScript
 import WebKit
+import WebExtensions
 
 extension WKWebViewConfiguration {
 
@@ -80,6 +81,9 @@ extension WKWebViewConfiguration {
                                                           earlyAccessHandlers: earlyAccessHandlers)
 
         self.userContentController = userContentController
+        if #available(macOS 15.4, *), NSApp.delegateTyped.webExtensionManager != nil {
+            CPMDocumentRecoverySafety.install(in: userContentController)
+        }
         self.processPool.geolocationProvider = GeolocationProvider(processPool: self.processPool)
     }
 

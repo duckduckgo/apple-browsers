@@ -182,6 +182,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>?
+
+    /// The already running startup, without waking background content or recording a navigation.
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { get }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -192,6 +196,9 @@ public extension WebExtensionManaging {
 
     @MainActor
     func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? { nil }
+
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

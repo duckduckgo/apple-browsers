@@ -102,33 +102,22 @@ jobs:
       skip-release: true
     secrets: inherit
 
-  build_end_to_end_app:
-    name: Build End-to-End app
-
-    needs: create_release_branch
-    uses: ./.github/workflows/ios_build_end_to_end_app.yml
-    with:
-      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-    secrets: inherit
-
   end_to_end_tests:
     name: End-to-End Tests
 
-    needs: [ create_release_branch, build_end_to_end_app ]
+    needs: create_release_branch
     uses: ./.github/workflows/ios_end_to_end.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      use-prebuilt-app: true
     secrets: inherit
 
   sync_end_to_end_tests:
     name: Sync End-to-End Tests
 
-    needs: [ create_release_branch, build_end_to_end_app ]
+    needs: create_release_branch
     uses: ./.github/workflows/ios_sync_end_to_end.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      use-prebuilt-app: true
     secrets: inherit
 
   prepare_release:

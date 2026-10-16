@@ -14,11 +14,6 @@ on:
         description: "Branch name"
         required: false
         type: string
-      use-prebuilt-app:
-        description: "Use the review app built earlier in the calling workflow run instead of building one"
-        required: false
-        type: boolean
-        default: false
 
 concurrency:
   group: ${{ github.workflow }}-macos-sync-end-to-end
@@ -27,19 +22,18 @@ concurrency:
 jobs:
   create-notarized-app:
     name: Build Notarized Review app
-    if: ${{ !inputs.use-prebuilt-app }}
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: review
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
+      artifact-prefix: sync-
     secrets: inherit
 
   sync-end-to-end-tests:
     name: Sync End-to-End Tests
     needs: create-notarized-app
-    if: ${{ !cancelled() && contains(fromJSON('["success", "skipped"]'), needs.create-notarized-app.result) }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -122,7 +116,9 @@ jobs:
     - name: Download and unzip artifact
       uses: actions/download-artifact@v7
       with:
-        path: macOS
+        pattern: sync-DuckDuckGo-review-*.app.tar.xz
+        merge-multiple: true
+        path: macOS/sync-app
 
     - name: Set cache key hash
       run: |
@@ -207,7 +203,7 @@ jobs:
     - name: Extract and Copy app to /DerivedData
       working-directory: macOS
       run: |
-        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        cd sync-app && tar -xf DuckDuckGo-*.app.tar.xz
 
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)

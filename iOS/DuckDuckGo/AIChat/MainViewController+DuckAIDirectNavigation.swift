@@ -50,7 +50,7 @@ extension MainViewController {
     }
 
     func fireDuckAIDirectNavigationPixel(via: DuckAINavigationVia) {
-        PixelKit.fire(Pixel.Event.aiChatDuckAIDirectNavigation, frequency: .dailyAndCount, options: .parameters([
+        pixelFiring?.fire(Pixel.Event.aiChatDuckAIDirectNavigation, frequency: .dailyAndCount, options: .parameters([
             "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
             "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled),
             "via": via.rawValue

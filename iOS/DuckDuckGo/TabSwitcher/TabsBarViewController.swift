@@ -1251,7 +1251,8 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {
-        newChatLongPressMenuAction()
+        recordUserOpenedTab()
+        openNewChatTabFromLongPressMenu()
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {

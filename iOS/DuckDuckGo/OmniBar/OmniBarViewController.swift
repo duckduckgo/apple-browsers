@@ -68,6 +68,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // -
 
     let dependencies: OmnibarDependencyProvider
+    var pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     weak var omniDelegate: OmniBarDelegate? {
         didSet {
             guard isViewLoaded else { return }
@@ -1094,7 +1095,7 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount, options: .parameters([
+        pixelFiring?.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount, options: .parameters([
             "toggle_visible": String(dependencies.aiChatAddressBarExperience.shouldShowModeToggle)
         ]))
         

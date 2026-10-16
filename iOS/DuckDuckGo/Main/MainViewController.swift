@@ -341,7 +341,7 @@ class MainViewController: UIViewController {
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
-    private let pixelFiring: (any PixelKitFiring)?
+    let pixelFiring: (any PixelKitFiring)?
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -4950,7 +4950,7 @@ class MainViewController: UIViewController {
     }
 
     func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
-        PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
+        pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -6489,6 +6489,10 @@ extension MainViewController: OmniBarDelegate {
 
     func newChatLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        openNewChatTabFromLongPressMenu()
+    }
+
+    func openNewChatTabFromLongPressMenu() {
         // The tab is created here, so `openAIChat` would see it blank and report no new tab.
         newTab(allowingKeyboard: false)
         openAIChat(source: .newTabLongPressMenu, reportsNewTab: true)
@@ -6679,7 +6683,7 @@ extension MainViewController: OmniBarDelegate {
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarAichatButtonPressed, frequency: .dailyAndCount)
         }
-        PixelKit.fire(Pixel.Event.openAIChatFromAddressBar, options: .parameters(featureDiscovery.addToParams([:], forFeature: .aiChat)))
+        pixelFiring?.fire(Pixel.Event.openAIChatFromAddressBar, options: .parameters(featureDiscovery.addToParams([:], forFeature: .aiChat)))
     }
 
     private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
@@ -9523,7 +9527,7 @@ extension MainViewController {
             showTextZoomEditorIfPossible()
 
         case .duckAIVoice:
-            PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
+            pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
             self.openAIChatInVoiceMode()
 
         default:
@@ -9618,7 +9622,7 @@ extension MainViewController {
             segueToDownloads()
 
         case .duckAIVoice:
-            PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
+            pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
             openAIChatInVoiceMode()
 
         default:

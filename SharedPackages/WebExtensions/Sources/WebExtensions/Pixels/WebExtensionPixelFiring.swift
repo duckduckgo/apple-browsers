@@ -94,6 +94,8 @@ public enum WebExtensionPixelEvent {
     case defaultPasswordManagerRemoved(extensionName: String, source: WebExtensionDefaultPasswordManagerRemovalSource)
     /// Bitwarden is installed and loaded. Fired once a day.
     case bitwardenDailyActive(isDefault: Bool)
+    /// The user clicked an extension's toolbar button.
+    case toolbarButtonClicked(extensionName: String)
 }
 
 /// Failure state of the episode immediately before recovery.
@@ -181,7 +183,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
-             .defaultPasswordManagerSet, .defaultPasswordManagerRemoved, .bitwardenDailyActive:
+             .defaultPasswordManagerSet, .defaultPasswordManagerRemoved, .bitwardenDailyActive,
+             .toolbarButtonClicked:
             return nil
         }
     }

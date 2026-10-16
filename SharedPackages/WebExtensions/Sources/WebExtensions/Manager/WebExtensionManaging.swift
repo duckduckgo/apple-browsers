@@ -176,6 +176,11 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func performSearchTokenRefresh()
+
+    /// Reports that the user clicked the toolbar button of the extension with the given identifier.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func reportToolbarButtonClick(identifier: String)
 }
 
 @available(macOS 15.4, iOS 18.4, *)

@@ -83,4 +83,5 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor public func clearCachedScriptlets() {}
     @MainActor public func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
+    @MainActor public func reportToolbarButtonClick(identifier: String) {}
 }

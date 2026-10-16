@@ -172,8 +172,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingRecoveredAfterExtensionReload,
              .cpmMessagingExtensionReloadFailed:
             fireCPMPixel(event)
-        case .defaultPasswordManagerSet, .defaultPasswordManagerRemoved, .bitwardenDailyActive:
-            // Chrome extensions, and so password manager extensions, are only supported on macOS.
+        case .defaultPasswordManagerSet, .defaultPasswordManagerRemoved, .bitwardenDailyActive, .toolbarButtonClicked:
+            // Chrome extensions, their toolbar buttons and password manager extensions are only supported on macOS.
             return
         }
     }

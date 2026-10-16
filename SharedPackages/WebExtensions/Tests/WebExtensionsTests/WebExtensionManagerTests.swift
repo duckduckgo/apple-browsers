@@ -774,6 +774,33 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
     }
 
+    @MainActor
+    func testWhenAToolbarButtonIsClicked_ThenThePixelNamesTheExtensionsCatalogEntry() {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "sideloaded", filename: "sideloaded", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: nil)
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          eventsListener: eventsListenerMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        manager.chromeWebStore = CatalogNamingWebStore(names: [bitwardenStoreID: "bitwarden"])
+
+        manager.reportToolbarButtonClick(identifier: "bitwarden")
+        manager.reportToolbarButtonClick(identifier: "sideloaded")
+
+        XCTAssertEqual(pixels.events, ["toolbar click: bitwarden", "toolbar click: other"])
+    }
+
     // MARK: - Autofill Takeover Flag
 
     /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
@@ -1055,6 +1082,8 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("default set: \(extensionName)")
         case .defaultPasswordManagerRemoved(let extensionName, let source):
             events.append("default removed: \(extensionName) by \(source.rawValue)")
+        case .toolbarButtonClicked(let extensionName):
+            events.append("toolbar click: \(extensionName)")
         default:
             break
         }

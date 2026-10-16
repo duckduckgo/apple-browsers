@@ -93,6 +93,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     case defaultPasswordManagerSet(extensionName: String)
     case defaultPasswordManagerRemoved(extensionName: String, source: WebExtensionDefaultPasswordManagerRemovalSource)
+    case toolbarButtonClicked(extensionName: String)
 
     // MARK: - Debug
 
@@ -176,6 +177,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_default_password_manager_set_macos"
         case .defaultPasswordManagerRemoved:
             return "web_extension_default_password_manager_removed_macos"
+        case .toolbarButtonClicked:
+            return "web_extension_toolbar_button_clicked_macos"
         case .stateChecked:
             return "web_extension_state_checked_macos"
         case .embeddedNotLoaded:
@@ -222,7 +225,8 @@ enum WebExtensionPixel: PixelKit.Event {
         case .installed(let extensionName),
              .installError(let extensionName, _),
              .uninstalled(let extensionName),
-             .defaultPasswordManagerSet(let extensionName):
+             .defaultPasswordManagerSet(let extensionName),
+             .toolbarButtonClicked(let extensionName):
             return ["extension": extensionName]
         case .defaultPasswordManagerRemoved(let extensionName, let source):
             return ["extension": extensionName, "source": source.rawValue]
@@ -239,7 +243,8 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .defaultPasswordManagerRemoved:
+        case .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .defaultPasswordManagerRemoved,
+             .toolbarButtonClicked:
             return .none
         default:
             return .platformDefault
@@ -363,6 +368,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .defaultPasswordManagerRemoved(extensionName: extensionName, source: source)
         case .bitwardenDailyActive(let isDefault):
             pixel = .bitwardenDailyActive(isDefault: isDefault)
+        case .toolbarButtonClicked(let extensionName):
+            pixel = .toolbarButtonClicked(extensionName: extensionName)
         }
         switch event {
         case .bitwardenDailyActive:

@@ -925,6 +925,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
+    @MainActor
+    public func reportToolbarButtonClick(identifier: String) {
+        let storeIdentity = installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity
+        pixelFiring.fire(.toolbarButtonClicked(extensionName: pixelExtensionName(for: storeIdentity)))
+    }
+
     /// The catalog name pixels report for an extension, such as `bitwarden`, or `other` for one the
     /// Chrome Web Store catalog doesn't list. An extension's own identifier never reaches a pixel.
     @MainActor

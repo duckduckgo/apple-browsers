@@ -50,4 +50,12 @@ final class WebExtensionPixelTests: XCTestCase {
         XCTAssertEqual(removed.parameters, ["extension": "bitwarden", "source": "settings"])
         XCTAssertEqual(removed.namePrefix, .none)
     }
+
+    func testToolbarButtonClickedPixel() {
+        let pixel = WebExtensionPixel.toolbarButtonClicked(extensionName: "bitwarden")
+
+        XCTAssertEqual(pixel.name, "web_extension_toolbar_button_clicked_macos")
+        XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"])
+        XCTAssertEqual(pixel.namePrefix, .none)
+    }
 }

@@ -387,6 +387,13 @@
         "triggers": ["feature_lifecycle"],
         "parameters": ["appVersion", "pixelSource", "web_extension_catalog_extension", "channel"]
     },
+    "web_extension_toolbar_button_clicked_macos": {
+        "description": "Fires when the user clicks a third-party extension's button in the navigation bar, which usually opens its popup.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "web_extension_catalog_extension", "channel"]
+    },
     "web_extension_default_password_manager_removed_macos": {
         "description": "Fires when an extension stops being the default password manager: it turns password saving back on, or the user gives passwords back to DuckDuckGo in Settings.",
         "owners": ["diegoreymendez"],

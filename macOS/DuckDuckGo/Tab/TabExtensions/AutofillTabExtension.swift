@@ -102,13 +102,13 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
         let prefs = AutofillPreferences()
         switch type {
         case .card:
-            return prefs.isPaymentMethodsAutofillActive
+            return prefs.askToSavePaymentMethods
         case .identity:
-            return prefs.isAddressesAutofillActive
+            return prefs.askToSaveAddresses
         case.password:
-            return prefs.isUsernamesAndPasswordsAutofillActive
+            return prefs.askToSaveUsernamesAndPasswords
         case .none:
-            return prefs.isAddressesAutofillActive || prefs.isPaymentMethodsAutofillActive || prefs.isUsernamesAndPasswordsAutofillActive
+            return prefs.askToSaveAddresses || prefs.askToSavePaymentMethods || prefs.askToSaveUsernamesAndPasswords
         }
     }
 

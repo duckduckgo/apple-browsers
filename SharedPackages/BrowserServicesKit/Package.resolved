@@ -1,13 +1,13 @@
 {
-  "originHash" : "463f682799aae9047e2fe1d72074cec4e78823ab402a5e42b32309b9d36ada97",
+  "originHash" : "863c1364bba11e3aec618ea0c93b0154e286aae43bc27d5611e77a0e29a4c3f5",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "3670ee77f7bbd6068ecc4d64eaa54bf5782062f9",
-        "version" : "17.27.0"
+        "revision" : "0e9cb240a0aa30197c9a50e64f10685b0652da04",
+        "version" : "17.29.0"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "34eb540473a90d25e11942e9c72a18c2430d4f50",
-        "version" : "19.2.0"
+        "revision" : "4d5848619462c863d6bb7553cb090fc74b172be2",
+        "version" : "19.2.1"
       }
     },
     {
@@ -83,15 +83,6 @@
       }
     },
     {
-      "identity" : "swift-issue-reporting",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
-      "state" : {
-        "revision" : "75b000cea2ca6d7527a57e1b9cc0bdf21a9abe9f",
-        "version" : "2.1.1"
-      }
-    },
-    {
       "identity" : "swifter",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/httpswift/swifter.git",
@@ -116,6 +107,15 @@
       "state" : {
         "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
         "version" : "4.0.0"
+      }
+    },
+    {
+      "identity" : "xctest-dynamic-overlay",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "state" : {
+        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
+        "version" : "1.13.1"
       }
     }
   ],

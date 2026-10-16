@@ -81,6 +81,7 @@ class BookmarksViewControllerCellFactory {
         cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
         cell.faviconImageView.round(corners: .allCorners, radius: Constant.faviconCornerRadius)
         cell.editingAccessoryType = .disclosureIndicator
+        cell.accessibilityIdentifier = "Bookmarks.Item"
         return cell
     }
 
@@ -95,6 +96,7 @@ class BookmarksViewControllerCellFactory {
         cell.childrenCountLabel.textColor = theme.tableCellTextColor
         cell.editingAccessoryType = .disclosureIndicator
         cell.iconImageView.image = DesignSystemImages.Color.Size24.folder
+        cell.accessibilityIdentifier = "Bookmarks.Folder"
         
         return cell
     }

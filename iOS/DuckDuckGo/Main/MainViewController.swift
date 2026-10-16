@@ -1310,8 +1310,9 @@ class MainViewController: UIViewController {
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
-            currentTab.preparePreview(completion: { image, result in
-                if let image {
+            // A snapshot that never answers (a frozen page) must not keep a closed tab alive.
+            currentTab.preparePreview(completion: { [weak currentTab] image, result in
+                if let image, let currentTab {
                     self.previewsSource.update(preview: image,
                                                forTab: currentTab.tabModel)
                 }

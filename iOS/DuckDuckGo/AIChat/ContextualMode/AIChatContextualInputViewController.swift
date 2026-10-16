@@ -73,6 +73,10 @@ final class AIChatContextualInputViewController: UIViewController {
         static let horizontalPadding: CGFloat = 20
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
+        static let compactKeyboardSpacing: CGFloat = 8
+        /// A hardware keyboard's shortcuts bar covers less than this, so it never compacts the layout.
+        static let compactKeyboardOverlap: CGFloat = 150
+        static let startActionsEdgeFadeLength: CGFloat = 24
         static let iPadBottomPadding: CGFloat = 16
         static let dimmedStartActionsAlpha: CGFloat = 0.4
     }
@@ -95,8 +99,8 @@ final class AIChatContextualInputViewController: UIViewController {
         }
     }()
 
-    private lazy var quickActionsScrollView: UIScrollView = {
-        let scrollView = UIScrollView()
+    private lazy var quickActionsScrollView: StartActionsScrollView = {
+        let scrollView = StartActionsScrollView()
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -145,6 +149,25 @@ final class AIChatContextualInputViewController: UIViewController {
     }
     private var displayedTermsOfServiceMessage: UTIFooterMessage?
     private var renderedStartActions: [ContextualSheetAction] = []
+    private var startActionsFillWidthConstraint: NSLayoutConstraint?
+    private var lastStartActionsHeight: CGFloat = 0
+    private lazy var startActionsEdgeFadeMask = CAGradientLayer()
+
+    /// Folds the suggestions into one row and tucks the context chip beside the submit button while the keyboard
+    /// covers this input in landscape, whichever field it is typing into. Portrait leaves room for the full layout.
+    var compactsWhileKeyboardShows = false {
+        didSet {
+            guard !compactsWhileKeyboardShows, isCompactLayout else { return }
+            setCompactLayout(false, animation: nil)
+        }
+    }
+
+    /// Called inside the layout animation, so a host can tighten its own chrome alongside.
+    var onCompactLayoutChange: ((Bool) -> Void)?
+
+    private(set) var isCompactLayout = false
+    /// The fade is sized to the final layout, so it would clip the chips while they move there.
+    private var isChangingCompactLayout = false
 
     // MARK: - Initialization
 
@@ -382,18 +405,33 @@ private extension AIChatContextualInputViewController {
         centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
+        // Sized to the chips until the keyboard leaves too little room; then it scrolls instead of growing upwards.
+        quickActionsScrollView.onLayout = { [weak self] in
+            self?.keepNearestStartActionsVisible()
+            self?.updateStartActionsEdgeFade()
+        }
+        let startActionsFitContent = quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(
+            equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor)
+        startActionsFitContent.priority = .defaultHigh
+        let fillWidth = quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor)
+        startActionsFillWidthConstraint = fillWidth
+        let scrollLeading = quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding)
+        startActionsLeadingConstraint = scrollLeading
+        let scrollTrailing = quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding)
+        startActionsTrailingConstraint = scrollTrailing
+
         NSLayoutConstraint.activate([
-            // Scroll view wraps quick actions at natural size, pinned above input
-            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
+            scrollLeading,
+            scrollTrailing,
             quickActionsScrollView.bottomAnchor.constraint(equalTo: basicNativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
 
             quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
             quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
             quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
             quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
-            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
-            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
+            fillWidth,
+            startActionsFitContent,
 
             // Welcome label centered horizontally, vertical position set dynamically
             centerY,
@@ -533,6 +571,7 @@ private extension AIChatContextualInputViewController {
     }
 
     func scrollQuickActionsToBottom() {
+        guard quickActionsView.axis == .vertical else { return }
         view.layoutIfNeeded()
         let bottomOffset = CGPoint(
             x: 0,
@@ -581,11 +620,123 @@ private extension AIChatContextualInputViewController {
     }
 
     @objc func keyboardWillShow(_ notification: Notification) {
-        bottomInset = -Constants.keyboardSpacing
+        let isCompact = compactsWhileKeyboardShows
+            && isLandscape
+            && keyboardOverlap(from: notification) >= Constants.compactKeyboardOverlap
+        guard isCompact != isCompactLayout else {
+            bottomInset = -keyboardSpacing
+            return
+        }
+        setCompactLayout(isCompact, animation: CompactLayoutAnimation(notification))
     }
 
     @objc func keyboardWillHide(_ notification: Notification) {
-        bottomInset = bottomPaddingForOrientation()
+        guard isCompactLayout else {
+            bottomInset = bottomPaddingForOrientation()
+            return
+        }
+        setCompactLayout(false, animation: CompactLayoutAnimation(notification), keyboardIsHiding: true)
+    }
+
+    var isLandscape: Bool {
+        guard let windowScene = view.window?.windowScene else { return false }
+        if #available(iOS 16.0, *) {
+            return windowScene.effectiveGeometry.interfaceOrientation.isLandscape
+        }
+        return windowScene.interfaceOrientation.isLandscape
+    }
+
+    var keyboardSpacing: CGFloat {
+        isCompactLayout ? Constants.compactKeyboardSpacing : Constants.keyboardSpacing
+    }
+
+    func keyboardOverlap(from notification: Notification) -> CGFloat {
+        guard let endFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let screen = view.window?.windowScene?.screen else { return 0 }
+        let keyboardFrame = view.convert(endFrame, from: screen.coordinateSpace)
+        return view.bounds.intersection(keyboardFrame).height
+    }
+
+    /// Runs alongside the keyboard, so the suggestions fold into their row as it rises.
+    func setCompactLayout(_ isCompact: Bool, animation: CompactLayoutAnimation?, keyboardIsHiding: Bool = false) {
+        isCompactLayout = isCompact
+        view.layoutIfNeeded()
+        let changes = { [self] in
+            basicNativeInputViewController.isCompact = isCompact
+            quickActionsView.axis = isCompact ? .horizontal : .vertical
+            startActionsFillWidthConstraint?.isActive = !isCompact
+            // The row runs to the column's edges, so chips scroll out from under them rather than clip mid-way.
+            let edgeInset = isCompact ? 0 : Constants.horizontalPadding
+            startActionsLeadingConstraint?.constant = edgeInset
+            startActionsTrailingConstraint?.constant = -edgeInset
+            let contentInset = Constants.horizontalPadding - edgeInset
+            quickActionsScrollView.contentInset = UIEdgeInsets(top: 0, left: contentInset, bottom: 0, right: contentInset)
+            quickActionsScrollView.contentOffset = CGPoint(x: -contentInset, y: 0)
+            bottomInset = keyboardIsHiding ? bottomPaddingForOrientation() : -keyboardSpacing
+            updateStartActionsVisibilityForText()
+            onCompactLayoutChange?(isCompact)
+            (parent?.view ?? view).layoutIfNeeded()
+        }
+        guard let animation else {
+            changes()
+            return
+        }
+        isChangingCompactLayout = true
+        quickActionsScrollView.layer.mask = nil
+        UIView.animate(withDuration: animation.duration,
+                       delay: 0,
+                       options: [animation.options, .beginFromCurrentState, .allowUserInteraction],
+                       animations: changes) { [weak self] _ in
+            self?.isChangingCompactLayout = false
+            self?.updateStartActionsEdgeFade()
+        }
+    }
+
+    /// In the single row, the suggestions step aside once the user types a prompt of their own.
+    func updateStartActionsVisibilityForText() {
+        let hidesForText = isCompactLayout && !basicNativeInputViewController.text.isEmpty
+        quickActionsScrollView.alpha = hidesForText ? 0 : 1
+        quickActionsScrollView.isUserInteractionEnabled = !hidesForText
+    }
+
+    /// When the list has to scroll, the chips nearest the input stay in view.
+    func keepNearestStartActionsVisible() {
+        let height = quickActionsScrollView.bounds.height
+        defer { lastStartActionsHeight = height }
+        guard quickActionsView.axis == .vertical, height != lastStartActionsHeight else { return }
+        let maxOffset = max(0, quickActionsScrollView.contentSize.height - height)
+        quickActionsScrollView.contentOffset = CGPoint(x: 0, y: maxOffset)
+    }
+
+    /// Fades whichever edge has chips scrolled out past it, so a cut-off chip reads as more to scroll to.
+    func updateStartActionsEdgeFade() {
+        guard !isChangingCompactLayout else { return }
+        let scrollView = quickActionsScrollView
+        let isHorizontal = quickActionsView.axis == .horizontal
+        let inset = scrollView.adjustedContentInset
+        let length = isHorizontal ? scrollView.bounds.width : scrollView.bounds.height
+        let contentLength = isHorizontal
+            ? scrollView.contentSize.width + inset.left + inset.right
+            : scrollView.contentSize.height + inset.top + inset.bottom
+        let offset = isHorizontal ? scrollView.contentOffset.x + inset.left : scrollView.contentOffset.y + inset.top
+        guard length > 0, contentLength > length + 1 else {
+            scrollView.layer.mask = nil
+            return
+        }
+
+        let fade = min(Constants.startActionsEdgeFadeLength / length, 0.5)
+        let opaque = UIColor.black.cgColor
+        let clear = UIColor.black.withAlphaComponent(0).cgColor
+        let mask = startActionsEdgeFadeMask
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        mask.startPoint = isHorizontal ? CGPoint(x: 0, y: 0.5) : CGPoint(x: 0.5, y: 0)
+        mask.endPoint = isHorizontal ? CGPoint(x: 1, y: 0.5) : CGPoint(x: 0.5, y: 1)
+        mask.colors = [offset > 1 ? clear : opaque, opaque, opaque, offset + length < contentLength - 1 ? clear : opaque]
+        mask.locations = [0, NSNumber(value: Double(fade)), NSNumber(value: Double(1 - fade)), 1]
+        mask.frame = scrollView.bounds
+        CATransaction.commit()
+        scrollView.layer.mask = mask
     }
 
     func updateBottomPaddingForOrientation() {
@@ -616,5 +767,35 @@ extension AIChatContextualInputViewController: AIChatBasicNativeInputViewControl
 
     func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didChangeText text: String) {
         scrollQuickActionsToBottom()
+        guard isCompactLayout else { return }
+        UIView.animate(withDuration: 0.2) {
+            self.updateStartActionsVisibilityForText()
+        }
+    }
+}
+
+// MARK: - Start Actions Scroll View
+
+/// Reports each layout pass, the first point where its content size is current.
+private final class StartActionsScrollView: UIScrollView {
+    var onLayout: (() -> Void)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onLayout?()
+    }
+}
+
+// MARK: - Keyboard Animation
+
+private struct CompactLayoutAnimation {
+    let duration: TimeInterval
+    let options: UIView.AnimationOptions
+
+    init(_ notification: Notification) {
+        let userInfo = notification.userInfo
+        duration = userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0.25
+        let curve = userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? UInt(UIView.AnimationCurve.easeInOut.rawValue)
+        options = UIView.AnimationOptions(rawValue: curve << 16)
     }
 }

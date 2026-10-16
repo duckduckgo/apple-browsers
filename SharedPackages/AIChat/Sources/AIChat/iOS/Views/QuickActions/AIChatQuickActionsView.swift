@@ -27,7 +27,7 @@ private enum AIChatQuickActionsViewConstants {
 
 // MARK: - View
 
-/// A vertically stacked container view for quick action chips.
+/// A container view for quick action chips, stacked vertically or in a single row.
 public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView {
 
     // MARK: - Properties
@@ -43,7 +43,16 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         }
     }
 
+    /// `.horizontal` lays the chips out in one row, sized to fit them, for a host to scroll sideways.
+    public var axis: NSLayoutConstraint.Axis = .vertical {
+        didSet {
+            guard axis != oldValue else { return }
+            applyAxis()
+        }
+    }
+
     private var loadingView: AIChatSuggestionsLoadingView?
+    private var hugsChipsWidthConstraint: NSLayoutConstraint?
 
     // MARK: - UI Components
 
@@ -138,12 +147,20 @@ private extension AIChatQuickActionsView {
         let stackHost = installGlassContainerIfAvailable() ?? self
         stackHost.addSubview(stackView)
 
+        hugsChipsWidthConstraint = stackView.trailingAnchor.constraint(equalTo: stackHost.trailingAnchor)
         NSLayoutConstraint.activate([
             stackView.topAnchor.constraint(greaterThanOrEqualTo: stackHost.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: stackHost.bottomAnchor),
             stackView.leadingAnchor.constraint(equalTo: stackHost.leadingAnchor),
             stackView.trailingAnchor.constraint(lessThanOrEqualTo: stackHost.trailingAnchor),
         ])
+    }
+
+    func applyAxis() {
+        let isHorizontal = axis == .horizontal
+        stackView.axis = axis
+        stackView.alignment = isHorizontal ? .center : .leading
+        hugsChipsWidthConstraint?.isActive = isHorizontal
     }
 
     /// Renders every chip's glass as one combined effect rather than each resolving its own backdrop.

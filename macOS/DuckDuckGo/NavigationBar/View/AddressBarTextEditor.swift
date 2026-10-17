@@ -203,6 +203,13 @@ final class AddressBarTextEditor: NSTextView {
         }
     }
 
+    override func selectAll(_ sender: Any?) {
+        super.selectAll(sender)
+        // Select All anchors the selection at the start with the caret at the end, like in standard text fields:
+        // Opt+Shift+Left then contracts it from the right and Opt+Shift+Right keeps it.
+        setSelectedRange(selectedRange(), affinity: .downstream, stillSelecting: false)
+    }
+
     func selectToTheEnd(from offset: Int? = nil) {
         let string = self.string
         let startIndex: String.Index
@@ -360,21 +367,11 @@ final class AddressBarTextEditor: NSTextView {
 
     override func moveWordLeftAndModifySelection(_ sender: Any?) {
         let selectedRange = self.selectedRange()
-        // Compute the leftmost selectable offset (i.e. the start of the URL portion, ignoring any suffix).
-        // If the selection already starts there we cannot extend further left, so we must contract
-        // from the right end instead (this is the Cmd+A / focus-with-full-selection case).
-        let selectableLowerBound = (addressBar?.stringValueWithoutSuffixRange)
-            .map { NSRange($0, in: self.string).location } ?? 0
-        let isAtSelectableStart = selectedRange.location <= selectableLowerBound
-
-        // Contract from the right end when:
-        // - The selection has `.downstream` affinity (cursor is at the right end — Opt+Shift+Left
-        //   shrinks the selection by moving the cursor leftward), OR
-        // - The selection has `.upstream` affinity but already starts at the leftmost selectable
-        //   position (e.g. after Cmd+A), so it cannot grow any further left.
-        // Otherwise (`.upstream` selection with room to grow), extend the left edge further left —
-        // this preserves the natural "Opt+Shift+Left, Opt+Shift+Left" extension flow.
-        if selectedRange.length > 0 && (selectionAffinity == .downstream || isAtSelectableStart) {
+        // Contract from the right end when the selection has `.downstream` affinity (the caret is at the right end),
+        // as after Cmd+A: Opt+Shift+Left moves the caret one word to the left.
+        // Otherwise (`.upstream` selection or no selection) extend the left edge further left — this preserves the natural
+        // "Opt+Shift+Left, Opt+Shift+Left" extension flow and stops at the start of the text.
+        if selectedRange.length > 0 && selectionAffinity == .downstream {
             // Use cursorOverride so we don't mutate self.selectedRange (which would fire address-bar
             // observers and corrupt the string state before nextWordSelectionIndex can read it).
             guard let newUpperBound = nextWordSelectionIndex(backwards: true, cursorOverride: selectedRange.upperBound) else { return }

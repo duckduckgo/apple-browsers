@@ -19,8 +19,8 @@
 import AppKit
 import XCTest
 
-/// A key press: the key (a `String` or `XCUIKeyboardKey`) and its modifier flags.
-typealias EditingKey = (key: Any, flags: XCUIElement.KeyModifierFlags)
+/// A key press: the key and its modifier flags.
+typealias EditingKey = (key: XCUIKeyboardKey, flags: XCUIElement.KeyModifierFlags)
 
 /// The editing / selection shortcuts exercised by the address bar and Duck.ai omnibar tests.
 enum EditingKeys {
@@ -45,15 +45,15 @@ enum EditingKeys {
     static let optForwardDelete: EditingKey = (XCUIKeyboardKey.forwardDelete, .option)
     static let cmdForwardDelete: EditingKey = (XCUIKeyboardKey.forwardDelete, .command)
 
-    static let selectAll: EditingKey = ("a", .command)
-    static let copy: EditingKey = ("c", .command)
-    static let undo: EditingKey = ("z", .command)
+    static let selectAll: EditingKey = (XCUIKeyboardKey(rawValue: "a"), .command)
+    static let copy: EditingKey = (XCUIKeyboardKey(rawValue: "c"), .command)
+    static let undo: EditingKey = (XCUIKeyboardKey(rawValue: "z"), .command)
 
-    static let ctrlA: EditingKey = ("a", .control)
-    static let ctrlE: EditingKey = ("e", .control)
-    static let ctrlK: EditingKey = ("k", .control)
-    static let ctrlD: EditingKey = ("d", .control)
-    static let ctrlH: EditingKey = ("h", .control)
+    static let ctrlA: EditingKey = (XCUIKeyboardKey(rawValue: "a"), .control)
+    static let ctrlE: EditingKey = (XCUIKeyboardKey(rawValue: "e"), .control)
+    static let ctrlK: EditingKey = (XCUIKeyboardKey(rawValue: "k"), .control)
+    static let ctrlD: EditingKey = (XCUIKeyboardKey(rawValue: "d"), .control)
+    static let ctrlH: EditingKey = (XCUIKeyboardKey(rawValue: "h"), .control)
 }
 
 /// Drives a text element (address bar or Duck.ai omnibar text view) with keyboard shortcuts and reads its contents back.
@@ -62,11 +62,18 @@ struct EditingDriver {
     /// Text the address bar appends after the typed text, e.g. " – Search with DuckDuckGo" or " – Visit duckduckgo.com".
     static let suffixSeparator = " – "
 
+    /// The element receiving the key presses.
     let element: XCUIElement
+
+    /// Set for text views that XCUI cannot read the value of: the contents are then read by selecting all and copying,
+    /// which replaces the current selection.
+    var readsContentByCopying = false
 
     /// The element contents including any address bar suffix.
     var rawValue: String {
-        element.value as? String ?? ""
+        guard readsContentByCopying else { return element.value as? String ?? "" }
+        press(EditingKeys.selectAll)
+        return selectedText() ?? ""
     }
 
     /// The element contents without the address bar suffix.

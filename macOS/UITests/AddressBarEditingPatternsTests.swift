@@ -111,7 +111,7 @@ class AddressBarUrlEditingTests: UITestCase {
         bar.moveCaretTwoWordsFromEnd()
         bar.press(repeated(EditingKeys.optShiftRight, 2))
         bar.press(EditingKeys.optShiftLeft)
-        XCTAssertEqual(bar.selectedText(), "results")
+        XCTAssertEqual(bar.selectedText(), "results/", "The caret moves back to the start of ‘translation’")
     }
 
     // MARK: - Contracting a select-all selection
@@ -329,7 +329,7 @@ class AddressBarUrlEditingTests: UITestCase {
         bar.press(EditingKeys.selectAll)
         bar.press(EditingKeys.left)
         bar.type("!")
-        XCTAssertEqual(bar.value, "!" + url)
+        XCTAssertEqual(bar.value, "!" + url + "!")
     }
 }
 

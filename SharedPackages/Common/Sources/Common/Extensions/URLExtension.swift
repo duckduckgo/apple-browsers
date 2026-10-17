@@ -674,13 +674,29 @@ extension URL {
         return canonicalHost
      }
 
+    /// `absoluteString` up to the first literal `#`; an encoded `%23` is not a delimiter.
+    ///
+    /// Foundation's `fragment` answers in O(1) for URLs that have none, so they are not scanned at all. Otherwise the
+    /// `#` is found in the UTF-8 bytes in place: `String.range(of:)` walks grapheme clusters and takes hundreds of
+    /// milliseconds on multi-megabyte URLs, which stalled the main thread. Opaque URLs (`about:`, `data:`) are always
+    /// scanned, because `fragment` can't see their fragment.
+    private var absoluteStringWithoutFragment: String {
+        var string = absoluteString
+        guard fragment != nil || isOpaque else { return string }
+        return string.withUTF8 { bytes in
+            let end = bytes.firstIndex(of: UInt8(ascii: "#")) ?? bytes.count
+            guard end > 0, let source = bytes.baseAddress else { return "" }
+            return String(unsafeUninitializedCapacity: end) { output in
+                UnsafeMutableRawPointer(output.baseAddress!).copyMemory(from: source, byteCount: end)
+                return end
+            }
+        }
+    }
+
     public func canonicalURL() -> URL? {
         // Remove the fragment before copying or transforming the URL: fragments can contain very large payloads.
-        let absoluteString = self.absoluteString
-        let fragmentStart = absoluteString.range(of: "#")?.lowerBound ?? absoluteString.endIndex
-
         // Steps 1 and 2: Remove tab (0x09), CR (0x0d), LF (0x0a), and the fragment.
-        var urlString = String(absoluteString[..<fragmentStart])
+        var urlString = absoluteStringWithoutFragment
         if urlString.contains(where: { $0 == "\t" || $0 == "\r" || $0 == "\n" }) {
             urlString = urlString.filter { $0 != "\t" && $0 != "\r" && $0 != "\n" }
         }

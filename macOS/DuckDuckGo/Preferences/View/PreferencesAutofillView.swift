@@ -90,7 +90,13 @@ extension Preferences {
                         .foregroundColor(Color(.textSecondary))
                 }
 
-                if !NSApp.isSandboxed {
+                if let passwordsExtension = model.managingExtension(for: .passwords) {
+                    // SECTION 1: Password Manager, taken over by an extension. Shown in every build,
+                    // since an extension can take passwords over in App Store builds too.
+                    PreferencePaneSection(UserText.autofillPasswordManager) {
+                        managingExtensionView(passwordsExtension)
+                    }
+                } else if !NSApp.isSandboxed {
                     // SECTION 1: Password Manager
                     PreferencePaneSection(UserText.autofillPasswordManager) {
                         VStack(alignment: .leading, spacing: 6) {
@@ -124,15 +130,32 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 2: Ask to Save:
-                PreferencePaneSection {
-                    TextMenuItemHeader(UserText.autofillAskToSave)
-                    VStack(alignment: .leading, spacing: 6) {
-                        ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
-                        ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
-                        ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
+                // SECTION 2: Ask to Save. A kind an extension has taken over has no toggle: DuckDuckGo
+                // neither saves nor autofills it.
+                if ExtensionManagedAutofillKind.allCases.contains(where: { model.managingExtension(for: $0) == nil }) {
+                    PreferencePaneSection {
+                        TextMenuItemHeader(UserText.autofillAskToSave)
+                        VStack(alignment: .leading, spacing: 6) {
+                            if model.managingExtension(for: .passwords) == nil {
+                                ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
+                            }
+                            if model.managingExtension(for: .addresses) == nil {
+                                ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
+                            }
+                            if model.managingExtension(for: .cards) == nil {
+                                ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
+                            }
+                        }
+                        TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                     }
-                    TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
+                }
+
+                // An extension that took addresses or cards over, but not passwords, which the
+                // Password Manager section above doesn't mention.
+                ForEach(model.extensionsManagingOnlyAddressesOrCards, id: \.identifier) { managingExtension in
+                    PreferencePaneSection(UserText.autofillAskToSave) {
+                        managingExtensionView(managingExtension)
+                    }
                 }
 
                 // SECTION 3: Reset excluded (aka never prompt to save) sites:
@@ -212,6 +235,26 @@ extension Preferences {
             .pickerStyle(.radioGroup)
             .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+        }
+
+        /// An extension that took kinds of autofill data over: who, what, and a way to give them back.
+        @ViewBuilder
+        private func managingExtensionView(_ managingExtension: AutofillManagingExtension) -> some View {
+            let kinds = model.kinds(managedBy: managingExtension)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    if let icon = managingExtension.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                    }
+                    Text(UserText.autofillManagedByExtension(managingExtension.name))
+                }
+                TextMenuItemCaption(UserText.autofillManagedByExtensionExplanation(managingExtension.name, kinds: kinds))
+                Button(UserText.autofillUseDuckDuckGoInstead) {
+                    model.useDuckDuckGoInstead(for: kinds)
+                }
+            }
         }
 
         // MARK: - Password Manager Availability Methods

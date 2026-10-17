@@ -56,10 +56,12 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     /// DuckDuckGo uses for its own scripts would not be seen by the extension.
     let requiresRunInPageContentWorld: Bool = true
 
-    /// The scripts report the unsupported APIs an extension touches through the first handler
-    /// and ask for the `chrome.idle` state through the second, which answers.
+    /// The scripts report the unsupported APIs an extension touches through the first handler, ask
+    /// for the `chrome.idle` state through the second and keep `chrome.privacy` settings through the
+    /// third; those two answer.
     let messageNames: [String] = [WebExtensionAPICompatibilityScript.messageHandlerName,
-                                  WebExtensionAPIStubScript.idleMessageHandlerName]
+                                  WebExtensionAPIStubScript.idleMessageHandlerName,
+                                  WebExtensionAPIStubScript.privacyMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
@@ -76,6 +78,8 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
         }
         if message.name == WebExtensionAPIStubScript.idleMessageHandlerName {
             manager.handleIdleMessage(message, replyHandler: replyHandler)
+        } else if message.name == WebExtensionAPIStubScript.privacyMessageHandlerName {
+            manager.handlePrivacyMessage(message, replyHandler: replyHandler)
         } else {
             manager.handleAPICompatibilityMessage(message)
             replyHandler(nil, nil)

@@ -556,6 +556,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    /// Which kinds of autofill data an extension has taken over from DuckDuckGo.
+    let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -782,6 +784,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover(privacyConfigurationManager: privacyConfigurationManager)
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
@@ -2271,6 +2274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.webExtensionLifecycleCoordinator?.cancelAll()
                 self?.webExtensionLifecycleCoordinator = nil
                 self?.webExtensionManager = nil
+                self?.webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
@@ -2294,6 +2298,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 scriptletConfiguration: makeScriptletConfiguration()
             )
             self.webExtensionManager = webExtensionManager
+            webExtensionAutofillTakeover.manager = webExtensionManager
 
             let coordinator = WebExtensionLifecycleCoordinator(
                 manager: webExtensionManager,
@@ -2309,7 +2314,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Load extensions asynchronously - the controller is already attached to tabs
             coordinator.loadAndSync()
         } else {
-            webExtensionManager = nil
+            webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
         }
     }
 
@@ -2329,6 +2334,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionAutofillTakeover.manager = webExtensionManager
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,

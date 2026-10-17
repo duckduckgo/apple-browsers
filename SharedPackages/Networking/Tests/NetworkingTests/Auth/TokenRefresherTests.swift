@@ -113,7 +113,7 @@ final class TokenRefresherTests: XCTestCase {
         XCTAssertEqual(mockOAuthService.refreshAccessTokenRequestedTokens, ["r0", "r0"])
     }
 
-    func testFork_onlyLastCallFiresRefreshEvents() async throws {
+    func testFork_onlyFirstCallReportsItsSteps() async throws {
         mockOAuthService.refreshAccessTokenResponses = [
             .success(OAuthTokensFactory.makeValidOAuthTokenResponse()),
             .failure(URLError(.timedOut))
@@ -122,11 +122,24 @@ final class TokenRefresherTests: XCTestCase {
 
         _ = try? await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: "r")
 
-        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r")])
-        guard case .tokenRefreshRefreshingAccessToken(let refreshID) = eventCapture.capturedEvents.first else {
-            return XCTFail("Expected a refreshing event")
+        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r"),
+                                                     .tokenRefreshRefreshedAccessToken(refreshID: "r")])
+        for event in eventCapture.capturedEvents {
+            switch event {
+            case .tokenRefreshRefreshingAccessToken(let refreshID), .tokenRefreshRefreshedAccessToken(let refreshID):
+                XCTAssertEqual(refreshID, "r")
+            default:
+                XCTFail("Unexpected event \(event)")
+            }
         }
-        XCTAssertEqual(refreshID, "r")
+    }
+
+    func testFork_firstCallFails_reportsTheFailingStep() async throws {
+        mockOAuthService.refreshAccessTokenResponses = [.failure(URLError(.timedOut))]
+
+        _ = try? await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: "r")
+
+        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r")])
     }
 
     func testFork_secondCallFails_throwsIncompleteWithFirstPair() async throws {

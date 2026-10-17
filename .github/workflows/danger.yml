@@ -4,13 +4,8 @@ on:
     types: [labeled, unlabeled, opened, reopened, edited, synchronize, ready_for_review]
 
 jobs:
-  should-run-checks:
-    name: Determine if checks should run
-    uses: ./.github/workflows/should_run_pr_checks.yml
   danger:
     name: Danger JS
-    needs: should-run-checks
-    if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -22,4 +17,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npx --yes -p danger@13.0.4 -p typescript@6 -- \
-            danger ci --dangerfile duckduckgo/danger-settings/org/allPRs.ts@main
+            danger ci --dangerfile duckduckgo/danger-settings/org/allPRs.ts@fcappelli/ddgerror-conformance-warning

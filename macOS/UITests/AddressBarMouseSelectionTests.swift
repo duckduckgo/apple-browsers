@@ -22,7 +22,7 @@ import XCTest
 /// after the “ – Search with DuckDuckGo” / “ – Visit …” suffix, which must never be selected.
 ///
 /// The texts are short so the positions in points from the left edge of the field stay valid for any window width:
-/// the first word starts ~10 pt from the edge, the text ends at ~70 pt and the suffix covers roughly 80–230 pt.
+/// the text starts at the left edge, ends at ~70 pt and the suffix covers roughly 80–230 pt.
 class AddressBarMouseSelectionTests: UITestCase {
 
     private let query = "alpha beta"
@@ -32,9 +32,10 @@ class AddressBarMouseSelectionTests: UITestCase {
     private enum Points {
         static let firstWord: CGFloat = 20
         static let secondWord: CGFloat = 58
-        static let textStart: CGFloat = 12
+        static let textStart: CGFloat = 1
         static let onSuffix: CGFloat = 150
-        static let afterEverything: CGFloat = -12
+        /// Empty field area after the suffix (the field is much wider; the buttons at its right edge are avoided)
+        static let afterEverything: CGFloat = 330
     }
 
     override class func setUp() {
@@ -74,15 +75,15 @@ class AddressBarMouseSelectionTests: UITestCase {
         XCTAssertEqual(bar.selectedText(), "beta")
     }
 
-    func test_tripleClick_selectsTheWholeQueryWithoutTheSuffix() {
+    func test_tripleClick_selectsTheWholeQueryWithoutTheSuffix() throws {
         typeQuery()
-        bar.tripleClick(bar.point(x: Points.firstWord))
+        try bar.tripleClick(bar.point(x: Points.firstWord))
         XCTAssertEqual(bar.selectedText(), query)
     }
 
     func test_tripleClick_selectsTheWholeURLWithoutTheSuffix() throws {
         try typeURL()
-        bar.tripleClick(bar.point(x: Points.firstWord))
+        try bar.tripleClick(bar.point(x: Points.firstWord))
         XCTAssertEqual(bar.selectedText(), shortURL)
     }
 
@@ -126,9 +127,9 @@ class AddressBarMouseSelectionTests: UITestCase {
         XCTAssertEqual(bar.rawValue, before)
     }
 
-    func test_tripleClick_onTheSuffix_doesNotSelectTheSuffix() {
+    func test_tripleClick_onTheSuffix_doesNotSelectTheSuffix() throws {
         typeQuery()
-        bar.tripleClick(bar.point(x: Points.onSuffix))
+        try bar.tripleClick(bar.point(x: Points.onSuffix))
         let selected = bar.selectedText()
         XCTAssertTrue(bar.selectionExcludesSuffix(selected), "The suffix must not be selected, got \(selected ?? "nil")")
         XCTAssertTrue(selected == nil || selected == query, "Only the query can be selected, got \(selected ?? "nil")")

@@ -359,8 +359,8 @@ extension DuckAIOmnibarEditingTests {
         XCTAssertEqual(bar.selectedText(), "alpha")
     }
 
-    func test_tripleClick_selectsTheWholePrompt() {
-        bar.tripleClick(bar.point(x: Points.firstWord, y: Points.textLineY))
+    func test_tripleClick_selectsTheWholePrompt() throws {
+        try bar.tripleClick(bar.point(x: Points.firstWord, y: Points.textLineY))
         XCTAssertEqual(bar.selectedText(), prompt)
     }
 

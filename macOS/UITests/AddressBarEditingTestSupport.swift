@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ApplicationServices
 import XCTest
 
 /// A key press: the key and its modifier flags.
@@ -183,7 +184,9 @@ extension EditingDriver {
     }
 
     /// XCUI has no triple click: post three left clicks with an increasing click count at the point.
-    func tripleClick(_ point: XCUICoordinate) {
+    /// Posting events needs the Accessibility permission for the test runner; the test is skipped without it.
+    func tripleClick(_ point: XCUICoordinate) throws {
+        try XCTSkipUnless(AXIsProcessTrusted(), "Posting a triple click needs the Accessibility permission for the test runner")
         point.hover()
         let location = point.screenPoint
         let source = CGEventSource(stateID: .hidSystemState)

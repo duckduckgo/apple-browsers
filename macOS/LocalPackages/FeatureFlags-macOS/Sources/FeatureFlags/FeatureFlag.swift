@@ -361,6 +361,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
     case aiChatPdfPageContext
 
+    /// Attaches page context to the sidebar by default, replacing the auto-send setting. A manual
+    /// remove lasts across navigation until the user attaches again or reopens the sidebar.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
+    case aiChatPageContextAutoAttach
+
     /// Enables the image generation mode toggle in the Duck.ai omnibar
     case aiChatOmnibarImageGeneration
 
@@ -901,6 +906,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+        case .aiChatPageContextAutoAttach:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
         case .updatedCreateImage:

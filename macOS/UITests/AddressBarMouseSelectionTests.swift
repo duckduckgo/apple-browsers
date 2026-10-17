@@ -32,8 +32,8 @@ class AddressBarMouseSelectionTests: UITestCase {
     private enum Points {
         static let firstWord: CGFloat = 20
         static let secondWord: CGFloat = 58
-        /// Inside the first word, a couple of characters from the left edge (a mouse down at the very edge misses the text)
-        static let textStart: CGFloat = 12
+        /// Inside the first word; a drag starting at 12 pt ended up with an unrelated “New Tab” text in the selection
+        static let textStart: CGFloat = 20
         static let veryStart: CGFloat = 1
         static let onSuffix: CGFloat = 150
         /// Empty field area after the suffix (the field is much wider; the buttons at its right edge are avoided)

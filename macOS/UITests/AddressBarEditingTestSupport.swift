@@ -123,12 +123,17 @@ struct EditingDriver {
         let savedItems = Self.snapshot(of: pasteboard)
         defer { Self.restore(savedItems, to: pasteboard) }
 
-        let sentinel = "no-selection-\(UUID().uuidString)"
         pasteboard.clearContents()
-        pasteboard.setString(sentinel, forType: .string)
+        pasteboard.setString("no-selection-\(UUID().uuidString)", forType: .string)
+        let changeCount = pasteboard.changeCount
         press(EditingKeys.copy)
-        let copied = pasteboard.string(forType: .string)
-        return copied == sentinel ? nil : copied
+        // Copying is asynchronous: with nothing selected the pasteboard is never touched, so wait for it to change
+        let deadline = Date().addingTimeInterval(0.6)
+        while pasteboard.changeCount == changeCount && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        guard pasteboard.changeCount != changeCount else { return nil }
+        return pasteboard.string(forType: .string)
     }
 
     private static func snapshot(of pasteboard: NSPasteboard) -> [[NSPasteboard.PasteboardType: Data]] {

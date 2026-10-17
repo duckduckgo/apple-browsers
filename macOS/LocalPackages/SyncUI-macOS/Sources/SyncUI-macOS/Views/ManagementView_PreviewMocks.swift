@@ -28,6 +28,7 @@ final class PreviewManagementViewModel: ManagementViewModel {
     let isAppVersionNotSupported: Bool
     let isAIChatSyncEnabled = true
     let isSimplifiedSyncSetupV2Enabled: Bool
+    let isImprovedPairingFlowEnabled: Bool
 
     let isSyncEnabled: Bool
     let isSyncPaused: Bool
@@ -72,6 +73,7 @@ final class PreviewManagementViewModel: ManagementViewModel {
         syncPausedMessage: String? = nil,
         syncPausedButtonTitle: String? = nil,
         isSimplifiedSyncSetupV2Enabled: Bool = false,
+        isImprovedPairingFlowEnabled: Bool = false,
         isDataSyncingAvailable: Bool = true,
         isConnectingDevicesAvailable: Bool = true,
         isAccountCreationAvailable: Bool = true,
@@ -84,6 +86,7 @@ final class PreviewManagementViewModel: ManagementViewModel {
         self.syncPausedMessage = syncPausedMessage
         self.syncPausedButtonTitle = syncPausedButtonTitle
         self.isSimplifiedSyncSetupV2Enabled = isSimplifiedSyncSetupV2Enabled
+        self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
         self.isDataSyncingAvailable = isDataSyncingAvailable
         self.isConnectingDevicesAvailable = isConnectingDevicesAvailable
         self.isAccountCreationAvailable = isAccountCreationAvailable

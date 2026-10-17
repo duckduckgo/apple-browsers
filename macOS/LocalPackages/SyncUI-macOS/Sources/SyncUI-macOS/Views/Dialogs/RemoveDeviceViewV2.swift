@@ -25,6 +25,7 @@ struct RemoveDeviceViewV2: View {
     @EnvironmentObject var model: ManagementDialogModel
 
     let device: SyncDevice
+    var onCancel: (() -> Void)?
 
     @State private var isRemoving = false
 
@@ -54,7 +55,11 @@ struct RemoveDeviceViewV2: View {
             Spacer()
 
             Button(UserText.cancel) {
-                model.cancelPressed()
+                if let onCancel {
+                    onCancel()
+                } else {
+                    model.cancelPressed()
+                }
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             .disabled(isRemoving)

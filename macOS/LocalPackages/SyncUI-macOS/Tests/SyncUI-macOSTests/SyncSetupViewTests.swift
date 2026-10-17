@@ -1,5 +1,5 @@
 //
-//  SyncEnabledViewV2Tests.swift
+//  SyncSetupViewTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,14 +22,14 @@ import Testing
 @testable import SyncUI_macOS
 
 @MainActor
-@Suite("Sync Enabled View V2 Tests")
-final class SyncEnabledViewV2Tests {
+@Suite("Sync Setup View Tests")
+final class SyncSetupViewTests {
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func testSyncEnabledViewV2Snapshots() {
+    func testSyncSetupViewSnapshots() {
         assertImageSnapshots(
-            SyncEnabledViewV2_Previews.snapshots,
+            SyncSetupView_Previews.snapshots,
             size: .intrinsicContentSize
         )
     }

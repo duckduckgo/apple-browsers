@@ -1979,13 +1979,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
                 attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true, attachmentSource: .mention).isSuccessful ?? false }
             ))
-            mentionController.pixelSurfaceProvider = { [weak self] in
+            mentionController.pixelAttributionProvider = { [weak self] in
                 guard let self, attachmentController.canUseTabAttachments else { return nil }
-                return pixelSurface
+                return pixelReporter.currentTabPixelAttribution()
             }
-            mentionController.onPickerEvent = { [weak self] action, surface in
+            mentionController.onPickerEvent = { [weak self] action, attribution in
                 guard let self, case .available = tabAttachmentFeature?.state else { return }
-                pixelReporter.reportTabAttachment(action, source: .mention, surface: surface)
+                pixelReporter.reportTabAttachment(action, source: .mention, attribution: attribution)
             }
             mentionController.onSuggestionsChanged = { [weak self] in self?.onTabMentionSuggestionsChanged?($0) }
             tabMentionController = mentionController

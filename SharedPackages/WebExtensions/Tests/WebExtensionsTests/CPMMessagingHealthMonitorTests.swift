@@ -583,23 +583,43 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
 
+        let regularFailure = expectation(description: "First regular navigation reports failure")
+        pixelFiring.onFire = { event in
+            if case .cpmInitializationFailed(reason: .other, diagnostics: _) = event {
+                regularFailure.fulfill()
+            }
+        }
         finishNavigation(tabIdentifier: "regular-1", path: "regular-1", on: monitor)
-        await waitForEventTimeout()
+        await fulfillment(of: [regularFailure], timeout: 1)
+
+        let restorationFailure = expectation(description: "Restored navigation reports failure")
+        pixelFiring.onFire = { event in
+            if case .cpmInitializationFailed(reason: .sessionRestoration, diagnostics: _) = event {
+                restorationFailure.fulfill()
+            }
+        }
         finishNavigation(
             tabIdentifier: "restored-1",
             path: "restored-1",
             navigationKind: .sessionRestoration,
             on: monitor
         )
-        await waitForEventTimeout()
+        await fulfillment(of: [restorationFailure], timeout: 1)
 
         XCTAssertEqual(pixelFiring.events, [
             "initialization_failed_other",
             "initialization_failed_session_restoration"
         ])
 
+        let stuck = expectation(description: "Later regular navigation confirms messaging is stuck")
+        pixelFiring.onFire = { event in
+            if case .cpmMessagingStuck(reason: .other, diagnostics: _) = event {
+                stuck.fulfill()
+            }
+        }
         finishNavigation(tabIdentifier: "regular-2", path: "regular-2", on: monitor)
-        await waitForEventTimeout()
+        await fulfillment(of: [stuck], timeout: 1)
+        pixelFiring.onFire = nil
 
         XCTAssertEqual(pixelFiring.events.suffix(2), ["initialization_failed_other", "stuck_other"])
     }
@@ -1304,6 +1324,7 @@ private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
 
 @available(macOS 15.4, iOS 18.4, *)
 private final class CapturingWebExtensionPixelFiring: WebExtensionPixelFiring {
+    var onFire: ((WebExtensionPixelEvent) -> Void)?
     private(set) var metadata: [CPMWebExtensionPixelMetadata] = []
     private(set) var events: [String] = []
     private(set) var diagnostics: [CPMMessagingDiagnostics?] = []
@@ -1328,5 +1349,6 @@ private final class CapturingWebExtensionPixelFiring: WebExtensionPixelFiring {
         default:
             break
         }
+        onFire?(event)
     }
 }

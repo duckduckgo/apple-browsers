@@ -17,7 +17,6 @@
 //
 
 import SwiftUI
-import BrowserServicesKit
 import SwiftUIExtensions
 
 struct LoginFaviconView: View {
@@ -25,9 +24,13 @@ struct LoginFaviconView: View {
     let generatedIconLetters: String
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
+    @State private var image: NSImage?
+    /// Bumped from the `.faviconCacheUpdated` observer to re-run the loader while the placeholder is shown.
+    @State private var reloadCount = 0
+
     var body: some View {
         Group {
-            if let image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image {
+            if let image {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -39,10 +42,28 @@ struct LoginFaviconView: View {
                     .padding(.leading, 8)
             }
         }
+        // Favicon images are decoded lazily off-main, so await the decode on appear / domain change, and
+        // re-resolve when this row's favicon arrives later (the `.faviconCacheUpdated` observer bumps
+        // `reloadCount`). Keying the task on both cancels any in-flight load when either changes, so a
+        // stale result can't overwrite a newer one; clearing first avoids flashing a recycled row's icon.
+        .task(id: ReloadKey(domain: domain, reloadCount: reloadCount)) {
+            image = nil
+            let resolved = await faviconManagement.resolvedCachedFaviconSafeForRendering(for: domain, sizeCategory: .small)?.image
+            guard !Task.isCancelled else { return }
+            image = resolved
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { notification in
+            // Re-resolve only while the placeholder is shown and the update's affected domains include this row's.
+            guard image == nil,
+                  let update = notification.faviconsCacheUpdate,
+                  update.hosts.contains(domain) else { return }
+            reloadCount += 1
+        }
     }
 
-    var favicon: NSImage? {
-        return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image ?? .login
+    private struct ReloadKey: Equatable {
+        let domain: String
+        let reloadCount: Int
     }
 
 }

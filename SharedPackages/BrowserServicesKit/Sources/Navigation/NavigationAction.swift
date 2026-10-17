@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 
@@ -130,12 +131,15 @@ public struct NavigationAction {
         }
         var navigationType = navigationType
 
-        if case .other = navigationAction.navigationType,
+        let targetFrameURL = navigationAction.targetFrame?.safeRequest?.url
+        let isTargetFrameBlankOrEmpty = targetFrameURL?.isEmpty == true || targetFrameURL == .blankPage
+
+        if [.other, .backForward].contains(navigationAction.navigationType),
            case .returnCacheDataElseLoad = navigationAction.request.cachePolicy,
            navigationType == nil,
            redirectHistory == nil,
            navigationAction.targetFrame?.isMainFrame == true,
-           navigationAction.targetFrame?.safeRequest?.url?.isEmpty == true,
+           isTargetFrameBlankOrEmpty,
            webView.backForwardList.currentItem != nil {
 
             // go back after failing session restoration has `other` Navigation Type
@@ -310,7 +314,7 @@ extension NavigationAction: CustomDebugStringConvertible {
 #else
         let fromHistoryItem = ""
 #endif
-        return "<NavigationAction #\(identifier)\(isUserInitiatedStr): url: \"\(url.absoluteString)\" type: \(navigationType.debugDescription)\(shouldDownload ? " Download" : "") frame: \(sourceFrame)\(targetFrame.debugDescription)\(fromHistoryItem)>"
+        return "<NavigationAction #\(identifier)\(isUserInitiatedStr): url: \"\(url.shortDescription)\" type: \(navigationType.debugDescription)\(shouldDownload ? " Download" : "") frame: \(sourceFrame)\(targetFrame.debugDescription)\(fromHistoryItem)>"
     }
 }
 
@@ -333,6 +337,6 @@ extension NavigationPreferences: CustomDebugStringConvertible {
 
 extension HistoryItemIdentity: CustomDebugStringConvertible {
     public var debugDescription: String {
-        "<\(identifier) url: \(url?.absoluteString ?? "") title: \(title ?? "<nil>")>"
+        "<\(identifier) url: \(url?.shortDescription ?? "") title: \(title ?? "<nil>")>"
     }
 }

@@ -52,6 +52,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -62,7 +63,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -155,6 +160,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -165,7 +171,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -268,6 +278,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -278,7 +289,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -305,6 +320,40 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(matchingRules: [1, 2], exclusionRules: []))
     }
 
+    func testWhenPercentileRuleFailsThenTryNextMatchingRule() {
+        setupSUT(percentileStore: MockRemoteMessagePercentileStore(percentileStorage: ["1": 0.8]))
+
+        let matchingAttribute = OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)
+        let rules = [
+            RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.2), attributes: [matchingAttribute]),
+            RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [matchingAttribute])
+        ]
+
+        for matchingRules in [[2, 1], [1, 2]] {
+            let expectedMessage = mediumMessage(matchingRules: matchingRules, exclusionRules: [])
+            let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: rules)
+            let evaluatedMessage = matcher.evaluate(remoteConfig: remoteConfig)
+            XCTAssertEqual(evaluatedMessage, expectedMessage, "Rule 2 matches, so percentile failure must not depend on rule order: \(matchingRules)")
+        }
+    }
+
+    func testWhenPercentileRuleFailsThenTryNextExclusionRule() {
+        setupSUT(percentileStore: MockRemoteMessagePercentileStore(percentileStorage: ["1": 0.8]))
+
+        let matchingAttribute = OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)
+        let rules = [
+            RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.2), attributes: [matchingAttribute]),
+            RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [matchingAttribute])
+        ]
+
+        for exclusionRules in [[2, 1], [1, 2]] {
+            let excludedMessage = mediumMessage(matchingRules: [], exclusionRules: exclusionRules)
+            let remoteConfig = RemoteConfigModel(messages: [excludedMessage], rules: rules)
+            let evaluatedMessage = matcher.evaluate(remoteConfig: remoteConfig)
+            XCTAssertNil(evaluatedMessage, "Rule 2 excludes the message, regardless of rule order: \(exclusionRules)")
+        }
+    }
+
     func testWhenDeviceDoesNotMatchAnyRuleThenReturnNull() {
         let os = ProcessInfo().operatingSystemVersion
         matcher = RemoteMessagingConfigMatcher(
@@ -324,6 +373,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -334,7 +384,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -376,6 +430,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -386,7 +441,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -426,6 +485,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -436,7 +496,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -476,6 +540,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -486,7 +551,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -526,6 +595,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -536,7 +606,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -1054,6 +1128,7 @@ private extension RemoteMessagingConfigMatcherTests {
                 subscriptionDaysSinceSubscribed: -1,
                 subscriptionDaysUntilExpiry: -1,
                 subscriptionPurchasePlatform: nil,
+                subscriptionTier: nil,
                 isSubscriptionActive: false,
                 isSubscriptionExpiring: false,
                 isSubscriptionExpired: false,
@@ -1065,7 +1140,11 @@ private extension RemoteMessagingConfigMatcherTests {
                 enabledFeatureFlags: [],
                 isSyncEnabled: false,
                 shouldShowWinBackOfferUrgencyMessage: false,
-                isCurrentPIRUser: false
+                isCurrentPIRUser: false,
+                isReturningUser: nil,
+                isAIChatEnabled: false,
+                triedAIChatDuringOnboarding: false,
+                isAIChatBoostActive: nil
             ),
             percentileStore: percentileStore,
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

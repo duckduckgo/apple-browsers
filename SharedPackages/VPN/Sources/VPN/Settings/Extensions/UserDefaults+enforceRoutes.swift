@@ -21,13 +21,15 @@ import Foundation
 
 extension UserDefaults {
     private var enforceRoutesKey: String {
-        "networkProtectionSettingEnforceRoutes"
+        "vpnSettingEnforceRoutes"
     }
 
+    public static let enforceRoutesDefaultValue = true
+
     @objc
-    dynamic var networkProtectionSettingEnforceRoutes: Bool {
+    dynamic var vpnSettingEnforceRoutes: Bool {
         get {
-            bool(forKey: enforceRoutesKey)
+            value(forKey: enforceRoutesKey) as? Bool ?? Self.enforceRoutesDefaultValue
         }
 
         set {
@@ -35,11 +37,11 @@ extension UserDefaults {
         }
     }
 
-    var networkProtectionSettingEnforceRoutesPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.networkProtectionSettingEnforceRoutes).eraseToAnyPublisher()
+    var vpnSettingEnforceRoutesPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.vpnSettingEnforceRoutes).eraseToAnyPublisher()
     }
 
-    func resetNetworkProtectionSettingEnforceRoutes() {
+    func resetVPNSettingEnforceRoutes() {
         removeObject(forKey: enforceRoutesKey)
     }
 }

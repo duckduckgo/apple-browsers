@@ -194,6 +194,10 @@ final class BookmarkManagementSidebarViewController: NSViewController {
         bookmarkManager.requestSync()
     }
 
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.alignItemTextWithIconsRecursively()
+    }
+
     func select(folder: BookmarkFolder) {
         if let node = treeController.node(representing: folder) {
             let path = BookmarkNode.Path(node: node)

@@ -104,6 +104,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
 
     func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64) throws
     func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
+    func hasScanHistoryEvents() throws -> Bool
     func fetchEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
 
     func save(extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64
@@ -111,6 +112,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchExtractedProfiles(for brokerId: Int64, with profileQueryId: Int64) throws -> [ExtractedProfile]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
     func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws
+    func updateExtractedProfile(_ extractedProfile: ExtractedProfile, for extractedProfileId: Int64) throws
 
     func hasMatches() throws -> Bool
 
@@ -118,7 +120,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
-    func fetchFirstEligibleJobDate() throws -> Date?
+    func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date?
 
     func save(backgroundTaskEvent: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
@@ -502,8 +504,18 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         try self.providers.database.updateRemovedDate(for: extractedProfileId, with: date)
     }
 
+    public func updateExtractedProfile(_ extractedProfile: ExtractedProfile, for extractedProfileId: Int64) throws {
+        let mapper = MapperToDB(mechanism: l2Encrypt(data:))
+
+        try self.providers.database.updateProfileData(for: extractedProfileId, with: mapper.mapToDB(extractedProfile))
+    }
+
     public func hasMatches() throws -> Bool {
         try self.providers.database.hasMatches()
+    }
+
+    public func hasScanHistoryEvents() throws -> Bool {
+        try self.providers.database.hasScanHistoryEvents()
     }
 
     public func fetchAllAttempts() throws -> [AttemptInformation] {
@@ -559,8 +571,8 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         return try providers.crypto.decrypt(data, withKey: l2Key)
     }
 
-    public func fetchFirstEligibleJobDate() throws -> Date? {
-        return try self.providers.database.fetchFirstEligibleJobDate()
+    public func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date? {
+        return try self.providers.database.fetchFirstEligibleJobDate(excludingScanBrokerIDs: brokerIDs, includesOptOuts: includesOptOuts)
     }
 
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {

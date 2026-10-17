@@ -21,9 +21,13 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import History
 import os.log
+import PixelKit
 import PrivacyConfig
+import WebKit
 
 @MainActor
 protocol WindowControllersManagerProtocol: AnyObject {
@@ -37,6 +41,7 @@ protocol WindowControllersManagerProtocol: AnyObject {
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
+    var didChangeKeyWindowController: PassthroughSubject<MainWindowController?, Never> { get }
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
     var didUnregisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
 
@@ -125,6 +130,18 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    private weak var onboardingTab: Tab?
+    private var onboardingTabCancellable: AnyCancellable?
+
+    /// Records a skip that leaves the tab where it is. Cleared once used, so the same onboarding
+    /// session is only ever recorded once.
+    private var onboardingSkipInPlaceHandler: (@MainActor () -> Void)?
+
+    /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
+    /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
+    /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
+    private(set) lazy var voiceSessionTracker: VoiceSessionTracker = VoiceSessionTracker(windowControllersManager: self)
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
@@ -159,6 +176,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     func unregister(_ windowController: MainWindowController) {
+        recordOnboardingSkipIfWindowHostsOnboarding(windowController)
+
         pinnedTabsManagerProvider.cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager)
 
         guard let idx = mainWindowControllers.firstIndex(of: windowController) else {
@@ -167,6 +186,19 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
         mainWindowControllers.remove(at: idx)
         didUnregisterWindowController.send(windowController)
+    }
+
+    /// Closing the window that hosts onboarding disposes of onboarding just as deliberately as
+    /// closing its tab, so it counts as a skip. Quit cleanup detaches tracking before closing windows.
+    @MainActor
+    private func recordOnboardingSkipIfWindowHostsOnboarding(_ windowController: MainWindowController) {
+        guard let onboardingTab else { return }
+        guard windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: onboardingTab) != nil else { return }
+
+#if DEBUG
+        Logger.general.debug("Onboarding window close: owner=\(onboardingTab.uuid, privacy: .public)")
+#endif
+        recordOnboardingSkipInPlace()
     }
 
     func updateIsInInitialState() {
@@ -207,7 +239,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
 extension WindowControllersManager {
 
     func showDataBrokerProtectionTab() {
-        showTab(with: .dataBrokerProtection)
+        showTab(with: .dataBrokerProtection(.subscribed))
     }
 
     func showBookmarksTab() {
@@ -298,7 +330,7 @@ extension WindowControllersManager {
     /// - Parameters:
     ///   - url: The URL to open. If `nil`, New Tab page will be open (`.newtab`).
     ///   - tabId: An optional identifier for an existing tab to switch to.
-    ///            If provided along with the `source` matching `.appOpenUrl` or `.switchToOpenTab`,
+    ///            If provided along with a `source` that `switchesToOpenTab`,
     ///            the function will attempt to activate the tab with this ID.
     ///   - source: The origin of the URL being opened, which can indicate whether it is from a bookmark, history record, external link, etc.
     ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
@@ -322,7 +354,7 @@ extension WindowControllersManager {
             let selectionIndex = tabCollectionViewModel.selectionIndex
 
             // Switch to already open tab if present
-            if [.appOpenUrl, .switchToOpenTab].contains(source),
+            if source.switchesToOpenTab,
                let url, switchToOpenTab(withId: tabId, url: url, preferring: windowController) == true {
 
                 if let selectedTabViewModel, let selectionIndex,
@@ -367,14 +399,13 @@ extension WindowControllersManager {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             guard let index = tabCollectionViewModel.indexInAllTabs(where: {
                 if let tabId {
-                    return $0.id == tabId
+                    return $0.uuid == tabId
                 }
                 return $0.content.urlForWebView == url || (url.isSettingsURL && $0.content.urlForWebView?.isSettingsURL == true)
             }) else { continue }
 
             windowController.window?.makeKeyAndOrderFront(self)
-            tabCollectionViewModel.select(at: index)
-            if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
+            if let tab = tabCollectionViewModel.selectTab(at: index),
                tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
@@ -482,7 +513,7 @@ extension WindowControllersManager {
     /// Shows the non-subscription feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         if internalUserDecider.isInternalUser {
-            showTab(with: .url(.internalFeedbackForm, source: .ui))
+            Application.appDelegate.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
         } else {
             FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
         }
@@ -575,26 +606,22 @@ extension WindowControllersManagerProtocol {
         }
     }
 
-    var allTabViewModels: [TabViewModel] {
-        return allTabCollectionViewModels.flatMap {
-            $0.tabViewModels.values.compactMap { $0 as? TabViewModel }
-        }
-    }
-
-    func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [TabViewModel] {
+    func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [any TabBarViewModel] {
         let currentBurnerModeTabCollectionViewModels = allTabCollectionViewModels
             .filter { tabCollectionViewModel in
                 tabCollectionViewModel.burnerMode == burnerMode
             }
-        let tabViewModelsWithOriginalOrder = currentBurnerModeTabCollectionViewModels.flatMap {
-            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
+        let unpinnedTabBarViewModels = currentBurnerModeTabCollectionViewModels.flatMap { tabCollectionViewModel in
+            (0..<tabCollectionViewModel.tabViewModels.count).compactMap { index in
+                tabCollectionViewModel.tabBarViewModel(at: .unpinned(index))
+            }
         }
-        let pinnedTabSuggestions = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
-            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
-        }) : []
-        let result = pinnedTabSuggestions + tabViewModelsWithOriginalOrder
-
-        return result
+        let pinnedTabBarViewModels: [any TabBarViewModel] = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { pinnedManager in
+            (0..<pinnedManager.tabViewModels.count).compactMap { index in
+                pinnedManager.tabBarViewModel(at: index)
+            }
+        } : []
+        return pinnedTabBarViewModels + unpinnedTabBarViewModels
     }
 
     func windowController(for tabCollectionViewModel: TabCollectionViewModel) -> MainWindowController? {
@@ -604,37 +631,30 @@ extension WindowControllersManagerProtocol {
     }
 
     func windowController(for tab: Tab) -> MainWindowController? {
+        if let windowController = tab.webView.window?.windowController as? MainWindowController,
+           windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) != nil {
+            return windowController
+        }
         return mainWindowControllers.first(where: {
-            $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab)
+            $0.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) != nil
         })
     }
 
     // MARK: - Web Notifications Support
 
-    /// Finds a tab by its UUID across all windows.
+    /// Focuses the tab with the given UUID across all windows, materializing it if unloaded.
     /// - Parameter uuid: The tab's UUID.
-    /// - Returns: The tab if found, nil otherwise.
-    func findTab(byUUID uuid: String) -> Tab? {
+    /// - Returns: The loaded tab if found, nil otherwise.
+    @discardableResult
+    func focusTab(byUUID uuid: String) -> Tab? {
         for windowController in mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
-                return tabCollectionViewModel.tabViewModel(at: index)?.tab
+                windowController.window?.makeKeyAndOrderFront(nil)
+                return tabCollectionViewModel.selectTab(at: index)
             }
         }
         return nil
-    }
-
-    /// Focuses the window containing the given tab and selects the tab.
-    /// - Parameter tab: The tab to focus.
-    func focusTab(_ tab: Tab) {
-        for windowController in mainWindowControllers {
-            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-            if let index = tabCollectionViewModel.indexInAllTabs(of: tab) {
-                windowController.window?.makeKeyAndOrderFront(nil)
-                tabCollectionViewModel.select(at: index)
-                return
-            }
-        }
     }
 
     /// Focuses the most recently active browser window.
@@ -654,21 +674,115 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @MainActor
+    var hasOnboardingTab: Bool { onboardingTab != nil }
+
+    /// Captures the onboarding tab before the user can switch tabs while it loads.
+    @MainActor
+    func setOnboardingTab(_ tab: Tab?) {
+        onboardingTabCancellable = nil
+        onboardingSkipInPlaceHandler = nil
+        onboardingTab?.onClose = nil
+        onboardingTab = tab
+    }
+
+    @MainActor
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
+                               onSkipInPlace: @escaping @MainActor () -> Void) {
+        guard let onboardingTab else { return }
+
+        onboardingSkipInPlaceHandler = onSkipInPlace
+
+        onboardingTab.onClose = { [weak self, weak onboardingTab] in
+            guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
+            self.clearOnboardingTracking()
+            onClose(onboardingTab)
+        }
+
+        onboardingTabCancellable = onboardingTab.$content
+            .filter { if case .onboarding = $0 { false } else { true } }
+            .first()
+            .sink { [weak self, weak onboardingTab] _ in
+                guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
+#if DEBUG
+                Logger.general.debug("Onboarding content exit: owner=\(onboardingTab.uuid, privacy: .public)")
+#endif
+                self.recordOnboardingSkipInPlace()
+            }
+    }
+
+    @MainActor
+    func recordBrowsingBeforeOnboardingCompletion() {
+        guard onboardingSkipInPlaceHandler != nil, !OnboardingActionsManager.isOnboardingFinished else { return }
+        PixelKit.fire(GeneralPixel.onboardingBrowsingBeforeCompletion, frequency: .uniqueByName)
+    }
+
+    @MainActor
+    private func recordOnboardingSkipInPlace() {
+        guard let handler = onboardingSkipInPlaceHandler else { return }
+        clearOnboardingTracking()
+        handler()
+    }
+
+    // Let `.first()` finish the content subscription instead of cancelling it during delivery.
+    @MainActor
+    private func clearOnboardingTracking() {
+        onboardingSkipInPlaceHandler = nil
+        onboardingTab?.onClose = nil
+        onboardingTab = nil
+    }
+
+    /// Resolve the sender, never the selected tab: the user may have switched tabs or windows.
+    func onboardingTab(for webView: WKWebView?) -> Tab? {
+        guard let webView else { return nil }
+        for windowController in mainWindowControllers {
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
+            for case .loaded(let tab) in tabs where tab.webView === webView {
+                guard case .onboarding = tab.content else { return nil }
+                return tab
+            }
+        }
+        return nil
+    }
+
+    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {
+        guard onboardingTab(for: source.webView) === source else { return false }
+        if onboardingTab === source {
+            setOnboardingTab(nil)
+        }
+        return replaceTab(source, with: tab)
+    }
+
+    /// Replaces the onboarding tab, falling back to the selected tab when none is tracked
+    /// (the non-async flow keeps the UI locked, so the two are the same tab there).
+    @MainActor
     func replaceTabWith(_ tab: Tab) {
-        guard let tabToRemove = selectedTab else { return }
-        guard let mainWindowController else { return }
-        guard let index = mainWindowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
+        // Capture before clearing — `setOnboardingTab(nil)` drops the reference this needs.
+        guard let tabToRemove = onboardingTab ?? selectedTab else { return }
+        setOnboardingTab(nil)
+        replaceTab(tabToRemove, with: tab)
+    }
+
+    @MainActor
+    @discardableResult
+    private func replaceTab(_ tabToRemove: Tab, with tab: Tab) -> Bool {
+        // Resolve the window that actually holds the tab, not whichever one is key — otherwise the
+        // index lookup below searches the wrong collection and silently gives up.
+        guard let windowController = windowController(containing: tabToRemove) ?? mainWindowController else { return false }
+        guard let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return false }
         var tabToAppend = tab
-        if mainWindowController.mainViewController.isBurner {
-            let burnerMode = mainWindowController.mainViewController.tabCollectionViewModel.burnerMode
+        if windowController.mainViewController.isBurner {
+            let burnerMode = windowController.mainViewController.tabCollectionViewModel.burnerMode
             tabToAppend = Tab(content: tab.content, burnerMode: burnerMode)
         }
-        mainWindowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
-        mainWindowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        // Append before remove: the tab count must never hit zero, or the window closes.
+        windowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
+        windowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        return true
     }
 
     @MainActor
@@ -676,5 +790,17 @@ extension WindowControllersManager: OnboardingNavigating {
         guard let mainVC = lastKeyMainWindowController?.mainViewController else { return }
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue = ""
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
+    }
+}
+
+extension WindowControllersManager: TabAndWindowCountProviding {
+    var tabCount: Int {
+        mainWindowControllers.reduce(0) { total, controller in
+            total + controller.mainViewController.tabCollectionViewModel.allTabsCount
+        }
+    }
+
+    var windowCount: Int {
+        mainWindowControllers.count
     }
 }

@@ -16,10 +16,13 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import AppKit
 import AppUpdaterShared
 import Common
+import FoundationExtensions
 import CryptoKit
 import os.log
 import Persistence
@@ -52,6 +55,8 @@ final class UpdatesDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem.separator()
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
+                .targetting(self)
+            NSMenuItem(title: "Show Critical Update Popover", action: #selector(showCriticalUpdatePopover))
                 .targetting(self)
             NSMenuItem.separator()
             NSMenuItem(title: "Test Update Pixels") {
@@ -103,6 +108,10 @@ final class UpdatesDebugMenu: NSMenu {
 
     @objc func showBrowserUpdatedPopover() {
         Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .updated)
+    }
+
+    @objc func showCriticalUpdatePopover() {
+        Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .critical, areAutomaticUpdatesEnabled: true)
     }
 
     // MARK: - Custom Feed URL

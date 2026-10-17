@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import QuartzCore
 
@@ -137,7 +138,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     @MainActor
     @discardableResult public func addVisit(of url: URL, at date: Date, tabID: String? = nil) -> Visit? {
         guard let historyDictionary else {
-            Logger.history.debug("Visit of \(url.absoluteString) ignored")
+            Logger.history.debug("Visit of \(url.shortDescription) ignored")
             return nil
         }
 
@@ -153,12 +154,12 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     public func addBlockedTracker(entityName: String, on url: URL) {
         guard let historyDictionary else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no history")
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no history")
             return
         }
 
         guard let entry = historyDictionary[url] else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no entry")
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no entry")
             return
         }
 
@@ -167,12 +168,12 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     public func trackerFound(on url: URL) {
         guard let historyDictionary else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no history")
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no history")
             return
         }
 
         guard let entry = historyDictionary[url] else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no entry")
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no entry")
             return
         }
 
@@ -181,12 +182,12 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     public func cookiePopupBlocked(on url: URL) {
         guard let historyDictionary else {
-            Logger.history.debug("Set cookie popup blocked on \(url.absoluteString) ignored, no history")
+            Logger.history.debug("Set cookie popup blocked on \(url.shortDescription) ignored, no history")
             return
         }
 
         guard let entry = historyDictionary[url] else {
-            Logger.history.debug("Set cookie popup blocked on \(url.absoluteString) ignored, no entry")
+            Logger.history.debug("Set cookie popup blocked on \(url.shortDescription) ignored, no entry")
             return
         }
 
@@ -212,7 +213,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     public func commitChanges(url: URL) {
         guard let historyDictionary, let entry = historyDictionary[url] else { return }
-        Logger.history.debug("HistoryCoordinator: committing \(url.absoluteString)")
+        Logger.history.debug("HistoryCoordinator: committing \(url.shortDescription)")
         save(entry: entry)
     }
 
@@ -480,7 +481,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         Task {
             do {
                 let result = try await historyStoring.save(entry: entryCopy)
-                Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.absoluteString), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
+                Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.shortDescription), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
                 await MainActor.run {
                     for (id, date) in result {
                         if let visit = entry.visits.first(where: { $0.date == date }) {
@@ -499,7 +500,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     @MainActor
     private func mark(url: URL, keyPath: WritableKeyPath<HistoryEntry, Bool>, value: Bool) {
         guard let historyDictionary, var entry = historyDictionary[url] else {
-            Logger.history.debug("Marking of \(url.absoluteString) not saved. History not loaded yet or entry doesn't exist")
+            Logger.history.debug("Marking of \(url.shortDescription) not saved. History not loaded yet or entry doesn't exist")
             return
         }
 

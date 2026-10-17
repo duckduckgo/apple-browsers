@@ -2633,6 +2633,66 @@
         }
       }
     },
+    "network.protection.status.header.message.strict.routing.off" : {
+      "comment" : "Status view message shown while the VPN is on but Strict routing is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Teil des Datenverkehrs könnte das VPN umgehen, während das strikte Routing deaktiviert ist. Striktes Routing wird für öffentliche Netzwerke empfohlen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some traffic may bypass the VPN while Strict Routing is off. Strict Routing is recommended for public networks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parte del tráfico podría evitar la VPN mientras el enrutamiento estricto esté desactivado. Se recomienda el enrutamiento estricto para redes públicas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une partie du trafic peut contourner le VPN lorsque le routage strict est désactivé. Le routage strict est recommandé pour les réseaux publics."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parte del traffico potrebbe aggirare la VPN mentre il routing rigido è disattivato. Il routing rigido è consigliato per le reti pubbliche."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als Stricte Routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóry ruch może omijać VPN, gdy ścisły routing jest wyłączony. Ścisły routing jest zalecany w sieciach publicznych."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algum tráfego pode contornar a VPN enquanto o encaminhamento estrito estiver desativado. O encaminhamento estrito é recomendado para redes públicas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Часть трафика может идти в обход VPN, пока строгая маршрутизация отключена. Строгая маршрутизация рекомендуется для общедоступных сетей."
+          }
+        }
+      }
+    },
     "network.protection.status.view.connection.details" : {
       "comment" : "Connection details label shown in NetworkProtection's status view.",
       "extractionState" : "extracted_with_value",
@@ -2995,6 +3055,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Геопозиция"
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.off" : {
+      "comment" : "Label for the status pill shown while the VPN's Strict routing setting is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Striktes Routing: Deaktiviert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Strict routing: Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrutamiento estricto: desactivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Routage strict : désactivé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Routing rigido: disattivato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strikte routering: Uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ścisły routing: Wyłączony"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encaminhamento estrito: desativado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Строгая маршрутизация: выкл."
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.on" : {
+      "comment" : "Label for the status pill shown while the VPN's Strict routing setting is on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Striktes Routing: Aktiviert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Strict routing: On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrutamiento estricto: activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Routage strict : activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Routing rigido: attivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strikte routering: Aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ścisły routing: Włączony"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encaminhamento estrito: ativado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Строгая маршрутизация: вкл."
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.tooltip.off" : {
+      "comment" : "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Striktes Routing wird für öffentliche Netzwerke empfohlen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Strict Routing is recommended for public networks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se recomienda el enrutamiento estricto para redes públicas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le routage strict est recommandé pour les réseaux publics."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il routing rigido è consigliato per le reti pubbliche."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strikte routering wordt aanbevolen voor openbare netwerken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ścisły routing jest zalecany w sieciach publicznych."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O encaminhamento estrito é recomendado para redes públicas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Строгая маршрутизация рекомендуется для общедоступных сетей."
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.tooltip.on" : {
+      "comment" : "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Apps funktionieren möglicherweise nicht, während das strikte Routing aktiviert ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some apps may not work while Strict Routing is on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es posible que algunas aplicaciones no funcionen mientras el enrutamiento estricto esté activado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines applications peuvent ne pas fonctionner lorsque le routage strict est activé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcune app potrebbero non funzionare mentre il routing rigoroso è attivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige apps werken mogelijk niet terwijl Strikte routering is ingeschakeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niektóre aplikacje mogą nie działać, gdy włączony jest ścisły routing."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algumas aplicações podem não funcionar enquanto o encaminhamento estrito estiver ativado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При включенной строгой маршрутизации некоторые приложения могут не работать."
           }
         }
       }

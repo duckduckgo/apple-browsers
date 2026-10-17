@@ -21,6 +21,7 @@ import UserScript
 import WebKit
 import os.log
 import Common
+import FoundationExtensions
 
 // MARK: - AIChatSuggestionsUserScript
 
@@ -74,6 +75,10 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
         let pinned: Bool?
         let lastEdit: String?  // ISO date string like "2026-01-19T11:48:10.903Z"
         let firstUserMessageContent: String?
+        /// AI model the chat was conducted with (e.g. `"voice-mode"`, `"image-generation"`,
+        /// `"gpt-4o-mini"`). Optional — if Duck.ai's `getDuckAiChats` response doesn't include
+        /// it on a given chat, this stays `nil` and the suggestion renders with the default icon.
+        let model: String?
 
         func toAIChatSuggestion() -> AIChatSuggestion {
             AIChatSuggestion(
@@ -82,7 +87,8 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
                 isPinned: pinned ?? false,
                 chatId: chatId,
                 timestamp: AIChatSuggestion.parseISO8601Date(lastEdit),
-                firstUserMessageContent: firstUserMessageContent
+                firstUserMessageContent: firstUserMessageContent,
+                model: model
             )
         }
     }

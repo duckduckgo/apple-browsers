@@ -1,0 +1,25 @@
+{
+    "m_mac_webview_zoom": {
+        "description": "Daily pixel fired at most once per user per day when the user zooms a page from any entry point (keyboard shortcut, zoom popover, More Options menu, or Actual Size).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_webview_zoom-changed": {
+        "description": "Fired on each page zoom action (zoom in, zoom out, or actual size).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "enum": ["keyboard", "popover", "menu", "actual-size"],
+                "description": "How the user initiated the zoom change"
+            }
+        ]
+    }
+}

@@ -93,15 +93,17 @@ public struct MapperToDB {
     }
 
     func mapToDB(_ extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> ExtractedProfileDB {
-        let encodedProfile = try jsonEncoder.encode(extractedProfile)
-
-        return .init(
+        .init(
             id: nil,
             brokerId: brokerId,
             profileQueryId: profileQueryId,
-            profile: try mechanism(encodedProfile),
+            profile: try mapToDB(extractedProfile),
             removedDate: nil // Removed data is initialized as empty when created.
         )
+    }
+
+    func mapToDB(_ extractedProfile: ExtractedProfile) throws -> Data {
+        try mechanism(jsonEncoder.encode(extractedProfile))
     }
 
     func mapToDB(_ historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64) throws -> ScanHistoryEventDB {
@@ -291,7 +293,8 @@ struct MapperToModel {
                      age: extractedProfile.age,
                      email: extractedProfile.email,
                      removedDate: extractedProfileDB.removedDate,
-                     identifier: extractedProfile.identifier)
+                     identifier: extractedProfile.identifier,
+                     extras: extractedProfile.extras)
     }
 
     func mapToModel(_ scanEvent: ScanHistoryEventDB) throws -> HistoryEvent {

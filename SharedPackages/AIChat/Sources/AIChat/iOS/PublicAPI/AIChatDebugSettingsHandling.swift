@@ -85,10 +85,11 @@ public class AIChatDebugSettings: AIChatDebugSettingsHandling {
         contextualSessionTimerSeconds = nil
     }
 
-    /// Checks if the given URL matches the custom debug URL by comparing scheme, host, and path.
-    /// Query parameters and whitespace are ignored in the comparison.
+    /// Checks if the given URL belongs to the custom debug URL's origin by comparing scheme and host.
+    /// Path and query are ignored so that in-host redirects on a dev frontend (for example `/` to `/chat`)
+    /// still count as the debug Duck.ai, matching how `isDuckAIURL` treats the production host.
     /// - Parameter url: The URL to compare against the custom debug URL
-    /// - Returns: `true` if the URLs match (ignoring query params and whitespace), `false` otherwise
+    /// - Returns: `true` if the URL shares the custom debug URL's scheme and host, `false` otherwise
     public func matchesCustomURL(_ url: URL) -> Bool {
         guard let customURLString = customURL?.trimmingCharacters(in: .whitespaces),
               let customComponents = URLComponents(string: customURLString),
@@ -96,12 +97,8 @@ public class AIChatDebugSettings: AIChatDebugSettingsHandling {
             return false
         }
 
-        let customPath = customComponents.path.trimmingCharacters(in: .whitespaces)
-        let currentPath = currentComponents.path.trimmingCharacters(in: .whitespaces)
-
         return customComponents.scheme == currentComponents.scheme &&
-               customComponents.host == currentComponents.host &&
-               customPath == currentPath
+               customComponents.host == currentComponents.host
     }
 }
 #endif

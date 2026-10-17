@@ -73,10 +73,7 @@ final class DefaultBrowserAndDockPromptNotificationPresenter: NSObject, DefaultB
         let content = UNMutableNotificationContent()
         content.title = UserText.setAsDefaultAndAddToDockInactiveUserNotificationTitle
         content.body = UserText.setAsDefaultAndAddToDockInactiveUserNotificationBody
-
-        if #available(macOS 12, *) {
-            content.interruptionLevel = .active
-        }
+        content.interruptionLevel = .active
 
         let identifier = DefaultBrowserAndDockPromptNotificationIdentifier.inactiveUserFeedbackRequest.rawValue
         showNotification(identifier: identifier, content: content)

@@ -270,6 +270,29 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
         /// Verify: Previously Active Tab goes back to the pre-move state
         XCTAssertEqual(destinationTabCollectionViewModel.selectedTabIndex, .unpinned(2))
     }
+
+    @MainActor
+    func testWhenClosingTabAdjacentToUnloadedTab_thenNextUnloadedTabIsSelected() {
+        autoreleasepool {
+            /// Simulate lazy-loaded state: a few loaded tabs followed by unloaded tabs (as after state restoration).
+            let loadedTabs: [AnyTab] = (0..<3).map { _ in .loaded(Tab(content: .none)) }
+            let unloadedTabs: [AnyTab] = (0..<3).map { _ in
+                .unloaded(UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration)))
+            }
+            let tabCollection = TabCollection(tabs: loadedTabs + unloadedTabs)
+            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
+
+            /// Select the last loaded tab (the one next to the first unloaded tab).
+            tabCollectionViewModel.select(at: .unpinned(2))
+            let expectedNextTab = tabCollectionViewModel.tabCollection.tabs[3]
+
+            tabCollectionViewModel.remove(at: .unpinned(2))
+
+            /// After closing the loaded tab at index 2, the tab that was at index 3 (now at index 2) should be selected.
+            XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(2))
+            XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs[2].uuid, expectedNextTab.uuid)
+        }
+    }
 }
 
 fileprivate extension TabCollectionViewModel {

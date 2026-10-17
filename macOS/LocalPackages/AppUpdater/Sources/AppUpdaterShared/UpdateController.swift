@@ -19,11 +19,13 @@
 import BrowserServicesKit
 import Combine
 import Common
-import FeatureFlags
+import FoundationExtensions
+import FeatureFlags_macOS
 import Foundation
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import UserScript
@@ -31,7 +33,6 @@ import WebKit
 
 public protocol AppStoreUpdateControllerFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
-                            featureFlagger: FeatureFlagger,
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
@@ -43,6 +44,7 @@ public protocol SparkleUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: ApplicationUpdateDetector,
                             allowCustomUpdateFeed: Bool,
                             isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,
@@ -117,15 +119,6 @@ public protocol UpdateController: UpdateControllerObjC {
     /// Used for rate limiting automatic checks (typically 24-hour intervals).
     var lastUpdateCheckDate: Date? { get }
 
-    /// Timestamp when update notification was last shown to user.
-    ///
-    /// **Rate Limiting**: Notifications are throttled to once per 7 days to avoid spam.
-    /// Resets when new update becomes available or user manually triggers check.
-    ///
-    /// **Usage**: Controls frequency of system notifications about available updates.
-    /// Prevents showing the same update notification repeatedly.
-    var lastUpdateNotificationShownDate: Date { get set }
-
     // MARK: - Update Progress Tracking
 
     /// Current state of the update cycle process.
@@ -190,8 +183,7 @@ public protocol UpdateController: UpdateControllerObjC {
     /// Performs an immediate update check, bypassing rollout restrictions and rate limiting.
     ///
     /// **App Store vs Sparkle Behavior:**
-    /// - **App Store**: Immediate cloud API call to check latest version (with feature flag)
-    ///   - Legacy mode: Direct redirect to App Store without version check
+    /// - **App Store**: Immediate cloud API call to check latest version
     /// - **Sparkle**: Immediate appcast check, bypasses gradual rollout percentages
     ///
     /// **Rollout Bypassing**:
@@ -221,6 +213,9 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     ///
     /// **Usage**: Drives UI state to show "Restart to Update" button in Settings.
     var isAtRestartCheckpoint: Bool { get }
+
+    /// Whether the release notes page should automatically trigger an update check on load.
+    var shouldAutoCheckOnReleaseNotesLoad: Bool { get }
 
     /// Publisher that emits when the app is about to relaunch for an update.
     ///
@@ -290,15 +285,9 @@ extension UpdateController {
         latestUpdate == nil
     }
 
-    private var isUpdateNotificationAllowed: Bool {
-        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
-    }
-
     public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
-        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished(), isUpdateNotificationAllowed else { return }
+        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished() else { return }
 
         notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
-
-        lastUpdateNotificationShownDate = Date()
     }
 }

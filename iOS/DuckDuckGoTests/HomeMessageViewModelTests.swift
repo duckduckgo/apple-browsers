@@ -33,12 +33,14 @@ struct HomeMessageViewModelTests {
     ) -> HomeMessageViewModel {
         HomeMessageViewModel(
             messageId: "test-message",
+            acquisitionIdentity: nil,
             modelType: modelType,
             messageActionHandler: mockActionHandler,
             preloadedImage: nil,
             loadRemoteImage: nil,
             onDidClose: onDidClose,
             onDidAppear: {},
+            onDidDisappear: {},
             onAttachAdditionalParameters: nil
         )
     }

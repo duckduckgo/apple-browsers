@@ -18,7 +18,7 @@
 
 import AIChat
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 
 struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
@@ -38,5 +38,13 @@ struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 
     func isNativeDataAccessEnabled() -> Bool {
         featureFlagger.isFeatureOn(.aiChatNativeDataAccess)
+    }
+
+    func isNativeDataStorageEnabled() -> Bool {
+        featureFlagger.isFeatureOn(.aiChatNativeStorage)
+    }
+
+    func isHomepageChatSuggestionsEnabled() -> Bool {
+        featureFlagger.isFeatureOn(.aiChatHomepageChatSuggestions)
     }
 }

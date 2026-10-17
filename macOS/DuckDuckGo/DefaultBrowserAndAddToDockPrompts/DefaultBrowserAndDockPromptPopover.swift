@@ -19,6 +19,7 @@
 import SwiftUI
 import Carbon.HIToolbox
 import Combine
+import Common
 import SwiftUIExtensions
 
 public final class DefaultBrowserAndDockPromptPopoverViewModel {
@@ -88,7 +89,7 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
                         Text(secondaryButtonText)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .buttonStyle(StandardButtonStyle())
+                    .buttonStyle(StandardButtonStyle(pillShape: true))
                 }
 
                 Button {
@@ -97,13 +98,13 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
                     Text(viewModel.buttonText)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false, pillShape: true))
             }
             .frame(height: 28)
             .frame(maxWidth: .infinity)
         }
         .frame(width: 344)
-        .padding([.leading, .trailing, .bottom], 16)
+        .padding([.leading, .trailing, .bottom], AppVersion.isLiquidGlassSupported ? 20 : 16)
         .padding(.top, 20)
     }
 }

@@ -17,9 +17,10 @@
 //
 
 import Common
+import ConcurrencyExtensions
 import Network
-@testable import VPN
 import XCTest
+@testable import VPN
 
 final class NWConnectionExtensionTests: XCTestCase {
     let endpoint = NWEndpoint.hostPort(host: .name("www.duckduckgo.com", nil), port: .https)

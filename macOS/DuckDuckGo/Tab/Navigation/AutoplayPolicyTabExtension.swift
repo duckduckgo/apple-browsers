@@ -18,8 +18,7 @@
 
 import Combine
 import Foundation
-import FeatureFlags
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import UserScript
 import WebKit
@@ -32,24 +31,22 @@ extension UserScripts: WebTelemetryUserScriptProvider {}
 final class AutoplayPolicyTabExtension {
 
     private let autoplayPreferences: AutoplayPreferences
-    private let featureFlagger: FeatureFlagger
     private let permissionManager: PermissionManagerProtocol
     private let permissionSeeder: AutoplayPermissionSeeder
 
     private weak var telemetryUserScript: WebTelemetryUserScript?
     @Published private(set) var videoPlaybackDetected: Bool = false
+    @Published private(set) var videoAutoplayDetected: Bool = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
         autoplayPreferences: AutoplayPreferences,
-        featureFlagger: FeatureFlagger,
         permissionManager: PermissionManagerProtocol,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         permissionSeeder: AutoplayPermissionSeeder? = nil,
         telemetryScriptPublisher: some Publisher<some WebTelemetryUserScriptProvider, Never>
     ) {
         self.autoplayPreferences = autoplayPreferences
-        self.featureFlagger = featureFlagger
         self.permissionManager = permissionManager
         self.permissionSeeder = permissionSeeder ?? AutoplayPermissionSeeder(
             autoplayPreferences: autoplayPreferences,
@@ -74,6 +71,7 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         if navigationAction.isForMainFrame {
             videoPlaybackDetected = false
+            videoAutoplayDetected = false
         }
 
         let mustApplyAutoplayPolicy = mustApplyAutoplayPolicy(url: navigationAction.url)
@@ -95,7 +93,7 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
 private extension AutoplayPolicyTabExtension {
 
     func mustApplyAutoplayPolicy(url: URL) -> Bool {
-        featureFlagger.isFeatureOn(.autoplayPolicy) && url.isHttpOrHttps
+        url.isHttpOrHttps
     }
 
     func initializeSeededDomainIfNeeded(url: URL) {
@@ -138,20 +136,19 @@ private extension AutoplayPolicyTabExtension {
 
 extension AutoplayPolicyTabExtension: WebTelemetryUserScriptDelegate {
     @MainActor
-    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript,
-                                didDetectVideoPlayback payload: WebTelemetryUserScript.VideoPlaybackPayload,
-                                in webView: WKWebView?) {
-
-        guard featureFlagger.isFeatureOn(.autoplayPolicy) else {
-            return
-        }
-
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoPlaybackIn webView: WKWebView?) {
         videoPlaybackDetected = true
+    }
+
+    @MainActor
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoAutoplayIn webView: WKWebView?) {
+        videoAutoplayDetected = true
     }
 }
 
 protocol AutoplayPolicyTabExtensionProtocol: AnyObject, NavigationResponder {
     var videoPlaybackDetectedPublisher: AnyPublisher<Bool, Never> { get }
+    var videoAutoplayDetectedPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 extension AutoplayPolicyTabExtension: TabExtension, AutoplayPolicyTabExtensionProtocol {
@@ -159,6 +156,10 @@ extension AutoplayPolicyTabExtension: TabExtension, AutoplayPolicyTabExtensionPr
 
     var videoPlaybackDetectedPublisher: AnyPublisher<Bool, Never> {
         $videoPlaybackDetected.eraseToAnyPublisher()
+    }
+
+    var videoAutoplayDetectedPublisher: AnyPublisher<Bool, Never> {
+        $videoAutoplayDetected.eraseToAnyPublisher()
     }
 
     func getPublicProtocol() -> PublicProtocol { self }

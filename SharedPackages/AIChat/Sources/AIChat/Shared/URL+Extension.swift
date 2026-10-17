@@ -34,29 +34,6 @@ extension URL {
     static var duckAIHost: String { DuckDuckGo.aiHost }
 
     /**
-     Returns a new URL with the given query item added or replaced.  If the query item's value
-     is nil or empty after trimming whitespace, the original URL is returned.
-
-     - Parameter queryItem: The query item to add or replace.
-     - Returns: A new URL with the query item added or replaced, or the original URL if the query item's value is invalid.
-     */
-    func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
-        guard let queryValue = queryItem.value,
-              !queryValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return self
-        }
-
-        var components = URLComponents(url: self, resolvingAgainstBaseURL: false)
-
-        var queryItems = components?.queryItems ?? []
-        queryItems.removeAll { $0.name == queryItem.name }
-        queryItems.append(queryItem)
-        components?.queryItems = queryItems
-
-        return components?.url ?? self
-    }
-
-    /**
      Returns `true` if the URL points to Duck AI chat.
 
      Rules:
@@ -77,11 +54,50 @@ extension URL {
         return false
     }
 
+    /// Returns `true` for the bare DuckDuckGo homepage, including variants that carry only
+    /// non-search query parameters (e.g. `?ia=web`, `?atb=…`). Returns `false` for SERP URLs
+    /// (which require a `q=` parameter) and for sub-pages like `/settings` or `/about`.
+    public var isDuckDuckGoHomepage: Bool {
+        guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
+        return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
+    }
+
+    /// The homepage composer submits to Duck.ai with `origin=funnel_home_website`, which survives the
+    /// redirect to duck.ai and the SPA's later URL cleanup; nothing else sets it.
+    public var isDuckAIOpenedFromHomepage: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.originName && $0.value == AIChatURLParameters.homepageFunnelOriginValue
+        } == true
+    }
+
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
     public var isDuckAIVoiceMode: Bool {
         guard isDuckAIURL else { return false }
         return queryItems?.contains {
             $0.name == AIChatURLParameters.modeName && $0.value == AIChatURLParameters.voiceModeValue
+        } == true
+    }
+
+    /// Returns `true` if the URL requests the Duck AI sidebar to be open on load (`?sidebar=open`).
+    public var isDuckAISidebarOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.sidebarName && $0.value == AIChatURLParameters.sidebarOpenValue
+        } == true
+    }
+
+    /// Returns `true` if the URL requests the Duck AI settings to be open on load (`?settings=open`).
+    public var isDuckAISettingsOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.settingsName && $0.value == AIChatURLParameters.settingsOpenValue
+        } == true
+    }
+
+    public var isDuckAIChatProtectionOpen: Bool {
+        queryItems?.contains {
+            $0.name == AIChatURLParameters.chatProtectionName && $0.value == AIChatURLParameters.chatProtectionOpenValue
         } == true
     }
 

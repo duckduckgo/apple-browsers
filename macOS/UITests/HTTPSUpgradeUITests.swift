@@ -27,7 +27,6 @@ class HTTPSUpgradeUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         webView = app.webViews.firstMatch
@@ -43,15 +42,15 @@ class HTTPSUpgradeUITests: UITestCase {
 
     func testHTTPSUpgrade_WhenNavigatingToHTTPSite_ShowsHTTPSInAddressBar() throws {
         // Navigate to a test HTTP URL that supports HTTPS upgrade
-        let httpURL = URL(string: "http://example.com")!
+        let httpURL = URL(string: "http://github.com")!
         app.pasteURL(httpURL, pressingEnter: true)
 
         // Wait for page content to load
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain") .firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Example.com should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "github.com should load")
 
         // Verify HTTPS upgrade in address bar
-        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Address bar should show HTTPS after upgrade from HTTP")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://github.com/", "Address bar should show HTTPS after upgrade from HTTP")
     }
 
     func testHTTPSUpgrade_WithPrivacyTestPages_UpgradesCorrectly() throws {
@@ -73,50 +72,47 @@ class HTTPSUpgradeUITests: UITestCase {
         }
         XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "Summary should appear after running tests")
 
-        // Click by coordinate to expand details
-        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-
-        // Helper to find the last static text value that belongs to a header group
-        func lastValue(afterHeaderWithPrefix prefix: String) -> String? {
-            let headers = [
-                "upgrade-navigation - ",
-                "upgrade-iframe - ",
-                "upgrade-subrequest - ",
-                "upgrade-websocket - "
-            ]
-            let all = webView.staticTexts.allElementsBoundByIndex
-            var inSection = false
-            var lastValue: String?
-            for element in all {
-                let value = (element.value as? String) ?? element.label
-                if value.hasPrefix(prefix) {
-                    inSection = true
-                    lastValue = nil
-                    continue
-                }
-                if inSection {
-                    // next header begins -> stop
-                    if headers.contains(where: { value.hasPrefix($0) }) {
-                        break
-                    }
-                    if !value.isEmpty {
-                        lastValue = value
-                    }
-                }
-            }
-            return lastValue
-        }
-
-        // Validate last values per section
-        let expectedNav = "\"https://good.third-party.site/privacy-protections/https-upgrades/frame.html\""
+        // Expand the summary before inspecting the individual results.
+        summary.click()
         let expectedIframe = "\"http://good.third-party.site/privacy-protections/https-upgrades/frame.html\""
         let expectedSub = "\"http://good.third-party.site/reflect-headers\""
         let expectedWebsocket = "…"
 
-        // FIX ME: XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-navigation - "), expectedNav)
-        XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-iframe - "), expectedIframe)
-        XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-subrequest - "), expectedSub)
-        XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-websocket - "), expectedWebsocket)
+        let iframeGroup = webView.groups.matching(\.value, containing: "upgrade-iframe - ").firstMatch
+        // Older WebKit also exposes the header as a group, but keeps the result in static text.
+        let hasResultInGroupValue = iframeGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+            && (iframeGroup.value as? String)?.contains("upgrade-iframe - \"") == true
+        if hasResultInGroupValue {
+            // Newer WebKit exposes each result in a group value.
+            XCTAssertTrue(webView.groups.matching(\.value, containing: "upgrade-iframe - \(expectedIframe)").firstMatch.exists)
+            XCTAssertTrue(webView.groups.matching(\.value, containing: "upgrade-subrequest - \(expectedSub)").firstMatch.exists)
+            XCTAssertTrue(webView.groups.matching(\.value, containing: "upgrade-websocket - \(expectedWebsocket)").firstMatch.exists)
+        } else {
+            // Older WebKit exposes the same results as static text after each header.
+            let headers = ["upgrade-navigation - ", "upgrade-iframe - ", "upgrade-subrequest - ", "upgrade-websocket - "]
+            func lastValue(afterHeaderWithPrefix prefix: String) -> String? {
+                var inSection = false
+                var lastValue: String?
+                for element in webView.staticTexts.allElementsBoundByIndex {
+                    let value = (element.value as? String) ?? element.label
+                    if value.hasPrefix(prefix) {
+                        inSection = true
+                        lastValue = nil
+                        continue
+                    }
+                    if inSection {
+                        if headers.contains(where: { value.hasPrefix($0) }) { break }
+                        if !value.isEmpty { lastValue = value }
+                    }
+                }
+                return lastValue
+            }
+
+            // FIX ME: The navigation result is not upgraded yet; retain the existing test scope.
+            XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-iframe - "), expectedIframe)
+            XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-subrequest - "), expectedSub)
+            XCTAssertEqual(lastValue(afterHeaderWithPrefix: "upgrade-websocket - "), expectedWebsocket)
+        }
     }
 
     func testHTTPSUpgrade_LoopProtection_PreventsInfiniteRedirects() throws {

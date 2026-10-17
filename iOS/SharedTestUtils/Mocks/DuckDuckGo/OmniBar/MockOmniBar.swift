@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 import PrivacyDashboard
 
@@ -35,10 +36,15 @@ final class MockOmniBar: OmniBar {
     func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) { }
     var isTextFieldEditing: Bool = false
     var text: String?
-    
+    var iPadDuckAIControlValues: IPadDuckAIControlValues = IPadDuckAIControlValuesSnapshot()
+
+    func bindIPadDraft(to tab: Tab?) { }
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}
+    var onBeginEditing: (() -> Void)?
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
+        onBeginEditing?()
+    }
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }
@@ -73,9 +79,10 @@ final class MockOmniBar: OmniBar {
     func setSelectedTextEntryMode(_ mode: TextEntryMode) { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
     func refreshFireMode(fireMode: Bool) { }
+    func prepareForMoveTransition() { }
+    func moveTransitionCompleted() { }
 
     final class MockOmniBarView: UIView, OmniBarView {
-        
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
@@ -117,6 +124,17 @@ final class MockOmniBar: OmniBar {
         func revealButtons() { }
         func setBookmarksPosition(leading: Bool, hidden: Bool) { }
         func refreshFireMode(fireMode: Bool) { }
+        func refreshLongPressMenuAvailability() { }
+        func prepareForMoveTransition() { }
+        func moveTransitionCompleted() { }
+        func setIconContainersAlpha(_ alpha: CGFloat) { }
+        func hideBarChrome() { }
+        func restoreBarChrome() { }
+        func makeGlass() { }
+        func makeOpaque() { }
+        func restoreFloatingFieldAppearance() { }
+        func updateAIChatButtonForContextualChat(hasContextualSession: Bool) { }
+        func setFloatingMinimalChromeBar(_ enabled: Bool) { }
 
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?
@@ -141,8 +159,8 @@ final class MockOmniBar: OmniBar {
         var onPasswordsPressed: (() -> Void)?
         var onSettingsButtonLongPressed: (() -> Void)?
         var onCustomizableButtonPressed: (() -> Void)?
-        var onAIChatLeftButtonPressed: (() -> Void)?
-        var onAIChatBrandingPressed: (() -> Void)?
+        var longPressMenuProvider: (() -> UIMenu?)?
+        var onLongPressMenuDisplayed: (() -> Void)?
 
         static func create() -> Self {
             Self.init()
@@ -163,7 +181,6 @@ final class MockOmniBar: OmniBar {
         var isSearchLoupeHidden: Bool = true
         var isDismissButtonHidden: Bool = true
         var isCustomizableButtonHidden: Bool = true
-        var isFullAIChatHidden: Bool = true
         var isFireButtonHidden: Bool = true
         var isTabSwitcherButtonHidden: Bool = true
         var isPasswordsButtonHidden: Bool = true

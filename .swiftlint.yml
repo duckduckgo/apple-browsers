@@ -37,6 +37,21 @@ custom_rules:
     message: "Classes should be `final` by default, use explicit `internal` or `public` for non-final classes."
     severity: error
 
+  wknserror_webkit_calls:
+    name: "WebKit Web Extension call that throws WKNSError proxies"
+    included: ".*\\.swift"
+    excluded:
+      - ".*/WKWebExtension\\+CopyingErrors\\.swift"
+      - ".*/[A-Za-z]*Tests/.*"
+      - ".*Tests\\.swift"
+    regex: "WKWebExtension(\\.init)?\\((resourceBaseURL|appExtensionBundle):|\\.loadBackgroundContent\\b|[cC]ontroller\\??\\.(load|unload)\\b"
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "WebKit throws WKNSError proxies from this API, which crash on x86_64 when bridged to Swift Error. Use WebExtensionManager in app code, or the wrappers in WKWebExtension+CopyingErrors.swift in the WebExtensions package."
+    severity: error
+
 analyzer_rules: # Rules run by `swiftlint analyze`
   - explicit_self
 
@@ -94,4 +109,4 @@ excluded:
 
   # Specific files to exclude
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
-  - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
+  - SharedPackages/Infrastructure/SystemFrameworksExtensions/Sources/ConcurrencyExtensions/AsyncStream.swift

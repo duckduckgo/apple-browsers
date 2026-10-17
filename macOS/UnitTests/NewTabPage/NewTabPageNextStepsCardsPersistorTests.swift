@@ -17,7 +17,7 @@
 //
 
 import NewTabPage
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -218,22 +218,6 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         XCTAssertEqual(persistor.firstCardLevel, level)
     }
 
-    // MARK: - First Session Tests
-
-    func testIsFirstSessionReturnsTrueByDefault() {
-        XCTAssertTrue(persistor.isFirstSession)
-    }
-
-    func testWhenIsFirstSessionIsSetThenValueIsStored() throws {
-        persistor.isFirstSession = false
-        XCTAssertEqual(try keyValueStore.object(forKey: "new.tab.page.next.steps.is.first.session") as? Bool, false)
-    }
-
-    func testWhenIsFirstSessionIsRetrievedThenStoredValueIsReturned() throws {
-        try keyValueStore.set(false, forKey: "new.tab.page.next.steps.is.first.session")
-        XCTAssertEqual(persistor.isFirstSession, false)
-    }
-
     // MARK: - Clear Method Tests
 
     func testWhenClearIsCalledThenAllCardDataIsRemoved() throws {
@@ -304,5 +288,66 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         XCTAssertEqual(persistor.firstCardLevel, .level1)
         let stored = try? keyValueStore.object(forKey: "new.tab.page.next.steps.first.card.level") as? NewTabPageDataModel.CardLevel
         XCTAssertNil(stored)
+    }
+
+    func testWhenClearIsCalledThenNtpImpressionCountIsRemoved() throws {
+        persistor.ntpImpressionCount = 5
+        XCTAssertEqual(persistor.ntpImpressionCount, 5)
+
+        persistor.clear()
+
+        XCTAssertEqual(persistor.ntpImpressionCount, 0)
+        let stored = try? keyValueStore.object(forKey: "new.tab.page.next.steps.ntp.impression.count") as? Int
+        XCTAssertNil(stored)
+    }
+
+    // MARK: - New Tab Page Impression Count Tests
+
+    func testNtpImpressionCountReturnsZeroByDefault() {
+        XCTAssertTrue(persistor.ntpImpressionCount == 0)
+    }
+
+    func testNtpImpressionCountIsSetThenValueIsStored() throws {
+        persistor.ntpImpressionCount = 5
+        XCTAssertEqual(try keyValueStore.object(forKey: "new.tab.page.next.steps.ntp.impression.count") as? Int, 5)
+    }
+
+    func testWhenNtpImpressionCountIsRetrievedThenStoredValueIsReturned() throws {
+        try keyValueStore.set(3, forKey: "new.tab.page.next.steps.ntp.impression.count")
+        XCTAssertEqual(persistor.ntpImpressionCount, 3)
+    }
+
+    // MARK: - Daily Visible Stack Tests
+
+    func testWhenNoValuesAreStoredThenDailyVisibleStackIsNil() {
+        XCTAssertNil(persistor.dailyVisibleStack)
+    }
+
+    func testWhenNoValuesAreStoredThenVisibleStackDayIdentifierIsNil() {
+        XCTAssertNil(persistor.visibleStackDayIdentifier)
+    }
+
+    func testWhenDailyVisibleStackIsSetThenValueIsStored() throws {
+        persistor.dailyVisibleStack = [.personalizeBrowser, .sync, .emailProtection]
+        XCTAssertEqual(
+            try keyValueStore.object(forKey: "new.tab.page.next.steps.daily.visible.stack") as? [String],
+            ["personalizeBrowser", "sync", "emailProtection"]
+        )
+    }
+
+    func testWhenVisibleStackDayIdentifierIsSetThenValueIsStored() throws {
+        persistor.visibleStackDayIdentifier = 3
+        XCTAssertEqual(
+            try keyValueStore.object(forKey: "new.tab.page.next.steps.visible.stack.day.identifier") as? Int,
+            3
+        )
+    }
+
+    func testWhenClearIsCalledThenDailyVisibleStackAndDayIdentifierAreRemoved() {
+        persistor.dailyVisibleStack = [.sync]
+        persistor.visibleStackDayIdentifier = 2
+        persistor.clear()
+        XCTAssertNil(persistor.dailyVisibleStack)
+        XCTAssertNil(persistor.visibleStackDayIdentifier)
     }
 }

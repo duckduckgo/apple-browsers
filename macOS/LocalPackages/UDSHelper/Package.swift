@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "UDSHelper",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.

@@ -1,0 +1,114 @@
+//
+//  SyncErrorMessage.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+enum SyncErrorMessage {
+    case unknownError
+    case unableToSyncToServer
+    case unableToSyncWithDevice
+    case unableToMergeTwoAccounts
+    case unableToUpdateDeviceName
+    case unableToTurnSyncOff
+    case unableToDeleteData
+    case unableToRemoveDevice
+    case unableToCreateRecoveryPdf
+    case unableToRecognizeCode
+    case updateRequired
+    case unsupportedThirdPartyRecoveryCode
+    case thirdPartyAccountAlreadyUpgraded
+    case alreadyPairedWithAccount
+    case syncCancelledFromOtherDevice
+
+    var title: String {
+        switch self {
+        case .unableToRecognizeCode:
+            return UserText.unableToRecognizeCodeTitle
+        case .unableToSyncWithDevice:
+            return UserText.syncFailedTitle
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountTitle
+        case .updateRequired:
+            return UserText.syncUpdateRequiredTitle
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceTitle
+        default:
+            return UserText.syncErrorAlertTitle
+        }
+    }
+
+    var description: String? {
+        switch self {
+        case .unknownError:
+            return UserText.unknownErrorTryAgainMessage
+        case .unableToSyncToServer:
+            return UserText.unableToSyncToServerDescription
+        case .unableToSyncWithDevice:
+            return UserText.syncFailedDescription
+        case .unableToMergeTwoAccounts:
+            return UserText.unableToMergeTwoAccountsErrorDescription
+        case .unableToUpdateDeviceName:
+            return UserText.unableToUpdateDeviceNameDescription
+        case .unableToTurnSyncOff:
+            return UserText.unableToTurnSyncOffDescription
+        case .unableToDeleteData:
+            return UserText.unableToDeleteDataDescription
+        case .unableToRemoveDevice:
+            return UserText.unableToRemoveDeviceDescription
+        case .unableToCreateRecoveryPdf:
+            return UserText.unableToCreateRecoveryPDF
+        case .unableToRecognizeCode:
+            return UserText.unableToRecognizeCode
+        case .updateRequired:
+            return nil
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
+        case .thirdPartyAccountAlreadyUpgraded:
+            return UserText.syncThirdPartyAccountAlreadyUpgradedDescription
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountDescription
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceDescription
+        }
+    }
+
+    var buttonTitle: String {
+        switch self {
+        case .unableToRecognizeCode, .unableToSyncWithDevice, .updateRequired, .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncSetupErrorGotItButton
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountButton
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceButton
+        default:
+            return UserText.syncPausedAlertOkButton
+        }
+    }
+
+    var shouldSendPixel: Bool {
+        switch self {
+        case .unableToRecognizeCode:
+            return false
+        default:
+            return true
+        }
+    }
+}

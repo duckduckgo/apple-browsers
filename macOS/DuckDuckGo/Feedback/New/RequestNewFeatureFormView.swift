@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
@@ -123,7 +124,8 @@ struct RequestNewFeatureFormView: View {
     private enum ComponentHeights {
         static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
         static let textInputSection: CGFloat = 159  // Same as problem form
-        static let footer: CGFloat = 122  // Same as problem form structure
+        // Same as problem form structure; taller on Liquid Glass to fit the pill buttons (8/8 padding) + larger bottom inset
+        static var footer: CGFloat { AppVersion.isLiquidGlassSupported ? 137 : 133 }
     }
 
     private func calculateTotalHeight() -> CGFloat {
@@ -150,7 +152,7 @@ struct RequestNewFeatureFormView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.feedbackAsk)
+            Image(.feedbackPositive56)
 
             VStack(alignment: .leading, spacing: 8) {
 
@@ -163,11 +165,12 @@ struct RequestNewFeatureFormView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 20)
-        .padding([.leading, .trailing, .bottom], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.bottom, 24)
     }
 
     private func featurePills() -> some View {
-        let horizontalPadding: CGFloat = 24
+        let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 24
         return FlexibleView(
             availableWidth: RequestNewFeatureFormViewController.Constants.width - (horizontalPadding * 2),
             data: viewModel.availableFeatures,
@@ -203,7 +206,7 @@ struct RequestNewFeatureFormView: View {
 
     private func incognitoInfoSection() -> some View {
         IncognitoInfoBox()
-            .padding([.leading, .trailing], 24)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
             .padding(.bottom, 16)
             .transition(.opacity)
             .background(
@@ -232,9 +235,9 @@ struct RequestNewFeatureFormView: View {
                 .frame(minHeight: 80)
                 .padding(8)
                 .background(Color(.textBackgroundColor))
-                .cornerRadius(6)
+                .cornerRadius(16)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 16)
                         .stroke(viewModel.customFeatureText.isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
                                 lineWidth: 1)
                 )
@@ -245,32 +248,33 @@ struct RequestNewFeatureFormView: View {
                                 VStack {
                                     HStack {
                                         Text(UserText.requestNewFeatureFormPlaceholder)
-                                            .systemLabel(color: .textTertiary)
+                                            .systemLabel(color: Color(.textTertiary))
                                         Spacer()
                                     }
                                     Spacer()
                                 }
-                                .padding(11)
+                                .padding(.top, 8)
+                                .padding(.leading, 12)
                             }
                         }
                     }
                 )
         }
-        .padding([.leading, .trailing], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 8)
     }
 
     private func footer() -> some View {
         VStack(spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
-                .padding([.leading, .trailing], 24)
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             HStack(spacing: 10) {
                 Button {
@@ -279,7 +283,7 @@ struct RequestNewFeatureFormView: View {
                     Text(UserText.cancel)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(DismissActionButtonStyle())
+                .buttonStyle(DismissActionButtonStyle(topPadding: 8, bottomPadding: 8, pillShape: true))
 
                 Button {
                     viewModel.submitFeedback()
@@ -289,15 +293,16 @@ struct RequestNewFeatureFormView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .disabled(!viewModel.shouldEnableSubmit)
-                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
+                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit, topPadding: 8, bottomPadding: 8, pillShape: true))
             }
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
     }
 }
 
 private struct IncognitoInfoBox: View {
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(nsImage: DesignSystemImages.Color.Size16.infoFeedback)
@@ -307,7 +312,7 @@ private struct IncognitoInfoBox: View {
                     .body()
 
                 Text(UserText.incognitoInfoBoxDescription)
-                    .systemLabel(color: .textSecondary)
+                    .systemLabel(color: Color(.textSecondary))
                     .multilineTextAlignment(.leading)
             }
 
@@ -315,11 +320,11 @@ private struct IncognitoInfoBox: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.controlBackgroundColor))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.toneShade), lineWidth: 1)
         )
     }

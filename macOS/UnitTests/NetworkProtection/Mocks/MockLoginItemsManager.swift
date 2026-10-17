@@ -46,27 +46,27 @@ struct MockLoginItemsManager: LoginItemsManaging {
         self.isAnyInstalledCallback = isAnyInstalledCallback
     }
 
-    func enableLoginItems(_ items: Set<LoginItems.LoginItem>) {
+    func enableLoginItems(_ items: Set<LoginItems.LoginItem>) async {
         enableLoginItemsCallback(items)
     }
 
-    func throwingEnableLoginItems(_ items: Set<LoginItems.LoginItem>) throws {
+    func throwingEnableLoginItems(_ items: Set<LoginItems.LoginItem>) async throws {
         try throwingEnableLoginItemsCallback(items)
     }
 
-    func disableLoginItems(_ items: Set<LoginItems.LoginItem>) {
+    func disableLoginItems(_ items: Set<LoginItems.LoginItem>) async {
         disableLoginItemsCallback(items)
     }
 
-    func restartLoginItems(_ items: Set<LoginItems.LoginItem>) {
+    func restartLoginItems(_ items: Set<LoginItems.LoginItem>) async {
         restartLoginItemsCallback(items)
     }
 
-    func isAnyEnabled(_ items: Set<LoginItems.LoginItem>) -> Bool {
+    func isAnyEnabled(_ items: Set<LoginItems.LoginItem>) async -> Bool {
         isAnyEnabledCallback(items)
     }
 
-    func isAnyInstalled(_ items: Set<LoginItems.LoginItem>) -> Bool {
+    func isAnyInstalled(_ items: Set<LoginItems.LoginItem>) async -> Bool {
         isAnyInstalledCallback(items)
     }
 }

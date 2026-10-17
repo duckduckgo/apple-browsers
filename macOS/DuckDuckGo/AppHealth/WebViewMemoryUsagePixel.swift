@@ -20,7 +20,7 @@ import PixelKit
 
 /// Threshold WebContent process memory usage pixels that fire once daily when
 /// total WebContent memory enters a specific bucket.
-enum WebViewMemoryUsagePixel: PixelKitEvent {
+enum WebViewMemoryUsagePixel: PixelKit.Event {
 
     // swiftlint:disable identifier_name
     enum Threshold {

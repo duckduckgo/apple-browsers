@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Persistence
 import History
 @testable import Core
+@testable import DuckDuckGo
 
 final class HistoryCaptureTests: XCTestCase {
 

@@ -17,11 +17,13 @@
 //
 
 import Foundation
+import DDGError
 import StoreKit
 import os.log
 import Networking
 import Common
-import PixelKit
+import FoundationExtensions
+import WideEvent
 
 public enum AppStorePurchaseFlowError: DDGError {
     case noProductsFound
@@ -93,7 +95,7 @@ public enum AppStorePurchaseFlowError: DDGError {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol AppStorePurchaseFlow {
     typealias TransactionJWS = String
     typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WideEvent.MeasuredInterval?)
@@ -109,9 +111,11 @@ public protocol AppStorePurchaseFlow {
     ///
     /// - Parameters:
     ///   - transactionJWS: The JWS representation of the transaction to be validated.
-    ///   - additionalParams: Optional additional parameters to send with the transaction validation request.
+    ///   - experimentAttribution: Optional experiment attribution to send with the transaction validation request.
     /// - Returns: A `Result` containing either a `PurchaseUpdate` object on success or an `AppStorePurchaseFlowError` on failure.
-    @discardableResult func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError>
+    @discardableResult func completeSubscriptionPurchase(
+        with transactionJWS: TransactionJWS,
+        experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError>
 
     /// Changes the subscription tier for a user who already has an active subscription.
     /// This method uses the existing account's externalID and bypasses the "check for active subscription" logic.
@@ -121,7 +125,7 @@ public protocol AppStorePurchaseFlow {
     func changeTier(to subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError>
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManager
@@ -197,7 +201,6 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         // Make the purchase
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: includeProTier) {
         case .success(let transactionJWS):
-            NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
             return .success((transactionJWS: transactionJWS, accountCreationDuration: accountCreationDuration))
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(describing: error), privacy: .public)")
@@ -254,12 +257,15 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     }
 
     @discardableResult
-    public func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
+    public func completeSubscriptionPurchase(
+        with transactionJWS: TransactionJWS,
+        experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Completing Subscription Purchase")
         subscriptionManager.clearSubscriptionCache()
 
         do {
-            let subscription = try await subscriptionManager.confirmPurchase(signature: transactionJWS, additionalParams: additionalParams)
+            let subscription = try await subscriptionManager.confirmPurchase(signature: transactionJWS,
+                                                                             experimentAttribution: experimentAttribution)
             let refreshedToken = try await subscriptionManager.getTokenContainer(policy: .localForceRefresh) // fetch new entitlements
             if subscription.isActive {
                 if refreshedToken.decodedAccessToken.subscriptionEntitlements.isEmpty {
@@ -267,6 +273,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                     return .failure(.missingEntitlements)
                 } else {
                     pendingTransactionHandler?.handleSubscriptionActivated()
+                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
                     return .success(.completed)
                 }
             } else {
@@ -281,7 +288,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
 
     private func getExpiredSubscriptionID() async -> String? {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else { return nil }
             // Only return an externalID if the subscription is expired so to prevent creating multiple subscriptions in the same account
             if !subscription.isActive,
                subscription.platform != .apple {
@@ -291,21 +298,6 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         } catch {
             Logger.subscription.error("Failed to retrieve the current subscription ID: \(String(describing: error), privacy: .public)")
             return nil
-        }
-    }
-
-    public func recoverSubscriptionFromDeadToken() async throws {
-        Logger.subscriptionAppStorePurchaseFlow.log("Recovering Subscription From Dead Token")
-
-        // Clear everything, the token is unrecoverable
-        await subscriptionManager.signOut(notifyUI: true)
-
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            Logger.subscriptionAppStorePurchaseFlow.log("Subscription recovered")
-        case .failure(let error):
-            Logger.subscriptionAppStorePurchaseFlow.fault("Failed to recover Apple subscription: \(String(describing: error), privacy: .public)")
-            throw error
         }
     }
 }

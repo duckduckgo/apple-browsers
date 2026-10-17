@@ -26,10 +26,6 @@ final class KeyboardShortcutView: NSView {
         static let keyCapSize: CGFloat = 16
         static let keyCapFontSize: CGFloat = 10
         static let keyCapSpacing: CGFloat = 4
-        static let normalBackgroundColor = NSColor.black.withAlphaComponent(0.08)
-        static let selectedBackgroundColor = NSColor.white.withAlphaComponent(0.15)
-        static let normalTextColor = NSColor.suggestionText
-        static let selectedTextColor = NSColor.selectedSuggestionTint
     }
 
     private let stackView: NSStackView = {
@@ -40,6 +36,7 @@ final class KeyboardShortcutView: NSView {
         return stack
     }()
 
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     private var keyCapViews: [KeyCapView] = []
 
     var isHighlighted: Bool = false {
@@ -85,8 +82,9 @@ final class KeyboardShortcutView: NSView {
     }
 
     private func updateAppearance() {
-        let bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor
-        let textColor = isHighlighted ? Constants.selectedTextColor : Constants.normalTextColor
+        let palette = themeManager.theme.palette
+        let bgColor = isHighlighted ? palette.controlsFillSecondary : palette.controlsFillPrimary
+        let textColor = isHighlighted ? palette.accentTextPrimary : palette.textPrimary
 
         keyCapViews.forEach { keyCapView in
             keyCapView.backgroundColor = bgColor
@@ -123,7 +121,9 @@ private final class KeyCapView: NSView {
 
     var backgroundColor: NSColor = .clear {
         didSet {
-            layer?.backgroundColor = backgroundColor.cgColor
+            NSAppearance.withAppAppearance {
+                layer?.backgroundColor = backgroundColor.cgColor
+            }
         }
     }
 

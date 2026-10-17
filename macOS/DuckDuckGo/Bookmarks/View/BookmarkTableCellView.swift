@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 @objc protocol BookmarkTableCellViewDelegate: AnyObject {
 
@@ -27,15 +28,15 @@ import Foundation
 
 final class BookmarkTableCellView: NSTableCellView {
 
-    private lazy var faviconImageView = NSImageView(image: .bookmark)
+    private lazy var faviconImageView = NSImageView(image: NSImage(resource: .bookmark))
 
     private lazy var titleLabel = NSTextField(string: "Bookmark")
     private lazy var bookmarkURLLabel = NSTextField(string: "URL")
-    private lazy var accessoryImageView = NSImageView(image: .forward)
+    private lazy var accessoryImageView = NSImageView(image: NSImage(resource: .forward))
 
     private lazy var containerView = NSView()
 
-    private lazy var menuButton = NSButton(title: "", image: .settings, target: self, action: #selector(cellMenuButtonClicked))
+    private lazy var menuButton = NSButton(title: "", image: NSImage(resource: .settings), target: self, action: #selector(cellMenuButtonClicked))
 
     @objc func cellMenuButtonClicked(_ sender: NSButton) {
         delegate?.bookmarkTableCellViewRequestedMenu(sender, cell: self)
@@ -111,7 +112,7 @@ final class BookmarkTableCellView: NSTableCellView {
         containerView.addSubview(menuButton)
         containerView.addSubview(accessoryImageView)
 
-        faviconImageView.contentTintColor = .suggestionIcon
+        faviconImageView.contentTintColor = NSColor(resource: .suggestionIcon)
         faviconImageView.wantsLayer = true
         faviconImageView.layer?.cornerRadius = 2.0
         faviconImageView.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
@@ -134,7 +135,7 @@ final class BookmarkTableCellView: NSTableCellView {
 
         accessoryImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        menuButton.contentTintColor = .button
+        menuButton.contentTintColor = NSColor(resource: .button)
         menuButton.translatesAutoresizingMaskIntoConstraints = false
         menuButton.isBordered = false
         menuButton.isHidden = true
@@ -225,7 +226,7 @@ final class BookmarkTableCellView: NSTableCellView {
             accessoryImageView.isHidden = false
         }
 
-        accessoryImageView.image = bookmark.isFavorite ? .favoriteFilledBorder : nil
+        accessoryImageView.image = bookmark.isFavorite ? DesignSystemImages.Color.Size16.favorite : nil
         accessoryImageView.setAccessibilityIdentifier("BookmarkTableCellView.accessoryImageView")
         accessoryImageView.setAccessibilityValue(bookmark.isFavorite ? "Favorited" : "Unfavorited")
         titleLabel.stringValue = bookmark.title
@@ -233,11 +234,18 @@ final class BookmarkTableCellView: NSTableCellView {
         tertiaryTitleLabelValue = bookmark.url
     }
 
+    /// Upgrades the displayed favicon in place once it becomes available, without touching the rest of the
+    /// cell. Never falls back to the placeholder icon, so a transient cache miss doesn't blank a real favicon.
+    func refreshDisplayedFavicon() {
+        guard let bookmark = entity as? Bookmark, let favicon = bookmark.favicon(.small) else { return }
+        faviconImageView.image = favicon
+    }
+
     func update(from folder: BookmarkFolder) {
         self.entity = folder
 
         faviconImageView.image = theme.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
-        accessoryImageView.image = .chevronMediumRight16
+        accessoryImageView.image = NSImage(resource: .chevronMediumRight16)
         primaryTitleLabelValue = folder.title
         tertiaryTitleLabelValue = nil
     }
@@ -329,7 +337,7 @@ final class BookmarkTableCellView: NSTableCellView {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview {
-    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), theme: ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)))
+    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), theme: ThemeStyle.buildThemeStyle(themeName: .default)))
 }
 
 extension BookmarkTableCellView {

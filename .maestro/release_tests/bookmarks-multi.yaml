@@ -37,7 +37,8 @@ tags:
         - tapOn: "New Tab"
         - evalScript: ${output.counter += 1}
 
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - tapOn: "Tab Switcher"
 - tapOn: "Edit"
 - tapOn: "Select Tabs"

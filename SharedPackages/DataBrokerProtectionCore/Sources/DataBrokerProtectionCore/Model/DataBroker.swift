@@ -328,6 +328,47 @@ extension DataBroker {
         return removedAt != nil
     }
 
+    static let tokenGatedActionTypes: Set<ActionType> = [
+        .generateEmail,
+        .getEmailData,
+        .getCaptchaInfo,
+        .solveCaptcha,
+    ]
+
+    var scanRequiresSubscription: Bool {
+        guard let scanStep = try? scanStep() else { return false }
+        return scanStep.actions.contains { action in
+            if Self.tokenGatedActionTypes.contains(action.actionType) { return true }
+
+            /// ConditionAction contains nested actions
+            if action is ConditionAction, let json = action.json {
+                return Self.conditionJSONContainsTokenGatedActionType(in: json)
+            }
+
+            return false
+        }
+    }
+
+    private static func conditionJSONContainsTokenGatedActionType(in json: Data) -> Bool {
+        guard let dict = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else { return false }
+        return containsTokenGatedActionType(in: dict)
+    }
+
+    private static func containsTokenGatedActionType(in object: Any) -> Bool {
+        if let dict = object as? [String: Any] {
+            if let typeString = dict["actionType"] as? String,
+               let type = ActionType(rawValue: typeString),
+               tokenGatedActionTypes.contains(type) {
+                return true
+            }
+            return dict.values.contains(where: containsTokenGatedActionType)
+        }
+        if let array = object as? [Any] {
+            return array.contains(where: containsTokenGatedActionType)
+        }
+        return false
+    }
+
     public func requiresEmailConfirmationDuringOptOut() -> Bool {
         guard let optOutStep = optOutStep() else { return false }
         return optOutStep.actions.contains { $0 is EmailConfirmationAction }

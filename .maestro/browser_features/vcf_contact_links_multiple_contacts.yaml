@@ -1,0 +1,35 @@
+# vcf_contact_links_multiple_contacts.yaml
+# Multi-VCARD .vcf presents the FIRST contact's native card (the rest are
+# silently truncated). Unlike .ics multi-event, it does NOT fall back to QuickLook.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/contact-multiple.vcf"
+- pressKey: Enter
+
+# contact-multiple.vcf holds Alice Smith, Bob Jones, Carol Garcia. A multi-contact
+# .vcf still presents a native "Add to Contacts" card (the first contact; the rest
+# are silently truncated during parsing). We anchor on the card's Cancel button id:
+# the system Contacts UI content isn't reliably captured by Maestro, and the card is
+# CNContactViewController(forUnknownContact:) for a single contact, so the other
+# names never render on it regardless.
+- extendedWaitUntil:
+    visible:
+        id: "contactPreviewCancelButton"
+    timeout: 10000
+
+# The key behavioural difference from .ics multi-event: a multi-contact .vcf shows
+# the native card, NOT a QuickLook fallback.
+- assertNotVisible:
+    id: "QLOverlayDoneButtonAccessibilityIdentifier"

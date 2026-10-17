@@ -18,7 +18,7 @@
 //
 
 import XCTest
-@testable import Core
+@testable import DuckDuckGo
 
 @MainActor
 class BookmarksExporterTests: XCTestCase {

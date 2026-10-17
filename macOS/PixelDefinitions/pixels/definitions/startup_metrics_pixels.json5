@@ -8,6 +8,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "app_delegate_init",
                 "type": "string",

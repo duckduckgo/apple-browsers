@@ -19,7 +19,7 @@
 import AppStoreAppUpdater
 import AppUpdaterShared
 import Foundation
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import XCTest
 
 final class LatestReleaseCheckerTests: XCTestCase {

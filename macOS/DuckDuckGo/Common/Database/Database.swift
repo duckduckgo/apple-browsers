@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import CoreData
 import Foundation
 import Persistence
@@ -88,7 +89,7 @@ final class Database {
 
 extension NSManagedObjectContext {
 
-    func save(onErrorFire event: PixelKitEvent) throws {
+    func save(onErrorFire event: PixelKit.Event) throws {
         do {
             try save()
         } catch {

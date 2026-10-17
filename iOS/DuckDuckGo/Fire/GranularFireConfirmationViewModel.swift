@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import Core
 import Common
+import FoundationExtensions
 import History
 import AIChat
 import Persistence

@@ -18,8 +18,9 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import UserScript
 import WebKit
@@ -118,7 +119,9 @@ final class TabSuspensionExtension {
         guard !url.isDuckAIURL else { return false }
 
         // domain not in exceptions list
-        guard privacyConfigurationManager.privacyConfig.isFeature(.tabSuspension, enabledForDomain: url.host) else { return false }
+        if AppVersion.runType != .uiTests {
+            guard privacyConfigurationManager.privacyConfig.isFeature(.tabSuspension, enabledForDomain: url.host) else { return false }
+        }
 
         // not pinned
         guard !isTabPinned() else { return false }

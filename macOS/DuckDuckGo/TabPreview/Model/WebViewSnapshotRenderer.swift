@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
-import WebKit
+import ConcurrencyExtensions
+import Foundation
+import FoundationExtensions
 import os.log
+import WebKit
 
 protocol WebViewSnapshotRendering {
 

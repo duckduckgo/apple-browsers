@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "PerformanceTest",
     platforms: [
-        .macOS("11.4") // Match NetworkQualityMonitor requirement
+        .macOS("12.3") // Match NetworkQualityMonitor requirement
     ],
     products: [
         .library(

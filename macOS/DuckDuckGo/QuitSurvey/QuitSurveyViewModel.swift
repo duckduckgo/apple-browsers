@@ -16,15 +16,17 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
-import Foundation
-import os.log
 import Common
+import ConcurrencyExtensions
+import Foundation
+import FoundationExtensions
 import History
+import os.log
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
-import AppKit
 
 // MARK: - Domain Entry Model
 

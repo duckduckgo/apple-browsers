@@ -17,13 +17,14 @@
 //
 
 import Foundation
+import AppKit
 
 struct SyncPromoViewModel {
 
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
 
-    var primaryButtonAction: (() -> Void)?
-    var dismissButtonAction: (() -> Void)?
+    var primaryButtonAction: (@MainActor () -> Void)?
+    var dismissButtonAction: (@MainActor () -> Void)?
 
     var title: String {
         switch touchpointType {
@@ -44,11 +45,8 @@ struct SyncPromoViewModel {
         UserText.syncPromoMessage
     }
 
-    var image: String {
-        switch touchpointType {
-        default:
-            return "Sync-OK-96x96"
-        }
+    var image: NSImage {
+        NSImage(resource: .syncStart96)
     }
 
     var primaryButtonTitle: String {

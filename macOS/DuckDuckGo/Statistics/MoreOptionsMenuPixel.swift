@@ -31,7 +31,7 @@ import PixelKit
  * Anomaly Investigation:
  * - Anomaly in these pixels may mean an increase/drop in app use.
  */
-enum MoreOptionsMenuPixel: PixelKitEvent {
+enum MoreOptionsMenuPixel: PixelKit.Event {
 
     /// Event Trigger: Feedback or Subscription feedback menu action is clicked
     case feedbackActionClicked
@@ -44,9 +44,6 @@ enum MoreOptionsMenuPixel: PixelKitEvent {
 
     /// Event Trigger: New Fire Window action is clicked
     case newBurnerWindowActionClicked
-
-    /// Event Trigger: Zoom In, zoom Out or Actual Size action is clicked
-    case zoomActionClicked
 
     /// Event Trigger: Any action in Bookmarks submenu is clicked
     case bookmarksActionClicked
@@ -102,8 +99,6 @@ enum MoreOptionsMenuPixel: PixelKitEvent {
             return "browser_menu_new_window"
         case .newBurnerWindowActionClicked:
             return "browser_menu_new_burner_window"
-        case .zoomActionClicked:
-            return "browser_menu_zoom"
         case .bookmarksActionClicked:
             return "browser_menu_bookmarks"
         case .downloadsActionClicked:
@@ -145,7 +140,6 @@ enum MoreOptionsMenuPixel: PixelKitEvent {
                 .newTabActionClicked,
                 .newWindowActionClicked,
                 .newBurnerWindowActionClicked,
-                .zoomActionClicked,
                 .bookmarksActionClicked,
                 .downloadsActionClicked,
                 .passwordsActionClicked,

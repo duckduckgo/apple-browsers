@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import AIChat
 
 /// Manages shared text state between search mode and duck.ai mode in the address bar.
 /// This allows text content and selection to be preserved when switching between modes.
@@ -25,6 +26,16 @@ final class AddressBarSharedTextState: ObservableObject {
 
     /// The current text content shared between modes
     @Published private(set) var text: String = ""
+
+    /// `text` with every newline (LF, CR, CRLF, line/paragraph separators — anything in
+    /// `CharacterSet.newlines`) collapsed to a single space, suitable for rendering in the
+    /// single-line address bar. The Duck.ai panel's prompt editor consumes the raw `text`
+    /// instead. Centralized here so every bar consumer gets the same transformation; without
+    /// this, a multi-line prompt would render with broken vertical alignment in the unfocused
+    /// bar (the field tries to lay out two lines and only the first peeks through).
+    var textForSingleLineDisplay: String {
+        text.components(separatedBy: .newlines).joined(separator: " ")
+    }
 
     /// The current selection range in the text
     @Published private(set) var selectionRange: NSRange = NSRange(location: 0, length: 0)
@@ -35,11 +46,115 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Whether the user has type anything after switching modes
     private(set) var hasUserInteractedWithTextAfterSwitchingModes: Bool = false
 
-    /// Resets the shared state to initial values
-    func reset() {
+    /// Whether duck.ai mode is the currently selected mode for this tab.
+    /// Persists across focus changes and tab switches; cleared on navigation, submit, or explicit switch back to search.
+    @Published private(set) var isInDuckAIMode: Bool = false
+
+    /// The duck.ai tool selection for this tab (image generation / web search).
+    /// Persists across tab switches; cleared alongside text on navigation, submit, or explicit reset.
+    @Published private(set) var aiChatToolMode: AIChatToolMode?
+
+    /// The duck.ai image attachments for this tab.
+    /// Persists across tab switches so the user doesn't lose a prepared prompt's attachments when bouncing between tabs.
+    @Published private(set) var aiChatAttachments: [AIChatImageAttachment] = []
+
+    /// The duck.ai tab attachments (Attach Page Content) for this tab.
+    /// Persists across tab switches alongside the prompt text and image attachments so the user
+    /// can keep curating the prompt when bouncing between browser tabs.
+    @Published private(set) var aiChatTabAttachments: [AIChatTabAttachment] = []
+
+    /// The duck.ai file attachments (PDFs etc.) for this tab. Persists across tab switches.
+    @Published private(set) var aiChatFileAttachments: [AIChatFileAttachment] = []
+
+    /// Unified, insertion-ordered list of duck.ai panel attachments — both image uploads and
+    /// page-content tabs. The omnibar carousel renders directly from this list to preserve the
+    /// chronological order in which the user attached items (e.g. tab, image, tab, tab); the
+    /// per-type lists above are derived from this list for the image-side and submit-side code
+    /// paths that already work with one type at a time.
+    @Published private(set) var aiChatPanelAttachments: [AIChatPanelAttachment] = []
+
+    /// Resets the shared state to initial values.
+    /// - Parameter clearingDuckAIState: Pass `false` from tab-switch restore paths. Tab switches must not
+    ///   wipe per-tab duck.ai state — that includes the prompt text, selection, interaction flag, mode,
+    ///   tool mode and attachments, all of which belong to the tab and are only cleared on explicit user
+    ///   action (toggle off, submit, navigation). The unfocused duck.ai bar relies on `text` surviving
+    ///   tab switches because `applyDuckAIUnfocusedValue` reads from it. Default `true` preserves the
+    ///   navigation semantics for callers that do want a full reset.
+    func reset(clearingDuckAIState: Bool = true) {
+        guard clearingDuckAIState else { return }
         text = ""
         selectionRange = NSRange(location: 0, length: 0)
         hasUserInteractedWithText = false
+        if isInDuckAIMode {
+            isInDuckAIMode = false
+        }
+        if aiChatToolMode != nil {
+            aiChatToolMode = nil
+        }
+        if !aiChatAttachments.isEmpty {
+            aiChatAttachments = []
+        }
+        if !aiChatTabAttachments.isEmpty {
+            aiChatTabAttachments = []
+        }
+        if !aiChatFileAttachments.isEmpty {
+            aiChatFileAttachments = []
+        }
+        if !aiChatPanelAttachments.isEmpty {
+            aiChatPanelAttachments = []
+        }
+    }
+
+    /// Sets the duck.ai mode flag for this tab without touching text state.
+    func setDuckAIMode(_ enabled: Bool) {
+        guard isInDuckAIMode != enabled else { return }
+        isInDuckAIMode = enabled
+    }
+
+    /// Sets the duck.ai tool selection for this tab. No-op when the value is unchanged to avoid
+    /// spurious publisher emissions (and subscription loops between controller ↔ shared state).
+    func setAIChatToolMode(_ mode: AIChatToolMode?) {
+        guard aiChatToolMode != mode else { return }
+        aiChatToolMode = mode
+    }
+
+    /// Replaces the duck.ai attachment list for this tab. Skips the write when both the id AND the
+    /// image instance are unchanged — id alone isn't enough because `replaceAttachment` swaps in a
+    /// resized `NSImage` while keeping the same id, and we need that resized version to land in
+    /// shared state so a subsequent tab switch restores the resized image, not the placeholder.
+    ///
+    /// Also reconciles `aiChatPanelAttachments` so the carousel's chronological order is preserved:
+    /// existing image entries keep their slots (or get refreshed in place for resize replacements),
+    /// removed images drop out, and new images are appended at the end.
+    func setAIChatAttachments(_ attachments: [AIChatImageAttachment]) {
+        // `AIChatImageAttachment: Equatable` compares by `id` + image instance identity (see
+        // its own conformance), which is exactly the change-detection rule we want here.
+        guard attachments != aiChatAttachments else { return }
+        aiChatAttachments = attachments
+        aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingImagesWith: attachments)
+    }
+
+    /// Replaces the duck.ai tab attachment list for this tab. Skips the write when the list is
+    /// element-wise equal to the current one to avoid spurious publisher emissions during the
+    /// tab-switch restore path (which echoes the current list back through the same setter).
+    ///
+    /// Also reconciles `aiChatPanelAttachments` to keep insertion order — see the equivalent doc
+    /// on `setAIChatAttachments(_:)`.
+    func setAIChatTabAttachments(_ attachments: [AIChatTabAttachment]) {
+        guard attachments != aiChatTabAttachments else { return }
+        aiChatTabAttachments = attachments
+        aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingTabsWith: attachments)
+    }
+
+    /// Replaces the duck.ai file attachment list for this tab. Same idempotency + reconcile
+    /// semantics as the image and tab setters — id-equality is the change check (`AIChatFileAttachment`
+    /// is immutable once attached).
+    func setAIChatFileAttachments(_ attachments: [AIChatFileAttachment]) {
+        // `AIChatFileAttachment: Equatable` is id-only (files are immutable post-init), which
+        // matches the change-detection rule we want here.
+        guard attachments != aiChatFileAttachments else { return }
+        aiChatFileAttachments = attachments
+        aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingFilesWith: attachments)
     }
 
     func resetUserInteraction() {
@@ -65,28 +180,12 @@ final class AddressBarSharedTextState: ObservableObject {
         }
 
         text = newText
-
-        // Adjust selection range if it's now beyond the text length
-        if selectionRange.location > newText.count {
-            selectionRange = NSRange(location: newText.count, length: 0)
-        } else if selectionRange.upperBound > newText.count {
-            selectionRange = NSRange(location: selectionRange.location, length: max(0, newText.count - selectionRange.location))
-        }
+        selectionRange = selectionRange.clamped(toTextLength: newText.count)
     }
 
     /// Updates the selection range
     /// - Parameter range: The new selection range
     func updateSelection(_ range: NSRange) {
-        // Validate the range
-        let validatedRange: NSRange
-        if range.location > text.count {
-            validatedRange = NSRange(location: text.count, length: 0)
-        } else if range.upperBound > text.count {
-            validatedRange = NSRange(location: range.location, length: max(0, text.count - range.location))
-        } else {
-            validatedRange = range
-        }
-
-        selectionRange = validatedRange
+        selectionRange = range.clamped(toTextLength: text.count)
     }
 }

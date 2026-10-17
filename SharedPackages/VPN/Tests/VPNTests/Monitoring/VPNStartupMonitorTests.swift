@@ -20,7 +20,6 @@ import XCTest
 import NetworkExtension
 @testable import VPN
 
-@available(macOS 12, *)
 final class VPNStartupMonitorTests: XCTestCase {
 
     private var notificationCenter: NotificationCenter!
@@ -228,6 +227,68 @@ final class VPNStartupMonitorTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    // MARK: - waitForStop
+
+    func testWaitForStopCompletesWhenConnectionBecomesDisconnected() async {
+        let connection = tunnelManager.connection
+        mockStatus = .disconnecting
+
+        Task {
+            try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+            mockStatus = .disconnected
+            postStatusChange(connection: connection)
+        }
+
+        await monitor.waitForStop(tunnelManager, timeout: 1)
+    }
+
+    func testWaitForStopCompletesWhenConnectionBecomesInvalid() async {
+        let connection = tunnelManager.connection
+        mockStatus = .disconnecting
+
+        Task {
+            try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+            mockStatus = .invalid
+            postStatusChange(connection: connection)
+        }
+
+        await monitor.waitForStop(tunnelManager, timeout: 1)
+    }
+
+    func testWaitForStopCompletesImmediatelyWhenAlreadyDisconnected() async {
+        mockStatus = .disconnected
+
+        await monitor.waitForStop(tunnelManager, timeout: 1)
+    }
+
+    func testWaitForStopReturnsAfterTimeoutWhenStillConnected() async {
+        mockStatus = .connected
+
+        // Best-effort: returns (does not hang or throw) once the timeout elapses.
+        await monitor.waitForStop(tunnelManager, timeout: 0.1)
+    }
+
+    func testWaitForStopIgnoresNotificationsForDifferentConnections() async {
+        let connection = tunnelManager.connection
+        let otherManager = NETunnelProviderManager()
+        let otherConnection = otherManager.connection
+
+        mockStatus = .disconnecting
+
+        Task {
+            try await Task.sleep(nanoseconds: 50 * NSEC_PER_MSEC)
+            // Post for wrong connection - should be ignored
+            postStatusChange(connection: otherConnection)
+
+            try await Task.sleep(nanoseconds: 50 * NSEC_PER_MSEC)
+            // Post for correct connection - should complete
+            mockStatus = .disconnected
+            postStatusChange(connection: connection)
+        }
+
+        await monitor.waitForStop(tunnelManager, timeout: 1)
     }
 
     // MARK: - Helpers

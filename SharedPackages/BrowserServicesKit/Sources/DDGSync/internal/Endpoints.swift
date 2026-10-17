@@ -26,7 +26,11 @@ final class Endpoints {
     private(set) var connect: URL
     private(set) var exchange: URL
     private(set) var aiChats: URL
+    private(set) var devices: URL
     private(set) var tokenRescope: URL
+    private(set) var accessCredentials: URL
+    private(set) var keys: URL
+    private(set) var pairingV2Exchange: URL
     private(set) var login: URL
     private(set) var logoutDevice: URL
     private(set) var deleteAccount: URL
@@ -58,7 +62,11 @@ final class Endpoints {
         syncPatch = baseURL.appendingPathComponent("sync/data")
         exchange = baseURL.appendingPathComponent("sync/exchange")
         aiChats = baseURL.appendingPathComponent("sync/ai_chats")
+        devices = baseURL.appendingPathComponent("sync/devices")
         tokenRescope = baseURL.appendingPathComponent("sync/token/rescope")
+        accessCredentials = baseURL.appendingPathComponent("sync/access-credentials")
+        keys = baseURL.appendingPathComponent("sync/keys")
+        pairingV2Exchange = baseURL.appendingPathComponent("sync/v2/exchange")
     }
 }
 
@@ -78,7 +86,11 @@ extension Endpoints {
         syncPatch = baseURL.appendingPathComponent("sync/data")
         exchange = baseURL.appendingPathComponent("sync/exchange")
         aiChats = baseURL.appendingPathComponent("sync/ai_chats")
+        devices = baseURL.appendingPathComponent("sync/devices")
         tokenRescope = baseURL.appendingPathComponent("sync/token/rescope")
+        accessCredentials = baseURL.appendingPathComponent("sync/access-credentials")
+        keys = baseURL.appendingPathComponent("sync/keys")
+        pairingV2Exchange = baseURL.appendingPathComponent("sync/v2/exchange")
     }
 
 }

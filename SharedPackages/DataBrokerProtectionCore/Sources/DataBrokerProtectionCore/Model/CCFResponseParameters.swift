@@ -84,6 +84,7 @@ enum CCFSuccessData {
     case fillForm
     case click
     case expectation
+    case executeScript
     case getCaptchaInfo(GetCaptchaInfoResponse)
     case solveCaptcha(SolveCaptchaResponse)
     case conditionSuccess(ConditionSuccessResponse)
@@ -119,8 +120,14 @@ struct CCFSuccessResponse: Decodable {
             self.response = .click
         case .expectation:
             self.response = .expectation
+        case .executeScript:
+            self.response = .executeScript
         case .emailConfirmation:
             self.response = nil // Email confirmation is done on the native side. We shouldn't have a response here
+        case .generateEmail:
+            self.response = nil // Email generation is done on the native side. We shouldn't have a response here
+        case .getEmailData:
+            self.response = nil // Polling the email-data endpoint is done on the native side. No C-S-S response.
         case .getCaptchaInfo:
             self.response = .getCaptchaInfo(try container.decode(GetCaptchaInfoResponse.self, forKey: .response))
         case .solveCaptcha:

@@ -94,6 +94,39 @@ final class CustomToggleControlTests: XCTestCase {
         XCTAssertEqual(sut.selectedSegment, 0)
     }
 
+    // MARK: - Silent Segment Selection
+
+    func testWhenSetSelectedSegmentSilently_ThenSegmentChangesWithoutFiringAction() {
+        let recorder = ActionRecorder()
+        sut.target = recorder
+        sut.action = #selector(ActionRecorder.record(_:))
+
+        sut.setSelectedSegmentSilently(1)
+
+        XCTAssertEqual(sut.selectedSegment, 1)
+        XCTAssertEqual(recorder.callCount, 0)
+    }
+
+    func testWhenSelectedSegmentSetDirectly_ThenActionFires() {
+        let recorder = ActionRecorder()
+        sut.target = recorder
+        sut.action = #selector(ActionRecorder.record(_:))
+
+        sut.selectedSegment = 1
+
+        XCTAssertEqual(recorder.callCount, 1)
+    }
+
+    func testWhenSetSelectedSegmentSilentlyToSameValue_ThenNoChange() {
+        sut.setSelectedSegmentSilently(0) // already 0
+        XCTAssertEqual(sut.selectedSegment, 0)
+    }
+
+    func testWhenSetSelectedSegmentSilentlyWithOutOfRangeIndex_ThenIgnored() {
+        sut.setSelectedSegmentSilently(5)
+        XCTAssertEqual(sut.selectedSegment, 0)
+    }
+
     // MARK: - Labels
 
     func testWhenLabelSetForSegment_ThenLabelCanBeRetrieved() {
@@ -162,6 +195,14 @@ final class CustomToggleControlTests: XCTestCase {
         sut.setExpanded(false, animated: false)
 
         XCTAssertFalse(sut.isExpanded)
+    }
+}
+
+private final class ActionRecorder: NSObject {
+    var callCount = 0
+
+    @objc func record(_ sender: Any?) {
+        callCount += 1
     }
 }
 

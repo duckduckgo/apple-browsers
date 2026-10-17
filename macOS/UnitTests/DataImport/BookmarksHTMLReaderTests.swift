@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import SnapshotTesting
+import SnapshotTestingSupport
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

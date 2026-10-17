@@ -124,6 +124,7 @@ extension NewTabPageDataModel {
         case radarCheckPurple = "RadarCheckPurple"
         case subscriptionIcon = "Subscription"
         case veryCriticalUpdate = "VeryCriticalUpdate"
+        case youtubeNew = "YoutubeNew"
 
         init(_ placeholder: RemotePlaceholder) {
             switch placeholder {
@@ -149,6 +150,8 @@ extension NewTabPageDataModel {
                 self = .subscriptionIcon
             case .veryCriticalUpdate:
                 self = .veryCriticalUpdate
+            case .youtubeNew:
+                self = .youtubeNew
             default:
                 self = .ddgAnnounce
             }

@@ -25,6 +25,6 @@ final class MockHomePageContinueSetUpModelPersisting: HomePageContinueSetUpModel
     var shouldShowImportSetting: Bool = true
     var shouldShowDuckPlayerSetting: Bool = true
     var shouldShowEmailProtectionSetting: Bool = true
-    var isFirstSession: Bool = true
+    var shouldShowYouTubeAdBlockingSetting: Bool = true
     func clear() {}
 }

@@ -36,7 +36,7 @@ final class NewTabPageLoadMetricsTests: XCTestCase {
 
         let metrics = NewTabPageLoadMetrics { pixel in
             if let event = pixel as? NewTabPagePixel,
-               case .newTabPageLoadingTime(let duration, _) = event {
+               case .newTabPageLoadingTime(let duration) = event {
                 XCTAssertGreaterThan(duration, 0)
                 pixelFired = true
                 expectation.fulfill()
@@ -63,7 +63,7 @@ final class NewTabPageLoadMetricsTests: XCTestCase {
 
         let metrics = NewTabPageLoadMetrics { pixel in
             if let event = pixel as? NewTabPagePixel,
-               case .newTabPageLoadingTime(let duration, _) = event {
+               case .newTabPageLoadingTime(let duration) = event {
                 XCTAssertEqual(duration, 0)
                 expectation.fulfill()
             }

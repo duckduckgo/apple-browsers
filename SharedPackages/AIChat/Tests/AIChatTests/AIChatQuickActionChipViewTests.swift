@@ -69,6 +69,14 @@ final class AIChatQuickActionChipViewTests: XCTestCase {
         XCTAssertNotNil(sut)
     }
 
+    func testConfigureSetsAccessibilityIdentifierFromActionID() {
+        // When
+        sut.configure(with: MockQuickAction.testAction)
+
+        // Then
+        XCTAssertEqual(sut.accessibilityIdentifier, MockQuickAction.testAction.id)
+    }
+
     func testReconfigureWithDifferentAction() {
         // Given
         sut.configure(with: MockQuickAction.testAction)

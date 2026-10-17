@@ -27,7 +27,6 @@ final class MockThemeManager: ThemeManaging {
     var currentInterfaceStyle: UIUserInterfaceStyle = .light
 
     func updateColorScheme() { }
-    func toggleExperimentalTheming() { }
     func setThemeStyle(_ style: DuckDuckGo.ThemeStyle) { }
     func updateUserInterfaceStyle(window: UIWindow?) { }
 }

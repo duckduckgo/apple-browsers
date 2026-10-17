@@ -37,6 +37,7 @@ public protocol BWManagement: AnyObject {
 
 public protocol BWManagementFactory {
     static func makeManager(isBitwardenPasswordManagerProvider: @escaping () -> Bool,
+                            isConnectionHardeningEnabled: @escaping () -> Bool,
                             showRestartBitwardenAlert: @escaping (/*restartConfirmed:*/ @escaping () -> Void) -> Void) -> BWManagement
 }
 

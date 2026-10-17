@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Wide event data for subscription plan changes (upgrades, downgrades, crossgrades)
 public class SubscriptionPlanChangeWideEventData: WideEventData {
@@ -26,7 +26,7 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
         featureName: "subscription-plan-change",
         mobileMetaType: "ios-subscription-plan-change",
         desktopMetaType: "macos-subscription-plan-change",
-        version: "1.0.1"
+        version: "1.1.0"
     )
 
     public static let confirmationTimeout: TimeInterval = .hours(4)

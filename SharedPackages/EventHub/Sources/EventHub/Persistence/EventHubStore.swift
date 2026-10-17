@@ -1,0 +1,173 @@
+//
+//  EventHubStore.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Common
+import Persistence
+import os.log
+
+/// Persists per-pixel EventHub runtime state across app restarts, over a `ThrowingKeyValueStoring`.
+/// State survives the fire button and is only cleared by EventHub itself (period fire, config disable).
+///
+/// All persisted pixel states live under a single composite key (`storageKey`) as a
+/// `[String: EventHubStoredPixelState]` map, JSON-encoded to `Data`. Read/write/parse failures are
+/// treated as absence rather than propagated: a corrupt entry is skipped, not thrown — but every such
+/// boundary is logged to `Logger.eventHub`, and the ones that lose state also fire
+/// `EventHubDebugEvent.pixelStatePersistenceFailed` through `eventMapping`.
+///
+/// Deliberately concrete, with no protocol in front of it: the swappable seam is the injected
+/// `ThrowingKeyValueStoring`, which is what tests and both platforms actually vary.
+public final class EventHubKeyValueStore {
+    /// The single key under which the map of pixel-name to `EventHubStoredPixelState` is stored.
+    public static let storageKey = "eventhub_pixel_states"
+
+    /// `nil` when the platform could not open its store: reads report absence, writes are dropped.
+    private let store: ThrowingKeyValueStoring?
+    private let parser: EventHubConfigParser
+    private let eventMapping: EventMapping<EventHubDebugEvent>?
+
+    public init(
+        store: ThrowingKeyValueStoring?,
+        parser: EventHubConfigParser,
+        eventMapping: EventMapping<EventHubDebugEvent>? = nil
+    ) {
+        self.store = store
+        self.parser = parser
+        self.eventMapping = eventMapping
+    }
+
+    /// Returns the persisted state for the named pixel, or `nil` if absent or corrupt.
+    public func pixelState(named name: String) -> PixelState? {
+        readMap()[name].flatMap { toPixelState(name: name, entry: $0) }
+    }
+
+    /// Returns all persisted pixel states, skipping any whose stored config cannot be parsed.
+    public func allPixelStates() -> [PixelState] {
+        readMap().compactMap { name, entry in toPixelState(name: name, entry: entry) }
+    }
+
+    /// Persists (inserts or replaces) the states for a set of pixels in a single write.
+    ///
+    /// - Returns: `false` only when the store rejected the write, meaning the caller should keep the
+    ///   states pending and try again. States whose config or params cannot be serialised are skipped
+    ///   and do not fail the batch: that failure is permanent, so retrying could never clear it.
+    @discardableResult
+    public func savePixelStates(_ states: [PixelState]) -> Bool {
+        let entries = states.compactMap { state in serialise(state).map { (state.pixelName, $0) } }
+        guard !entries.isEmpty else { return true }
+        var map = readMap()
+        for (name, entry) in entries {
+            map[name] = entry
+        }
+        return writeMap(map)
+    }
+
+    private func serialise(_ state: PixelState) -> EventHubStoredPixelState? {
+        guard let configJSON = parser.serializePixelConfig(state.config) else {
+            Logger.eventHub.error("store: could not serialise the config snapshot for pixel \(state.pixelName, privacy: .public), state not saved")
+            return nil
+        }
+        guard let paramsData = try? JSONEncoder().encode(state.params),
+              let paramsJSON = String(bytes: paramsData, encoding: .utf8) else {
+            Logger.eventHub.error("store: could not serialise params for pixel \(state.pixelName, privacy: .public), state not saved")
+            return nil
+        }
+        return EventHubStoredPixelState(
+            periodStartMillis: state.periodStartMillis, periodEndMillis: state.periodEndMillis,
+            paramsJSON: paramsJSON, configJSON: configJSON)
+    }
+
+    @discardableResult
+    public func savePixelState(_ state: PixelState) -> Bool { savePixelStates([state]) }
+
+    /// Removes the persisted state for the named pixel, if any.
+    public func deletePixelState(named name: String) {
+        var map = readMap()
+        guard map.removeValue(forKey: name) != nil else { return }
+        writeMap(map)
+    }
+
+    /// Removes all persisted pixel state.
+    public func deleteAllPixelStates() {
+        do {
+            try store?.removeObject(forKey: Self.storageKey)
+        } catch {
+            Logger.eventHub.error("store: could not delete all pixel state: \(error.localizedDescription, privacy: .public)")
+            eventMapping?.fire(.pixelStatePersistenceFailed(operation: .delete), error: error)
+        }
+    }
+
+    private func readMap() -> [String: EventHubStoredPixelState] {
+        let stored: Any?
+        do {
+            stored = try store?.object(forKey: Self.storageKey)
+        } catch {
+            Logger.eventHub.error("store: could not read pixel state: \(error.localizedDescription, privacy: .public)")
+            eventMapping?.fire(.pixelStatePersistenceFailed(operation: .read), error: error)
+            return [:]
+        }
+        // Nothing stored yet is the normal cold-start state, not a failure: no event, no error log.
+        guard let stored else { return [:] }
+        guard let data = stored as? Data else {
+            Logger.eventHub.error("store: stored pixel state is not Data, treating as absent")
+            eventMapping?.fire(.pixelStatePersistenceFailed(operation: .decode))
+            return [:]
+        }
+        do {
+            return try JSONDecoder().decode([String: EventHubStoredPixelState].self, from: data)
+        } catch {
+            Logger.eventHub.error("store: stored pixel state could not be decoded, treating as absent: \(error.localizedDescription, privacy: .public)")
+            eventMapping?.fire(.pixelStatePersistenceFailed(operation: .decode), error: error)
+            return [:]
+        }
+    }
+
+    /// - Returns: `false` when the store threw. Encoding our own map cannot fail on any input reachable
+    ///   from remote config, so that path reports success rather than making the caller retry forever.
+    @discardableResult
+    private func writeMap(_ map: [String: EventHubStoredPixelState]) -> Bool {
+        guard let data = try? JSONEncoder().encode(map) else {
+            Logger.eventHub.error("store: could not encode the pixel state map, nothing persisted")
+            return true
+        }
+        do {
+            try store?.set(data, forKey: Self.storageKey)
+            return true
+        } catch {
+            Logger.eventHub.error("store: could not persist pixel state: \(error.localizedDescription, privacy: .public)")
+            eventMapping?.fire(.pixelStatePersistenceFailed(operation: .write), error: error)
+            return false
+        }
+    }
+
+    private func toPixelState(name: String, entry: EventHubStoredPixelState) -> PixelState? {
+        guard let config = parser.parseSinglePixelConfig(name: name, json: entry.configJSON) else {
+            Logger.eventHub.error("store: stored config snapshot for pixel \(name, privacy: .public) is unusable, state discarded")
+            return nil
+        }
+        let params: [String: ParamState]
+        do {
+            params = try JSONDecoder().decode([String: ParamState].self, from: Data(entry.paramsJSON.utf8))
+        } catch {
+            Logger.eventHub.error("store: stored params for pixel \(name, privacy: .public) are unusable, counters restart from zero: \(error.localizedDescription, privacy: .public)")
+            params = [:]
+        }
+        return PixelState(pixelName: name, periodStartMillis: entry.periodStartMillis,
+                           periodEndMillis: entry.periodEndMillis, config: config, params: params)
+    }
+}

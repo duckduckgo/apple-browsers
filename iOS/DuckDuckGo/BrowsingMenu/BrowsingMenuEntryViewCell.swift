@@ -22,9 +22,19 @@ import Core
 
 class BrowsingMenuEntryViewCell: UITableViewCell {
     
-    @IBOutlet weak var entryImage: UIImageView!
-    @IBOutlet weak var entryLabel: UILabel!
-    @IBOutlet weak var notificationDot: UIView!
+    let entryImage = UIImageView()
+    let entryLabel = UILabel()
+    let notificationDot = UIView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupViews()
+        setupConstraints()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false, customDotColor: UIColor? = nil) {
         entryImage.image = image
@@ -54,5 +64,56 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
                                                    context: nil)
         
         return size.width + 90 // Left Margin + Icon width + Spacing + Right Margin
+    }
+
+    private func setupViews() {
+        selectionStyle = .default
+        accessibilityTraits.insert(.button)
+
+        entryImage.translatesAutoresizingMaskIntoConstraints = false
+        entryImage.contentMode = .center
+        contentView.addSubview(entryImage)
+
+        entryLabel.translatesAutoresizingMaskIntoConstraints = false
+        entryLabel.numberOfLines = 0
+        entryLabel.lineBreakMode = .byTruncatingTail
+        entryLabel.attributedText = Self.makeLabelTemplate()
+        contentView.addSubview(entryLabel)
+
+        notificationDot.translatesAutoresizingMaskIntoConstraints = false
+        notificationDot.backgroundColor = UIColor(designSystemColor: .accentPrimary)
+        contentView.addSubview(notificationDot)
+    }
+
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            entryImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            entryImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 13),
+            entryImage.widthAnchor.constraint(equalToConstant: 16),
+            entryImage.heightAnchor.constraint(equalToConstant: 16),
+
+            entryLabel.leadingAnchor.constraint(equalTo: entryImage.trailingAnchor, constant: 17),
+            entryLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            entryLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
+            entryLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 10),
+            entryLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 22),
+
+            contentView.trailingAnchor.constraint(greaterThanOrEqualTo: entryLabel.trailingAnchor, constant: 12),
+
+            notificationDot.leadingAnchor.constraint(equalTo: entryLabel.trailingAnchor, constant: 6),
+            notificationDot.centerYAnchor.constraint(equalTo: entryImage.centerYAnchor),
+            notificationDot.widthAnchor.constraint(equalToConstant: 8),
+            notificationDot.heightAnchor.constraint(equalToConstant: 8),
+            contentView.trailingAnchor.constraint(greaterThanOrEqualTo: notificationDot.trailingAnchor, constant: 12)
+        ])
+    }
+
+    private static func makeLabelTemplate() -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.minimumLineHeight = 22
+
+        return NSAttributedString(string: " ",
+                                  attributes: [.font: UIFont.appFont(ofSize: 17),
+                                               .paragraphStyle: paragraphStyle])
     }
 }

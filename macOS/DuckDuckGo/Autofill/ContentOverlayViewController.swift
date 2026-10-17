@@ -21,16 +21,17 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import enum UserScript.UserScriptError
+import FoundationExtensions
 import PixelKit
 import PrivacyConfig
 import SecureStorage
 import WebKit
-import enum UserScript.UserScriptError
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
 
-    @IBOutlet var webView: WKWebView!
+    var webView: WKWebView!
     private var topAutofillUserScript: OverlayAutofillUserScript?
     private var appearanceCancellable: AnyCancellable?
 
@@ -61,8 +62,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return model
     }()
 
-    init?(
-        coder: NSCoder,
+    init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
@@ -74,14 +74,16 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         self.featureFlagger = featureFlagger
         self.tld = tld
         self.pinningManager = pinningManager
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        fatalError("\(type(of: self)): Bad initializer")
     }
 
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
+
+    lazy var autofillImportPromoReporter: AutofillImportPromoReporting = Application.appDelegate.autofillImportPromoObserver
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
@@ -90,6 +92,10 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     private let pinningManager: PinningManager
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
+    public override func loadView() {
+        view = NSView(frame: .zero)
+    }
 
     public override func viewDidLoad() {
         initWebView()
@@ -143,6 +149,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     public override func viewWillDisappear() {
         // We should never see this but it's better than a flash of old content
         webView.load(URLRequest(url: .blankPage))
+
+        autofillImportPromoReporter.overlayWillDisappear(self)
     }
 
     public func messageMouseMove(x: CGFloat, y: CGFloat) {
@@ -377,13 +385,14 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
             self.emailManager.updateLastUseDate()
 
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixelParameters, doNotEnforcePrefix: true)
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixelParameters)
             NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         } else if pixel.isCredentialsImportPromotionPixel {
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), doNotEnforcePrefix: true)
+            PixelKit.fire(GeneralPixel.jsPixel(pixel))
+            autofillImportPromoReporter.overlayDidShowImportPrompt(self)
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
-            var parameters = usageProvider.formattedFillDate.flatMap {
+            let parameters = usageProvider.formattedFillDate.flatMap {
                 existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
                 return existingParameters
             } ?? existingParameters
@@ -438,6 +447,14 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
+        autofillImportPromoReporter.overlayDidStartImport(self)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled) { [weak self] in
+            guard let self else { return }
+            autofillImportPromoReporter.overlayDidEndImportFlow(self)
+        }
+    }
+
+    public func autofillDidPermanentlyDismissCredentialsImportPrompt() {
+        autofillImportPromoReporter.overlayDidPermanentlyDismissImportPrompt(self)
     }
 }

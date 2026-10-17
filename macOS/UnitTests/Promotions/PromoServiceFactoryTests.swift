@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import RemoteMessagingTestsUtils
@@ -27,6 +27,7 @@ final class PromoServiceFactoryTests: XCTestCase {
 
     private var dependencies: PromoDependencies!
 
+    @MainActor
     override func setUp() {
         super.setUp()
         dependencies = makeDependencies()
@@ -82,6 +83,20 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNil(promo.delegate)
     }
 
+    func testFactoryCreatesBookmarkToolbarPromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.bookmarkToolbar(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "bookmark-toolbar")
+        XCTAssertEqual(promo.triggers, [.bookmarkAdded, .bookmarksImported])
+        XCTAssertEqual(promo.initiated, .user)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
     func testFactoryCreatesDefaultBrowserAndDockPromosWithCorrectConfiguration() async {
         let popoverPromo = await PromoServiceFactory.defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService)
         let bannerPromo = await PromoServiceFactory.defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService)
@@ -118,9 +133,54 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesSubscriptionPromoWithCorrectConfiguration() {
+        let promo = PromoServiceFactory.subscriptionPromo(delegate: FireWindowSubscriptionPromoDelegate())
+
+        XCTAssertEqual(promo.id, "subscription-promo-fire-window")
+        XCTAssertTrue(promo.triggers.isEmpty)
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.context, .fireWindow)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
+    func testFactoryCreatesVPNUpsellPromosWithCorrectConfiguration() {
+        let buttonPromo = PromoServiceFactory.vpnUpsellToolbarButton(delegate: dependencies.vpnUpsellToolbarButtonPromoDelegate)
+        let dotPromo = PromoServiceFactory.vpnUpsellDotBadge(delegate: dependencies.vpnUpsellDotBadgePromoDelegate)
+
+        for promo in [buttonPromo, dotPromo] {
+            XCTAssertEqual(promo.triggers, [.vpnUpsellBecameEligible, .appLaunched])
+            XCTAssertEqual(promo.initiated, .app)
+            XCTAssertEqual(promo.context, .global)
+            XCTAssertEqual(promo.promoType.severity, .low)
+            XCTAssertEqual(promo.promoType.timeoutResult, .ignored())
+            XCTAssertNotNil(promo.delegate)
+        }
+
+        XCTAssertEqual(buttonPromo.id, "vpn-upsell-toolbar-button")
+        XCTAssertEqual(buttonPromo.promoType.timeoutInterval, .days(7))
+        XCTAssertEqual(dotPromo.id, "vpn-upsell-dot-badge")
+        XCTAssertEqual(dotPromo.promoType.timeoutInterval, .days(3))
+    }
+
+    func testWhenVPNUpsellBecameEligibleNotificationPostedThenPromoTriggerFires() {
+        let expectation = expectation(description: "trigger fired")
+        let cancellable = PromoTrigger.triggerPublisher
+            .filter { $0 == .vpnUpsellBecameEligible }
+            .sink { _ in expectation.fulfill() }
+
+        NotificationCenter.default.post(name: .vpnUpsellBecameEligible, object: nil)
+
+        waitForExpectations(timeout: 1)
+        cancellable.cancel()
+    }
+
 }
 
 extension PromoServiceFactoryTests {
+    @MainActor
     private func makeDependencies() -> PromoDependencies {
         let activeRemoteMessageModel = ActiveRemoteMessageModel(
             remoteMessagingStore: MockRemoteMessagingStore(),
@@ -138,13 +198,96 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
+            isNewUserProvider: { false },
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
+            featureFlagger: MockFeatureFlagger(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: WindowControllersManagerMock(),
+            syncService: nil,
+            syncBookmarksAdapter: nil,
+            pinningManager: MockPinningManager(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            ),
+            duckPlayerOverlayObserver: {
+                let featureFlagger = MockFeatureFlagger()
+                return DuckPlayerOverlayObserver(
+                    duckPlayer: DuckPlayer(
+                        preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                        privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    ),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: featureFlagger
+                )
+            }(),
+            updateController: nil,
+            updateNotificationBridge: nil,
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver(),
+            vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
+            syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill),
+            bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                isBookmarksBarSettingOn: { true },
+                notificationCenter: NotificationCenter(),
+                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            )
+        )
+    }
+}
+
+extension SyncPromoManager {
+
+    static func makeForTesting(content: SyncPromoContent) -> SyncPromoManager {
+        SyncPromoManager(
+            content: content,
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            syncService: nil,
+            contentCountProvider: { 0 },
+            isDuckDuckGoPasswordManager: { false },
+            legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+            openSyncSettings: { },
+            recordResult: { _, _ in }
         )
     }
 }

@@ -19,11 +19,13 @@
 import AppKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import CoreGraphics
+import FoundationExtensions
 import OSLog
 import PixelKit
-import SwiftUI
 import QuartzCore
+import SwiftUI
 
 /// Delegate protocol for WarnBeforeQuitManager (mockable DuckDuckGo_Privacy_Browser.Application) to handle event interception
 @MainActor
@@ -676,10 +678,10 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
 extension PixelFiring {
     /// Fire a pixel and wait for completion asynchronously (with timeout)
-    func fireAndWait(_ event: PixelKitEvent, frequency: PixelKit.Frequency, timeout: TimeInterval = 1) async {
+    func fireAndWait(_ event: PixelKit.Event, frequency: PixelKit.Frequency, timeout: TimeInterval = 1) async {
         try? await withTimeout(timeout) {
             await withCancellableContinuation { resume, _ in
-                fire(event, frequency: frequency) { _, _ in
+                fire(event: event, frequency: frequency, options: .default) { _, _ in
                     DispatchQueue.main.asyncOrNow {
                         resume(())
                     }

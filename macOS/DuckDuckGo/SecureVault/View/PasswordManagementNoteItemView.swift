@@ -69,7 +69,7 @@ private struct Buttons: View {
     var body: some View {
         HStack {
 
-            Text("⚠️ Notes are deprecated.")
+            Text("⚠️ Notes are deprecated.", bundle: #bundle)
                 .font(.body)
                 .foregroundColor(Color.secondary)
 
@@ -97,7 +97,7 @@ private struct NoteTitleView: View {
             .bold()
             .padding(.bottom, itemSpacing)
 
-        TextField("", text: $model.title)
+        TextField("" as String, text: $model.title)
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .padding(.bottom, interItemSpacing)
 
@@ -113,13 +113,9 @@ private struct TextView: View {
         VStack(alignment: .leading, spacing: 0) {
 
                 HStack {
-                    if #available(macOS 12, *) {
-                        Text(model.text)
-                            .foregroundColor(Color.secondary)
-                            .textSelection(.enabled)
-                    } else {
-                        Text(model.text)
-                    }
+                    Text(model.text)
+                        .foregroundColor(Color.secondary)
+                        .textSelection(.enabled)
 
                     Spacer()
                 }

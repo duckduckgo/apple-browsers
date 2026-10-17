@@ -41,6 +41,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CxxCrashHandler
 import Foundation
 import os.log
@@ -110,8 +111,11 @@ public struct CrashLogMessageExtractor {
     }
 
     fileprivate static var nextUncaughtExceptionHandler: NSUncaughtExceptionHandler?
-    fileprivate static var nextCppTerminateHandler: (() -> Void)!
+    internal static var nextCppTerminateHandler: (() -> Void)!
     fileprivate static var diagnosticsDirectory: URL!
+    // Guards against re-entrant calls to the terminate handler (e.g. when `throw;`
+    // inside `currentCxxException` triggers another `std::terminate` on Apple's libc++abi).
+    internal static var isHandlingTermination = false
 
     /// Install uncaught NSException and C++ exception handlers.
     /// - Parameters:
@@ -231,14 +235,33 @@ public struct CrashLogMessageExtractor {
 
 }
 
-// `std::terminate` C++ unhandled exception handler
+// `std::terminate` C++ unhandled exception handler — C callback registered via SetCxxExceptionTerminateHandler.
 private func handleTerminateOnCxxException() {
-    // convert C++ exception to NSException (with name, description and stack trace) and handle it
-    if let exception = NSException.currentCxxException() {
-        handleException(exception)
+    CrashLogMessageExtractor.handleCxxTerminate()
+}
+
+extension CrashLogMessageExtractor {
+    /// Body of the `std::terminate` handler, separated so it can be exercised in tests.
+    ///
+    /// Re-entrant calls happen because `throw;` inside `currentCxxException` runs `__cxa_rethrow`.
+    /// On Apple's libc++abi (Darwin 25+) that requires an active *catch* context; when called
+    /// from a terminate handler (no catch context), it calls `std::terminate` again, recursing
+    /// until stack overflow.  The flag breaks the loop: on re-entry skip crash recording and
+    /// jump directly to the next handler.
+    internal static func handleCxxTerminate() {
+        guard !isHandlingTermination else {
+            nextCppTerminateHandler()
+            return
+        }
+        isHandlingTermination = true
+
+        // convert C++ exception to NSException (with name, description and stack trace) and handle it
+        if let exception = NSException.currentCxxException() {
+            handleException(exception)
+        }
+        // default handler
+        nextCppTerminateHandler()
     }
-    // default handler
-    CrashLogMessageExtractor.nextCppTerminateHandler()
 }
 
 // NSUncaughtExceptionHandler

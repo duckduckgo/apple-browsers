@@ -19,6 +19,8 @@
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
@@ -30,6 +32,7 @@ final class MainWindowController: NSWindowController {
     private var cancellables: Set<AnyCancellable> = []
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
+    let fireWindowOpenTrigger: FireWindowOpenTrigger?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
 
@@ -37,6 +40,7 @@ final class MainWindowController: NSWindowController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger?
+    private weak var windowControllersManager: WindowControllersManager?
 
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
 
@@ -50,9 +54,11 @@ final class MainWindowController: NSWindowController {
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
+         fireWindowOpenTrigger: FireWindowOpenTrigger? = nil,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -69,10 +75,12 @@ final class MainWindowController: NSWindowController {
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession
+        self.fireWindowOpenTrigger = fireWindowOpenTrigger
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
 
         super.init(window: window)
 
@@ -84,6 +92,8 @@ final class MainWindowController: NSWindowController {
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
         subscribeToThemeChanges()
+        subscribeToEffectiveAppearance()
+        subscribeToWindowOcclusion()
 
         applyThemeStyle()
 
@@ -124,6 +134,7 @@ final class MainWindowController: NSWindowController {
                 // Set onboarding settings so state is persisted across app re-launches during UI Tests
                 if isOnboardingCompleted {
                     OnboardingActionsManager.isOnboardingFinished = true
+                    OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
                 }
                 return !isOnboardingCompleted
             }
@@ -139,6 +150,7 @@ final class MainWindowController: NSWindowController {
         if !AppVersion.runType.allowsOnboarding {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             OnboardingActionsManager.isOnboardingFinished = true
+            OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {
@@ -155,20 +167,75 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
+    /// Automation runs and overridden onboarding would enrol without being real first runs.
+    private var isEligibleForNonBlockingExperiment: Bool {
+        let launchOptions = LaunchOptionsHandler()
+        guard !launchOptions.isAutomationSession,
+              case .notOverridden = launchOptions.onboardingStatus else { return false }
+        return true
+    }
+
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
-        // During Onboarding, several UI elements get disabled. In order to prevent flickering, we'll disable them right after kicking off Onboarding.
-        // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
-        //
+        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
+        if isEligibleForNonBlockingExperiment {
+            experiment?.enroll()
+        }
+        let isNonBlocking = experiment?.isNonBlocking == true
+        if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
+            return
+        }
+
         selectedTab.startOnboarding()
-        userInteraction(prevented: true)
+        configureOnboardingInteraction(for: selectedTab, isNonBlocking: isNonBlocking)
+    }
+
+    private func configureOnboardingInteraction(for tab: Tab, isNonBlocking: Bool) {
+        if isNonBlocking {
+            // Track the source before selection can change or the page can be closed.
+            windowControllersManager?.setOnboardingTab(tab)
+            tab.onboardingActionsManager?.installNonBlockingHandlers()
+        } else {
+            // Lock immediately to avoid flicker while the onboarding script loads.
+            userInteraction(prevented: true)
+        }
     }
 
     private func subscribeToResolutionChange() {
         NotificationCenter.default.addObserver(self, selector: #selector(didChangeScreenParameters), name: NSApplication.didChangeScreenParametersNotification, object: NSApp)
+    }
+
+    private func subscribeToEffectiveAppearance() {
+        // The titlebarView layer color set in applyThemeStyle is a frozen CGColor that, unlike
+        // window.backgroundColor, does not track the effective appearance. Re-apply the theme when the
+        // appearance changes (e.g. the system switches between light and dark while following the system
+        // setting) so the strip above the tab bar stays in sync. Only relevant on Liquid Glass UI.
+        guard AppVersion.isLiquidGlassSupported else { return }
+        NSApp.publisher(for: \.effectiveAppearance)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToWindowOcclusion() {
+        // A window occluded by a full screen Space — either another window's native Full Screen or a
+        // WKFullScreenWindowController video — doesn't reliably repaint its titlebar strip when the
+        // system appearance changes while it's off screen: subscribeToEffectiveAppearance() runs, but
+        // the layer color assignment doesn't stick until the window is on screen again. Re-apply the
+        // theme when the window becomes visible, when its effective appearance is guaranteed current.
+        guard AppVersion.isLiquidGlassSupported, let window else { return }
+        NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification, object: window)
+            .filter { ($0.object as? NSWindow)?.occlusionState.contains(.visible) == true }
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToFullScreenToolbarChanges() {
@@ -224,7 +291,7 @@ final class MainWindowController: NSWindowController {
 
     private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
-        guard let window, let featureFlagger, featureFlagger.isFeatureOn(.semaphoreAlwaysVisible) else {
+        guard let window else {
             return
         }
 
@@ -247,13 +314,30 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
+    private var didMoveTabBarForFireAnimation = false
+    private(set) var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink { [weak self] burningData in
-                self?.moveTabBarView(toTitlebarView: burningData == nil)
+                guard let self else { return }
+                // The tab bar is only moved out of the titlebar so the fire animation can cover it.
+                // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
+                // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
+                if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
+                    moveTabBarView(toTitlebarView: false)
+                    // The titlebar has an opaque background (see applyThemeStyle) and sits above the
+                    // full-window fire animation. With the tab bar moved out, that leaves a blank bar
+                    // over the animation — clear it so the animation shows through, and restore it after.
+                    setTitlebarBackgroundColor(.clear)
+                    didMoveTabBarForFireAnimation = true
+                } else if burningData == nil, didMoveTabBarForFireAnimation {
+                    moveTabBarView(toTitlebarView: true)
+                    setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
+                    didMoveTabBarForFireAnimation = false
+                }
             }
     }
 
@@ -315,6 +399,17 @@ final class MainWindowController: NSWindowController {
         NSLayoutConstraint.activate(constraints)
     }
 
+    /// Sets the titlebar view's layer background color on Liquid Glass, where the titlebar has an
+    /// opaque background (see `applyThemeStyle`). Used both to apply the theme background and to
+    /// clear it during the fire animation so the full-window animation shows through the titlebar.
+    private func setTitlebarBackgroundColor(_ color: NSColor) {
+        guard AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView else { return }
+        titlebarView.wantsLayer = true
+        titlebarView.effectiveAppearance.performAsCurrentDrawingAppearance {
+            titlebarView.layer?.backgroundColor = color.cgColor
+        }
+    }
+
     override func showWindow(_ sender: Any?) {
         window?.makeKeyAndOrderFront(sender)
         register()
@@ -352,6 +447,12 @@ extension MainWindowController: ThemeUpdateListening {
     func applyThemeStyle(theme: ThemeStyleProviding) {
         // Prevent a 2px white line from appearing above the tab bar on macOS 26
         window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
+
+        // The tab bar is added to the titlebarView with a 2pt top padding on Liquid Glass,
+        // leaving a thin strip above it that shows through to whatever is behind the titlebarView.
+        // In fullscreen the titlebarView lives in an auxiliary window whose contentView is opaque
+        // white, so coloring the titlebarView's layer itself is the only way to fill that strip.
+        setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
     }
 }
 
@@ -434,6 +535,12 @@ extension MainWindowController: NSWindowDelegate {
     func windowDidEnterFullScreen(_ notification: Notification) {
         guard let window = self.window else { return }
 
+        // Color the auxiliary fullscreen toolbar window's background to match the theme,
+        // hiding the white line above the title bar that appears on macOS 26 Liquid Glass UI.
+        if AppVersion.isLiquidGlassSupported {
+            applyThemeStyle()
+        }
+
         // Detect split screen vs regular fullscreen mode
         if window.isApproximatelyHalfScreenWide {
             // Fire pixel for split screen usage
@@ -500,7 +607,34 @@ extension MainWindowController: NSWindowDelegate {
         // Because it's also the delegate, deinit within this method caused crash
         // Push the Window Controller into current autorelease pool so it‘s released when the event loop pass ends
         _=Unmanaged.passRetained(self).autorelease()
-        Application.appDelegate.windowControllersManager.unregister(self)
+
+        let windowControllersManager = Application.appDelegate.windowControllersManager
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            // Shared pinned tabs remain open when another window still contains the same Tab instance.
+            let tabsInRemainingWindows = windowControllersManager.mainWindowControllers
+                .filter { $0 !== self }
+                .flatMap { windowController in
+                    windowController.mainViewController.tabCollectionViewModel.loadedPinnedTabs
+                        + windowController.mainViewController.tabCollectionViewModel.loadedTabs
+                }
+            // Shared pinned tabs are owned by the app-level manager and survive even when the last
+            // window closes. They must stay registered with WebKit until they are actually removed.
+            let sharedPinnedTabs = windowControllersManager.pinnedTabsManagerProvider.pinnedTabsMode == .shared
+                ? windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap(\.tabCollection.loadedTabs)
+                : []
+            let tabsInClosingWindow = mainViewController.tabCollectionViewModel.loadedPinnedTabs
+                + mainViewController.tabCollectionViewModel.loadedTabs
+
+            for tab in Self.tabsToCloseForWebExtensions(
+                in: tabsInClosingWindow,
+                retainedByOpenWindows: tabsInRemainingWindows,
+                retainedBySharedPinnedTabs: sharedPinnedTabs
+            ) {
+                webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: true)
+            }
+        }
+
+        windowControllersManager.unregister(self)
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didCloseWindow(self)
@@ -514,12 +648,31 @@ extension MainWindowController: NSWindowDelegate {
     func windowShouldClose(_ window: NSWindow) -> Bool {
         guard mainViewController.tabCollectionViewModel.isBurner else { return true }
 
+        burnAndClose(window)
+        return false
+    }
+
+    static func tabsToCloseForWebExtensions(in closingWindow: [Tab],
+                                            retainedByOpenWindows: [Tab],
+                                            retainedBySharedPinnedTabs: [Tab]) -> [Tab] {
+        let retainedTabIdentifiers = Set((retainedByOpenWindows + retainedBySharedPinnedTabs).map(ObjectIdentifier.init))
+        return closingWindow.filter { !retainedTabIdentifiers.contains(ObjectIdentifier($0)) }
+    }
+
+    /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to come
+    /// through here or they lose the fire animation and the in-progress downloads warning.
+    func burnAndClose(_ window: NSWindow) {
+        // A burn already has the animation on screen and closes windows itself (see Fire.closeWindows).
+        guard fireViewModel.fire.burningData == nil else {
+            window.close()
+            return
+        }
+
         if showAlertIfActiveDownloadsPresent(in: window) {
-            return false
+            return
         }
 
         animateBurningIfNeededAndClose(window)
-        return false
     }
 
     private func showAlertIfActiveDownloadsPresent(in window: NSWindow) -> Bool {
@@ -557,6 +710,10 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
+        // The animation is awaited, so the window stays around and closable in the meantime.
+        guard !isClosingAndBurning else { return }
+        isClosingAndBurning = true
+
         guard !window.isPopUpWindow else {
             window.close()
             return

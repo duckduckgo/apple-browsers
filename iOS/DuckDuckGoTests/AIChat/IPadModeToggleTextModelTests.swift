@@ -95,10 +95,10 @@ final class IPadModeToggleTextModelTests: XCTestCase {
         XCTAssertEqual(transition?.needsKeyboardTransfer, false)
     }
 
-    func testWhenTransitioningFromSearchToAIChatThenTextSelectionIsNotSuppressed() {
+    func testWhenTransitioningFromSearchToAIChatThenDoesNotSelectAllText() {
         let transition = sut.transition(to: .aiChat)
 
-        XCTAssertEqual(transition?.suppressTextSelection, false)
+        XCTAssertEqual(transition?.selectAllText, false)
     }
 
     // MARK: - Transition: AI Chat → Search
@@ -128,12 +128,46 @@ final class IPadModeToggleTextModelTests: XCTestCase {
         XCTAssertEqual(transition?.needsKeyboardTransfer, true)
     }
 
-    func testWhenTransitioningFromAIChatToSearchThenTextSelectionIsSuppressed() {
+    func testWhenTransitioningFromAIChatToSearchWithoutRememberedURLThenDoesNotSelectAllText() {
         _ = sut.transition(to: .aiChat)
 
         let transition = sut.transition(to: .search)
 
-        XCTAssertEqual(transition?.suppressTextSelection, true)
+        XCTAssertEqual(transition?.selectAllText, false)
+    }
+
+    // MARK: - Page URL restore (search ← duck.ai)
+
+    func testWhenReturningToSearchWithRememberedURLAndUntouchedDuckAIThenRestoresAndSelectsURL() {
+        sut.rememberSearchTextToRestore("https://example.com")
+        _ = sut.transition(to: .aiChat)
+
+        let transition = sut.transition(to: .search)
+
+        XCTAssertEqual(transition?.text, "https://example.com")
+        XCTAssertEqual(transition?.selectAllText, true)
+    }
+
+    func testWhenUserTypedInDuckAIThenRememberedURLIsNotRestored() {
+        sut.rememberSearchTextToRestore("https://example.com")
+        _ = sut.transition(to: .aiChat)
+        sut.updateText("weather")
+
+        let transition = sut.transition(to: .search)
+
+        XCTAssertEqual(transition?.text, "weather")
+        XCTAssertEqual(transition?.selectAllText, false)
+    }
+
+    func testWhenRestoreInvalidatedThenRememberedURLIsNotRestored() {
+        sut.rememberSearchTextToRestore("https://example.com")
+        _ = sut.transition(to: .aiChat)
+        sut.invalidateSearchTextToRestore()
+
+        let transition = sut.transition(to: .search)
+
+        XCTAssertNotEqual(transition?.text, "https://example.com")
+        XCTAssertEqual(transition?.selectAllText, false)
     }
 
     // MARK: - No-op Transitions

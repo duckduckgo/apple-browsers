@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import CoreData
 import Persistence
 import os.log
@@ -27,6 +28,10 @@ public enum RemoteMessagingStoreError: Error {
     case saveConfigFailed
     case updateMessageShownFailed
     case updateMessageStatusFailed
+}
+
+public enum RemoteMessageAutoDismissEvent: Equatable {
+    case messageAutoDismissed(messageID: String)
 }
 
 public final class RemoteMessagingStore: RemoteMessagingStoring {
@@ -61,16 +66,21 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     let context: NSManagedObjectContext
     let notificationCenter: NotificationCenter
     let remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+    private let enforcesMaxImpressions: Bool
 
     public init(
         database: CoreDataDatabase,
         notificationCenter: NotificationCenter = .default,
         errorEvents: EventMapping<RemoteMessagingStoreError>?,
+        autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>? = nil,
+        enforcesMaxImpressions: Bool = false,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
     ) {
         self.database = database
         self.notificationCenter = notificationCenter
         self.errorEvents = errorEvents
+        self.autoDismissEvents = autoDismissEvents
+        self.enforcesMaxImpressions = enforcesMaxImpressions
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
         self.context = database.makeContext(concurrencyType: .privateQueueConcurrencyType, name: Constants.privateContextName)
 
@@ -79,10 +89,10 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self else { return }
-                guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases) != nil else {
+                guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases, triggerFilter: .any) != nil else {
                     return
                 }
-                Task {
+                startTrackedTask(.deleteScheduledMessages) {
                     await self.deleteScheduledMessages()
                 }
             }
@@ -148,7 +158,35 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     }
 
     private let errorEvents: EventMapping<RemoteMessagingStoreError>?
+    private let autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>?
     private var featureFlagDisabledCancellable: AnyCancellable?
+
+    private enum PendingTask: Hashable {
+        case dismissal(messageID: String)
+        case deleteScheduledMessages
+    }
+
+    private let pendingTasksLock = NSLock()
+    private var pendingTasks: [PendingTask: Task<Void, Never>] = [:]
+
+    public func waitForStoreInitiatedTasks() async {
+        let tasks = pendingTasksLock.withLock { Array(pendingTasks.values) }
+
+        for task in tasks {
+            await task.value
+        }
+    }
+
+    private func startTrackedTask(_ key: PendingTask, operation: @escaping () async -> Void) {
+        pendingTasksLock.withLock {
+            guard pendingTasks[key] == nil else { return }
+
+            pendingTasks[key] = Task {
+                await operation()
+                self.pendingTasksLock.withLock { self.pendingTasks[key] = nil }
+            }
+        }
+    }
 }
 
 // MARK: - RemoteMessagingConfigManagedObject Public Interface
@@ -213,7 +251,7 @@ extension RemoteMessagingStore {
 
 extension RemoteMessagingStore {
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter = .noTrigger) -> RemoteMessageModel? {
 
         func predicateForSurfaces(_ surfaces: RemoteMessageSurfaceType) -> NSPredicate {
             // Match any message whose surfaces bitmask overlaps with the requested surfaces
@@ -251,13 +289,39 @@ extension RemoteMessagingStore {
                     continue
                 }
 
+                let hasExpired: Bool = {
+                    guard let dismissAfterDays = remoteMessage.displayConditions?.dismissAfterDaysShown,
+                          dismissAfterDays > 0,
+                          let firstShown = remoteMessageManagedObject.firstShownDate,
+                          let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day else {
+                        return false
+                    }
+                    return daysSinceFirstShown >= dismissAfterDays
+                }()
+                let hasReachedImpressionCap: Bool = {
+                    guard self.enforcesMaxImpressions,
+                          let maxImpressions = remoteMessage.displayConditions?.maxImpressions,
+                          maxImpressions > 0 else {
+                        return false
+                    }
+                    return remoteMessageManagedObject.impressionCount >= Int64(maxImpressions)
+                }()
+
+                if hasExpired || hasReachedImpressionCap {
+                    self.autoDismiss(remoteMessage)
+                    continue
+                }
+
+                guard triggerFilter.matches(remoteMessage.displayConditions?.trigger) else { continue }
+
                 scheduledRemoteMessage = RemoteMessageModel(
                     id: id,
                     surfaces: remoteMessageManagedObject.surfaces.flatMap { RemoteMessageSurfaceType(rawValue: $0.int16Value) } ?? .newTabPage,
                     content: remoteMessage.content,
                     matchingRules: [],
                     exclusionRules: [],
-                    isMetricsEnabled: remoteMessage.isMetricsEnabled
+                    isMetricsEnabled: remoteMessage.isMetricsEnabled,
+                    displayConditions: remoteMessage.displayConditions
                 )
                 break
             }
@@ -309,27 +373,39 @@ extension RemoteMessagingStore {
     }
 
     public func dismissRemoteMessage(withID id: String) async {
+        _ = await persistDismissal(of: id, requireScheduledTransition: false)
+    }
+
+    private func persistDismissal(of id: String, requireScheduledTransition: Bool) async -> Bool {
         guard remoteMessagingAvailabilityProvider.isRemoteMessagingAvailable else {
-            return
+            return false
         }
 
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             context.perform { [weak self] in
                 guard let self else {
-                    continuation.resume()
+                    continuation.resume(returning: false)
                     return
                 }
 
-                updateRemoteMessage(withID: id, toStatus: .dismissed, in: context)
+                guard let message = RemoteMessageUtils.fetchRemoteMessage(with: id, in: context),
+                      !requireScheduledTransition || message.status?.int16Value == RemoteMessageStatus.scheduled.rawValue else {
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                message.status = NSNumber(value: RemoteMessageStatus.dismissed.rawValue)
                 invalidateRemoteMessagingConfigs(in: context)
 
                 do {
                     try context.save()
+                    continuation.resume(returning: true)
                 } catch {
                     errorEvents?.fire(.updateMessageStatusFailed, error: error)
                     Logger.remoteMessaging.error("Error saving updateMessageStatus")
+                    context.rollback()
+                    continuation.resume(returning: false)
                 }
-                continuation.resume()
             }
         }
     }
@@ -357,36 +433,63 @@ extension RemoteMessagingStore {
     }
 
     public func updateRemoteMessage(withID id: String, asShown shown: Bool) async {
+        _ = await persistRemoteMessageShownState(withID: id, asShown: shown)
+    }
+
+    public func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult {
+        await persistRemoteMessageShownState(withID: id, asShown: true)
+    }
+
+    private func persistRemoteMessageShownState(withID id: String, asShown shown: Bool) async -> RemoteMessageImpressionResult {
         guard remoteMessagingAvailabilityProvider.isRemoteMessagingAvailable else {
-            return
+            return .notRecorded
         }
 
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             context.perform { [weak self] in
                 guard let self else {
-                    continuation.resume()
+                    continuation.resume(returning: .notRecorded)
                     return
                 }
 
                 let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
-                fetchRequest.predicate = NSPredicate(
-                    format: "%K == %@ AND %K == %d",
-                    #keyPath(RemoteMessageManagedObject.id), id,
-                    #keyPath(RemoteMessageManagedObject.shown), !shown
-                )
+                fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(RemoteMessageManagedObject.id), id)
 
                 do {
                     guard let message = try context.fetch(fetchRequest).first else {
-                        continuation.resume()
+                        continuation.resume(returning: .notRecorded)
                         return
                     }
+                    if shown, self.enforcesMaxImpressions,
+                       let payload = message.message,
+                       let maxImpressions = RemoteMessageMapper.fromString(payload)?.displayConditions?.maxImpressions,
+                       maxImpressions > 0,
+                       message.impressionCount >= Int64(maxImpressions) {
+                        continuation.resume(returning: .notRecorded)
+                        return
+                    }
+                    let isFirstImpression = shown && message.firstShownDate == nil
                     message.shown = shown
+                    if shown {
+                        message.firstShownDate = message.firstShownDate ?? Date()
+                        message.impressionCount += 1
+                    }
                     try context.save()
+                    if shown {
+                        Logger.remoteMessaging.info(
+                            "Remote message impression count updated: \(id, privacy: .public), count: \(message.impressionCount, privacy: .public)"
+                        )
+                        continuation.resume(returning: .recorded(isFirstImpression: isFirstImpression,
+                                                                 impressionCount: message.impressionCount))
+                    } else {
+                        continuation.resume(returning: .notRecorded)
+                    }
                 } catch {
                     errorEvents?.fire(.updateMessageShownFailed, error: error)
-                    Logger.remoteMessaging.error("Failed to save message update as shown")
+                    Logger.remoteMessaging.error("Failed to save message shown state")
+                    context.rollback()
+                    continuation.resume(returning: .notRecorded)
                 }
-                continuation.resume()
             }
         }
     }
@@ -444,14 +547,13 @@ extension RemoteMessagingStore {
         }
     }
 
-    private func updateRemoteMessage(withID id: String, toStatus status: RemoteMessageStatus, in context: NSManagedObjectContext) {
-        let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %@", id)
-        fetchRequest.returnsObjectsAsFaults = false
-
-        guard let results = try? context.fetch(fetchRequest) else { return }
-
-        results.forEach { $0.status = NSNumber(value: status.rawValue) }
+    private func autoDismiss(_ remoteMessage: RemoteMessageModel) {
+        startTrackedTask(.dismissal(messageID: remoteMessage.id)) {
+            let didPersistDismissal = await self.persistDismissal(of: remoteMessage.id, requireScheduledTransition: true)
+            if didPersistDismissal, remoteMessage.isMetricsEnabled {
+                self.autoDismissEvents?.fire(.messageAutoDismissed(messageID: remoteMessage.id))
+            }
+        }
     }
 
     private func markScheduledMessagesAsDone(in context: NSManagedObjectContext) {

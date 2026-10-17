@@ -219,6 +219,7 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             subscriptionDaysSinceSubscribed: 5,
             subscriptionDaysUntilExpiry: 25,
             subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,
@@ -232,7 +233,11 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             isCurrentFreemiumPIRUser: false,
             isCurrentPIRUser: isCurrentPIRUser,
             dismissedDeprecatedMacRemoteMessageIds: dismissedDeprecatedMacRemoteMessageIds,
-            enabledFeatureFlags: []
+            enabledFeatureFlags: [],
+            isReturningUser: nil,
+            isAIChatEnabled: false,
+            triedAIChatDuringOnboarding: false,
+            isAIChatBoostActive: nil
         )
     }
 }

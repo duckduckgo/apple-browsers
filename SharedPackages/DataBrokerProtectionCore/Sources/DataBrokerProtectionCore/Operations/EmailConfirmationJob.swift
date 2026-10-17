@@ -136,8 +136,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             parentURL: broker.parent,
             isFreeScan: false,
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
-            vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown",
-            featureFlagger: jobDependencies.featureFlagger
+            vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
@@ -171,7 +170,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: attemptNumber)
             markSubmissionWideEventCompleted(
                 broker: broker,
-                profileIdentifier: extractedProfile.identifier,
                 brokerId: jobData.brokerId,
                 profileQueryId: jobData.profileQueryId,
                 extractedProfileId: jobData.extractedProfileId
@@ -218,9 +216,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
 
-        let applicationNameForUserAgent: String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
-            ? jobDependencies.applicationNameForUserAgent
-            : nil
+        let applicationNameForUserAgentProvider: () -> String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
+            ? jobDependencies.applicationNameForUserAgentProvider
+            : { nil }
 
         let webRunner: BrokerProfileOptOutSubJobWebProtocol
         if let webRunnerForTesting = self.webRunnerForTesting {
@@ -233,11 +231,12 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
                 captchaService: jobDependencies.captchaService,
                 featureFlagger: jobDependencies.featureFlagger,
-                applicationNameForUserAgent: applicationNameForUserAgent,
+                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
                 stageCalculator: stageDurationCalculator,
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
                 actionsHandlerMode: .emailConfirmation(confirmationURL),
+                contentBlocking: jobDependencies.contentBlocking,
                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
@@ -255,11 +254,15 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 delegate: webRunner,
                 isFakeBroker: broker.isFakeBroker,
                 executionConfig: jobDependencies.executionConfig,
+                challengePixelDataBroker: broker.url,
+                challengePixelBrokerVersion: broker.version,
                 shouldContinueActionHandler: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
                 },
-                applicationNameForUserAgent: applicationNameForUserAgent
+                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
+                contentBlocking: jobDependencies.contentBlocking,
+                pixelHandler: jobDependencies.pixelHandler
             )
         } else {
             assertionFailure("webRunner must conform to CCFCommunicationDelegate")
@@ -305,7 +308,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             extractedProfileId: jobData.extractedProfileId
         )
 
-        let updater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        let updater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                    featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
         try updater.updateChildrenBrokerForParentBroker(broker, profileQueryId: jobData.profileQueryId)
 
         try updateOperationDataDates(
@@ -401,7 +405,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                           extractedProfileId: Int64?,
                                           schedulingConfig: DataBrokerScheduleConfig,
                                           database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdater(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database,
+                                                        featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,
@@ -410,7 +415,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func markSubmissionWideEventCompleted(broker: DataBroker,
-                                                  profileIdentifier: String?,
                                                   brokerId: Int64,
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) {
@@ -420,10 +424,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                               brokerId: brokerId,
                                                               profileQueryId: profileQueryId,
                                                               extractedProfileId: extractedProfileId)
-        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
-                                                            brokerId: brokerId,
-                                                            profileQueryId: profileQueryId,
-                                                            extractedProfileId: extractedProfileId)
+        let wideEventId = OptOutWideEventIdentifier(brokerId: brokerId,
+                                                    profileQueryId: profileQueryId,
+                                                    extractedProfileId: extractedProfileId)
         OptOutSubmissionWideEventRecorder.startIfPossible(
             wideEvent: wideEvent,
             identifier: wideEventId,

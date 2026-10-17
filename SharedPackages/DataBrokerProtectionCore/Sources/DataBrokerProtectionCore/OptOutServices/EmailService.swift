@@ -28,12 +28,13 @@ public enum EmailError: Error, Equatable, Codable {
     case cantDecodeEmailLink
     case unknownStatusReceived(email: String)
     case cancelled
-    case httpError(statusCode: Int)
+    case httpError(statusCode: Int, message: String?)
     case unknownHTTPError
     case extractionError
     case requestError
     case serverError
     case retriesExceeded
+    case alreadyGeneratedEmail
 }
 
 public struct EmailData: Decodable {
@@ -100,7 +101,7 @@ public struct EmailService: EmailServiceProtocol {
         request.setValue(authHeader, forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await urlSession.data(for: request)
-        try validateHTTPResponse(response)
+        try validateHTTPResponse(response, body: data)
 
         do {
             let emailData = try JSONDecoder().decode(EmailData.self, from: data)
@@ -112,11 +113,13 @@ public struct EmailService: EmailServiceProtocol {
         }
     }
 
-    private func validateHTTPResponse(_ response: URLResponse) throws {
+    private func validateHTTPResponse(_ response: URLResponse, body: Data) throws {
         if let httpResponse = response as? HTTPURLResponse {
             if !(200...299).contains(httpResponse.statusCode) {
                 servicePixel.fireGenerateEmailHTTPError(statusCode: httpResponse.statusCode)
-                throw EmailError.httpError(statusCode: httpResponse.statusCode)
+                let message = body.isEmpty ? nil : String(bytes: body.prefix(200), encoding: .utf8)
+                throw EmailError.httpError(statusCode: httpResponse.statusCode,
+                                           message: message)
             }
         } else {
             servicePixel.fireGenerateEmailHTTPError(statusCode: 0)
@@ -224,7 +227,7 @@ extension EmailError: LocalizedError {
             return "Unknown email status received"
         case .cancelled:
             return "Email operation cancelled"
-        case .httpError(let statusCode):
+        case .httpError(let statusCode, _):
             return "Email HTTP error \(statusCode)"
         case .unknownHTTPError:
             return "Unknown email HTTP error"
@@ -236,6 +239,22 @@ extension EmailError: LocalizedError {
             return "Email server error"
         case .retriesExceeded:
             return "Email retries exceeded"
+        case .alreadyGeneratedEmail:
+            return "generateEmail action ran more than once in the same job"
+        }
+    }
+}
+
+extension EmailError {
+    var debugDescription: String {
+        switch self {
+        case .httpError(let statusCode, let message):
+            guard let message, !message.isEmpty else {
+                return "Email HTTP error \(statusCode)"
+            }
+            return "Email HTTP error \(statusCode): \(message)"
+        default:
+            return localizedDescription
         }
     }
 }

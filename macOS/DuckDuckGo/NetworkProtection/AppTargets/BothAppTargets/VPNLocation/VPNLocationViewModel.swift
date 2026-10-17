@@ -29,6 +29,7 @@ final class VPNLocationViewModel: ObservableObject {
     private var selectedLocation: VPNSettings.SelectedLocation
     @Published public var state: LoadingState
     @Published public var isNearestSelected: Bool
+    @Published public var isSubmitEnabled: Bool
 
     enum ViewAction {
         case cancel
@@ -54,6 +55,7 @@ final class VPNLocationViewModel: ObservableObject {
         self.settings = settings
         selectedLocation = settings.selectedLocation
         self.isNearestSelected = selectedLocation == .nearest
+        self.isSubmitEnabled = selectedLocation != settings.selectedLocation
         if let cachedCountryItems = Self.cachedCountryItems {
             state = .loaded(countryItems: cachedCountryItems)
         } else {
@@ -94,6 +96,8 @@ final class VPNLocationViewModel: ObservableObject {
 
     @MainActor
     private func reloadList() async {
+        isSubmitEnabled = selectedLocation != settings.selectedLocation
+
         guard let locations = (try? await locationListRepository.fetchLocationList().sortedByName()) ?? Self.cachedLocations else {
             return
         }

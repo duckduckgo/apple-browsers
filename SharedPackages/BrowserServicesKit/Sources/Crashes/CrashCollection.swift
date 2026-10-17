@@ -21,6 +21,7 @@ import MetricKit
 import Persistence
 import os.log
 import Common
+import FoundationExtensions
 
 public enum CrashCollectionPlatform {
     case iOS, macOS, macOSAppStore
@@ -44,11 +45,18 @@ public enum CrashReportPixelParameter: String {
     case signal
     case first
     case bundle
+    case terminationReason
 }
 
 @available(iOSApplicationExtension, unavailable)
-@available(iOS 13, macOS 12, *)
+@available(iOS 13, *)
 public final class CrashCollection {
+
+    /// Crash reports whose crash occurred more than this long ago are excluded from crash pixels.
+    ///
+    /// This prevents old crashes from skewing crash metrics and causing false alarms.
+    /// Such reports are still uploaded to Sentry, only pixel reporting is affected.
+    public static let maxCrashReportAgeForPixels: TimeInterval = .days(7)
 
     public init(crashReportSender: CrashReportSending,
                 crashCollectionStorage: KeyValueStoring = UserDefaults.standard) {
@@ -75,12 +83,16 @@ public final class CrashCollection {
                                                       _ payloads: [Data],
                                                       _ uploadReports: @escaping () -> Void) -> Void,
                       didFinishHandlingResponse: @escaping (() -> Void) = {}) {
-        let first = isFirstCrash
-        isFirstCrash = false
-
         crashHandler.crashDiagnosticsPayloadHandler = { payloads in
             Logger.general.log("😵 loaded \(payloads.count, privacy: .public) diagnostic payloads")
+
+            let first = self.isFirstCrash
+
+            // Exclude crash reports older than `maxCrashReportAgeForPixels` from crash pixels to
+            // avoid skewing metrics with stale crashes. Uploads (`process` below) are unaffected.
+            let pixelReportingCutoffDate = Date().addingTimeInterval(-Self.maxCrashReportAgeForPixels)
             let pixelParameters = payloads
+                .filter { $0.timeStampBegin >= pixelReportingCutoffDate }
                 .compactMap(\.crashDiagnostics)
                 .flatMap { $0 }
                 .map { diagnostic in
@@ -90,6 +102,7 @@ public final class CrashCollection {
                         .code: "\(diagnostic.exceptionCode ?? -1)",
                         .type: "\(diagnostic.exceptionType ?? -1)",
                         .signal: "\(diagnostic.signal ?? -1)",
+                        .terminationReason: Self.pixelTerminationReason(from: diagnostic.terminationReason),
                     ]
                     if first {
                         params[.first] = "1"
@@ -99,6 +112,13 @@ public final class CrashCollection {
                     params[.bundle] = metadataJSON?["bundleIdentifier"] as? String
                     return params
                 }
+
+            // Only consume the first-crash flag once we've actually reported a crash pixel, so a
+            // batch of exclusively stale (age-filtered) crashes doesn't clear it before an in-window
+            // crash is reported.
+            if !pixelParameters.isEmpty {
+                self.isFirstCrash = false
+            }
 
             // Only process crash diagnostics
             let processedData = process(payloads.filter({ $0.crashDiagnostics?.isEmpty == false }))
@@ -229,6 +249,31 @@ public final class CrashCollection {
     let crashSender: CrashReportSending
     let crashCollectionStorage: KeyValueStoring
     let crcidManager: CRCIDManager
+
+    // MARK: - Termination Reason
+
+    private static let terminationReasonRegex = try? NSRegularExpression(
+        pattern: #"Namespace\s+([A-Za-z0-9_]{1,32}),\s*Code\s+(0x[0-9A-Fa-f]{1,16}|[0-9]{1,20})"#
+    )
+
+    /// Reduces an `MXCrashDiagnostic.terminationReason` to its namespace and code, e.g.
+    /// "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression" becomes
+    /// "springboard_0x8badf00d". Only the namespace and code are kept, so free text from the OS
+    /// never reaches the pixel.
+    ///
+    /// - Returns: "-1" when the crash has no termination reason, "unknown" when it can't be parsed.
+    static func pixelTerminationReason(from terminationReason: String?) -> String {
+        guard let terminationReason, !terminationReason.isEmpty else { return "-1" }
+
+        guard let regex = terminationReasonRegex,
+              let match = regex.firstMatch(in: terminationReason, range: NSRange(terminationReason.startIndex..., in: terminationReason)),
+              let namespaceRange = Range(match.range(at: 1), in: terminationReason),
+              let codeRange = Range(match.range(at: 2), in: terminationReason) else {
+            return "unknown"
+        }
+
+        return "\(terminationReason[namespaceRange])_\(terminationReason[codeRange])".lowercased()
+    }
 
     // MARK: - Call Stack Tree Depth Limiting
 

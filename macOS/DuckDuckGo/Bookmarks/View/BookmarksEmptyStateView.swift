@@ -101,9 +101,9 @@ public struct BookmarksEmptyStateView: View {
                     }
                     .buttonStyle(DynamicWidthButtonStyle(
                         maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
-                        defaultBackgroundColor: .buttonsPrimaryDefault,
-                        pressedBackgroundColor: .buttonsPrimaryPressed,
-                        textColor: .buttonsPrimaryText
+                        defaultBackgroundColor: .accentPrimary,
+                        pressedBackgroundColor: .accentSecondary,
+                        textColor: .accentContentPrimary
                     ))
                 }
             }

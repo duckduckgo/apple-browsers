@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import SwiftUI
 
 @available(macOS 13.5, *)

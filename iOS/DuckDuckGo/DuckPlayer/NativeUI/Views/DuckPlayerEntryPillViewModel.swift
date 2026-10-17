@@ -20,16 +20,39 @@
 import Foundation
 import Combine
 import SwiftUI
+import UIKit
 
 @MainActor
 final class DuckPlayerEntryPillViewModel: ObservableObject {
     var onOpen: () -> Void
 
     @Published var isVisible: Bool = false
+    /// YouTube thumbnail, only used by the floating entry pill. The legacy pill ignores it.
+    @Published var thumbnailURL: URL?
+    /// Downloaded thumbnail. Floating pill waits for this so it slides in as one unit.
+    @Published var thumbnailImage: UIImage?
     private(set) var shouldAnimate: Bool = true
 
-    init(onOpen: @escaping () -> Void) {
+    private let videoID: String?
+    private let oEmbedService: YoutubeOembedService
+
+    init(videoID: String? = nil,
+         oEmbedService: YoutubeOembedService = DefaultYoutubeOembedService(),
+         onOpen: @escaping () -> Void) {
+        self.videoID = videoID
+        self.oEmbedService = oEmbedService
         self.onOpen = onOpen
+        if let videoID {
+            Task { await updateThumbnail(for: videoID) }
+        }
+    }
+
+    @MainActor
+    private func updateThumbnail(for videoID: String) async {
+        guard let response = await oEmbedService.fetchMetadata(for: videoID),
+              let url = URL(string: response.thumbnailUrl) else { return }
+        thumbnailURL = url
+        thumbnailImage = await DuckPlayerThumbnailLoader.loadImage(from: url)
     }
 
     func updateOnOpen(_ onOpen: @escaping () -> Void) {

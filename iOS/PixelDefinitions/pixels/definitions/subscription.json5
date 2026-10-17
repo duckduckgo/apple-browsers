@@ -76,6 +76,57 @@
         ]
     },
 
+    // VPN Subscription Funnel Entry Points
+    "subscription_vpn_toolbar_impression": {
+        "description": "Fired when the customizable toolbar VPN button is presented to the user (customization enabled and VPN selected as the toolbar button).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
+    },
+    "subscription_vpn_toolbar_click": {
+        "description": "Fired when a non-subscriber taps the customizable toolbar VPN button and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
+    },
+    "subscription_vpn_address-bar_impression": {
+        "description": "Fired when the customizable address-bar VPN button is presented to the user (customization enabled and VPN selected as the address-bar button).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
+    },
+    "subscription_vpn_address-bar_click": {
+        "description": "Fired when a non-subscriber taps the customizable address-bar VPN button and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "vpnSubscriptionActive"]
+    },
+    "subscription_vpn_widget_click": {
+        "description": "Fired when a non-subscriber taps the VPN widget entry point and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_vpn_shortcut_click": {
+        "description": "Fired when a non-subscriber taps the VPN app shortcut entry point and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_vpn_notification_click": {
+        "description": "Fired when a non-subscriber taps the VPN notification entry point and is redirected into the subscription funnel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
     // Pending Transaction Recovery
     "m_privacy-pro_purchase_success_after_pending_transaction": {
         "description": "Fired when a subscription purchase succeeds after previously being in a pending transaction state (e.g., Ask to Buy was approved)",
@@ -259,6 +310,52 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    // Subscription Funnel Entry-Point Pixels (App Menu, App Settings)
+    "m_subscription_appmenu_impression": {
+        "description": "Fired when the VPN/subscription entry is rendered in the iOS overflow menu to a non-subscriber. Gated on the vpnMenuItem feature flag, App Store products availability, and non-subscribed status. Used to count subscription-funnel entry-point exposure.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_appmenu_subscription_click": {
+        "description": "Fired when the user taps the VPN/subscription entry in the iOS overflow menu. Used to count subscription-funnel entry-point click-through.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_settings_impression": {
+        "description": "Fired when the Subscribe-to-DuckDuckGo row is rendered in iOS Settings to a non-subscriber. Used to count subscription-funnel entry-point exposure.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_settings_subscription_click": {
+        "description": "Fired when the user taps the Subscribe-to-DuckDuckGo row in iOS Settings. Used to count subscription-funnel entry-point click-through.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    // VPN Access-Revoked Alert Pixels
+    "m_vpn_access_revoked_alert_shown": {
+        "description": "Fired when the VPN access-revoked alert is presented to the user after their subscription expired. Used to count exposure of the revoked-subscription funnel entry-point on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_vpn_access_revoked_alert_subscribe_button_clicked": {
+        "description": "Fired when the user taps the Subscribe button in the VPN access-revoked alert. Used to count revoked-subscription funnel click-through on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
     // Onboarding Subscription Promotion Pixels
     "m_privacy-pro_onboarding_promotion_impression": {
         "description": "Fired when the subscription promotion is shown during onboarding",
@@ -300,6 +397,29 @@
     "m_privacy-pro_skipped_onboarding_promotion_dismiss": {
         "description": "Fired when the user dismisses the skipped-onboarding subscription promotion modal",
         "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+
+    // Existing User (Day 7) Subscription Promotion Pixels
+    "m_privacy-pro_existing_user_promotion_impression": {
+        "description": "Fired when the subscription promotion modal is shown to an existing user (7+ days since install) who has never seen a subscription offer",
+        "owners": ["mallexxx", "jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_existing_user_promotion_tap": {
+        "description": "Fired when the user taps the subscription promotion CTA on the existing-user modal",
+        "owners": ["mallexxx", "jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_existing_user_promotion_dismiss": {
+        "description": "Fired when the user dismisses the existing-user subscription promotion modal",
+        "owners": ["mallexxx", "jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "returningUser", "freeTrial"]
@@ -357,6 +477,29 @@
                 "enum": ["d1", "d2_to_d7"]
             }
         ]
+    },
+
+    "m_privacy-pro_offer_screen_impression": {
+        "description": "Fired when the subscription offer page is shown to the user. Mid-funnel pixel that closes the loop between an entry-point click and the purchase attempt.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+    },
+    "m_privacy-pro_terms-conditions_subscribe_click": {
+        "description": "Fired when the user taps the Subscribe CTA on the subscription offer page. Mid-funnel pixel preceding the purchase attempt outcome.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+    },
+
+    "m_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin", "locale", "freeTrial"]
     },
 
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
@@ -439,10 +582,26 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "feature.data.ext.funnel_name",
+                "key": "feature.data.ext.entry_point",
                 "type": "string",
-                "description": "The funnel that led to the subscription flow",
-                "pattern": "^funnel_"
+                "description": "The coarse product surface that led to the subscription flow",
+                "enum": [
+                    "app_menu",
+                    "app_promotion",
+                    "settings",
+                    "onboarding",
+                    "new_tab_page",
+                    "duck_ai",
+                    "vpn",
+                    "personal_information_removal",
+                    "web",
+                    "unknown"
+                ]
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -520,6 +679,11 @@
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -609,8 +773,7 @@
             {
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "The funnel that led to the plan change flow",
-                "pattern": "^funnel_"
+                "description": "The funnel that led to the plan change flow. Note: older app versions sent shorter, non-prefixed values (e.g. 'cancel-downgrade')."
             }
         ]
     },
@@ -663,13 +826,21 @@
                 "key": "feature.data.ext.refresh_trigger",
                 "type": "string",
                 "description": "String representing what caused the token refresh to begin",
-                "enum": ["backend", "client", "token_adoption"]
+                "enum": ["backend", "client", "create_if_needed", "token_adoption"]
             },
             {
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write"]
+                "enum": [
+                    "token_read",
+                    "refresh_access_token",
+                    "fetch_jwks",
+                    "verify_access_token",
+                    "verify_refresh_token",
+                    "token_write",
+                    "recover_invalid_token"
+                ]
             },
             {
                 "key": "feature.data.ext.refresh_token_latency_ms_bucketed",
@@ -682,7 +853,206 @@
                 "type": "integer",
                 "description": "Bucketed latency for the JWKS fetch step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency from invalid-token detection to recovery outcome (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_outcome",
+                "type": "string",
+                "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
+                "enum": ["not_attempted", "succeeded", "failed"]
+            },
+            {
+                "key": "feature.data.ext.signed_out",
+                "type": "boolean",
+                "description": "Whether this refresh ended with the user being signed out. Always emitted; true when invalid-token recovery failed or was not attempted, or when the backend reported an unknown account"
+            },
+            {
+                "key": "feature.data.ext.subscription_status",
+                "type": "string",
+                "description": "Status of the cached subscription when the refresh started. unavailable means no subscription was cached; unknown is a status returned by the backend",
+                "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+            },
+            {
+                "key": "feature.data.ext.netp_is_running",
+                "type": "boolean",
+                "description": "Whether the VPN tunnel was connected when the refresh started. Only emitted from the packet tunnel extension; false while the tunnel is still starting up"
             }
         ]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
+    "m_ios_wide_auth_v2_token_adoption": {
+        "description": "Wide pixel sent after an AuthV2 token adoption event",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-authv2-token-adoption"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide event",
+                "enum": ["authv2-token-adoption"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                "enum": ["partial_data"]
+            },
+            {
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["token_adoption", "token_refresh"]
+            },
+            {
+                "key": "feature.data.ext.adoption_source",
+                "type": "string",
+                "description": "What caused the token to be adopted, when known",
+                "enum": ["web_restore", "vpn"]
+            }
+        ]
+    },
+
+    // Subscription Onboarding Flow
+    "subscription_onboarding_step_shown_": {
+        "description": "Fired when an onboarding step is shown. The step name is the pixel's suffix.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step that was shown",
+                "enum": ["intro", "features_summary", "vpn", "idtr", "duck_ai", "pir", "completion"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_completed_": {
+        "description": "Fired when an onboarding step is completed — the protection it offers was activated. Only activation steps can complete.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step that was completed",
+                "enum": ["vpn", "idtr", "duck_ai", "pir"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_skipped_": {
+        "description": "Fired when the customer leaves an onboarding step via its skip CTA. Only the VPN and Duck.ai steps have one.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step that was skipped",
+                "enum": ["vpn", "duck_ai"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_connection-info_failure": {
+        "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_ai-models_failure": {
+        "description": "Fired when the Duck.ai model list fetch fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_subscription_failure": {
+        "description": "Fired when the subscription fetch behind the order confirmation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_post_purchase_launch_failure": {
+        "description": "Fired when a purchase that should present onboarding fails to launch the flow. By design there is no retry, so this purchase never gets onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why the flow never launched",
+                "enum": ["missingPersistor", "emptyChecklist", "notPresentable"]
+            }
+        ]
+    },
+    "m_privacy-pro_app-settings_partner-benefits_click": {
+        "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",
+        "owners": ["bwaresiak", "jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

@@ -19,8 +19,9 @@
 import Cocoa
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -30,6 +31,37 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController)
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL)
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion)
+
+    /// For surfaces whose `routesSubmissionThroughHost` is set. `query` is the plain text the tab
+    /// opener needs; `payload` carries what the host re-applies once the tab is open.
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController,
+                                 requestsSubmissionOf query: String,
+                                 payload: AIChatNativePrompt)
+
+    func aiChatOmnibarControllerRequestsVoiceSession(_ controller: AIChatOmnibarController)
+}
+
+/// Both hand-offs only fire for surfaces that opt into host routing.
+extension AIChatOmnibarControllerDelegate {
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController,
+                                 requestsSubmissionOf query: String,
+                                 payload: AIChatNativePrompt) {}
+
+    func aiChatOmnibarControllerRequestsVoiceSession(_ controller: AIChatOmnibarController) {}
+}
+
+/// Duck.ai omnibar tool selection. Preserved across tab switches via `AddressBarSharedTextState`.
+enum AIChatToolMode: Equatable {
+    case imageGeneration
+    case webSearch
+
+    var ragTool: AIChatRAGTool {
+        switch self {
+        case .imageGeneration: return .imageGeneration
+        case .webSearch: return .webSearch
+        }
+    }
 }
 
 /// Controller that manages the state and actions for the AI Chat omnibar.
@@ -37,30 +69,56 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
 /// to coordinate text input and submission.
 @MainActor
 final class AIChatOmnibarController {
-    enum ToolMode: Equatable {
-        case imageGeneration
-        case webSearch
-    }
-
     @Published private(set) var currentText: String = ""
-    @Published private(set) var activeToolMode: ToolMode?
+    @Published private(set) var activeToolMode: AIChatToolMode?
     @Published var hasImageAttachments: Bool = false
+
+    /// The last selected reasoning effort, persisted across sessions. `nil` if no selection has
+    /// been made, or the persisted raw value doesn't map to a known `AIChatReasoningEffort` case.
+    var selectedReasoningEffort: AIChatReasoningEffort? {
+        preferences.selectedReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+    }
 
     var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
     var isWebSearchMode: Bool { activeToolMode == .webSearch }
     weak var delegate: AIChatOmnibarControllerDelegate?
+
+    /// The surface this controller drives. Behavior differences between the address bar and the
+    /// Prompt Bar are resolved through it rather than by branching at call sites.
+    let surface: DuckAIPromptSurface
+
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
-    private let tabCollectionViewModel: TabCollectionViewModel
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
+    private let draftSource: DuckAIPromptDraftSource
+    /// The browser window backing page-context and voice-session scoping. `nil` for window-less surfaces.
+    private let origin: DuckAIPromptOriginProviding?
+    /// Not private: the container view controller reports its own prompt events through the same
+    /// handler, so neither of them hardcodes a surface's pixel names.
+    let pixelHandler: DuckAIPromptPixelFiring
     private let featureFlagger: FeatureFlagger
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
+    /// Burner (Fire Window) omnibars run an isolated Duck.ai session, so persisted chat-history
+    /// suggestions from the regular session can't be opened here. When true, suggestions are
+    /// suppressed entirely — see `isSuggestionsEnabled`.
+    private let isBurner: Bool
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
+    private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
+    private let usageLimitsStore: DuckAiUsageLimitsStore?
+    private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
+        origin: origin,
+        windowControllersManager: Application.appDelegate.windowControllersManager
+    )
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
-    private var sharedTextStateCancellable: AnyCancellable?
+    private var draftStoreCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
+    /// True while `cleanup()` is zeroing out controller-local state. Cleanup is a teardown of transient
+    /// state, not a user action, so its writes must not reach the draft store — during a tab switch they
+    /// would otherwise stomp the outgoing tab's draft.
+    private(set) var isCleaningUp = false
     private var currentFetchTask: Task<Void, Never>?
     private var modelsFetchTask: Task<Void, Never>?
     private var hasBeenActivated = false
@@ -71,14 +129,110 @@ final class AIChatOmnibarController {
     /// Whether the user has an active paid subscription (plus or pro).
     private(set) var hasActiveSubscription = false
 
-    /// Provides the current image attachments from the container VC.
-    var attachmentsProvider: (() -> [AIChatImageAttachment])?
+    /// The resolved subscription tier (honors the PoC debug override). Drives per-model and
+    /// per-reasoning-effort gating in the pickers.
+    private(set) var userTier: AIChatUserTier = .free
 
-    /// Called after a successful submit so the container VC can clear its attachment UI.
+    /// Per-tier attachment limits (file size / pages / counts, image counts, input-char) from the
+    /// models endpoint, resolved to the user's tier. `nil` until fetched, or when the endpoint
+    /// omits the block — callers fall back to the previously shipped defaults in that case.
+    private(set) var attachmentLimits: AIChatAttachmentTierLimits?
+
+    /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
+    private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
+
+    /// The panel's label, image-upload button, tool chips and reasoning picker all key off the
+    /// selected model, and the picker menu is not the only thing that can change it.
+    var onSelectedModelChanged: (() -> Void)?
+
+    /// Create Image can be enabled before models finish loading. If resolving the models then
+    /// requires a switch, the container presents the same notice as an immediate switch.
+    var onCreateImageModelSwitchNotice: ((AIChatCreateImageModelSwitchNotice) -> Void)?
+
+    /// The high-usage notice has no publisher of its own, so it re-resolves on the same beats the
+    /// warning does — activation included, which is what `cleanup()` dropped it for.
+    var onUsageWarningsRefreshed: (() -> Void)?
+
+    var onPromptSubmitted: (() -> Void)?
+
+    /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
+    /// submit and teardown — two of the events — are this type's to report.
+    private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
+        pixelFiring: DuckAiUsageWarningPixelAdapter(surface: surface.usageWarningPixelSurface)
+    )
+
+    /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
+    /// message: switching to a free model retires the message while the limit it named still stands.
+    var isAdvancedModelUsageExhausted: Bool {
+        usageWarningViewModel?.activeNoticeID == .weeklyReachedDegraded
+    }
+
+    /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
+    var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
+
+    /// Set by the container VC from the card it renders; the text VC listens so the prompt goes
+    /// inert alongside the buttons.
+    @Published var isInputBlockedByUsageLimit = false
+
+    let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring?
+    private(set) lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
+        pixelFiring: inputOutcomePixelFiring ?? DuckAiInputOutcomePixelAdapter()
+    )
+
+    /// Set by the container VC from the card it renders: an Ask click accepts the terms only while it's on screen.
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard isTermsOfServiceDisclaimerShown, !oldValue else { return }
+            inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible()
+        }
+    }
+
+    private func performUsageWarningAction(_ action: DuckAiUsageAction) {
+        switch action {
+        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            usageWarningMeasurement.ctaTapped(.switchModel)
+            updateSelectedModel(suggestion.modelId)
+        case .tryForFree:
+            // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            usageWarningMeasurement.ctaTapped(.upsell)
+            onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
+        case .startUsingWeeklyLimit(let entries):
+            usageWarningMeasurement.ctaTapped(.weeklyLimit)
+            // Web reads the entry on its next hydration, so there is nothing to reload here.
+            usageLimitsStore?.write(entries)
+        }
+    }
+
+    /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
+    private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
+        DuckAiChatCapabilityRequirements(
+            needsImageUpload: hasImageAttachments,
+            requiredMimeTypes: activeFileAttachments.map(\.mimeType),
+            requiredTools: activeToolMode.map { [$0.ragTool] } ?? []
+        )
+    }
+
+    /// Called after a successful submit so the container VC can cancel any in-flight image
+    /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
+
+    /// Blocked-submit reason, for the container VC's attachments error label.
+    var onAttachmentValidationFailed: ((String) -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
+
+    /// Fires whenever the active tab's unified panel attachment list changes — either because
+    /// the user switched tabs (new shared state with its own list) or because they added /
+    /// removed an attachment in the current tab. The container VC subscribes to this single
+    /// callback to drive the unified carousel; the publisher takes care of both
+    /// "restore on tab switch" and "react to mutations" in one channel.
+    var onActiveTabPanelAttachmentsChanged: (([AIChatPanelAttachment]) -> Void)?
+
+    /// Cancellable for the active tab's `$aiChatPanelAttachments` subscription. Re-subscribed
+    /// every time the selected tab changes.
+    private var panelAttachmentsCancellable: AnyCancellable?
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
@@ -86,7 +240,10 @@ final class AIChatOmnibarController {
     /// Whether the suggestions feature is enabled.
     /// Requires both the feature flag and the autocomplete setting to be on.
     var isSuggestionsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatSuggestions) && searchPreferencesPersistor.showAutocompleteSuggestions
+        !isBurner
+            && surface.supportsSuggestions
+            && featureFlagger.isFeatureOn(.aiChatSuggestions)
+            && searchPreferencesPersistor.showAutocompleteSuggestions
     }
 
     /// Whether the omnibar tools (customize, search toggle, image upload) are enabled.
@@ -103,13 +260,68 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
     }
 
+    var isUpdatedCreateImageEnabled: Bool {
+        featureFlagger.isFeatureOn(.updatedCreateImage)
+    }
+
     /// Whether the web search tool is available.
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
     }
 
-    func toggleImageGenerationMode() {
-        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    /// Whether the Customize Responses tool is available in the omnibar tools menu.
+    var isCustomizeResponsesEnabled: Bool {
+        surface.supportsCustomizeResponses && featureFlagger.isFeatureOn(.aiChatCustomizeResponses)
+    }
+
+    /// Whether the reasoning effort picker is available.
+    var isReasoningEffortEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
+    }
+
+    /// Whether gated rows show the "Try for free"/"Upgrade" tag and route to the confirmation
+    /// dialog. A kill switch independent of the underlying tier gating: disabling it doesn't make
+    /// gated models/efforts selectable again, it just removes the tag and dialog, falling back to
+    /// a plain dimmed, non-interactive row — same as before this feature shipped.
+    var isSubscriptionUpsellEnabled: Bool {
+        surface.supportsSubscriptionUpsell && featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
+    }
+
+    /// Whether the subscription-upsell CTA (tag + dialog primary button) should read "Try for
+    /// free" rather than "Upgrade". `SubscriptionManager.isUserEligibleForFreeTrial()` reflects
+    /// StoreKit's on-device introductory-offer eligibility (has this Apple ID/device already used
+    /// a free trial?), not the user's tier — so this only ever applies to a free user; an existing
+    /// Plus subscriber upgrading to Pro always sees "Upgrade", trial eligibility notwithstanding.
+    var shouldOfferFreeTrial: Bool {
+        guard userTier == .free else { return false }
+        return subscriptionManager.isUserEligibleForFreeTrial()
+    }
+
+    /// Whether 1-click voice-chat access in the omnibar is available. When disabled, the submit
+    /// button keeps its legacy "arrow / disabled when empty" behavior.
+    var isVoiceChatAccessEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
+    }
+
+    /// Whether the omnibar's tab picker (Attach Page Content) is available.
+    /// Requires both `aiChatPageContext` (the underlying extraction pipeline) and
+    /// `aiChatOmnibarAttachMoreTabs` (the omnibar surface gate).
+    var isOmnibarTabPickerEnabled: Bool {
+        surface.supportsPageContext
+            && featureFlagger.isFeatureOn(.aiChatPageContext)
+            && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
+    }
+
+    @discardableResult
+    func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
+        guard !isImageGenerationMode else {
+            activeToolMode = nil
+            return nil
+        }
+
+        let notice = switchToImageGenerationModelIfNeeded()
+        activeToolMode = .imageGeneration
+        return notice
     }
 
     func toggleWebSearchMode() {
@@ -127,39 +339,116 @@ final class AIChatOmnibarController {
             .eraseToAnyPublisher()
     }
 
-    /// Gets the shared text state from the current tab's view model
-    private var sharedTextState: AddressBarSharedTextState? {
-        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
-    }
+    /// The draft store currently in effect. Cached from the source's publisher rather than computed on
+    /// demand: during a tab switch the emission arrives before the stored tab property updates, so
+    /// delegate-chained callers like `onOmnibarActivated` would otherwise read the outgoing tab's draft.
+    private var draftStore: DuckAIPromptDraftStoring?
 
     // MARK: - Initialization
 
     init(
         aiChatTabOpener: AIChatTabOpening,
-        tabCollectionViewModel: TabCollectionViewModel,
+        surface: DuckAIPromptSurface,
+        draftSource: DuckAIPromptDraftSource,
+        origin: DuckAIPromptOriginProviding?,
+        pixelHandler: DuckAIPromptPixelFiring,
         promptHandler: AIChatPromptHandler = .shared,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
         suggestionsReader: AIChatSuggestionsReading? = nil,
+        isBurner: Bool = false,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
-        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager
+        modelsService: AIChatModelsProviding? = nil,
+        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
+        // `AIChatOmnibarSubscriptionUpsellPresenter.init` and `Application.appDelegate.subscriptionNavigationCoordinator`
+        // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
+        // context even though this initializer's body is not, so the real default is resolved below.
+        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
-        self.tabCollectionViewModel = tabCollectionViewModel
+        self.surface = surface
+        self.draftSource = draftSource
+        self.origin = origin
+        self.pixelHandler = pixelHandler
         self.promptHandler = promptHandler
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.featureFlagger = featureFlagger
         self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
+        self.isBurner = isBurner
         self.preferences = preferences
-        self.modelsService = modelsService
+        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+            ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
+        self.usageLimitsStore = usageLimitsStore
+        self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.inputOutcomePixelFiring = inputOutcomePixelFiring
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
 
-        subscribeToSelectedTabViewModel()
+        subscribeToDraftSource()
         subscribeToTextChangesForSuggestions()
+        subscribeToToolModeChangesForDraftStore()
+        setUpUsageWarnings()
+    }
+
+    /// The persisted id, matching what the warning's own suggester reasons about.
+    func makeHighUsageNoticeSource() -> AIChatHighUsageNoticeSource? {
+        usageLimitsStore?.makeHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self else { return (nil, nil) }
+            let modelId = persistedModelId
+            return (modelId, models.first { $0.id == modelId }?.shortName ?? cachedModelShortName)
+        })
+    }
+
+    private func setUpUsageWarnings() {
+        usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
+            modelSuggester: DuckAiModelSuggester(
+                modelsProvider: { [weak self] in self?.models ?? [] },
+                currentModelIdProvider: { [weak self] in self?.currentModelId },
+                requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
+            ),
+            isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
+            isFireMode: { [weak self] in self?.isBurner ?? false }
+        )
+        usageWarningViewModel?.onAction = { [weak self] action in
+            self?.performUsageWarningAction(action)
+        }
+        // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
+
+        // Also what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshUsageWarnings() }
+            .store(in: &cancellables)
+    }
+
+    /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
+    /// otherwise opens a new selected Duck.ai tab in `mode: voice-mode`.
+    func openNewVoiceChat() {
+        pixelHandler.fire(.voiceChatOpened)
+        inputOutcomeMeasurement.record(.voiceStarted)
+
+        guard !surface.routesSubmissionThroughHost else {
+            delegate?.aiChatOmnibarControllerRequestsVoiceSession(self)
+            return
+        }
+
+        // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.aiChatConversationSourceHandler.setData(.omnibarVoice)
+            self.aiChatTabOpener.openVoiceSession(
+                inSourceCollection: self.origin?.originTabCollectionViewModel,
+                behavior: .newTab(selected: true)
+            )
+        }
     }
 
     private func subscribeToTextChangesForSuggestions() {
@@ -172,14 +461,50 @@ final class AIChatOmnibarController {
             .store(in: &cancellables)
     }
 
+    /// Persists the user's tool selection (image generation / web search) to the draft store.
+    /// Skipped while mid-restore from the store to avoid a feedback loop.
+    private func subscribeToToolModeChangesForDraftStore() {
+        $activeToolMode
+            .dropFirst()
+            .sink { [weak self] mode in
+                guard let self, !self.isUpdatingFromSharedState, !self.isCleaningUp else { return }
+                self.draftStore?.setAIChatToolMode(mode)
+            }
+            .store(in: &cancellables)
+    }
+
     // MARK: - Suggestions Fetching
 
     /// Called when the duck.ai omnibar becomes visible.
     /// Triggers a models fetch (on every activation) and suggestions fetch.
-    func onOmnibarActivated() {
+    /// - Parameter shouldFetchSuggestions: pass `false` when the activation should avoid triggering an async
+    ///   suggestions fetch that would visibly expand the panel height after it appears (e.g. on tab-switch
+    ///   presentation). User text input will still trigger suggestions via the debounced subscription once
+    ///   `hasBeenActivated` is `true`.
+    func onOmnibarActivated(shouldFetchSuggestions: Bool = true) {
         hasBeenActivated = true
 
+        // Re-sync per-tab Duck.ai state from shared state in case a prior `cleanup()` cleared the controller-local copy.
+        // Toggling Duck.ai → search runs `cleanup()` (zeroing `currentText`, `activeToolMode`, the attachments view),
+        // but the tab's shared state still holds the draft; without re-sync, toggling back would show an empty panel.
+        if let draftStore {
+            if draftStore.hasUserInteractedWithText, currentText != draftStore.text {
+                isUpdatingFromSharedState = true
+                currentText = draftStore.text
+                isUpdatingFromSharedState = false
+            }
+            if activeToolMode != draftStore.aiChatToolMode {
+                isUpdatingFromSharedState = true
+                activeToolMode = draftStore.aiChatToolMode
+                isUpdatingFromSharedState = false
+            }
+            // Image, file, and tab restoration on activation flows through the
+            // `panelAttachmentsPublisher` subscription set up in `subscribeToDraftSource()`.
+        }
+
         fetchModels()
+        refreshUsageWarnings()
+        startInputOutcomeMeasurement()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -187,7 +512,24 @@ final class AIChatOmnibarController {
             return
         }
 
-        fetchSuggestionsIfNeeded(query: currentText)
+        if shouldFetchSuggestions {
+            fetchSuggestionsIfNeeded(query: currentText)
+        }
+    }
+
+    /// After the refresh, which applies the card synchronously, so whether it shows the disclaimer is settled.
+    private func startInputOutcomeMeasurement() {
+        inputOutcomeMeasurement.inputOpened(surface: surface.inputOutcomePixelSurface,
+                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
+    }
+
+    private func refreshUsageWarnings() {
+        // `cleanup()` clears the message on the switch back to search; without this a snapshot
+        // published after that would re-resolve it under a search omnibar.
+        guard hasBeenActivated else { return }
+
+        usageWarningViewModel?.refresh()
+        onUsageWarningsRefreshed?()
     }
 
     private func fetchModels() {
@@ -195,13 +537,25 @@ final class AIChatOmnibarController {
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let remoteModels = try await modelsService.fetchModels()
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
                 let userTier = try await self.resolveUserTier()
                 guard !Task.isCancelled else { return }
                 self.hasActiveSubscription = userTier != .free
-                self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+                self.userTier = userTier
+                self.attachmentLimits = response.attachmentLimits?.limits(for: userTier)
+                self.models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
+                self.clearStaleReasoningEffortIfNeeded()
+                self.deactivateWebSearchIfUnsupported()
+                if self.isImageGenerationMode,
+                   let notice = self.switchToImageGenerationModelIfNeeded() {
+                    self.onCreateImageModelSwitchNotice?(notice)
+                }
+                self.deactivateImageGenerationIfUnsupported()
+                // Tier and models land after the activation that resolved the warning, so the first
+                // banner after a tier change would otherwise show a stale tier and no CTA.
+                self.refreshUsageWarnings()
             } catch is CancellationError {
                 return
             } catch {
@@ -213,8 +567,8 @@ final class AIChatOmnibarController {
 
     private func resolveUserTier() async throws -> AIChatUserTier {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            guard subscription.isActive else { return .free }
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: false),
+                  subscription.isActive else { return .free }
             switch subscription.tier {
             case .plus: return .plus
             case .pro: return .pro
@@ -274,6 +628,23 @@ final class AIChatOmnibarController {
         }
     }
 
+    /// Clears the persisted reasoning effort if the current model no longer supports it, or if
+    /// the persisted raw value doesn't map to a known `AIChatReasoningEffort` case. Runs after
+    /// models are fetched, so a stale value persisted against an older model list doesn't linger
+    /// and get attached to future prompts.
+    private func clearStaleReasoningEffortIfNeeded() {
+        guard let effort = selectedReasoningEffort else {
+            // Wipe any unknown raw value we couldn't decode into the enum.
+            if preferences.selectedReasoningEffort != nil {
+                preferences.selectedReasoningEffort = nil
+            }
+            return
+        }
+        if !selectedModelReasoningEfforts.contains(effort) {
+            preferences.selectedReasoningEffort = nil
+        }
+    }
+
     /// The model ID to include in the prompt. Returns nil if the user has never
     /// explicitly selected a model, so the backend uses its default.
     var currentModelId: String? {
@@ -292,6 +663,22 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
     }
 
+    /// Whether the currently selected model supports the WebSearch tool.
+    /// Returns true when models are unavailable (conservative default — Web Search menu item
+    /// remains visible until the model list is known).
+    var selectedModelSupportsWebSearch: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == persistedModelId })?.supportsTool(.webSearch) ?? true
+    }
+
+    /// Whether the currently selected model supports the GenerateImage tool.
+    /// Returns true when models are unavailable (conservative default — Create Image menu item
+    /// remains visible until the model list is known).
+    var selectedModelSupportsImageGeneration: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == persistedModelId })?.supportsTool(.imageGeneration) ?? true
+    }
+
     /// Image formats supported by the currently selected model (e.g. ["png", "jpeg", "webp"]).
     /// Returns a default set when models are unavailable.
     var selectedModelImageFormats: [String] {
@@ -299,26 +686,295 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
-    /// The model ID to use for the current submission.
-    /// Returns nil when image generation mode is active — the mode field handles routing.
+    /// Fallback caps used until the API limits load (or when the endpoint omits them). These match
+    /// the values previously hardcoded here, so a missing-limits state degrades to prior behaviour.
+    static let fallbackMaxImageAttachments: Int = 3
+    static let fallbackMaxFileAttachments: Int = 3
+
+    /// Maximum images the omnibar accepts for a submission. The omnibar starts a *new* chat, so a
+    /// submission is a single turn — the per-turn limit governs (bounded by the per-conversation
+    /// limit as a safety net). Falls back to 3 until limits load.
+    var maxImageAttachments: Int {
+        guard let images = attachmentLimits?.images else { return Self.fallbackMaxImageAttachments }
+        return max(0, min(images.maxPerTurn, images.maxPerConversation))
+    }
+    /// One above the cap — the picker / `addImageAttachmentToActiveTab` allow exactly one over
+    /// so the user gets a visible "you've gone over" cue and the error label has something to
+    /// anchor against. Submit blocks while in that state.
+    var imageAttachmentsDisplayCap: Int { maxImageAttachments + 1 }
+
+    /// Maximum file (PDF etc.) attachments per conversation. Files have no per-turn limit, so the
+    /// per-conversation value applies directly. Falls back to 3 until limits load.
+    var maxFileAttachments: Int {
+        attachmentLimits?.files.maxPerConversation ?? Self.fallbackMaxFileAttachments
+    }
+    var fileAttachmentsDisplayCap: Int { maxFileAttachments + 1 }
+
+    /// Hardcoded cap on tabs attached as page context (not backend-driven, unlike images/files).
+    static let maxTabAttachments: Int = 3
+    /// Kill switch (default on) for the whole tab-attachment cap. Off → no cap.
+    var isTabAttachmentLimitEnabled: Bool { featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit) }
+    /// One over the cap, mirroring the image/file display cap; unbounded when the limit is disabled.
+    var tabAttachmentsDisplayCap: Int { isTabAttachmentLimitEnabled ? Self.maxTabAttachments + 1 : .max }
+
+    var isActiveTabAttachmentsFull: Bool {
+        isTabAttachmentLimitEnabled && activeTabAttachments.count >= Self.maxTabAttachments
+    }
+
+    var hasExcessTabAttachments: Bool {
+        isTabAttachmentLimitEnabled && activeTabAttachments.count > Self.maxTabAttachments
+    }
+
+    /// Whether the currently selected model supports file (PDF etc.) upload.
+    /// Returns `false` conservatively when models are unavailable — file upload is opt-in per model
+    /// and the file picker should stay hidden until we know the model can accept it.
+    var selectedModelSupportsFileUpload: Bool {
+        guard !models.isEmpty else { return false }
+        return models.first(where: { $0.id == persistedModelId })?.supportsFileUpload ?? false
+    }
+
+    /// File types supported by the currently selected model (e.g. ["pdf"]). Empty when files
+    /// aren't supported.
+    var selectedModelSupportedFileTypes: [String] {
+        guard !models.isEmpty else { return [] }
+        return models.first(where: { $0.id == persistedModelId })?.supportedFileTypes ?? []
+    }
+
+    /// The currently selected model, or `nil` when models haven't loaded.
+    var selectedModel: AIChatModel? {
+        models.first(where: { $0.id == persistedModelId })
+    }
+
+    /// Builds a validator for the current model + limits against the supplied pending attachments.
+    /// The omnibar is the entry point to a brand-new chat, so prior conversation usage is always
+    /// zero — pending attachments are the whole picture.
+    func makeAttachmentValidator(
+        pendingImageCount: Int,
+        pendingFiles: [AIChatAttachmentValidator.FileDescriptor]
+    ) -> AIChatAttachmentValidator {
+        AIChatAttachmentValidator(
+            limits: attachmentLimits,
+            model: selectedModel,
+            usage: .zero,
+            pendingImageCount: pendingImageCount,
+            pendingFiles: pendingFiles,
+            messages: Self.attachmentValidatorMessages
+        )
+    }
+
+    static let attachmentValidatorMessages = AIChatAttachmentValidator.Messages(
+        unsupportedFileType: UserText.aiChatAttachmentUnsupportedFileType,
+        unavailable: UserText.aiChatAttachmentUnavailable,
+        fileEncrypted: UserText.aiChatAttachmentFileEncrypted,
+        fileUnreadable: UserText.aiChatAttachmentFileUnreadable,
+        promptTooLong: UserText.aiChatAttachmentPromptTooLong,
+        unsupportedFileTypeWithAccepted: { UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: $0) },
+        fileCountLimit: { UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: $0) },
+        fileTooLarge: { UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: $0) },
+        filesExceedTotalSizeLimit: { UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: $0) },
+        fileTooManyPages: { UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: $0) },
+        imageTurnLimit: { UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: $0) },
+        imageCountLimit: { UserText.aiChatAttachmentImageCountLimit(maxImagesPerConversation: $0) }
+    )
+
+    /// Supported reasoning effort levels for the currently selected model. Unknown raw values
+    /// returned by the backend are silently filtered out. This is the server-truth list — used to
+    /// validate persisted selections and to gate what we attach to submissions, so a value the
+    /// user actually picked still flows through unchanged (e.g. a stored `medium` keeps submitting
+    /// `medium` even after the model gains `high` support).
+    var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
+        models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? []
+    }
+
+    /// Display-only variant of `selectedModelReasoningEfforts` for the picker menu. Picker
+    /// buckets collapse to a single menu item when the model advertises both efforts in a
+    /// bucket:
+    /// - Fast maps to the first supported effort from `none`, then `minimal` — `.minimal` is
+    ///   hidden when `.none` is also supported.
+    /// - Extended Reasoning maps to the first supported effort from `high`, then `medium` —
+    ///   `.medium` is hidden when `.high` is also supported.
+    /// Submission and validation paths must use the un-deduped list so a previously-picked value
+    /// (e.g. stored `.medium` or `.minimal`) keeps flowing to the backend unchanged.
+    var pickerReasoningEfforts: [AIChatReasoningEffort] {
+        var efforts = selectedModelReasoningEfforts
+        if efforts.contains(.none), efforts.contains(.minimal) {
+            efforts.removeAll { $0 == .minimal }
+        }
+        if efforts.contains(.high), efforts.contains(.medium) {
+            efforts.removeAll { $0 == .medium }
+        }
+        return efforts
+    }
+
+    /// The effort the chip/checkmark should show for the persisted selection, mapping bucket
+    /// equivalents (`.medium` → `.high`, `.minimal` → `.none`) so it matches what's submitted.
+    /// Nil when the stored effort is gated above the tier, so the chip falls back to the accessible
+    /// default — same guard as `effectiveReasoningEffort`.
+    var displayedReasoningEffort: AIChatReasoningEffort? {
+        guard let stored = selectedReasoningEffort,
+              isReasoningEffortAccessible(stored) else { return nil }
+        let efforts = pickerReasoningEfforts
+        if efforts.contains(stored) { return stored }
+        switch stored {
+        case .medium where efforts.contains(.high): return .high
+        case .minimal where efforts.contains(AIChatReasoningEffort.none): return AIChatReasoningEffort.none
+        default: return nil
+        }
+    }
+
+    /// Updates the selected reasoning effort and persists it for future sessions.
+    func updateSelectedReasoningEffort(_ effort: AIChatReasoningEffort?) {
+        preferences.selectedReasoningEffort = effort?.rawValue
+    }
+
+    // MARK: - Subscription gating
+
+    /// Whether the selected model's `effort` is accessible to the current tier. Returns `true` when
+    /// models haven't loaded, or the model has no per-effort gating metadata (`reasoningEffortAccess
+    /// == nil` → graceful degradation, matching today's behavior for models that predate this field).
+    func isReasoningEffortAccessible(_ effort: AIChatReasoningEffort) -> Bool {
+        selectedModel?.isAccessible(effort) ?? true
+    }
+
+    /// The public tier required to unlock `effort` on the selected model, or `nil` when it's already
+    /// accessible (or no model is selected).
+    func requiredTier(for effort: AIChatReasoningEffort) -> AIChatModelPublicAccessTier? {
+        guard let model = selectedModel, !model.isAccessible(effort) else { return nil }
+        return model.lowestPublicAccessTier(for: effort)
+    }
+
+    enum ReasoningEffortSelectionOutcome: Equatable {
+        case selected(AIChatReasoningEffort)
+        /// The effort is gated at `requiredTier`. The caller is responsible for explaining the
+        /// upsell (a confirmation dialog) before calling `presentSubscriptionUpsell(requiredTier:origin:)`
+        /// — selecting a gated effort must not silently navigate away.
+        case gated(requiredTier: AIChatModelPublicAccessTier)
+    }
+
+    /// Central handler for a reasoning-effort tap in the picker: selects it if accessible, otherwise
+    /// reports the tier gating it. Never navigates or changes the selection for a gated effort.
+    func handleReasoningEffortSelection(_ effort: AIChatReasoningEffort) -> ReasoningEffortSelectionOutcome {
+        guard let requiredTier = requiredTier(for: effort) else {
+            updateSelectedReasoningEffort(effort)
+            return .selected(effort)
+        }
+        return .gated(requiredTier: requiredTier)
+    }
+
+    /// Routes a gated selection to the subscription flow. Called from the confirmation dialog's
+    /// "Subscribe" action — both the model picker and the reasoning-effort picker show that dialog
+    /// before navigating (per design review, neither surface navigates directly on a gated tap).
+    func presentSubscriptionUpsell(requiredTier: AIChatModelPublicAccessTier, origin: SubscriptionFunnelOrigin) {
+        subscriptionUpsellPresenter.routeGatedSelection(requiredTier: requiredTier, userTier: userTier, origin: origin)
+    }
+
+    /// The public tier required to unlock `model`, or `nil` when it's already accessible.
+    func requiredTier(for model: AIChatModel) -> AIChatModelPublicAccessTier? {
+        guard !model.entityHasAccess else { return nil }
+        return model.lowestPublicAccessTier
+    }
+
+    /// Opens the subscription activation flow, for a user who already has a subscription (e.g.
+    /// purchased on another device) and wants to sign in rather than purchase again.
+    func presentSubscriptionActivationFlow() {
+        subscriptionUpsellPresenter.presentSubscriptionActivation()
+    }
+
+    /// The model used for image-generation submissions: the selected model when it supports
+    /// GenerateImage, otherwise the first accessible model that does. `nil` while models
+    /// haven't loaded (or none supports the tool).
+    ///
+    /// Resolving the model natively matters: a handoff without `modelId` makes the duck.ai
+    /// page fall back to its own saved model, which may not support image generation (e.g.
+    /// Mistral) — the chat then starts on that model and no image is produced.
+    var imageGenerationModel: AIChatModel? {
+        if let selectedModel, selectedModel.supportsTool(.imageGeneration) {
+            return selectedModel
+        }
+        return AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
+    private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
+        guard isUpdatedCreateImageEnabled,
+              let previousModel = selectedModel,
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let fallbackModel = imageGenerationModel else {
+            pixelHandler.fire(.createImageUnavailable)
+            return nil
+        }
+
+        updateSelectedModel(fallbackModel.id)
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        pixelHandler.fire(.createImageModelSwitched(
+            fromModelId: previousModel.id,
+            toModelId: fallbackModel.id,
+            fromModelPrivacyPreserving: notice.previousModelHasExtraPrivacyProtections
+        ))
+        return notice
+    }
+
+    /// The model ID to use for the current submission. In image-generation mode an
+    /// image-capable model is sent explicitly, matching iOS.
     var effectiveModelId: String? {
-        isImageGenerationMode ? nil : currentModelId
+        isImageGenerationMode ? imageGenerationModel?.id : currentModelId
     }
 
-    /// The mode to include in the prompt payload (e.g., "image-generation").
+    /// The mode to include in the prompt payload. Only used as the image-generation fallback
+    /// when no image-capable model could be resolved (models not loaded) — the duck.ai page
+    /// then routes the request itself.
     var effectiveMode: String? {
-        isImageGenerationMode ? "image-generation" : nil
+        isImageGenerationMode && imageGenerationModel == nil ? AIChatNativePrompt.imageGenerationMode : nil
     }
 
-    /// The tool choice to include in the prompt payload (e.g., ["WebSearch"]).
+    /// The tool choice to include in the prompt payload (e.g., ["GenerateImage"], ["WebSearch"]).
     var effectiveToolChoice: [String]? {
-        isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
+        if isImageGenerationMode {
+            return imageGenerationModel != nil ? [AIChatRAGTool.imageGeneration.rawValue] : nil
+        }
+        return isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
+    }
+
+    /// The reasoning effort to attach to the submission, or nil when it no longer applies (flag off,
+    /// image-gen mode, unsupported by the model, or gated above the tier). The tier check catches a
+    /// persisted effort that outlived a downgrade: still supported so not cleared as stale, but no
+    /// longer accessible — submitting it would fail on the server.
+    var effectiveReasoningEffort: AIChatReasoningEffort? {
+        guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
+        guard let effort = selectedReasoningEffort,
+              selectedModelReasoningEfforts.contains(effort),
+              isReasoningEffortAccessible(effort) else { return nil }
+        return effort
     }
 
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        // The newly selected model may not support the previously persisted reasoning effort.
+        // Clearing here keeps stale-effort handling in one place (see `clearStaleReasoningEffortIfNeeded`).
+        clearStaleReasoningEffortIfNeeded()
+        deactivateWebSearchIfUnsupported()
+        deactivateImageGenerationIfUnsupported()
+        onSelectedModelChanged?()
+    }
+
+    /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.
+    /// Submitting a web-search prompt to an unsupported model fails on the duck.ai page, so the
+    /// mode must not remain active across a switch into such a model.
+    private func deactivateWebSearchIfUnsupported() {
+        guard isWebSearchMode, !selectedModelSupportsWebSearch else { return }
+        activeToolMode = nil
+    }
+
+    /// Clears image-generation mode if the currently selected model doesn't support the
+    /// GenerateImage tool. Mirrors `deactivateWebSearchIfUnsupported` so the tool can't stay
+    /// armed for a model that can't generate images (e.g. Mistral).
+    private func deactivateImageGenerationIfUnsupported() {
+        guard isImageGenerationMode, !selectedModelSupportsImageGeneration else { return }
+        activeToolMode = nil
     }
 
     /// Updates the current text being typed by the user
@@ -326,15 +982,252 @@ final class AIChatOmnibarController {
     func updateText(_ text: String) {
         currentText = text
         if !isUpdatingFromSharedState {
-            sharedTextState?.updateText(text, markInteraction: true)
+            draftStore?.updateText(text, markInteraction: true)
         }
     }
 
+    /// Persists the prompt text view's cursor position / selection to the current tab's shared state so it
+    /// can be restored when the panel is re-activated (tab switch, refocus).
+    func updateSelection(_ range: NSRange) {
+        draftStore?.updateSelection(range)
+    }
+
+    /// The cursor position / selection range currently persisted for this tab, or `nil` if none.
+    var currentSelectionRange: NSRange? {
+        draftStore?.selectionRange
+    }
+
+    /// Persists the Duck.ai image attachments for the current tab so they survive tab switches.
+    /// Called by the container VC whenever the attachment list changes (add, remove, resize-complete replacement).
+    func persistAttachmentsToActiveTab(_ attachments: [AIChatImageAttachment]) {
+        draftStore?.setAIChatAttachments(attachments)
+    }
+
+    /// Persists the Duck.ai tab attachments (Attach Page Content) for the current tab so they survive tab switches.
+    /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
+    func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
+        draftStore?.setAIChatTabAttachments(attachments)
+        attachedTabsTracker.trackAttachments(of: draftStore)
+    }
+
+    /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
+    var activeTabAttachments: [AIChatTabAttachment] {
+        draftStore?.aiChatTabAttachments ?? []
+    }
+
+    /// The unified, insertion-ordered attachments list for the current tab — both image
+    /// uploads and page-content tabs interleaved in the order the user attached them.
+    var activePanelAttachments: [AIChatPanelAttachment] {
+        draftStore?.aiChatPanelAttachments ?? []
+    }
+
+    /// Toggles whether a tab is attached to the current tab's prompt:
+    /// adds the attachment if absent, removes it if already present (matched by `id`).
+    /// Persists the resulting list to shared state — the unified-attachments publisher then
+    /// fires `onActiveTabPanelAttachmentsChanged`, which drives the carousel.
+    func toggleTabAttachment(_ attachment: AIChatTabAttachment) {
+        var current = activeTabAttachments
+        if let index = current.firstIndex(where: { $0.id == attachment.id }) {
+            current.remove(at: index)
+        } else {
+            // Allow one over the cap (for the over-limit cue); block beyond.
+            guard current.count < tabAttachmentsDisplayCap else { return }
+            current.append(attachment)
+            prewarmAttachedTab(id: attachment.id)
+        }
+        persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Starts loading a just-attached tab whose page isn't loaded yet, so it's ready by submit time.
+    /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
+    private func prewarmAttachedTab(id: String) {
+        guard let originTabCollection = origin?.originTabCollectionViewModel,
+              let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager),
+              resolved.needsLoad else {
+            return
+        }
+        resolved.tab.reload()
+    }
+
+    /// Attach/detach from a picker, whose rows are a snapshot: a tab closed since it was taken, or
+    /// one that has since left the page the row showed, is no longer the thing the user picked.
+    /// Returns whether the attachments changed, so callers can skip their pixel when nothing did.
+    @discardableResult
+    func togglePickedTabAttachment(_ attachment: AIChatTabAttachment) -> Bool {
+        guard !activeTabAttachments.contains(where: { $0.id == attachment.id }) else {
+            toggleTabAttachment(attachment)
+            return true
+        }
+        guard let stillOffered = openTabsForOmnibarPicker().first(where: { $0.id == attachment.id }),
+              stillOffered.url == attachment.url else {
+            // Every picker works from a snapshot, so say why the pick didn't take rather than
+            // leaving the click looking ignored.
+            onAttachmentValidationFailed?(UserText.aiChatAttachTabsStaleSelection)
+            return false
+        }
+        toggleTabAttachment(stillOffered)
+        return true
+    }
+
+    /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
+    /// currently attached.
+    func removeTabAttachmentFromActiveTab(id: String) {
+        var current = activeTabAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Image attachments persisted on the current tab. Empty when no tab is active.
+    var activeImageAttachments: [AIChatImageAttachment] {
+        draftStore?.aiChatAttachments ?? []
+    }
+
+    /// At or above the per-conversation image cap.
+    var isActiveTabImageAttachmentsFull: Bool {
+        activeImageAttachments.count >= maxImageAttachments
+    }
+
+    /// Strictly over the per-conversation image cap (one over, by `imageAttachmentsDisplayCap` design).
+    var hasExcessActiveTabImageAttachments: Bool {
+        activeImageAttachments.count > maxImageAttachments
+    }
+
+    /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
+    /// with the same id is already present.
+    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
+        var current = activeImageAttachments
+        guard current.count < imageAttachmentsDisplayCap else { return }
+        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        current.append(attachment)
+        draftStore?.setAIChatAttachments(current)
+    }
+
+    /// Removes an image attachment from the active tab, identified by `id`. No-op if not
+    /// currently attached.
+    func removeImageAttachmentFromActiveTab(id: UUID) {
+        guard let draftStore else { return }
+        var current = draftStore.aiChatAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        draftStore.setAIChatAttachments(current)
+    }
+
+    /// Replaces an image attachment in place — used when the resize task completes and swaps
+    /// the placeholder for the resized `NSImage`. Just updates the data list; the carousel's
+    /// `setAttachments` does the in-place thumbnail update by id.
+    func replaceImageAttachmentInActiveTab(id: UUID, with newAttachment: AIChatImageAttachment) {
+        guard let draftStore else { return }
+        var current = draftStore.aiChatAttachments
+        guard let index = current.firstIndex(where: { $0.id == id }) else { return }
+        current[index] = newAttachment
+        draftStore.setAIChatAttachments(current)
+    }
+
+    /// File attachments persisted on the current tab (PDFs etc.). Empty when no tab is active.
+    var activeFileAttachments: [AIChatFileAttachment] {
+        draftStore?.aiChatFileAttachments ?? []
+    }
+
+    /// Persists the supplied file-attachment list onto the active tab's shared state. The
+    /// publisher fires; the carousel re-renders.
+    func persistFileAttachmentsToActiveTab(_ attachments: [AIChatFileAttachment]) {
+        draftStore?.setAIChatFileAttachments(attachments)
+    }
+
+    /// Adds a file attachment to the active tab. No-op if at displayCap or if an attachment
+    /// with the same id is already present. Mirrors `addImageAttachmentToActiveTab`'s
+    /// defense-in-depth posture — the picker is the only caller today and gates on the cap
+    /// before this runs, but a second guard here keeps every future caller (drag-and-drop,
+    /// paste, restore paths, tests) safe from overshooting `fileAttachmentsDisplayCap`.
+    func addFileAttachmentToActiveTab(_ attachment: AIChatFileAttachment) {
+        var current = activeFileAttachments
+        guard current.count < fileAttachmentsDisplayCap else { return }
+        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        current.append(attachment)
+        persistFileAttachmentsToActiveTab(current)
+    }
+
+    /// Removes a file attachment from the active tab. No-op if not currently attached.
+    func removeFileAttachmentFromActiveTab(id: UUID) {
+        var current = activeFileAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        persistFileAttachmentsToActiveTab(current)
+    }
+
+    /// UUID of the tab the omnibar is currently overlaid on, or `nil` when no tab is selected.
+    /// Surfaced for tab pickers (both the "Attach Page Content" menu and the `@`-mention
+    /// picker) so they can pin the current tab at the top and render its row with a
+    /// "(Current Tab)" trailing badge.
+    var currentTabUUID: String? {
+        origin?.activeTabUUID
+    }
+
+    /// Returns the open browser tabs (pinned + regular) as candidate attachments, with native
+    /// `NSImage` favicons resolved from the favicon manager. Used by the omnibar attach menu and
+    /// the `@`-mention picker to populate their tab lists.
+    ///
+    /// - Note: tabs are sourced across windows via the shared `AIChatTabPickerSource`, using this
+    /// controller's `tabCollectionViewModel` as the origin: a regular window surfaces tabs from all
+    /// regular windows, while a Fire Window surfaces only its own tabs (Fire Windows are never
+    /// pulled into a regular picker, and vice versa). Non-URL tabs and URLs ruled out by
+    /// `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` are already filtered by the source.
+    /// Internal testers who set a custom AI Chat URL via Debug → AI Chat → Set custom URL also get
+    /// tabs at that host filtered out here — the shared helper only knows the hardcoded `duck.ai`
+    /// host, so the omnibar checks the debug override too.
+    ///
+    /// The current tab (if it survives the filters) is hoisted to the front of the returned list
+    /// so menus that pin "Current Tab" at the top get the right ordering for free.
+    func openTabsForOmnibarPicker() -> [AIChatTabAttachment] {
+        // Window-less surfaces have no origin to scope the picker to, so they offer no tabs.
+        guard let originTabCollection = origin?.originTabCollectionViewModel else { return [] }
+
+        let faviconManager = NSApp.delegateTyped.faviconManager
+        // Resolve the custom-URL host once per pick — `keyedStoring` reads from UserDefaults
+        // every access, so caching avoids hitting it per-tab.
+        let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
+        let customAIChatURLHost = debugURLSettings.customURLHostname
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager)
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.element.lastSelectedAt ?? .distantPast
+                let rhsDate = rhs.element.lastSelectedAt ?? .distantPast
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
+                return lhs.offset < rhs.offset
+            }
+            .compactMap { _, tab -> AIChatTabAttachment? in
+                guard case .url(let url, _, _) = tab.content else { return nil }
+                if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
+                    return nil
+                }
+                let title = tab.title ?? url.host ?? ""
+                let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
+                return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
+            }
+        // Move the current tab to the front so the picker pins it on top.
+        guard let currentTabUUID,
+              let currentIndex = candidates.firstIndex(where: { $0.id == currentTabUUID }),
+              currentIndex != 0 else {
+            return candidates
+        }
+        var reordered = candidates
+        let current = reordered.remove(at: currentIndex)
+        reordered.insert(current, at: 0)
+        return reordered
+    }
+
     func cleanup() {
+        isCleaningUp = true
+        defer { isCleaningUp = false }
         currentText = ""
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
+        // Whatever the user was going to do about the card, they have now done it.
+        usageWarningMeasurement.inputSessionEnded()
+        inputOutcomeMeasurement.inputClosed()
+        usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil
@@ -390,30 +1283,49 @@ final class AIChatOmnibarController {
 
     // MARK: - Private Methods
 
-    private func subscribeToSelectedTabViewModel() {
-        tabCollectionViewModel.$selectedTabViewModel
-            .sink { [weak self] tabViewModel in
+    private func subscribeToDraftSource() {
+        draftSource.currentDraftStorePublisher
+            .sink { [weak self] store in
                 guard let self else { return }
-                self.subscribeToSharedTextState(tabViewModel?.addressBarSharedTextState)
+                /// Cache the incoming store now so synchronous delegate chains driven off the same emission
+                /// (e.g. AddressBarVC → MainVC → onOmnibarActivated) read it rather than the outgoing tab's.
+                self.draftStore = store
+                self.subscribeToDraftStoreText(store)
 
-                /// Restore text on duck.ai panel when changing tabs
-                if let text = tabViewModel?.addressBarSharedTextState.text {
+                /// Restore the surface's draft. The `isUpdatingFromSharedState` guard stops the
+                /// `$activeToolMode` sink writing the restored value straight back to the store.
+                self.isUpdatingFromSharedState = true
+                if let text = store?.text {
                     self.currentText = text
+                }
+                self.activeToolMode = store?.aiChatToolMode
+                self.isUpdatingFromSharedState = false
+
+                // The attachments publisher replays its current value on subscription, so this also
+                // performs the initial restore — no separate restore call needed.
+                self.panelAttachmentsCancellable = store?.panelAttachmentsPublisher
+                    .sink { [weak self] panelAttachments in
+                        self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
+                    }
+                self.attachedTabsTracker.trackAttachments(of: store)
+                if store == nil {
+                    // No store → empty carousel; nothing can deliver the empty value for us.
+                    self.onActiveTabPanelAttachmentsChanged?([])
                 }
             }
             .store(in: &cancellables)
     }
 
-    private func subscribeToSharedTextState(_ sharedTextState: AddressBarSharedTextState?) {
-        sharedTextStateCancellable?.cancel()
-        sharedTextStateCancellable = nil
+    private func subscribeToDraftStoreText(_ draftStore: DuckAIPromptDraftStoring?) {
+        draftStoreCancellable?.cancel()
+        draftStoreCancellable = nil
 
-        guard let sharedTextState else { return }
+        guard let draftStore else { return }
 
-        sharedTextStateCancellable = sharedTextState.$text
+        draftStoreCancellable = draftStore.textPublisher
             .sink { [weak self] newText in
                 guard let self = self else { return }
-                if self.currentText != newText && sharedTextState.hasUserInteractedWithText {
+                if self.currentText != newText && draftStore.hasUserInteractedWithText {
                     self.isUpdatingFromSharedState = true
                     self.currentText = newText
                     self.isUpdatingFromSharedState = false
@@ -423,68 +1335,294 @@ final class AIChatOmnibarController {
 
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        aiChatConversationSourceHandler.setData(.omnibarViewAllChats)
+        aiChatTabOpener.openAIChatTab(with: .chatHistory, behavior: .newTab(selected: true))
     }
 
-    func submit() {
-        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+    /// Fallback when no window can host the modal: opens the customize URL in a tab.
+    func openCustomizeResponses() {
+        let url = AIChatURLParameters.nativeCustomizeModalURL(from: AIChatRemoteSettings().aiChatURL)
+        aiChatConversationSourceHandler.setData(.omnibar)
+        aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+    }
+
+    private var canSendImages: Bool {
+        isImageGenerationMode || selectedModelSupportsImageUpload
+    }
+
+    /// Attachments that would ship with a submit, so a prompt with no text can still be sent.
+    var hasSendableAttachments: Bool {
+        (canSendImages && !activeImageAttachments.isEmpty)
+            || (selectedModelSupportsFileUpload && !activeFileAttachments.isEmpty)
+            || !activeTabAttachments.isEmpty
+    }
+
+    /// Each picker allows one pick past its limit as a visible cue, so submitting stays held there.
+    private var hasSubmitBlockingAttachmentExcess: Bool {
+        if canSendImages && activeImageAttachments.count > maxImageAttachments {
+            return true
+        }
+        if selectedModelSupportsFileUpload && activeFileAttachments.count > maxFileAttachments {
+            return true
+        }
+        // Unconditional, since tab cards render regardless of the picker flag.
+        return hasExcessTabAttachments
+    }
+
+    /// Files accepted while `attachmentLimits` was nil were never validated, and the limits can change after a pick.
+    private var fileSubmissionValidationError: AIChatAttachmentValidator.FileValidationError? {
+        guard attachmentLimits != nil, selectedModelSupportsFileUpload else { return nil }
+
+        var validated: [AIChatAttachmentValidator.FileDescriptor] = []
+        for descriptor in activeFileAttachments.map(AIChatAttachmentValidator.FileDescriptor.init) {
+            let validator = makeAttachmentValidator(
+                pendingImageCount: activeImageAttachments.count,
+                pendingFiles: validated
+            )
+            // enforceCount off: the count limit keeps its one-over cue via `hasSubmitBlockingAttachmentExcess`.
+            if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
+                return error
+            }
+            validated.append(descriptor)
+        }
+        return nil
+    }
+
+    /// `sentWithAsk` is a send-button click rather than Return. Only that click accepts the Terms of Service,
+    /// and only with the disclaimer on screen; the prompt carries it to the web app either way.
+    func submit(sentWithAsk: Bool = false) {
+        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasSendableAttachments else {
             return
         }
 
-        // Block submission if too many images are attached and would be sent
-        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
-        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > AIChatImageAttachmentsContainerView.maxAttachments {
+        guard !hasSubmitBlockingAttachmentExcess else {
+            return
+        }
+
+        if let error = fileSubmissionValidationError {
+            pixelHandler.fire(.fileValidationFailed(reason: error.reason.rawValue))
+            onAttachmentValidationFailed?(error.message)
             return
         }
 
         let trimmedText = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if let navigableURL = classifyAsNavigableURL(trimmedText) {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitURL, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            pixelHandler.fire(.urlSubmitted)
             currentText = ""
             delegate?.aiChatOmnibarController(self, didRequestNavigationToURL: navigableURL)
             return
         }
 
-        PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
-
-        if isImageGenerationMode {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        } else if isWebSearchMode {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        firePromptSubmissionPixels()
+        // After the URL branch: navigating away is not a prompt spent against the allowance.
+        usageWarningMeasurement.promptSubmitted()
+        inputOutcomeMeasurement.record(.promptSubmitted(sentWithAsk ? .button : .enter))
+        if sentWithAsk {
+            termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
         }
+        onPromptSubmitted?()
 
-        // Capture mode/model/toolChoice before async work — cleanup() may reset activeToolMode
+        // Snapshot everything that could change between now and when the async submit Task
+        // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
+        // `draftStore` is rebound on tab change — without the snapshot, every post-await
+        // read would reflect whichever tab is active when the await resumes, not the tab the
+        // user pressed submit on. That meant attachments from tab B could ship in the payload
+        // for the prompt typed on tab A, and the `tabId`-stripping discriminator would be
+        // computed against the wrong active tab.
+        //
+        // Snapshotting before the Task closure is the cheap fix: each capture is a value-type
+        // copy (or a closure capture of the model state at submit time), so the task body
+        // operates on a frozen view of "what the user actually clicked submit on".
+        //
+        // We intentionally do NOT re-check `isOmnibarTabPickerEnabled` inside the task. If the
+        // privacy config remotely disables the omnibar tab picker between submit-click and
+        // task resume, the in-flight `pageContext` payload still ships — the user expressed
+        // clear intent before the flag flipped, and silently dropping attachments mid-submit
+        // would be worse UX than the corner-case rollback. Surface gating still kicks in the
+        // *next* time the user opens the omnibar.
         let modelId = effectiveModelId
         let mode = effectiveMode
         let toolChoice = effectiveToolChoice
+        let reasoningEffort = effectiveReasoningEffort
+        let snapshotImageAttachments: [AIChatImageAttachment] = canSendImages ? activeImageAttachments : []
+        let snapshotTabAttachments: [AIChatTabAttachment] = activeTabAttachments
+        let snapshotFileAttachments: [AIChatFileAttachment] = selectedModelSupportsFileUpload ? activeFileAttachments : []
+        let snapshotActiveTabUUID: String? = origin?.activeTabUUID
+        // Capture the *per-tab* shared text state reference itself, not just a copy of its
+        // current attachments. The resize task writes the finalized image back into the same
+        // tab's `aiChatAttachments` storage via this object; `self.draftStore` would
+        // otherwise rebind to a different tab if the user tab-switches during the await, and
+        // the post-resize lookup below would read from the wrong tab — losing the resized
+        // bytes for the submission the user actually triggered.
+        let snapshotDraftStore = draftStore
+        let supportedImageFormats = selectedModelImageFormats
 
         Task { @MainActor in
-            // Wait for any pending image resizes to complete
+            // Wait for any pending image resizes to complete. NOTE: the read of the *image
+            // bytes* is deferred past this await because resize-replacement updates the same
+            // `AIChatImageAttachment.id` in place — the snapshot captured the identity, the
+            // resize finalizes the pixels.
             await waitForAttachmentsReady?()
 
-            // Get attachments after resizes are complete — only include if model supports images or in image gen mode
-            let attachments = canSendImages ? (attachmentsProvider?() ?? []) : []
-            let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
+            let postResizeImages: [AIChatImageAttachment] = snapshotImageAttachments.compactMap { attachment in
+                // Re-read by id from the *submit-time* tab's shared state — the resize task
+                // swapped the image instance on the same id, but possibly while the user
+                // tab-switched away. Reading via `snapshotDraftStore` keeps us pinned
+                // to the tab the user actually pressed submit on. If the attachment has been
+                // removed in the meantime (shouldn't normally happen, but defend), fall back
+                // to the pre-resize snapshot.
+                snapshotDraftStore?.aiChatAttachments.first(where: { $0.id == attachment.id }) ?? attachment
+            }
+            let images = Self.nativePromptImages(from: postResizeImages, supportedFormats: supportedImageFormats)
 
-            if !attachments.isEmpty {
-                PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: attachments.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
+            if !postResizeImages.isEmpty {
+                pixelHandler.fire(.submittedWithImages(count: postResizeImages.count))
             }
 
-            aiChatTabOpener.openAIChatTab(
-                with: .query(trimmedText, shouldAutoSubmit: true),
-                behavior: .currentTab
-            )
-            // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode)
-            promptHandler.setData(prompt)
+            // Extract each picked tab's current `AIChatPageContextData` in parallel — same
+            // per-tab extractor the sidebar's JS-bridge (`getAIChatTabContent`) uses, so the
+            // page-content + favicon enrichment is byte-identical across both flows. Each
+            // entry carries `tabId` so the duck.ai web app sees the discriminator (presence =
+            // tab-picker context), except for the entry whose tab UUID matches the snapshot's
+            // active tab: that one becomes the no-`tabId` form, i.e. "the page you're chatting
+            // about", per the tech design.
+            //
+            // When there are no attached tabs we skip the `await` entirely — keeping the
+            // submit Task linear in the common case.
+            let pageContextPayload: AIChatPageContextPayload?
+            if snapshotTabAttachments.isEmpty {
+                pageContextPayload = nil
+            } else {
+                pageContextPayload = await self.extractPageContextsForOmnibarSubmit(
+                    tabAttachments: snapshotTabAttachments,
+                    activeTabUUID: snapshotActiveTabUUID,
+                    promptStore: snapshotDraftStore
+                )
+                pixelHandler.fire(.submittedWithTabs(count: snapshotTabAttachments.count))
+            }
+
+            // Encode each `AIChatFileAttachment.data` as base64 for the JSON bridge.
+            let files: [AIChatNativePrompt.NativePromptFile]? = snapshotFileAttachments.isEmpty ? nil : snapshotFileAttachments.map { attachment in
+                AIChatNativePrompt.NativePromptFile(
+                    data: attachment.data.base64EncodedString(),
+                    fileName: attachment.fileName,
+                    mimeType: attachment.mimeType
+                )
+            }
+            if !snapshotFileAttachments.isEmpty {
+                pixelHandler.fire(.submittedWithFiles(count: snapshotFileAttachments.count))
+            }
+
+            let prompt = AIChatNativePrompt.queryPrompt(
+                trimmedText,
+                autoSubmit: true,
+                toolChoice: toolChoice,
+                images: images,
+                files: files,
+                modelId: modelId,
+                pageContext: pageContextPayload,
+                mode: mode,
+                reasoningEffort: reasoningEffort
+            ).withTermsAccepted(sentWithAsk)
+
+            if surface.routesSubmissionThroughHost {
+                delegate?.aiChatOmnibarController(self, requestsSubmissionOf: trimmedText, payload: prompt)
+            } else {
+                aiChatConversationSourceHandler.setData(.omnibar)
+                aiChatTabOpener.openAIChatTab(
+                    with: .query(trimmedText, shouldAutoSubmit: true),
+                    behavior: .currentTab
+                )
+                // Re-set prompt after tab opener to include images, files, tab attachments, model
+                // selection, and mode (tab opener overwrites with a plain query).
+                promptHandler.setData(prompt)
+            }
 
             self.activeToolMode = nil
+            // Cancel any in-flight image-resize tasks; the container VC owns those.
             onAttachmentsClearRequested?()
+            // All three attachment kinds live on shared state — clear each so the
+            // `$aiChatPanelAttachments` publisher drives the carousel back to empty.
+            self.persistAttachmentsToActiveTab([])
+            self.persistTabAttachmentsToActiveTab([])
+            self.persistFileAttachmentsToActiveTab([])
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }
 
         currentText = ""
+    }
+
+    private func firePromptSubmissionPixels() {
+        pixelHandler.fire(.promptSubmitted)
+
+        switch activeToolMode {
+        case .imageGeneration:
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
+            pixelHandler.fire(.imageGenerationSubmitted)
+        case .webSearch:
+            pixelHandler.fire(.webSearchSubmitted)
+        case nil:
+            break
+        }
+    }
+
+    /// Eagerly extracts the page context for each omnibar-attached tab, returning a
+    /// `AIChatPageContextPayload?` ready to attach to the prompt's top-level `pageContext`
+    /// field. Empty list → `nil` (the field is omitted on the wire). Otherwise a
+    /// `.multiple([...])` array preserving the carousel's insertion order, where each entry
+    /// has `tabId` stamped EXCEPT the one whose tab matches the active tab (that one is
+    /// stripped to the no-`tabId` form, marking it as "the page you're chatting about" per
+    /// the tech design discriminator).
+    ///
+    /// Per-tab extraction runs in parallel (`withTaskGroup`). Each task resolves the tab by id via
+    /// the shared cross-window source (scoped to this controller's window as origin) and **wakes a
+    /// suspended tab** if needed so its content is extracted rather than dropped. Tabs that genuinely
+    /// can't be loaded return `nil` and are dropped from the payload — same as the JS-bridge.
+    @MainActor
+    private func extractPageContextsForOmnibarSubmit(
+        tabAttachments: [AIChatTabAttachment],
+        activeTabUUID: String?,
+        promptStore: (any DuckAIPromptDraftStoring)?
+    ) async -> AIChatPageContextPayload? {
+        guard !tabAttachments.isEmpty, let origin = origin?.originTabCollectionViewModel else { return nil }
+
+        let windowControllersManager = Application.appDelegate.windowControllersManager
+        let extracted: [(String, AIChatPageContextData?)] = await withTaskGroup(of: (String, AIChatPageContextData?).self) { group in
+            for attachment in tabAttachments {
+                let tabId: String = attachment.id
+                group.addTask { @MainActor in
+                    let ctx = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager)
+                    return (tabId, ctx)
+                }
+            }
+            var results: [(String, AIChatPageContextData?)] = []
+            for await pair in group {
+                results.append(pair)
+            }
+            return results
+        }
+
+        // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
+        // active tab), then re-order to match the carousel's insertion order.
+        // Extraction resolves the live tab, which may have navigated while the extraction ran, so
+        // only attachments this submission made — and that are still attached — may ship.
+        let submittedInstanceIDs = Dictionary(tabAttachments.map { ($0.id, $0.instanceID) }, uniquingKeysWith: { _, latest in latest })
+        // Matched on instanceID, so a tab detached and reattached mid-submit is a different
+        // attachment and its new page can't ride along with this prompt.
+        let attachedNow = Set((promptStore?.aiChatTabAttachments ?? tabAttachments)
+            .filter { submittedInstanceIDs[$0.id] == $0.instanceID }
+            .map(\.id))
+        var byId: [String: AIChatPageContextData] = [:]
+        for (tabId, maybeContext) in extracted {
+            guard let ctx = maybeContext, attachedNow.contains(tabId) else { continue }
+            let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
+            byId[tabId] = ctx.withTabId(stampedTabId)
+        }
+        let ordered: [AIChatPageContextData] = tabAttachments.compactMap { byId[$0.id] }
+        return ordered.isEmpty ? nil : .multiple(ordered)
     }
 
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.
@@ -557,7 +1695,11 @@ final class AIChatOmnibarController {
 
     /// Checks if the input text is a navigable URL (not a search query).
     /// Returns the URL if it should be navigated to, nil if it should be treated as an AI chat query.
+    /// Pre-filter: a URL cannot contain internal whitespace, so any multi-word prompt that happens to start
+    /// with a URL (e.g. "https://example.com\nexplain this") is treated as a chat query. Without this the
+    /// classifier (after URL construction strips the whitespace) would navigate to the concatenated string.
     private func classifyAsNavigableURL(_ text: String) -> URL? {
+        guard text.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else { return nil }
         do {
             switch try Classifier.classify(input: text) {
             case .navigate(let url):
@@ -568,5 +1710,98 @@ final class AIChatOmnibarController {
         } catch {
             return nil
         }
+    }
+}
+
+// MARK: - Model Picker Content
+
+/// A fully-resolved model-picker row so the view controller only maps it to an `NSMenuItem`.
+enum AIChatModelPickerItem {
+    case model(AIChatModel, subtitle: String? = nil, isSelected: Bool)
+    case separator
+    /// Muted, uppercase section title (no CTA) — used above the gated models section.
+    case sectionHeader(title: String)
+    /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
+    /// doesn't support it) — the row still shows, but must not open the purchase dialog.
+    case gatedModel(AIChatModel, routesToUpsell: Bool)
+    /// Out of allowance rather than out of subscription: the row shows, greyed, and selects nothing.
+    case unavailableModel(AIChatModel, isSelected: Bool)
+}
+
+/// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
+struct AIChatReasoningPickerItem {
+    let effort: AIChatReasoningEffort
+    let isSelected: Bool
+    let isGated: Bool
+    /// Title of the section this effort opens, set on the first gated effort only. `nil` when the
+    /// upsell is unavailable — the divider still separates the section, just without a heading.
+    let gatedSectionTitle: String?
+    /// See `AIChatModelPickerItem.gatedModel`'s `routesToUpsell`.
+    let routesToUpsell: Bool
+}
+
+extension AIChatOmnibarController {
+    /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
+    /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
+    /// `hidesGatedModels` is the usage card's chevron: it offers a way out of a spent allowance, so a
+    /// row the user's plan can't pick has nothing to offer there.
+    func modelPickerItems(selectedModelId: String?,
+                          freeModelsOnly: Bool = false,
+                          hidesGatedModels: Bool = false) -> [AIChatModelPickerItem] {
+        let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
+        // Recommended = backend-labelled models, shown first with the label as a subtitle.
+        let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
+
+        let advancedExhausted = isAdvancedModelUsageExhausted
+        func item(for model: AIChatModel, subtitle: String? = nil) -> AIChatModelPickerItem {
+            let isSelected = model.id == selectedModelId
+            guard advancedExhausted, model.isAdvanced else {
+                return .model(model, subtitle: subtitle, isSelected: isSelected)
+            }
+            return .unavailableModel(model, isSelected: isSelected)
+        }
+
+        var items: [AIChatModelPickerItem] = recommended.map { model in
+            item(for: model, subtitle: AIChatPickerSectionCopy.subtitle(for: model.label))
+        }
+        items += rest.map { item(for: $0) }
+
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
+        items.append(.separator)
+
+        if isSubscriptionUpsellEnabled {
+            items.append(.sectionHeader(title: AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)))
+        }
+
+        items += gated.map { .gatedModel($0.model, routesToUpsell: isSubscriptionUpsellEnabled) }
+        return items
+    }
+
+    /// Resolved reasoning-effort rows; owns the current-effort fallback and the
+    /// flag/eligibility/tier decisions so the VC just renders.
+    func reasoningPickerItems() -> [AIChatReasoningPickerItem] {
+        // Falls back to the first (always-accessible) effort before models load, so the menu and
+        // the chip agree on what's "current".
+        let current = displayedReasoningEffort ?? pickerReasoningEfforts.first
+        var items: [AIChatReasoningPickerItem] = []
+        var titledGatedSection = false
+        for effort in pickerReasoningEfforts {
+            let requiredTier = requiredTier(for: effort)
+            let isGated = requiredTier != nil
+            // Only the first gated effort heads the section.
+            let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
+                ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)
+                : nil
+            titledGatedSection = titledGatedSection || sectionTitle != nil
+            items.append(AIChatReasoningPickerItem(
+                effort: effort,
+                isSelected: effort == current && !isGated,
+                isGated: isGated,
+                gatedSectionTitle: sectionTitle,
+                routesToUpsell: isGated && isSubscriptionUpsellEnabled
+            ))
+        }
+        return items
     }
 }

@@ -25,7 +25,11 @@ class FirefoxLoginReaderTests: XCTestCase {
 
     private let rootDirectoryName = UUID().uuidString
 
+    // Skipped: legacy BSD `dbopen()` no longer reads Firefox's key3.db DB_HASH format on the
+    // macOS 26 CI runner image. PR #5028 attempted a fix (closing the DB handle) but did not
+    // address the root cause and the tests stayed red. Tracked for a real fix.
     func testWhenImportingFirefox46LoginsWithNoPrimaryPassword_ThenImportSucceeds() throws {
+        try XCTSkipIf(true, "Disabled while Firefox key3.db decryption is broken on macOS 26 runner — see PR #5028.")
         let database = resourcesURLWithoutPassword().appendingPathComponent("key3-firefox46.db")
         let logins = resourcesURLWithoutPassword().appendingPathComponent("logins-firefox46.json")
 

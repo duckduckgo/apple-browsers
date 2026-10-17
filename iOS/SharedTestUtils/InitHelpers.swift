@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 @testable import Core
 import Common
+import FoundationExtensions
 
 extension HTTPCookie {
     

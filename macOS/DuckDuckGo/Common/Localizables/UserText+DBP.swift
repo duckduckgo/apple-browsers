@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 // MARK: - DBP Error pages
 extension UserText {

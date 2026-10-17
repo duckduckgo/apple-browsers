@@ -20,6 +20,7 @@ import Foundation
 
 import Combine
 import Common
+import FoundationExtensions
 import UserScriptActionsManager
 import WebKit
 

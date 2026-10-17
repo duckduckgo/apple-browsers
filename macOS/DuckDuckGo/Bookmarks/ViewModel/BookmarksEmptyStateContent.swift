@@ -51,8 +51,8 @@ enum BookmarksEmptyStateContent {
 
     var image: NSImage? {
         switch self {
-        case .noBookmarks: .bookmarksImport128
-        case .noSearchResults: .bookmarkEmptySearch
+        case .noBookmarks: NSImage(resource: .bookmarksImport128)
+        case .noSearchResults: NSImage(resource: .bookmarkEmptySearch)
         }
     }
 

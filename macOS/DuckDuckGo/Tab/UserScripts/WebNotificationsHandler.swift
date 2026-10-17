@@ -18,7 +18,8 @@
 
 import Combine
 import Common
-import FeatureFlags
+import FoundationExtensions
+import FeatureFlags_macOS
 import Foundation
 import OSLog
 import PixelKit
@@ -46,7 +47,9 @@ protocol WebNotificationService {
 }
 
 extension UNUserNotificationCenter: WebNotificationService {
-    // UNUserNotificationCenter already provides the required methods
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await notificationSettings().authorizationStatus
+    }
 }
 
 /// Abstraction for permission model operations needed by WebNotificationsHandler.
@@ -155,6 +158,8 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         case .authorized, .provisional:
             return true
         case .notDetermined:
+            // The new prompt requests system access only from its explicit Request Permission button.
+            guard !featureFlagger.isFeatureOn(.websitePermissionsPrompts) else { return false }
             do {
                 PixelKit.fire(WebNotificationPixel.systemAuthorizationRequested, frequency: .dailyAndCount)
                 let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
@@ -256,12 +261,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            Logger.general.debug("WebNotificationsHandler: Blocked - newPermissionView flag disabled (ID: \(payload.id))")
-            await sendErrorEvent(id: payload.id, to: original.webView)
-            return
-        }
-
         guard let url = await original.webView?.url,
               let domain = url.host else {
             Logger.general.debug("WebNotificationsHandler: Missing domain for permission check (ID: \(payload.id))")
@@ -316,11 +315,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            Logger.general.debug("WebNotificationsHandler: Permission denied - newPermissionView flag disabled")
-            return RequestPermissionResponse(permission: Permission.denied.rawValue)
-        }
-
         guard let url = await original.webView?.url,
               let domain = url.host,
               let permissionModel = permissionModel else {
@@ -345,7 +339,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        // Ensure system authorization (requests if not determined, checks if already granted/denied)
+        // The new prompt handles system authorization; only the legacy flow may request it here.
         guard await ensureSystemAuthorization() else {
             Logger.general.debug("WebNotificationsHandler: System authorization not granted")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)

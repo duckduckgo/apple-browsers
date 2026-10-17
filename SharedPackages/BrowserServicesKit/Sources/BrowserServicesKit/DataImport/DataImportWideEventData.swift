@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 public class DataImportWideEventData: WideEventData {
 
@@ -28,7 +28,7 @@ public class DataImportWideEventData: WideEventData {
         featureName: "data-import",
         mobileMetaType: "ios-data-import",
         desktopMetaType: "macos-data-import",
-        version: "1.0.0"
+        version: "1.2.0"
     )
     public static let importTimeout: TimeInterval = .minutes(15)
 

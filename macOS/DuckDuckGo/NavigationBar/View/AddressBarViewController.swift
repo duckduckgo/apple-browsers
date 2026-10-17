@@ -16,19 +16,29 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Combine
-import Lottie
+import CombineExtensions
 import Common
-import AIChat
-import UIComponents
+import FoundationExtensions
+import Lottie
 import PixelKit
 import PrivacyConfig
+import UIComponents
 import WebExtensions
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, allowsAsync: Bool)
     func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool)
+    /// Called when the user unfocuses the address bar while duck.ai mode is selected for the current tab.
+    /// The panel should stay on screen, but the suggestions row should collapse.
+    func addressBarViewControllerDidResignFocusKeepingAIChatMode(_ addressBarViewController: AddressBarViewController)
+    /// Called when the user refocuses the address bar while duck.ai mode is the persistent mode for the current tab.
+    /// The suggestions row should re-expand and the prompt editor should become first responder.
+    func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController)
+    func addressBarViewController(_ addressBarViewController: AddressBarViewController, openSettings destination: PreferencesDestination)
 }
 
 final class AddressBarViewController: NSViewController {
@@ -63,9 +73,24 @@ final class AddressBarViewController: NSViewController {
         case inactive
         case active
         case activeWithAIChat
+        /// Address bar is unfocused, but duck.ai is the persistent mode for the current tab:
+        /// the AI chat panel is hidden and the bar renders identically to `.inactive` (single-line,
+        /// no left icon), with the toggle on the duck.ai segment. Clicking the bar re-enters focused
+        /// duck.ai (`.activeWithAIChat`); the typed prompt / cursor / tool mode / attachments are preserved.
+        case inactiveWithAIChat
 
         var isSelected: Bool {
-            self != .inactive
+            switch self {
+            case .inactive, .inactiveWithAIChat: return false
+            case .active, .activeWithAIChat: return true
+            }
+        }
+
+        var isInAIChatMode: Bool {
+            switch self {
+            case .activeWithAIChat, .inactiveWithAIChat: return true
+            case .inactive, .active: return false
+            }
         }
     }
 
@@ -76,23 +101,34 @@ final class AddressBarViewController: NSViewController {
         static let maxClickReleaseDistanceToResignFirstResponder: CGFloat = 4
     }
 
-    @IBOutlet var addressBarTextField: AddressBarTextField!
-    @IBOutlet var passiveTextField: PassiveAddressBarTextField!
-    @IBOutlet var inactiveBackgroundView: ColorView!
-    @IBOutlet var activeBackgroundView: ColorView!
-    @IBOutlet var activeOuterBorderView: ColorView!
-    @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
-    @IBOutlet var innerBorderView: ColorView!
-    @IBOutlet var buttonsContainerView: NSView!
-    @IBOutlet var switchToTabBox: ColorView!
-    @IBOutlet var switchToTabLabel: NSTextField!
-    @IBOutlet var shadowView: ShadowView!
+    private(set) var addressBarTextField: AddressBarTextField!
+    private(set) var passiveTextField: PassiveAddressBarTextField!
+    private(set) var inactiveBackgroundView: ColorView!
+    private(set) var activeBackgroundView: ColorView!
+    private(set) var activeBackgroundViewWithSuggestions: ColorView!
+    private(set) var innerBorderView: ColorView!
+    private(set) var bottomSeparatorView: ColorView!
+    private(set) var buttonsContainerView: NSView!
+    private(set) var switchToTabBox: ColorView!
+    private(set) var switchToTabLabel: NSTextField!
+    private(set) var shadowView: ShadowView!
 
-    @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewTopConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewBottomConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewTopConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewBottomConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var switchToTabBoxMinXConstraint: NSLayoutConstraint!
+    private(set) var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
+    private(set) var passiveTextFieldMinXConstraint: NSLayoutConstraint!
+    private(set) var activeTextFieldMinXConstraint: NSLayoutConstraint!
+    private(set) var addressBarTextTrailingConstraint: NSLayoutConstraint!
+    private(set) var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
 
     private let popovers: NavigationBarPopovers?
     private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
@@ -120,15 +156,36 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.addressBarSharedTextState ?? AddressBarSharedTextState()
     }
 
-    @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var activeOuterBorderLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var activeOuterBorderBottomConstraint: NSLayoutConstraint!
-    @IBOutlet weak var activeOuterBorderTopConstraint: NSLayoutConstraint!
+    /// Deprecated: Remove when `appRebranding` ships
+    private(set) var activeOuterBorderView: ColorView!
+    private(set) var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
+    private(set) var activeOuterBorderLeadingConstraint: NSLayoutConstraint!
+    private(set) var activeOuterBorderBottomConstraint: NSLayoutConstraint!
+    private(set) var activeOuterBorderTopConstraint: NSLayoutConstraint!
 
     private var mode: Mode = .editing(.text) {
         didSet {
             addressBarButtonsViewController?.controllerMode = mode
+            /// `shouldUseTallAddressBarLayout` keys off `mode.isEditing`, but the height-driving
+            /// `resizeAddressBar` only re-runs on tab content changes and focus transitions — not on
+            /// mode flips. When a window opens with a stored URL tab, the initial resize reads the
+            /// default `mode = .editing(.text)` and locks the bar at the tall focused height; once
+            /// the bar's value updates to the loaded URL `mode` flips to `.browsing` but nothing
+            /// re-evaluates the height. Trigger a resize on the editing-ness flip so the compact
+            /// layout applies immediately on session restore / "Open in New Window".
+            if oldValue.isEditing != mode.isEditing {
+                requestAddressBarResize()
+            }
         }
+    }
+
+    private var isSearchOrChatSuggestionsWindowVisible: Bool {
+        addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible
+    }
+
+    /// True when the nav bar should render at its tall / focused height
+    var shouldUseTallAddressBarLayout: Bool {
+        selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
     }
 
     let themeManager: ThemeManaging
@@ -139,11 +196,19 @@ final class AddressBarViewController: NSViewController {
             updateView()
             updateSwitchToTabBoxAppearance()
             self.addressBarButtonsViewController?.isTextFieldEditorFirstResponder = selectionState.isSelected
+            /// `isAIChatPanelActive` gates the suppression of left-side indicators (privacy shield, permission
+            /// center, image button, bookmark). Propagate `isInAIChatMode` so unfocused duck.ai also hides these
+            /// — even though the panel itself isn't visible, the bar is logically a prompt input, not a URL
+            /// indicator. `isAIChatOmnibarVisible.didSet` also writes this flag; the last write wins, so sequence
+            /// the ordering carefully in transitions (flip `isAIChatOmnibarVisible` first, then `selectionState`).
+            self.addressBarButtonsViewController?.isAIChatPanelActive = selectionState.isInAIChatMode
             if selectionState == .inactive {
                 self.clickPoint = nil // reset click point if the address bar activated during click
             }
         }
     }
+
+    private var displaysTallLayout: Bool = false
 
     private var isFirstResponder = false {
         didSet {
@@ -164,8 +229,9 @@ final class AddressBarViewController: NSViewController {
 
     private(set) var isAIChatOmnibarVisible = false {
         didSet {
+            addressBarButtonsViewController?.isAIChatPanelActive = isAIChatOmnibarVisible
             if isSelected {
-                updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+                refreshAppearance(isSuggestionsWindowVisible: addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             }
         }
     }
@@ -175,7 +241,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private var accentColor: NSColor {
-        return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
+        return isBurner ? NSColor(resource: .burnerAccent) : NSColor.controlAccentColor
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -188,6 +254,13 @@ final class AddressBarViewController: NSViewController {
     /// Callback to check if a point (in window coordinates) is within the AI Chat omnibar
     var isPointInAIChatOmnibar: ((NSPoint) -> Bool)?
 
+    /// Called from `escapeKeyDown()` BEFORE any focus-resign work, so the duck.ai omnibar
+    /// can swallow Esc when its `@`-mention picker is visible. Returns `true` to indicate
+    /// the picker was open and got dismissed; in that case the address bar leaves its
+    /// focus / selection state alone. Returns `false` (or nil callback) to fall through
+    /// to the regular Esc behavior.
+    var aiChatOmnibarHandledEscape: (() -> Bool)?
+
     weak var delegate: AddressBarViewControllerDelegate?
 
     // MARK: - View Lifecycle
@@ -196,24 +269,23 @@ final class AddressBarViewController: NSViewController {
         fatalError("AddressBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder,
-          tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager,
-          historyCoordinator: SuggestionContainer.HistoryProvider,
-          privacyConfigurationManager: PrivacyConfigurationManaging,
-          permissionManager: PermissionManagerProtocol,
-          burnerMode: BurnerMode,
-          popovers: NavigationBarPopovers?,
-          searchPreferences: SearchPreferences,
-          tabsPreferences: TabsPreferences,
-          accessibilityPreferences: AccessibilityPreferences,
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
-          aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          aiChatCoordinator: AIChatCoordinating,
-          featureFlagger: FeatureFlagger,
-          adBlockingAvailability: AdBlockingAvailabilityProviding) {
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         bookmarkManager: BookmarkManager,
+         historyCoordinator: SuggestionContainer.HistoryProvider,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         permissionManager: PermissionManagerProtocol,
+         burnerMode: BurnerMode,
+         popovers: NavigationBarPopovers?,
+         searchPreferences: SearchPreferences,
+         tabsPreferences: TabsPreferences,
+         accessibilityPreferences: AccessibilityPreferences,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+         aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatCoordinator: AIChatCoordinating,
+         featureFlagger: FeatureFlagger,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -244,12 +316,299 @@ final class AddressBarViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
 
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
-    @IBSegueAction func createAddressBarButtonsViewController(_ coder: NSCoder) -> AddressBarButtonsViewController? {
-        let controller = AddressBarButtonsViewController(coder: coder,
-                                                         tabCollectionViewModel: tabCollectionViewModel,
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 653, height: 32)
+        static let suggestionsBackgroundHeight: CGFloat = 60
+        static let bottomSeparatorTop: CGFloat = 47
+        static let borderWidth: CGFloat = 1
+        static let activeBorderWidth: CGFloat = 2
+        static let cornerRadius: CGFloat = 8
+        static let outerBorderCornerRadius: CGFloat = 10
+        static let outerBorderInset: CGFloat = -3
+        static let inactiveInset: CGFloat = 2
+        static let inactiveCornerRadius: CGFloat = 6
+        static let buttonsContainerInset: CGFloat = 2
+        static let buttonsContainerVerticalInset: CGFloat = 3
+        static let textFieldLeading: CGFloat = 40
+        /// The editable text field never grows past this share of the address bar height.
+        static let textFieldMaxHeightRatio: CGFloat = 0.55
+        static let passiveTextFieldLeading: CGFloat = 37
+        static let textFieldTrailing: CGFloat = 45
+        static let passiveTextFieldMinWidth: CGFloat = 75
+        static let switchToTabBoxLeading: CGFloat = 550
+        static let switchToTabBoxTrailing: CGFloat = 29
+        static let switchToTabBoxCornerRadius: CGFloat = 6
+        static let switchToTabInset: CGFloat = 12
+        static let switchToTabArrowSide: CGFloat = 9
+        static let switchToTabHeight: CGFloat = 22
+        static let shadowRadius: CGFloat = 4
+        static let shadowOffset = CGSize(width: 0, height: -4)
+    }
+
+    // swiftlint:disable:next function_body_length
+    override func loadView() {
+        let view = DraggingDestinationView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+        view.wantsLayer = true
+
+        inactiveBackgroundView = ColorView(frame: .zero,
+                                           backgroundColor: NSColor(resource: .inactiveSearchBarBackground),
+                                           cornerRadius: LayoutConstants.inactiveCornerRadius)
+        inactiveBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+
+        activeOuterBorderView = ColorView(frame: .zero, cornerRadius: LayoutConstants.outerBorderCornerRadius)
+        activeOuterBorderView.translatesAutoresizingMaskIntoConstraints = false
+        activeOuterBorderView.borderWidth = 0
+
+        activeBackgroundView = ColorView(frame: .zero,
+                                         backgroundColor: NSColor(resource: .addressBarBackground),
+                                         cornerRadius: LayoutConstants.cornerRadius,
+                                         borderColor: NSColor(resource: .addressBarBorder),
+                                         borderWidth: LayoutConstants.activeBorderWidth)
+        activeBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+
+        activeBackgroundViewWithSuggestions = ColorView(frame: .zero,
+                                                        backgroundColor: NSColor(resource: .addressBarBackground),
+                                                        cornerRadius: LayoutConstants.cornerRadius,
+                                                        borderColor: NSColor(resource: .addressBarBorder),
+                                                        borderWidth: LayoutConstants.borderWidth)
+        activeBackgroundViewWithSuggestions.translatesAutoresizingMaskIntoConstraints = false
+
+        innerBorderView = ColorView(frame: .zero,
+                                    cornerRadius: LayoutConstants.cornerRadius,
+                                    borderColor: NSColor(resource: .addressBarInnerBorder),
+                                    borderWidth: LayoutConstants.borderWidth)
+        innerBorderView.translatesAutoresizingMaskIntoConstraints = false
+
+        bottomSeparatorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .addressBarSeparator))
+        bottomSeparatorView.translatesAutoresizingMaskIntoConstraints = false
+
+        activeBackgroundViewWithSuggestions.addSubview(innerBorderView)
+        activeBackgroundViewWithSuggestions.addSubview(bottomSeparatorView)
+
+        passiveTextField = PassiveAddressBarTextField(frame: .zero)
+        passiveTextField.translatesAutoresizingMaskIntoConstraints = false
+        passiveTextField.isEditable = false
+        passiveTextField.isBordered = false
+        passiveTextField.drawsBackground = false
+        passiveTextField.focusRingType = .none
+        passiveTextField.alignment = .center
+        passiveTextField.lineBreakMode = .byTruncatingTail
+        passiveTextField.usesSingleLineMode = true
+        passiveTextField.refusesFirstResponder = true
+        passiveTextField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        passiveTextField.setContentHuggingPriority(.init(750), for: .horizontal)
+        passiveTextField.setContentHuggingPriority(.init(750), for: .vertical)
+        passiveTextField.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+
+        addressBarTextField = AddressBarTextField(frame: .zero)
+        addressBarTextField.translatesAutoresizingMaskIntoConstraints = false
+        addressBarTextField.isEditable = true
+        addressBarTextField.isSelectable = true
+        addressBarTextField.isBordered = false
+        addressBarTextField.drawsBackground = false
+        addressBarTextField.focusRingType = .none
+        addressBarTextField.lineBreakMode = .byTruncatingTail
+        addressBarTextField.usesSingleLineMode = true
+        addressBarTextField.tag = 5
+        addressBarTextField.placeholderString = UserText.addressBarPlaceholder
+        addressBarTextField.cell?.sendsActionOnEndEditing = true
+        addressBarTextField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        addressBarTextField.setContentHuggingPriority(.init(750), for: .vertical)
+
+        buttonsContainerView = NSView()
+        buttonsContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        switchToTabLabel = NSTextField(labelWithString: UserText.switchToTab)
+        switchToTabLabel.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabLabel.lineBreakMode = .byClipping
+        switchToTabLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        switchToTabLabel.focusRingType = .none
+        switchToTabLabel.setContentHuggingPriority(.init(750), for: .vertical)
+        switchToTabLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let switchToTabArrow = NSImageView()
+        switchToTabArrow.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabArrow.image = NSImage(resource: .arrowRight12)
+        switchToTabArrow.imageScaling = .scaleProportionallyDown
+        switchToTabArrow.imageAlignment = .alignLeft
+        switchToTabArrow.refusesFirstResponder = true
+        switchToTabArrow.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let switchToTabRoundedView = ColorView(frame: .zero, cornerRadius: LayoutConstants.switchToTabBoxCornerRadius)
+        switchToTabRoundedView.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabRoundedView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        switchToTabRoundedView.addSubview(switchToTabLabel)
+        switchToTabRoundedView.addSubview(switchToTabArrow)
+
+        switchToTabBox = ColorView(frame: .zero, cornerRadius: LayoutConstants.switchToTabBoxCornerRadius)
+        switchToTabBox.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabBox.setContentCompressionResistancePriority(.required, for: .horizontal)
+        switchToTabBox.addSubview(switchToTabRoundedView)
+
+        // Frame-driven: `layoutShadowView` positions it with `shadowView.frame`
+        // after moving it into the window's content view, so it must keep
+        // translatesAutoresizingMaskIntoConstraints on.
+        shadowView = ShadowView()
+        shadowView.shadowColor = NSColor(resource: .addressBarShadow)
+        shadowView.shadowOffset = LayoutConstants.shadowOffset
+        shadowView.shadowRadius = LayoutConstants.shadowRadius
+        shadowView.cornerRadius = LayoutConstants.cornerRadius
+        shadowView.shadowOpacity = 1
+
+        // Order matters: the three background states go first so the text fields, buttons and the
+        // shadow all draw on top of whichever one is currently visible.
+        view.addSubview(inactiveBackgroundView)
+        view.addSubview(activeOuterBorderView)
+        view.addSubview(activeBackgroundView)
+        view.addSubview(activeBackgroundViewWithSuggestions)
+        view.addSubview(passiveTextField)
+        view.addSubview(addressBarTextField)
+        view.addSubview(buttonsContainerView)
+        view.addSubview(switchToTabBox)
+        view.addSubview(shadowView)
+
+        inactiveBackgroundViewTopConstraint = inactiveBackgroundView.topAnchor
+            .constraint(equalTo: view.topAnchor, constant: LayoutConstants.inactiveInset)
+        inactiveBackgroundViewBottomConstraint = view.bottomAnchor
+            .constraint(equalTo: inactiveBackgroundView.bottomAnchor, constant: LayoutConstants.inactiveInset)
+        inactiveBackgroundViewLeadingConstraint = inactiveBackgroundView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.inactiveInset)
+        inactiveBackgroundViewTrailingConstraint = view.trailingAnchor
+            .constraint(equalTo: inactiveBackgroundView.trailingAnchor, constant: LayoutConstants.inactiveInset)
+
+        activeOuterBorderTopConstraint = activeOuterBorderView.topAnchor
+            .constraint(equalTo: view.topAnchor, constant: LayoutConstants.outerBorderInset)
+        activeOuterBorderBottomConstraint = view.bottomAnchor
+            .constraint(equalTo: activeOuterBorderView.bottomAnchor, constant: LayoutConstants.outerBorderInset)
+        activeOuterBorderLeadingConstraint = activeOuterBorderView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.outerBorderInset)
+        activeOuterBorderTrailingConstraint = view.trailingAnchor
+            .constraint(equalTo: activeOuterBorderView.trailingAnchor, constant: LayoutConstants.outerBorderInset)
+
+        activeBackgroundViewTopConstraint = activeBackgroundView.topAnchor.constraint(equalTo: view.topAnchor)
+        activeBackgroundViewBottomConstraint = view.bottomAnchor.constraint(equalTo: activeBackgroundView.bottomAnchor)
+        activeBackgroundViewBottomConstraint.priority = .init(300)
+        activeBackgroundViewLeadingConstraint = activeBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        activeBackgroundViewTrailingConstraint = view.trailingAnchor.constraint(equalTo: activeBackgroundView.trailingAnchor)
+
+        buttonsContainerViewLeadingConstraint = buttonsContainerView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.buttonsContainerInset)
+        buttonsContainerViewTrailingConstraint = view.trailingAnchor
+            .constraint(equalTo: buttonsContainerView.trailingAnchor, constant: LayoutConstants.buttonsContainerInset)
+
+        activeTextFieldMinXConstraint = addressBarTextField.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.textFieldLeading)
+        addressBarTextTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: addressBarTextField.trailingAnchor, constant: LayoutConstants.textFieldTrailing)
+        passiveTextFieldMinXConstraint = passiveTextField.leadingAnchor
+            .constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: LayoutConstants.passiveTextFieldLeading)
+        passiveTextFieldTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: passiveTextField.trailingAnchor, constant: LayoutConstants.textFieldTrailing)
+
+        switchToTabBoxMinXConstraint = switchToTabBox.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.switchToTabBoxLeading)
+        switchToTabBoxMinXConstraint.priority = .init(300)
+        switchToTabBoxTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: switchToTabBox.trailingAnchor, constant: LayoutConstants.switchToTabBoxTrailing)
+        switchToTabBoxTrailingConstraint.priority = .init(200)
+
+        let addressBarTextFieldTrailing = view.trailingAnchor.constraint(equalTo: addressBarTextField.trailingAnchor)
+        addressBarTextFieldTrailing.priority = .init(900)
+        let passiveTextFieldCenterX = passiveTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        passiveTextFieldCenterX.priority = .init(250)
+
+        NSLayoutConstraint.activate([
+            inactiveBackgroundViewTopConstraint, inactiveBackgroundViewBottomConstraint,
+            inactiveBackgroundViewLeadingConstraint, inactiveBackgroundViewTrailingConstraint,
+
+            activeOuterBorderTopConstraint, activeOuterBorderBottomConstraint,
+            activeOuterBorderLeadingConstraint, activeOuterBorderTrailingConstraint,
+
+            activeBackgroundViewTopConstraint, activeBackgroundViewBottomConstraint,
+            activeBackgroundViewLeadingConstraint, activeBackgroundViewTrailingConstraint,
+
+            activeBackgroundViewWithSuggestions.topAnchor.constraint(equalTo: view.topAnchor),
+            activeBackgroundViewWithSuggestions.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.trailingAnchor),
+            activeBackgroundViewWithSuggestions.heightAnchor
+                .constraint(equalToConstant: LayoutConstants.suggestionsBackgroundHeight),
+
+            innerBorderView.topAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.topAnchor,
+                                                 constant: LayoutConstants.borderWidth),
+            innerBorderView.leadingAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.leadingAnchor,
+                                                     constant: LayoutConstants.borderWidth),
+            activeBackgroundViewWithSuggestions.trailingAnchor.constraint(equalTo: innerBorderView.trailingAnchor,
+                                                                          constant: LayoutConstants.borderWidth),
+            activeBackgroundViewWithSuggestions.bottomAnchor.constraint(equalTo: innerBorderView.bottomAnchor,
+                                                                        constant: LayoutConstants.borderWidth),
+
+            bottomSeparatorView.heightAnchor.constraint(equalToConstant: LayoutConstants.borderWidth),
+            bottomSeparatorView.topAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.topAnchor,
+                                                     constant: LayoutConstants.bottomSeparatorTop),
+            bottomSeparatorView.leadingAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.leadingAnchor,
+                                                         constant: LayoutConstants.borderWidth),
+            activeBackgroundViewWithSuggestions.trailingAnchor.constraint(equalTo: bottomSeparatorView.trailingAnchor,
+                                                                          constant: LayoutConstants.borderWidth),
+
+            passiveTextField.widthAnchor.constraint(greaterThanOrEqualToConstant: LayoutConstants.passiveTextFieldMinWidth),
+            passiveTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            passiveTextFieldMinXConstraint, passiveTextFieldTrailingConstraint, passiveTextFieldCenterX,
+
+            addressBarTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            addressBarTextField.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor,
+                                                        multiplier: LayoutConstants.textFieldMaxHeightRatio),
+            activeTextFieldMinXConstraint, addressBarTextTrailingConstraint, addressBarTextFieldTrailing,
+
+            buttonsContainerView.topAnchor.constraint(equalTo: view.topAnchor,
+                                                      constant: LayoutConstants.buttonsContainerVerticalInset),
+            view.bottomAnchor.constraint(equalTo: buttonsContainerView.bottomAnchor,
+                                         constant: LayoutConstants.buttonsContainerVerticalInset),
+            buttonsContainerViewLeadingConstraint, buttonsContainerViewTrailingConstraint,
+
+            switchToTabBox.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            switchToTabBox.heightAnchor.constraint(equalTo: addressBarTextField.heightAnchor),
+            switchToTabBoxMinXConstraint, switchToTabBoxTrailingConstraint,
+
+            switchToTabRoundedView.leadingAnchor.constraint(equalTo: switchToTabBox.leadingAnchor),
+            switchToTabBox.trailingAnchor.constraint(equalTo: switchToTabRoundedView.trailingAnchor),
+            switchToTabRoundedView.centerYAnchor.constraint(equalTo: switchToTabBox.centerYAnchor),
+            switchToTabRoundedView.heightAnchor.constraint(equalToConstant: LayoutConstants.switchToTabHeight),
+
+            switchToTabLabel.leadingAnchor.constraint(equalTo: switchToTabRoundedView.leadingAnchor,
+                                                      constant: LayoutConstants.switchToTabInset),
+            switchToTabLabel.centerYAnchor.constraint(equalTo: switchToTabRoundedView.centerYAnchor),
+            switchToTabArrow.widthAnchor.constraint(equalToConstant: LayoutConstants.switchToTabArrowSide),
+            switchToTabArrow.heightAnchor.constraint(equalToConstant: LayoutConstants.switchToTabArrowSide),
+            switchToTabArrow.leadingAnchor.constraint(equalTo: switchToTabLabel.trailingAnchor, constant: 6),
+            switchToTabArrow.firstBaselineAnchor.constraint(equalTo: switchToTabLabel.firstBaselineAnchor),
+            switchToTabRoundedView.trailingAnchor.constraint(equalTo: switchToTabArrow.trailingAnchor,
+                                                             constant: LayoutConstants.switchToTabInset),
+        ])
+
+        // The buttons are their own controller so they keep their own state and lifecycle;
+        // embed it as a child rather than reaching into its views from here.
+        let buttonsViewController = makeAddressBarButtonsViewController()
+        addChild(buttonsViewController)
+        // Pinned with constraints rather than `addAndLayout`: the container has no size yet at
+        // `loadView()` time, so autoresizing would have to grow the child from a zero frame.
+        let buttonsView = buttonsViewController.view
+        buttonsView.translatesAutoresizingMaskIntoConstraints = false
+        buttonsContainerView.addSubview(buttonsView)
+        NSLayoutConstraint.activate([
+            buttonsView.leadingAnchor.constraint(equalTo: buttonsContainerView.leadingAnchor),
+            buttonsContainerView.trailingAnchor.constraint(equalTo: buttonsView.trailingAnchor),
+            buttonsView.topAnchor.constraint(equalTo: buttonsContainerView.topAnchor),
+            buttonsContainerView.bottomAnchor.constraint(equalTo: buttonsView.bottomAnchor),
+        ])
+
+        self.view = view
+    }
+
+    private func makeAddressBarButtonsViewController() -> AddressBarButtonsViewController {
+        let controller = AddressBarButtonsViewController(tabCollectionViewModel: tabCollectionViewModel,
                                                          bookmarkManager: bookmarkManager,
                                                          privacyConfigurationManager: privacyConfigurationManager,
                                                          permissionManager: permissionManager,
@@ -264,8 +623,8 @@ final class AddressBarViewController: NSViewController {
                                                          adBlockingAvailability: adBlockingAvailability)
 
         self.addressBarButtonsViewController = controller
-        controller?.delegate = self
-        return addressBarButtonsViewController
+        controller.delegate = self
+        return controller
     }
 
     override func viewDidLoad() {
@@ -303,10 +662,10 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.focusDelegate = self
         addressBarTextField.searchPreferences = searchPreferences
         addressBarTextField.tabsPreferences = tabsPreferences
-        addressBarTextField.aiChatPreferences = aiChatSettings
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
+        refreshConstraints()
         refreshSuggestionsAppearance()
     }
 
@@ -335,10 +694,15 @@ final class AddressBarViewController: NSViewController {
             subscribeToMouseEvents()
             subscribeToFirstResponder()
         }
+        /// `lastAddressBarTextFieldValue` is now mirrored live from `AddressBarTextField.handleTextDidChange`
+        /// (every keystroke writes it into the current tab), so there's no need for a tab-switch snapshot
+        /// subscriber here — Combine fires `$selectedTabViewModel` sinks in non-deterministic order, and
+        /// any "save outgoing on switch" subscriber would race with `restoreValueIfPossible`'s mutation
+        /// of `self.value` and either lose the user's draft or leak it onto a sibling tab.
         addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
         passiveTextField.tabCollectionViewModel = tabCollectionViewModel
-
         subscribeToSelectedTabViewModel()
+
         subscribeToAddressBarValue()
         subscribeToButtonsWidth()
         subscribeForShadowViewUpdates()
@@ -381,17 +745,12 @@ final class AddressBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        // hide Suggestions when child window is shown (Suggestions, Bookmarks, Downloads etc…, excluding Tab Previews and Suggestions)
         window.publisher(for: \.childWindows)
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
             .sink { [weak self] childWindows in
-                guard let self, let childWindows, childWindows.contains(where: {
-                    !(
-                        $0.windowController is TabPreviewWindowController
-                        || $0.contentViewController is SuggestionViewController
-                        || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
-                    )
-                }) else { return }
+                guard let childWindows, let self, self.mustDismissSuggestionsWindow(childWindows, titlebarWindow: self.view.window?.titlebarView?.window) else {
+                    return
+                }
 
                 addressBarTextField.hideSuggestionWindow()
             }
@@ -402,6 +761,19 @@ final class AddressBarViewController: NSViewController {
                 self?.refreshAddressBarAppearance(nil)
             }
             .store(in: &cancellables)
+    }
+
+    /// Determines if the Suggestions Window must be hidden, whenever the specified collection of Child Windows is onscreen
+    ///
+    private func mustDismissSuggestionsWindow(_ childWindows: [NSWindow], titlebarWindow: NSWindow?) -> Bool {
+        childWindows.contains { window in
+            !(
+                window.windowController is TabPreviewWindowController
+                || window.contentViewController is SuggestionViewController
+                || window === titlebarWindow
+                || window.contentViewController?.identifier == .updateNotificationPopover
+            )
+        }
     }
 
     private func subscribeToFireproofDomainsChanges() {
@@ -417,6 +789,8 @@ final class AddressBarViewController: NSViewController {
             .sink { [weak self] tabViewModel in
                 guard let self else { return }
 
+                let wasInAIChatMode = self.selectionState.isInAIChatMode
+
                 self.tabViewModel = tabViewModel
                 tabViewModelCancellables.removeAll()
 
@@ -428,12 +802,59 @@ final class AddressBarViewController: NSViewController {
                 // don't resign first responder on tab switching
                 clickPoint = nil
 
-                if selectionState == .activeWithAIChat {
-                    delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
-                    setAIChatOmnibarVisible(false)
-                }
+                applyIncomingTabAIChatMode(wasInAIChatMode: wasInAIChatMode)
             }
             .store(in: &cancellables)
+    }
+
+    /// Reconciles the selection state with the newly selected tab's persistent duck.ai flag.
+    /// Per the redesign the unfocused duck.ai bar looks identical to unfocused search (one-line passive text field,
+    /// panel hidden). Tab switches always land in the unfocused state: `.inactiveWithAIChat` for duck.ai tabs,
+    /// `.inactive` otherwise. The user can click the bar or the toggle to enter focused duck.ai.
+    private func applyIncomingTabAIChatMode(wasInAIChatMode: Bool) {
+        let incomingIsInDuckAIMode = sharedTextState?.isInDuckAIMode ?? false
+
+        switch (wasInAIChatMode, incomingIsInDuckAIMode) {
+        case (true, true), (false, true):
+            /// Incoming tab has duck.ai selected — sync toggle + land in unfocused duck.ai without opening the panel.
+            /// `isAIChatOmnibarVisible` is flipped BEFORE `selectionState` so `updateView` (triggered by the state
+            /// change) sees the panel-hidden flag and drops the suggestions-variant background; otherwise the
+            /// unfocused bar renders at the taller focused-with-suggestions height.
+            /// `makeFirstResponder(nil)` drops any FR on `addressBarTextField` inherited from the outgoing tab
+            /// (e.g. the new-tab NTP path makes it FR). Without it the field editor stays active over the
+            /// now-unfocused duck.ai bar and renders the suffix + selected text on top of our plain-looking bar.
+            /// `applyDuckAIUnfocusedValue` pushes the incoming tab's preserved prompt onto the bar — otherwise
+            /// on a URL-loaded tab the value would still be the URL and the bar would render the URL + shield.
+            /// `addressBarViewControllerDidResignFocusKeepingAIChatMode` drives `hideAIChatOmnibarPanelKeepingTabState`
+            /// to close the panel container if the outgoing tab had it open (e.g. NTP with Duck.ai, where the focused
+            /// panel is the default UX). Without this the incoming tab inherits the expanded panel while `selectionState`
+            /// already reads `.inactiveWithAIChat`, rendering a broken focused-looking view. The delegate target guards
+            /// on `mainView.isAIChatOmnibarContainerShown`, so it no-ops when the panel was already hidden.
+            addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
+            isAIChatOmnibarVisible = false
+            addressBarTextField.applyDuckAIUnfocusedValue()
+            selectionState = .inactiveWithAIChat
+            updateMode()
+            view.window?.makeFirstResponder(nil)
+            requestAddressBarResize()
+            delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
+        case (true, false):
+            /// Incoming tab is in search mode — fully dismiss the duck.ai panel (in case it was up) and reset the toggle.
+            delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
+            setAIChatOmnibarVisible(false)
+            /// On Cmd+T from a Duck.ai tab, the new NTP tab should land in focused search mode (cursor in
+            /// the bar, "Search or enter address" placeholder). MainVC's `adjustFirstResponder` chain
+            /// normally grabs focus for NTP, but the Duck.ai panel's close + AIChatOmnibarTextContainerVC
+            /// resignation race can leave the bar unfocused with `selectionState.isInAIChatMode` lingering
+            /// and the wrong placeholder showing. Explicitly making the address bar first responder here
+            /// converges the new tab to `.active` via `handleFirstResponderChange`. URL-loaded incoming
+            /// tabs are unaffected — they should land unfocused with the URL passively rendered.
+            if tabViewModel?.tab.content == .newtab {
+                addressBarTextField.makeMeFirstResponder()
+            }
+        case (false, false):
+            break
+        }
     }
 
     private func subscribeToAddressBarValue() {
@@ -453,6 +874,20 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.tab.$content
             .map { $0 == .newtab }
             .assign(to: \.isHomePage, onWeaklyHeld: self)
+            .store(in: &tabViewModelCancellables)
+
+        /// Navigation within the tab (link click, back/forward, reload) should exit duck.ai mode:
+        /// tear the panel down and reset the toggle so the address bar returns to its normal search state.
+        /// Triggered from a `Tab.Content` change rather than from the shared state publisher to avoid re-entering
+        /// `setAIChatOmnibarVisible` while it is in the process of clearing shared state.
+        tabViewModel?.tab.$content
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self, selectionState.isInAIChatMode else { return }
+                delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
+                setAIChatOmnibarVisible(false)
+            }
             .store(in: &tabViewModelCancellables)
     }
 
@@ -479,7 +914,7 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.isSuggestionWindowVisiblePublisher
             .sink { [weak self] isSuggestionsWindowVisible in
                 guard let self else { return }
-                self.updateShadowView(isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
+                self.refreshAppearance(isSuggestionsWindowVisible: isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
                 if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
                     self.layoutShadowView()
                 }
@@ -553,58 +988,93 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateView() {
-        if selectionState == .activeWithAIChat {
+        let colorsProvider = theme.colorsProvider
+
+        switch selectionState {
+        case .activeWithAIChat:
+            /// Focused Duck.ai: the prompt panel covers the address-bar area. Hide both text fields so their
+            /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
-        } else {
-            let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
-            addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
-            passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
-        }
-        passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
+        case .active, .inactive, .inactiveWithAIChat:
+            let isPassiveTextFieldHidden = (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
 
-        // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
+            addressBarTextField.isHidden = !isPassiveTextFieldHidden
+            passiveTextField.isHidden = isPassiveTextFieldHidden
+        }
+
+        refreshPlaceholderAppearance()
+
+        // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
+        // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
+        // out of `.activeWithAIChat` into `.inactiveWithAIChat`) must restore them or the text won't render.
         if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
             if addressBarTextField.isHidden {
                 forceHideInternalTextFieldLabels(in: addressBarTextField)
+            } else {
+                restoreInternalTextFieldLabels(in: addressBarTextField)
             }
         }
 
         updateShadowViewPresence(selectionState.isSelected)
-        inactiveBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
-        inactiveBackgroundView.alphaValue = selectionState.isSelected ? 0 : 1
-        activeBackgroundView.alphaValue = selectionState.isSelected ? 1 : 0
+        inactiveBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
+
+        /// When duck.ai is active, the extended `activeBackgroundViewWithSuggestions` is the single background
+        /// behind the bar (it merges with the panel below). Suppress the regular inactive / active variants to
+        /// avoid two layers rendering with different widths — that's the ~1pt edge mismatch and the
+        /// "address-bar-like" look on tab-switch back into a Duck.ai tab. `refreshAppearance` (fired off the
+        /// suggestion-window publisher) handles the suggestions-visible case; don't duplicate its isHidden flips
+        /// here or we risk racing it after first ESC closes the suggestions window.
+        inactiveBackgroundView.alphaValue = (selectionState.isSelected || isAIChatOmnibarVisible) ? 0 : 1
+        activeBackgroundView.alphaValue = (selectionState.isSelected && !isAIChatOmnibarVisible) ? 1 : 0
+
+        addressBarButtonsViewController?.trailingButtonsBackgroundColor = .clear
 
         let isKey = self.view.window?.isKeyWindow == true
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
-        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+        /// The outer blue glow is a "prompt the user to type" state — once the user has actually typed
+        /// something, drop it so the bar reads as editing-in-progress rather than empty-and-inviting.
+        /// Without this the glow reappears after ESC closes the suggestions window (where it had been
+        /// visually masked by the merged suggestions background) even though the bar still holds the
+        /// user's draft.
+        let currentTextFieldValue = addressBarTextField.value
+        let hasUserTypedContent = currentTextFieldValue.isUserTyped && !currentTextFieldValue.isEmpty
+        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && !hasUserTypedContent && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor(resource: .burnerAccent).withAlphaComponent(0.2) : colorsProvider.addressBarOutlineShadow
 
         if isToggleFocused {
             activeBackgroundView.borderWidth = 1.0
-            activeBackgroundView.borderColor = .addressBarBorder
+            activeBackgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             activeBackgroundView.borderWidth = 2.0
-            activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
+            activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
         }
 
         setupAddressBarPlaceHolder()
-        setupAddressBarCornerRadius()
+        refreshAddressBarCornerRadius()
         inactiveAddressBarShadowView.isHidden = selectionState.isSelected
     }
 
-    private func setupAddressBarCornerRadius() {
-        activeBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
-        inactiveBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarInnerBorderViewRadius)
-        activeOuterBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveOuterBorderViewRadius)
-        activeBackgroundViewWithSuggestions.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+    private func refreshAddressBarCornerRadius() {
+        let styleProvider = theme.addressBarStyleProvider
+        let isSuggestionsWindowVisible = isSearchOrChatSuggestionsWindowVisible
+
+        activeBackgroundView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadius
+        activeBackgroundViewWithSuggestions.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        activeOuterBorderView.cornerRadius = styleProvider.addressBarActiveOuterBorderViewRadius
+        inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
+        innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSuggestionsWindowVisible)
+
+        let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+
+        innerBorderView.roundedCorners = roundedCorners
+        activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
     }
 
     private func setupInactiveShadowView() {
         if theme.addressBarStyleProvider.shouldAddAddressBarShadowWhenInactive {
-            inactiveAddressBarShadowView.shadowColor = NSColor.shadowPrimary
+            inactiveAddressBarShadowView.shadowColor = NSColor(resource: .shadowPrimary)
             inactiveAddressBarShadowView.shadowOpacity = 1
             inactiveAddressBarShadowView.shadowOffset = CGSize(width: 0, height: 0)
             inactiveAddressBarShadowView.shadowRadius = 3
@@ -630,14 +1100,34 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderTopConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
     }
 
+    private func refreshConstraints() {
+        let styleProvider = theme.addressBarStyleProvider
+
+        activeBackgroundViewTopConstraint.constant = styleProvider.addressBarActiveBackgroundViewVerticalPadding
+        activeBackgroundViewBottomConstraint.constant = styleProvider.addressBarActiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewTopConstraint.constant = styleProvider.addressBarInactiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewBottomConstraint.constant = styleProvider.addressBarInactiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewLeadingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewLeadingPadding
+        inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
+        buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding
+        buttonsContainerViewTrailingConstraint.constant = styleProvider.addressBarButtonsContainerViewTrailingPadding
+    }
+
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
         let addressBarPlaceholder: String
 
-        if isNewTab {
-            addressBarPlaceholder = UserText.addressBarPlaceholder
+        if selectionState.isInAIChatMode {
+            /// Duck.ai (focused or unfocused) — the bar represents a prompt input, not an address. Use the
+            /// same placeholder as the Duck.ai panel's prompt editor so the empty-state label matches across
+            /// focused and unfocused states.
+            addressBarPlaceholder = UserText.aiChatOmnibarPlaceholder
         } else {
-            addressBarPlaceholder = ""
+            /// In search mode the placeholder always reads "Search or enter address". `NSTextField` only
+            /// paints it when `stringValue` is empty, so this naturally appears on a fresh NTP and after
+            /// the user clears a URL on a loaded page, and stays out of the way while a URL is displayed.
+            /// Unfocused URL display is owned by `passiveTextField` and is unaffected by this string.
+            addressBarPlaceholder = UserText.addressBarPlaceholder
         }
 
         let font = NSFont.systemFont(ofSize: isNewTab ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
@@ -649,23 +1139,44 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateSwitchToTabBoxAppearance() {
-        guard case .editing(.openTabSuggestion) = mode,
-              addressBarTextField.isVisible, let editor = addressBarTextField.editor,
-              view.frame.size.width > 280 else {
-            switchToTabBox.isHidden = true
-            switchToTabBox.alphaValue = 0
+        guard calculateSwitchToTabBoxMinX() != nil else {
+            refreshSwitchToTabVisibility(isHidden: true)
             return
         }
 
-        if !switchToTabBox.isVisible {
-            switchToTabBox.isShown = true
-            switchToTabBox.alphaValue = 0
-        }
         // update box position on the next pass after text editor layout is updated
         DispatchQueue.main.async {
-            self.switchToTabBox.alphaValue = 1
-            self.switchToTabBoxMinXConstraint.constant = editor.textSize.width + Constants.switchToTabMinXPadding
+            guard let minX = self.calculateSwitchToTabBoxMinX() else {
+                self.refreshSwitchToTabVisibility(isHidden: true)
+                return
+            }
+
+            self.refreshSwitchToTabVisibility(isHidden: false)
+            self.switchToTabBoxMinXConstraint.constant = minX
         }
+    }
+
+    private func calculateSwitchToTabBoxMinX() -> CGFloat? {
+        guard case .editing(.openTabSuggestion) = mode, addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+            return nil
+        }
+
+        let trailingInset = switchToTabBoxTrailingConstraint.constant
+        let switchToWidth = switchToTabBox.fittingSize.width
+
+        /// We're placing the `SwitchToTabBox` component at the tail of the Address Bar text.
+        /// But such location is also limited by the actually visible width.
+        let textWidth = min(editor.textSize.width, max(0, addressBarTextField.bounds.width - switchToWidth))
+
+        let switchToMinX = Constants.switchToTabMinXPadding + textWidth
+        let requiredWidth = switchToMinX + switchToWidth + trailingInset
+
+        return requiredWidth <= view.bounds.width ? switchToMinX : nil
+    }
+
+    private func refreshSwitchToTabVisibility(isHidden: Bool) {
+        switchToTabBox.isHidden = isHidden
+        switchToTabBox.alphaValue = isHidden ? 0 : 1
     }
 
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {
@@ -676,7 +1187,7 @@ final class AddressBarViewController: NSViewController {
             return
         }
         if shadowView.superview == nil {
-            updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+            refreshAppearance(isSuggestionsWindowVisible: addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             view.window?.contentView?.addSubview(shadowView)
             layoutShadowView()
 
@@ -689,17 +1200,27 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private func updateShadowView(_ isSuggestionsWindowVisible: Bool) {
+    private func refreshAppearance(isSuggestionsWindowVisible: Bool) {
+        let styleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
+
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
-        shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
-        shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-        shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
+        shadowView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+
+        NSAppearance.withAppAppearance {
+            shadowView.shadowRadius = styleProvider.suggestionShadowRadius
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
+        }
 
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
         activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused
         activeBackgroundView.isHidden = isSuggestionsWindowVisible
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
+
+        /// When Search Suggestions (OR) Omnibar are rendered, we'll switch to the Extended Height mode, with different rounded corners
+        resizeAddressBarIfNeeded()
+        refreshAddressBarCornerRadius()
     }
 
     private func layoutShadowView() {
@@ -708,17 +1229,23 @@ final class AddressBarViewController: NSViewController {
         let winFrame = self.view.convert(self.view.bounds, to: nil)
         var frame = superview.convert(winFrame, from: nil)
 
-        /// Extend shadow upward when AI Chat omnibar toggle is enabled to vertically align the toggle
-        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            let offset = AddressBarTextField.SuggestionWindowSizes.aiChatToggleVerticalOffset
-            frame.origin.y += offset
-            frame.size.height -= offset
-        }
+        /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
+        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset
+        frame.origin.y += offset
+        frame.size.height -= offset
 
         shadowView.frame = frame
     }
 
     private func updateMode(value: AddressBarTextField.Value? = nil) {
+        /// Whenever the tab is in duck.ai mode (focused or unfocused) the bar represents a prompt input, not an
+        /// address — keep `mode` pinned to `.editing(.aiChat)` so downstream button / icon / placeholder logic
+        /// treats it as such regardless of what URL / text the underlying `addressBarTextField.value` currently
+        /// holds (the sync from shared state happens asynchronously on the main queue).
+        if selectionState.isInAIChatMode {
+            self.mode = .editing(.aiChat)
+            return
+        }
         switch value ?? self.addressBarTextField.value {
         case .text: self.mode = .editing(.text)
         case .url(urlString: _, url: _, userTyped: let userTyped): self.mode = userTyped ? .editing(.url) : .browsing
@@ -752,63 +1279,98 @@ final class AddressBarViewController: NSViewController {
         }
 
         addressBarTextField.refreshStyle()
+        bottomSeparatorView.isHidden = false
 
-        let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
+        let colorsProvider = theme.colorsProvider
 
         NSAppearance.withAppAppearance {
-            // Keep selected appearance when AI chat is active, even if window loses key status
-            let shouldShowActiveState = window.isKeyWindow || selectionState == .activeWithAIChat
+            // Keep selected appearance when AI chat is active (OR) isBurner, even if window loses key status
+            let shouldShowActiveState = window.isKeyWindow || selectionState == .activeWithAIChat || isBurner
             let isToggleFocused = window.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
             if shouldShowActiveState {
                 if isToggleFocused {
                     activeBackgroundView.borderWidth = 1.0
-                    activeBackgroundView.borderColor = .addressBarBorder
+                    activeBackgroundView.borderColor = NSColor(resource: .addressBarBorder)
                 } else {
                     activeBackgroundView.borderWidth = 2.0
-                    activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
+                    activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
                 }
-                activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
-                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
-                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
+                activeBackgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
+                switchToTabBox.backgroundColor = colorsProvider.activeSwitchToTabBackgroundColor
 
+                /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
-                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+                activeOuterBorderView.backgroundColor = isBurner ? NSColor(resource: .burnerAccent).withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
-                activeBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
-                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
-                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
+                activeBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
+
+                switchToTabBox.backgroundColor = colorsProvider.inactiveSwitchToTabBackgroundColor
 
                 activeOuterBorderView.isHidden = true
             }
         }
     }
 
+    func refreshAddressBarBackgroundWidth() {
+        let styleProvider = theme.addressBarStyleProvider
+        guard let padding = styleProvider.addressBarHorizontalPadding(focused: shouldUseTallAddressBarLayout) else {
+            return
+        }
+
+        activeBackgroundViewLeadingConstraint.constant = padding
+        activeBackgroundViewTrailingConstraint.constant = padding
+    }
+
     private func refreshSuggestionsAppearance() {
-        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
+        activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
+    }
+
+    private func refreshPlaceholderAppearance() {
+        let colorsProvider = theme.colorsProvider
+        let displaysPlaceholder = tabViewModel?.passiveAddressBarDisplaysPlaceholder == true
+
+        passiveTextField.textColor = displaysPlaceholder ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {
-        self.passiveTextFieldMinXConstraint.constant = minX
-        // adjust min-x to passive text field when "Search or enter" placeholder is displayed (to prevent placeholder overlapping buttons)
+        /// Keep the text leading X fixed across focused / unfocused / mode transitions so accepting a suggestion
+        /// (which flips `mode` between `.text` / `.url` / `.openTabSuggestion`) doesn't visibly shift the text.
+        /// When the toggle feature is on, all editing states have no left icon, so we pin the text at a constant
+        /// padding that matches the Duck.ai prompt panel's leading inset. When the buttons container is wider
+        /// (e.g. browsing with the privacy dashboard showing), we respect that width so the text clears the button.
+        let isToggleFeatureEnabled = aiChatSettings.isAIFeaturesEnabled
+        let isToggleVisible = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
 
+        let styleProvider = theme.addressBarStyleProvider
+        let duckAILeadingPadding: CGFloat = styleProvider.addressBarTextFieldLeadingPadding
+
+        if isToggleVisible {
+            let effectiveMinX = max(minX, duckAILeadingPadding)
+            self.passiveTextFieldMinXConstraint.constant = effectiveMinX
+            self.activeTextFieldMinXConstraint.constant = effectiveMinX
+            return
+        }
+
+        self.passiveTextFieldMinXConstraint.constant = max(minX, duckAILeadingPadding)
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
-        let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
+        let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? max(minX, duckAILeadingPadding) : Constants.defaultActiveTextFieldMinX
 
-        let isOmnibarToggleFeatureEnabled = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
-        let isToggleVisible = isOmnibarToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
-        let textMargin: CGFloat = 20
-
-        if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
-            if isAddressBarFocused {
-                self.activeTextFieldMinXConstraint.constant = isToggleVisible ? textMargin : adjustedMinX - 5
-            } else {
-                self.activeTextFieldMinXConstraint.constant = adjustedMinX - 6
-            }
+        /// The negative offset compensates for the leading padding of the search icon so the typed text sits
+        /// flush against it (the buttons side sets a matching positive pad on the privacy-shield constraint —
+        /// see `AddressBarButtonsViewController.IconLeadingTuning`). With the redesign, editing states
+        /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon — skip the
+        /// offset so the text isn't pushed past the (now-narrower) buttons container's left edge on that path.
+        if styleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
+            let pullback = isAddressBarFocused
+            ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
+            : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
+            self.activeTextFieldMinXConstraint.constant = adjustedMinX - pullback
         } else {
-            self.activeTextFieldMinXConstraint.constant = isToggleVisible ? textMargin : adjustedMinX
+            self.activeTextFieldMinXConstraint.constant = adjustedMinX
         }
     }
 
@@ -816,6 +1378,21 @@ final class AddressBarViewController: NSViewController {
         addressBarTextTrailingConstraint.constant = width
         passiveTextFieldTrailingConstraint.constant = width
     }
+
+    func resizeAddressBarIfNeeded() {
+        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
+            return
+        }
+
+        requestAddressBarResize(allowsAsync: false)
+    }
+
+    func requestAddressBarResize(allowsAsync: Bool = true) {
+        displaysTallLayout = shouldUseTallAddressBarLayout
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
+    }
+
+    // MARK: - First Responder
 
     private func firstResponderDidChange(_ notification: Notification) {
         let firstResponder = view.window?.firstResponder
@@ -842,7 +1419,7 @@ final class AddressBarViewController: NSViewController {
             updateView()
             refreshAddressBarAppearance(nil)
 
-            delegate?.resizeAddressBarForHomePage(self)
+            requestAddressBarResize()
             addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
 
@@ -863,15 +1440,26 @@ final class AddressBarViewController: NSViewController {
                 selectionState = .inactive
             }
         case .activeWithAIChat:
+            // Focused duck.ai mode doesn't use the address bar's first-responder flag — the prompt editor is a
+            // separate NSTextView. Focus transitions out of this state are driven explicitly by click-outside/Escape/toggle.
             break
+        case .inactiveWithAIChat:
+            if isFirstResponder {
+                /// User clicked the address bar while duck.ai is the persistent mode for the tab. Don't let
+                /// `addressBarTextField` stay first responder (its editor becoming responder is what triggered
+                /// this call); bounce back into focused Duck.ai instead so the panel reappears with the preserved
+                /// prompt / cursor / tool mode / attachments and the Duck.ai text view takes focus.
+                view.window?.makeFirstResponder(nil)
+                refocusInAIChatMode()
+                fireAddressBarActivatedPixelIfNeeded()
+            }
         }
 
         setupAddressBarPlaceHolder()
     }
 
     private func fireAddressBarActivatedPixelIfNeeded() {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-              aiChatSettings.isAIFeaturesEnabled else {
+        guard aiChatSettings.isAIFeaturesEnabled else {
             return
         }
 
@@ -883,11 +1471,32 @@ final class AddressBarViewController: NSViewController {
     // MARK: - Event handling
 
     func escapeKeyDown() -> Bool {
+        /// Duck.ai's `@`-mention picker gets first crack at Esc. When the picker is
+        /// visible, dismissing it is the user's intent — they don't expect Esc to also
+        /// resign the omnibar's focus or move the bar out of duck.ai mode. Returning
+        /// here short-circuits the entire focus-state machine below.
+        if aiChatOmnibarHandledEscape?() == true {
+            return true
+        }
+
+        /// Second Escape press while unfocused in duck.ai mode: fully exit duck.ai for this tab, mirroring the
+        /// "clear content and mode" step search mode performs. `addressBarTextField.escapeKeyDown()` resets the
+        /// bar's value to the tab's URL (or empty for NTP) and calls `sharedTextState?.reset(clearingDuckAIState: true)`
+        /// via `updateValue`, which clears the preserved prompt / selection / tool mode / attachments / duck.ai flag.
+        if selectionState == .inactiveWithAIChat {
+            selectionState = .inactive
+            addressBarTextField.escapeKeyDown()
+            addressBarButtonsViewController?.resetSearchModeToggle()
+            updateMode()
+            return true
+        }
+
         guard selectionState.isSelected else { return false }
 
         if selectionState == .activeWithAIChat {
-            delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
-            setAIChatOmnibarVisible(false)
+            /// First Escape press in focused duck.ai: just resign focus. The tab stays in duck.ai mode, the prompt
+            /// stays in `passiveTextField`, and the tool / attachment state is preserved for the next refocus.
+            resignFocusKeepingAIChatMode()
             return true
         }
 
@@ -942,21 +1551,22 @@ final class AddressBarViewController: NSViewController {
                 return event
             }
 
-            // In AI chat mode, only block clicks specifically on the address bar text fields
-            // Allow clicks elsewhere (like on the AI chat text view)
+            // In focused AI chat mode, only block clicks specifically on the address bar text fields
+            // Allow clicks elsewhere (like on the AI chat text view).
             if selectionState == .activeWithAIChat {
-                let isClickOnAddressBarTextField = hitView === addressBarTextField ||
-                hitView?.isDescendant(of: addressBarTextField) == true ||
-                hitView === passiveTextField ||
-                hitView?.isDescendant(of: passiveTextField) == true
-                if isClickOnAddressBarTextField {
-                    return nil
-                }
-                return event
+                return isHitViewInsideAddressBarTextFields(hitView) ? nil : event
             }
 
-            guard self.view.window?.firstResponder !== addressBarTextField.currentEditor()
-            else { return event }
+            // Unfocused duck.ai renders as a single-line `passiveTextField`; clicking it should refocus into
+            // duck.ai (restore panel + prompt + cursor), not make `addressBarTextField` first responder (which
+            // would briefly transition to search-focused and flash). Intercept the click and short-circuit into
+            // the refocus path. Hits on tool buttons / the toggle fall through above via `shouldShowArrowCursor`.
+            if selectionState == .inactiveWithAIChat {
+                refocusInAIChatMode()
+                return nil
+            }
+
+            guard self.view.window?.firstResponder !== addressBarTextField.currentEditor() else { return event }
 
             // bookmark button visibility is usually determined by hover state, but we def need to hide it right now
             self.addressBarButtonsViewController?.bookmarkButton.isHidden = true
@@ -974,7 +1584,7 @@ final class AddressBarViewController: NSViewController {
         } else if window.isMainWindow {
             let locationInWindow = event.locationInWindow
 
-            if selectionState == .activeWithAIChat,
+            if selectionState.isInAIChatMode,
                let isPointInAIChatOmnibar = isPointInAIChatOmnibar,
                isPointInAIChatOmnibar(locationInWindow) {
                 return event
@@ -1002,7 +1612,12 @@ final class AddressBarViewController: NSViewController {
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
-        guard selectionState != .activeWithAIChat else { return event }
+        guard !selectionState.isInAIChatMode else { return event }
+
+        if self.view.window?.firstResponder !== addressBarTextField.currentEditor() {
+            self.addressBarButtonsViewController?.bookmarkButton.isHidden = true
+            self.addressBarTextField.makeMeFirstResponder()
+        }
 
         // The event location is not a button so we can forward the event to the textfield
         addressBarTextField.rightMouseDown(with: event)
@@ -1014,12 +1629,11 @@ final class AddressBarViewController: NSViewController {
             return event
         }
 
-        /// Handle AI chat mode - click outside to dismiss
+        /// Handle AI chat mode - click outside: unfocus but keep duck.ai mode, prompt, and toggle segment for this tab.
         if selectionState == .activeWithAIChat,
            let clickPoint,
            clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder {
-            delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
-            setAIChatOmnibarVisible(false)
+            resignFocusKeepingAIChatMode()
             return event
         }
 
@@ -1042,9 +1656,9 @@ final class AddressBarViewController: NSViewController {
 
         return event
     }
-
 }
 
+// MARK: - ThemeUpdateListening
 extension AddressBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -1054,7 +1668,9 @@ extension AddressBarViewController: ThemeUpdateListening {
     }
 }
 
+// MARK: - AddressBarButtonsViewControllerDelegate
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
+
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBar = false
     }
@@ -1071,8 +1687,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         _ = escapeKeyDown()
     }
 
-    func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
-        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: .aiChat))
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettings destination: PreferencesDestination) {
+        delegate?.addressBarViewController(self, openSettings: destination)
     }
 
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
@@ -1082,8 +1698,16 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool) {
         isAIChatOmnibarVisible = isAIChatMode
+        sharedTextState?.setDuckAIMode(isAIChatMode)
 
         if isAIChatMode {
+            /// Capture the address-bar field editor's caret before we transition — search-mode typing doesn't
+            /// keep `sharedTextState.selectionRange` in sync, so without this the Duck.ai panel would restore
+            /// the prompt cursor to `(0, 0)`. If there's no editor (address bar wasn't focused), leave the
+            /// stored value alone and let `focusTextViewRestoringCursorPosition` fall back to end-of-text.
+            if let editor = addressBarTextField.currentEditor() {
+                sharedTextState?.updateSelection(editor.selectedRange)
+            }
             selectionState = .activeWithAIChat
             mode = .editing(.aiChat)
             if isFirstResponder {
@@ -1094,7 +1718,21 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
             updateMode()
             addressBarTextField.makeMeFirstResponder()
-            addressBarTextField.moveCursorToEnd()
+            /// Mirror of the capture in the `if isAIChatMode` branch: restore the selection that
+            /// Duck.ai's `textViewDidChangeSelection` persisted, so toggling back doesn't drop the
+            /// user's highlight. UTF-16 bounds check matches `focusTextViewRestoringCursorPosition`.
+            if let saved = sharedTextState?.selectionRange,
+               let editor = addressBarTextField.currentEditor() {
+                let utf16Length = (editor.string as NSString).length
+                if saved.location <= utf16Length {
+                    let clampedLength = min(saved.length, max(0, utf16Length - saved.location))
+                    editor.selectedRange = NSRange(location: saved.location, length: clampedLength)
+                } else {
+                    addressBarTextField.moveCursorToEnd()
+                }
+            } else {
+                addressBarTextField.moveCursorToEnd()
+            }
 
             /// Force layout update after becoming first responder to update in case the window was resized
             layoutTextFields(withMinX: addressBarButtonsViewController.buttonsWidth)
@@ -1111,19 +1749,89 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         if visible {
             selectionState = .activeWithAIChat
             mode = .editing(.aiChat)
+            sharedTextState?.setDuckAIMode(true)
             if isFirstResponder {
                 view.window?.makeFirstResponder(nil)
             }
         } else {
+            /// Note: we intentionally do NOT clear `sharedTextState?.setDuckAIMode(false)` here. On tab switch,
+            /// this method runs with `self.tabViewModel` still pointing at the OUTGOING tab (AddressBarVC's own
+            /// $selectedTabViewModel sink fires after MainVC's), so clearing would wipe the wrong tab's flag.
+            /// Explicit exit paths (toggle to search, prompt submit, URL navigation, context-menu hide toggle)
+            /// call `setDuckAIMode(false)` themselves. In-tab navigation clears via `sharedTextState.reset()`
+            /// from `AddressBarTextField.updateValue`.
             if shouldKeepSelection {
                 addressBarButtonsViewController?.resetSearchModeToggle()
             } else {
                 selectionState = .inactive
                 updateMode()
+                /// `selectionState`'s didSet ran `updateView` with the stale `.editing(.aiChat)` mode set
+                /// from when this tab was Duck.ai-active, which kept `addressBarTextField` visible (and
+                /// left-aligned with the full URL) on the incoming search-mode URL tab until the user
+                /// focused/unfocused the bar. Re-run the layout now that `updateMode` has flipped `mode`
+                /// to its correct browsing/editing value so the active/passive text-field split converges.
+                updateView()
                 view.window?.makeFirstResponder(nil)
                 addressBarButtonsViewController?.resetSearchModeToggle()
             }
         }
+
+        resizeAddressBarIfNeeded()
+    }
+
+    /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):
+    /// resigns first responder, fully hides the Duck.ai panel, and lets the bar revert to its inactive single-line
+    /// rendering (with `passiveTextField` showing the preserved prompt). The tab's `isInDuckAIMode` flag and the
+    /// shared text state stay intact so clicking the bar or submitting from elsewhere resumes the draft.
+    /// `isAIChatOmnibarVisible` flips to false so the buttons VC stops treating the panel as active; the toggle
+    /// remains on the duck.ai segment via the tab's preserved mode flag.
+    func resignFocusKeepingAIChatMode() {
+        guard selectionState == .activeWithAIChat else { return }
+        /// Force `addressBarTextField.value` to the duck.ai prompt (or empty for the placeholder) before the
+        /// bar becomes visible. On a URL-loaded tab the underlying value is still the URL; without this push,
+        /// unfocused duck.ai would render the URL + privacy shield + permission center.
+        addressBarTextField.applyDuckAIUnfocusedValue()
+        /// Flip `isAIChatOmnibarVisible` FIRST — `selectionState`'s didSet calls `updateView`, which reads
+        /// `isAIChatOmnibarVisible` to decide whether the suggestions-variant background (the tall one merged
+        /// with the Duck.ai panel) should stay visible. Setting visibility after the state change leaves that
+        /// background up, making the unfocused bar look taller than `.inactive` with typed text.
+        isAIChatOmnibarVisible = false
+        selectionState = .inactiveWithAIChat
+        updateMode()
+        view.window?.makeFirstResponder(nil)
+        requestAddressBarResize()
+        delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
+    }
+
+    /// Whether a hit-test result points at one of the address bar's text fields (active or passive).
+    /// Used by `mouseDown` in focused AI-chat mode to block clicks on the address bar while letting
+    /// clicks on the AI chat text view through.
+    private func isHitViewInsideAddressBarTextFields(_ hitView: NSView?) -> Bool {
+        hitView === addressBarTextField
+        || hitView?.isDescendant(of: addressBarTextField) == true
+        || hitView === passiveTextField
+        || hitView?.isDescendant(of: passiveTextField) == true
+    }
+
+    /// Transitions from unfocused duck.ai mode (`.inactiveWithAIChat`) back to focused duck.ai mode (`.activeWithAIChat`):
+    /// re-shows the Duck.ai panel and returns focus to the prompt editor with the preserved draft / cursor position.
+    func refocusInAIChatMode() {
+        guard selectionState == .inactiveWithAIChat else { return }
+        /// Flip `isAIChatOmnibarVisible` BEFORE `selectionState`. `selectionState`'s didSet calls
+        /// `updateView`, which reads `isAIChatOmnibarVisible` to decide `activeBackgroundView.alphaValue`
+        /// (`(selectionState.isSelected && !isAIChatOmnibarVisible) ? 1 : 0`). Doing it in the other order
+        /// leaves the accent-bordered active background visible behind the Duck.ai panel until the next
+        /// `updateView` run, because `isAIChatOmnibarVisible`'s didSet doesn't re-invoke `updateView`.
+        /// The other entry paths into `.activeWithAIChat` (`setAIChatOmnibarVisible`,
+        /// `addressBarButtonsViewControllerSearchModeToggleChanged`) already sequence it this way, and
+        /// `resignFocusKeepingAIChatMode` has the symmetric comment on exit.
+        isAIChatOmnibarVisible = true
+        selectionState = .activeWithAIChat
+        mode = .editing(.aiChat)
+
+        // Important: Resizing the Address Bar must be synchronous. Otherwise we'll observe the Omnibar jumping onscreen
+        requestAddressBarResize(allowsAsync: false)
+        delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)
     }
 }
 
@@ -1202,7 +1910,7 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
         if let tabFavicon = tabViewModel?.tab.favicon {
             favicon = tabFavicon
         } else {
-            favicon = .web
+            favicon = NSImage(resource: .web)
         }
 
         session.draggingFormation = .none
@@ -1242,14 +1950,15 @@ extension AddressBarViewController: NSDraggingDestination {
     }
 }
 
+// MARK: - AddressBarTextFieldFocusDelegate
 extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: true)
     }
 
     func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField) {
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
 
         // Restore internal text field labels when address bar loses focus
@@ -1259,10 +1968,16 @@ extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     }
 }
 
+// MARK: - NSView+shouldShowArrowCursor
 fileprivate extension NSView {
 
     var shouldShowArrowCursor: Bool {
         self is NSButton || self is LottieAnimationView || self is CustomToggleControl
     }
+}
 
+extension NSUserInterfaceItemIdentifier {
+    /// Tags the update-notification toast's content view controller so the address bar's
+    /// `childWindows` observer can allow-list its window instead of treating it as a competing panel.
+    static let updateNotificationPopover = NSUserInterfaceItemIdentifier("updateNotificationPopover")
 }

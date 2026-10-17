@@ -19,6 +19,9 @@
 import Foundation
 import PrivacyConfig
 import Common
+import FoundationExtensions
+import AppKitExtensions
+import DataBrokerProtection_macOS
 
 extension UserAgent {
 
@@ -59,6 +62,16 @@ extension UserAgent {
     static let brandedDefault = "\(Self.safari) \(ddgVersion)"
     static let brandedDefaultSuffix = "Version/\(safariVersion) " + "Safari/\(webKitVersion) " + ddgVersion
     static let `default` = UserAgent.brandedDefault
+
+    // MARK: - Web extensions
+
+    /// How web extension pages identify the browser: as other pages do, plus a Chrome version, because extensions
+    /// built for Chrome check for one before taking their Chrome code paths.
+    static let webExtensionSuffix = "Version/\(safariVersion) " + "Chrome/\(webExtensionChromeVersion) " + "Safari/\(webKitVersion) " + ddgVersion
+
+    /// The Chrome version web extension pages report. Chrome-only extensions only check that a Chrome token exists, so any
+    /// recent version works; bump it occasionally so it stays plausible.
+    static let webExtensionChromeVersion = "140.0.0.0"
 
     static func `for`(_ url: URL?,
                       privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) -> String {

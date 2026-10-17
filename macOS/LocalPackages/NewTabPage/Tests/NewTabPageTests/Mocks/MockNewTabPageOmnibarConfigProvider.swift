@@ -18,6 +18,7 @@
 
 import Combine
 import NewTabPage
+import WebKit
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
@@ -52,5 +53,168 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isAIChatToolsEnabled: Bool = false
 
-    var selectedModelId: String?
+    var isImageGenerationEnabled: Bool = false
+
+    var isUpdatedCreateImageEnabled: Bool = false
+
+    var imageGenerationModelId: String?
+
+    var activateImageGenerationResult: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+    private(set) var activateImageGenerationCallCount = 0
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        activateImageGenerationCallCount += 1
+        return activateImageGenerationResult
+    }
+
+    var isWebSearchEnabled: Bool = false
+
+    var isCustomizeResponsesEnabled: Bool = false
+
+    var customizeResponsesStateResult = NewTabPageDataModel.OmnibarCustomizeResponsesState.none
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        customizeResponsesStateResult
+    }
+
+    let customizeResponsesStateSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesStateSubject.eraseToAnyPublisher()
+    }
+
+    var refreshUsageLimitsCallCount = 0
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?) {
+        refreshUsageLimitsCallCount += 1
+    }
+
+    var usageLimitsResult: NewTabPageDataModel.OmnibarUsageLimits?
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? {
+        usageLimitsResult
+    }
+
+    private(set) var dismissUsageLimitsCallCount = 0
+    @MainActor
+    func dismissUsageLimits() {
+        dismissUsageLimitsCallCount += 1
+    }
+
+    var selectUsageLimitsCtaOutcome = NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome.handled
+    private(set) var selectUsageLimitsCtaModelIds: [String?] = []
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome {
+        selectUsageLimitsCtaModelIds.append(modelId)
+        return selectUsageLimitsCtaOutcome
+    }
+
+    let usageLimitsSubject = PassthroughSubject<Void, Never>()
+    var usageLimitsPublisher: AnyPublisher<Void, Never> {
+        usageLimitsSubject.eraseToAnyPublisher()
+    }
+
+    @MainActor
+    var showAttachmentPrivacyDisclaimer = false
+
+    private(set) var attachmentPrivacyDisclaimerShownKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        attachmentPrivacyDisclaimerShownKinds.append(kind)
+    }
+
+    let attachmentPrivacySubject = PassthroughSubject<Void, Never>()
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> {
+        attachmentPrivacySubject.eraseToAnyPublisher()
+    }
+
+    var launcherPromoResult: NewTabPageDataModel.OmnibarLauncherPromo?
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
+        launcherPromoResult
+    }
+
+    private(set) var launcherPromoShownCallCount = 0
+    @MainActor
+    func launcherPromoShown() {
+        launcherPromoShownCallCount += 1
+    }
+
+    private(set) var selectLauncherPromoCtaCallCount = 0
+    @MainActor
+    func selectLauncherPromoCta() {
+        selectLauncherPromoCtaCallCount += 1
+    }
+
+    private(set) var dismissLauncherPromoCallCount = 0
+    @MainActor
+    func dismissLauncherPromo() {
+        dismissLauncherPromoCallCount += 1
+    }
+
+    private(set) var launcherPromoIgnoredCallCount = 0
+    @MainActor
+    func launcherPromoIgnored() {
+        launcherPromoIgnoredCallCount += 1
+    }
+
+    let launcherPromoSubject = PassthroughSubject<Void, Never>()
+    var launcherPromoPublisher: AnyPublisher<Void, Never> {
+        launcherPromoSubject.eraseToAnyPublisher()
+    }
+
+    @Published var isAttachTabsEnabled: Bool = false
+
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAttachTabsEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var isVoiceChatAccessEnabled: Bool = false
+
+    /// Mirrors the real `NewTabPageOmnibarConfigProvider.isVoiceChatAccessEnabledPublisher`
+    /// shape — emits the current value on subscribe (so `NewTabPageOmnibarClient.notifyConfigUpdated`
+    /// fires on init) and then de-duplicates subsequent flag flips.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isVoiceChatAccessEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var showAskAiSuggestion: Bool = true
+
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        $showAskAiSuggestion.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var selectedModelId: String?
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        $selectedModelId.dropFirst().eraseToAnyPublisher()
+    }
+
+    var selectedModelShortName: String?
+
+    var isReasoningEffortEnabled: Bool = false
+
+    @Published var selectedReasoningEffort: String?
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var isAIChatDeletionEnabled: Bool = false
+
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var isSearchSuggestionDeletionEnabled: Bool = false
+
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var requiresAiTermsAcceptance: Bool = false
+
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        $requiresAiTermsAcceptance.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    }
 }

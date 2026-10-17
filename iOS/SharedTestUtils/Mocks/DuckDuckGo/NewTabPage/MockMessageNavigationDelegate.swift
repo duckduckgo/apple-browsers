@@ -24,6 +24,7 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
     private(set) var didCallSegueToAIChatSettings: Bool = false
     private(set) var capturedAIChatOpenedFromSERPSettingsButton: Bool?
     private(set) var didCallSegueToSettings: Bool = false
+    private(set) var didCallSegueToSettingsGeneral: Bool = false
     private(set) var didCallSegueToSettingsAppearance: Bool = false
     private(set) var didCallSegueToFeedback: Bool = false
     private(set) var didCallSegueToSettingsSync: Bool = false
@@ -43,6 +44,11 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
 
     func segueToSettings(presentationStyle: PresentationContext.Style) {
         didCallSegueToSettings = true
+        capturedPresentationStyle = presentationStyle
+    }
+
+    func segueToSettingsGeneral(presentationStyle: PresentationContext.Style) {
+        didCallSegueToSettingsGeneral = true
         capturedPresentationStyle = presentationStyle
     }
 

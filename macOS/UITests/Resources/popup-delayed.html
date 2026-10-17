@@ -57,7 +57,7 @@
       e.preventDefault();
       document.getElementById('status').textContent = 'Waiting 3s...';
       setTimeout(function() {
-        var w = window.open('https://example.com', '_blank', 'width=300,height=300');
+        var w = window.open('https://github.com', '_blank', 'width=300,height=300');
         document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
       }, 3000);
     });
@@ -68,7 +68,7 @@
       e.preventDefault();
       document.getElementById('status').textContent = 'Waiting 3s for tab popup...';
       setTimeout(function() {
-        var w = window.open('https://example.com', '_blank');  // No window features = opens as tab
+        var w = window.open('https://github.com', '_blank');  // No window features = opens as tab
         document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
       }, 3000);
     });

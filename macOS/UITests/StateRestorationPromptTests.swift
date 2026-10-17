@@ -27,7 +27,6 @@ class StateRestorationPromptTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(arguments: ["CRASH_RESTORE_TEST"])
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
@@ -57,20 +56,19 @@ class StateRestorationPromptTests: UITestCase {
 
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
         app.openNewWindow()
 
         app.acceptSessionRestore()
 
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
 
@@ -96,14 +94,13 @@ class StateRestorationPromptTests: UITestCase {
 
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
         app.openNewWindow()
 
         app.rejectSessionRestore()
@@ -121,16 +118,19 @@ class StateRestorationPromptTests: UITestCase {
 }
 
 private extension StateRestorationPromptTests {
-    static let persistenceFileLocation: URL = {
-        let fileName = "persistentState"
-        let sandboxPathComponent = "Containers/com.duckduckgo.macos.browser.review/Data/Library/Application Support/"
-        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        return libraryURL.appendingPathComponent(sandboxPathComponent).appendingPathComponent(fileName)
-    }()
+    var persistenceFileLocation: URL {
+        get throws {
+            let bundleID = try XCTUnwrap(app.bundleID)
+            let fileName = "persistentState"
+            let sandboxPathComponent = "Containers/\(bundleID)/Data/Library/Application Support/"
+            let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
+            return libraryURL.appendingPathComponent(sandboxPathComponent).appendingPathComponent(fileName)
+        }
+    }
 
     func dateOfLastSavedState() -> Date? {
         do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: Self.persistenceFileLocation.path)
+            let attributes = try FileManager.default.attributesOfItem(atPath: persistenceFileLocation.path)
             return attributes[.modificationDate] as? Date
         } catch {
             XCTFail("Failed to get file attributes for session persistence file: \(error)")
@@ -140,7 +140,10 @@ private extension StateRestorationPromptTests {
 
     func waitForSessionFileToExist() {
         let expectation = expectation(for: NSPredicate(description: "Session persistence file should be saved", block: { _, _ in
-            FileManager.default.fileExists(atPath: Self.persistenceFileLocation.path)
+            guard let path = try? self.persistenceFileLocation.path else {
+                return false
+            }
+            return FileManager.default.fileExists(atPath: path)
         }), evaluatedWith: nil)
         wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
     }

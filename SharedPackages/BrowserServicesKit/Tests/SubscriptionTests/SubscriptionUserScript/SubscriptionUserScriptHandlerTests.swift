@@ -21,7 +21,7 @@ import SubscriptionTestingUtilities
 import UserScript
 import WebKit
 import XCTest
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 final class SubscriptionUserScriptHandlerTests: XCTestCase {
 

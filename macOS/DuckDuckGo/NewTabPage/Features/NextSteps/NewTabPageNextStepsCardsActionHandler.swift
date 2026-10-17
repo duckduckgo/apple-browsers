@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Foundation
 import NewTabPage
 import os.log
+import PixelKit
 import PrivacyConfig
 import Subscription
 
@@ -45,12 +46,15 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
-    private let featureFlagger: FeatureFlagger
+    private let pixelFiring: (any PixelKitFiring)?
+    private let onboardingExperiment: OnboardingNonBlockingExperiment
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
         return duckPlayerSettings["tryDuckPlayerLink"] as? String ?? "https://www.youtube.com/watch?v=yKWIA-Pys4c"
     }
+
+    let youtubeAdBlockingURL = "https://www.youtube.com/watch?v=yKWIA-Pys4c"
 
     init(defaultBrowserProvider: DefaultBrowserProvider,
          dockCustomizer: DockCustomization,
@@ -60,7 +64,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
          syncLauncher: SyncDeviceFlowLaunching? = nil,
-         featureFlagger: FeatureFlagger) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -70,7 +75,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.pixelHandler = pixelHandler
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
-        self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
+        self.onboardingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -92,6 +98,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
             performPersonalizeBrowserAction()
         case .sync:
             performSyncAction(completion: refreshCardsAction)
+        case .youtubeAdBlocking:
+            performYoutubeAdBlockingAction()
         }
     }
 }
@@ -107,7 +115,8 @@ private extension NewTabPageNextStepsCardsActionHandler {
     }
 
     func performImportBookmarksAndPasswordsAction(completion: (() -> Void)?) {
-        dataImportProvider.showImportWindow(customTitle: nil, completion: completion)
+        onboardingExperiment.fireMetric(.importRequested)
+        dataImportProvider.showImportWindow(completion: completion)
     }
 
     @MainActor
@@ -125,8 +134,9 @@ private extension NewTabPageNextStepsCardsActionHandler {
     }
 
     func performDockAction(completion: (() -> Void)?) {
+        onboardingExperiment.fireMetric(.addToDockRequested)
         pixelHandler.fireAddedToDockPixel()
-        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsListWidget) {
+        if dockCustomizer.addToDock() {
             completion?()
         }
     }
@@ -151,6 +161,15 @@ private extension NewTabPageNextStepsCardsActionHandler {
         guard let syncLauncher = syncLauncher ?? DeviceSyncCoordinator() else {
             return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
         }
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.nextStepsCard.rawValue]))
         syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
+    }
+
+    @MainActor
+    func performYoutubeAdBlockingAction() {
+        if let videoUrl = URL(string: youtubeAdBlockingURL) {
+            let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
+            tabOpener.openTab(tab)
+        }
     }
 }

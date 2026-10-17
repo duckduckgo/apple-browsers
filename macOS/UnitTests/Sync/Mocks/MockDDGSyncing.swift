@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo_Privacy_Browser
 @testable import DDGSync
 
@@ -33,6 +33,14 @@ class MockDDGSyncing: DDGSyncing {
 
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
 
+    }
+
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
+        ""
+    }
+
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] {
+        []
     }
 
     var mainTokenRescopeResult: String?
@@ -50,6 +58,9 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     func deleteAIChats(chatIds: [String]) async throws {
+    }
+
+    func patchAIChats(updates: [AIChatUpdate]) async throws {
     }
 
     private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
@@ -80,6 +91,10 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     var account: SyncAccount?
+    var recoveryCodeOverride: String?
+    var recoveryCode: String? {
+        recoveryCodeOverride ?? account?.legacyRecoveryCodeV1
+    }
 
     var scheduler: Scheduling
 
@@ -256,14 +271,14 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
 
     var syncCodeEnteredCalled: (String, Bool, SyncCodeSource) -> Void = { _, _, _ in }
     var spySyncCodeEnteredCode: String?
-    var spySyncCodeEnteredCanScanURLBarcodes: Bool?
+    var spySyncCodeEnteredCanScanLegacyURLBarcodes: Bool?
     var spySyncCodeEnteredCodeSource: SyncCodeSource?
     var stubSyncCodeEntered: Bool = true
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
+    func syncCodeEntered(code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         spySyncCodeEnteredCode = code
-        spySyncCodeEnteredCanScanURLBarcodes = canScanURLBarcodes
+        spySyncCodeEnteredCanScanLegacyURLBarcodes = canScanLegacyURLBarcodes
         spySyncCodeEnteredCodeSource = codeSource
-        syncCodeEnteredCalled(code, canScanURLBarcodes, codeSource)
+        syncCodeEnteredCalled(code, canScanLegacyURLBarcodes, codeSource)
         return stubSyncCodeEntered
     }
 

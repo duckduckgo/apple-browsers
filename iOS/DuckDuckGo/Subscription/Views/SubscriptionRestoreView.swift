@@ -23,6 +23,8 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import PrivacyConfig
+import MetricBuilder
+import PixelKit
 
 struct SubscriptionRestoreView: View {
 
@@ -143,8 +145,8 @@ struct SubscriptionRestoreView: View {
                         image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailStart,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseEmailStart,
+                          frequency: .legacyDailyAndCount)
             viewModel.showActivationFlow(true)
         })
     }
@@ -178,9 +180,9 @@ struct SubscriptionRestoreView: View {
     
     private var headerView: some View {
         VStack(spacing: Constants.headerItemSpacing) {
-            Image(Constants.heroImage)
+            Image(rebrandable: Constants.heroImage)
             Text(UserText.subscriptionActivateHeaderTitle)
-                .daxTitle1()
+                .daxTitle2()
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
         }
@@ -232,7 +234,6 @@ struct SubscriptionRestoreView: View {
 private struct RoundedCardView: View {
 
     private enum Constants {
-        static let cornerRadius = 12.0
         static let cardPadding = EdgeInsets(top: 16,
                                             leading: 16,
                                             bottom: 16,
@@ -290,13 +291,13 @@ private struct RoundedCardView: View {
                 }, label: {
                     Text(buttonTitle)
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                 })
             }
         }
         .padding(Constants.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(designSystemColor: .surface))
-        .cornerRadius(Constants.cornerRadius)
+        .cornerRadius(ContainerMetrics.cornerRadius)
     }
 }

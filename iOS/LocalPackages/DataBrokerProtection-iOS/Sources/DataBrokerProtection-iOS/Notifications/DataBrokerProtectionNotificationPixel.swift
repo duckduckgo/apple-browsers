@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import PixelKit
 
 public enum DataBrokerProtectionNotificationPixel {
@@ -30,7 +31,10 @@ public enum DataBrokerProtectionNotificationPixel {
     case notificationSentGoToMarketFirstScan
 }
 
-extension DataBrokerProtectionNotificationPixel: PixelKitEvent {
+extension DataBrokerProtectionNotificationPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public var name: String {
         switch self {
         case .notificationSentFirstScanComplete:
@@ -68,11 +72,8 @@ public class DataBrokerProtectionNotificationPixelHandler: EventMapping<DataBrok
     public init(pixelKit: PixelKit) {
         self.pixelKit = pixelKit
 
-        super.init { _, _, _, _ in
-        }
-
-        self.eventMapper = { event, _, _, _ in
-            self.pixelKit.fire(event)
+        super.init { event, _, _, _ in
+            pixelKit.fire(event)
         }
     }
 

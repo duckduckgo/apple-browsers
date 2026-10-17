@@ -142,7 +142,7 @@ public final class DataBrokerProtectionEventPixels {
         let data: [BrokerProfileQueryData]
 
         do {
-            data = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+            data = try database.fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticated)
         } catch {
             Logger.dataBrokerProtection.error("Database error: when attempting to fireWeeklyReportPixels, error: \(error.localizedDescription, privacy: .public)")
             return

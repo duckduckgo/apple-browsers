@@ -17,6 +17,7 @@
 //
 
 import Combine
+import WebKit
 
 public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
@@ -39,5 +40,129 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isAIChatToolsEnabled: Bool { get }
 
+    var isImageGenerationEnabled: Bool { get }
+
+    /// Whether Create Image activation is resolved natively, including automatic model switching.
+    var isUpdatedCreateImageEnabled: Bool { get }
+
+    /// The accessible image-capable model selected natively for an updated Create Image submission.
+    @MainActor
+    var imageGenerationModelId: String? { get }
+
+    /// Switches to an accessible image-capable model when needed and returns native-localized notice copy.
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+
+    var isWebSearchEnabled: Bool { get }
+
+    /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.
+    var isCustomizeResponsesEnabled: Bool { get }
+
+    /// Customize Responses row state (sub-label + toggle) for the window hosting `requestingWebView`;
+    /// pass `nil` to resolve the current key window.
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState
+
+    /// Fires when the stored response customization changes, so the client re-pushes the config.
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { get }
+
+    /// Called on entry into Duck.ai mode: the web omnibar sends no focus message, so that's the closest
+    /// "user is about to prompt" signal. `requestingWebView` resolves burner mode; `nil` uses the key window.
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?)
+
+    /// A method, not a value: the high-usage notice is keyed off the selected model, so it has to be
+    /// re-resolved per read.
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits?
+
+    @MainActor
+    func dismissUsageLimits()
+
+    /// `modelId` is set when the user picked a model, primary or from the chevron menu.
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome
+
+    /// Published so the client can push `omnibar_onConfigUpdate` when web republishes the usage
+    /// snapshot, or the user settles a message, keeping an open NTP in sync without a reload.
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { get }
+
+    /// Whether the file-upload privacy disclaimer may still be shown. One count for the whole app,
+    /// Fire Windows included.
+    @MainActor
+    var showAttachmentPrivacyDisclaimer: Bool { get }
+
+    /// The page rendered the disclaimer. Native spends the display and fires the pixel.
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind)
+
+    /// Fires when the display is spent on any surface, so the client re-pushes the config and an
+    /// open NTP stops offering the disclaimer.
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { get }
+
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
+
+    @MainActor
+    func launcherPromoShown()
+
+    @MainActor
+    func selectLauncherPromoCta()
+
+    @MainActor
+    func dismissLauncherPromo()
+
+    @MainActor
+    func launcherPromoIgnored()
+
+    var launcherPromoPublisher: AnyPublisher<Void, Never> { get }
+
+    /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
+    /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.
+    var isAttachTabsEnabled: Bool { get }
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the 1-click voice-chat affordance is currently enabled. Published so the client
+    /// can push an `omnibar_onConfigUpdate` when the underlying feature flag flips at runtime,
+    /// keeping an open NTP in sync without a reload.
+    var isVoiceChatAccessEnabled: Bool { get }
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the inline "Ask Duck.ai: <query>" entry should be shown in the NTP omnibar's
+    /// suggestions dropdown. Mirrors the user's "Autocomplete suggestions" preference so the
+    /// dropdown matches the address bar. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the toggle flips, keeping an open NTP in sync.
+    var showAskAiSuggestion: Bool { get }
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { get }
+
     var selectedModelId: String? { get set }
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
+
+    /// Short display name that the native omnibar can show before its own models fetch completes.
+    /// Mirrors the native `AIChatPreferencesPersisting.selectedModelShortName`.
+    var selectedModelShortName: String? { get set }
+
+    /// Whether the reasoning-effort picker feature is available. Combines the dedicated
+    /// reasoning-effort feature flag with `isAIChatToolsEnabled`, since reasoning effort depends
+    /// on the model picker being available.
+    var isReasoningEffortEnabled: Bool { get }
+
+    /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
+    /// nothing is selected or when `isReasoningEffortEnabled` is false.
+    var selectedReasoningEffort: String? { get set }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
+
+    /// Whether recent-chat suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
+    var isAIChatDeletionEnabled: Bool { get }
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether history-entry suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
+    var isSearchSuggestionDeletionEnabled: Bool { get }
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the Duck.ai tab shows the Terms of Service disclaimer. Published so every open NTP
+    /// drops it once the user accepts, wherever they accepted.
+    var requiresAiTermsAcceptance: Bool { get }
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { get }
 }

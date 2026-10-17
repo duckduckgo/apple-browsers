@@ -38,19 +38,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
         include:
-          - xcode-version: "26.4"
-            runner: macos-26-xlarge
+          - runner: [image:osx-tahoe-27, general-purpose]
+            runner-name: image-osx-tahoe-27,general-purpose # runner label without reserved characters, for use in the artifact name
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner-name }}
       cancel-in-progress: true
 
     timeout-minutes: 32
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -61,6 +60,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration
@@ -79,6 +81,10 @@ jobs:
     - name: Update Homebrew
       run: brew update
 
+    - name: Install Node.js
+      if: runner.environment == 'self-hosted'
+      run: asdf install nodejs 18.16.0
+
     - name: Start PIR Fake Broker
       run: |
         cd pir-fake-broker
@@ -86,7 +92,12 @@ jobs:
         ./install-prerequisites.sh
         ./setup-ci.sh
         cd ..
-        pnpm start:all &
+        # install-prerequisites.sh runs `npm install -g pnpm` unpinned, which now
+        # resolves to pnpm 10 and turns ignored-builds into a hard error. Override
+        # to v9 (matches the broker lockfile) until the broker repo pins it itself.
+        npm install -g pnpm@9.7.1
+        pnpm start:all > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.log" 2>&1 &
+        echo $! > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.pid"
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -118,7 +129,7 @@ jobs:
         bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
 
     - name: Set cache key hash
       run: |
@@ -131,7 +142,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
@@ -140,16 +151,36 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
-      with:
-        xcode-version: ${{ matrix.xcode-version }}
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-pir-e2e
         restore-keys: |
           xcode-compilation-cache-pir-e2e-
+
+    - name: Wait for PIR Fake Broker
+      run: |
+        for i in {1..60}; do
+          if curl -sS -o /dev/null --max-time 2 http://localhost:3001/; then
+            echo "PIR Fake Broker is reachable on port 3001 (after ${i}s)"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "::error::PIR Fake Broker did not become reachable on port 3001 within 60s"
+        echo "--- listeners on :3001 ---"
+        lsof -iTCP:3001 -sTCP:LISTEN || echo "(nothing listening on :3001)"
+        if [ -f pir-fake-broker.pid ]; then
+          pid=$(cat pir-fake-broker.pid)
+          echo "--- broker process status (pid=$pid) ---"
+          ps -p "$pid" -o pid,stat,etime,command || echo "(broker process is no longer running)"
+        fi
+        echo "--- pir-fake-broker.log (last 200 lines) ---"
+        tail -n 200 pir-fake-broker.log || echo "(no broker log)"
+        exit 1
 
     - name: Run PIR e2e Tests
       id: run-tests
@@ -162,16 +193,18 @@ jobs:
           -skipPackagePluginValidation -skipMacroValidation \
           ENABLE_TESTABILITY=true \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:DBPE2ETests" \
+          -test-iterations 3 \
           -retry-tests-on-failure \
-          -test-iterations 2 \
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
+          SPM_FORCE_DEBUG: "1"
           PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -182,8 +215,8 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-pir-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -197,7 +230,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
         pixel-params: |
-          runner: ${{ matrix.runner }}
+          runner: ${{ matrix.runner-name }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'
@@ -206,17 +239,17 @@ jobs:
         pixel-name: m_ci_apple_status_mac_e2e_pir_${{ steps.run-tests.outcome }}
 
     - name: Prepare test report
-      if: always()
+      if: always() && steps.run-tests.outcome != 'skipped'
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename pir-e2e-tests.xml < pir-e2e-tests.log
 
     - name: Publish tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always()
       with:
-        check_name: "Test Report ${{ matrix.runner }}"
+        check_name: "Test Report ${{ matrix.runner-name }}"
         report_paths: macOS/pir-e2e-tests.xml
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Collect PIR process logs
       if: failure() || cancelled()
@@ -224,13 +257,14 @@ jobs:
         log show --predicate 'processImagePath CONTAINS "DuckDuckGo Personal Information Removal"' --last 1h > pir-process.log 2>&1 || true
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
+        name: "BuildLogs ${{ matrix.runner-name }}"
         path: |
           macOS/xcodebuild.log
           macOS/pir-process.log
+          macOS/pir-fake-broker.log
           macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7
@@ -243,7 +277,7 @@ jobs:
 
     steps:
     - name: Create Asana task when workflow failed
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

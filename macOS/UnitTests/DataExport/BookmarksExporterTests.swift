@@ -21,7 +21,7 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-class BookmarksExporterTests: XCTestCase {
+final class BookmarksExporterTests: XCTestCase {
 
     struct TestData {
         static let exampleUrl = URL(string: "https://example.com")!
@@ -213,6 +213,50 @@ class BookmarksExporterTests: XCTestCase {
         ].joined())
     }
 
+    func test_WhenBookmarkURLHasHTMLMetacharacters_ThenTheExportedAttributeIsEscaped() throws {
+        let url = "https://example.com/?q=\"<value>\"&literal=&amp;&encoded=%26"
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            Bookmark(id: UUID().uuidString, url: url, title: TestData.exampleTitle, isFavorite: true)
+        ]))
+        defer { try? FileManager.default.removeItem(at: tmpFile) }
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+
+        let actual = try String(contentsOf: tmpFile, encoding: .utf8)
+        XCTAssertTrue(actual.contains(
+            "<A HREF=\"https://example.com/?q=&quot;&lt;value&gt;&quot;&amp;literal=&amp;amp;&amp;encoded=%26\" duckduckgo:favorite=\"true\">Example</A>"
+        ))
+    }
+
+    func test_WhenBookmarkURLsAreExportedAndImported_ThenURLsArePreserved() throws {
+        let urls = [
+            "https://example.com/?q=&amp;",
+            "https://example.com/?q=&quot;&other=&lt;tag&gt;",
+            "https://example.com/?q=&#38;&other=&#x26;",
+            "https://example.com/?q=&amp;amp;",
+            // The importer's HTML tidy parser percent-encodes literal angle brackets in HREF values.
+            "https://example.com/?q=\"%3Cvalue%3E\"&other='value'",
+            "https://example.com/a%2Fb?q=%26amp%3B&other=two#fragment",
+            "https://example.com/?q=`value`&other=[one]"
+        ]
+        let bookmarks = urls.map {
+            Bookmark(id: UUID().uuidString, url: $0, title: TestData.exampleTitle, isFavorite: true)
+        }
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            BookmarkFolder(id: UUID().uuidString, title: TestData.folderName1, children: bookmarks)
+        ]))
+        defer { try? FileManager.default.removeItem(at: tmpFile) }
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+        let imported = try BookmarkHTMLReader(bookmarksFileURL: tmpFile).readBookmarks().get()
+        let folder = try XCTUnwrap(imported.bookmarks.topLevelFolders.otherBookmarks?.children?.first)
+        let importedBookmarks = try XCTUnwrap(folder.children)
+
+        XCTAssertEqual(folder.name, TestData.folderName1)
+        XCTAssertEqual(importedBookmarks.compactMap(\.urlString), urls)
+        XCTAssertEqual(importedBookmarks.map(\.isDDGFavorite), Array(repeating: true, count: urls.count))
+    }
+
     func test_WhenBookmarkAtTopLevel_ThenFileContainsBookmarkAtTopLevel() throws {
         let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
             Bookmark(id: UUID().uuidString, url: TestData.exampleUrl.absoluteString, title: TestData.exampleTitle, isFavorite: false)
@@ -233,6 +277,45 @@ class BookmarksExporterTests: XCTestCase {
             BookmarksExporter.Template.header,
             BookmarksExporter.Template.footer
         ].joined())
+    }
+
+    // #3 — Folder names are written into the exported HTML raw, while bookmark titles are escaped.
+    // A folder named with HTML metacharacters (e.g. "News & Politics", or one containing `<`/`>`)
+    // produces malformed HTML, so that folder's subtree is mis-parsed / lost on re-import.
+    func test_WhenFolderNameHasHTMLEntities_ThenTheExportedFolderNameIsEscaped() throws {
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            BookmarkFolder(id: UUID().uuidString, title: TestData.titleWithUnescapedHTMLEntities)
+        ]))
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+
+        let actual = try XCTUnwrap(try? String(contentsOf: tmpFile))
+        XCTAssertTrue(actual.contains("<DT><H3 FOLDED>\(TestData.titleWithEscapedHTMLEntities)</H3>"),
+                      "Folder name was not HTML-escaped on export; re-import will mis-parse the folder. Exported:\n\(actual)")
+        XCTAssertFalse(actual.contains("<DT><H3 FOLDED>\(TestData.titleWithUnescapedHTMLEntities)</H3>"),
+                       "Folder name was written with raw HTML metacharacters")
+    }
+
+    // Cross-importer round-trip: parse the exported HTML with Foundation's generic tidy-HTML parser
+    // (the same loose-HTML reading other browsers use to import the Netscape bookmark format) and
+    // confirm the folder name survives. The `<feed>` is the data-loss case: `<` followed by a letter
+    // is read as a tag and silently dropped unless escaped, so without the fix the name comes back as
+    // "News & Politics " — proving the escaping prevents real, user-visible data loss on import.
+    func test_ExportedFolderNameIsRecoverableByAGenericHTMLParser() throws {
+        let folderName = "News & Politics <feed>"
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            BookmarkFolder(id: UUID().uuidString, title: folderName, children: [
+                Bookmark(id: UUID().uuidString, url: TestData.exampleUrl.absoluteString, title: TestData.exampleTitle, isFavorite: false)
+            ])
+        ]))
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+
+        let document = try XMLDocument(contentsOf: tmpFile, options: [.documentTidyHTML])
+        let folderNames = try document.nodes(forXPath: "//h3")
+            .compactMap { $0.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        XCTAssertTrue(folderNames.contains(folderName),
+                      "A generic HTML parser did not recover the folder name. Got: \(folderNames)")
     }
 
     private func assertExportedFileEquals(_ expected: String, _ file: StaticString = #file, _ line: UInt = #line) {

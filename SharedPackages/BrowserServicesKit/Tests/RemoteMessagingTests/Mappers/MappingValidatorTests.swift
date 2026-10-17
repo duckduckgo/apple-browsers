@@ -25,6 +25,7 @@ struct TestModel {
     let items: [String]
     let optionalItems: [String]?
     let status: String
+    var optionalStatus: String?
 }
 
 enum TestStatus: String {
@@ -334,6 +335,44 @@ extension MappingValidatorTests {
 
             // THEN
             #expect(result == expectedStatus)
+        }
+    }
+
+}
+
+extension MappingValidatorTests {
+
+    @Suite("Map Enum If Present")
+    struct MapEnumIfPresentTests {
+
+        @Test("Check valid optional enum value maps successfully")
+        func checkValidOptionalEnumMaps() throws {
+            let model = TestModel(id: "1", name: nil, items: [], optionalItems: nil, status: "active", optionalStatus: "active")
+            let sut = MappingValidator(root: model)
+
+            let result = try sut.mapEnumIfPresent(\.optionalStatus, to: TestStatus.self)
+
+            #expect(result == .active)
+        }
+
+        @Test("Check nil optional enum returns nil")
+        func checkNilOptionalEnumReturnsNil() throws {
+            let model = TestModel(id: "1", name: nil, items: [], optionalItems: nil, status: "active")
+            let sut = MappingValidator(root: model)
+
+            let result = try sut.mapEnumIfPresent(\.optionalStatus, to: TestStatus.self)
+
+            #expect(result == nil)
+        }
+
+        @Test("Check invalid optional enum value throws invalidValue error")
+        func checkInvalidOptionalEnumThrows() {
+            let model = TestModel(id: "1", name: nil, items: [], optionalItems: nil, status: "active", optionalStatus: "unknown")
+            let sut = MappingValidator(root: model)
+
+            #expect(throws: MappingError.invalidValue(\TestModel.optionalStatus)) {
+                try sut.mapEnumIfPresent(\.optionalStatus, to: TestStatus.self)
+            }
         }
     }
 

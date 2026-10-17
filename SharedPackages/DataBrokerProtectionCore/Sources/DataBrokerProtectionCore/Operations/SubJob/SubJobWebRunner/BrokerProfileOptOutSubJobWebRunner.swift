@@ -27,8 +27,7 @@ import Common
 public typealias BrokerProfileOptOutSubJobWebProtocol = BrokerProfileOptOutSubJobWebRunning & BrokerProfileOptOutSubJobWebTesting
 
 public protocol BrokerProfileOptOutSubJobWebRunning {
-    func optOut(profileQuery: BrokerProfileQueryData,
-                extractedProfile: ExtractedProfile,
+    func optOut(extractedProfile: ExtractedProfile,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
@@ -52,7 +51,7 @@ extension BrokerProfileOptOutSubJobWebTesting {
 public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebProtocol {
     public enum ActionsHandlerMode {
         case testing // for injecting custom actionsHandler
-        case optOut // for opt-out operations (action list may be modified depending on featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+        case optOut // for opt-out operations (action list is truncated before the email confirmation action)
         case emailConfirmation(URL) // for email confirmation operations
     }
 
@@ -68,20 +67,21 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let stageCalculator: StageDurationCalculator
     public var webViewHandler: WebViewHandler?
     public var actionsHandler: ActionsHandler?
-    public var continuation: CheckedContinuation<Void, Error>?
+    public let runnerContinuation = SubJobRunnerContinuationState<Void>()
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    public let shouldRunNextStep: () -> Bool
-    public lazy var clickAwaitTime: TimeInterval = {
-        featureFlagger.isClickActionDelayReductionOptimizationOn ?
-        executionConfig.optimizedClickAwaitTimeForOptOut :
-        executionConfig.legacyClickAwaitTimeForOptOut
-    }()
+    public let runnerCancellation: SubJobRunnerCancellationState
+    public var clickAwaitTime: TimeInterval {
+        executionConfig.clickAwaitTimeForOptOut
+    }
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgentProvider: () -> String?
+    public let contentBlocking: DBPWebViewContentBlocking?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
     private let actionsHandlerMode: ActionsHandlerMode
 
     public var retriesCountOnError: Int = 0
@@ -92,13 +92,14 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgentProvider: @escaping () -> String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
                 actionsHandlerMode: ActionsHandlerMode,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
@@ -107,17 +108,17 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageCalculator
-        self.shouldRunNextStep = shouldRunNextStep
+        self.runnerCancellation = SubJobRunnerCancellationState(shouldRunNextStep: shouldRunNextStep)
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
         self.actionsHandlerMode = actionsHandlerMode
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
+        self.contentBlocking = contentBlocking
     }
 
-    public func optOut(profileQuery: BrokerProfileQueryData,
-                       extractedProfile: ExtractedProfile,
+    public func optOut(extractedProfile: ExtractedProfile,
                        showWebView: Bool,
                        shouldRunNextStep: @escaping () -> Bool) async throws {
         try await run(inputValue: extractedProfile, showWebView: showWebView)
@@ -133,7 +134,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 self.extractedProfile = inputValue.merge(with: context.profileQuery)
-                self.continuation = continuation
+                self.runnerContinuation.install(continuation)
 
                 guard self.shouldRunNextStep() else {
                     failed(with: DataBrokerProtectionError.cancelled)
@@ -162,7 +163,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                             if actionsHandler != nil {
                                 assertionFailure("Use .testing actionsHandlerMode instead")
                             }
-                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep, haltsAtEmailConfirmation: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep)
                         case .emailConfirmation(let url):
                             if actionsHandler != nil {
                                 assertionFailure("Use .testing actionsHandlerMode instead")
@@ -173,18 +174,22 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                         if self.shouldRunNextStep() {
                             await executeNextStep()
                         } else {
-                            failed(with: DataBrokerProtectionError.cancelled)
+                            await failAsCancelledAndTearDown()
                         }
 
                     } else {
                         // If we try to run an optout on a broker without an optout step, we throw.
+                        await self.webViewHandler?.finish()
                         failed(with: DataBrokerProtectionError.noOptOutStep)
                     }
                 }
             }
         } onCancel: {
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self, self.runnerCancellation.markCancelled() else { return }
+
                 task?.cancel()
+                await self.failAsCancelledAndTearDown()
             }
         }
     }
@@ -194,6 +199,11 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     }
 
     public func executeNextStep() async {
+        guard !isCancelled else {
+            await failAsCancelledAndTearDown()
+            return
+        }
+
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
         recordDebugEvent(kind: .wait,

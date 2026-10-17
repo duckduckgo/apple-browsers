@@ -8,9 +8,34 @@
             "appVersion",
             "pixelSource",
             {
+                "key": "first",
+                "type": "boolean",
+                "description": "Set to true if it's the first ever crash recorded for a given user"
+            },
+            {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
                 "type": "boolean"
+            },
+            {
+                "key": "code",
+                "type": "string",
+                "description": "MXDiagnostic exception code (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "signal",
+                "type": "string",
+                "description": "MXDiagnostic POSIX signal number (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "MXDiagnostic Mach exception type (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "terminationReason",
+                "type": "string",
+                "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' (App Store builds only); '-1' when the crash has none, 'unknown' when it can't be parsed"
             }
         ]
     },
@@ -22,6 +47,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
@@ -52,6 +78,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
@@ -74,11 +101,24 @@
             }
         ]
     },
+    "m_mac_crash_on_handlers_setup": {
+        "description": "Fired when a crash is detected when setting up crash handlers",
+        "owners": ["ayoy", "mallexxx"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_crashreporting_failed_to_read_crash_contents": {
         "description": "Fired when the crash reporter fails to read the contents of a crash report",
         "owners": ["ayoy", "mallexxx", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_crash-report_sent": {
+        "description": "Fired when a crash report is successfully submitted (HTTP 200) to the crash reporting service. Counterpart to m_windows_crash-report_sent for cross-platform parity.",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

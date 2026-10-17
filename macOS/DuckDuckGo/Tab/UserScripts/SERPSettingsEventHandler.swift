@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import PixelKit
 import SERPSettings
 
@@ -49,17 +50,25 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
     /// This initializer configures the event-to-pixel mappings for all
     /// supported error types.
     init() {
-        super.init { event, _, _, _ in
+        super.init { event, error, parameters, _ in
             switch event {
             case .serializationFailed:
                 // Fires when converting settings dictionary to JSON fails.
                 PixelKit.fire(GeneralPixel.serpSettingsSerializationFailed, frequency: .dailyAndCount)
             case .keyValueStoreReadError:
                 // Fires when reading from persistent storage fails.
-                PixelKit.fire(GeneralPixel.serpSettingsKeyValueStoreReadError, frequency: .dailyAndCount)
+                // DebugEvent attaches the underlying error's domain/code; `parameters` carries the `reason`
+                // (store read vs JSON decode) so the two failure modes can be distinguished in analytics.
+                PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsKeyValueStoreReadError, error: error),
+                              frequency: .dailyAndCount,
+                              withAdditionalParameters: parameters)
             case .keyValueStoreWriteError:
                 // Fires when writing to persistent storage fails.
                 PixelKit.fire(GeneralPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
+            case .unrecognizedValue:
+                PixelKit.fire(AIChatPixel.serpSettingsUnrecognizedValue,
+                              frequency: .daily,
+                              includeAppVersionParameter: true)
             }
         }
     }

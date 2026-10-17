@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 public protocol SubscriptionTierOptionsProviding {
@@ -75,9 +76,6 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
     private func fetchAppleTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
         guard subscriptionEnvironmentPlatform == .appStore else {
-            return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
-        }
-        guard #available(macOS 12.0, iOS 15.0, *) else {
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }
         guard let storePurchaseManager else {

@@ -24,7 +24,7 @@ let package = Package(
     name: "DesignResourcesKitIcons",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
@@ -36,6 +36,9 @@ let package = Package(
             name: "DesignResourcesKitIcons",
             resources: [
                 .process("DesignSystemImages.xcassets")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
 

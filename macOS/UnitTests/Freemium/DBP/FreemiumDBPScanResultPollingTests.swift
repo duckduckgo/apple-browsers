@@ -21,6 +21,7 @@ import XCTest
 @testable import DataBrokerProtection_macOS
 @testable import DataBrokerProtectionCore
 import Common
+import FoundationExtensions
 import Freemium
 
 final class FreemiumDBPScanResultPollingTests: XCTestCase {

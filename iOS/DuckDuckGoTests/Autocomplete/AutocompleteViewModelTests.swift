@@ -23,8 +23,8 @@ import Suggestions
 
 final class AutocompleteViewModelTests: XCTestCase {
 
-    private func makeViewModel(showMessage: Bool = true, showAskAIChat: Bool = false, isSwipeToDeleteEnabled: Bool = false) -> (AutocompleteViewModel, MockAutocompleteViewModelDelegate) {
-        let vm = AutocompleteViewModel(isAddressBarAtBottom: false, showMessage: showMessage, showAskAIChat: showAskAIChat, isSwipeToDeleteEnabled: isSwipeToDeleteEnabled)
+    private func makeViewModel(showAskAIChat: Bool = false) -> (AutocompleteViewModel, MockAutocompleteViewModelDelegate) {
+        let vm = AutocompleteViewModel(isAddressBarAtBottom: false, showAskAIChat: showAskAIChat)
         let delegate = MockAutocompleteViewModelDelegate()
         vm.delegate = delegate
         return (vm, delegate)
@@ -100,21 +100,6 @@ final class AutocompleteViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.tapAhead, model.suggestion)
     }
 
-    func testOnDismissMessage_HidesAndNotifiesDelegate() {
-        let (vm, delegate) = makeViewModel(showMessage: true)
-
-        vm.onDismissMessage()
-
-        XCTAssertFalse(vm.isMessageVisible)
-        XCTAssertEqual(delegate.dismissedCount, 1)
-    }
-
-    func testOnShownToUser_NotifiesDelegate() {
-        let (vm, delegate) = makeViewModel()
-        vm.onShownToUser()
-        XCTAssertEqual(delegate.shownCount, 1)
-    }
-
     func testDeleteSuggestion_NotifiesDelegate() {
         let (vm, delegate) = makeViewModel()
         let model = AutocompleteViewModel.SuggestionModel(suggestion: .phrase(phrase: "delete"))
@@ -157,7 +142,7 @@ final class AutocompleteViewModelTests: XCTestCase {
     }
 
     func testUpdateSuggestions_WhenShowAskAIChatTrue_AddsSupplementarySuggestion() {
-        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        let (vm, _) = makeViewModel(showAskAIChat: true)
         vm.query = "ask this"
         let result = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
 
@@ -172,7 +157,7 @@ final class AutocompleteViewModelTests: XCTestCase {
     }
 
     func testNextSelection_IncludesAiChatSuggestions() {
-        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        let (vm, _) = makeViewModel(showAskAIChat: true)
         vm.query = "test query"
         let first = AutocompleteViewModel.SuggestionModel(suggestion: .phrase(phrase: "first"))
         let aiChat = AutocompleteViewModel.SuggestionModel(suggestion: .askAIChat(value: "test query"))
@@ -187,7 +172,7 @@ final class AutocompleteViewModelTests: XCTestCase {
     }
 
     func testPreviousSelection_IncludesAiChatSuggestions() {
-        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        let (vm, _) = makeViewModel(showAskAIChat: true)
         vm.query = "test query"
         let first = AutocompleteViewModel.SuggestionModel(suggestion: .phrase(phrase: "first"))
         let aiChat = AutocompleteViewModel.SuggestionModel(suggestion: .askAIChat(value: "test query"))
@@ -202,7 +187,7 @@ final class AutocompleteViewModelTests: XCTestCase {
     }
 
     func testNextSelection_WhenNoSelection_SelectsFirstFromAllIncludingAiChat() {
-        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        let (vm, _) = makeViewModel(showAskAIChat: true)
         vm.query = "test query"
         let aiChat = AutocompleteViewModel.SuggestionModel(suggestion: .askAIChat(value: "test query"))
         vm.aiChatSuggestions = [aiChat]
@@ -218,8 +203,6 @@ private final class MockAutocompleteViewModelDelegate: NSObject, AutocompleteVie
     var selected: [Suggestion] = []
     var highlighted: (suggestion: Suggestion, query: String)?
     var tapAhead: Suggestion?
-    var dismissedCount: Int = 0
-    var shownCount: Int = 0
     var deleted: Suggestion?
 
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
@@ -232,14 +215,6 @@ private final class MockAutocompleteViewModelDelegate: NSObject, AutocompleteVie
 
     func onTapAhead(_ suggestion: Suggestion) {
         tapAhead = suggestion
-    }
-
-    func onMessageDismissed() {
-        dismissedCount += 1
-    }
-
-    func onMessageShown() {
-        shownCount += 1
     }
 
     func deleteSuggestion(_ suggestion: Suggestion) {

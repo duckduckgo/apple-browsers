@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import Networking
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 @testable import Subscription
 import SubscriptionTestingUtilities
 

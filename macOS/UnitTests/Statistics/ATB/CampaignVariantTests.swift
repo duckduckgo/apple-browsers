@@ -29,14 +29,14 @@ class CampaignVariantTests: XCTestCase, StatisticsStore {
     }
 
     func testWhenNoVariantFileThenNoVariantAssigned() {
-        let campaign = CampaignVariant(statisticsStore: self, loadFromFile: {
+        let campaign = CampaignVariant(statisticsStore: self, loadVariant: {
             return nil
         })
         XCTAssertNil(campaign.getAndEnableVariant())
     }
 
     func testWhenVariantPresentAndDateIn0To93DaysThenIsActive() {
-        let campaign = CampaignVariant(statisticsStore: self, loadFromFile: {
+        let campaign = CampaignVariant(statisticsStore: self, loadVariant: {
             return "ab"
         })
         XCTAssertEqual(campaign.getAndEnableVariant(), "ab")
@@ -52,7 +52,7 @@ class CampaignVariantTests: XCTestCase, StatisticsStore {
     }
 
     func testWhenCampaignVariantAvailableThenVariantManagerUsesCampaignVariant() {
-        let campaign = CampaignVariant(statisticsStore: self, loadFromFile: {
+        let campaign = CampaignVariant(statisticsStore: self, loadVariant: {
             return "ab"
         })
         let mgr = DefaultVariantManager(storage: self, campaignVariant: campaign)

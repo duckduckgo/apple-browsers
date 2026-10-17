@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import GRDB
 import SecureStorage
@@ -359,7 +360,7 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
         do {
             var account = credentials.account
             account.title = account.patternMatchedTitle()
-            account.lastUsed = Date()
+            account.lastUsed = account.lastUsed ?? Date()
 
             try account.insert(database)
             let id = database.lastInsertedRowID

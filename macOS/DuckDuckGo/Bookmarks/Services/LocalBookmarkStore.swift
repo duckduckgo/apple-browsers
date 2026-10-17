@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import CoreData
 import DDGSync
@@ -277,6 +278,15 @@ final class LocalBookmarkStore: BookmarkStore {
     func applyFavoritesDisplayMode(_ displayMode: FavoritesDisplayMode) {
         favoritesDisplayMode = displayMode
         cacheReadOnlyTopLevelBookmarksFolders()
+    }
+
+    func bookmarksCount() -> Int {
+        let context = makeContext()
+        var count = 0
+        context.performAndWait {
+            count = (try? context.count(for: Bookmark.bookmarksFetchRequest())) ?? 0
+        }
+        return count
     }
 
     func loadAll(type: BookmarkStoreFetchPredicateType, completion: @escaping ([BaseBookmarkEntity]?, Error?) -> Void) {
@@ -616,8 +626,8 @@ final class LocalBookmarkStore: BookmarkStore {
                     assertionFailure("Object index not found in its parent")
                     continue
                 }
-                allChildren.remove(at: currentIndex)
                 guard currentIndex != insertionIndex else { continue }
+                allChildren.remove(at: currentIndex)
                 // decrement insertion index if moving object within the same folder to a higher index
                 if insertionIndex > currentIndex {
                     insertionIndexShift -= 1
@@ -830,6 +840,15 @@ final class LocalBookmarkStore: BookmarkStore {
         var favorites: [(BookmarkEntity, Int?)] = []
 
         for bookmarkOrFolder in bookmarks {
+
+            // Drop bookmarks/favorites whose URL uses an unsafe scheme (e.g. javascript:/data:), which
+            // would execute content rather than navigate if the bookmark were later activated. Folders
+            // are exempt (mirrors iOS BookmarkOrFolder.isInvalidBookmark) so a folder is never dropped
+            // along with its children even if it carries a stray URL string.
+            if !bookmarkOrFolder.isFolder, bookmarkOrFolder.urlString?.hasUnsafeBookmarkImportScheme() == true {
+                total.failed += 1
+                continue
+            }
 
             let bookmarkManagedObject: BookmarkEntity
             if bookmarkOrFolder.isFolder {

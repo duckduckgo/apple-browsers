@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "PreferencesUI-macOS",
     defaultLocalization: "en",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(name: "PreferencesUI-macOS", targets: ["PreferencesUI-macOS"]),
     ],

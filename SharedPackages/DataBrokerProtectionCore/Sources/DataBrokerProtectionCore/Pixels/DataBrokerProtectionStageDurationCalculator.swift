@@ -33,6 +33,7 @@ public enum Stage: String {
     case emailConfirm = "email-confirm"
     case emailConfirmHalted = "email-confirm-halted"
     case emailConfirmDecoupled = "email-confirm-decoupled"
+    case emailGetData = "email-get-data"
     case validate
     case other
     case fillForm = "fill-form"
@@ -48,6 +49,7 @@ public protocol StageDurationCalculator {
 
     func durationSinceLastStage() -> Double
     func durationSinceStartTime() -> Double
+    func awakeDurationSinceStartTime() -> Double
     func fireOptOutStart()
     func fireOptOutEmailGenerate()
     func fireOptOutCaptchaParse()
@@ -57,6 +59,7 @@ public protocol StageDurationCalculator {
     func fireOptOutFillForm()
     func fireOptOutEmailReceive()
     func fireOptOutEmailConfirm()
+    func fireOptOutEmailGetData()
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int, error: Error)
@@ -88,6 +91,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerURL: String
     let dataBrokerVersion: String
     let startTime: Date
+    let startUptimeNanos: UInt64
     let parentURL: String?
     let isAuthenticated: Bool
     let isFreeScan: Bool?
@@ -99,10 +103,10 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
-    let featureFlagger: DBPFeatureFlagging
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
+         startUptimeNanos: UInt64 = DispatchTime.now().uptimeNanoseconds,
          dataBrokerURL: String,
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
@@ -111,10 +115,10 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          isAuthenticated: Bool = true,
          isFreeScan: Bool?,
          vpnConnectionState: String,
-         vpnBypassStatus: String,
-         featureFlagger: DBPFeatureFlagging) {
+         vpnBypassStatus: String) {
         self.attemptId = attemptId
         self.startTime = startTime
+        self.startUptimeNanos = startUptimeNanos
         self.lastStateTime = startTime
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
@@ -125,7 +129,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.isFreeScan = isFreeScan
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
-        self.featureFlagger = featureFlagger
     }
 
     /// Returned in milliseconds
@@ -143,12 +146,21 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         return (now.timeIntervalSince(startTime) * 1000).rounded(.towardZero)
     }
 
+    /// Returned in milliseconds
+    func awakeDurationSinceStartTime() -> Double {
+        let nowUptimeNanos = DispatchTime.now().uptimeNanoseconds
+        guard nowUptimeNanos >= startUptimeNanos else {
+            return 0
+        }
+
+        return (Double(nowUptimeNanos - startUptimeNanos) / 1_000_000).rounded(.towardZero)
+    }
+
     func fireOptOutStart() {
         setStage(.start)
         handler.fire(.optOutStart(dataBroker: dataBrokerURL,
                                   attemptId: attemptId,
-                                  parent: parentURL ?? "",
-                                  clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                  parent: parentURL ?? ""))
     }
 
     func fireOptOutEmailGenerate() {
@@ -204,8 +216,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
                                    parent: parentURL ?? "",
-                                   actionId: actionID ?? "",
-                                   clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                   actionId: actionID ?? ""))
     }
 
     func fireOptOutEmailReceive() {
@@ -222,6 +233,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutEmailConfirm() {
         let duration = durationSinceLastStage()
         handler.fire(.optOutEmailConfirm(dataBroker: dataBrokerURL,
+                                         attemptId: attemptId,
+                                         duration: duration,
+                                         dataBrokerVersion: dataBrokerVersion,
+                                         tries: tries,
+                                         parent: parentURL ?? "",
+                                         actionId: actionID ?? ""))
+    }
+
+    func fireOptOutEmailGetData() {
+        let duration = (durationSinceLastStage() / 10.0).rounded() * 10.0
+        handler.fire(.optOutEmailGetData(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
@@ -258,6 +280,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,
                                           duration: totalDuration,
+                                          awakeDuration: awakeDurationSinceStartTime(),
                                           tries: tries,
                                           parent: parentURL ?? "",
                                           emailPattern: emailPattern,
@@ -272,6 +295,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
+                                    awakeDuration: awakeDurationSinceStartTime(),
                                     parent: parentURL ?? "",
                                     errorCategory: errorCategory.toString,
                                     errorDetails: error.localizedDescription,
@@ -281,8 +305,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     actionId: actionID ?? "unknown",
                                     actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
-                                    vpnBypassStatus: vpnBypassStatus,
-                                    clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                    vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutConditionFound() {
@@ -317,6 +340,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.scanSuccess(dataBroker: dataBrokerURL,
                                   matchesFound: matchesFound,
                                   duration: durationSinceStartTime(),
+                                  awakeDuration: awakeDurationSinceStartTime(),
                                   tries: 1,
                                   isImmediateOperation: isImmediateOperation,
                                   vpnConnectionState: vpnConnectionState,
@@ -330,6 +354,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.scanNoResults(dataBroker: dataBrokerURL,
                                     dataBrokerVersion: dataBrokerVersion,
                                     duration: durationSinceStartTime(),
+                                    awakeDuration: awakeDurationSinceStartTime(),
                                     tries: 1,
                                     isImmediateOperation: isImmediateOperation,
                                     vpnConnectionState: vpnConnectionState,
@@ -353,6 +378,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 dataBroker: dataBrokerURL,
                 dataBrokerVersion: dataBrokerVersion,
                 duration: durationSinceStartTime(),
+                awakeDuration: awakeDurationSinceStartTime(),
                 category: errorCategory.toString,
                 details: error.localizedDescription,
                 isImmediateOperation: isImmediateOperation,

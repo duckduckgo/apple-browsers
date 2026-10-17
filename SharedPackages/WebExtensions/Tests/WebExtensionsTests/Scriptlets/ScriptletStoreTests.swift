@@ -242,6 +242,37 @@ final class ScriptletStoreTests: XCTestCase {
         XCTAssertEqual(store.installedVersion(for: .adBlockingExtension), "1.0")
     }
 
+    // MARK: - Path Traversal Protection
+
+    func testWhenScriptletNameIsAbsolutePathThenSaveThrows() {
+        let fetched = [makeFetchedScriptlet(name: "/etc/passwd", content: "evil")]
+        XCTAssertThrowsError(try store.save(fetched, version: "1.0", for: .adBlockingExtension)) { error in
+            XCTAssertEqual(error as? ScriptletError, .invalidName(name: "/etc/passwd"))
+        }
+    }
+
+    func testWhenScriptletNameContainsParentSegmentThenSaveThrows() {
+        let fetched = [makeFetchedScriptlet(name: "../../evil.js", content: "evil")]
+        XCTAssertThrowsError(try store.save(fetched, version: "1.0", for: .adBlockingExtension)) { error in
+            XCTAssertEqual(error as? ScriptletError, .invalidName(name: "../../evil.js"))
+        }
+    }
+
+    func testWhenScriptletNameContainsNulByteThenSaveThrows() {
+        let fetched = [makeFetchedScriptlet(name: "safe\u{0}name.js", content: "evil")]
+        XCTAssertThrowsError(try store.save(fetched, version: "1.0", for: .adBlockingExtension))
+    }
+
+    func testWhenScriptletNameIsTraversalThenNoFileIsWrittenOutsideBase() {
+        // Confirms the guard fires *before* any write succeeds — the parent
+        // directory of the base must not be polluted.
+        let fetched = [makeFetchedScriptlet(name: "../escaped.js", content: "evil")]
+        _ = try? store.save(fetched, version: "1.0", for: .adBlockingExtension)
+
+        let sibling = tempDirectory.deletingLastPathComponent().appendingPathComponent("escaped.js")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sibling.path))
+    }
+
     // MARK: - Helpers
 
     private func makeFetchedScriptlet(name: String, content: String) -> FetchedScriptlet {

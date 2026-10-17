@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import os.log
 
@@ -54,6 +55,10 @@ protocol FaviconReferenceCaching {
     func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
     @MainActor
     func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: TLD) async
+
+    /// Debug/admin: removes every host and URL favicon reference from memory + store.
+    @MainActor
+    func removeAllReferences() async
 }
 
 final class FaviconReferenceCache: FaviconReferenceCaching {
@@ -76,15 +81,29 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         do {
             let (hostReferences, urlReferences) = try await storing.loadFaviconReferences()
 
-            for reference in hostReferences {
+            // Drop references with no favicon URL. They carry no information - a lookup
+            // returns `nil` whether such a reference exists or not. An empty URL reference
+            // used to shadow a good host reference for the same host, which was a bug.
+            let (emptyHostReferences, validHostReferences) = hostReferences.extractEmpty()
+            let (emptyUrlReferences, validUrlReferences) = urlReferences.extractEmpty()
+
+            for reference in validHostReferences {
                 self.hostReferences[reference.host] = reference
             }
-            for reference in urlReferences {
+            for reference in validUrlReferences {
                 self.urlReferences[reference.documentUrl] = reference
             }
             loaded = true
 
             Logger.favicons.debug("References loaded successfully")
+
+            if !emptyHostReferences.isEmpty || !emptyUrlReferences.isEmpty {
+                Logger.favicons.debug("Discarding \(emptyHostReferences.count) empty host and \(emptyUrlReferences.count) empty URL references")
+                Task.detached {
+                    await self.removeHostReferencesFromStore(emptyHostReferences)
+                    await self.removeUrlReferencesFromStore(emptyUrlReferences)
+                }
+            }
 
             NotificationCenter.default.post(name: .faviconCacheUpdated, object: nil)
         } catch {
@@ -95,6 +114,17 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
 
     func insert(faviconUrls: (smallFaviconUrl: URL?, mediumFaviconUrl: URL?), documentUrl: URL) {
         guard loaded else { return }
+
+        // Never replace a usable reference with an empty one. A favicon fetch that returns nothing
+        // (network error, 404, cancelled navigation) reaches this point with both URLs `nil`; writing
+        // that would destroy the favicon reference the site already has, and the favicon would stay
+        // missing until the next successful fetch.
+        // This also means that we wouldn't immediately clear a favicon on a website that removed a favicon,
+        // but it's a reasonable trade-off considering the breakage caused by otherwise displaying incorrect favicons.
+        if faviconUrls.smallFaviconUrl == nil, faviconUrls.mediumFaviconUrl == nil, hasReference(for: documentUrl) {
+            Logger.favicons.debug("Keeping existing reference for \(documentUrl.shortDescription); no favicon was found this time")
+            return
+        }
 
         guard let host = documentUrl.host else {
             insertToUrlCache(faviconUrls: faviconUrls, documentUrl: documentUrl)
@@ -139,17 +169,15 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
             return nil
         }
 
-        if let urlCacheEntry = urlReferences[documentURL] {
-            switch sizeCategory {
-            case .small: return urlCacheEntry.smallFaviconUrl ?? urlCacheEntry.mediumFaviconUrl
-            default: return urlCacheEntry.mediumFaviconUrl
-            }
-        } else if let host = documentURL.host,
-                    let hostCacheEntry = hostReferences[host] {
-            switch sizeCategory {
-            case .small: return hostCacheEntry.smallFaviconUrl ?? hostCacheEntry.mediumFaviconUrl
-            default: return hostCacheEntry.mediumFaviconUrl
-            }
+        // A URL reference is an exception for one document URL, so it takes precedence, but only
+        // if it points to a non-nil favicon URL. Otherwise we fall through to the host reference.
+        if let urlCacheEntry = urlReferences[documentURL],
+           let faviconUrl = urlCacheEntry.faviconUrl(for: sizeCategory) {
+            return faviconUrl
+        }
+
+        if let host = documentURL.host, let hostCacheEntry = hostReferences[host] {
+            return hostCacheEntry.faviconUrl(for: sizeCategory)
         }
 
         return nil
@@ -160,14 +188,7 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
             return nil
         }
 
-        let hostCacheEntry = hostReferences[host]
-
-        switch sizeCategory {
-        case .small:
-            return hostCacheEntry?.smallFaviconUrl ?? hostCacheEntry?.mediumFaviconUrl
-        default:
-            return hostCacheEntry?.mediumFaviconUrl
-        }
+        return hostReferences[host]?.faviconUrl(for: sizeCategory)
     }
 
     // MARK: - Clean
@@ -237,7 +258,32 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         }).value
     }
 
+    // MARK: - Debug / admin removal
+
+    @MainActor
+    func removeAllReferences() async {
+        // Resolve from the store (the source of truth) so a full reset also clears references this
+        // in-memory cache may not have loaded yet, rather than only the in-memory ones.
+        let (storedHostReferences, storedUrlReferences) = (try? await storing.loadFaviconReferences()) ?? ([], [])
+        hostReferences.removeAll()
+        urlReferences.removeAll()
+        await removeHostReferencesFromStore(storedHostReferences)
+        await removeUrlReferencesFromStore(storedUrlReferences)
+    }
+
     // MARK: - Private
+
+    /// Whether a lookup for `documentUrl` already resolves to a favicon URL, at any size category.
+    @MainActor
+    private func hasReference(for documentUrl: URL) -> Bool {
+        if let urlCacheEntry = urlReferences[documentUrl], !urlCacheEntry.isEmpty {
+            return true
+        }
+        if let host = documentUrl.host, let hostCacheEntry = hostReferences[host], !hostCacheEntry.isEmpty {
+            return true
+        }
+        return false
+    }
 
     @MainActor
     private func insertToHostCache(faviconUrls: (smallFaviconUrl: URL?, mediumFaviconUrl: URL?), host: String, documentUrl: URL) {
@@ -288,7 +334,7 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         Task {
             do {
                 try await self.storing.save(urlReference: urlReference)
-                Logger.favicons.debug("URL reference saved successfully. document URL: \(urlReference.documentUrl.absoluteString)")
+                Logger.favicons.debug("URL reference saved successfully. document URL: \(urlReference.documentUrl.shortDescription)")
             } catch {
                 Logger.favicons.error("Saving of URL reference failed: \(error.localizedDescription)")
             }
@@ -343,4 +389,49 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
             Logger.favicons.error("Removing of URL references failed: \(error.localizedDescription)")
         }
     }
+}
+
+/// A common protocol for FaviconHostReference and FaviconUrlReference to share favicon URL accessors and
+/// resolving a URL for a given size category.
+protocol FaviconReferencing {
+
+    var smallFaviconUrl: URL? { get }
+    var mediumFaviconUrl: URL? { get }
+
+}
+
+extension FaviconReferencing {
+
+    /// The favicon URL for `sizeCategory`, or `nil` when this reference names none. The small category
+    /// accepts the medium favicon as a stand-in, because a medium favicon scales down acceptably.
+    func faviconUrl(for sizeCategory: Favicon.SizeCategory) -> URL? {
+        switch sizeCategory {
+        case .small: return smallFaviconUrl ?? mediumFaviconUrl
+        default: return mediumFaviconUrl
+        }
+    }
+
+    /// Returns `true` when a reference doesn't point to any favicon URL at all.
+    var isEmpty: Bool {
+        smallFaviconUrl == nil && mediumFaviconUrl == nil
+    }
+
+}
+
+extension FaviconHostReference: FaviconReferencing {}
+extension FaviconUrlReference: FaviconReferencing {}
+
+extension Array where Element: FaviconReferencing {
+
+    /// Splits the references into the empty ones and the ones that name a favicon URL.
+    func extractEmpty() -> (empty: [Element], valid: [Element]) {
+        reduce(into: (empty: [Element](), valid: [Element]())) { result, reference in
+            if reference.isEmpty {
+                result.empty.append(reference)
+            } else {
+                result.valid.append(reference)
+            }
+        }
+    }
+
 }

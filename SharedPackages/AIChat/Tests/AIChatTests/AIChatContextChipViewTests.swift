@@ -83,5 +83,6 @@ final class AIChatContextChipViewTests: XCTestCase {
         // Then
         XCTAssertEqual(sut.accessibilityLabel, "Updated")
     }
+
 }
 #endif

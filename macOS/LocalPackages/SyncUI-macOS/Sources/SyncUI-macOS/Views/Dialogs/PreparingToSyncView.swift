@@ -20,17 +20,28 @@ import SwiftUI
 import SwiftUIExtensions
 
 struct PreparingToSyncView: View {
+    let mode: PreparingToSyncMode
+
     @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
-        let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled ? UserText.preparingToSyncDialogSubTitleUpdated : UserText.preparingToSyncDialogSubTitle
         SyncDialog(spacing: 20.0, bottomText: UserText.preparingToSyncDialogAction) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.sync96)
-                SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
-                    .fixedSize(horizontal: false, vertical: /*@START_MENU_TOKEN@*/true/*@END_MENU_TOKEN@*/)
-                    .multilineTextAlignment(.center)
-                SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
+                switch mode {
+                case .singleDeviceOrRecovery:
+                    let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled
+                        ? UserText.preparingToSyncDialogSubTitleUpdated
+                        : UserText.preparingToSyncDialogSubTitle
+                    SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                    SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
+                case .twoDevicePairing:
+                    SyncUIViews.TextHeader(text: UserText.preparingToSyncTwoDeviceDialogTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                }
             }
             .frame(width: 320)
         } buttons: {
@@ -43,6 +54,40 @@ struct RecoverSyncedDataView: View {
     @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
+        if model.isImprovedPairingFlowEnabled {
+            improvedBody
+        } else {
+            legacyBody
+        }
+    }
+
+    private var improvedBody: some View {
+        SyncDialogV2(spacing: 20.0) {
+            VStack(alignment: .center, spacing: 20) {
+                Image(.clipboardSyncRecoverFeature128)
+                VStack(alignment: .center, spacing: 8) {
+                    SyncUIViewsV2.TextHeader(text: UserText.recoverSyncedDataDialogTitleImproved)
+                    SyncUIViewsV2.TextDetailSecondary(text: UserText.recoverSyncedDataDialogSubtitleImproved)
+                }
+            }
+        } buttons: {
+            Spacer()
+            Button(UserText.cancel) {
+                model.cancelPressed()
+            }
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+
+            Button(UserText.recoverSyncedDataDialogButtonImproved) {
+                Task {
+                    await model.delegate?.enterRecoveryCodePressed()
+                }
+            }
+            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
+            .disabled(model.isAuthenticating)
+        }
+    }
+
+    private var legacyBody: some View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPair96)
@@ -54,12 +99,31 @@ struct RecoverSyncedDataView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.reciverSyncedDataDialogButton) {
-                model.delegate?.enterRecoveryCodePressed()
+                Task {
+                    await model.delegate?.enterRecoveryCodePressed()
+                }
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
+            .disabled(model.isAuthenticating)
         }
     }
 
 }
+
+#if DEBUG
+#Preview("Recover Synced Data") {
+    RecoverSyncedDataView()
+        .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Recover Synced Data - Improved Pairing Flow") {
+    RecoverSyncedDataView()
+        .environmentObject({
+            let model = ManagementDialogModel()
+            model.isImprovedPairingFlowEnabled = true
+            return model
+        }())
+}
+#endif

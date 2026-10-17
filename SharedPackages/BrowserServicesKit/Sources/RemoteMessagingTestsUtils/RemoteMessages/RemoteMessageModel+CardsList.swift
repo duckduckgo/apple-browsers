@@ -58,6 +58,7 @@ public extension RemoteMessageModelType.ListItem {
         titleText: String = "Item Title",
         descriptionText: String = "Item Description",
         placeholder: RemotePlaceholder = .announce,
+        imageUrl: URL? = nil,
         action: RemoteAction? = nil,
         matchingRules: [Int] = [],
         exclusionRules: [Int] = []
@@ -68,6 +69,7 @@ public extension RemoteMessageModelType.ListItem {
                 titleText: titleText,
                 descriptionText: descriptionText,
                 placeholderImage: placeholder,
+                imageUrl: imageUrl,
                 action: action
             ),
             matchingRules: matchingRules,
@@ -93,6 +95,7 @@ public extension RemoteMessageModelType.ListItem {
         titleText: String = "Featured Item",
         descriptionText: String = "Featured Description",
         placeholder: RemotePlaceholder = .announce,
+        imageUrl: URL? = nil,
         primaryActionText: String? = nil,
         primaryAction: RemoteAction? = nil,
         matchingRules: [Int] = [],
@@ -104,6 +107,7 @@ public extension RemoteMessageModelType.ListItem {
                 titleText: titleText,
                 descriptionText: descriptionText,
                 placeholderImage: placeholder,
+                imageUrl: imageUrl,
                 primaryActionText: primaryActionText,
                 primaryAction: primaryAction
             ),
@@ -119,9 +123,9 @@ public extension RemoteMessageModelType.ListItem {
         switch type {
         case let .titledSection(titleText, _):
             return titleText
-        case let .twoLinesItem(titleText, _, _, _):
+        case let .twoLinesItem(titleText, _, _, _, _):
             return titleText
-        case let .featuredTwoLinesSingleActionItem(titleText, _, _, _, _):
+        case let .featuredTwoLinesSingleActionItem(titleText, _, _, _, _, _):
             return titleText
         }
     }
@@ -130,9 +134,9 @@ public extension RemoteMessageModelType.ListItem {
         switch type {
         case .titledSection:
             return nil
-        case let .twoLinesItem(_, descriptionText, _, _):
+        case let .twoLinesItem(_, descriptionText, _, _, _):
             return descriptionText
-        case let .featuredTwoLinesSingleActionItem(_, descriptionText, _, _, _):
+        case let .featuredTwoLinesSingleActionItem(_, descriptionText, _, _, _, _):
             return descriptionText
         }
     }
@@ -141,10 +145,21 @@ public extension RemoteMessageModelType.ListItem {
         switch type {
         case .titledSection:
             return nil
-        case let .twoLinesItem(_, _, placeholderImage, _):
+        case let .twoLinesItem(_, _, placeholderImage, _, _):
             return placeholderImage
-        case let .featuredTwoLinesSingleActionItem(_, _, placeholderImage, _, _):
+        case let .featuredTwoLinesSingleActionItem(_, _, placeholderImage, _, _, _):
             return placeholderImage
+        }
+    }
+
+    var imageUrl: URL? {
+        switch type {
+        case .titledSection:
+            return nil
+        case let .twoLinesItem(_, _, _, imageUrl, _):
+            return imageUrl
+        case let .featuredTwoLinesSingleActionItem(_, _, _, imageUrl, _, _):
+            return imageUrl
         }
     }
 
@@ -152,7 +167,7 @@ public extension RemoteMessageModelType.ListItem {
         switch type {
         case.titledSection, .twoLinesItem:
             return nil
-        case let .featuredTwoLinesSingleActionItem(_, _, _, primaryActionText, _):
+        case let .featuredTwoLinesSingleActionItem(_, _, _, _, primaryActionText, _):
             return primaryActionText
         }
     }
@@ -161,9 +176,9 @@ public extension RemoteMessageModelType.ListItem {
         switch type {
         case .titledSection:
             return nil
-        case let .twoLinesItem(_, _, _, action):
+        case let .twoLinesItem(_, _, _, _, action):
             return action
-        case let .featuredTwoLinesSingleActionItem(_, _, _, _, action):
+        case let .featuredTwoLinesSingleActionItem(_, _, _, _, _, action):
             return action
         }
     }

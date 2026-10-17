@@ -18,11 +18,10 @@
 
 import Cocoa
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import History
 import Suggestions
-import AIChat
 
 protocol SuggestionViewControllerDelegate: AnyObject {
 
@@ -34,41 +33,223 @@ final class SuggestionViewController: NSViewController {
 
     weak var delegate: SuggestionViewControllerDelegate?
 
-    @IBOutlet weak var backgroundView: ColorView!
-    @IBOutlet weak var innerBorderView: ColorView!
-    @IBOutlet weak var innerBorderViewTopConstraint: NSLayoutConstraint!
-    @IBOutlet weak var innerBorderViewBottomConstraint: NSLayoutConstraint!
-    @IBOutlet weak var innerBorderViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var innerBorderViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var shadowView: ShadowView!
 
-    @IBOutlet weak var tableView: NSTableView!
-    @IBOutlet weak var tableViewHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
-    @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
-    @IBOutlet weak var topSeparatorView: NSView!
+    private(set) var backgroundView: ColorView!
+    private(set) var innerBorderView: ColorView!
+    private(set) var innerBorderViewTopConstraint: NSLayoutConstraint!
+    private(set) var innerBorderViewBottomConstraint: NSLayoutConstraint!
+    private(set) var innerBorderViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var innerBorderViewTrailingConstraint: NSLayoutConstraint!
+
+    private(set) var tableView: NSTableView!
+    private(set) var tableViewHeightConstraint: NSLayoutConstraint!
+    private(set) var pixelPerfectConstraint: NSLayoutConstraint!
+    private(set) var backgroundViewTopConstraint: NSLayoutConstraint!
+    private(set) var topSeparatorView: NSView!
+    private(set) var scrollView: NSScrollView!
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
     private let suggestionContainerViewModel: SuggestionContainerViewModel
-    private let isBurner: Bool
+    private var isBurner: Bool {
+        suggestionContainerViewModel.isBurner
+    }
+
+    private let sectionDividerRowHeight: CGFloat = 14
+    private let scrollViewBottomInset: CGFloat = 3
 
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
     }
 
-    required init?(coder: NSCoder,
-                   suggestionContainerViewModel: SuggestionContainerViewModel,
-                   isBurner: Bool,
-                   themeManager: ThemeManaging,
-                   aiChatPreferencesStorage: AIChatPreferencesStorage,
-                   featureFlagger: FeatureFlagger) {
+    init(suggestionContainerViewModel: SuggestionContainerViewModel,
+         themeManager: ThemeManaging,
+         featureFlagger: FeatureFlagger) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
-        self.isBurner = isBurner
         self.themeManager = themeManager
-        self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.featureFlagger = featureFlagger
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    private enum LayoutConstants {
+        static let shadowRadius: CGFloat = 8
+        static let shadowCornerRadius: CGFloat = 14
+        static let shadowInset: CGFloat = 20
+        static let cornerRadius: CGFloat = 8
+        static let borderWidth: CGFloat = 1
+        static let scrollViewHorizontalInset: CGFloat = 4
+        static let scrollViewTopInset: CGFloat = 21
+        static let backgroundViewTopOverhang: CGFloat = -20
+        static let tableViewHeight: CGFloat = 200
+        static let rowHeight: CGFloat = 28
+        static let scrollViewSize = CGSize(width: 609, height: 102)
+    }
+
+    /// Three nested containers: the outer one clips the drop shadow, the inner one clips the
+    /// rounded background, and the background hosts the table so its top edge can slide under
+    /// the address bar without the shadow showing through.
+    override func loadView() {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 633, height: 267))
+
+        let layoutView = NSView()
+        layoutView.translatesAutoresizingMaskIntoConstraints = false
+
+        let shadowClipView = NSView()
+        shadowClipView.translatesAutoresizingMaskIntoConstraints = false
+
+        shadowView = ShadowView()
+        shadowView.translatesAutoresizingMaskIntoConstraints = false
+        shadowView.shadowColor = NSColor(resource: .suggestionsShadow)
+        shadowView.shadowRadius = LayoutConstants.shadowRadius
+        shadowView.cornerRadius = LayoutConstants.shadowCornerRadius
+        shadowView.shadowOpacity = 1
+        shadowClipView.addSubview(shadowView)
+
+        let clipView = NSView()
+        clipView.translatesAutoresizingMaskIntoConstraints = false
+
+        backgroundView = ColorView(frame: .zero,
+                                   backgroundColor: NSColor(resource: .addressBarBackground),
+                                   cornerRadius: LayoutConstants.cornerRadius,
+                                   borderColor: NSColor(resource: .addressBarBorder),
+                                   borderWidth: LayoutConstants.borderWidth)
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
+
+        innerBorderView = ColorView(frame: .zero,
+                                    cornerRadius: LayoutConstants.cornerRadius,
+                                    borderColor: NSColor(resource: .addressBarInnerBorder),
+                                    borderWidth: LayoutConstants.borderWidth)
+        innerBorderView.translatesAutoresizingMaskIntoConstraints = false
+
+        tableView = NSTableView()
+        let column = NSTableColumn()
+        column.resizingMask = [.autoresizingMask, .userResizingMask]
+        tableView.addTableColumn(column)
+        tableView.headerView = nil
+        tableView.backgroundColor = .clear
+        tableView.gridColor = .gridColor
+        tableView.rowHeight = LayoutConstants.rowHeight
+        tableView.selectionHighlightStyle = .none
+        tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        tableView.allowsColumnReordering = false
+        tableView.allowsColumnResizing = false
+        tableView.allowsMultipleSelection = false
+        tableView.allowsExpansionToolTips = true
+        tableView.autoresizingMask = [.width, .height]
+        // A table created in code defaults to a 17pt horizontal intercell.
+        // `viewDidLayout` sets the column to the full frame width, so any spacing makes
+        // the table wider than the clip view and the suggestions scroll sideways.
+        // The row's own 8pt/11pt insets provide all the padding needed.
+        tableView.intercellSpacing = NSSize(width: 0, height: 0)
+        tableView.setContentHuggingPriority(.init(750), for: .vertical)
+
+        scrollView = NSScrollView(frame: NSRect(x: 0, y: 0,
+                                                width: LayoutConstants.scrollViewSize.width,
+                                                height: LayoutConstants.scrollViewSize.height))
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Sized to the scroll view and resizing with it: starting at zero would leave the table
+        // laid out against a collapsed container.
+        let tableClipView = NSClipView(frame: scrollView.frame)
+        tableClipView.translatesAutoresizingMaskIntoConstraints = true
+        tableClipView.autoresizingMask = [.width, .height]
+        tableClipView.drawsBackground = false
+        tableClipView.backgroundColor = .clear
+        tableClipView.documentView = tableView
+        scrollView.borderType = .noBorder
+        scrollView.hasHorizontalScroller = false
+        scrollView.hasVerticalScroller = false
+        scrollView.usesPredominantAxisScrolling = false
+        scrollView.horizontalLineScroll = LayoutConstants.rowHeight
+        scrollView.verticalLineScroll = LayoutConstants.rowHeight
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 3, right: 0)
+        scrollView.contentView = tableClipView
+
+        backgroundView.addSubview(innerBorderView)
+        backgroundView.addSubview(scrollView)
+
+        topSeparatorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .addressBarSeparator))
+        topSeparatorView.translatesAutoresizingMaskIntoConstraints = false
+
+        clipView.addSubview(backgroundView)
+        clipView.addSubview(topSeparatorView)
+
+        layoutView.addSubview(shadowClipView)
+        layoutView.addSubview(clipView)
+        view.addSubview(layoutView)
+
+        pixelPerfectConstraint = layoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        backgroundViewTopConstraint = scrollView.topAnchor
+            .constraint(equalTo: backgroundView.topAnchor, constant: LayoutConstants.scrollViewTopInset)
+        innerBorderViewTopConstraint = innerBorderView.topAnchor
+            .constraint(equalTo: backgroundView.topAnchor, constant: LayoutConstants.borderWidth)
+        innerBorderViewBottomConstraint = backgroundView.bottomAnchor
+            .constraint(equalTo: innerBorderView.bottomAnchor, constant: LayoutConstants.borderWidth)
+        innerBorderViewLeadingConstraint = innerBorderView.leadingAnchor
+            .constraint(equalTo: backgroundView.leadingAnchor, constant: LayoutConstants.borderWidth)
+        innerBorderViewTrailingConstraint = backgroundView.trailingAnchor
+            .constraint(equalTo: innerBorderView.trailingAnchor, constant: LayoutConstants.borderWidth)
+        tableViewHeightConstraint = clipView.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.tableViewHeight)
+        tableViewHeightConstraint.priority = .init(950)
+
+        NSLayoutConstraint.activate([
+            layoutView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: layoutView.bottomAnchor),
+            layoutView.widthAnchor.constraint(equalTo: view.widthAnchor),
+            pixelPerfectConstraint,
+
+            shadowClipView.leadingAnchor.constraint(equalTo: layoutView.leadingAnchor),
+            layoutView.trailingAnchor.constraint(equalTo: shadowClipView.trailingAnchor),
+            shadowClipView.topAnchor.constraint(equalTo: layoutView.topAnchor, constant: LayoutConstants.borderWidth),
+            layoutView.bottomAnchor.constraint(equalTo: shadowClipView.bottomAnchor),
+
+            shadowView.leadingAnchor.constraint(equalTo: shadowClipView.leadingAnchor,
+                                                constant: LayoutConstants.shadowInset),
+            shadowClipView.trailingAnchor.constraint(equalTo: shadowView.trailingAnchor,
+                                                     constant: LayoutConstants.shadowInset),
+            shadowView.topAnchor.constraint(equalTo: shadowClipView.topAnchor,
+                                            constant: -LayoutConstants.shadowCornerRadius),
+            shadowClipView.bottomAnchor.constraint(equalTo: shadowView.bottomAnchor,
+                                                   constant: LayoutConstants.shadowInset),
+
+            clipView.leadingAnchor.constraint(equalTo: layoutView.leadingAnchor, constant: LayoutConstants.shadowInset),
+            layoutView.trailingAnchor.constraint(equalTo: clipView.trailingAnchor, constant: LayoutConstants.shadowInset),
+            clipView.topAnchor.constraint(equalTo: layoutView.topAnchor),
+            layoutView.bottomAnchor.constraint(equalTo: clipView.bottomAnchor, constant: LayoutConstants.shadowInset),
+            clipView.heightAnchor.constraint(greaterThanOrEqualToConstant: LayoutConstants.rowHeight),
+            tableViewHeightConstraint,
+
+            backgroundView.leadingAnchor.constraint(equalTo: clipView.leadingAnchor),
+            clipView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: clipView.topAnchor,
+                                                constant: LayoutConstants.backgroundViewTopOverhang),
+            clipView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
+
+            innerBorderViewTopConstraint,
+            innerBorderViewBottomConstraint,
+            innerBorderViewLeadingConstraint,
+            innerBorderViewTrailingConstraint,
+
+            scrollView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor,
+                                                constant: LayoutConstants.scrollViewHorizontalInset),
+            backgroundView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor,
+                                                     constant: LayoutConstants.scrollViewHorizontalInset),
+            backgroundViewTopConstraint,
+            backgroundView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+
+            topSeparatorView.heightAnchor.constraint(equalToConstant: LayoutConstants.borderWidth),
+            topSeparatorView.topAnchor.constraint(equalTo: clipView.topAnchor),
+            topSeparatorView.leadingAnchor.constraint(equalTo: clipView.leadingAnchor,
+                                                      constant: LayoutConstants.borderWidth),
+            clipView.trailingAnchor.constraint(equalTo: topSeparatorView.trailingAnchor,
+                                               constant: LayoutConstants.borderWidth),
+        ])
+
+        self.view = view
     }
 
     private var suggestionResultCancellable: AnyCancellable?
@@ -79,35 +260,24 @@ final class SuggestionViewController: NSViewController {
 
     /// Flag to prevent re-entrancy when programmatically updating table selection
     private var isUpdatingTableSelection = false
-    private var isAIChatToggleBeingDisplayed: Bool = false
-    private let aiChatPreferencesStorage: AIChatPreferencesStorage
     private let featureFlagger: FeatureFlagger
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tableView.delegate = self
-        tableView.dataSource = self
         setupTableView()
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionSync()
+        setupRoundedCorners()
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            topSeparatorView?.isHidden = true
-        }
-    }
-
-    private func updateAIChatToggleFlag() {
-        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
-        isAIChatToggleBeingDisplayed = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
+        topSeparatorView?.isHidden = true
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        updateAIChatToggleFlag()
 
         self.view.window!.isOpaque = false
         self.view.window!.backgroundColor = .clear
@@ -133,8 +303,17 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func setupTableView() {
+        tableView.delegate = self
+        tableView.dataSource = self
         tableView.style = .plain
+        tableView.enclosingScrollView?.contentInsets.bottom = scrollViewBottomInset
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
+    }
+
+    private func setupRoundedCorners() {
+        let roundedCorners: RoundedCorners = [.bottomLeft, .bottomRight]
+        backgroundView.roundedCorners = roundedCorners
+        innerBorderView.roundedCorners = roundedCorners
     }
 
     private func addTrackingArea() {
@@ -147,12 +326,12 @@ final class SuggestionViewController: NSViewController {
         tableView.addTrackingArea(trackingArea)
     }
 
-    @IBAction func confirmButtonAction(_ sender: NSButton) {
+    @objc func confirmButtonAction(_ sender: NSButton) {
         delegate?.suggestionViewControllerDidConfirmSelection(self)
         closeWindow()
     }
 
-    @IBAction func removeButtonAction(_ sender: NSButton) {
+    @objc func removeButtonAction(_ sender: NSButton) {
         guard let cell = sender.superview as? SuggestionTableCellView,
               let suggestion = cell.suggestion else {
             assertionFailure("Correct cell or url are not available")
@@ -200,7 +379,7 @@ final class SuggestionViewController: NSViewController {
         }
 
         // Remove the second reload that causes visual glitch in the beginning of typing
-        if suggestionContainerViewModel.suggestionContainer.result != nil || suggestionContainerViewModel.shouldShowSearchCell {
+        if suggestionContainerViewModel.suggestionContainer.result != nil {
             updateHeight()
             tableView.reloadData()
 
@@ -231,13 +410,7 @@ final class SuggestionViewController: NSViewController {
         guard let rowIndex,
               rowIndex >= 0,
               rowIndex < suggestionContainerViewModel.numberOfRows else {
-            if let defaultRow = suggestionContainerViewModel.defaultSelectedRow {
-                tableView.selectRowIndexes(IndexSet(integer: defaultRow), byExtendingSelection: false)
-                // Sync view model with the default selection so keyboard navigation works correctly
-                suggestionContainerViewModel.selectRow(at: defaultRow)
-            } else {
-                self.clearSelection()
-            }
+            self.clearSelection()
             return
         }
 
@@ -344,9 +517,17 @@ extension SuggestionViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
-        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+
+        shadowView.shadowSides = [.left, .right, .bottom]
+        shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
+        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+
+        NSAppearance.withAppearance(from: view) {
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
+            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
+        }
 
         tableView.reloadData()
     }
@@ -363,35 +544,25 @@ extension SuggestionViewController: NSTableViewDataSource {
 extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard let rowContent = suggestionContainerViewModel.rowContent(at: row) else {
-            return nil
-        }
+        guard let rowContent = suggestionContainerViewModel.rowContent(at: row) else { return nil }
 
         // Handle section divider separately
         if case .sectionDivider = rowContent {
             return makeSectionDividerView()
         }
 
-        let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
+        let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier,
+                                      owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView(frame: .zero)
+        cell.setActionTarget(self,
+                             confirmAction: #selector(confirmButtonAction(_:)),
+                             removeAction: #selector(removeButtonAction(_:)))
         cell.theme = themeManager.theme
-        cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed
 
         switch rowContent {
-        case .searchCell:
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
-            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
-
         case .aiChatCell:
             let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let aiChatIcon: NSImage = .aiChat
+            let aiChatIcon: NSImage = NSImage(resource: .aiChat)
             cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
-
-        case .visitCell:
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let host = suggestionContainerViewModel.visitCellHost ?? ""
-            let websiteIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.websiteEntryIcon
-            cell.display(userText: userText, style: .visit(host: host), icon: websiteIcon, isBurner: self.isBurner)
 
         case .sectionDivider:
             break // Already handled above
@@ -420,38 +591,37 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         let dividerLine = NSView()
         dividerLine.wantsLayer = true
-        dividerLine.layer?.backgroundColor = NSColor.addressBarSeparator.cgColor
+        dividerLine.layer?.backgroundColor = NSColor(resource: .addressBarSeparator).cgColor
         dividerLine.translatesAutoresizingMaskIntoConstraints = false
 
         containerView.addSubview(dividerLine)
 
+        let leadingConstant: CGFloat = 0
+        let trailingConstant: CGFloat = 0
+
+        let verticalConstraint: NSLayoutConstraint = dividerLine.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8)
+
         NSLayoutConstraint.activate([
-            dividerLine.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            dividerLine.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            dividerLine.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            dividerLine.heightAnchor.constraint(equalToConstant: 1)
+            dividerLine.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            dividerLine.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: trailingConstant),
+            dividerLine.heightAnchor.constraint(equalToConstant: 1),
+            verticalConstraint
         ])
 
         return containerView
     }
 
-    private static let sectionDividerRowHeight: CGFloat = 9
-
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
         if suggestionContainerViewModel.isDividerRow(row) {
-            return Self.sectionDividerRowHeight
+            return sectionDividerRowHeight
         }
         let barStyleProvider = themeManager.theme.addressBarStyleProvider
         return barStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
     }
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
-        guard let suggestionTableRowView = tableView.makeView(
-            withIdentifier: NSUserInterfaceItemIdentifier(rawValue: SuggestionTableRowView.identifier), owner: self)
-                as? SuggestionTableRowView else {
-            assertionFailure("SuggestionViewController: Making of table row view failed")
-            return nil
-        }
+        let suggestionTableRowView = tableView.makeView(withIdentifier: SuggestionTableRowView.identifier,
+                                                        owner: self) as? SuggestionTableRowView ?? SuggestionTableRowView()
 
         suggestionTableRowView.theme = themeManager.theme
         return suggestionTableRowView

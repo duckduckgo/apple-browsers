@@ -17,6 +17,17 @@
 //
 
 import Foundation
+import FoundationExtensions
+
+/// Indicates whether the Duck.ai conversion pixel is being fired by a new or returning install.
+///
+/// `unknown` is reported on platforms/build channels that cannot determine this — e.g. macOS
+/// App Store builds, which have no reliable reinstall signal — so it isn't conflated with `new`.
+public enum AIChatInstallType: String, Codable {
+    case new
+    case returning
+    case unknown
+}
 
 public struct AIChatNativeHandoffData: Codable {
     public let isAIChatHandoffEnabled: Bool
@@ -68,6 +79,25 @@ public struct AIChatNativeHandoffData: Codable {
     }
 }
 
+/// Native-owned attachment caps for the duck.ai web app, keyed by type; an absent entry means no limit.
+public struct AIChatNativeAttachmentLimits: Codable, Equatable {
+    public struct TabLimits: Codable, Equatable {
+        /// Max open tabs attachable to one prompt; omit the entry for "no limit" (0/negative aren't sentinels).
+        public let maxAttached: Int
+
+        public init(maxAttached: Int) {
+            self.maxAttached = maxAttached
+        }
+    }
+
+    /// Cap on tabs attached via the sidebar picker; nil = no tab limit (kill switch off).
+    public let tabs: TabLimits?
+
+    public init(tabs: TabLimits?) {
+        self.tabs = tabs
+    }
+}
+
 public struct AIChatNativeConfigValues: Codable {
     public let isAIChatHandoffEnabled: Bool
     public let platform: String
@@ -87,6 +117,56 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsAIChatSync: Bool
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
+    public let supportsNativeStorage: Bool
+    public let supportsNativePromptEditing: Bool
+    /// `true` when the native input can handle the Duck.ai promo card CTAs (model/reasoning/attachment
+    /// pickers), so the FE re-enables the promo cards for native-input users.
+    public let supportsPromoCards: Bool
+    /// `true` when the native side supplies page-type signals so the duck.ai web app can render
+    /// page-tailored suggested prompts ("suggestions").
+    public let supportsSuggestions: Bool
+    /// `true` when the native app renders the usage-limit messages itself, so the FE suppresses
+    /// its own usage banner.
+    public let supportsNativeUsageWarnings: Bool
+    /// `true` when the native app handles the "voice chat start failed" remediation UI
+    /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
+    /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
+    /// after `getUserMedia` rejects.
+    public let supportsNativeVoicePermissionHandler: Bool
+    /// `true` when the native app handles the "dictation start failed" remediation UI.
+    /// Mirrors `supportsNativeVoicePermissionHandler` but for the dictation flow: when this
+    /// is `true` the FE must suppress its own in-page tooltip and post `dictationStartFailed`
+    /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
+    /// prompt with dictation-specific copy.
+    public let supportsNativeDictationPermissionHandler: Bool
+    /// `true` when clearing Duck.ai data also removes the images' blob files from IndexedDB, so the FE
+    /// can run its one-time sweep of blob files orphaned by older clears.
+    public let supportsBlobSafeDataClearing: Bool
+    /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
+    /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
+    public let installType: AIChatInstallType
+    /// Bucketed age of the install (days since the ATB install date):
+    /// 0 = same day, 1 = 1–7, 2 = 8–14, 3 = 15–21, 4 = 22–28, 5 = after day 28.
+    public let installAge: Int
+    /// Native-owned attachment caps read by the sidebar; nil (omitted) means no caps.
+    public let attachmentLimits: AIChatNativeAttachmentLimits?
+    /// `true` when native exposes the browser tools bridge, so Duck.ai may open an MCP session
+    /// and discover tools. The front end must not open a session when this is false — it also
+    /// serves as version-skew protection against builds that predate the bridge.
+    public let supportsBrowserTools: Bool
+
+    /// `true` when native owns how often the file-upload privacy disclosure is shown, so the web
+    /// app asks before displaying it. Absent on builds that predate the handler.
+    public let supportsAttachmentPrivacyDisplay: Bool
+    /// `true` when the duckduckgo.com homepage may request the user's chats via `getAIChats`.
+    public let supportsHomePageChatSuggestions: Bool
+    /// `true` when native supports the Bonus offer messages, so Duck.ai
+    /// shows the limit extension offer. Gated by the bonus offer feature flag.
+    public let supportsBonusOffer: Bool
+    /// `true` when native's own readers of stored chats (chat history, suggestions, export) accept the
+    /// canonical chat format, so the web app may write canonical chats to native storage. Absent on
+    /// builds that predate it, which must keep receiving the legacy format.
+    public let supportsCanonicalChatFormat: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -105,7 +185,10 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
-                                        supportsMultipleContexts: false)
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false,
+                                        supportsNativeVoicePermissionHandler: false,
+                                        supportsNativeDictationPermissionHandler: false)
 #endif
 
 #if os(macOS)
@@ -124,7 +207,10 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
-                                        supportsMultipleContexts: false)
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false,
+                                        supportsNativeVoicePermissionHandler: true,
+                                        supportsNativeDictationPermissionHandler: true)
 #endif
     }
 
@@ -144,7 +230,23 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsOpenAIChatLink: Bool = true,
                 supportsAIChatSync: Bool,
                 supportsMultipleContexts: Bool = false,
-                supportsTabPicker: Bool = false) {
+                supportsTabPicker: Bool = false,
+                supportsNativeStorage: Bool = false,
+                supportsNativePromptEditing: Bool = false,
+                supportsPromoCards: Bool = false,
+                supportsSuggestions: Bool = false,
+                supportsNativeUsageWarnings: Bool = false,
+                supportsNativeVoicePermissionHandler: Bool = false,
+                supportsNativeDictationPermissionHandler: Bool = false,
+                supportsBlobSafeDataClearing: Bool = false,
+                installType: AIChatInstallType = .new,
+                installAge: Int = 0,
+                attachmentLimits: AIChatNativeAttachmentLimits? = nil,
+                supportsBrowserTools: Bool = false,
+                supportsAttachmentPrivacyDisplay: Bool = false,
+                supportsHomePageChatSuggestions: Bool = false,
+                supportsBonusOffer: Bool = false,
+                supportsCanonicalChatFormat: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -163,13 +265,94 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsAIChatSync = supportsAIChatSync
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
+        self.supportsNativeStorage = supportsNativeStorage
+        self.supportsNativePromptEditing = supportsNativePromptEditing
+        self.supportsPromoCards = supportsPromoCards
+        self.supportsSuggestions = supportsSuggestions
+        self.supportsNativeUsageWarnings = supportsNativeUsageWarnings
+        self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
+        self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
+        self.supportsBlobSafeDataClearing = supportsBlobSafeDataClearing
+        self.installType = installType
+        self.installAge = installAge
+        self.attachmentLimits = attachmentLimits
+        self.supportsBrowserTools = supportsBrowserTools
+        self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
+        self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
+        self.supportsBonusOffer = supportsBonusOffer
+        self.supportsCanonicalChatFormat = supportsCanonicalChatFormat
+    }
+
+    /// Buckets the days between the install date and `now` into the values expected by the
+    /// `web.conversion.duckai.prompt` pixel. A `nil` install date (ATB round-trip not yet
+    /// completed on a fresh install) maps to `0` (same day), as do future/negative dates.
+    public static func installAgeBucket(installDate: Date?, now: Date = Date()) -> Int {
+        guard let installDate else { return 0 }
+        let days = Calendar.current.numberOfDaysBetween(
+            Calendar.current.startOfDay(for: installDate),
+            and: Calendar.current.startOfDay(for: now)) ?? 0
+        switch days {
+        case ..<1: return 0
+        case 1...7: return 1
+        case 8...14: return 2
+        case 15...21: return 3
+        case 22...28: return 4
+        default: return 5
+        }
+    }
+}
+
+/// Payload form for the prompt's `pageContext` field. The duck.ai web app accepts either a
+/// single `AIChatPageContextData` (the sidebar's current-page case) or an array (the
+/// omnibar's multi-tab case) at the same JSON key — this enum encodes/decodes both shapes
+/// without a discriminator on the wire.
+///
+/// Per the discriminator in the tech design: each element's `tabId` discriminates
+/// tab-picker contexts (non-nil) from the current sidebar page (nil).
+public enum AIChatPageContextPayload: Codable, Equatable {
+    case single(AIChatPageContextData)
+    case multiple([AIChatPageContextData])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        // Decode array first — a JSON object would fail array decoding cleanly, and we want
+        // to disambiguate without relying on Swift's behavior of partially decoding objects.
+        if let array = try? container.decode([AIChatPageContextData].self) {
+            self = .multiple(array)
+        } else {
+            let single = try container.decode(AIChatPageContextData.self)
+            self = .single(single)
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .single(let value):
+            try container.encode(value)
+        case .multiple(let values):
+            try container.encode(values)
+        }
     }
 }
 
 public struct AIChatNativePrompt: Codable, Equatable {
+    /// Mode value for image generation prompts.
+    public static let imageGenerationMode = "image-generation"
+    /// Mode value for voice-chat prompts. Duck.ai routes to the voice flow purely from this
+    /// mode in the handoff payload — no `?mode=voice` URL parameter is required.
+    public static let voiceMode = "voice-mode"
+
     public let platform: String
     public let tool: Tool?
-    public let pageContext: AIChatPageContextData?
+    public let pageContext: AIChatPageContextPayload?
+
+    /// Text selections attached to this prompt, sent alongside `pageContext` rather than folded into it.
+    public let selections: [AIChatSelectionContextData]?
+
+    /// `true` only for a prompt the user sent by tapping Ask in a native input, with the Terms of Service
+    /// accepted. `nil` omits the key, which is how a build without native Terms of Service reads to the FE.
+    public let termsAccepted: Bool?
 
     public enum Tool: Equatable {
         case query(Query)
@@ -188,6 +371,18 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
     }
 
+    public struct NativePromptFile: Codable, Equatable {
+        public let data: String
+        public let fileName: String
+        public let mimeType: String
+
+        public init(data: String, fileName: String, mimeType: String) {
+            self.data = data
+            self.fileName = fileName
+            self.mimeType = mimeType
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
@@ -195,8 +390,55 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let autoSubmit: Bool
         public let toolChoice: [String]?
         public let images: [NativePromptImage]?
+        public let files: [NativePromptFile]?
         public let modelId: String?
         public let mode: String?
+        public let reasoningEffort: AIChatReasoningEffort?
+
+        private enum CodingKeys: String, CodingKey {
+            case prompt
+            case autoSubmit
+            case toolChoice
+            case images
+            case files
+            case modelId
+            case mode
+            case reasoningEffort
+        }
+
+        public init(
+            prompt: String,
+            autoSubmit: Bool,
+            toolChoice: [String]?,
+            images: [NativePromptImage]?,
+            files: [NativePromptFile]?,
+            modelId: String?,
+            mode: String?,
+            reasoningEffort: AIChatReasoningEffort?
+        ) {
+            self.prompt = prompt
+            self.autoSubmit = autoSubmit
+            self.toolChoice = toolChoice
+            self.images = images
+            self.files = files
+            self.modelId = modelId
+            self.mode = mode
+            self.reasoningEffort = reasoningEffort
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            prompt = try container.decode(String.self, forKey: .prompt)
+            autoSubmit = try container.decode(Bool.self, forKey: .autoSubmit)
+            toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
+            images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
+            files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
+            modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
+            mode = try container.decodeIfPresent(String.self, forKey: .mode)
+            let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
+            reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        }
+
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -249,12 +491,29 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case summary
         case translation
         case pageContext
+        case selections
+        case termsAccepted
     }
 
-    public init(platform: String, tool: Tool?, pageContext: AIChatPageContextData? = nil) {
+    public init(platform: String,
+                tool: Tool?,
+                pageContext: AIChatPageContextPayload? = nil,
+                selections: [AIChatSelectionContextData]? = nil,
+                termsAccepted: Bool? = nil) {
         self.platform = platform
         self.tool = tool
         self.pageContext = pageContext
+        self.selections = selections
+        self.termsAccepted = termsAccepted
+    }
+
+    /// The same prompt carrying `termsAccepted`.
+    public func withTermsAccepted(_ termsAccepted: Bool?) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: platform,
+                           tool: tool,
+                           pageContext: pageContext,
+                           selections: selections,
+                           termsAccepted: termsAccepted)
     }
 
     public init(from decoder: Decoder) throws {
@@ -278,7 +537,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
             tool = nil
         }
 
-        pageContext = try container.decodeIfPresent(AIChatPageContextData.self, forKey: .pageContext)
+        pageContext = try container.decodeIfPresent(AIChatPageContextPayload.self, forKey: .pageContext)
+        selections = try container.decodeIfPresent([AIChatSelectionContextData].self, forKey: .selections)
+        termsAccepted = try container.decodeIfPresent(Bool.self, forKey: .termsAccepted)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -301,10 +562,12 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
 
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
+        try container.encodeIfPresent(selections, forKey: .selections)
+        try container.encodeIfPresent(termsAccepted, forKey: .termsAccepted)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode)), pageContext: pageContext)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

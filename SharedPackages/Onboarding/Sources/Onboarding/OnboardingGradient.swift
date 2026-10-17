@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Common
+import FoundationExtensions
 
 public struct OnboardingGradient: View {
     @Environment(\.colorScheme) private var colorScheme

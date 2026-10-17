@@ -103,7 +103,7 @@ struct VPNStatusView: View {
                                          connectButtonForegroundColor(isDisabled: false) :
                                             disconnectButtonForegroundColor(isDisabled: status != .connected))
                         .tint(snoozeTimingStore.isSnoozing ?
-                              Color(designSystemColor: .accent) :
+                              Color(designSystemColor: .accentPrimary) :
                                 disconnectButtonBackgroundColor(isDisabled: status != .connected)
                         )
                         .disabled(status != .connected)
@@ -117,7 +117,7 @@ struct VPNStatusView: View {
                     connectButton
                         .makeAccentable(status == .disconnected)
                         .foregroundStyle(connectButtonForegroundColor(isDisabled: status != .disconnected))
-                        .tint(Color(designSystemColor: .accent))
+                        .tint(Color(designSystemColor: .accentPrimary))
                         .disabled(status != .disconnected)
                 default:
                     EmptyView()

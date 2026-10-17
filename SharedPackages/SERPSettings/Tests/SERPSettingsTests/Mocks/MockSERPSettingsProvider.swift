@@ -20,14 +20,12 @@ import Foundation
 import UserScript
 import AIChat
 import Common
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import SERPSettings
 
 final class MockSERPSettingsProvider: SERPSettingsProviding {
 
     // Configurable mock properties
-    var mockIsSERPSettingsFeatureOn: Bool = true
     var mockIsAIChatEnabled: Bool = false
 
     // Required protocol properties
@@ -42,10 +40,8 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     var aiChatPreferencesStorage: AIChatPreferencesStorage
 #endif
 
-    init(keyValueStore: ThrowingKeyValueStoring,
-         mockIsSERPSettingsFeatureOn: Bool = true) {
+    init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
-        self.mockIsSERPSettingsFeatureOn = mockIsSERPSettingsFeatureOn
 
 #if os(iOS)
         self.aiChatProvider = MockAIChatSettingsProvider()
@@ -57,10 +53,6 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
 
     func buildMessageOriginRules() -> [HostnameMatchingRule] {
         return [.exact(hostname: "duckduckgo.com")]
-    }
-
-    func isSERPSettingsFeatureOn() -> Bool {
-        return mockIsSERPSettingsFeatureOn
     }
 
     func storeSERPSettings(settings: [String: Any]) {
@@ -89,11 +81,17 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var aiChatURL: URL = URL(string: "https://duckduckgo.com/ai")!
     var isAIChatEnabled: Bool = false
     var sessionTimerInMinutes: Int = 30
+    var aiChatAttachMoreTabsLimit: Int = 3
+    var aiChatAttachMoreTabsPromotionStartDate: Date?
     var isAIChatAddressBarUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsEnabled: Bool = false
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool = false
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool = false
     var isAIChatVoiceSearchUserSettingsEnabled: Bool = false
     var isAIChatTabSwitcherUserSettingsEnabled: Bool = false
+    var isAIChatTabBarUserSettingsEnabled: Bool = false
+    var isAIChatTabBarDuckAIButtonVisible: Bool = true
+    var isAIChatTabBarContextualSheetButtonVisible: Bool = true
     var isAIChatFullModeEnabled: Bool = false
     var isAutomaticContextAttachmentEnabled: Bool = false
     var isChatSuggestionsEnabled: Bool = true
@@ -106,6 +104,9 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func enableAIChatAddressBarUserSettings(enable: Bool) {}
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {}
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {}
+    func enableAIChatTabBarUserSettings(enable: Bool) {}
+    func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool) {}
+    func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
     func enableAIChatFullModeSetting(enable: Bool) {}
     func enableAutomaticContextAttachment(enable: Bool) {}

@@ -1,0 +1,41 @@
+{
+  "images" : [
+    {
+      "filename" : "Logo-Stacked.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Logo-Stacked-Dark.svg",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "Logo-Horizontal.svg",
+      "height-class" : "compact",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Logo-Horizontal-Dark.svg",
+      "height-class" : "compact",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

@@ -54,4 +54,28 @@ struct CrashReportTests {
         #expect(content.contains(#""deviceIdentifierForVendor":"<removed>""#))
     }
 
+    @Test("Legacy crash report exposes the file creation date", .timeLimit(.minutes(1)))
+    func legacyCrashReportExposesFileCreationDate() {
+        let fileManager = MockFileManager()
+        let creationDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let url = FileManager.userDiagnosticReports.appendingPathComponent("DuckDuckGo-legacy.crash")
+        fileManager.registerFile(at: url, in: FileManager.userDiagnosticReports, contents: "Process: DuckDuckGo [123]", creationDate: creationDate)
+
+        let report = LegacyCrashReport(url: url, fileManager: fileManager)
+
+        #expect(report.creationDate == creationDate)
+    }
+
+    @Test("JSON crash report exposes the file creation date", .timeLimit(.minutes(1)))
+    func jsonCrashReportExposesFileCreationDate() {
+        let fileManager = MockFileManager()
+        let creationDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let url = FileManager.userDiagnosticReports.appendingPathComponent("DuckDuckGo-report.ips")
+        fileManager.registerFile(at: url, in: FileManager.userDiagnosticReports, contents: "{}", creationDate: creationDate)
+
+        let report = JSONCrashReport(url: url, fileManager: fileManager)
+
+        #expect(report.creationDate == creationDate)
+    }
+
 }

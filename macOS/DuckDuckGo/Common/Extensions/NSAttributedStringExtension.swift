@@ -78,6 +78,15 @@ extension NSMutableAttributedString {
 
 extension NSMutableAttributedString {
 
+    /// Applies bold to the `*`-enclosed parts of the string, at a single font size throughout.
+    static func attributedString(from string: String, fontSize: CGFloat) -> NSMutableAttributedString {
+        attributedString(from: string,
+                         defaultFontSize: fontSize,
+                         boldFontSize: fontSize,
+                         customPart: "",
+                         customFontSize: fontSize)
+    }
+
     /// Applies bold and custom font sizes to specific parts of the string.
     /// - Parameters:
     ///   - string: The full string content to be processed.

@@ -20,6 +20,15 @@ import Foundation
 import OSLog
 import DataBrokerProtectionCore
 
+enum SubsystemPreset: String, CaseIterable, Identifiable {
+    case pixelKit = "PixelKit"
+    case pir = "PIR"
+    case networkProtection = "Network protection"
+    case updates = "Updates"
+
+    var id: String { rawValue }
+}
+
 struct LogEntry: Identifiable, Hashable {
     let id = UUID()
     let timestamp: Date
@@ -62,16 +71,7 @@ struct LogEntry: Identifiable, Hashable {
         }
     }
 
-    var levelDescription: String {
-        switch level {
-        case .debug: return "DEBUG"
-        case .info: return "INFO"
-        case .notice: return "NOTICE"
-        case .error: return "ERROR"
-        case .fault: return "FAULT"
-        default: return "UNKNOWN"
-        }
-    }
+    var levelDescription: String { level.description }
 }
 
 struct LogFilterSettings {
@@ -83,7 +83,21 @@ struct LogFilterSettings {
     var shouldUseCustomCategory: Bool = false
     var customCategory: String = ""
 
+    var subsystemPresets: Set<SubsystemPreset> = [.pir]
+    var shouldUseCustomSubsystem: Bool = false
+    var customSubsystem: String = ""
+
     func matches(_ log: LogEntry) -> Bool {
+        let subsystemMatch: Bool
+        if shouldUseCustomSubsystem {
+            subsystemMatch = !customSubsystem.isEmpty
+                && log.subsystem.range(of: customSubsystem, options: .caseInsensitive) != nil
+        } else if subsystemPresets.isEmpty {
+            subsystemMatch = true
+        } else {
+            subsystemMatch = subsystemPresets.contains { $0.rawValue == log.subsystem }
+        }
+
         let categoryMatch: Bool
         if shouldUseCustomCategory {
             categoryMatch = log.rawCategory == customCategory
@@ -97,16 +111,42 @@ struct LogFilterSettings {
                          log.category.rawValue.localizedCaseInsensitiveContains(searchText) ||
                          log.rawCategory.localizedCaseInsensitiveContains(searchText)
 
-        return categoryMatch && levelMatch && searchMatch
+        return subsystemMatch && categoryMatch && levelMatch && searchMatch
+    }
+
+    var subsystemPredicate: NSPredicate {
+        let processClause = NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo")
+        if shouldUseCustomSubsystem {
+            guard !customSubsystem.isEmpty else { return NSPredicate(value: false) }
+            let subsystemClause = NSPredicate(format: "subsystem CONTAINS[cd] %@", customSubsystem)
+            return NSCompoundPredicate(andPredicateWithSubpredicates: [processClause, subsystemClause])
+        }
+        if subsystemPresets.isEmpty || subsystemPresets.count == SubsystemPreset.allCases.count {
+            return processClause
+        }
+        let names = subsystemPresets.map(\.rawValue)
+        let subsystemClause = NSPredicate(format: "subsystem IN %@", names)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [processClause, subsystemClause])
     }
 
     var hasActiveFilters: Bool {
-        if shouldUseCustomCategory {
-            return !customCategory.isEmpty || logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count || !searchText.isEmpty
+        let subsystemActive: Bool
+        if shouldUseCustomSubsystem {
+            subsystemActive = !customSubsystem.isEmpty
         } else {
-            return categories.count != DataBrokerProtectionLoggerCategory.allCases.count ||
-                   logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count ||
-                   !searchText.isEmpty
+            subsystemActive = subsystemPresets.count != SubsystemPreset.allCases.count
         }
+
+        let categoryActive: Bool
+        if shouldUseCustomCategory {
+            categoryActive = !customCategory.isEmpty
+        } else {
+            categoryActive = categories.count != DataBrokerProtectionLoggerCategory.allCases.count
+        }
+
+        let levelsActive = logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count
+        let searchActive = !searchText.isEmpty
+
+        return subsystemActive || categoryActive || levelsActive || searchActive
     }
 }

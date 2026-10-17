@@ -18,18 +18,28 @@
 //
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import Bookmarks
 import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
-import Configuration
+import DataBrokerProtection_iOS
+@testable import Configuration
 import Combine
 import SubscriptionTestingUtilities
 import Common
+import FoundationExtensions
 @testable import DuckDuckGo
 @testable import Core
+
+private final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
+    func isFeatureAvailable() -> Bool { false }
+    func isEligibleForNTPAfterIdle() -> Bool { false }
+    func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
+    func idleThresholdSeconds() -> Int { 60 }
+    func ntpAfterIdleState() -> NTPAfterIdleState { .notEligible }
+}
 
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
@@ -45,12 +55,21 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
+            keyValueStore: MockThrowingKeyValueStore(),
             settingHandlers: [],
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: SyncErrorHandler(),
             faviconStoring: MockFaviconStore(),
             tld: TLD()
         )
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: try MockKeyValueFileStore())
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingNavigationDelegateTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
+        let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults)
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -60,7 +79,20 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage()
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
+            duckPlayerStorage: MockDuckPlayerStorage(),
+            configurationURLProvider: MockConfigurationURLProvider(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            winBackOfferService: .mocked,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: MockFeatureFlagger(),
+                runPrerequisitesDelegate: nil,
+                subscriptionManager: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            ),
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManager()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
         let tabsModel = TabsModel(desktop: true)
@@ -95,6 +127,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
+            profileStateManager: profileStateManager,
             themeManager: MockThemeManager()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

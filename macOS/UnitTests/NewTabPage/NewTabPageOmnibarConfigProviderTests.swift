@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
+import FeatureFlags_macOS
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
+import PixelKit
 import PrivacyConfig
 import NewTabPage
 @testable import DuckDuckGo_Privacy_Browser
@@ -38,10 +40,30 @@ final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcu
     }
 }
 
+@MainActor
 final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // Key used for persistence in the provider
     private let storageKey = "newTabPageOmnibarMode"
+
+    /// `DuckAiUsageLimitsStore` builds its dismissal stores over `UserDefaults.standard`, so the
+    /// usage-limits tests would otherwise carry state into each other and into the rest of the suite.
+    private static let usageWarningDefaultsKeys = [
+        "aichat.usage-warning.dismissal.daily",
+        "aichat.usage-warning.dismissal.weekly",
+        "aichat.usage-warning.acted-snapshot",
+        "aichat.high-usage-notice.dismissed-models"
+    ]
+
+    override func setUp() {
+        super.setUp()
+        Self.usageWarningDefaultsKeys.forEach(UserDefaults.standard.removeObject(forKey:))
+    }
+
+    override func tearDown() {
+        Self.usageWarningDefaultsKeys.forEach(UserDefaults.standard.removeObject(forKey:))
+        super.tearDown()
+    }
 
     // Helper to create a mock key-value store
     private func makeStore(
@@ -56,16 +78,23 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
+    private func makeSearchPreferences(showAutocompleteSuggestions: Bool = true) -> SearchPreferences {
+        let persistor = MockSearchPreferencesPersistor()
+        persistor.showAutocompleteSuggestions = showAutocompleteSuggestions
+        return SearchPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock())
+    }
+
+    @MainActor
     func testDefaultModeWhenNoValueInStore() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testModeReadsStoredValidValue() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .ai)
     }
 
@@ -73,7 +102,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeFallBackToSearchWhenAIFeaturesAreDisabled() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         settingProvider.isAIChatSettingVisible = false
         XCTAssertEqual(provider.mode, .search)
     }
@@ -82,7 +111,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeFallBackToSearchWhenAIChatShortcutIsHidden() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         settingProvider.isAIChatShortcutEnabled = false
         XCTAssertEqual(provider.mode, .search)
     }
@@ -90,7 +119,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     @MainActor
     func testModeDefaultsToSearchOnInvalidRawValue() throws {
         let store = try makeStore(underlying: [storageKey: "invalid"])
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .search)
     }
 
@@ -98,14 +127,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeDefaultsToSearchOnReadError() throws {
         let readError = NSError(domain: "test", code: 1)
         let store = try makeStore(throwOnRead: readError)
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testSettingModeWritesValue() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         provider.mode = .ai
         // Underlying dict should contain the rawValue
         XCTAssertEqual(store.underlyingDict[storageKey] as? String, "ai")
@@ -117,7 +146,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSettingModeHandlesWriteErrorGracefully() throws {
         let writeError = NSError(domain: "test", code: 2)
         let store = try makeStore(throwOnSet: writeError)
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         // Should not throw on write error
         provider.mode = .ai
         // Underlying dict remains unchanged
@@ -129,7 +158,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatShortcutEnabledFlagIsPassedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         provider.isAIChatShortcutEnabled = true
         XCTAssertEqual(settingProvider.isAIChatShortcutEnabled, true)
@@ -141,7 +170,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatShortcutEnabledFlagPublisherIsConnectedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         var events: [Bool] = []
 
@@ -164,7 +193,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatSettingsVisibleFlagIsPassedToFromSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         settingProvider.isAIChatSettingVisible = true
         XCTAssertEqual(provider.isAIChatSettingVisible, true)
@@ -176,7 +205,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatSettingVisibleFlagPublisherIsConnectedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         var events: [Bool] = []
 
@@ -201,7 +230,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": false, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -215,7 +244,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": false]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -229,7 +258,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -243,7 +272,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -252,12 +281,645 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertTrue(provider.showViewAllAiChats)
     }
 
+    // MARK: - selectedModelId (shared with native omnibar)
+
+    private let legacyModelIdKey = "newTabPageSelectedModelId"
+
+    // MARK: - usage limits
+
+    @MainActor
+    func testUsageLimits_approachingSeedMapsToTheRingDrawer() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        let drawer = sut.provider.usageLimits()
+
+        XCTAssertEqual(drawer?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+        XCTAssertEqual(drawer?.secondaryText, " \u{00B7} " + UserText.aiChatUsageWarningsResetsIn("5h"))
+        XCTAssertEqual(drawer?.icon, .ring)
+        XCTAssertEqual(drawer?.percent, 75)
+        XCTAssertEqual(drawer?.severity, .warning)
+        XCTAssertEqual(drawer?.dismissible, true)
+        XCTAssertEqual(drawer?.blocksPrompt, false)
+        XCTAssertEqual(drawer?.cta?.label, UserText.aiChatUsageWarningsSwitchToModel("Haiku 4.5"))
+        XCTAssertEqual(drawer?.cta?.leadingIcon, .convert)
+        XCTAssertEqual(drawer?.cta?.primaryModelId, "claude-haiku-4-5")
+    }
+
+    /// The picker's models, not the step-down ones web named.
+    @MainActor
+    func testUsageLimits_switchCtaCarriesTheModelPickerAsAlternatives() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        let cta = sut.provider.usageLimits()?.cta
+
+        XCTAssertEqual(cta?.showMenu, true)
+        XCTAssertEqual(cta?.alternatives, [
+            .init(id: "gpt-5.6-luna", name: "5.6 Luna"),
+            .init(id: "claude-haiku-4-5", name: "Haiku 4.5"),
+            .init(id: "gpt-5.4-mini", name: "5.4 mini")
+        ])
+    }
+
+    @MainActor
+    func testUsageLimits_switchToFreeCtaListsOnlyFreeAccessibleModels() throws {
+        let sut = try makeUsageLimitsProvider(seed: .weeklyReachedDegraded)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.cta?.alternatives, [
+            .init(id: "claude-haiku-4-5", name: "Haiku 4.5"),
+            .init(id: "gpt-5.4-mini", name: "5.4 mini")
+        ])
+    }
+
+    @MainActor
+    func testUsageLimits_nonSwitchCtaHasNoMenu() throws {
+        let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.cta?.showMenu, false)
+        XCTAssertEqual(sut.provider.usageLimits()?.cta?.alternatives, [])
+    }
+
+    @MainActor
+    func testUsageLimits_reachedSeedBlocksThePromptAndDropsTheRing() throws {
+        let sut = try makeUsageLimitsProvider(seed: .weeklyReached)
+
+        let drawer = sut.provider.usageLimits()
+
+        XCTAssertEqual(drawer?.message, UserText.aiChatUsageWarningsWeeklyLimitReached)
+        XCTAssertEqual(drawer?.icon, .alert)
+        XCTAssertNil(drawer?.percent)
+        XCTAssertNil(drawer?.severity)
+        XCTAssertEqual(drawer?.blocksPrompt, true)
+        XCTAssertEqual(drawer?.dismissible, false)
+        XCTAssertNil(drawer?.cta)
+    }
+
+    @MainActor
+    func testUsageLimits_subscribeCtaOffersNoModelAndNoMenu() throws {
+        let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
+
+        let cta = sut.provider.usageLimits()?.cta
+
+        XCTAssertEqual(cta?.label, UserText.aiChatUsageWarningsSubscribe)
+        XCTAssertEqual(cta?.leadingIcon, .textOnly)
+        XCTAssertNil(cta?.primaryModelId)
+        XCTAssertEqual(cta?.showMenu, false)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCta_withoutAModelAsksForTheSubscriptionUpsell() throws {
+        let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: nil), .requiresSubscriptionUpsell)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCta_withThePrimaryModelPersistsItAndStandsTheMessageDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "claude-haiku-4-5"), .handled)
+
+        XCTAssertEqual(sut.persistor.selectedModelId, "claude-haiku-4-5")
+        XCTAssertEqual(sut.persistor.selectedModelShortName, "Haiku 4.5")
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    /// Settles the message even for a model web never named as a step down.
+    @MainActor
+    func testSelectUsageLimitsCta_withAMenuAlternativePersistsItAndStandsTheMessageDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "gpt-5.6-luna"), .handled)
+
+        XCTAssertEqual(sut.persistor.selectedModelId, "gpt-5.6-luna")
+        XCTAssertEqual(sut.persistor.selectedModelShortName, "5.6 Luna")
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCta_ignoresAModelThatIsNotSelectable() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "gated-model"), .handled)
+
+        XCTAssertEqual(sut.persistor.selectedModelId, "claude-opus-4-8")
+        XCTAssertNotNil(sut.provider.usageLimits())
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCta_clearsAReasoningEffortTheNewModelDoesNotSupport() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+        sut.persistor.selectedReasoningEffort = AIChatReasoningEffort.medium.rawValue
+
+        _ = sut.provider.selectUsageLimitsCta(modelId: "claude-haiku-4-5")
+
+        XCTAssertNil(sut.persistor.selectedReasoningEffort)
+    }
+
+    /// On a model with no high-usage notice behind it, so a dismissed warning leaves nothing.
+    @MainActor
+    func testDismissUsageLimits_hidesTheWarning() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, selectedModelId: "gpt-5.6-luna")
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+        sut.provider.dismissUsageLimits()
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    @MainActor
+    func testSelectedModelId_switchingToTheSuggestedModelStandsTheWarningDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+        sut.provider.selectedModelId = "claude-haiku-4-5"
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    @MainActor
+    func testSelectedModelId_switchingToAModelTheDrawerDidNotOfferLeavesTheWarningUp() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        sut.provider.selectedModelId = "gpt-5.6-luna"
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+    }
+
+    @MainActor
+    func testUsageLimits_isNilWhenTheFeatureFlagIsOff() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, isUsageWarningsEnabled: false)
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    @MainActor
+    func testUsageLimits_fallsBackToTheHighUsageNoticeWhenNoAllowanceMessageApplies() throws {
+        let sut = try makeUsageLimitsProvider(seed: nil)
+
+        let drawer = sut.provider.usageLimits()
+
+        XCTAssertEqual(drawer?.message, UserText.aiChatUsageWarningsHighUsageModel("Opus 4.8"))
+        XCTAssertEqual(drawer?.icon, .info)
+        XCTAssertEqual(drawer?.dismissible, true)
+        XCTAssertEqual(drawer?.blocksPrompt, false)
+        XCTAssertNil(drawer?.cta)
+    }
+
+    @MainActor
+    func testUsageLimits_prefersTheWarningOverTheHighUsageNotice() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+    }
+
+    func testDismissUsageLimits_dismissesTheHighUsageNoticeWhenThatIsWhatIsShowing() throws {
+        let sut = try makeUsageLimitsProvider(seed: nil)
+
+        sut.provider.dismissUsageLimits()
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    /// Defaults to a high-usage model, so the notice fallback has something to resolve.
+    @MainActor
+    private func makeUsageLimitsProvider(
+        seed: DuckAiUsageSnapshotSeed?,
+        selectedModelId: String = "claude-opus-4-8",
+        isUsageWarningsEnabled: Bool = true
+    ) throws -> (provider: NewTabPageOmnibarConfigProvider, persistor: MockAIChatPreferencesPersisting) {
+        let paid = ["plus", "pro"]
+        let free = ["free"] + paid
+        let models = [
+            makeModel(id: "claude-opus-4-8", shortName: "Opus 4.8", accessTier: paid, supportedReasoningEffort: [.medium]),
+            makeModel(id: "gpt-5.6-luna", shortName: "5.6 Luna", accessTier: paid, supportedReasoningEffort: [.medium]),
+            makeModel(id: "claude-haiku-4-5", shortName: "Haiku 4.5", accessTier: free),
+            makeModel(id: "gpt-5.4-mini", shortName: "5.4 mini", accessTier: free),
+            makeModel(id: "gated-model", shortName: "Gated", entityHasAccess: false, accessTier: free)
+        ]
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = selectedModelId
+        persistor.selectedModelShortName = models.first { $0.id == selectedModelId }?.shortName
+
+        let storage = DuckAiNativeMemoryStorageHandler()
+        if let seed {
+            let now = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
+            try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
+                                 value: seed.entryValue(now: now,
+                                                        switchTargets: ["claude-haiku-4-5", "gpt-5.4-mini"],
+                                                        selectedModelId: selectedModelId))
+        }
+
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatUsageWarnings.rawValue] = isUsageWarningsEnabled
+
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flagger,
+            windowControllersManager: WindowControllersManagerMock(),
+            duckAiStorageHandler: storage,
+            availableModelsProvider: { models }
+        )
+        provider.refreshUsageLimits(requestingWebView: nil)
+        return (provider, persistor)
+    }
+
+    @MainActor
+    private func makeProvider(
+        persistor: AIChatPreferencesPersisting,
+        keyValueStore: ThrowingKeyValueStoring? = nil,
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        searchPreferences: SearchPreferences? = nil,
+        windowControllersManager: WindowControllersManagerProtocol? = nil,
+        duckAiStorageHandler: DuckAiNativeStorageHandling? = nil,
+        availableModelsProvider: @escaping () -> [AIChatModel] = { [] }
+    ) throws -> NewTabPageOmnibarConfigProvider {
+        NewTabPageOmnibarConfigProvider(
+            keyValueStore: try keyValueStore ?? makeStore(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            featureFlagger: featureFlagger,
+            aiChatPreferencesPersistor: persistor,
+            searchPreferences: searchPreferences ?? makeSearchPreferences(),
+            windowControllersManager: windowControllersManager,
+            duckAiStorageHandlerProvider: { _ in duckAiStorageHandler },
+            availableModelsProvider: availableModelsProvider,
+            firePixel: { _ in }
+        )
+    }
+
+    /// Returns a `MockFeatureFlagger` with both flags required by `isReasoningEffortEnabled`
+    /// switched on. Tests that need the reasoning path to be off should build their own flagger.
+    private func flaggerWithReasoningOn() -> MockFeatureFlagger {
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatNtpChatTools.rawValue] = true
+        flagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        return flagger
+    }
+
+    private func flaggerWithUpdatedCreateImageOn() -> MockFeatureFlagger {
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatNtpImageGeneration.rawValue] = true
+        flagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        return flagger
+    }
+
+    private func makeModel(
+        id: String,
+        shortName: String? = nil,
+        provider: AIChatModel.ModelProvider = .openAI,
+        supportsImageGeneration: Bool = false,
+        entityHasAccess: Bool = true,
+        accessTier: [String] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            shortName: shortName,
+            provider: provider,
+            supportsImageUpload: false,
+            supportedTools: supportsImageGeneration ? [.imageGeneration] : [],
+            entityHasAccess: entityHasAccess,
+            accessTier: accessTier,
+            supportedReasoningEffort: supportedReasoningEffort,
+            reasoningEffortAccess: reasoningEffortAccess,
+            label: label
+        )
+    }
+
+    func testSelectedModelId_readsFromInjectedPersistor() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-4o-mini"
+        let provider = try makeProvider(persistor: persistor)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-4o-mini")
+    }
+
+    func testSelectedModelId_writesThroughToInjectedPersistor() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor)
+
+        provider.selectedModelId = "claude-4"
+        XCTAssertEqual(persistor.selectedModelId, "claude-4")
+
+        provider.selectedModelId = nil
+        XCTAssertNil(persistor.selectedModelId)
+    }
+
+    func testSelectedModelIdPublisher_forwardsFromSharedPersistor() throws {
+        // Native and NTP hold the same persistor. A write on the "native" side must reach
+        // the NTP provider's publisher so JS gets notified via omnibar_onConfigUpdate.
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor)
+
+        var received: [String?] = []
+        let cancellable = provider.selectedModelIdPublisher.sink { received.append($0) }
+
+        persistor.selectedModelId = "maverick"
+        persistor.selectedModelId = "maverick"   // dedup in persistor → no second emit
+        persistor.selectedModelId = "claude-4"
+        persistor.selectedModelId = nil
+
+        cancellable.cancel()
+        XCTAssertEqual(received, ["maverick", "claude-4", nil])
+    }
+
+    // MARK: - legacy model id migration
+
+    func testMigration_copiesLegacyValueWhenSharedStoreIsEmpty() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelId, "maverick")
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_seedsShortNamePlaceholderWhenSharedStoreIsEmpty() throws {
+        // Legacy NTP store never cached a short name. Without a placeholder the native
+        // model picker is hidden on first launch post-upgrade until models fetch completes.
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelShortName, "maverick")
+    }
+
+    func testMigration_preservesSharedValueAndDropsLegacyKey() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-5"
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelId, "gpt-5")
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_doesNotOverwriteExistingShortName() throws {
+        // Native omnibar users may already have a cached short name. Migration must not clobber it.
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-5"
+        persistor.selectedModelShortName = "GPT-5"
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelShortName, "GPT-5")
+    }
+
+    func testMigration_noOpWhenLegacyKeyAbsent() throws {
+        let store = try makeStore()
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertNil(persistor.selectedModelId)
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_runsOnlyOnce() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        // First launch: migrates.
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+        XCTAssertEqual(persistor.selectedModelId, "maverick")
+
+        // Simulate the user picking a new model after migration.
+        persistor.selectedModelId = "claude-4"
+
+        // Second launch: legacy key is gone, so nothing is overwritten.
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+        XCTAssertEqual(persistor.selectedModelId, "claude-4")
+    }
+
+    // MARK: - Create Image model resolution
+
+    func testImageGenerationModelId_usesSelectedAccessibleImageModel() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "selected-image-model"
+        let models = [
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse),
+            makeModel(id: "selected-image-model", supportsImageGeneration: true, label: .usesLimitsFaster)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        XCTAssertEqual(provider.imageGenerationModelId, "selected-image-model")
+    }
+
+    func testImageGenerationModelId_usesPreferredModelWhenSelectionIsUnsupported() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "first-image-model", supportsImageGeneration: true, label: .usesLimitsFaster),
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        XCTAssertEqual(provider.imageGenerationModelId, "preferred-image-model")
+    }
+
+    func testActivateImageGeneration_withMissingSelectionPersistsPreferredModelWithoutNotice() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let models = [makeModel(id: "preferred-image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        let notice = provider.activateImageGeneration()
+
+        XCTAssertEqual(persistor.selectedModelId, "preferred-image-model")
+        XCTAssertEqual(persistor.selectedModelShortName, "Luna")
+        XCTAssertNil(notice)
+    }
+
+    func testActivateImageGeneration_withKnownUnsupportedSelectionReturnsSharedLocalizedNotice() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "oss-model"
+        let previousModel = makeModel(id: "oss-model", shortName: "Open Model", provider: .oss)
+        let imageModel = makeModel(id: "image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { [previousModel, imageModel] }
+        )
+
+        let notice = provider.activateImageGeneration()
+
+        XCTAssertEqual(
+            notice,
+            NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+                message: UserText.aiChatCreateImageModelSwitchTitle("Luna"),
+                secondaryText: UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model")
+            )
+        )
+    }
+
+    func testActivateImageGeneration_clearsInvalidReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = "invalid"
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testActivateImageGeneration_clearsUnsupportedReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "image-model", supportsImageGeneration: true, supportedReasoningEffort: [.low], label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testActivateImageGeneration_preservesSupportedGatedReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.medium.rawValue
+        let gatedEffort = AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro"], entityHasAccess: false)
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(
+                id: "image-model",
+                supportsImageGeneration: true,
+                supportedReasoningEffort: [.medium],
+                reasoningEffortAccess: [gatedEffort],
+                label: .everydayUse
+            )
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertEqual(persistor.selectedReasoningEffort, AIChatReasoningEffort.medium.rawValue)
+    }
+
+    // MARK: - Reasoning effort
+
+    func testIsReasoningEffortEnabled_trueWhenBothFlagsOn() throws {
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: flaggerWithReasoningOn())
+        XCTAssertTrue(provider.isReasoningEffortEnabled)
+    }
+
+    func testIsReasoningEffortEnabled_falseWhenToolsFlagOff() throws {
+        // Reasoning depends on the model picker being available — if tools aren't enabled,
+        // reasoning has nothing to attach to, so this must return false.
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatNtpChatTools.rawValue] = false
+        flagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: flagger)
+        XCTAssertFalse(provider.isReasoningEffortEnabled)
+    }
+
+    func testIsReasoningEffortEnabled_falseWhenReasoningFlagOff() throws {
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatNtpChatTools.rawValue] = true
+        flagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = false
+
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: flagger)
+        XCTAssertFalse(provider.isReasoningEffortEnabled)
+    }
+
+    func testSelectedReasoningEffort_readsFromPersistorWhenEnabled() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedReasoningEffort = "medium"
+        let provider = try makeProvider(persistor: persistor, featureFlagger: flaggerWithReasoningOn())
+
+        XCTAssertEqual(provider.selectedReasoningEffort, "medium")
+    }
+
+    func testSelectedReasoningEffort_returnsNilWhenDisabled() throws {
+        // Persisted value remains in storage, but the provider hides it so the web gets `nil`.
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedReasoningEffort = "medium"
+        let provider = try makeProvider(persistor: persistor, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
+
+        XCTAssertNil(provider.selectedReasoningEffort)
+    }
+
+    func testSelectedReasoningEffort_writesThroughWhenEnabled() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor, featureFlagger: flaggerWithReasoningOn())
+
+        provider.selectedReasoningEffort = "low"
+        XCTAssertEqual(persistor.selectedReasoningEffort, "low")
+
+        provider.selectedReasoningEffort = nil
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testSelectedReasoningEffort_writeIgnoredWhenDisabled() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
+
+        provider.selectedReasoningEffort = "low"
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testSelectedReasoningEffortPublisher_forwardsFromSharedPersistor() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor, featureFlagger: flaggerWithReasoningOn())
+
+        var received: [String?] = []
+        let cancellable = provider.selectedReasoningEffortPublisher.sink { received.append($0) }
+
+        persistor.selectedReasoningEffort = "low"
+        persistor.selectedReasoningEffort = "low"    // dedup → no second emit
+        persistor.selectedReasoningEffort = "medium"
+        persistor.selectedReasoningEffort = nil
+
+        cancellable.cancel()
+        XCTAssertEqual(received, ["low", "medium", nil])
+    }
+
     @MainActor
     func testShowViewAllAiChatsPublisher_emitsWhenExcessChanges() throws {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         var events: [Bool] = []
@@ -273,9 +935,244 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(events.last, false)
     }
 
+    func testShowViewAllAiChats_isFalseWhenAutocompleteSuggestionsDisabled() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: false))
+        let excessProvider = MockAIChatExcessProvider()
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        // Stale `hasExcessChats` from a prior fetch must not surface a "View All" button when
+        // the user has turned Autocomplete suggestions off — matches the address bar behaviour
+        // and avoids the empty-chats-but-View-All inconsistency Cursor Bugbot flagged.
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    func testShowViewAllAiChatsPublisher_emitsWhenAutocompleteSuggestionsToggles() throws {
+        PixelKit.setUp(dryRun: true, appVersion: "", session: "test", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        defer { PixelKit.tearDown() }
+
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let searchPreferences = makeSearchPreferences(showAutocompleteSuggestions: true)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: searchPreferences)
+        let excessProvider = MockAIChatExcessProvider()
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        var events: [Bool] = []
+        let cancellable = provider.showViewAllAiChatsPublisher.sink { events.append($0) }
+
+        searchPreferences.showAutocompleteSuggestions = false
+        searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertTrue(events.contains(false))
+        XCTAssertEqual(events.last, true)
+    }
+
+    // MARK: - showAskAiSuggestion
+
+    func testShowAskAiSuggestion_mirrorsSearchPreferences() throws {
+        let store = try makeStore()
+        let onProvider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: true))
+        let offProvider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: false))
+
+        XCTAssertTrue(onProvider.showAskAiSuggestion)
+        XCTAssertFalse(offProvider.showAskAiSuggestion)
+    }
+
+    func testShowAskAiSuggestionPublisher_emitsWhenPreferenceChanges() throws {
+        PixelKit.setUp(dryRun: true, appVersion: "", session: "test", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        defer { PixelKit.tearDown() }
+
+        let searchPreferences = makeSearchPreferences(showAutocompleteSuggestions: true)
+        let store = try makeStore()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: searchPreferences)
+
+        var events: [Bool] = []
+        let cancellable = provider.showAskAiSuggestionPublisher.sink { events.append($0) }
+
+        searchPreferences.showAutocompleteSuggestions = false
+        searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    // MARK: - chat/suggestion deletion
+
+    @MainActor
+    func testIsAIChatDeletionEnabled_reflectsFeatureFlag() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.isAIChatDeletionEnabled)
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": false]
+        XCTAssertFalse(provider.isAIChatDeletionEnabled)
+    }
+
+    @MainActor
+    func testIsAIChatDeletionEnabledPublisher_emitsOnFlaggerUpdate() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        var events: [Bool] = []
+        let cancellable = provider.isAIChatDeletionEnabledPublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": true]
+        featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    @MainActor
+    func testIsSearchSuggestionDeletionEnabled_reflectsFeatureFlag() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.isSearchSuggestionDeletionEnabled)
+
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": false]
+        XCTAssertFalse(provider.isSearchSuggestionDeletionEnabled)
+    }
+
+    @MainActor
+    func testIsSearchSuggestionDeletionEnabledPublisher_emitsOnFlaggerUpdate() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        var events: [Bool] = []
+        let cancellable = provider.isSearchSuggestionDeletionEnabledPublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": true]
+        featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    // MARK: - Terms of Service
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFeatureOffThenFalse() throws {
+        let terms = makeTermsOfService(featureEnabled: false)
+
+        XCTAssertFalse(try makeProvider(terms).requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFeatureOnAndNotAcceptedThenTrue() throws {
+        let terms = makeTermsOfService(featureEnabled: true)
+
+        XCTAssertTrue(try makeProvider(terms).requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFeatureOnAndAcceptedThenFalse() throws {
+        let terms = makeTermsOfService(featureEnabled: true)
+        terms.store.recordWebReport()
+
+        XCTAssertFalse(try makeProvider(terms).requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsFalseOnceAccepted() throws {
+        let terms = makeTermsOfService(featureEnabled: true)
+        let provider = try makeProvider(terms)
+
+        let accepted = expectation(description: "requiresAiTermsAcceptance turns false")
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink {
+            events.append($0)
+            if !$0 { accepted.fulfill() }
+        }
+
+        terms.store.recordAcceptedInNativeInput()
+
+        wait(for: [accepted], timeout: 1)
+        cancellable.cancel()
+        XCTAssertEqual(events, [true, false])
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsOnFlaggerUpdate() throws {
+        let terms = makeTermsOfService(featureEnabled: false)
+        let provider = try makeProvider(terms)
+
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+
+        terms.featureFlagger.featuresStub = ["aiChatNativeTermsOfService": true]
+        terms.featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    private struct TermsOfServiceFixture {
+        let featureFlagger: MockFeatureFlagger
+        let store: DuckAiTermsOfServiceStore
+        let notificationCenter: NotificationCenter
+    }
+
+    private func makeTermsOfService(featureEnabled: Bool) -> TermsOfServiceFixture {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNativeTermsOfService": featureEnabled]
+        let notificationCenter = NotificationCenter()
+        let store = DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: notificationCenter)
+        return TermsOfServiceFixture(featureFlagger: featureFlagger, store: store, notificationCenter: notificationCenter)
+    }
+
+    @MainActor
+    private func makeProvider(_ terms: TermsOfServiceFixture) throws -> NewTabPageOmnibarConfigProvider {
+        NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(),
+                                        aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+                                        featureFlagger: terms.featureFlagger,
+                                        searchPreferences: makeSearchPreferences(),
+                                        termsOfServiceStore: terms.store,
+                                        notificationCenter: terms.notificationCenter)
+    }
+
 }
 
 // MARK: - Mocks
+
+private final class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
+    private let subject = PassthroughSubject<String?, Never>()
+    private let reasoningEffortSubject = PassthroughSubject<String?, Never>()
+
+    var selectedModelId: String? {
+        didSet {
+            guard selectedModelId != oldValue else { return }
+            subject.send(selectedModelId)
+        }
+    }
+    var selectedModelShortName: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { subject.eraseToAnyPublisher() }
+    var selectedReasoningEffort: String? {
+        didSet {
+            guard selectedReasoningEffort != oldValue else { return }
+            reasoningEffortSubject.send(selectedReasoningEffort)
+        }
+    }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { reasoningEffortSubject.eraseToAnyPublisher() }
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+}
 
 private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding {
 

@@ -31,8 +31,25 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         handler.clear()
     }
 
+    func testOptOutFailurePixelDoesNotIncludeEmailServerMessage() {
+        let serverMessage = "INVALID_REQUEST: user@example.com"
+        let error = DataBrokerProtectionError.emailError(.httpError(statusCode: 400, message: serverMessage))
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                              dataBrokerVersion: "1.1.1",
+                                                              handler: handler,
+                                                              isFreeScan: false,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no")
+
+        sut.fireOptOutFailure(tries: 1, error: error)
+
+        let errorDetails = handler.lastFiredEvent?.params?[DataBrokerProtectionSharedPixels.Consts.errorDetailsKey]
+        XCTAssertEqual(errorDetails, "Email service error: Email HTTP error 400")
+        XCTAssertFalse(errorDetails?.contains(serverMessage) == true)
+    }
+
     func testWhenErrorIs404_thenWeFireScanNoResultsPixel() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))
 
@@ -40,7 +57,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanNoResults(let broker, let brokerVersion, _, _, _, _, _, _, _, _, _, _):
+            case .scanNoResults(let broker, let brokerVersion, _, _, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(broker, "broker.com")
                 XCTAssertEqual(brokerVersion, "1.1.1")
             default: XCTFail("The scan no results pixel should be fired")
@@ -51,7 +68,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs403_thenWeFireScanErrorPixelWithClientErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 403))
 
@@ -59,7 +76,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanError(_, _, _, let category, _, _, _, _, _, _, _, _, _):
+            case .scanError(_, _, _, _, let category, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.clientError(httpCode: 403).toString)
             default: XCTFail("The scan error pixel should be fired")
             }
@@ -69,7 +86,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs500_thenWeFireScanErrorPixelWithServerErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -77,7 +94,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanError(_, _, _, let category, _, _, _, _, _, _, _, _, _):
+            case .scanError(_, _, _, _, let category, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.serverError(httpCode: 500).toString)
             default: XCTFail("The scan error pixel should be fired")
             }
@@ -87,7 +104,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testScanErrorIncludesActionContextWhenAvailable() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.setLastAction(ClickAction(id: "action-123", actionType: .click))
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
@@ -98,7 +115,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch failurePixel {
-        case .scanError(_, _, _, _, _, _, _, _, _, let actionId, let actionType, _, _):
+        case .scanError(_, _, _, _, _, _, _, _, _, _, let actionId, let actionType, _, _):
             XCTAssertEqual(actionId, "action-123")
             XCTAssertEqual(actionType, "click")
         default:
@@ -107,7 +124,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testScanErrorDefaultsToUnknownActionContextWhenNotSet() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -117,7 +134,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch failurePixel {
-        case .scanError(_, _, _, _, _, _, _, _, _, let actionId, let actionType, _, _):
+        case .scanError(_, _, _, _, _, _, _, _, _, _, let actionId, let actionType, _, _):
             XCTAssertEqual(actionId, "unknown")
             XCTAssertEqual(actionType, "unknown")
         default:
@@ -132,8 +149,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               parentURL: "parent.com",
                                                               isFreeScan: false,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -143,7 +159,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch failurePixel {
-        case .scanError(_, _, _, _, _, _, _, _, let parent, _, _, _, _):
+        case .scanError(_, _, _, _, _, _, _, _, _, let parent, _, _, _, _):
             XCTAssertEqual(parent, "parent.com")
         default:
             XCTFail("The scan error pixel should be fired")
@@ -151,7 +167,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotHttp_thenWeFireScanErrorPixelWithValidationErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.actionFailed(actionID: "Action-ID", message: "Some message"))
 
@@ -159,7 +175,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanError(_, _, _, let category, _, _, _, _, _, _, _, _, _):
+            case .scanError(_, _, _, _, let category, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.validationError.toString)
             default: XCTFail("The scan error pixel should be fired")
             }
@@ -169,7 +185,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotDBPErrorButItIsNSURL_thenWeFireScanErrorPixelWithNetworkErrorErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let nsURLError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
 
         sut.fireScanError(error: nsURLError)
@@ -178,7 +194,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanError(_, _, _, let category, _, _, _, _, _, _, _, _, _):
+            case .scanError(_, _, _, _, let category, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.networkError.toString)
             default: XCTFail("The scan error pixel should be fired")
             }
@@ -188,7 +204,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsSecureVaultError_thenWeFireScanErorrPixelWithDatabaseErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let error = SecureStorageError.encodingFailed
 
         sut.fireScanError(error: error)
@@ -197,7 +213,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanError(_, _, _, let category, _, _, _, _, _, _, _, _, _):
+            case .scanError(_, _, _, _, let category, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(category, "database-error-SecureVaultError-13")
             default: XCTFail("The scan error pixel should be fired")
             }
@@ -207,7 +223,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotDBPErrorAndNotURL_thenWeFireScanErrorPixelWithUnclassifiedErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let error = NSError(domain: NSCocoaErrorDomain, code: -1)
 
         sut.fireScanError(error: error)
@@ -216,7 +232,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanError(_, _, _, let category, _, _, _, _, _, _, _, _, _):
+            case .scanError(_, _, _, _, let category, _, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.unclassified.toString)
             default: XCTFail("The scan error pixel should be fired")
             }
@@ -233,8 +249,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: true,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanSuccess(matchesFound: 1)
 
@@ -244,7 +259,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch pixel {
-        case .scanSuccess(_, _, _, _, _, _, _, _, _, let isFreeScan):
+        case .scanSuccess(_, _, _, _, _, _, _, _, _, _, let isFreeScan):
             XCTAssertEqual(isFreeScan, true)
         default:
             XCTFail("Expected scanSuccess pixel")
@@ -257,8 +272,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: false,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanSuccess(matchesFound: 1)
 
@@ -268,7 +282,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch pixel {
-        case .scanSuccess(_, _, _, _, _, _, _, _, _, let isFreeScan):
+        case .scanSuccess(_, _, _, _, _, _, _, _, _, _, let isFreeScan):
             XCTAssertEqual(isFreeScan, false)
         default:
             XCTFail("Expected scanSuccess pixel")
@@ -281,8 +295,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: true,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -292,7 +305,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch pixel {
-        case .scanError(_, _, _, _, _, _, _, _, _, _, _, _, let isFreeScan):
+        case .scanError(_, _, _, _, _, _, _, _, _, _, _, _, _, let isFreeScan):
             XCTAssertEqual(isFreeScan, true)
         default:
             XCTFail("Expected scanError pixel")
@@ -305,8 +318,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: true,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         // 404 triggers fireScanNoResults() path
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))
@@ -317,7 +329,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         }
 
         switch pixel {
-        case .scanNoResults(_, _, _, _, _, _, _, _, _, _, _, let isFreeScan):
+        case .scanNoResults(_, _, _, _, _, _, _, _, _, _, _, _, let isFreeScan):
             XCTAssertEqual(isFreeScan, true)
         default:
             XCTFail("Expected scanNoResults pixel")
@@ -350,155 +362,4 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         XCTAssertEqual(pixel.params?[DataBrokerProtectionSharedPixels.Consts.isFreeScan], "false")
     }
 
-    // MARK: - Click Action Delay Reduction Optimization Feature Flag Tests
-
-    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenOptOutStartPixelIncludesClickDelayOptimizationTrue() {
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                              dataBrokerVersion: "1.0",
-                                                              handler: handler,
-                                                              isFreeScan: false,
-                                                              vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: featureFlagger)
-
-        sut.fireOptOutStart()
-
-        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
-            XCTFail("A pixel should be fired")
-            return
-        }
-
-        switch pixel {
-        case .optOutStart(_, _, _, let clickDelayOptimization):
-            XCTAssertTrue(clickDelayOptimization, "clickActionDelayReductionOptimization should be true when feature flag is ON")
-        default:
-            XCTFail("Expected optOutStart pixel")
-        }
-    }
-
-    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenOptOutStartPixelIncludesClickDelayOptimizationFalse() {
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                              dataBrokerVersion: "1.0",
-                                                              handler: handler,
-                                                              isFreeScan: false,
-                                                              vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: featureFlagger)
-
-        sut.fireOptOutStart()
-
-        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
-            XCTFail("A pixel should be fired")
-            return
-        }
-
-        switch pixel {
-        case .optOutStart(_, _, _, let clickDelayOptimization):
-            XCTAssertFalse(clickDelayOptimization, "clickActionDelayReductionOptimization should be false when feature flag is OFF")
-        default:
-            XCTFail("Expected optOutStart pixel")
-        }
-    }
-
-    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenOptOutFailurePixelIncludesClickDelayOptimizationTrue() {
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                              dataBrokerVersion: "1.0",
-                                                              handler: handler,
-                                                              isFreeScan: false,
-                                                              vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: featureFlagger)
-
-        sut.fireOptOutFailure(tries: 1, error: DataBrokerProtectionError.cancelled)
-
-        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
-            XCTFail("A pixel should be fired")
-            return
-        }
-
-        switch pixel {
-        case .optOutFailure(_, _, _, _, _, _, _, _, _, _, _, _, _, _, let clickDelayOptimization):
-            XCTAssertTrue(clickDelayOptimization, "clickActionDelayReductionOptimization should be true when feature flag is ON")
-        default:
-            XCTFail("Expected optOutFailure pixel")
-        }
-    }
-
-    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenOptOutFailurePixelIncludesClickDelayOptimizationFalse() {
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                              dataBrokerVersion: "1.0",
-                                                              handler: handler,
-                                                              isFreeScan: false,
-                                                              vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: featureFlagger)
-
-        sut.fireOptOutFailure(tries: 1, error: DataBrokerProtectionError.cancelled)
-
-        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
-            XCTFail("A pixel should be fired")
-            return
-        }
-
-        switch pixel {
-        case .optOutFailure(_, _, _, _, _, _, _, _, _, _, _, _, _, _, let clickDelayOptimization):
-            XCTAssertFalse(clickDelayOptimization, "clickActionDelayReductionOptimization should be false when feature flag is OFF")
-        default:
-            XCTFail("Expected optOutFailure pixel")
-        }
-    }
-
-    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenOptOutSubmitPixelIncludesClickDelayOptimizationTrue() {
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                              dataBrokerVersion: "1.0",
-                                                              handler: handler,
-                                                              isFreeScan: false,
-                                                              vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: featureFlagger)
-
-        sut.fireOptOutSubmit()
-
-        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
-            XCTFail("A pixel should be fired")
-            return
-        }
-
-        switch pixel {
-        case .optOutSubmit(_, _, _, _, _, _, _, let clickDelayOptimization):
-            XCTAssertTrue(clickDelayOptimization, "clickActionDelayReductionOptimization should be true when feature flag is ON")
-        default:
-            XCTFail("Expected optOutSubmit pixel")
-        }
-    }
-
-    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenOptOutSubmitPixelIncludesClickDelayOptimizationFalse() {
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                              dataBrokerVersion: "1.0",
-                                                              handler: handler,
-                                                              isFreeScan: false,
-                                                              vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: featureFlagger)
-
-        sut.fireOptOutSubmit()
-
-        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
-            XCTFail("A pixel should be fired")
-            return
-        }
-
-        switch pixel {
-        case .optOutSubmit(_, _, _, _, _, _, _, let clickDelayOptimization):
-            XCTAssertFalse(clickDelayOptimization, "clickActionDelayReductionOptimization should be false when feature flag is OFF")
-        default:
-            XCTFail("Expected optOutSubmit pixel")
-        }
-    }
 }

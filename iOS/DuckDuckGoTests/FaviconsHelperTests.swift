@@ -53,9 +53,9 @@ class FaviconsHelperTests: XCTestCase {
         let result = FaviconsHelper.loadFaviconSync(forDomain: "duckduckgo.com",
                                                    usingCache: .fireproof,
                                                    useFakeFavicon: true)
-        
+
         XCTAssertNotNil(result.image)
-        XCTAssertEqual(result.image?.accessibilityIdentifier, "Logo")
+        XCTAssertEqual(result.image?.accessibilityIdentifier, "duckduckgo-favicon-128x128")
         XCTAssertFalse(result.isFake)
     }
     
@@ -67,13 +67,40 @@ class FaviconsHelperTests: XCTestCase {
         XCTAssertNotNil(result.image)
         XCTAssertTrue(result.isFake)
     }
+
+    func testLoadFaviconSync_WhenDuckDuckGoSubdomain_ReturnsLogo() {
+        for domain in ["start.duckduckgo.com", "www.duckduckgo.com", "other.duckduckgo.com"] {
+            for cacheType in [FaviconsCacheType.tabs, .fireproof] {
+                for useFakeFavicon in [true, false] {
+                    let result = FaviconsHelper.loadFaviconSync(forDomain: domain,
+                                                               usingCache: cacheType,
+                                                               useFakeFavicon: useFakeFavicon)
+
+                    XCTAssertNotNil(result.image, domain)
+                    XCTAssertEqual(result.image?.accessibilityIdentifier, "duckduckgo-favicon-128x128", domain)
+                    XCTAssertFalse(result.isFake, domain)
+                }
+            }
+        }
+    }
+
+    func testLoadFaviconSync_WhenDuckDuckGoLookalikeDomain_DoesNotReturnLogo() {
+        for domain in ["notduckduckgo.com", "duckduckgo.com.example.com"] {
+            let result = FaviconsHelper.loadFaviconSync(forDomain: domain,
+                                                       usingCache: .tabs,
+                                                       useFakeFavicon: false)
+
+            XCTAssertNil(result.image, domain)
+            XCTAssertFalse(result.isFake, domain)
+        }
+    }
     
     func testLoadFaviconSync_WhenCachedFavicon_ReturnsFromCache() {
         // Setup
         let domain = "example.com"
         let cache = Favicons.Constants.caches[.fireproof]!
         let resource = Favicons().defaultResource(forDomain: domain)!
-        let testImage = UIImage(resource: .logo)
+        let testImage = UIImage(named: "duckduckgo-favicon-128x128")!
         
         cache.store(testImage, forKey: resource.cacheKey)
         

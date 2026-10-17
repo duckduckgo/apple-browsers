@@ -26,10 +26,14 @@ extension MainWindowController: WKWebExtensionWindow {
         case notSupported
     }
 
+    /// Called by WebKit through `WKWebExtensionWindow` when an extension needs the ordered tabs exposed by this window.
+    /// The context identifies the requesting extension; all extensions currently receive the same tabs.
     func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
         // Only loaded tabs are returned — WKWebExtensionTab requires a WKWebView,
         // which unloaded tabs don't have. They become visible as the lazy loader materializes them.
-        return mainViewController.tabCollectionViewModel.loadedTabs
+        // Pinned tabs are included so the extension can see and message them like any other tab.
+        return mainViewController.tabCollectionViewModel.loadedPinnedTabs
+            + mainViewController.tabCollectionViewModel.loadedTabs
     }
 
     func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {

@@ -53,7 +53,11 @@ final class CreditCardsDatabaseCleanerTests: XCTestCase {
         try super.setUpWithError()
 
         databaseLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".db")
-        databaseProvider = try DefaultAutofillDatabaseProvider(file: databaseLocation, key: simpleL1Key)
+        databaseProvider = try DefaultAutofillDatabaseProvider(
+            file: databaseLocation,
+            key: simpleL1Key,
+            fileStorageManager: TemporaryDatabaseFileStorageManager(databaseURL: databaseLocation)
+        )
         secureVaultFactory = AutofillVaultFactory.testFactory(databaseProvider: databaseProvider)
         secureVault = try secureVaultFactory.makeVault(reporter: nil)
         _ = try secureVault.authWith(password: "abcd".data(using: .utf8)!)
@@ -63,6 +67,10 @@ final class CreditCardsDatabaseCleanerTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        databaseCleaner = nil
+        secureVault = nil
+        secureVaultFactory = nil
+        databaseProvider = nil
         try deleteDbFile()
         try super.tearDownWithError()
     }

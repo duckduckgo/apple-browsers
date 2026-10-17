@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import Foundation
 import VPN
 import XPCHelper
@@ -247,6 +248,24 @@ extension VPNControllerXPCClient: XPCServerInterface {
         xpc.execute(call: { server in
             server.fetchLastError(completion: completion)
         }, xpcReplyErrorHandler: completion)
+    }
+
+    public func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        xpc.execute(call: { server in
+            server.refreshSystemState(completion: self.onComplete(completion))
+        }, xpcReplyErrorHandler: self.onComplete(completion))
+    }
+
+    public func refreshSystemState() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            refreshSystemState { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
     }
 
     public func command(_ command: VPNCommand) async throws {

@@ -1,9 +1,0 @@
-/* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
-"P3h-DO-2nT.title" = "Τίτλος";
-
-/* Class = "UILabel"; text = "Website -- Long Title"; ObjectID = "Uu4-yR-9tN"; */
-"Uu4-yR-9tN.text" = "Ιστότοπος - Μεγάλος τίτλος";
-
-/* Class = "UIButton"; accessibilityHint = "Close"; ObjectID = "xto-EI-h22"; */
-"xto-EI-h22.accessibilityHint" = "Κλείσιμο";
-

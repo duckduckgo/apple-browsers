@@ -26,19 +26,64 @@ public extension NewTabPageDataModel {
         case search, ai
     }
 
+    /// A reasoning-effort option for a reasoning-capable model, with localized display copy and
+    /// per-effort availability. Replaces the old flat `supportedReasoningEffort: [String]` list.
+    struct AIModelReasoningEffort: Codable, Equatable {
+        /// Stable server key for this option (e.g. `"none"`, `"low"`, `"medium"`); round-tripped
+        /// on `omnibar_submitChat`'s `reasoningEffort` param.
+        public let id: String
+        public let name: String
+        public let description: String?
+        /// Whether this option is selectable (`true`) or gated behind a subscription upsell (`false`).
+        public let isAvailable: Bool
+        /// `"subscribe"` or `"upgrade"`. Present only when `isAvailable == false`.
+        public let upsell: String?
+        /// Header for the gated section this effort starts; set on the first gated effort only.
+        public let gatedSectionHeader: String?
+
+        public init(id: String, name: String, description: String? = nil, isAvailable: Bool, upsell: String? = nil, gatedSectionHeader: String? = nil) {
+            self.id = id
+            self.name = name
+            self.description = description
+            self.isAvailable = isAvailable
+            self.upsell = upsell
+            self.gatedSectionHeader = gatedSectionHeader
+        }
+    }
+
     struct AIModelItem: Codable, Equatable {
         public let id: String
         public let name: String
         public let shortName: String
-        public let isEnabled: Bool
+        /// Subtitle beneath the model name (the backend recommendation label), `nil` for unlabelled models.
+        public let description: String?
+        public let isAvailable: Bool
         public let supportsImageUpload: Bool
+        public let supportedTools: [String]
+        /// `nil` for a model with no tier requirement; set on every item, not just gated ones.
+        public let accessTier: String?
+        /// Empty when reasoning isn't supported, or when disabled natively (picker stays hidden).
+        public var reasoningEfforts: [AIModelReasoningEffort]
+        /// MIME types the model accepts as file attachments (e.g. `["application/pdf"]`). Empty
+        /// when the model accepts no files; the web uses this to drive the file picker's `accept`
+        /// and to clear attached files whose MIME isn't supported when the user switches models.
+        public let supportedFileTypes: [String]
+        /// For a gated (`isAvailable == false`) model, which upsell flow it leads to: `"subscribe"` or
+        /// `"upgrade"`. `nil` for enabled models.
+        public let upsell: String?
 
-        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool) {
+        public init(id: String, name: String, shortName: String, description: String? = nil, isAvailable: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], accessTier: String? = nil, reasoningEfforts: [AIModelReasoningEffort] = [], supportedFileTypes: [String] = [], upsell: String? = nil) {
             self.id = id
             self.name = name
             self.shortName = shortName
-            self.isEnabled = isEnabled
+            self.description = description
+            self.isAvailable = isAvailable
             self.supportsImageUpload = supportsImageUpload
+            self.supportedTools = supportedTools
+            self.accessTier = accessTier
+            self.reasoningEfforts = reasoningEfforts
+            self.supportedFileTypes = supportedFileTypes
+            self.upsell = upsell
         }
     }
 
@@ -52,6 +97,153 @@ public extension NewTabPageDataModel {
         }
     }
 
+    struct OmnibarCreateImageModelSwitch: Codable, Equatable {
+        let message: String
+        let secondaryText: String?
+        let dismissible: Bool
+
+        public init(message: String, secondaryText: String?, dismissible: Bool = true) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.dismissible = dismissible
+        }
+    }
+
+    struct OmnibarUsageLimits: Codable, Equatable {
+
+        public enum Icon: String, Codable {
+            case info, ring, alert
+        }
+
+        /// The ring's colour. Only read when `icon` is `.ring`.
+        public enum Severity: String, Codable {
+            case neutral, warning, critical
+        }
+
+        public struct Cta: Codable, Equatable {
+
+            /// `textOnly` carries the schema's `"none"`; the case is renamed so it can't be read as
+            /// `Optional.none` at a call site.
+            public enum LeadingIcon: String, Codable {
+                case textOnly = "none"
+                case convert
+            }
+
+            public struct Alternative: Codable, Equatable {
+                public let id: String
+                public let name: String
+
+                public init(id: String, name: String) {
+                    self.id = id
+                    self.name = name
+                }
+            }
+
+            public let label: String
+            public let leadingIcon: LeadingIcon
+            public let primaryModelId: String?
+            public let showMenu: Bool
+            /// Unset: the address bar's chevron has no heading either, bar the gated one.
+            public let menuHeader: String?
+            public let alternatives: [Alternative]
+
+            public init(label: String,
+                        leadingIcon: LeadingIcon = .textOnly,
+                        primaryModelId: String? = nil,
+                        showMenu: Bool = false,
+                        menuHeader: String? = nil,
+                        alternatives: [Alternative] = []) {
+                self.label = label
+                self.leadingIcon = leadingIcon
+                self.primaryModelId = primaryModelId
+                self.showMenu = showMenu
+                self.menuHeader = menuHeader
+                self.alternatives = alternatives
+            }
+        }
+
+        public let message: String
+        public let secondaryText: String?
+        public let dismissible: Bool
+        public let icon: Icon
+        public let percent: Int?
+        public let severity: Severity?
+        /// The allowance is spent, so the web freezes the composer and its tools.
+        public let blocksPrompt: Bool
+        public let cta: Cta?
+
+        public init(message: String,
+                    secondaryText: String? = nil,
+                    dismissible: Bool = false,
+                    icon: Icon = .info,
+                    percent: Int? = nil,
+                    severity: Severity? = nil,
+                    blocksPrompt: Bool = false,
+                    cta: Cta? = nil) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.dismissible = dismissible
+            self.icon = icon
+            self.percent = percent
+            self.severity = severity
+            self.blocksPrompt = blocksPrompt
+            self.cta = cta
+        }
+    }
+
+    /// Keeps the config provider out of the subscription flow; the client owns dialogs.
+    enum OmnibarUsageLimitsCtaOutcome: Equatable {
+        case handled
+        case requiresSubscriptionUpsell
+    }
+
+    /// Attachment limits forwarded to the web. All optional: `files`/`images` are backend-sourced; `tabs` is a hardcoded native cap, omitted when the limit is disabled (web then applies no tab limit).
+    struct AttachmentLimits: Codable, Equatable {
+        public struct FileLimits: Codable, Equatable {
+            let maxPerConversation: Int
+            let maxFileSizeMB: Int
+            let maxTotalFileSizeBytes: Int
+            let maxPagesPerFile: Int
+
+            public init(maxPerConversation: Int, maxFileSizeMB: Int, maxTotalFileSizeBytes: Int, maxPagesPerFile: Int) {
+                self.maxPerConversation = maxPerConversation
+                self.maxFileSizeMB = maxFileSizeMB
+                self.maxTotalFileSizeBytes = maxTotalFileSizeBytes
+                self.maxPagesPerFile = maxPagesPerFile
+            }
+        }
+
+        public struct ImageLimits: Codable, Equatable {
+            let maxPerTurn: Int
+            let maxPerConversation: Int
+            let maxInputCharsWithAttachments: Int
+
+            public init(maxPerTurn: Int, maxPerConversation: Int, maxInputCharsWithAttachments: Int) {
+                self.maxPerTurn = maxPerTurn
+                self.maxPerConversation = maxPerConversation
+                self.maxInputCharsWithAttachments = maxInputCharsWithAttachments
+            }
+        }
+
+        public struct TabLimits: Codable, Equatable {
+            let maxAttached: Int
+
+            public init(maxAttached: Int) {
+                self.maxAttached = maxAttached
+            }
+        }
+
+        let files: FileLimits?
+        let images: ImageLimits?
+        let tabs: TabLimits?
+
+        public init(files: FileLimits?, images: ImageLimits?, tabs: TabLimits?) {
+            self.files = files
+            self.images = images
+            self.tabs = tabs
+        }
+    }
+
     struct OmnibarConfig: Codable, Equatable {
         let mode: OmnibarMode
         let enableAi: Bool
@@ -60,8 +252,117 @@ public extension NewTabPageDataModel {
         let enableRecentAiChats: Bool?
         let showViewAllAiChats: Bool?
         let enableAiChatTools: Bool?
+        let enableImageGeneration: Bool?
+        let enableWebSearch: Bool?
+        /// When true, the omnibar shows the "Customize Responses" tool in the Tools menu. Selecting
+        /// it sends `omnibar_openCustomizeResponses` so native opens the Customize Responses modal.
+        let enableCustomizeResponses: Bool?
+        /// Summary of the user's current customization (e.g. "Professional, Concise"), shown under
+        /// the Customize Responses row. Omitted when responses haven't been customized.
+        let customizeSubLabel: String?
+        /// True once the user has customized responses; gates the row's on/off toggle.
+        let hasCustomization: Bool?
+        /// Whether the stored customization is currently applied; drives the toggle's checked state.
+        let customizationActive: Bool?
+        /// When true, the omnibar shows a 1-click voice-chat button. Driven by the native
+        /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
+        /// so the affordance appears/disappears without a page reload when the flag flips.
+        let enableVoiceChatAccess: Bool?
+        /// When false, the omnibar must not render the inline "Ask Duck.ai: <query>" entry in
+        /// the suggestions dropdown. Native sets this to the value of the user's "Autocomplete
+        /// suggestions" preference so the dropdown matches the address bar (which hides the
+        /// equivalent `.askAIChat` entry when the preference is off). Reactive over
+        /// `omnibar_onConfigUpdate`. `nil` means "treat as true" for back-compat with web
+        /// clients that don't know about this field yet.
+        let enableAskAiSuggestion: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
+        /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
+        /// nothing is selected or when the reasoning-effort feature is disabled natively.
+        let selectedReasoningEffort: String?
+        /// When true, the omnibar shows the paperclip entry point and accepts `@` mentions for
+        /// attaching open tabs (and files) as context to a Duck.ai submission. Driven by the
+        /// `aiChatNtpAttachMoreTabs` feature flag and reactive over `omnibar_onConfigUpdate`.
+        /// `nil`/false means the affordances stay hidden and existing flows are unchanged.
+        let enableAttachTabs: Bool?
+        /// Backend-provided attachment limits, already tier-resolved. `nil` on older native builds
+        /// or when the backend omits them, in which case the web falls back to its built-in defaults.
+        let attachmentLimits: AttachmentLimits?
+        /// Whether a free-tier user is eligible for a free trial — independent of `AIModelItem.upsell`
+        /// (which only says which flow), used to pick "Try for Free" vs "Upgrade" copy on gated rows.
+        let isEligibleForFreeTrial: Bool?
+        /// When true, recent-chat suggestions show a delete button that sends `omnibar_confirmDeleteAiChat`.
+        let enableAiChatDeletion: Bool?
+        /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
+        let enableSearchSuggestionDeletion: Bool?
+        /// Whether the file-upload privacy disclaimer may still be shown. Native owns the one
+        /// app-wide display; false or `nil` means the omnibar renders nothing.
+        var showAttachmentPrivacyDisclaimer: Bool?
+        /// Enables the native-driven Create Image model-switch flow in the web omnibar.
+        var enableUpdatedCreateImage: Bool?
+        /// Native-localized notice shown after Create Image switches away from an unsupported model.
+        var createImageModelSwitch: OmnibarCreateImageModelSwitch?
+        var usageLimits: OmnibarUsageLimits?
+        /// True until the user accepts Duck.ai's Terms of Service. The Duck.ai tab then shows the
+        /// disclaimer and an "Ask" button that sends `aiTermsAccepted` with `omnibar_submitChat`.
+        /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
+        var requiresAiTermsAcceptance: Bool?
+        var launcherPromo: OmnibarLauncherPromo?
+    }
+
+    struct OmnibarSetImageGenerationActive: Codable, Equatable {
+        let active: Bool
+    }
+
+    // MARK: - Attachment privacy
+
+    /// Which attachment the disclaimer is about. Native never sees the attach, so the page has to
+    /// say, for the pixel.
+    enum OmnibarAttachmentPrivacyKind: String, Codable {
+        case image, file
+    }
+
+    struct OmnibarAttachmentPrivacyDisclaimerShown: Codable, Equatable {
+
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    struct OmnibarOpenAttachmentPrivacyLearnMore: Codable, Equatable {
+
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    struct OmnibarLauncherPromo: Codable, Equatable {
+        public let message: String
+        public let secondaryText: String?
+        public let ctaLabel: String?
+        public let dismissible: Bool?
+
+        public init(message: String, secondaryText: String? = nil, ctaLabel: String? = nil, dismissible: Bool? = nil) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.ctaLabel = ctaLabel
+            self.dismissible = dismissible
+        }
+    }
+
+    // MARK: - omnibar_selectUsageLimitsCta
+
+    struct OmnibarSelectUsageLimitsCtaAction: Codable, Equatable {
+        /// Absent for the upsell and the weekly hand-off.
+        let modelId: String?
+
+        public init(modelId: String?) {
+            self.modelId = modelId
+        }
     }
 
     // MARK: - omnibar_getSuggestions
@@ -226,6 +527,106 @@ public extension NewTabPageDataModel {
         let target: OpenTarget
         let modelId: String?
         let images: [SubmitChatImage]?
+        let mode: String?
+        let toolChoice: [String]?
+        /// Reasoning effort to attach to this submission. Ignored natively when the reasoning-effort
+        /// feature is disabled or when the value isn't supported by the submission's model.
+        let reasoningEffort: String?
+        /// Page contexts attached from open tabs via the attach-tabs picker. Each entry is the
+        /// same shape returned by `omnibar_getTabContent` and carries a `tabId`. Omitted when no
+        /// tabs are attached so existing handlers continue to work unchanged.
+        let pageContext: [OmnibarPageContext]?
+        /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
+        let files: [OmnibarPromptFile]?
+        /// True only when the user clicked "Ask" (or "Create") with the terms disclaimer on screen.
+        /// Enter, voice and the "Ask Duck.ai" suggestion never send it, because legal requires a click.
+        var aiTermsAccepted: Bool?
+        var launcherPromoVisible: Bool?
+    }
+
+    // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)
+
+    /// Favicon for an attached tab. Matches the NewTab `favicon.json` shape. Native populates
+    /// `src` with a base64 PNG data URL so the favicon survives the round-trip back on submit
+    /// and renders without CSP issues when forwarded to the Duck.ai tab.
+    struct OmnibarTabFavicon: Codable, Equatable {
+        public let src: String
+        public let maxAvailableSize: Int?
+
+        public init(src: String, maxAvailableSize: Int? = nil) {
+            self.src = src
+            self.maxAvailableSize = maxAvailableSize
+        }
+    }
+
+    /// Metadata for an open tab, returned by `omnibar_getOpenTabs`.
+    struct OmnibarTabMetadata: Codable, Equatable {
+        public let tabId: String
+        public let title: String
+        public let url: String
+        public let favicon: OmnibarTabFavicon?
+
+        public init(tabId: String, title: String, url: String, favicon: OmnibarTabFavicon?) {
+            self.tabId = tabId
+            self.title = title
+            self.url = url
+            self.favicon = favicon
+        }
+    }
+
+    /// Extracted page content for a specific tab, returned by `omnibar_getTabContent` and echoed
+    /// back on `omnibar_submitChat`.
+    struct OmnibarPageContext: Codable, Equatable {
+        public let tabId: String?
+        public let title: String
+        public let url: String
+        public let favicon: OmnibarTabFavicon?
+        public let content: String?
+        public let truncated: Bool?
+        public let fullContentLength: Int?
+
+        public init(tabId: String?, title: String, url: String, favicon: OmnibarTabFavicon?, content: String?, truncated: Bool?, fullContentLength: Int?) {
+            self.tabId = tabId
+            self.title = title
+            self.url = url
+            self.favicon = favicon
+            self.content = content
+            self.truncated = truncated
+            self.fullContentLength = fullContentLength
+        }
+    }
+
+    /// A file attached to a Duck.ai prompt (PDFs in v1). Shape mirrors Duck.ai's `NativePromptFile`.
+    struct OmnibarPromptFile: Codable, Equatable {
+        public let data: String
+        public let fileName: String
+        public let mimeType: String
+
+        public init(data: String, fileName: String, mimeType: String) {
+            self.data = data
+            self.fileName = fileName
+            self.mimeType = mimeType
+        }
+    }
+
+    struct OmnibarGetOpenTabsResponse: Codable, Equatable {
+        let tabs: [OmnibarTabMetadata]
+
+        public init(tabs: [OmnibarTabMetadata]) {
+            self.tabs = tabs
+        }
+    }
+
+    struct OmnibarGetTabContentRequest: Codable, Equatable {
+        let tabId: String
+    }
+
+    struct OmnibarGetTabContentResponse: Codable, Equatable {
+        let pageContext: OmnibarPageContext?
+
+        public init(pageContext: OmnibarPageContext?) {
+            self.pageContext = pageContext
+        }
     }
 
     // MARK: - omnibar_openAiChat
@@ -248,6 +649,41 @@ public extension NewTabPageDataModel {
         let target: OpenTarget
     }
 
+    struct SetCustomizeResponsesActiveAction: Codable, Equatable {
+        let active: Bool
+    }
+
+    // MARK: - omnibar_showSubscriptionUpsell / omnibar_showSubscriptionUpgrade
+
+    public enum OmnibarSubscriptionUpsellSource: String, Codable, Equatable {
+        case model
+        case reasoning
+        case usageLimit
+    }
+
+    struct ShowSubscriptionUpsellAction: Codable, Equatable {
+        let source: OmnibarSubscriptionUpsellSource
+    }
+
+    struct ShowSubscriptionUpgradeAction: Codable, Equatable {
+        let source: OmnibarSubscriptionUpsellSource
+    }
+
+    /// Customize Responses row state resolved for a specific window (sub-label + toggle).
+    struct OmnibarCustomizeResponsesState: Equatable {
+        let subLabel: String?
+        let hasCustomization: Bool
+        let active: Bool
+
+        public init(subLabel: String?, hasCustomization: Bool, active: Bool) {
+            self.subLabel = subLabel
+            self.hasCustomization = hasCustomization
+            self.active = active
+        }
+
+        public static let none = OmnibarCustomizeResponsesState(subLabel: nil, hasCustomization: false, active: false)
+    }
+
     // MARK: - omnibar_getAiChats
 
     struct OmnibarGetAiChatsRequest: Codable, Equatable {
@@ -260,13 +696,15 @@ public extension NewTabPageDataModel {
         let pinned: Bool?
         let lastEdit: String?
         let firstUserMessageContent: String?
+        let model: String?
 
-        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil) {
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil, model: String? = nil) {
             self.chatId = chatId
             self.title = title
             self.pinned = pinned
             self.lastEdit = lastEdit
             self.firstUserMessageContent = firstUserMessageContent
+            self.model = model
         }
     }
 
@@ -278,6 +716,27 @@ public extension NewTabPageDataModel {
         }
 
         public static let empty = Self(chats: [])
+    }
+
+    // MARK: - omnibar_confirmDeleteAiChat
+
+    struct ConfirmDeleteAiChatAction: Codable, Equatable {
+        let chatId: String
+        let title: String
+    }
+
+    struct ConfirmDeleteAiChatResponse: Codable, Equatable {
+        enum Action: String, Codable {
+            case delete
+            case none
+        }
+        let action: Action
+    }
+
+    // MARK: - omnibar_removeSuggestion
+
+    struct RemoveSuggestionAction: Codable, Equatable {
+        let url: String
     }
 
 }

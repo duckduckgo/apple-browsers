@@ -28,7 +28,6 @@ import XCTest
 @testable import TrackerRadarKit
 
 final class GPCReferenceTests: XCTestCase {
-    private let userScriptDelegateMock = MockSurrogatesUserScriptDelegate()
     private let navigationDelegateMock = MockNavigationDelegate()
     private let schemeHandler = TestSchemeHandler()
     private static let data = JsonTestDataLoader()
@@ -36,8 +35,8 @@ final class GPCReferenceTests: XCTestCase {
     private var javascriptTests = [GpcJavaScriptAPITest]()
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/global-privacy-control/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/global-privacy-control/tests.json"
+        static let config = "Res/privacy-reference-tests/global-privacy-control/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/global-privacy-control/tests.json"
     }
 
     private var privacyManager: PrivacyConfigurationManager {

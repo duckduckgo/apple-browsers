@@ -19,7 +19,7 @@
 import SwiftUI
 import BrowserServicesKit
 import DataBrokerProtectionCore
-import FeatureFlags
+import FeatureFlags_macOS
 
 struct DataBrokerRunCustomJSONView: View {
     private enum Constants {
@@ -137,10 +137,21 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var dbpFeatureFlagLines: [(name: String, value: String)] {
         [
-            (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
-            (FeatureFlag.dbpEmailConfirmationDecoupling.rawValue, viewModel.featureFlagger.isEmailConfirmationDecouplingFeatureOn.description),
-            (FeatureFlag.dbpClickActionDelayReductionOptimization.rawValue, viewModel.featureFlagger.isClickActionDelayReductionOptimizationOn.description),
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
+            (FeatureFlag.dbpExtractedProfileRefresh.rawValue, viewModel.featureFlagger.isExtractedProfileRefreshOn.description),
+        ]
+    }
+
+    private var brokerJobExecutionConfigLines: [(name: String, value: String)] {
+        let config = viewModel.brokerJobExecutionConfig
+        return [
+            ("scanJobTimeout", formattedDuration(config.scanJobTimeout)),
+            ("optOutJobTimeout", formattedDuration(config.optOutJobTimeout)),
+            ("cssActionTimeout", formattedDuration(config.cssActionTimeout)),
+            ("cssActionCancellationCheckInterval", formattedDuration(config.cssActionCancellationCheckInterval)),
+            ("clickAwaitTimeForScan", formattedDuration(config.clickAwaitTimeForScan)),
+            ("clickAwaitTimeForOptOut", formattedDuration(config.clickAwaitTimeForOptOut)),
+            ("getEmailDataTotalTimeout", formattedDuration(config.getEmailDataTotalTimeout)),
         ]
     }
 
@@ -152,41 +163,39 @@ struct DataBrokerRunCustomJSONView: View {
                 Text("Scan")
                     .font(.headline)
                 Spacer()
-                if #available(macOS 12.0, *) {
-                    if viewModel.isEditingPresets {
-                        Button("Save Presets") {
-                            viewModel.savePresets()
-                            viewModel.isEditingPresets = false
-                        }
+                if viewModel.isEditingPresets {
+                    Button("Save Presets") {
+                        viewModel.savePresets()
+                        viewModel.isEditingPresets = false
+                    }
 
-                        Button("Cancel") {
-                            viewModel.loadPresets()
-                            viewModel.isEditingPresets = false
-                        }
-                    } else {
-                        Menu("Load Preset...") {
-                            ForEach(viewModel.presets) { preset in
-                                Button(String(describing: preset)) {
-                                    viewModel.applyPreset(preset)
-                                }
+                    Button("Cancel") {
+                        viewModel.loadPresets()
+                        viewModel.isEditingPresets = false
+                    }
+                } else {
+                    Menu("Load Preset...") {
+                        ForEach(viewModel.presets) { preset in
+                            Button(String(describing: preset)) {
+                                viewModel.applyPreset(preset)
                             }
                         }
-                        .disabled(viewModel.presets.isEmpty)
+                    }
+                    .disabled(viewModel.presets.isEmpty)
 
-                        Button("Edit Presets") {
-                            viewModel.isEditingPresets = true
-                        }
+                    Button("Edit Presets") {
+                        viewModel.isEditingPresets = true
+                    }
 
-                        Button("Save Form as Preset") {
-                            viewModel.saveCurrentFormAsPreset()
-                        }
+                    Button("Save Form as Preset") {
+                        viewModel.saveCurrentFormAsPreset()
                     }
                 }
             }
 
             Divider()
 
-            if #available(macOS 12.0, *), viewModel.isEditingPresets {
+            if viewModel.isEditingPresets {
                 presetForm
             } else {
                 scanForm
@@ -196,11 +205,22 @@ struct DataBrokerRunCustomJSONView: View {
 
             Text("macOS App version: \(viewModel.appVersion())")
             Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-            Text("Web view applicationNameForUserAgent: \(viewModel.applicationNameForUserAgentDisplayValue)")
+            Text("Web view applicationNameForUserAgentProvider: \(viewModel.applicationNameForUserAgentDisplayValue)")
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(dbpFeatureFlagLines, id: \.name) { flag in
                     Text("\(flag.name): \(flag.value)")
+                        .padding(.top, 6)
+                }
+            }
+
+            Text(verbatim: "Broker job execution config")
+                .font(.headline)
+                .padding(.top, 6)
+
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(brokerJobExecutionConfigLines, id: \.name) { item in
+                    Text(verbatim: "\(item.name): \(item.value)")
                         .padding(.top, 6)
                 }
             }
@@ -255,11 +275,19 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
             VStack(alignment: .leading, spacing: 6) {
-                Button("Run") {
-                    viewModel.runJSON(jsonString: jsonText)
-                    selectedTab = .extractedProfiles
+                HStack(spacing: 12) {
+                    Button("Run") {
+                        viewModel.runJSON(jsonString: jsonText)
+                        selectedTab = .extractedProfiles
+                    }
+                    .disabled(jsonText.isEmpty)
+
+                    Toggle(isOn: $viewModel.usesConfiguredTimeouts) {
+                        Text(verbatim: "Use configured timeouts")
+                    }
+                    .toggleStyle(.checkbox)
+                    .help(Text(verbatim: "Applies the scan and opt-out job timeouts shown below."))
                 }
-                .disabled(jsonText.isEmpty)
 
                 if jsonText.isEmpty {
                     Text("Please enter broker JSON to enable scan")
@@ -268,6 +296,10 @@ struct DataBrokerRunCustomJSONView: View {
                 }
             }
         }
+    }
+
+    private func formattedDuration(_ duration: TimeInterval) -> String {
+        "\(duration.formatted(.number.precision(.fractionLength(0...2))))s"
     }
 
     // MARK: - Tab 2: Extracted profiles
@@ -492,10 +524,7 @@ struct DataBrokerRunCustomJSONView: View {
     }()
 
     private var monospacedTextFont: Font {
-        if #available(macOS 12.0, *) {
-            return .system(.body, design: .monospaced)
-        }
-        return .system(.body)
+        return .system(.body, design: .monospaced)
     }
 }
 

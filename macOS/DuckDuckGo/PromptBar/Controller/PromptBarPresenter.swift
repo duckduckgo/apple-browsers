@@ -1,0 +1,314 @@
+//
+//  PromptBarPresenter.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppKit
+import Combine
+import PixelKit
+
+/// Which entry point put the bar on screen. Each reports its own pixel, and re-triggering the same
+/// one while the bar is up is what closes it.
+enum PromptBarPresentationSource: Equatable, CaseIterable {
+    case keyboardShortcut
+    case menuBarIcon
+
+    var pixelValue: String {
+        switch self {
+        case .keyboardShortcut: "shortcut"
+        case .menuBarIcon: "menu_bar_icon"
+        }
+    }
+
+    var shownPixel: PromptBarPixel {
+        switch self {
+        case .keyboardShortcut: .shownFromShortcut
+        case .menuBarIcon: .shownFromMenuBarIcon
+        }
+    }
+
+    var toggleDismissReason: PromptBarDismissReason {
+        switch self {
+        case .keyboardShortcut: .shortcutToggle
+        case .menuBarIcon: .menuBarIconToggle
+        }
+    }
+}
+
+/// Why the bar closed. Only the reasons that leave the prompt unsent are reported — the submit
+/// pixels already cover the rest.
+enum PromptBarDismissReason: Equatable {
+    /// A prompt, URL or voice session was handed off.
+    case submission
+    case escape
+    case clickOutside
+    case shortcutToggle
+    case menuBarIconToggle
+
+    var cancellation: PromptBarCancellationReason? {
+        switch self {
+        case .submission: nil
+        case .escape: .escape
+        case .clickOutside: .clickOutside
+        case .shortcutToggle: .shortcutToggle
+        case .menuBarIconToggle: .menuBarIcon
+        }
+    }
+}
+
+@MainActor
+protocol PromptBarPresenting: AnyObject {
+    var isVisible: Bool { get }
+    func show(source: PromptBarPresentationSource)
+    func showForLauncherPromo(shortcut: String)
+    func dismiss(reason: PromptBarDismissReason)
+    func toggle(source: PromptBarPresentationSource)
+}
+
+@MainActor
+final class PromptBarPresenter: PromptBarPresenting {
+
+    private let content: PromptBarContentHosting
+    private let screenProvider: PromptBarScreenProviding
+    private let makeWindow: (NSRect) -> PromptBarWindow
+    private let makeDimWindow: (NSRect) -> NSWindow
+    private let presentationEffectsEnabled: () -> Bool
+    private let animatesPresentationEffects: Bool
+    private let firePixel: (PromptBarPixel) -> Void
+    private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
+    private let isDragEnabled: () -> Bool
+    private let loadRelativePosition: () -> CGPoint?
+    private let saveRelativePosition: (CGPoint) -> Void
+
+    private var window: PromptBarWindow?
+    private var resignKeyCancellable: AnyCancellable?
+    private var dimWindow: NSWindow?
+
+    var isVisible: Bool {
+        window?.isVisible ?? false
+    }
+
+    // `screenProvider` has no default value: defaults are evaluated nonisolated, and the provider is @MainActor.
+    init(content: PromptBarContentHosting,
+         screenProvider: PromptBarScreenProviding? = nil,
+         makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
+         makeDimWindow: @escaping (NSRect) -> NSWindow = { NSWindow(contentRect: $0, styleMask: .borderless, backing: .buffered, defer: false) },
+         presentationEffectsEnabled: @escaping () -> Bool = { false },
+         animatesPresentationEffects: Bool = true,
+         promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
+         isDragEnabled: @escaping () -> Bool = { false },
+         loadRelativePosition: @escaping () -> CGPoint? = { nil },
+         saveRelativePosition: @escaping (CGPoint) -> Void = { _ in },
+         firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
+            if case .firstUse = pixel {
+                PixelKit.fire(pixel, frequency: .uniqueByName, includeAppVersionParameter: true)
+            } else {
+                PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+         }) {
+        self.content = content
+        self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
+        self.makeWindow = makeWindow
+        self.makeDimWindow = makeDimWindow
+        self.presentationEffectsEnabled = presentationEffectsEnabled
+        self.animatesPresentationEffects = animatesPresentationEffects
+        self.promoOutcome = promoOutcome
+        self.isDragEnabled = isDragEnabled
+        self.loadRelativePosition = loadRelativePosition
+        self.saveRelativePosition = saveRelativePosition
+        self.firePixel = firePixel
+
+        self.content.onSubmit = { [weak self] in
+            self?.dismiss(reason: .submission)
+        }
+        self.content.onPreferredWindowContentSizeChanged = { [weak self] size in
+            self?.resizeWindow(toContentSize: size)
+        }
+    }
+
+    func toggle(source: PromptBarPresentationSource) {
+        if isVisible {
+            dismiss(reason: source.toggleDismissReason)
+        } else {
+            show(source: source)
+        }
+    }
+
+    func show(source: PromptBarPresentationSource) {
+        present()
+        firePixel(source.shownPixel)
+        firePixel(.firstUse(source: source, promoOutcome: promoOutcome()))
+    }
+
+    func showForLauncherPromo(shortcut: String) {
+        present()
+        content.showLauncherIntroduction(shortcut: shortcut)
+    }
+
+    private func animateAppearance(of window: NSWindow) {
+        guard animatesPresentationEffects else {
+            window.alphaValue = 1
+            return
+        }
+        let duration = 0.25
+        if let contentView = window.contentView, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            contentView.wantsLayer = true
+            let center = CGPoint(x: contentView.bounds.midX, y: contentView.bounds.midY)
+            var start = CATransform3DMakeTranslation(center.x, center.y, 0)
+            start = CATransform3DScale(start, 0.96, 0.96, 1)
+            start = CATransform3DTranslate(start, -center.x, -center.y, 0)
+
+            let zoom = CABasicAnimation(keyPath: "transform")
+            zoom.fromValue = start
+            zoom.toValue = CATransform3DIdentity
+            zoom.duration = duration
+            zoom.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            contentView.layer?.add(zoom, forKey: "appear")
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            window.animator().alphaValue = 1
+        }
+    }
+
+    private static let dimFadeDuration = 0.3
+    private static let dimAlpha: CGFloat = 0.15
+
+    private func dimScreen() {
+        guard dimWindow == nil, let window, let screen = window.screen else { return }
+
+        let dimWindow = makeDimWindow(screen.frame)
+        dimWindow.isReleasedWhenClosed = false
+        dimWindow.backgroundColor = .black
+        dimWindow.isOpaque = false
+        dimWindow.hasShadow = false
+        dimWindow.ignoresMouseEvents = true
+        dimWindow.level = window.level
+        dimWindow.collectionBehavior = window.collectionBehavior
+        dimWindow.alphaValue = animatesPresentationEffects ? 0 : Self.dimAlpha
+        dimWindow.order(.below, relativeTo: window.windowNumber)
+        self.dimWindow = dimWindow
+        guard animatesPresentationEffects else { return }
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = Self.dimFadeDuration
+            dimWindow.animator().alphaValue = Self.dimAlpha
+        }
+    }
+
+    private func present() {
+        content.prepareForPresentation()
+
+        let window = existingWindowOrNew()
+        let isDraggable = isDragEnabled()
+        window.isMovableByWindowBackground = isDraggable
+        window.setFrame(presentationFrame(isDraggable: isDraggable), display: false)
+
+        let showsEffects = presentationEffectsEnabled()
+        window.alphaValue = showsEffects ? 0 : 1
+        // No `NSApp.activate`: it would raise the browser's windows above whatever the user has in front.
+        window.orderFrontRegardless()
+        window.makeKey()
+        if showsEffects {
+            animateAppearance(of: window)
+            dimScreen()
+        }
+        // First responder only sticks once the window is key.
+        content.focusPromptEditor()
+        // Per presentation, not per window: `dismiss()` tears this down.
+        subscribeToResignKey(of: window)
+    }
+
+    private func presentationFrame(isDraggable: Bool) -> NSRect {
+        let contentHeight = content.preferredWindowContentSize.height
+        let visibleFrame = screenProvider.targetVisibleFrame
+        guard isDraggable, let relativePosition = loadRelativePosition() else {
+            return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame)
+        }
+        return PromptBarPlacement.frame(forContentHeight: contentHeight, in: visibleFrame, relativePosition: relativePosition)
+    }
+
+    func dismiss(reason: PromptBarDismissReason) {
+        // Visibility, not just existence: submitting reports through two delegate callbacks and so
+        // asks to dismiss twice, and `resetAfterDismissal` must not run against a torn-down bar.
+        guard let window, window.isVisible else { return }
+        // Read before `resetAfterDismissal()` clears the draft.
+        let hadText = content.hasPromptText
+        resignKeyCancellable = nil
+        if window.isMovableByWindowBackground, let visibleFrame = window.screen?.visibleFrame {
+            saveRelativePosition(PromptBarPlacement.relativePosition(of: window.frame, in: visibleFrame))
+        }
+        window.orderOut(nil)
+        if let dimWindow {
+            self.dimWindow = nil
+            if !animatesPresentationEffects {
+                dimWindow.orderOut(nil)
+            } else {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = Self.dimFadeDuration
+                    dimWindow.animator().alphaValue = 0
+                } completionHandler: {
+                    dimWindow.orderOut(nil)
+                }
+            }
+        }
+        content.resetAfterDismissal()
+
+        if let cancellation = reason.cancellation {
+            firePixel(.dismissedWithoutSubmission(reason: cancellation, hadText: hadText))
+        }
+    }
+
+    private func existingWindowOrNew() -> PromptBarWindow {
+        if let window {
+            return window
+        }
+
+        let initialFrame = PromptBarPlacement.frame(forContentHeight: content.preferredWindowContentSize.height,
+                                                    in: screenProvider.targetVisibleFrame)
+        let window = makeWindow(initialFrame)
+        window.contentViewController = content.viewController
+        window.onCancel = { [weak self] in
+            self?.dismiss(reason: .escape)
+        }
+        self.window = window
+        return window
+    }
+
+    /// Clicking outside dismisses — but a tool menu or `NSOpenPanel` also takes key away, and must not.
+    private func subscribeToResignKey(of window: PromptBarWindow) {
+        resignKeyCancellable = NotificationCenter.default
+            .publisher(for: NSWindow.didResignKeyNotification, object: window)
+            .sink { [weak self] _ in
+                guard let self, !self.content.isPresentingAuxiliaryUI else { return }
+                self.dismiss(reason: .clickOutside)
+            }
+    }
+
+    private func resizeWindow(toContentSize size: NSSize) {
+        guard let window else { return }
+
+        var frame = window.frame
+        var top = frame.maxY
+        frame.size.height = size.height
+        if let visibleFrame = window.screen?.visibleFrame {
+            frame.size.height = min(size.height, visibleFrame.height)
+            top = min(max(top, visibleFrame.minY + frame.height), visibleFrame.maxY)
+        }
+        frame.origin.y = top - frame.height
+        window.setFrame(frame, display: true, animate: false)
+    }
+}

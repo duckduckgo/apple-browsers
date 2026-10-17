@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import WebKit
 
@@ -29,8 +30,10 @@ public struct LinkProtection {
 
     public init(privacyManager: PrivacyConfigurationManaging,
                 contentBlockingManager: CompiledRuleListsSource,
-                errorReporting: EventMapping<AMPProtectionDebugEvents>) {
-        linkCleaner = LinkCleaner(privacyManager: privacyManager)
+                errorReporting: EventMapping<AMPProtectionDebugEvents>,
+                isFastTrackingParameterFilterEnabled: @escaping () -> Bool = { false }) {
+        linkCleaner = LinkCleaner(privacyManager: privacyManager,
+                                  isFastTrackingParameterFilterEnabled: isFastTrackingParameterFilterEnabled)
         ampExtractor = AMPCanonicalExtractor(linkCleaner: linkCleaner,
                                              privacyManager: privacyManager,
                                              contentBlockingManager: contentBlockingManager,

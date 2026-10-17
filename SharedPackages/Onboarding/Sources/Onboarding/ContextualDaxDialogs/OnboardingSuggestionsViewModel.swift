@@ -21,18 +21,29 @@ import Foundation
 public protocol OnboardingNavigationDelegate: AnyObject {
     func searchFromOnboarding(for query: String)
     func navigateFromOnboarding(to url: URL)
+    func navigateFromOnboardingInNewTab(to url: URL)
+}
+
+public extension OnboardingNavigationDelegate {
+
+    func navigateFromOnboardingInNewTab(to url: URL) {
+        navigateFromOnboarding(to: url)
+    }
 }
 
 public struct OnboardingSearchSuggestionsViewModel {
     let suggestedSearchesProvider: OnboardingSuggestionsItemsProviding
     public weak var delegate: OnboardingNavigationDelegate?
+    let onSuggestionPressed: (() -> Void)?
 
     public init(
         suggestedSearchesProvider: OnboardingSuggestionsItemsProviding,
-        delegate: OnboardingNavigationDelegate? = nil
+        delegate: OnboardingNavigationDelegate? = nil,
+        onSuggestionPressed: (() -> Void)? = nil
     ) {
         self.suggestedSearchesProvider = suggestedSearchesProvider
         self.delegate = delegate
+        self.onSuggestionPressed = onSuggestionPressed
     }
 
     public var itemsList: [ContextualOnboardingListItem] {
@@ -41,21 +52,25 @@ public struct OnboardingSearchSuggestionsViewModel {
 
     public func listItemPressed(_ item: ContextualOnboardingListItem) {
         delegate?.searchFromOnboarding(for: item.title)
+        onSuggestionPressed?()
     }
 }
 
 public struct OnboardingSiteSuggestionsViewModel {
     let suggestedSitesProvider: OnboardingSuggestionsItemsProviding
     public weak var delegate: OnboardingNavigationDelegate?
+    let onSuggestionPressed: (() -> Void)?
 
     public init(
         title: String,
         suggestedSitesProvider: OnboardingSuggestionsItemsProviding,
-        delegate: OnboardingNavigationDelegate? = nil
-) {
+        delegate: OnboardingNavigationDelegate? = nil,
+        onSuggestionPressed: (() -> Void)? = nil
+    ) {
         self.title = title
         self.suggestedSitesProvider = suggestedSitesProvider
         self.delegate = delegate
+        self.onSuggestionPressed = onSuggestionPressed
     }
 
     public let title: String
@@ -67,5 +82,6 @@ public struct OnboardingSiteSuggestionsViewModel {
     public func listItemPressed(_ item: ContextualOnboardingListItem) {
         guard let url = URL(string: item.title) else { return }
         delegate?.navigateFromOnboarding(to: url)
+        onSuggestionPressed?()
     }
 }

@@ -24,6 +24,8 @@ import Combine
     @objc @MainActor optional func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool)
     @objc @MainActor optional func mouseOverView(_ mouseOverView: MouseOverView, mouseMovedWith: NSEvent)
 
+    @objc @MainActor optional func mouseOverView(_ mouseOverView: MouseOverView, acceptsFirstMouseFor event: NSEvent?) -> Bool
+
     @objc @MainActor optional func mouseClickView(_ mouseClickView: MouseClickView, mouseDownEvent: NSEvent)
     @objc @MainActor optional func mouseClickView(_ mouseClickView: MouseClickView, mouseUpEvent: NSEvent)
     @objc @MainActor optional func mouseClickView(_ mouseClickView: MouseClickView, rightMouseDownEvent: NSEvent)
@@ -113,6 +115,10 @@ internal class MouseOverView: NSControl, Hoverable {
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard !clickThrough else { return nil }
         return super.hitTest(point)
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        delegate?.mouseOverView?(self, acceptsFirstMouseFor: event) ?? super.acceptsFirstMouse(for: event)
     }
 
     func backgroundLayer(createIfNeeded: Bool) -> CALayer? {

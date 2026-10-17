@@ -196,6 +196,29 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         }
     }
 
+    func testWhenDeleteFilesByChatIdThenOnlyThatChatsFilesAreRemoved() throws {
+        let uuidChat1A = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+        let uuidChat1B = "B2C3D4E5-F6A7-8901-BCDE-F12345678901"
+        let uuidChat2 = "C3D4E5F6-A7B8-9012-CDEF-123456789012"
+
+        try sut.putFile(uuid: uuidChat1A, chatId: "chat-1", data: Data("a".utf8))
+        try sut.putFile(uuid: uuidChat1B, chatId: "chat-1", data: Data("b".utf8))
+        try sut.putFile(uuid: uuidChat2, chatId: "chat-2", data: Data("c".utf8))
+
+        try sut.deleteFiles(chatId: "chat-1")
+
+        let remaining = try sut.listFiles()
+        XCTAssertEqual(remaining.map { $0.uuid }, [uuidChat2])
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: filesDirectory.appendingPathComponent(uuidChat1A).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: filesDirectory.appendingPathComponent(uuidChat1B).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: filesDirectory.appendingPathComponent(uuidChat2).path))
+    }
+
+    func testWhenDeleteFilesForChatWithNoFilesThenNoError() throws {
+        XCTAssertNoThrow(try sut.deleteFiles(chatId: "non-existent"))
+    }
+
     func testWhenFileEncryptedWithDifferentKeyThenGetFileThrowsFileReadError() throws {
         let uuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
         let data = Data("secret".utf8)

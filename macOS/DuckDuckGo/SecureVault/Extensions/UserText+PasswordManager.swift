@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 extension UserText {
 
@@ -37,6 +38,9 @@ extension UserText {
     static let pmEmptyStateCardsDefaultDescription = NSLocalizedString("pm.empty.default.cards.description.extended.v2",
                                                                   value: "Credit cards are stored securely on your device.",
                                                                   comment: "Label for empty state description when user has no credit cards saved")
+    static let pmEmptyStateIdentitiesDefaultDescription = NSLocalizedString("pm.empty.default.identities.description.extended.v2",
+                                                                            value: "Identities are stored securely on your device.",
+                                                                            comment: "Label for empty state description when the user has no identities saved")
     static let pmEmptyStateDefaultDescription = NSLocalizedString("pm.empty.default.description.extended.v2",
                                                                   value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.",
                                                                   comment: "Label for default empty state description")

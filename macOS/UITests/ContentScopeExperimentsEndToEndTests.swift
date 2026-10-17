@@ -20,8 +20,24 @@ import XCTest
 
 final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
+    private var didSetCustomConfiguration = false
+
+    override func tearDownWithError() throws {
+        if didSetCustomConfiguration, let app {
+            app.debugMenu.click()
+            app.debugMenu.menuItems["Remote Configuration"].click()
+            app.debugMenu.menuItems["Reset configuration to default"].firstMatch.click()
+
+            let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
+            XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.navigation), "Default configuration was not restored")
+            app.typeKey(.return, modifierFlags: [])
+        }
+
+        try super.tearDownWithError()
+    }
+
     func testContentScopeExperiments() throws {
-        let app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp()
         app.openNewTab()
 
         // Step 1: Enable internal user if needed
@@ -50,6 +66,7 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         XCTAssertTrue(textField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
         textField.typeURL(configURL, pressingEnter: false)
         app.typeKey(.return, modifierFlags: [])
+        didSetCustomConfiguration = true
         let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
         XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
         app.typeKey(.return, modifierFlags: [])
@@ -67,10 +84,9 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         )
 
         // Step 4: Check test passes
-        let suiteStatusLabel = app.staticTexts["Test suite status: "]
-        let suiteStatusValue = app.staticTexts["pass"]
-        XCTAssertTrue(suiteStatusLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Label not found")
-        XCTAssertTrue(suiteStatusValue.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Value not pass")
+        let webView = app.windows.firstMatch.webViews["Conditional Matching experiments"]
+        let suiteStatusValue = webView.descendants(matching: .any)["pass"]
+        XCTAssertTrue(suiteStatusValue.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test suite status should be pass")
     }
 
 }

@@ -16,15 +16,17 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import PixelKit
-import LoginItems
-import Common
+import Foundation
+import FoundationExtensions
 import Freemium
+import LoginItems
 import NetworkProtectionIPC
+import PixelKit
 import Subscription
 
 public final class DataBrokerProtectionManager {
@@ -101,7 +103,8 @@ public final class DataBrokerProtectionManager {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: settings,
-                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: settings,
                                                     vault: vault,

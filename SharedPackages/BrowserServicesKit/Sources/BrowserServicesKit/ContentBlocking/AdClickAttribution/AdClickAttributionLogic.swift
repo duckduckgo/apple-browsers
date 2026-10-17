@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import ContentBlocking
 import os.log
 import PrivacyConfig

@@ -29,7 +29,7 @@ struct URLDragPreviewProvider {
     let textColor: NSColor
     let width: CGFloat?
 
-    init(text: String, favicon: NSImage?, backgroundColor: NSColor = .blackWhite5, textColor: NSColor = .textColor, width: CGFloat? = nil) {
+    init(text: String, favicon: NSImage?, backgroundColor: NSColor = NSColor(resource: .blackWhite5), textColor: NSColor = .textColor, width: CGFloat? = nil) {
         self.text = text
         self.favicon = favicon
         self.backgroundColor = backgroundColor
@@ -37,7 +37,7 @@ struct URLDragPreviewProvider {
         self.width = width
     }
 
-    init(url: URL, favicon: NSImage?, backgroundColor: NSColor = .blackWhite5, textColor: NSColor = .textColor, width: CGFloat? = nil) {
+    init(url: URL, favicon: NSImage?, backgroundColor: NSColor = NSColor(resource: .blackWhite5), textColor: NSColor = .textColor, width: CGFloat? = nil) {
         self.text = url.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
         self.favicon = favicon
         self.backgroundColor = backgroundColor
@@ -120,7 +120,7 @@ extension NSDraggingSession {
 
 @available(macOS 14.0, *)
 #Preview("Preview with favicon") {
-    URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon).createPreview()
+    URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: NSImage(resource: .homeFavicon)).createPreview()
 }
 @available(macOS 14.0, *)
 #Preview("Preview without favicon") {
@@ -128,5 +128,5 @@ extension NSDraggingSession {
 }
 @available(macOS 14.0, *)
 #Preview("Preview with text") {
-    URLDragPreviewProvider(text: "DuckDuckGo", favicon: .homeFavicon).createPreview()
+    URLDragPreviewProvider(text: "DuckDuckGo", favicon: NSImage(resource: .homeFavicon)).createPreview()
 }

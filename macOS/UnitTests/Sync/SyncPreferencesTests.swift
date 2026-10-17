@@ -19,10 +19,10 @@
 import Bookmarks
 import BrowserServicesKit
 import Combine
-import FeatureFlags
-import Persistence
+import FeatureFlags_macOS
+@_spi(Testing) import Persistence
 import XCTest
-import PersistenceTestingUtils
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 @testable import DDGSync
@@ -65,6 +65,10 @@ class MockSyncFeatureFlagger: FeatureFlagger {
         return cohort
     }
 
+    func assignedCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return cohort
+    }
+
     var allActiveExperiments: Experiments = [:]
 }
 
@@ -82,9 +86,10 @@ final class SyncPreferencesTests: XCTestCase {
     var syncPreferences: SyncPreferences!
     var pausedStateManager: MockSyncPausedStateManaging!
     var connectionController: MockSyncConnectionControlling!
+    var pixelKitMock: PixelKitMock!
     var featureFlagger: MockSyncFeatureFlagger!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
-    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!
+    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!.defaultCredentialRecoveryKey()
     var cancellables: Set<AnyCancellable>!
 
     var bookmarksDatabase: CoreDataDatabase!
@@ -107,6 +112,7 @@ final class SyncPreferencesTests: XCTestCase {
         featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
         connectionController = MockSyncConnectionControlling()
+        pixelKitMock = PixelKitMock()
 
         syncPreferences = SyncPreferences(
             syncService: ddgSyncing,
@@ -121,7 +127,8 @@ final class SyncPreferencesTests: XCTestCase {
                 guard let self else { return MockSyncConnectionControlling() }
                 return connectionController
             },
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelKitMock
         )
     }
 
@@ -135,11 +142,15 @@ final class SyncPreferencesTests: XCTestCase {
         appearancePreferences = nil
         connectionController = nil
         featureFlagger = nil
+        pixelKitMock = nil
         scheduler = nil
         syncBookmarksAdapter = nil
         syncCredentialsAdapter = nil
         syncCreditCardsAdapter = nil
         syncIdentitiesAdapter = nil
+
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsEligibleForFaviconsFetcherOnboarding.rawValue)
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsFaviconsFetcherEnabled.rawValue)
     }
 
     private func setUpDatabase() {
@@ -434,6 +445,40 @@ final class SyncPreferencesTests: XCTestCase {
         appearancePreferences.favoritesDisplayMode = .displayUnified(native: .desktop)
 
         await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    @MainActor
+    func testSettingsScreenDidAppear_whenSyncDisabled_firesOpenPixelWithSyncNotEnabled() {
+        ddgSyncing.account = nil
+
+        syncPreferences.settingsScreenDidAppear()
+
+        let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "sync_settings_open_mac" }
+        XCTAssertEqual(fireCall?.pixel.parameters?["is_enabled"], "0")
+    }
+
+    @MainActor
+    func testSettingsScreenDidAppear_whenSyncEnabled_firesOpenPixelWithSyncEnabled() {
+        ddgSyncing.account = .mock
+
+        syncPreferences.settingsScreenDidAppear()
+
+        let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "sync_settings_open_mac" }
+        XCTAssertEqual(fireCall?.pixel.parameters?["is_enabled"], "1")
+    }
+
+    // MARK: - RegisteredDevice → SyncDevice.Kind
+
+    func testWhenMappingRegisteredDeviceThenKindFollowsTypeAndCredential() {
+        XCTAssertEqual(SyncDevice(RegisteredDevice(id: "1", name: "Mac", type: "desktop")).kind, .desktop)
+        XCTAssertEqual(SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "mobile")).kind, .mobile)
+        XCTAssertEqual(SyncDevice(RegisteredDevice(id: "3", name: "Unknown", type: "unknown")).kind, .unknown)
+    }
+
+    func testWhenMappingUndecryptableThirdPartyDeviceThenThirdPartyKindWins() {
+        let device = RegisteredDevice(id: "4", name: "Browser", type: "unknown", credentialId: SyncCredentialID.thirdParty)
+
+        XCTAssertEqual(SyncDevice(device).kind, .thirdParty)
     }
 
 }

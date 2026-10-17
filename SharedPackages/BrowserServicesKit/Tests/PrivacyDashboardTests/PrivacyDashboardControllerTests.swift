@@ -50,16 +50,36 @@ final class PrivacyDashboardControllerTests: XCTestCase {
         let entryPoints: [PrivacyDashboardEntryPoint] = [
             .dashboard,
             .report,
+            .errorPage,
+            .webKitTerminationErrorPage,
             .toggleReport(completionHandler: { _ in })
         ]
         for entryPoint in entryPoints {
             makePrivacyDashboardController(entryPoint: entryPoint)
             let currentURL = privacyDashboardController.webView!.url
             XCTAssertEqual(currentURL?.getParameter(named: "screen"), entryPoint.screen.rawValue)
-            if case .toggleReport = entryPoint {
+            switch entryPoint {
+            case .toggleReport, .report, .errorPage, .webKitTerminationErrorPage:
                 XCTAssertEqual(currentURL?.getParameter(named: "opener"), "menu")
+            case .dashboard, .prompt:
+                break
             }
         }
+    }
+
+    func testWhenEntryPointIsErrorPageThenReportSourceIsErrorPage() {
+        makePrivacyDashboardController(entryPoint: .errorPage)
+
+        XCTAssertEqual(privacyDashboardController.source.rawValue, "error_page")
+    }
+
+    func testWhenEntryPointIsWebKitTerminationErrorPageThenFinalReportFormUsesErrorPageSource() {
+        makePrivacyDashboardController(entryPoint: .webKitTerminationErrorPage)
+
+        XCTAssertEqual(privacyDashboardController.webView?.url?.getParameter(named: "screen"), "breakageFormFinalStep")
+        XCTAssertEqual(privacyDashboardController.webView?.url?.getParameter(named: "opener"), "menu")
+        XCTAssertNil(privacyDashboardController.webView?.url?.getParameter(named: "category"))
+        XCTAssertEqual(privacyDashboardController.source.rawValue, "error_page")
     }
 
     // MARK: - didChangeProtectionState

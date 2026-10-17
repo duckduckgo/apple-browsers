@@ -16,11 +16,22 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Foundation
 import HistoryView
-import Navigation
+import DDGNavigation
 import Subscription
+
+enum DataBrokerProtectionTabContext: Equatable {
+    case subscribed
+    case freemium(FreemiumDBPEntryPoint)
+
+    var freemiumEntryPoint: FreemiumDBPEntryPoint? {
+        guard case let .freemium(entryPoint) = self else { return nil }
+        return entryPoint
+    }
+}
 
 extension Tab {
 
@@ -32,12 +43,12 @@ extension Tab {
         case history(pane: HistoryPaneIdentifier?)
         case onboarding
         case none
-        case dataBrokerProtection
+        case dataBrokerProtection(DataBrokerProtectionTabContext)
         case subscription(URL)
         case identityTheftRestoration(URL)
         case releaseNotes
         case webExtensionUrl(URL)
-        case aiChat(URL)
+        case aiChat(URL, source: URLSource = .ui)
     }
     typealias TabContent = Tab.Content
 
@@ -60,6 +71,9 @@ extension TabContent {
         case bookmark(isFavorite: Bool)
         /// Used for URLs opened from internal browser UI (mostly for URLs like email protection, duck.ai, duckduckgo.com, etc.)
         case ui
+        /// `.ui` that also names where a Duck.ai load came from, for surfaces that don't stamp the chat
+        /// themselves. Loads exactly like `.ui`.
+        case attributedUI(AIChatConversationSource)
         /// Used for links opened from the web view
         case link
         /// Used for URLs opened from an external application
@@ -103,7 +117,7 @@ extension TabContent {
                 .custom(.historyEntry)
             case .bookmark:
                 .custom(.bookmark)
-            case .ui:
+            case .ui, .attributedUI:
                 .custom(.ui)
             case .link:
                 .custom(.link)
@@ -114,6 +128,19 @@ extension TabContent {
             }
         }
 
+        /// Opening a URL from these first switches to a tab already showing it.
+        var switchesToOpenTab: Bool {
+            switch self {
+            case .appOpenUrl, .switchToOpenTab:
+                true
+            case .attributedUI(.duckAILink):
+                // Duck.ai's own links opened as `.switchToOpenTab` before they were attributed.
+                true
+            default:
+                false
+            }
+        }
+
         /// URLRequest.CachePolicy that would be used to load this URLSource
         var cachePolicy: URLRequest.CachePolicy {
             switch self {
@@ -121,8 +148,21 @@ extension TabContent {
                 .returnCacheDataElseLoad
             case .reload, .loadedByStateRestoration:
                 .reloadIgnoringCacheData
-            case .userEntered, .bookmark, .ui, .link, .appOpenUrl, .webViewUpdated, .switchToOpenTab:
+            case .userEntered, .bookmark, .ui, .attributedUI, .link, .appOpenUrl, .webViewUpdated, .switchToOpenTab:
                 .useProtocolCachePolicy
+            }
+        }
+
+        /// Duck.ai keeps only the sources that tell how it was reached, so every other load of it
+        /// (restoration, reload, web view updates) still behaves as `.ui` did. It never downloads the page.
+        fileprivate var aiChatSource: Self {
+            switch self {
+            case .userEntered(let value, downloadRequested: _):
+                .userEntered(value)
+            case .bookmark, .historyEntry, .appOpenUrl, .link, .attributedUI:
+                self
+            case .pendingStateRestoration, .loadedByStateRestoration, .ui, .reload, .switchToOpenTab, .webViewUpdated:
+                .ui
             }
         }
 
@@ -142,7 +182,7 @@ extension TabContent {
         case URL.bookmarks, URL.Invalid.aboutBookmarks:
             return .bookmarks
         case URL.dataBrokerProtection:
-            return .dataBrokerProtection
+            return .dataBrokerProtection(.subscribed)
         case URL.releaseNotes:
             return .releaseNotes
         case URL.Invalid.aboutHome:
@@ -160,7 +200,7 @@ extension TabContent {
                 return .webExtensionUrl(url)
             }
             if url.isDuckAIURL {
-                return .aiChat(url)
+                return .aiChat(url, source: source.aiChatSource)
             }
 
             let subscriptionManager = Application.appDelegate.subscriptionManager
@@ -288,7 +328,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url):
+        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url, source: _):
             return url
         case .newtab:
             return .newtab
@@ -315,12 +355,28 @@ extension TabContent {
 
     var source: URLSource {
         switch self {
-        case .url(_, _, source: let source):
+        case .url(_, _, source: let source), .aiChat(_, source: let source):
             return source
         case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .dataBrokerProtection,
-                .subscription, .identityTheftRestoration, .webExtensionUrl, .none, .aiChat:
+                .subscription, .identityTheftRestoration, .webExtensionUrl, .none:
             return .ui
         }
+    }
+
+    /// URLRequest.CachePolicy for loading this content. Duck.ai always loads as `.ui` does, so a
+    /// history-entry open doesn't prefer stale cached data.
+    var cachePolicy: URLRequest.CachePolicy {
+        if case .aiChat = self {
+            return URLSource.ui.cachePolicy
+        }
+        return source.cachePolicy
+    }
+
+    /// Duck.ai content without the source of the navigation that opened it, for copies that load it
+    /// again later and must not count as that navigation.
+    var resettingAIChatSource: Self {
+        guard case .aiChat(let url, source: _) = self else { return self }
+        return .aiChat(url)
     }
 
     var isExternalUrl: Bool {
@@ -347,6 +403,10 @@ extension TabContent {
 
     var isHistory: Bool {
         if case .history = self { true } else { false }
+    }
+
+    var isDataBrokerProtection: Bool {
+        if case .dataBrokerProtection = self { true } else { false }
     }
 
     var isUserRequestedPageDownload: Bool {

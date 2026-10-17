@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Cocoa
 import Combine
 import Common
@@ -24,11 +26,13 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import WideEvent
+import PrivacyConfig
 import Networking
 import Subscription
 import os.log
 import Configuration
-import FeatureFlags
+import FeatureFlags_macOS
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
@@ -36,11 +40,20 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
+        let channel: String? = {
+            guard let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration)) else {
+                return nil
+            }
+            let internalUserDecider = DefaultInternalUserDecider(store: appConfigDefaults)
+            return StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
+        }()
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "dbpBackgroundAgent",
+                       session: "dbp-agent",
+                       channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in
 
@@ -50,7 +63,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
             let request = APIRequest(configuration: configuration)
 
             request.fetch { _, error in
-                onComplete(true, error)
+                onComplete(error == nil, error)
             }
         }
 
@@ -125,7 +138,8 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
             vpnBypassService: VPNBypassService(),
-            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
+            resourceMonitor: dbpFeatureFlagger.isPerformanceMetricsOn ? ResourceMonitor() : nil,
+            applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         )
         manager?.agentFinishedLaunching()
 

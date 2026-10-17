@@ -39,7 +39,7 @@ private enum Constants {
     static let actionButtonsTopPadding: CGFloat = 12
     static let topPadding: CGFloat = 28
     static let horizontalPadding: CGFloat = 16
-    static let bottomPadding: CGFloat = 24
+    static let bottomPadding: CGFloat = 20
     static let sparkleSize: CGSize = CGSize(width: 250, height: 100)
     static let subscriptionSize: CGSize = CGSize(width: 256, height: 96)
     static let plusRowHorizontalSpacing: CGFloat = 12
@@ -88,11 +88,11 @@ struct VPNUpsellPopoverView: View {
 
     private var animatedHeader: some View {
         ZStack {
-            LottieView(animation: .named("sparkleloop_wide"))
+            LottieView(animation: .named("upsell_devices_loop"))
                 .playing(loopMode: .loop)
                 .frame(width: Constants.sparkleSize.width, height: Constants.sparkleSize.height)
                 .clipped()
-            LottieView(animation: .named("privacypro_devices"))
+            LottieView(animation: .named("upsell_devices_reveal"))
                 .playing(loopMode: .playOnce)
                 .frame(width: Constants.subscriptionSize.width, height: Constants.subscriptionSize.height)
                 .clipped()
@@ -117,7 +117,7 @@ struct VPNUpsellPopoverView: View {
     private var features: some View {
         VStack(spacing: Constants.featuresVerticalSpacing) {
             ForEach(viewModel.featureSet.core, id: \.title) { feature in
-                FeatureRow(text: feature.title, subtitle: feature.subtitle)
+                FeatureRow(text: feature.title)
             }
             HStack(spacing: Constants.plusRowHorizontalSpacing) {
                 horizontalLine
@@ -129,20 +129,21 @@ struct VPNUpsellPopoverView: View {
             .padding(.vertical, Constants.plusRowVerticalSpacing)
 
             ForEach(viewModel.featureSet.plus, id: \.title) { feature in
-                FeatureRow(text: feature.title, subtitle: feature.subtitle)
+                FeatureRow(text: feature.title)
             }
         }
     }
 
     private var actionButtons: some View {
         HStack(spacing: Constants.actionButtonHorizontalSpacing) {
-            Button {
+            let dismissButton = Button {
                 viewModel.dismiss()
             } label: {
                 Text(UserText.vpnUpsellPopoverNoThanksButton)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(StandardButtonStyle())
+
+            dismissButton.buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: false, stateColors: .themedDismissButton))
 
             Button {
                 viewModel.showSubscriptionLandingPage()
@@ -150,7 +151,10 @@ struct VPNUpsellPopoverView: View {
                 Text(viewModel.featureSet.mainCTATitle.capitalized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true,
+                                                  shouldBeFixedVertical: false,
+                                                  stateColors: .themedActionButton,
+                                                  pillShape: true))
         }
         .frame(height: Constants.actionButtonHeight)
     }
@@ -169,11 +173,9 @@ struct VPNUpsellPopoverView: View {
 
 private struct FeatureRow: View {
     let text: String
-    let subtitle: String?
 
-    init(text: String, subtitle: String? = nil) {
+    init(text: String) {
         self.text = text
-        self.subtitle = subtitle
     }
 
     var body: some View {
@@ -184,19 +186,10 @@ private struct FeatureRow: View {
                 .frame(width: Constants.featureRowImageSize.width, height: Constants.featureRowImageSize.height)
                 .padding(.top, Constants.featureRowImageTopPadding)
 
-            VStack(alignment: .leading, spacing: Constants.featureRowSubtitleVerticalSpacing) {
-                Text(text)
-                    .font(.body)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+            Text(text)
+                .font(.body)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -70,7 +70,6 @@ open class DefaultContentBlockerRulesListsSource: ContentBlockerRulesListsSource
 
     public struct Constants {
         public static let trackerDataSetRulesListName = "TrackerDataSet"
-        public static let clickToLoadRulesListName = "ClickToLoad"
     }
 
     private let trackerDataManager: TrackerDataManager

@@ -20,6 +20,11 @@
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
 public enum SingleUseColor {
+
+    // Fire View
+    case fireModeAccent
+
+#if os(iOS)
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -27,20 +32,35 @@ public enum SingleUseColor {
     /// Color used for separator line between text input and content
     case inputContentSeparator
 
+    /// Resting background fill for the floating address bar field (composites over the toolbar's Liquid Glass capsule)
+    case floatingAddressBarBackground
+
+    /// Flat fill for the address field embedded in the bottom floating chrome (no glass highlights).
+    case floatingEmbeddedAddressBarBackground
+
     /// Color used for what's New background
     case whatsNewBackground
 
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
 
+    /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
+    case duckAIWebViewBackground
+
     /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
     case unifiedToggleInputCardBackground
+    case unifiedToggleInputAttachmentErrorBannerBackground
+    case unifiedToggleInputAttachmentErrorText
+    case unifiedToggleInputAttachmentErrorIcon
+
+    /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
+    case unifiedToggleInputStopButtonBackground
 
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
 
-    /// Color used for 2026 Rebranding. Currently used only in Onboarding, hence they're isolated to avoid bleeding in other parts of the App.
-    /// DefaultColorPalette should be updated with new colors when the time comes.
+    /// Colors introduced for the 2026 rebrand. Some have the same value as a `DesignSystemColor` (e.g. `accentPrimary`,
+    /// `destructivePrimary`) – for new code, prefer using the `DesignSystemColor` instead.
     case rebranding(Rebranding)
 
     /// On iOS 26 toolbar buttons get some effect applied to them which affects the lightness of the color.  This is temporary
@@ -48,11 +68,55 @@ public enum SingleUseColor {
     case toolbarButton
 
     // Fire Mode
-    case fireModeAccent
     case fireModeAccentDark
     case fireModeAccentTertiary
     case fireModeBackground
+    case fireModeCardBackground
+
+    /// Fire Mode address bar field fill (Figma: Unified-Input-Fire/Field)
+    case fireModeFieldBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
+
+    /// Native voice-mode chrome (header + status strip) background, matching the web voice background.
+    case duckAIVoiceModeBackground
+
+    /// Fill over the frosted module background on the redesigned New Tab Page, tinted toward its pond background image.
+    case newTabPageModuleTint
+
+    /// Search input card on the redesigned New Tab Page; navy in dark mode to match its pond background image.
+    case newTabPageSearchCardBackground
+
+    /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline
+    case confettiMandarinFill
+    case confettiMandarinStroke
+    case confettiPondwaterFill
+    case confettiPondwaterStroke
+    case confettiLilypadFill
+    case confettiLilypadStroke
+    case confettiBlossomFill
+    case confettiBlossomStroke
+    case confettiPollenFill
+    case confettiPollenStroke
+
+#elseif os(macOS)
+
+    case fireButtonGradientStart
+    case fireButtonGradientEnd
+    case fireButtonPressedGradientStart
+    case fireButtonPressedGradientEnd
+    case fireDialogKnobFill
+    case fireDialogTabBackground
+    case fireDialogTabBackgroundSelected
+    case fireDialogTabShadowPrimary
+    case fireDialogTabShadowSecondary
+
+#endif
+
 }
+
+#if os(iOS)
 
 // MARK: - Onboarding Rebranding 2026
 
@@ -64,27 +128,38 @@ public extension SingleUseColor {
         case textLink
 
         case accentPrimary
-
-        case accentAltPrimary
-        case accentAltGlowPrimary
+        case accentPrimaryPressed
+        case accentPrimaryText
+        case accentGlowPrimary
 
         case backdrop
-
-        case surfaceTertiary
 
         case buttonsPrimaryDefault
         case buttonsPrimaryPressed
         case buttonsPrimaryText
+        case buttonsContentDisabled
 
         case buttonsSecondaryDefault
         case buttonsSecondaryPressed
         case buttonsSecondaryText
-        case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
+        case buttonsSecondaryDisabledBackground
+        case buttonsSecondaryDisabledText
+
+        case destructivePrimary
+        case destructivePrimaryPressed
+        case destructivePrimaryText
+        case destructiveGlowPrimary
 
         case controlsFillPrimary
+        case controlBorderTertiary
 
         case decorationPrimary
         case decorationSecondary
+
+        case alertGreen
+        case calendarStripYellow
     }
 
 }
+
+#endif

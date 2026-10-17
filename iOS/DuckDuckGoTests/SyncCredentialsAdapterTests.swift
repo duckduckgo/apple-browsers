@@ -24,6 +24,7 @@ import DDGSync
 import SecureStorage
 import Core
 import Common
+import FoundationExtensions
 @testable import DuckDuckGo
 
 final class SyncCredentialsAdapterTests: XCTestCase {

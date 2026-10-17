@@ -19,9 +19,9 @@
 import Foundation
 import Combine
 import Common
-@testable import Networking
+import FoundationExtensions
+@_spi(Testing) @testable import Networking
 @testable import Subscription
-import NetworkingTestingUtils
 
 public final class SubscriptionManagerMock: SubscriptionManager {
 
@@ -50,13 +50,20 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         case .failure(let failure):
             throw failure
         case nil:
-            throw SubscriptionEndpointServiceError.noData
+            throw SubscriptionManagerError.noTokenAvailable
         }
     }
 
     private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
+    }
+
+    public var hasResolvedAppStoreProducts = true {
+        didSet {
+            guard hasResolvedAppStoreProducts != oldValue else { return }
+            hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
+        }
     }
 
     public var hasAppStoreProductsAvailable: Bool = true {
@@ -88,13 +95,22 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     public var customerPortalURL: URL?
     public func getCustomerPortalURL() async throws -> URL {
         guard let customerPortalURL else {
-            throw SubscriptionEndpointServiceError.noData
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return customerPortalURL
     }
 
     public var isUserAuthenticated: Bool {
         resultTokenContainer != nil
+    }
+
+    public var localTokenStateResult: LocalSubscriptionTokenState?
+    public func localTokenState() -> LocalSubscriptionTokenState {
+        if let localTokenStateResult {
+            return localTokenStateResult
+        }
+
+        return resultTokenContainer == nil ? .missing : .present
     }
 
     public var userEmail: String? {
@@ -131,8 +147,15 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     }
 
+    public var ingestSubscriptionCalled: Bool = false
+    public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
+        ingestSubscriptionCalled = true
+        resultSubscription = .success(subscription)
+        return subscription
+    }
+
     public var confirmPurchaseResponse: Result<DuckDuckGoSubscription, Error>?
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
         switch confirmPurchaseResponse! {
         case .success(let result):
             return result
@@ -141,14 +164,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         }
     }
 
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
+    public func getSubscription(forceRefresh: Bool) async throws -> DuckDuckGoSubscription? {
         switch resultSubscription {
         case .success(let success):
             return success
         case .failure(let failure):
             throw failure
         case nil:
-            throw SubscriptionEndpointServiceError.noData
+            return nil
         }
     }
 
@@ -174,8 +197,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var resultFeatures: [SubscriptionEntitlement] = []
+    public var resultFeaturesError: Error?
+    public var currentSubscriptionFeaturesCallCount: Int = 0
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
-        resultFeatures
+        currentSubscriptionFeaturesCallCount += 1
+        if let resultFeaturesError {
+            throw resultFeaturesError
+        }
+        return resultFeatures
     }
 
     public func isFeatureIncludedInSubscription(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
@@ -211,9 +240,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isSubscriptionPresent() -> Bool {
         switch resultSubscription {
-        case .success(let success):
+        case .success:
             return true
-        case .failure(let failure):
+        case .failure:
             return false
         case nil:
             return false

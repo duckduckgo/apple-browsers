@@ -39,13 +39,13 @@ public struct DataBrokerMacOSSchedulingConfig {
     public var activitySchedulerIntervalTolerance: TimeInterval {
         switch mode {
         case .normal:
-            return 30 * 60 // 30 minutes
+            return 15 * 60 // 15 minutes
         case .fastForIntegrationTests:
             return 30 // 0.5 minutes
         }
     }
 
-    public let activitySchedulerQOS: QualityOfService = .userInitiated
+    public let activitySchedulerQOS: QualityOfService = .utility
 
     public init(mode: DataBrokerMacOSSchedulingConfigMode) {
         self.mode = mode

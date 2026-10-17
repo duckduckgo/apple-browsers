@@ -1,0 +1,126 @@
+//
+//  OAuthServiceError.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import DDGError
+import Common
+import FoundationExtensions
+
+public enum OAuthServiceError: DDGError {
+    case authAPIError(OAuthRequestError)
+    case apiServiceError(Error)
+    case invalidRequest
+    case invalidResponseCode(HTTPStatusCode)
+    case missingResponseValue(OAuthMissingResponseValue)
+
+    public var description: String {
+        switch self {
+        case .authAPIError(let apiError):
+            "Auth API responded with error \(apiError.description)"
+        case .apiServiceError(let error):
+            "API service error - \(String(describing: error))"
+        case .invalidRequest:
+            "Failed to generate the API request"
+        case .invalidResponseCode(let code):
+            "Invalid API request response code: \(code.rawValue) - \(code.description)"
+        case .missingResponseValue(let value):
+            "The API response is missing \(value.description)"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.networking.OAuthServiceError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .authAPIError:
+            return 11200
+        case .apiServiceError:
+            return 11201
+        case .invalidRequest:
+            return 11202
+        case .invalidResponseCode:
+            return 11203
+        case .missingResponseValue:
+            return 11204
+        }
+    }
+
+    public var underlyingError: Error? {
+        switch self {
+        case .authAPIError(let apiError):
+            return apiError
+        case .apiServiceError(let error):
+            return error
+        case .invalidResponseCode(let httpStatusCode):
+            return NSError(domain: "com.duckduckgo.networking.HTTPStatusCode", code: httpStatusCode.rawValue)
+        case .missingResponseValue(let value):
+            return value
+        case .invalidRequest:
+            return nil
+        }
+    }
+
+    public static func == (lhs: OAuthServiceError, rhs: OAuthServiceError) -> Bool {
+        switch (lhs, rhs) {
+        case (.authAPIError(let lhsCode), .authAPIError(let rhsCode)):
+            return lhsCode == rhsCode
+        case (.apiServiceError(let lhsError), .apiServiceError(let rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        case (.invalidRequest, .invalidRequest):
+            return true
+        case (.invalidResponseCode(let lhsCode), .invalidResponseCode(let rhsCode)):
+            return lhsCode == rhsCode
+        case (.missingResponseValue(let lhsValue), .missingResponseValue(let rhsValue)):
+            return lhsValue == rhsValue
+        default:
+            return false
+        }
+    }
+}
+
+/// The values the Auth API response can be missing, reported as the underlying error of `OAuthServiceError.missingResponseValue`
+/// so the specific missing value is identifiable from the error code in pixels.
+public enum OAuthMissingResponseValue: Int, DDGError, CaseIterable {
+    case locationHeader = 11210
+    case bodyError = 11211
+    case authSessionIDCookie = 11212
+    case authorizationCodeInRedirectURI = 11213
+    case authCodeInLoginRedirect = 11214
+    case logoutStatus = 11215
+
+    public var description: String {
+        switch self {
+        case .locationHeader:
+            "Location header"
+        case .bodyError:
+            "Body error"
+        case .authSessionIDCookie:
+            "ddg_auth_session_id cookie"
+        case .authorizationCodeInRedirectURI:
+            "Authorization Code in redirect URI"
+        case .authCodeInLoginRedirect:
+            "Auth code"
+        case .logoutStatus:
+            "LogoutResponse.status"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.networking.OAuthMissingResponseValue" }
+
+    public var errorCode: Int { rawValue }
+}

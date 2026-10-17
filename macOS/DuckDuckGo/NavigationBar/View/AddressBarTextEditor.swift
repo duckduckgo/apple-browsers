@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import QuickLookUI
 
@@ -32,7 +33,6 @@ final class AddressBarTextEditor: NSTextView {
         return addressBar
     }
 
-    @available(macOS 12.0, *)
     override var textLayoutManager: NSTextLayoutManager? {
         // uses NSTextLayoutManager by default in macOS 13, ignored in macOS 12
         if let textLayoutManager = super.textLayoutManager,
@@ -551,7 +551,7 @@ final class AddressBarTextEditor: NSTextView {
             favicon = tabFavicon
         } else {
             // fallback to the "globe" favicon
-            favicon = .web
+            favicon = NSImage(resource: .web)
         }
         session.setPreviewProvider(URLDragPreviewProvider(url: draggedUrl, favicon: favicon))
 

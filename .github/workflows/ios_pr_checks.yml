@@ -10,15 +10,11 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - '.github/**'
-      - '.xcode-version'
-      - 'SharedPackages/**'
-      - 'iOS/**'
   schedule:
     - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
@@ -46,6 +42,10 @@ on:
         required: true
       APPLE_GH_RO_PAT:
         required: true
+      BITRISE_BUILD_CACHE_AUTH_TOKEN:
+        required: true
+      BITRISE_BUILD_CACHE_WORKSPACE_ID:
+        required: true
       MATCH_PASSWORD:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
@@ -61,6 +61,13 @@ jobs:
   should-run-checks:
     name: Determine if checks should run
     uses: ./.github/workflows/should_run_pr_checks.yml
+    with:
+      paths: |
+        .github/**
+        .xcode-version
+        SharedPackages/**
+        iOS/**
+        scripts/translation-pr-checks/**
 
   shellcheck:
 
@@ -97,11 +104,11 @@ jobs:
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-27, general-purpose]
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
-      RUNS_ON: macos-26 # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
@@ -111,7 +118,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -127,6 +134,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration-tests
@@ -146,7 +156,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
@@ -157,38 +167,74 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests
         restore-keys: |
           xcode-compilation-cache-ios-unit-tests-
 
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.4"
+        preferred-versions: "27.0"
+
+    - name: Record simulator runtime diagnostics
+      continue-on-error: true
+      run: |
+        xcode-select -p
+        for xcode_app in /Applications/Xcode*.app; do
+          [ -d "$xcode_app" ] || continue
+          echo "Installed Xcode: $xcode_app"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$xcode_app/Contents/version.plist" || true
+          /usr/libexec/PlistBuddy -c 'Print :ProductBuildVersion' "$xcode_app/Contents/version.plist" || true
+        done
+        xcodebuild -version
+        xcrun --sdk iphonesimulator --show-sdk-build-version
+        xcrun simctl runtime list
+        xcrun simctl runtime match list
 
     - name: Build and test
       id: run-unit-tests
+      env:
+        # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
+        # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
+        # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
+        SPM_FORCE_DEBUG: "1"
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
+        # Avoid Xcode's verbose simulator collection for runtime warnings in passing tests.
+        # Keep the console log, result bundle, and crash reports for failed runs.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/iOS-UnitTests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
+          -collect-test-diagnostics never \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -199,23 +245,34 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
+    - name: Process test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: iOS
+        junit-path: unittests.xml
+        log-path: xcodebuild.log
+        title: iOS PR Checks
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
     - name: Upload JUnit XML as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: ios-unittests.xml
         path: |
           iOS/unittests.xml
+          iOS/unittests-crash-details.json
         retention-days: 7
 
     - name: Upload logs if workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: BuildLogs
@@ -224,10 +281,33 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+    - name: Report snapshot failures
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: iOS
+        xcresult: DerivedData/Logs/Test/iOS-UnitTests.xcresult
+        report-name: ios-snapshot-failures.html
+        title: iOS Snapshot Failures
+
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
+      with:
+        name: ios-pr-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.ips
+          ~/Library/Logs/DiagnosticReports/*.crash
+        if-no-files-found: ignore
+        retention-days: 7
+
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v3
+      uses: mikepenz/action-junit-report@v6
+      if: always()
       with:
         report_paths: iOS/unittests.xml
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && steps.run-unit-tests.outcome == 'failure'
@@ -277,11 +357,11 @@ jobs:
       inputs.skip-release != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-27, general-purpose]
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
-      RUNS_ON: macos-26 # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
 
     outputs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
@@ -289,7 +369,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -304,6 +384,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration-release-build
@@ -322,7 +405,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-release-${{ env.cache_key_hash }}
@@ -333,18 +416,26 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-release
         restore-keys: |
           xcode-compilation-cache-ios-release-
 
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.4"
+        preferred-versions: "27.0"
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -372,10 +463,11 @@ jobs:
         -skipPackagePluginValidation \
         -skipMacroValidation \
         COMPILATION_CACHE_ENABLE_CACHING=YES \
+        OTHER_CODE_SIGN_FLAGS=--timestamp=none \
         | xcbeautify
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -386,8 +478,8 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-release-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -436,7 +528,7 @@ jobs:
           fetch-depth: 0 # Allows scripts to diff against the base branch
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -462,6 +554,36 @@ jobs:
 
       - name: Check translations
         run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform iOS
+
+      - name: Check markdown markers
+        id: marker-check
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_marker_consistency.py --platform iOS 2>&1) || marker_failed=1
+          echo "$output"
+          if [ "${marker_failed:-0}" = "1" ]; then
+            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MARKER_MESSAGE: ${{ steps.marker-check.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Markdown Marker Mismatches\n\nBold marker (`**`) counts must match the English source. Fix the affected translations at the Smartling source.\n\n```\n%s\n```' "$MARKER_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
+
+      - name: Fail if marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        run: |
+          echo "Markdown marker mismatches detected (see PR comment and output above)."
+          exit 1
 
       - name: Check for orphaned translations
         id: orphaned-translations
@@ -527,3 +649,19 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+  # The only job required by branch protection for this workflow.
+  # It always runs and fails if any job it depends on failed or was cancelled, so skipped jobs pass
+  # and a failing should-run-checks blocks the merge instead of skipping the tests unnoticed.
+  pr-checks-result:
+    name: iOS PR Checks Result
+    needs: [should-run-checks, unit-tests, release-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether a required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        working-directory: .
+        run: |
+          echo "Required job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1

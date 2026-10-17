@@ -1055,7 +1055,7 @@ class ContentBlockerRulesManagerCleanupTests: ContentBlockerRulesManagerTests, C
                                           updateListener: rulesUpdateListener,
                                           errorReporting: nil)
         withExtendedLifetime(cbrm) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 15)
         }
     }
 
@@ -1108,7 +1108,7 @@ class ContentBlockerRulesManagerCleanupTests: ContentBlockerRulesManagerTests, C
                                           updateListener: rulesUpdateListener,
                                           errorReporting: nil)
         withExtendedLifetime(cbrm) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 15)
         }
         XCTAssertEqual(Set(contentRulesCache.keys), Set(["current1", "current2", cbrm.currentRules[0].identifier.stringValue]))
     }

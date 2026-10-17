@@ -27,9 +27,18 @@ import BrowserServicesKit
 struct WhatsNewDebugView: View {
     @StateObject private var viewModel: WhatsNewDebugViewModel
 
-    init(keyValueStore: ThrowingKeyValueStoring, remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
-        let store =  PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: .init(mapping: { _, _, _, _ in }))
-        self._viewModel = StateObject(wrappedValue: WhatsNewDebugViewModel(store: store, remoteMessagingDebugHandler: remoteMessagingDebugHandler))
+    init(
+        diagnosticsProvider: PromoCoordinationDiagnosticsProviding?,
+        cooldownResetter: PromoCoordinationCooldownResetting?,
+        remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil
+    ) {
+        self._viewModel = StateObject(
+            wrappedValue: WhatsNewDebugViewModel(
+                diagnosticsProvider: diagnosticsProvider,
+                cooldownResetter: cooldownResetter,
+                remoteMessagingDebugHandler: remoteMessagingDebugHandler
+            )
+        )
     }
 
     var body: some View {
@@ -59,8 +68,10 @@ struct WhatsNewDebugView: View {
     }
 }
 
+@MainActor
 private final class WhatsNewDebugViewModel: ObservableObject {
-    private let store: PromptCooldownStore
+    private let diagnosticsProvider: PromoCoordinationDiagnosticsProviding?
+    private let cooldownResetter: PromoCoordinationCooldownResetting?
     private let remoteMessagingDebugHandler: RemoteMessagingDebugHandling?
 
     private static let dateFormatter: DateFormatter = {
@@ -76,15 +87,20 @@ private final class WhatsNewDebugViewModel: ObservableObject {
     @Published private(set) var isCooldownPeriodActive: Bool = false
     @Published private(set) var formattedCooldownPeriod: String = ""
 
-    init(store: PromptCooldownStore, remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
-        self.store = store
+    init(
+        diagnosticsProvider: PromoCoordinationDiagnosticsProviding?,
+        cooldownResetter: PromoCoordinationCooldownResetting?,
+        remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil
+    ) {
+        self.diagnosticsProvider = diagnosticsProvider
+        self.cooldownResetter = cooldownResetter
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.database = Database.shared
         updateUI()
     }
 
     func resetCoolDownPeriod() {
-        store.lastPresentationTimestamp = nil
+        cooldownResetter?.resetModalCooldown()
         updateUI()
     }
 
@@ -105,20 +121,16 @@ private final class WhatsNewDebugViewModel: ObservableObject {
     }
 
     private func updateUI() {
-        isCooldownPeriodActive = isCooldownActive()
-        formattedCooldownPeriod = makeFormattedCooldownPeriod()
+        let lastAppearance = diagnosticsProvider?.diagnosticSnapshot.cooldown.lastConfirmedModalAppearance
+        isCooldownPeriodActive = lastAppearance != nil
+        formattedCooldownPeriod = makeFormattedCooldownPeriod(lastAppearance)
     }
 
-    private func isCooldownActive() -> Bool {
-        store.lastPresentationTimestamp != nil
-    }
-
-    private func makeFormattedCooldownPeriod() -> String {
-        guard let timestamp = store.lastPresentationTimestamp else {
+    private func makeFormattedCooldownPeriod(_ date: Date?) -> String {
+        guard let date else {
             return "No Prompt Cooldown active."
         }
 
-        let lastTimeStampDate = Date(timeIntervalSince1970: timestamp)
-        return "Modal Prompt shown \(Self.dateFormatter.string(from: lastTimeStampDate))."
+        return "Modal Prompt shown \(Self.dateFormatter.string(from: date))."
     }
 }

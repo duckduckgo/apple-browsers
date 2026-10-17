@@ -18,6 +18,7 @@
 
 import Clocks
 import Common
+import ConcurrencyExtensions
 import Foundation
 import Networking
 import XCTest

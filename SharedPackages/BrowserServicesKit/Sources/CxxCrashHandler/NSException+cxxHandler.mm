@@ -95,7 +95,11 @@ extern "C" terminate_handler SetCxxExceptionTerminateHandler(terminate_handler h
         name = tinfo->name();
         isObjCExc = isObjCException(tinfo);
     }
-    
+
+    // No active C++ exception: calling throw; here would invoke std::terminate again.
+    if (!tinfo) {
+        return nil;
+    }
     // ObjC exceptions are handled by NSUncaughtExceptionHandler.
     if (isObjCExc) {
         return nil;

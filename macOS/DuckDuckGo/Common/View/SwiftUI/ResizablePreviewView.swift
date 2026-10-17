@@ -20,7 +20,6 @@ import SwiftUI
 
 #if DEBUG
 
-@available(macOS 12.0, *)
 struct ResizablePreviewView<Content: View>: View {
 
     let maxSize: CGSize
@@ -80,7 +79,6 @@ struct ResizablePreviewView<Content: View>: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct ResizeHandle: View {
     var body: some View {
         Image(systemName: "arrow.up.left.and.arrow.down.right")

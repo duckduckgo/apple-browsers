@@ -24,7 +24,6 @@ import OSLog
 /// Parameters: (productId: String, changeType: String?) where changeType is "upgrade", "downgrade", or nil for new purchase
 public typealias SubscriptionSelectionHandler = (String, String?) async -> Void
 
-@available(macOS 12.0, *)
 public struct ProductionSubscriptionPurchaseDebugView: View {
     @StateObject private var viewModel: ProductionSubscriptionPurchaseViewModel
     let dismissAction: () -> Void
@@ -181,7 +180,6 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
     }
 }
 
-@available(macOS 12.0, *)
 public final class ProductionSubscriptionPurchaseViewController: NSViewController {
 
     private let subscriptionManager: SubscriptionManager
@@ -216,7 +214,6 @@ public final class ProductionSubscriptionPurchaseViewController: NSViewControlle
     }
 }
 
-@available(macOS 12.0, *)
 @MainActor
 final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var isLoading = false

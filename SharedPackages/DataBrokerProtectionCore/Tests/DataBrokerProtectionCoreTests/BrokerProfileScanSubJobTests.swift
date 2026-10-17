@@ -19,7 +19,7 @@
 import XCTest
 import BrowserServicesKit
 import Common
-import PixelKit
+@_spi(Testing) import WideEvent
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -49,10 +49,20 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         mockDependencies.pixelHandler = self.mockPixelHandler
 
         sut = BrokerProfileScanSubJob(dependencies: mockDependencies)
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
     }
 
     private func makeFixtureIdentifiers() -> BrokerProfileScanSubJob.ScanIdentifiers {
         .init(brokerId: 1, profileQueryId: 1)
+    }
+
+    private func firedFirstScanPixel() -> Bool {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains { pixel in
+            if case .firstScan = pixel {
+                return true
+            }
+            return false
+        }
     }
 
     private func makeFixtureBrokerProfileQueryData(broker: DataBroker = .mock,
@@ -183,8 +193,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
                                                  vpnConnectionState: "connected",
-                                                 vpnBypassStatus: "enabled",
-                                                 featureFlagger: MockDBPFeatureFlagger())
+                                                 vpnBypassStatus: "enabled")
 
         XCTAssertNotNil(context.eventPixels)
         XCTAssertNotNil(context.stageCalculator)
@@ -201,8 +210,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
                                                  vpnConnectionState: "connected",
-                                                 vpnBypassStatus: "enabled",
-                                                 featureFlagger: MockDBPFeatureFlagger())
+                                                 vpnBypassStatus: "enabled")
 
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
@@ -220,8 +228,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
                                                  vpnConnectionState: "connected",
-                                                 vpnBypassStatus: "enabled",
-                                                 featureFlagger: MockDBPFeatureFlagger())
+                                                 vpnBypassStatus: "enabled")
 
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
@@ -239,8 +246,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
                                                  vpnConnectionState: "connected",
-                                                 vpnBypassStatus: "enabled",
-                                                 featureFlagger: MockDBPFeatureFlagger())
+                                                 vpnBypassStatus: "enabled")
 
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
@@ -258,8 +264,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
                                                  vpnConnectionState: "connected",
-                                                 vpnBypassStatus: "enabled",
-                                                 featureFlagger: MockDBPFeatureFlagger())
+                                                 vpnBypassStatus: "enabled")
 
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
@@ -276,8 +281,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
 
         try sut.markScanStarted(brokerId: identifiers.brokerId,
                                 profileQueryId: identifiers.profileQueryId,
@@ -295,8 +299,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
 
         XCTAssertThrowsError(try sut.markScanStarted(brokerId: identifiers.brokerId,
@@ -320,8 +323,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
 
         let runner = sut.makeScanRunner(brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                         stageCalculator: calculator,
@@ -347,7 +349,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         runner.scanResults = [.mockWithoutRemovedDate]
 
         let profiles = try await sut.executeScan(runner: runner,
-                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                                  showWebView: true,
                                                  shouldRunNextStep: { true })
 
@@ -361,7 +362,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         do {
             _ = try await sut.executeScan(runner: runner,
-                                          brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                           showWebView: true,
                                           shouldRunNextStep: { true })
             XCTFail("Expected runner scan to throw")
@@ -376,7 +376,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         runner.scanResults = expectedProfiles
 
         let profiles = try await sut.executeScan(runner: runner,
-                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                                  showWebView: false,
                                                  shouldRunNextStep: { true })
 
@@ -396,8 +395,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate]
         var scheduleOptOutsCalled = false
 
@@ -427,8 +425,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate, ExtractedProfile.mockWithoutId]
 
         try sut.handleScanMatches(matches: matches,
@@ -453,8 +450,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      handler: mockPixelHandler,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate]
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
 
@@ -480,8 +476,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         var storeNoMatchesCalled = false
 
         try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
@@ -503,8 +498,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      parentURL: nil,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
 
         XCTAssertThrowsError(try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
                                                              profileQueryId: identifiers.profileQueryId,
@@ -566,6 +560,94 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertTrue(removedProfiles.isEmpty)
     }
 
+    // MARK: - markSavedProfilesAsRemovedAndNotifyUser
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileIsNewlyRemoved_firesTransitionPixels() throws {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: brokerData,
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
+        XCTAssertTrue(firedNames.contains("dbp_optout_process_success"))
+        XCTAssertTrue(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileAlreadyHasRemovedDate_doesNotFireTransitionPixels() throws {
+        // Maintenance-scan scenario: the profile was already confirmed removed on a prior scan
+        // (removedDate set) but the current scan still doesn't find it, so it re-enters the
+        // confirmation path with stored attempt info. The transition pixels must NOT re-fire.
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: brokerData,
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
+        XCTAssertFalse(firedNames.contains("dbp_optout_process_success"))
+        XCTAssertFalse(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_resolvesFoundDateBeforeStoringConfirmation() async throws {
+        let identifiers = makeFixtureIdentifiers()
+        let foundDate = Date().addingTimeInterval(-60)
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: identifiers.brokerId,
+                         profileQueryId: identifiers.profileQueryId,
+                         type: .matchesFound(count: 1),
+                         date: foundDate)
+        ]
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 1,
+                         brokerId: identifiers.brokerId,
+                         profileQueryId: identifiers.profileQueryId,
+                         type: .optOutRequested,
+                         date: foundDate.addingTimeInterval(10))
+        ]
+        let wideEvent = WideEventMock()
+        mockDependencies.wideEvent = wideEvent
+        let completionExpectation = expectation(description: "confirmation wide event completed")
+        wideEvent.onComplete = { data, status in
+            let confirmationData = data as? OptOutConfirmationWideEventData
+            XCTAssertEqual(status, .success)
+            XCTAssertEqual(confirmationData?.confirmationInterval?.start, foundDate)
+            XCTAssertNotNil(confirmationData?.confirmationInterval?.end)
+            XCTAssertGreaterThan(confirmationData?.confirmationInterval?.durationMilliseconds ?? 0, 0)
+            completionExpectation.fulfill()
+        }
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        await fulfillment(of: [completionExpectation], timeout: 15)
+    }
+
     // MARK: - handleRemovedProfiles
 
     func testHandleRemovedProfiles_callsMarkRemovedAndNotify() throws {
@@ -581,8 +663,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                       database: mockDatabase,
                                       pixelHandler: mockPixelHandler,
                                       eventsHandler: mockEventsHandler,
-                                      featureFlagger: MockDBPFeatureFlagger(),
-                                      markRemovedAndNotify: { _, _, _, _, _, _, _, _ in
+                                      markRemovedAndNotify: { _, _, _, _, _, _, _ in
             markRemovedCalled = true
         })
 
@@ -601,8 +682,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                            database: mockDatabase,
                                                            pixelHandler: mockPixelHandler,
                                                            eventsHandler: mockEventsHandler,
-                                                           featureFlagger: MockDBPFeatureFlagger(),
-                                                           markRemovedAndNotify: { _, _, _, _, _, _, _, _ in
+                                                           markRemovedAndNotify: { _, _, _, _, _, _, _ in
             throw MockDatabase.MockError.saveFailed
         })) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
@@ -684,8 +764,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      handler: mockPixelHandler,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.unknown("test error")
         var handleErrorCalled = false
 
@@ -713,8 +792,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      handler: mockPixelHandler,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.unknown("test error")
         var capturedOrigin: OperationPreferredDateUpdaterOrigin?
 
@@ -741,8 +819,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      handler: mockPixelHandler,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.unknown("test error")
         var capturedExtractedProfileId: Int64? = Int64(999) // Start with non-nil to prove it gets set to nil
 
@@ -769,8 +846,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      handler: mockPixelHandler,
                                                                      isFreeScan: false,
                                                                      vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status",
-                                                                     featureFlagger: MockDBPFeatureFlagger())
+                                                                     vpnBypassStatus: "status")
         let testError = DataBrokerProtectionError.actionFailed(actionID: "test", message: "test message")
 
         let returnedError = sut.handleScanFailure(error: testError,
@@ -1197,6 +1273,119 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
     }
 
+    func testWhenScannedProfileIsAlreadyInTheDatabase_thenTheStoredProfileIsRefreshedFromTheScrape() async {
+        do {
+            let storedProfile = ExtractedProfile(id: 1,
+                                                 name: "Some name",
+                                                 addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["street": "100 Sample Dr"])],
+                                                 profileUrl: "someURL",
+                                                 identifier: "someURL",
+                                                 extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some name",
+                                                  addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["zip": "62701"])],
+                                                  profileUrl: "someURL",
+                                                  identifier: "someURL")
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertEqual(mockDatabase.updatedExtractedProfiles.count, 1)
+            let update = try XCTUnwrap(mockDatabase.updatedExtractedProfiles.first)
+            XCTAssertEqual(update.id, 1)
+            XCTAssertEqual(update.profile.extras, ["county": "Sangamon"])
+            XCTAssertEqual(update.profile.addresses?.first?.extras, ["street": "100 Sample Dr", "zip": "62701"])
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenExtractedProfileRefreshIsOff_thenTheStoredProfileIsNotRefreshed() async {
+        do {
+            mockDependencies.featureFlagger = MockDBPFeatureFlagger(isExtractedProfileRefreshOn: false)
+            let storedProfile = ExtractedProfile(id: 1,
+                                                 name: "Some name",
+                                                 profileUrl: "someURL",
+                                                 identifier: "someURL",
+                                                 extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some name",
+                                                  profileUrl: "someURL",
+                                                  identifier: "someURL",
+                                                  extras: ["zip": "62701"])
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenScannedProfileIsNotYetInTheDatabase_thenNoStoredProfileIsRefreshed() async {
+        do {
+            mockScanRunner.scanResults = [.mockWithoutRemovedDate]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+            XCTAssertTrue(mockDatabase.wasSaveOptOutOperationCalled)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
+    func testWhenScannedProfileHasNoIdentifier_thenNoStoredProfileIsRefreshed() async {
+        do {
+            let storedProfile = ExtractedProfile(id: 1, name: "Some name", extras: ["county": "Sangamon"])
+            let scrapedProfile = ExtractedProfile(name: "Some other name")
+            mockDatabase.extractedProfilesFromBroker = [storedProfile]
+            mockScanRunner.scanResults = [scrapedProfile]
+
+            _ = try await sut.runScan(
+                brokerProfileQueryData: .init(
+                    dataBroker: .mock,
+                    profileQuery: .mock,
+                    scanJobData: .mock,
+                    optOutJobData: [OptOutJobData.mock(with: storedProfile)]
+                ),
+                showWebView: false,
+                isManual: false,
+                shouldRunNextStep: { true }
+            )
+
+            XCTAssertTrue(mockDatabase.updatedExtractedProfiles.isEmpty)
+        } catch {
+            XCTFail("Should not throw")
+        }
+    }
+
     func testWhenScannedProfileIsAlreadyInTheDatabaseAndWasRemoved_thenTheRemovedDateIsSetBackToNil() async {
         do {
             mockDatabase.extractedProfilesFromBroker = [.mockWithRemovedDate]
@@ -1541,6 +1730,50 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         // Then
         XCTAssertTrue(result)
+    }
+
+    func testRunScan_whenNoScanHistoryExists_firesFirstScanPixel() async throws {
+        // Given
+        mockDatabase.hasScanHistoryEventsResult = .success(false)
+
+        // When
+        let result = try await sut.runScan(
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock
+            ),
+            showWebView: false,
+            isManual: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockDatabase.wasHasScanHistoryEventsCalled)
+        XCTAssertTrue(firedFirstScanPixel())
+    }
+
+    func testRunScan_whenScanHistoryExists_doesNotFireFirstScanPixel() async throws {
+        // Given
+        mockDatabase.hasScanHistoryEventsResult = .success(true)
+
+        // When
+        let result = try await sut.runScan(
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock
+            ),
+            showWebView: false,
+            isManual: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockDatabase.wasHasScanHistoryEventsCalled)
+        XCTAssertFalse(firedFirstScanPixel())
     }
 
 }

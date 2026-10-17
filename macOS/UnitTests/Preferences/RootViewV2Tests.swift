@@ -17,11 +17,12 @@
 //
 
 import Combine
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
+import AIChat
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -71,8 +72,7 @@ final class RootViewV2Tests: XCTestCase {
                 featureFlagger: MockFeatureFlagger()
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: sharedDuckPlayerPreferences,
@@ -106,6 +106,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in }
             )
@@ -116,8 +117,11 @@ final class RootViewV2Tests: XCTestCase {
     }
 
     func testPaidAIChatViewModel_OpenAIChat() throws {
-        let expectation = expectation(description: "Wait for showTab to be called")
+        let expectation = expectation(description: "Wait for Duck.ai to open")
         let mockRemoteAISettings = MockRemoteAISettings()
+        let aiChatTabOpener = MockAIChatTabOpener()
+        aiChatTabOpener.setOpenMethodCalledExpectation(expectation)
+        let sourceHandler = AIChatConversationSourceHandler()
         // Given
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
@@ -127,12 +131,12 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: mockRemoteAISettings,
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
-        ) { content in
-            self.showTabCalled = true
-            self.showTabContent = content
-            expectation.fulfill()
-        }
+            permissionManager: PermissionManagerMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in self.showTabCalled = true },
+            aiChatTabOpener: aiChatTabOpener,
+            aiChatConversationSourceHandler: sourceHandler
+        )
 
         let model = rootView.paidAIChatModel!
 
@@ -141,13 +145,10 @@ final class RootViewV2Tests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(showTabCalled, "Should call showTab")
-        if case .url(let url, _, let source) = showTabContent {
-            XCTAssertEqual(url.absoluteString, mockRemoteAISettings.aiChatURL.absoluteString)
-            XCTAssertEqual(source, .ui)
-        } else {
-            XCTFail("Expected URL tab content")
-        }
+        XCTAssertFalse(showTabCalled, "Duck.ai opens through the tab opener so its entry pixel reports it")
+        XCTAssertEqual(aiChatTabOpener.lastURL, mockRemoteAISettings.aiChatURL)
+        XCTAssertEqual(aiChatTabOpener.lastBehavior, .newTab(selected: true))
+        XCTAssertEqual(sourceHandler.consumeData(), .settings)
     }
 
     func testPaidAIChatViewModel_OpenURL() throws {
@@ -162,7 +163,8 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
-            pinningManager: MockPinningManager()
+            pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -188,8 +190,9 @@ final class RootViewV2Tests: XCTestCase {
     @MainActor
     func testPurchaseSubscriptionViewModel_WinBackOfferPixel() throws {
         // Given
-        let expectation = expectation(description: "Wait for pixel to be fired")
-        var capturedPixel: SubscriptionPixel?
+        let expectation = expectation(description: "Wait for pixels to be fired")
+        expectation.expectedFulfillmentCount = 2
+        var capturedPixels: [SubscriptionPixel] = []
 
         mockWinBackOfferVisibilityManager.isOfferAvailable = true
         let rootView = Preferences.RootViewV2(
@@ -200,10 +203,11 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in
-                capturedPixel = pixel
+                capturedPixels.append(pixel)
                 expectation.fulfill()
             }
         )
@@ -215,11 +219,18 @@ final class RootViewV2Tests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertNotNil(capturedPixel, "Should have fired a pixel")
-        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixel! {
-            // Correct pixel fired
+        XCTAssertEqual(capturedPixels.count, 2, "purchaseAction should fire exactly two pixels when win-back offer is available")
+
+        if case .subscriptionEntrySettingsSubscriptionClick = capturedPixels[0] {
+            // Correct pixel fired first
         } else {
-            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked pixel")
+            XCTFail("Should fire subscriptionEntrySettingsSubscriptionClick first")
+        }
+
+        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixels[1] {
+            // Correct pixel fired second
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked second")
         }
     }
 

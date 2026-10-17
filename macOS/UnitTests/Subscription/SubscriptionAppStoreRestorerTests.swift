@@ -20,12 +20,11 @@ import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
-@testable import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) @testable import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import enum StoreKit.StoreKitError
 
-@available(macOS 12.0, *)
 final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
     private struct Constants {
@@ -184,7 +183,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                           .didShowAlert(.subscriptionNotFound),
                                           .didShowTab(.subscription(Constants.purchaseURL))])
 
-        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression.name])
+        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression(origin: nil).name])
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
 
         XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
@@ -213,7 +212,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                           .didShowAlert(.subscriptionNotFound),
                                           .didShowTab(.subscription(Constants.purchaseURL))])
 
-        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression.name])
+        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression(origin: nil).name])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
         XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
@@ -307,7 +306,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                           .didShowAlert(.subscriptionInactive),
                                           .didShowTab(.subscription(Constants.purchaseURL))])
 
-        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression.name])
+        let expectedPixels = Set([SubscriptionPixel.subscriptionOfferScreenImpression(origin: nil).name])
         XCTAssertTrue(subscriptionEventReporter.reportedActivationErrors.contains(where: { error in
             switch error {
             case SubscriptionError.restoreFailedDueToExpiredSubscription:

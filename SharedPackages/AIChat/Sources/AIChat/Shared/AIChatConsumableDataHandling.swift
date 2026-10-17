@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 /// A protocol that defines a standard interface for handling consumable data.
 /// Types conforming to this protocol can set, consume, and reset data of a specified type.
 public protocol AIChatConsumableDataHandling {
@@ -47,6 +49,146 @@ public final class AIChatPromptHandler: AIChatConsumableDataHandling {
 
     public func setData(_ data: DataType) {
         self.data = data
+    }
+
+    public func consumeData() -> DataType? {
+        let currentData = data
+        reset()
+        return currentData
+    }
+
+    public func reset() {
+        self.data = nil
+    }
+}
+
+/// Sent verbatim as the conversation pixels' `source`. Raw values must match the
+/// `aiChatConversationSource` enum in `macOS/PixelDefinitions/pixels/params_dictionary.json5`.
+public enum AIChatConversationSource: String, CaseIterable {
+    case tabBarButton = "tab-bar-button"
+    case askAboutPage = "ask-about-page"
+    case tabBarSidebar = "tab-bar-sidebar"
+    case tabBarChats = "tab-bar-chats"
+
+    case addressBar = "address-bar"
+    case addressBarSuggestion = "address-bar-suggestion"
+    case addressBarContextMenu = "address-bar-context-menu"
+
+    case newTabPage = "new-tab-page"
+    case newTabPageViewAllChats = "new-tab-page-view-all-chats"
+    case newTabPageVoice = "new-tab-page-voice"
+    case newTabPageRecentChat = "new-tab-page-recent-chat"
+
+    case omnibar = "omnibar"
+    case omnibarViewAllChats = "omnibar-view-all-chats"
+    case omnibarVoice = "omnibar-voice"
+    case omnibarRecentChat = "omnibar-recent-chat"
+
+    case promptBar = "prompt-bar"
+    case promptBarVoice = "prompt-bar-voice"
+
+    case mainMenuFileNewChat = "main-menu-file-new-chat"
+    case mainMenuSidebar = "main-menu-sidebar"
+    case mainMenuAskAboutPage = "main-menu-ask-about-page"
+    case mainMenuOpenDuckAI = "main-menu-open-duck-ai"
+    case mainMenuNewChat = "main-menu-new-chat"
+    case mainMenuViewAllChats = "main-menu-view-all-chats"
+    case mainMenuVoice = "main-menu-voice"
+    case mainMenuImage = "main-menu-image"
+    case mainMenuRecentChat = "main-menu-recent-chat"
+
+    case moreOptionsMenuNewDuckAIChat = "more-options-menu-new-duck-ai-chat"
+    case moreOptionsMenuOpenDuckAI = "more-options-menu-open-duck-ai"
+    case moreOptionsMenuNewChat = "more-options-menu-new-chat"
+    case moreOptionsMenuViewAllChats = "more-options-menu-view-all-chats"
+    case moreOptionsMenuVoice = "more-options-menu-voice"
+    case moreOptionsMenuImage = "more-options-menu-image"
+    case moreOptionsMenuRecentChat = "more-options-menu-recent-chat"
+
+    case contextualSummarize = "contextual-summarize"
+    case contextualTranslate = "contextual-translate"
+    case contextualAttachSelection = "contextual-attach-selection"
+
+    case serp = "serp"
+    case sidebarHandoff = "sidebar-handoff"
+
+    case settings = "settings"
+    /// The Duck.ai link on the subscription welcome page. The same value Windows reports.
+    case subscriptionPage = "subscription-page"
+
+    /// Duck.ai reached by navigating to it directly rather than from a Duck.ai surface: typed in the
+    /// address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link
+    /// from another app, a link on a web page, or typed in the New Tab Page search box.
+    case directTyped = "direct-typed"
+    case directSuggestion = "direct-suggestion"
+    case directBookmark = "direct-bookmark"
+    case directFavorite = "direct-favorite"
+    case directHistory = "direct-history"
+    case directExternal = "direct-external"
+    case directLink = "direct-link"
+    case directNewTabPage = "direct-new-tab-page"
+
+    /// No native surface opens this one; it is read from the funnel marker duckduckgo.com puts on
+    /// the chat URL when its homepage hands a prompt over (`URL.isDuckAIOpenedFromHomepage`).
+    case duckduckgoHomepage = "duckduckgo-homepage"
+
+    /// A link on a Duck.ai or duckduckgo.com page that opened Duck.ai, other than the homepage
+    /// handoff. Like the `direct-*` values, only used when no surface stamped the chat.
+    case duckAILink = "duck-ai-link"
+    case duckDuckGoLink = "duckduckgo-link"
+
+    /// A chat continued in a tab the browser re-created from an earlier one: restored with the
+    /// previous session, reopened after it was closed, or duplicated. Like the `direct-*` values,
+    /// only used when no surface stamped the chat.
+    case sessionRestore = "session-restore"
+    case reopenedTab = "reopened-tab"
+    case tabCopy = "tab-copy"
+
+    /// Named for the attribution gap it measures: a chat no surface stamped and nothing else
+    /// explains, such as an entry point nobody has instrumented yet.
+    case unattributed = "unattributed"
+
+    /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept
+    /// only for continuity with dashboards that predate it. The main-menu Ask About Page counts
+    /// because it reported as the tab-bar one until it had its own source.
+    public var isAskDuckAiButton: Bool {
+        switch self {
+        case .tabBarButton, .askAboutPage, .tabBarSidebar, .tabBarChats, .mainMenuAskAboutPage:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+/// One-shot mailbox carrying the opening surface to the chat's handler: written just before the
+/// chat opens, consumed once at load. A single instance is owned by `AppDelegate` and injected
+/// into the user-script handler.
+public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling {
+    public typealias DataType = AIChatConversationSource
+    private var data: DataType?
+
+    /// The same stamp, kept for the entry-point pixel: the opener reports it as soon as Duck.ai
+    /// opens, while the chat consumes `data` only when it loads.
+    private var unreportedEntry: DataType?
+
+    public init() {}
+
+    public func setData(_ data: DataType) {
+        self.data = data
+        unreportedEntry = data
+    }
+
+    /// Returns the latest stamp for the entry-point pixel, once.
+    public func takeUnreportedEntry() -> DataType? {
+        defer { unreportedEntry = nil }
+        return unreportedEntry
+    }
+
+    /// The open was abandoned, so neither the entry-point pixel nor the next chat may use the stamp.
+    public func discardPendingOpen() {
+        data = nil
+        unreportedEntry = nil
     }
 
     public func consumeData() -> DataType? {
@@ -133,7 +275,28 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
+/// Lightweight page-type signals read from page markup, used by the duck.ai web app to pick
+/// page-tailored suggested prompts ("shortcuts"). All fields are best-effort and may be empty.
+public struct AIChatPageTypeSignals: Codable, Equatable {
+    /// `@type` values from every <script type="application/ld+json"> block (incl. `@graph`), deduped. [] if none.
+    public let jsonLdType: [String]
+    /// Content of the first <meta property="og:type">, or nil if absent.
+    public let ogType: String?
+    /// The page's declared language (e.g. <html lang>); "" if none.
+    public let lang: String
+
+    public init(jsonLdType: [String], ogType: String?, lang: String) {
+        self.jsonLdType = jsonLdType
+        self.ogType = ogType
+        self.lang = lang
+    }
+}
+
 public struct AIChatPageContextData: Codable, Equatable {
+    /// Carrier for pages handed over as markdown — everything that isn't a document.
+    public static let htmlMIMEType = "text/html"
+    public static let pdfMIMEType = "application/pdf"
+
     public let title: String
     public let favicon: [PageContextFavicon]
     public let url: String
@@ -141,8 +304,30 @@ public struct AIChatPageContextData: Codable, Equatable {
     public let truncated: Bool
     public let fullContentLength: Int
     public let attachable: Bool?
+    /// Page-type signals for the duck.ai web app's page shortcuts. Sent in both the full-content
+    /// (auto-attach on) and signals-only (auto-attach off) payloads. Omitted (nil) when unavailable.
+    public let pageTypeSignals: AIChatPageTypeSignals?
+    /// Whether the page CONTENT is attached in this payload. Distinct from `attachable` (whether
+    /// content *can ever* be attached). Absent → treated as `true` (backward compatible). `false`
+    /// marks a signals-only payload: metadata + `pageTypeSignals`, no content.
+    public let attached: Bool?
+    /// Discriminator for the duck.ai web app: presence marks a tab-picker context (e.g.
+    /// picked via the sidebar `@` picker or the omnibar's "Add Page Content" menu); absence
+    /// marks the current sidebar page. The omnibar strips this for the entry that matches
+    /// the active tab so the discriminator's semantics hold end-to-end.
+    public let tabId: String?
+    /// MIME type of the page this context came from. Sent on every payload — it's what tells the
+    /// duck.ai web app which carrier to read. Payloads that don't carry one (the collection result
+    /// from Content-Scope-Scripts) decode as `text/html`.
+    public let mimeType: String
+    /// The document's bytes, base64-encoded. Set only for document contexts (PDF today), where the
+    /// markdown carrier is empty. One carrier per context: `content` or `data`, never both.
+    ///
+    /// Kept out of `content` deliberately: `content` has a shipped meaning (chunked into the prompt,
+    /// measured in characters, truncated at ~9.5k) and bytes must do none of that.
+    public let data: String?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil, pageTypeSignals: AIChatPageTypeSignals? = nil, attached: Bool? = nil, mimeType: String = AIChatPageContextData.htmlMIMEType, data: String? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
@@ -150,6 +335,120 @@ public struct AIChatPageContextData: Codable, Equatable {
         self.truncated = truncated
         self.fullContentLength = fullContentLength
         self.attachable = attachable
+        self.tabId = tabId
+        self.pageTypeSignals = pageTypeSignals
+        self.attached = attached
+        self.mimeType = mimeType
+        self.data = data
+    }
+
+    /// A page handed over as bytes rather than markdown (PDF today). The markdown carrier and its
+    /// measurements stay empty so nothing downstream chunks or counts characters on a document.
+    ///
+    /// `data` is nil for a document native refuses to hand over (over the size ceiling) — the
+    /// payload still says what the page is via `mimeType`.
+    public static func document(title: String,
+                                favicon: [PageContextFavicon] = [],
+                                url: String,
+                                mimeType: String,
+                                data: String?,
+                                attachable: Bool? = nil,
+                                tabId: String? = nil,
+                                attached: Bool? = nil) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: title,
+            favicon: favicon,
+            url: url,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: attachable,
+            tabId: tabId,
+            attached: attached,
+            mimeType: mimeType,
+            data: data
+        )
+    }
+
+    /// Whether this context carries its page as bytes. The counterpart of a markdown context, whose
+    /// content lives in `content`.
+    public var isDocument: Bool {
+        data?.isEmpty == false
+    }
+
+    /// Whether this context actually carries the page, by either carrier. Metadata-only payloads
+    /// (signals-only, prevented, a document over the size ceiling) carry neither.
+    public var hasAttachedPage: Bool {
+        !content.isEmpty || isDocument
+    }
+
+    /// Returns a copy of this page context with the `tabId` field set to the given value.
+    /// Used at extraction time to stamp the originating tab id, and at omnibar submit time
+    /// to strip the id for the entry that matches the active tab.
+    public func withTabId(_ tabId: String?) -> AIChatPageContextData {
+        copy(tabId: tabId)
+    }
+
+    /// Returns a copy with the favicon replaced — used where raw favicon URLs are swapped for
+    /// base64 data (raw URLs get CSP-blocked in the sidebar).
+    public func withFavicon(_ favicon: [PageContextFavicon]) -> AIChatPageContextData {
+        copy(favicon: favicon)
+    }
+
+    /// Returns a copy with `attachable` overridden — used by the attachability gate.
+    public func withAttachable(_ attachable: Bool?) -> AIChatPageContextData {
+        copy(attachable: attachable)
+    }
+
+    /// Returns a copy carrying the page's real MIME type, stamped by native from the main-frame
+    /// response (the collected payload itself doesn't know it).
+    public func withMIMEType(_ mimeType: String) -> AIChatPageContextData {
+        copy(mimeType: mimeType)
+    }
+
+    /// Field-preserving copy. Every override is explicit, so a new field added to the type can't be
+    /// silently dropped by a rebuild the way it could when call sites listed fields by hand.
+    private func copy(favicon: [PageContextFavicon]? = nil,
+                      attachable: Bool?? = nil,
+                      tabId: String?? = nil,
+                      mimeType: String? = nil) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: title,
+            favicon: favicon ?? self.favicon,
+            url: url,
+            content: content,
+            truncated: truncated,
+            fullContentLength: fullContentLength,
+            attachable: attachable ?? self.attachable,
+            tabId: tabId ?? self.tabId,
+            pageTypeSignals: pageTypeSignals,
+            attached: attached,
+            mimeType: mimeType ?? self.mimeType,
+            data: data
+        )
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, favicon, url, content, truncated, fullContentLength, attachable, pageTypeSignals, attached, tabId, mimeType, data
+    }
+
+    /// `mimeType` is sent on every payload native produces, but the collected payload coming back
+    /// from Content-Scope-Scripts has no such field — decoding it must not fail, so it falls back
+    /// to `text/html` and native stamps the real type afterwards.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decode(String.self, forKey: .title)
+        favicon = try container.decode([PageContextFavicon].self, forKey: .favicon)
+        url = try container.decode(String.self, forKey: .url)
+        content = try container.decode(String.self, forKey: .content)
+        truncated = try container.decode(Bool.self, forKey: .truncated)
+        fullContentLength = try container.decode(Int.self, forKey: .fullContentLength)
+        attachable = try container.decodeIfPresent(Bool.self, forKey: .attachable)
+        pageTypeSignals = try container.decodeIfPresent(AIChatPageTypeSignals.self, forKey: .pageTypeSignals)
+        attached = try container.decodeIfPresent(Bool.self, forKey: .attached)
+        tabId = try container.decodeIfPresent(String.self, forKey: .tabId)
+        mimeType = try container.decodeIfPresent(String.self, forKey: .mimeType) ?? Self.htmlMIMEType
+        data = try container.decodeIfPresent(String.self, forKey: .data)
     }
 
     public struct PageContextFavicon: Codable, Equatable {
@@ -165,10 +464,68 @@ public struct AIChatPageContextData: Codable, Equatable {
     /// Returns `true` if this page context contains no usable data for AI Chat.
     ///
     /// A page context is considered empty when it has no title, no favicon, no content,
-    /// and the full content length is zero. Note that `url` is intentionally excluded
-    /// from this check.
+    /// no document bytes, and the full content length is zero. Note that `url` is intentionally
+    /// excluded from this check.
     public func isEmpty() -> Bool {
-        return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
+        return title.isEmpty && favicon.isEmpty && content.isEmpty && !isDocument && fullContentLength == 0
+    }
+}
+
+// MARK: - Selection Context
+
+/// Accumulates user text selections attached to Duck.ai so a freshly-opened sidebar can pull the
+/// ones it missed (via `getAIChatSelectionContext`), mirroring how `AIChatPageContextHandler` backs
+/// `getAIChatPageContext`. Unlike the single-slot page-context handler, selections append and the
+/// list is read non-destructively (the FE dedupes by `id`); it's cleared when a prompt is submitted.
+///
+/// Not used where prompts are composed natively — those carry selections on `AIChatNativePrompt.selections`.
+public final class AIChatSelectionContextHandler {
+    private var selections: [AIChatSelectionContextData] = []
+
+    public init() {}
+
+    public func append(_ selection: AIChatSelectionContextData) {
+        selections.append(selection)
+    }
+
+    public func getAll() -> [AIChatSelectionContextData] {
+        selections
+    }
+
+    public func reset() {
+        selections = []
+    }
+}
+
+/// One user text selection attached to Duck.ai via "Attach to Duck.ai".
+///
+/// Selections live on their own dedicated channel (`submitAIChatSelectionContext`), independent of
+/// the single page-context slot: native appends items one at a time and the duck.ai web app owns the
+/// resulting list (chips, removal, max count, inclusion in the next prompt). `id` lets the FE address
+/// individual items.
+public struct AIChatSelectionContextData: Codable, Equatable {
+    public let id: String
+    public let title: String
+    /// The source page's favicon, base64-encoded the same way as `AIChatPageContextData.favicon`
+    /// (raw URLs get CSP-blocked in the sidebar). Empty when no favicon is cached.
+    public let favicon: [AIChatPageContextData.PageContextFavicon]
+    public let url: String
+    public let content: String
+    public let truncated: Bool
+    public let fullContentLength: Int
+    /// Word count of the *full* selection (before truncation), computed natively. The FE can't
+    /// derive this reliably from `content` because `content` is truncated, so native owns it.
+    public let wordCount: Int
+
+    public init(id: String, title: String, favicon: [AIChatPageContextData.PageContextFavicon] = [], url: String, content: String, truncated: Bool, fullContentLength: Int, wordCount: Int) {
+        self.id = id
+        self.title = title
+        self.favicon = favicon
+        self.url = url
+        self.content = content
+        self.truncated = truncated
+        self.fullContentLength = fullContentLength
+        self.wordCount = wordCount
     }
 }
 
@@ -188,6 +545,18 @@ public struct AIChatTabMetadata: Codable {
         self.url = url
         self.favicon = favicon
         self.isCurrentTab = isCurrentTab
+    }
+
+    /// Returns `true` if a tab with this URL should be hidden from any tab picker that lists
+    /// open tabs as Duck.ai chat attachments (sidebar today, omnibar in the future). Excludes
+    /// URLs that carry no useful page context for an AI chat:
+    /// - The DDG homepage (SERP URLs with a `q=` parameter remain attachable).
+    /// - `about:blank` (transient state, no content).
+    /// - Duck.ai itself (avoids meta-attaching one chat to another).
+    public static func shouldExcludeFromTabPicker(_ url: URL) -> Bool {
+        return url.isDuckDuckGoHomepage
+            || url.absoluteString == "about:blank"
+            || url.isDuckAIURL
     }
 }
 

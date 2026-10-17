@@ -1,0 +1,585 @@
+{
+    "sync_setup_barcode_screen_shown_mac": {
+        "description": "Fired when the Sync setup QR/code screen is shown.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            }
+        ]
+    },
+    "sync_setup_barcode_code_copied_mac": {
+        "description": "Fired when the user copies the Sync setup code.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            }
+        ]
+    },
+    "sync_setup_manual_code_entry_screen_shown_mac": {
+        "description": "Fired when the Sync setup manual code-entry screen is shown.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            }
+        ]
+    },
+    "sync_setup_manual_code_entered_success_mac": {
+        "description": "Fired when Sync setup recognizes a manually entered or pasted code.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source or recognized code source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            },
+            {
+                "key": "code_type",
+                "type": "string",
+                "description": "The type of Sync setup code recognized.",
+                "enum": ["recovery", "linking"]
+            },
+            {
+                "key": "code_version",
+                "type": "string",
+                "description": "The version of Sync setup code recognized.",
+                "enum": ["v1", "v2"]
+            }
+        ]
+    },
+    "sync_setup_manual_code_entered_failed_mac": {
+        "description": "Fired when Sync setup rejects a manually entered or pasted code.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source or rejected code source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            },
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "The reason the entered code was rejected, when it can be mapped safely.",
+                "enum": ["unrecognized_code", "needs_upgrade", "incompatible_code"]
+            }
+        ]
+    },
+    "sync_setup_ended_abandoned_mac": {
+        "description": "Fired when the user abandons Sync setup before completion.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            },
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "The reason Sync setup was abandoned, when it can be mapped safely.",
+                "enum": ["scanning_cancelled", "sync_confirmation_denied"]
+            }
+        ]
+    },
+    "sync_setup_ended_failed_mac": {
+        "description": "Fired when Sync setup started from a recognized code but failed before completion.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            },
+            {
+                "key": "path",
+                "type": "string",
+                "description": "Whether the setup flow was recovery or pairing.",
+                "enum": ["recovery", "pairing"]
+            },
+            {
+                "key": "peer_kind",
+                "type": "string",
+                "description": "The kind of the peer client, when known.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "my_role",
+                "type": "string",
+                "description": "This client's role in the pairing flow, when applicable.",
+                "enum": ["host", "joiner"]
+            },
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "The reason Sync setup failed, when it can be mapped safely.",
+                "enum": [
+                    "v1_failure",
+                    "session_timeout",
+                    "invalid_credentials",
+                    "already_upgraded",
+                    "already_paired",
+                    "account_creation_failed",
+                    "account_upgrade_failed",
+                    "protocol_error",
+                    "transport_failure",
+                    "unexpected_second_hello",
+                    "unexpected_event",
+                    "pairing_session_not_ready",
+                    "relay_channel_failure",
+                    "relay_channel_unavailable",
+                    "recovery_code_preparation_failed",
+                    "peer_recovery_code_unavailable",
+                    "unexpected_failure",
+                    "missing_3party_credential",
+                    "undecryptable_3party_credential",
+                    "account_extend_failed",
+                    "missing_3party_key",
+                    "local_storage_failed"
+                ]
+            },
+            {
+                "key": "timeout_stage",
+                "type": "string",
+                "description": "The last Pairing V2 stage before a session_timeout failure, when known.",
+                "enum": [
+                    "waiting_for_peer_hello",
+                    "waiting_for_peer_status",
+                    "waiting_for_confirmation",
+                    "waiting_for_recovery_code",
+                    "logging_in"
+                ]
+            },
+            {
+                "key": "pairing_failure_stage",
+                "type": "string",
+                "description": "The Pairing V2 operation that failed, when known.",
+                "enum": [
+                    "presenter_generate_code",
+                    "presenter_open_own_channel",
+                    "presenter_poll_own_channel",
+                    "presenter_send_peer_status",
+                    "presenter_send_confirmation_status",
+                    "presenter_send_recovery_denied",
+                    "presenter_send_recovery_code",
+                    "presenter_send_recovery_unavailable",
+                    "scanner_generate_keys",
+                    "scanner_open_own_channel",
+                    "scanner_send_hello",
+                    "scanner_send_peer_status",
+                    "scanner_poll_own_channel",
+                    "scanner_send_confirmation_status",
+                    "scanner_send_recovery_denied",
+                    "scanner_send_recovery_code",
+                    "scanner_send_recovery_unavailable"
+                ]
+            },
+            {
+                "key": "pairing_failure_kind",
+                "type": "string",
+                "description": "The terminal relay request error class. Present for relay_channel_failure.",
+                "enum": ["unavailable", "expired", "http_error", "network_error"]
+            }
+        ]
+    },
+    "sync_setup_ended_successful_mac": {
+        "description": "Fired when Sync setup completes successfully.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "The local Sync setup capability enabled for this flow, independent of the negotiated protocol version.",
+                "enum": ["v1", "v2", "v2.1"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            },
+            {
+                "key": "path",
+                "type": "string",
+                "description": "Whether the setup flow was recovery or pairing.",
+                "enum": ["recovery", "pairing"]
+            },
+            {
+                "key": "peer_kind",
+                "type": "string",
+                "description": "The kind of the peer client, when known.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "my_role",
+                "type": "string",
+                "description": "This client's role in the pairing flow, when applicable.",
+                "enum": ["host", "joiner"]
+            }
+        ]
+    },
+    "sync_settings_another_device_prompt_shown_mac": {
+        "description": "Fired when the device-selection prompt (sync with another device or just this device) is shown after enabling Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_another_device_prompt_option_tapped_mac": {
+        "description": "Fired when the user taps an option on the device-selection prompt shown after enabling Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "option",
+                "type": "string",
+                "description": "Which option the user tapped on the device-selection prompt.",
+                "enum": ["this_device_only", "sync_another_device"]
+            }
+        ]
+    },
+    "sync_settings_sync_this_device_fallback_shown_mac": {
+        "description": "Fired when the dialog offering to sync only this computer is shown, after the user confirms closing the Sync with another device dialog while Sync is off, in the improved pairing flow.",
+        "owners": ["pballart"],
+        "triggers": ["impression"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_sync_this_device_fallback_sync_tapped_mac": {
+        "description": "Fired when the user taps 'Sync This Device' on the dialog offering to sync only this computer, in the improved pairing flow.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_authentication_cancelled_prompt_shown_mac": {
+        "description": "Fired when the prompt asking the user to authenticate is shown after they cancel the device authentication prompt while setting up Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_authentication_cancelled_prompt_retry_tapped_mac": {
+        "description": "Fired when the user taps 'Try Again' on the authentication-cancelled prompt, asking to be shown the device authentication prompt once more.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_authentication_cancelled_prompt_dismissed_mac": {
+        "description": "Fired when the user closes the authentication-cancelled prompt without a retry being offered, ending the Sync setup flow.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_authentication_cancelled_prompt_retry_succeeded_mac": {
+        "description": "Fired when the user authenticates successfully after retrying from the authentication-cancelled prompt, and the Sync setup flow continues.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_authentication_cancelled_prompt_retry_failed_mac": {
+        "description": "Fired when the user fails or cancels device authentication again after retrying from the authentication-cancelled prompt, ending the Sync setup flow.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_open_mac": {
+        "description": "Fired when the Sync & Back Up settings pane is shown.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "is_enabled",
+                "type": "string",
+                "description": "Whether Sync is enabled when the pane is shown.",
+                "enum": ["0", "1"]
+            }
+        ]
+    },
+    "sync_settings_back_up_this_device_tapped_mac": {
+        "description": "Fired when the user turns on the 'Sync and Back Up This Device' toggle on the Sync settings pane.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_recover_synced_data_tapped_mac": {
+        "description": "Fired when the user taps the entry point to the Recover Synced Data flow on the Sync settings pane.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_recovery_confirmed_tapped_mac": {
+        "description": "Fired when the user taps the primary button on the Recover Synced Data dialog, confirming intent to begin recovery.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_success_screen_shown_mac": {
+        "description": "Fired when the Sync setup success screen, which shows the recovery code, is displayed in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_success_screen_copy_code_tapped_mac": {
+        "description": "Fired when the user taps 'Copy Code' on the Sync setup success screen in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_success_screen_download_recovery_pdf_tapped_mac": {
+        "description": "Fired when the user taps the button to download the recovery PDF on the Sync setup success screen in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_success_screen_done_tapped_mac": {
+        "description": "Fired when the user taps 'Done' on the Sync setup success screen in the simplified V2 setup, completing the flow.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_this_device_details_screen_shown_mac": {
+        "description": "Fired when the device details screen is shown for the current device in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_this_device_details_name_updated_mac": {
+        "description": "Fired when the name of the current device is successfully updated from its device details screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_this_device_details_turn_off_sync_tapped_mac": {
+        "description": "Fired when the user taps 'Turn Off Sync & Backup' on the details screen of the current device, opening the confirmation dialog.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_other_device_details_screen_shown_mac": {
+        "description": "Fired when the device details screen is shown for another synced device in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_computer_name_unavailable_mac": {
+        "description": "Fired when macOS cannot read the user-assigned computer name and Sync falls back to ProcessInfo.hostName.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_other_device_details_remove_device_tapped_mac": {
+        "description": "Fired when the user taps 'Remove Device' on the details screen of another synced device, opening the confirmation dialog.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_other_device_details_remove_device_confirmed_mac": {
+        "description": "Fired when another synced device is successfully removed after the user confirms 'Remove Device' from its details screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_setup_joiner_recovery_code_done_success_mac": {
+        "description": "Fired by the joiner after successfully sending a recovery_code_done success report to the host.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "host_has_account",
+                "type": "boolean",
+                "description": "Whether the host had an account when roles were negotiated."
+            },
+            {
+                "key": "host_kind",
+                "type": "string",
+                "description": "The host client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "joiner_has_account",
+                "type": "boolean",
+                "description": "Whether the joiner had an account when roles were negotiated."
+            },
+            {
+                "key": "joiner_kind",
+                "type": "string",
+                "description": "The joiner client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "protocol_version",
+                "type": "string",
+                "description": "The negotiated Exchange protocol version."
+            }
+        ]
+    },
+    "sync_setup_joiner_recovery_code_done_failed_mac": {
+        "description": "Fired by the joiner after successfully sending a recovery_code_done failed report to the host.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "host_has_account",
+                "type": "boolean",
+                "description": "Whether the host had an account when roles were negotiated."
+            },
+            {
+                "key": "host_kind",
+                "type": "string",
+                "description": "The host client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "joiner_has_account",
+                "type": "boolean",
+                "description": "Whether the joiner had an account when roles were negotiated."
+            },
+            {
+                "key": "joiner_kind",
+                "type": "string",
+                "description": "The joiner client kind.",
+                "enum": ["ddg", "3party"]
+            },
+            {
+                "key": "protocol_version",
+                "type": "string",
+                "description": "The negotiated Exchange protocol version."
+            }
+        ]
+    }
+}

@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 
 #if os(iOS)
@@ -37,7 +38,11 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     private let isWidgetInstalled: Bool
     private let isSyncEnabled: Bool
     private let shouldShowWinBackOfferUrgencyMessage: Bool
-    private let isCurrentPIRUser: Bool
+    private let isFreemiumPIREligible: Bool
+    private let isFreemiumPIRActivated: Bool
+    private let freemiumPIRFirstScanResult: String?
+    private let isCurrentPIRUser: Bool?
+    private let ntpAfterIdleState: String
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -55,6 +60,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 subscriptionDaysSinceSubscribed: Int,
                 subscriptionDaysUntilExpiry: Int,
                 subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
@@ -66,12 +72,24 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 enabledFeatureFlags: [String],
                 isSyncEnabled: Bool,
                 shouldShowWinBackOfferUrgencyMessage: Bool,
-                isCurrentPIRUser: Bool = false
+                isFreemiumPIREligible: Bool = false,
+                isFreemiumPIRActivated: Bool = false,
+                freemiumPIRFirstScanResult: String? = nil,
+                isCurrentPIRUser: Bool? = false,
+                ntpAfterIdleState: String = "",
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
         self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
+        self.isFreemiumPIREligible = isFreemiumPIREligible
+        self.isFreemiumPIRActivated = isFreemiumPIRActivated
+        self.freemiumPIRFirstScanResult = freemiumPIRFirstScanResult
         self.isCurrentPIRUser = isCurrentPIRUser
+        self.ntpAfterIdleState = ntpAfterIdleState
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -87,6 +105,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
             subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
             subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+            subscriptionTier: subscriptionTier,
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
@@ -95,7 +114,11 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -105,8 +128,16 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isWidgetInstalled)
         case let matchingAttribute as SyncEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isSyncEnabled)
+        case let matchingAttribute as NTPAfterIdleStateMatchingAttribute:
+            return matchingAttribute.evaluate(for: ntpAfterIdleState)
         case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
             return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
+        case let matchingAttribute as FreemiumPIREligibleMatchingAttribute:
+            return matchingAttribute.evaluate(for: isFreemiumPIREligible)
+        case let matchingAttribute as FreemiumPIRDidActivateMatchingAttribute:
+            return matchingAttribute.evaluate(for: isFreemiumPIRActivated)
+        case let matchingAttribute as FreemiumPIRFirstScanResultMatchingAttribute:
+            return matchingAttribute.evaluate(for: freemiumPIRFirstScanResult)
         case let matchingAttribute as PIRCurrentUserMatchingAttribute:
             return matchingAttribute.evaluate(for: isCurrentPIRUser)
         default:
@@ -138,6 +169,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 subscriptionDaysSinceSubscribed: Int,
                 subscriptionDaysUntilExpiry: Int,
                 subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
@@ -151,7 +183,11 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isCurrentFreemiumPIRUser: Bool,
                 isCurrentPIRUser: Bool = false,
                 dismissedDeprecatedMacRemoteMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.pinnedTabsCount = pinnedTabsCount
         self.hasCustomHomePage = hasCustomHomePage
@@ -173,6 +209,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
             subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
             subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+            subscriptionTier: subscriptionTier,
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
@@ -181,7 +218,11 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -230,6 +271,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let subscriptionDaysSinceSubscribed: Int
     private let subscriptionDaysUntilExpiry: Int
     private let subscriptionPurchasePlatform: String?
+    private let subscriptionTier: String?
     private let isSubscriptionActive: Bool
     private let isSubscriptionExpiring: Bool
     private let isSubscriptionExpired: Bool
@@ -239,6 +281,10 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let dismissedMessageIds: [String]
     private let shownMessageIds: [String]
     private let enabledFeatureFlags: [String]
+    private let isReturningUser: Bool? // `nil` when it can't be determined (macOS App Store)
+    private let isAIChatEnabled: Bool
+    private let triedAIChatDuringOnboarding: Bool
+    private let isAIChatBoostActive: Bool? // `nil` when the bonus record can't be read, so a rule using it fails whatever the expected value.
 
     public init(statisticsStore: StatisticsStore,
                 featureDiscovery: FeatureDiscovery,
@@ -253,6 +299,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 subscriptionDaysSinceSubscribed: Int,
                 subscriptionDaysUntilExpiry: Int,
                 subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
@@ -261,7 +308,11 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.statisticsStore = statisticsStore
         self.featureDiscovery = featureDiscovery
@@ -276,6 +327,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.subscriptionDaysSinceSubscribed = subscriptionDaysSinceSubscribed
         self.subscriptionDaysUntilExpiry = subscriptionDaysUntilExpiry
         self.subscriptionPurchasePlatform = subscriptionPurchasePlatform
+        self.subscriptionTier = subscriptionTier
         self.isSubscriptionActive = isSubscriptionActive
         self.isSubscriptionExpiring = isSubscriptionExpiring
         self.isSubscriptionExpired = isSubscriptionExpired
@@ -285,6 +337,10 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.dismissedMessageIds = dismissedMessageIds
         self.shownMessageIds = shownMessageIds
         self.enabledFeatureFlags = enabledFeatureFlags
+        self.isReturningUser = isReturningUser
+        self.isAIChatEnabled = isAIChatEnabled
+        self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
+        self.isAIChatBoostActive = isAIChatBoostActive
     }
 
     public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
@@ -315,6 +371,8 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: subscriptionDaysUntilExpiry)
         case let matchingAttribute as SubscriptionPurchasePlatformMatchingAttribute:
             return matchingAttribute.evaluate(for: subscriptionPurchasePlatform ?? "")
+        case let matchingAttribute as SubscriptionTierMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionTier ?? "")
         case let matchingAttribute as SubscriptionStatusMatchingAttribute:
             let mappedStatuses = (matchingAttribute.value ?? []).compactMap { status in
                 return SubscriptionStatus(rawValue: status)
@@ -359,6 +417,14 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             } else {
                 return .fail
             }
+        case let matchingAttribute as IsReturningUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isReturningUser)
+        case let matchingAttribute as IsDuckAIEnabledMatchingAttribute:
+            return matchingAttribute.evaluate(for: isAIChatEnabled)
+        case let matchingAttribute as TriedDuckAIDuringOnboardingMatchingAttribute:
+            return matchingAttribute.evaluate(for: triedAIChatDuringOnboarding)
+        case let matchingAttribute as IsDuckAIBoostActiveMatchingAttribute:
+            return matchingAttribute.evaluate(for: isAIChatBoostActive)
         default:
             assertionFailure("Could not find matching attribute")
             return nil

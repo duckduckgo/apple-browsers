@@ -57,32 +57,34 @@ struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
 struct SyncedDeviceIcon: View {
     var kind: SyncDevice.Kind
 
-    var image: NSImage {
+    private var imageResource: ImageResource {
         switch kind {
         case .current, .desktop:
-            return NSImage(imageLiteralResourceName: "SyncedDeviceDesktop")
+            return .syncedDeviceDesktop
         case .mobile:
-            return NSImage(imageLiteralResourceName: "SyncedDeviceMobile")
+            return .syncedDeviceMobile
+        case .thirdParty, .unknown:
+            return .syncAllDevices
+        }
+    }
+
+    private var accessibilityIdentifier: String {
+        switch kind {
+        case .current, .desktop:
+            return "SyncSettings.syncedDevice.desktop"
+        case .mobile:
+            return "SyncSettings.syncedDevice.mobile"
+        case .thirdParty:
+            return "SyncSettings.syncedDevice.thirdParty"
+        case .unknown:
+            return "SyncSettings.syncedDevice.unknown"
         }
     }
 
     var body: some View {
-        IconOnBackground(image: image)
-    }
-}
-
-struct IconOnBackground: View {
-    var image: NSImage
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color(.blackWhite100).opacity(0.06))
-                .frame(width: 24, height: 24)
-
-            Image(nsImage: image)
-                .aspectRatio(contentMode: .fit)
-        }
+        Image(imageResource)
+            .aspectRatio(contentMode: .fit)
+            .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 
@@ -92,7 +94,7 @@ struct SyncedDevicesList: View {
 
     @State var hoveredDevice: SyncDevice?
 
-    var presentDeviceDetails: ((SyncDevice) -> Void)?
+    var presentDeviceDetails: ((SyncDevice) async -> Void)?
     var presentRemoveDevice: ((SyncDevice) -> Void)?
 
     var body: some View {
@@ -123,7 +125,9 @@ struct SyncedDevicesList: View {
                     } rightContent: {
                         if let presentDeviceDetails {
                             Button(UserText.currentDeviceDetails) {
-                                presentDeviceDetails(device)
+                                Task {
+                                    await presentDeviceDetails(device)
+                                }
                             }
                         }
                     }

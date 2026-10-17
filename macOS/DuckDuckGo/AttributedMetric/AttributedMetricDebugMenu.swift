@@ -19,14 +19,20 @@
 import AppKit
 import AttributedMetric
 import Common
+import FoundationExtensions
 import Foundation
+import Persistence
 
 final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
     private var attributedMetricDataStorage: any AttributedMetricDataStoring
+    private let installDateProvider: any AttributedMetricInstallDateProviding
+    private let keyValueStore: ThrowingKeyValueStoring
 
-    init() {
+    init(keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore) {
         self.attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration, errorHandler: nil)
+        self.installDateProvider = AttributedMetricATBInstallDateProvider()
+        self.keyValueStore = keyValueStore
 
         super.init(title: "Attributed Metrics")
 
@@ -41,6 +47,12 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             NSMenuItem(title: "Reset Stored Data", action: #selector(AttributedMetricDebugMenu.resetAllData))
                 .targetting(self)
 
+            NSMenuItem(title: "Reset Install Attribution", action: #selector(AttributedMetricDebugMenu.resetInstallAttribution))
+                .targetting(self)
+
+            NSMenuItem(title: "Reset Returning User Status", action: #selector(AttributedMetricDebugMenu.resetReturningUser))
+                .targetting(self)
+
             NSMenuItem(title: "Set Current Time...", action: #selector(AttributedMetricDebugMenu.setCurrentTime))
                 .targetting(self)
 
@@ -49,13 +61,15 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath) ?? "nil")")
+            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: AttributionXattr.variant, from: Bundle.main.bundlePath) ?? "nil")")
 
-            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath) ?? "nil")")
+            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath) ?? "nil")")
 
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Install Date: \(formatOptionalDate(attributedMetricDataStorage.installDate))")
+            NSMenuItem(title: "Install Date: \(formatOptionalDate(installDateProvider.installDate))")
+
+            NSMenuItem(title: "Debug Date: \(formatOptionalDate(attributedMetricDataStorage.debugDate))")
 
             NSMenuItem(title: "Last Retention Threshold: \(attributedMetricDataStorage.lastRetentionThreshold?.description ?? "nil")")
 
@@ -65,9 +79,17 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
             NSMenuItem(title: "Search (8 days): \(attributedMetricDataStorage.search8Days.debugDescription)")
 
+            NSMenuItem(title: "Active Search Days Last Threshold: \(attributedMetricDataStorage.activeSearchDaysLastThreshold?.description ?? "nil")")
+
+            NSMenuItem(title: "Search Last Threshold: \(attributedMetricDataStorage.searchLastThreshold?.description ?? "nil")")
+
             NSMenuItem(title: "Ad Click (8 days): \(attributedMetricDataStorage.adClick8Days.debugDescription)")
 
+            NSMenuItem(title: "Ad Click Last Threshold: \(attributedMetricDataStorage.adClickLastThreshold?.description ?? "nil")")
+
             NSMenuItem(title: "Duck AI Chat (8 days): \(attributedMetricDataStorage.duckAIChat8Days.debugDescription)")
+
+            NSMenuItem(title: "Duck AI Last Threshold: \(attributedMetricDataStorage.duckAILastThreshold?.description ?? "nil")")
 
             NSMenuItem.separator()
 
@@ -95,11 +117,7 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
     private func formatOptionalDate(_ date: Date?) -> String {
         guard let date = date else { return "nil" }
-        if #available(macOS 12.0, *) {
-            return date.ISO8601Format()
-        } else {
-            return date.debugDescription
-        }
+        return date.ISO8601Format()
     }
 
     // MARK: - Actions
@@ -111,6 +129,52 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             attributedMetricDataStorage.removeAll()
 
             await NSAlert.attributedMetricsResetCompleteAlert().runModal()
+        }
+    }
+
+    @objc private func resetInstallAttribution(_ sender: Any?) {
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "Reset Install Attribution"
+            alert.informativeText = "Clears ATB, variant, install date, retention ATBs, the campaign variant flag, and the m_mac_install \"already fired\" flag. Restart the app to re-run first-launch attribution from the bundle xattrs."
+            alert.addButton(withTitle: "Reset")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .warning
+            guard case .alertFirstButtonReturn = await alert.runModal() else { return }
+
+            LocalStatisticsStore().resetInstallAttributionState()
+            CampaignVariant().cleanUp()
+            for key in UserDefaults.netP.dictionaryRepresentation().keys
+            where key.hasPrefix("com.duckduckgo.network-protection.pixel.m_mac_install") {
+                UserDefaults.netP.removeObject(forKey: key)
+            }
+
+            let confirm = NSAlert()
+            confirm.messageText = "Done"
+            confirm.informativeText = "Restart the app to re-run first-launch attribution."
+            confirm.addButton(withTitle: "OK")
+            await confirm.runModal()
+        }
+    }
+
+    @objc private func resetReturningUser(_ sender: Any?) {
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "Reset Returning User Status"
+            alert.informativeText = "Clears the reinstall detection state so AttributedMetric treats this user as a non-returning user. Restart the app to re-run detection."
+            alert.addButton(withTitle: "Reset")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .warning
+            guard case .alertFirstButtonReturn = await alert.runModal() else { return }
+
+            try? keyValueStore.removeObject(forKey: "reinstall.detection.bundle-creation-date")
+            try? keyValueStore.removeObject(forKey: "reinstall.detection.is-reinstalling-user")
+
+            let confirm = NSAlert()
+            confirm.messageText = "Done"
+            confirm.informativeText = "Reinstall detection state has been cleared."
+            confirm.addButton(withTitle: "OK")
+            await confirm.runModal()
         }
     }
 

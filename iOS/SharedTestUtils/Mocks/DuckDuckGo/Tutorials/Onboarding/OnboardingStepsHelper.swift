@@ -17,32 +17,61 @@
 //  limitations under the License.
 //
 
+import Onboarding
 @testable import DuckDuckGo
 
 struct OnboardingStepsHelper {
     static func expectedIPhoneSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
+            .setDefaultBrowser,
             .addToDockPromo,
             .appIconSelection,
-            .addressBarPositionSelection
+            .addressBarPositionSelection,
+            .searchExperienceSelection
         ]
-    }
-
-    static func expectedIPhoneStepsWithSearchExperience(isReturningUser: Bool) -> [OnboardingIntroStep] {
-        expectedIPhoneSteps(isReturningUser: isReturningUser) + [.searchExperienceSelection]
     }
 
     static func expectedIPadSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
+            .setDefaultBrowser,
             .appIconSelection
         ]
     }
 
     static func expectedIPadStepsWithSearchExperience(isReturningUser: Bool) -> [OnboardingIntroStep] {
         expectedIPadSteps(isReturningUser: isReturningUser) + [.searchExperienceSelection]
+    }
+
+    static func expectedDuckAISteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
+        [
+            .introDialog(isReturningUser: isReturningUser),
+            .aiIntro,
+            .duckAIQuerySelection,
+            .interlude(.duckAI),
+            .addToDockPromo,
+            .setDefaultBrowser,
+            .addressBarPositionSelection
+        ]
+    }
+
+    /// The remaining steps that follow the Download Screen for a given reason
+    static func expectedRemainingSteps(for reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
+        let commonSteps: [OnboardingIntroStep] = [.addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection]
+
+        let personalisationSteps: [OnboardingIntroStep]
+        switch reason {
+        case .browserPrivately:
+            personalisationSteps = [.searchPrivacySettingsSelection, .searchExperienceSelection]
+        case .privateAIChat:
+            personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
+        case .noAI:
+            personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
+        case .blockAds:
+            personalisationSteps = [.adBlockingPersonalization, .searchExperienceSelection]
+        }
+
+        return [.setDefaultBrowser] + personalisationSteps + commonSteps
     }
 }

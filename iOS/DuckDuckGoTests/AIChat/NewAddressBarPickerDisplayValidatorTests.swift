@@ -19,11 +19,11 @@
 
 import XCTest
 import Core
-import Persistence
+import FoundationExtensions
+@_spi(Testing) import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
-import PersistenceTestingUtils
 import AIChat
 @testable import DuckDuckGo
 
@@ -32,13 +32,11 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockAppSettings: AppSettingsMock!
     private var mockKeyValueStore: MockKeyValueStore!
-    private var testUserDefaults: UserDefaults!
     private var experimentalAIChatManager: ExperimentalAIChatManager!
     private var pickerStorage: NewAddressBarPickerStore!
     private var mockOnboardingSearchExperienceProvider: MockOnboardingSearchExperienceProvider!
+    private var mockStatisticsStore: MockStatisticsStore!
     private var validator: NewAddressBarPickerDisplayValidator!
-
-    private let testSuiteName = "NewAddressBarPickerDisplayValidatorTests"
 
     override func setUp() {
         super.setUp()
@@ -48,24 +46,22 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockKeyValueStore = MockKeyValueStore()
 
-        testUserDefaults = UserDefaults(suiteName: testSuiteName)!
-        testUserDefaults.removePersistentDomain(forName: testSuiteName)
-
         experimentalAIChatManager = ExperimentalAIChatManager(
-            featureFlagger: mockFeatureFlagger,
-            userDefaults: testUserDefaults
+            featureFlagger: mockFeatureFlagger
         )
         pickerStorage = NewAddressBarPickerStore(keyValueStore: mockKeyValueStore)
         mockOnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        mockStatisticsStore = MockStatisticsStore()
 
-        // Note: tutorialSettings and launchSourceManager validation moved to ModalPromptCoordinationService
+        // Note: tutorialSettings and launchSourceManager validation moved to PromoCoordinationService
         validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: mockAIChatSettings,
             featureFlagger: mockFeatureFlagger,
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
             pickerStorage: pickerStorage,
-            searchExperienceOnboardingProvider: mockOnboardingSearchExperienceProvider
+            searchExperienceOnboardingProvider: mockOnboardingSearchExperienceProvider,
+            statisticsStore: mockStatisticsStore
         )
     }
 
@@ -74,8 +70,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         pickerStorage = nil
         experimentalAIChatManager = nil
         mockOnboardingSearchExperienceProvider = nil
-        testUserDefaults.removePersistentDomain(forName: testSuiteName)
-        testUserDefaults = nil
+        mockStatisticsStore = nil
         mockKeyValueStore = nil
         mockAppSettings = nil
         mockFeatureFlagger = nil
@@ -123,13 +118,13 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // MARK: - Exclusion Criteria Tests
+    // MARK: - Install Cooldown Tests
 
-    func testShouldDisplayPicker_WhenAddressBarPositionIsBottom_ReturnsFalse() {
+    func testShouldDisplayPicker_WhenInstallDateIsNil_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
-        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
-        mockAppSettings.currentAddressBarPosition = .bottom
+        setupNoExclusionCriteria()
+        mockStatisticsStore.installDate = nil
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -138,11 +133,82 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testShouldDisplayPicker_WhenInstalledToday_ReturnsFalse() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockStatisticsStore.installDate = Date()
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    func testShouldDisplayPicker_WhenInstalledLessThan24HoursAgo_ReturnsFalse() {
+        // Given: install was 23 hours and 59 minutes ago — i.e. almost-but-not-quite a full day.
+        // This pins the "1 day cooldown means 24 hours, not a midnight boundary" intent.
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        let almostOneDay = TimeInterval.hours(23) + TimeInterval.minutes(59)
+        mockStatisticsStore.installDate = Date().addingTimeInterval(-almostOneDay)
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    func testShouldDisplayPicker_WhenInstallCooldownExactlyPassed_ReturnsTrue() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockStatisticsStore.installDate = daysAgo(1)
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testShouldDisplayPicker_WhenInstallCooldownLongPassed_ReturnsTrue() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockStatisticsStore.installDate = daysAgo(30)
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    // MARK: - Exclusion Criteria Tests
+
     func testShouldDisplayPicker_WhenAddressBarPositionIsTop_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()
         mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
         mockAppSettings.currentAddressBarPosition = .top
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testShouldDisplayPicker_WhenAddressBarPositionIsBottomAndOtherCriteriaMet_ReturnsTrue() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsDisabledByUser = false
+        mockAppSettings.currentAddressBarPosition = .bottom
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -175,10 +241,12 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testShouldDisplayPicker_WhenAlreadyShown_ReturnsFalse() {
+    func testShouldDisplayPicker_WhenAddressBarSearchInputExplicitlyDisabledByUser_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
-        mockKeyValueStore.set(true, forKey: "aichat.storage.newAddressBarPickerShown")
+        setupNoExclusionCriteria()
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsDisabledByUser = true
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -187,11 +255,12 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testShouldDisplayPicker_WhenOnboardingSearchExperienceFeatureFlagIsOff_ReturnsTrue() {
+    func testShouldDisplayPicker_WhenAddressBarSearchInputNeverSetByUser_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()
         setupNoExclusionCriteria()
-        mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen]
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsDisabledByUser = false
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -200,15 +269,10 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testShouldDisplayPicker_WhenOnboardingSearchExperienceFeatureFlagIsOn_AndUserEnabledAIChatSearchInputDuringOnboarding_ReturnsFalse() {
+    func testShouldDisplayPicker_WhenAlreadyShown_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
-        mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen, .onboardingSearchExperience]
-        mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = true
-        mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = true
-        mockAppSettings.currentAddressBarPosition = .top
-        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(true, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -217,11 +281,26 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testShouldDisplayPicker_WhenOnboardingSearchExperienceFeatureFlagIsOn_AndUserDisabledAIChatSearchInputDuringOnboarding_ReturnsFalse() {
+    func testShouldDisplayPicker_WhenUserEnabledAIChatSearchInputDuringOnboarding_ReturnsFalse() {
+        // Given
+        setupShowCriteriaMet()
+        mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = true
+        mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = true
+        mockAppSettings.currentAddressBarPosition = .top
+        mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    func testShouldDisplayPicker_WhenUserDisabledAIChatSearchInputDuringOnboarding_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
         setupNoExclusionCriteria()
-        mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen, .onboardingSearchExperience]
         mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = true
         mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
 
@@ -232,11 +311,10 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testShouldDisplayPicker_WhenOnboardingSearchExperienceFeatureFlagIsOn_AndUserSkippedOnboarding_ReturnsTrue() {
+    func testShouldDisplayPicker_WhenUserSkippedOnboarding_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()
         setupNoExclusionCriteria()
-        mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen, .onboardingSearchExperience]
         mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = false
 
         // When
@@ -252,8 +330,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         // Given
         setupShowCriteriaMet()
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = false
-        testUserDefaults.set(true, forKey: "experimentalAIChatSettingsEnabled")
-        mockKeyValueStore.set(true, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(true, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -280,11 +357,15 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     private func setupShowCriteriaMet() {
         mockAIChatSettings.isAIChatEnabled = true
         mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen]
+        mockStatisticsStore.installDate = daysAgo(7)
+    }
+
+    private func daysAgo(_ days: Int) -> Date {
+        Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
     }
 
     private func setupNoExclusionCriteria() {
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = true
-        testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
-        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
     }
 }

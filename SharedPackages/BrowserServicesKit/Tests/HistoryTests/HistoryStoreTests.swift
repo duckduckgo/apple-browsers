@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import Combine
 import class Persistence.CoreDataDatabase
-@testable import History
+import Combine
 import Common
 import CoreData
+import Foundation
+import XCTest
+
+@testable @preconcurrency import History
 
 final class HistoryStoreTests: XCTestCase {
 
@@ -34,7 +35,7 @@ final class HistoryStoreTests: XCTestCase {
         super.setUp()
         let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory")!
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let database = CoreDataDatabase(name: className, containerLocation: location, model: model)
+        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: model)
         database.loadStore { _, error in
             if let e = error {
                 XCTFail("Could not load store: \(e.localizedDescription)")
@@ -164,10 +165,10 @@ final class HistoryStoreTests: XCTestCase {
 
         try await removeEntriesAndWait([history])
 
-        context.performAndWait {
+        context.performAndWait { [unowned context] in
             let request = PageVisitManagedObject.fetchRequest()
             do {
-                let results = try context.fetch(request)
+                let results = try context!.fetch(request)
                 XCTAssertEqual(results.count, 0)
             } catch {
                 XCTFail(error.localizedDescription)
@@ -207,10 +208,10 @@ final class HistoryStoreTests: XCTestCase {
         withExtendedLifetime(historiesToPreventFromDeallocation) { _ in }
         await fulfillment(of: [firstSavingExpectation], timeout: 2)
 
-        context.performAndWait {
+        context.performAndWait { [unowned context] in
             let request = PageVisitManagedObject.fetchRequest()
             do {
-                let results = try context.fetch(request)
+                let results = try context!.fetch(request)
                 XCTAssertEqual(results.first?.historyEntry?.identifier, toBeKeptsHistory.identifier)
                 XCTAssertEqual(results.first?.date, toBeKept.date)
                 XCTAssertEqual(results.count, 1)

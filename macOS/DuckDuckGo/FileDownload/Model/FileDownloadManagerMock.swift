@@ -20,7 +20,7 @@
 
 import Combine
 import Foundation
-import Navigation
+import DDGNavigation
 import UniformTypeIdentifiers
 
 final class FileDownloadManagerMock: FileDownloadManagerProtocol, WebKitDownloadTaskDelegate {

@@ -27,7 +27,6 @@ class FindInPageTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
 
         let bundle = Bundle(for: type(of: self))
         loremIpsumFileURL = try XCTUnwrap(bundle.url(forResource: "lorem_ipsum", withExtension: "html"), "Could not find lorem_ipsum.html in test bundle")
@@ -42,7 +41,7 @@ class FindInPageTests: UITestCase {
         addressBarTextField.pasteURL(loremIpsumFileURL, pressingEnter: true)
         XCTAssertTrue(
             loremIpsumWebView.staticTexts.containing(\.value, containing: "Lorem ipsum").firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                .waitForExistence(timeout: UITests.Timeouts.navigation),
             "The \"Lorem Ipsum\" web page didn't load in a reasonable timeframe."
         )
     }

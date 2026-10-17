@@ -1,0 +1,19 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f
+{
+    "m_mac_session_restored": {
+        "description": "Fires when the app session is restored successfully at launch (the user's regular tabs are brought back). The daily variant reports users who had a session restored on a given day; the count variant is the denominator for comparing against session restoration failures.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["startup"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "isRestartToUpdate",
+                "type": "boolean",
+                "description": "Whether the restoration happened during an automatic restart-to-update relaunch, which restores the session regardless of the session-restore setting."
+            }
+        ]
+    }
+}

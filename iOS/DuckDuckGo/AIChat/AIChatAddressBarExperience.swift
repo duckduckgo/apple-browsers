@@ -21,6 +21,7 @@ import UIKit
 import AIChat
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol UserInterfaceIdiomProviding {
     var userInterfaceIdiom: UIUserInterfaceIdiom { get }
@@ -32,10 +33,15 @@ struct SystemUserInterfaceIdiomProvider: UserInterfaceIdiomProviding {
     }
 }
 
+protocol LargeWidthProviding {
+    var isLargeWidth: Bool { get }
+}
+
+extension AppWidthObserver: LargeWidthProviding {}
+
 protocol AIChatAddressBarExperienceProviding {
     var shouldShowDuckAIAddressBarButton: Bool { get }
     var shouldShowModeToggle: Bool { get }
-    var shouldUseExperimentalEditingState: Bool { get }
     var isIPadAIToggleExperienceEnabled: Bool { get }
 }
 
@@ -44,31 +50,39 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
     private let featureFlagger: FeatureFlagger
     private let aiChatSettings: AIChatSettingsProvider
     private let userInterfaceIdiomProvider: UserInterfaceIdiomProviding
+    private let largeWidthProvider: LargeWidthProviding
 
     init(featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
-         userInterfaceIdiomProvider: UserInterfaceIdiomProviding = SystemUserInterfaceIdiomProvider()) {
+         userInterfaceIdiomProvider: UserInterfaceIdiomProviding = SystemUserInterfaceIdiomProvider(),
+         largeWidthProvider: LargeWidthProviding = AppWidthObserver.shared) {
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
         self.userInterfaceIdiomProvider = userInterfaceIdiomProvider
+        self.largeWidthProvider = largeWidthProvider
     }
 
     var isIPadAIToggleExperienceEnabled: Bool {
         userInterfaceIdiomProvider.userInterfaceIdiom == .pad
-            && featureFlagger.isFeatureOn(.iPadAIToggle)
+    }
+
+    private var isIPadChromeShortcutInPlay: Bool {
+        userInterfaceIdiomProvider.userInterfaceIdiom == .pad
+            && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
     }
 
     var shouldShowDuckAIAddressBarButton: Bool {
+        if isIPadChromeShortcutInPlay {
+            return DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
+                isLargeWidth: largeWidthProvider.isLargeWidth,
+                isTabBarShortcutEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
+            )
+        }
         return aiChatSettings.isAIChatAddressBarUserSettingsEnabled
     }
 
     var shouldShowModeToggle: Bool {
         isIPadAIToggleExperienceEnabled
             && aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-    }
-
-    var shouldUseExperimentalEditingState: Bool {
-        aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-            && !isIPadAIToggleExperienceEnabled
     }
 }

@@ -44,15 +44,56 @@ public enum BubbleArrowEdge {
 
 /// A shape representing a rectangular bubble with a directional arrow and rounded corners.
 /// Used internally by BubbleView.
-struct Bubble: InsettableShape {
+struct Bubble: InsettableShape, Animatable {
     let arrowLength: CGFloat
     let arrowWidth: CGFloat
     let arrowPlacement: ArrowPlacement
     let cornerRadius: CGFloat
-    let bend: CGFloat
+    var bend: CGFloat
     let finSideCurve: CGFloat
     let finTipRadius: CGFloat
     let finTipRoundness: CGFloat
+
+    /// Animatable copy of the placement's continuous parameter (`percent` or `edge` offset).
+    /// SwiftUI updates this via `animatableData` during transitions; `path(in:)` reads it
+    /// in preference to the value embedded in `arrowPlacement` so the tail position
+    /// interpolates smoothly when the bubble's `tailPosition` changes between steps.
+    private var animatedPlacementValue: CGFloat
+
+    init(arrowLength: CGFloat,
+         arrowWidth: CGFloat,
+         arrowPlacement: ArrowPlacement,
+         cornerRadius: CGFloat,
+         bend: CGFloat,
+         finSideCurve: CGFloat,
+         finTipRadius: CGFloat,
+         finTipRoundness: CGFloat) {
+        self.arrowLength = arrowLength
+        self.arrowWidth = arrowWidth
+        self.arrowPlacement = arrowPlacement
+        self.cornerRadius = cornerRadius
+        self.bend = bend
+        self.finSideCurve = finSideCurve
+        self.finTipRadius = finTipRadius
+        self.finTipRoundness = finTipRoundness
+        switch arrowPlacement {
+        case let .percent(value):
+            self.animatedPlacementValue = value
+        case let .edge(_, offset):
+            self.animatedPlacementValue = offset
+        }
+    }
+
+    /// Pairs the continuous tail parameters so SwiftUI interpolates them across
+    /// `tailPosition` changes — eliminating the brief border/fin desync that occurred
+    /// when the path snapped instantly between two different shapes.
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(animatedPlacementValue, bend) }
+        set {
+            animatedPlacementValue = newValue.first
+            bend = newValue.second
+        }
+    }
 
     enum ArrowPlacement {
         case percent(CGFloat)
@@ -71,12 +112,14 @@ struct Bubble: InsettableShape {
 
         let arrowPositionPercent: CGFloat
         switch arrowPlacement {
-        case let .percent(value):
-            arrowPositionPercent = value
-        case let .edge(edge, offset):
+        case .percent:
+            // Use the animatable value directly (matches the original `value`).
+            arrowPositionPercent = animatedPlacementValue
+        case let .edge(edge, _):
+            // Use the animatable offset (which interpolates) rather than the static one in the enum.
             arrowPositionPercent = Bubble.arrowPositionPercent(
                 edge: edge,
-                offset: offset,
+                offset: animatedPlacementValue,
                 rect: rect,
                 radius: radius,
                 arrowWidth: arrowWidth

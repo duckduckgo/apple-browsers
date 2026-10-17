@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
 import BrowserServicesKit
-import UserScript
-import os.log
 import Common
+import ConcurrencyExtensions
+import Foundation
+import os.log
+import UserScript
+import WebKit
 
 public protocol CCFCommunicationDelegate: AnyObject {
     func loadURL(url: URL) async
@@ -65,7 +66,13 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     deinit {
-        removeTimers()
+        let actionResponseTimer = actionResponseTimer
+        let taskCancellationTimer = taskCancellationTimer
+
+        DispatchQueue.main.asyncOrNow {
+            actionResponseTimer?.invalidate()
+            taskCancellationTimer?.invalidate()
+        }
     }
 
     public func handler(forMethodNamed methodName: String) -> Handler? {
@@ -83,7 +90,7 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionCompleted(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        removeTimers()
+        await removeTimers()
 
         Logger.action.log("Action completed")
 
@@ -125,7 +132,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.captchaInformation(captchaInfo: captchaInfo)
         case .solveCaptcha(let response):
             await delegate?.solveCaptcha(with: response)
-        case .fillForm, .click, .expectation:
+        case .fillForm, .click, .expectation, .executeScript:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
         case .conditionSuccess(let response):
             await delegate?.conditionSuccess(actions: response.actions)
@@ -135,7 +142,7 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionError(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        removeTimers()
+        await removeTimers()
 
         let error = DataBrokerProtectionError.parse(params: params)
         Logger.action.log("Action Error: \(String(describing: error.localizedDescription), privacy: .public)")
@@ -148,6 +155,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         self.broker = broker
     }
 
+    @MainActor
     func pushAction(method: CCFSubscribeActionName, webView: WKWebView, params: Encodable) {
         guard let broker = broker else {
             assertionFailure("Cannot continue without broker instance")
@@ -155,7 +163,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         }
 
         guard shouldContinueAction() else {
-            handleJobTimeout()
+            handleJobCancellation()
             return
         }
 
@@ -168,25 +176,42 @@ public class DataBrokerProtectionFeature: Subfeature {
         installActionTimer(for: (params as? Params)?.state.action)
     }
 
+    @MainActor
     private func installActionTimer(for action: Action?) {
+        actionResponseTimer?.invalidate()
+        actionResponseTimer = nil
+
         guard let action else { return }
 
-        actionResponseTimer?.invalidate()
-        actionResponseTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionTimeout, repeats: false) { [weak self] _ in
-            self?.handleTimeout(for: action)
-        }
-    }
-
-    private func installTaskCancellationTimer() {
-        taskCancellationTimer?.invalidate()
-        taskCancellationTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            if !self.shouldContinueAction() {
-                self.handleJobTimeout()
+        let timer = Timer(timeInterval: executionConfig.cssActionTimeout, repeats: false) { [weak self] _ in
+            MainActor.assumeMainThread {
+                self?.handleTimeout(for: action)
             }
         }
+
+        RunLoop.main.add(timer, forMode: .common)
+        actionResponseTimer = timer
     }
 
+    @MainActor
+    private func installTaskCancellationTimer() {
+        taskCancellationTimer?.invalidate()
+        taskCancellationTimer = nil
+
+        let timer = Timer(timeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeMainThread {
+                guard let self else { return }
+                if !self.shouldContinueAction() {
+                    self.handleJobCancellation()
+                }
+            }
+        }
+
+        RunLoop.main.add(timer, forMode: .common)
+        taskCancellationTimer = timer
+    }
+
+    @MainActor
     private func handleTimeout(for action: Action) {
         Logger.action.log("Action timeout: \(String(describing: action))")
 
@@ -197,15 +222,17 @@ public class DataBrokerProtectionFeature: Subfeature {
         }
     }
 
-    private func handleJobTimeout() {
-        Logger.action.log("Job timeout")
+    @MainActor
+    private func handleJobCancellation() {
+        Logger.action.log("Job cancelled")
 
         removeTimers()
         Task {
-            await delegate?.onError(error: DataBrokerProtectionError.jobTimeout)
+            await delegate?.onError(error: DataBrokerProtectionError.cancelled)
         }
     }
 
+    @MainActor
     private func removeTimers() {
         actionResponseTimer?.invalidate()
         actionResponseTimer = nil

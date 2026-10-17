@@ -26,6 +26,10 @@ final class MockDDGSyncing: DDGSyncing {
 
     var authState: SyncAuthState = .active
     var account: SyncAccount?
+    var recoveryCodeOverride: String?
+    var recoveryCode: String? {
+        recoveryCodeOverride ?? account?.legacyRecoveryCodeV1
+    }
     var isAIChatHistoryEnabled: Bool = true
 
     // MARK: - Delete AI Chats
@@ -56,6 +60,22 @@ final class MockDDGSyncing: DDGSyncing {
         deleteAIChatsByChatIds = chatIds
         onDeleteAIChatsByChatIds?()
         if let error = deleteAIChatsByChatIdsError {
+            throw error
+        }
+    }
+
+    // MARK: - Patch AI Chats
+
+    var patchAIChatsCallCount = 0
+    var patchAIChatsUpdates: [AIChatUpdate]?
+    var patchAIChatsError: Error?
+    var onPatchAIChats: (() -> Void)?
+
+    func patchAIChats(updates: [AIChatUpdate]) async throws {
+        patchAIChatsCallCount += 1
+        patchAIChatsUpdates = updates
+        onPatchAIChats?()
+        if let error = patchAIChatsError {
             throw error
         }
     }
@@ -113,7 +133,8 @@ final class MockDDGSyncing: DDGSyncing {
     var featureFlags: SyncFeatureFlags = .all
     var featureFlagsPublisher: AnyPublisher<SyncFeatureFlags, Never> { Just(featureFlags).eraseToAnyPublisher() }
     var authStatePublisher: AnyPublisher<SyncAuthState, Never> { Just(authState).eraseToAnyPublisher() }
-    var scheduler: Scheduling { MockScheduling() }
+    let mockScheduler = MockScheduling()
+    var scheduler: Scheduling { mockScheduler }
     var syncDailyStats: SyncDailyStats { fatalError("Not implemented") }
     var isSyncInProgress: Bool { false }
     var isSyncInProgressPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
@@ -129,6 +150,8 @@ final class MockDDGSyncing: DDGSyncing {
     func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionControlling { fatalError("Not implemented") }
     func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo { fatalError("Not implemented") }
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {}
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String { "" }
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] { [] }
     func setCustomOperations(_ operations: [any SyncCustomOperation]) {}
     func disconnect() async throws {}
     func disconnect(deviceId: String) async throws {}
@@ -143,7 +166,8 @@ final class MockDDGSyncing: DDGSyncing {
 // MARK: - Mock Scheduling
 
 final class MockScheduling: Scheduling {
-    func notifyDataChanged() {}
+    private(set) var notifyDataChangedCallCount = 0
+    func notifyDataChanged() { notifyDataChangedCallCount += 1 }
     func notifyAppLifecycleEvent() {}
     func requestSyncImmediately() {}
     func cancelSyncAndSuspendSyncQueue() {}

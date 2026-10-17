@@ -23,7 +23,6 @@ import DesignResourcesKitIcons
 import SwiftUIExtensions
 
 struct PasswordEntryRetryPromptView: View {
-    let onRetry: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -38,7 +37,6 @@ struct PasswordEntryRetryPromptView: View {
             VStack(alignment: .leading, spacing: Metrics.contentSpacing) {
                 titleSection
                 instructionsText
-                showMessageButton
                 keychainPromptExample
             }
         }
@@ -56,7 +54,7 @@ struct PasswordEntryRetryPromptView: View {
 
     @ViewBuilder
     private var instructionsText: some View {
-        if #available(macOS 12, *), let instructionsAttr = try? AttributedString(markdown: UserText.passwordEntryHelpInstructions) {
+        if let instructionsAttr = try? AttributedString(markdown: UserText.passwordEntryHelpInstructions) {
             Text(instructionsAttr)
                 .font(.body)
                 .foregroundColor(.primary)
@@ -67,17 +65,6 @@ struct PasswordEntryRetryPromptView: View {
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.leading)
         }
-    }
-
-    private var showMessageButton: some View {
-        Button {
-            onRetry()
-        } label: {
-            Text(UserText.passwordEntryHelpShowMacOSMessageButton)
-                .padding(.horizontal, 12)
-        }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true))
-        .padding(.bottom, 8)
     }
 
     private var keychainPromptExample: some View {

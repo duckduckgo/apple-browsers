@@ -22,7 +22,10 @@ import AppKit
 @MainActor
 protocol AutoconsentStatsPopoverPresenting: AnyObject {
     func isPopoverBeingPresented() -> Bool
-    func showPopover(viewController: PopoverMessageViewController)
+    /// Returns `false` if there was no window/anchor to present against, so callers can resolve
+    /// their own pending state instead of leaving it hanging on a promo that never actually appeared.
+    @discardableResult
+    func showPopover(viewController: PopoverMessageViewController) -> Bool
     func dismissPopover()
 }
 
@@ -40,9 +43,10 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
         activePopover != nil
     }
 
-    func showPopover(viewController: PopoverMessageViewController) {
+    @discardableResult
+    func showPopover(viewController: PopoverMessageViewController) -> Bool {
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
-            return
+            return false
         }
 
         let tabBarVC = mainWindowController.mainViewController.tabBarViewController
@@ -71,7 +75,7 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
         }()
 
         guard let button = targetButton else {
-            return
+            return false
         }
 
         activePopover = viewController
@@ -79,6 +83,7 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
         viewController.show(onParent: mainWindowController.mainViewController,
                             relativeTo: button,
                             behavior: .applicationDefined)
+        return true
     }
 
     func dismissPopover() {

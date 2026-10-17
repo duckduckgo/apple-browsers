@@ -51,7 +51,7 @@ final class TunnelControllerIPCService {
         }
     }
 
-    enum UDSError: PixelKitEvent {
+    enum UDSError: PixelKit.Event {
         case udsServerStartFailure(_ error: Error)
 
         var name: String {
@@ -228,6 +228,13 @@ extension TunnelControllerIPCService: XPCServerInterface {
         }
     }
 
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        Task { @MainActor in
+            await tunnelController.refreshSystemState()
+            completion(nil)
+        }
+    }
+
     func resetAll(uninstallSystemExtension: Bool) async {
         try? await networkExtensionController.deactivateSystemExtension()
     }
@@ -258,6 +265,9 @@ extension TunnelControllerIPCService: XPCServerInterface {
             quitAgent()
         case .createLogSnapshot:
             assertionFailure("Unsupported on macOS")
+        case .triggerLeakCheck:
+            // Intentional no-op: handled by the extension
+            break
         }
     }
 

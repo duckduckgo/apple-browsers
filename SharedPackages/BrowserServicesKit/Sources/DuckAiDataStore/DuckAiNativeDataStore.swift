@@ -16,17 +16,40 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
+import FoundationExtensions
 import CryptoKit
 import Foundation
 import GRDB
 import os.log
 
-public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
+public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeChatsRecordObserving {
 
-    private let dbQueue: DatabaseQueue
+    /// Sentinel error stored in `setupResult` until the background setup task overwrites it.
+    /// Under normal init flow this is never observed — `init` enqueues the setup task on the
+    /// serial `setupQueue` before returning, so any later `sync` is FIFO-ordered behind it.
+    private struct SetupNotCompletedError: Error {}
+
     private let filesDirectoryURL: URL
     private let encryptionKey: SymmetricKey
+    private let setupQueue = DispatchQueue(label: "com.duckduckgo.duckai.nativedatastore.setup", qos: .userInitiated)
+    private var setupResult: Result<DatabaseQueue, Error> = .failure(SetupNotCompletedError())
+
+    // Non-blocking probe of background setup state. Read by `setupSucceeded` from
+    // any thread; written exactly once when the deferred work finishes.
+    private let setupStateLock = NSLock()
+    private var _setupSucceeded: Bool?
+
+    /// Non-blocking probe of background DB setup state.
+    /// - Returns: `nil` while setup is in flight, `true` if it completed successfully,
+    ///   `false` if it failed. Safe to call from any thread; never blocks on the
+    ///   setup queue and so is safe to evaluate on the main thread during launch.
+    public var setupSucceeded: Bool? {
+        setupStateLock.lock()
+        defer { setupStateLock.unlock() }
+        return _setupSucceeded
+    }
 
     /// Creates an encrypted data store backed by SQLCipher.
     ///
@@ -34,11 +57,25 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     /// as an encrypted database. This handles the migration from the pre-encryption
     /// storage format.
     ///
+    /// The database open and migrations run asynchronously on a background queue;
+    /// errors surface at the first read/write call rather than from `init`. To observe
+    /// the async setup outcome (e.g. for telemetry) pass `setupCompletion`; it is
+    /// invoked exactly once on the setup queue when the DB is ready or has failed.
+    ///
     /// - Parameters:
     ///   - databaseURL: Path to the SQLite database file.
     ///   - filesDirectoryURL: Directory for storing file attachments on disk.
     ///   - key: 256-bit symmetric key used for SQLCipher encryption.
-    public init(databaseURL: URL, filesDirectoryURL: URL, key: Data) throws {
+    ///   - setupCompletion: Optional callback invoked once the background DB open
+    ///     and migrations finish. Called on the internal setup queue, which means
+    ///     the first DB read/write from any other thread queues behind it — the
+    ///     closure should be fast (e.g. fire a pixel) and must not block.
+    public init(
+        databaseURL: URL,
+        filesDirectoryURL: URL,
+        key: Data,
+        setupCompletion: ((Result<Void, Error>) -> Void)? = nil
+    ) throws {
         self.filesDirectoryURL = filesDirectoryURL
         self.encryptionKey = SymmetricKey(data: key)
 
@@ -52,13 +89,40 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
             throw DuckAiNativeDataStoreError.directoryCreationFailed(error)
         }
 
-        do {
-            dbQueue = try Self.openDatabase(at: databaseURL, key: key, filesDirectoryURL: filesDirectoryURL)
-        } catch {
-            throw DuckAiNativeDataStoreError.databaseError(error)
+        setupQueue.async { [filesDirectoryURL] in
+            let result: Result<DatabaseQueue, Error> = Result {
+                do {
+                    let queue = try Self.openDatabase(at: databaseURL, key: key, filesDirectoryURL: filesDirectoryURL)
+                    try Self.runMigrations(on: queue)
+                    return queue
+                } catch let error as DuckAiNativeDataStoreError {
+                    throw error
+                } catch {
+                    throw DuckAiNativeDataStoreError.databaseError(error)
+                }
+            }
+            self.setupResult = result
+            switch result {
+            case .success:
+                self.setupStateLock.lock()
+                self._setupSucceeded = true
+                self.setupStateLock.unlock()
+                setupCompletion?(.success(()))
+            case .failure(let error):
+                self.setupStateLock.lock()
+                self._setupSucceeded = false
+                self.setupStateLock.unlock()
+                setupCompletion?(.failure(error))
+            }
         }
+    }
 
-        try Self.runMigrations(on: dbQueue)
+    /// Blocks the caller until background setup completes, then returns the prepared
+    /// `DatabaseQueue` or rethrows the wrapped setup error.
+    private func dbQueue() throws -> DatabaseQueue {
+        try setupQueue.sync {
+            try self.setupResult.get()
+        }
     }
 
     /// Opens an encrypted database, recreating it if the existing file is unencrypted or corrupt.
@@ -135,9 +199,10 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     // MARK: - Chats
 
     public func putChat(chatId: String, data: Data) throws {
+        let queue = try dbQueue()
         let record = ChatRecord(chatId: chatId, data: data)
         do {
-            try dbQueue.write { db in
+            try queue.write { db in
                 try record.save(db)
             }
         } catch {
@@ -146,8 +211,9 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func putChats(_ chats: [DuckAiChatRecord]) throws {
+        let queue = try dbQueue()
         do {
-            try dbQueue.write { db in
+            try queue.write { db in
                 for chat in chats where !chat.chatId.isEmpty {
                     let record = ChatRecord(chatId: chat.chatId, data: chat.data)
                     try record.save(db)
@@ -158,9 +224,22 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
     }
 
-    public func getAllChats() throws -> [DuckAiChatRecord] {
+    public func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        let queue = try dbQueue()
         do {
-            return try dbQueue.read { db in
+            return try queue.read { db in
+                guard let record = try ChatRecord.fetchOne(db, key: chatId) else { return nil }
+                return DuckAiChatRecord(chatId: record.chatId, data: record.data)
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
+    public func getAllChats() throws -> [DuckAiChatRecord] {
+        let queue = try dbQueue()
+        do {
+            return try queue.read { db in
                 let records = try ChatRecord.fetchAll(db)
                 return records.map { DuckAiChatRecord(chatId: $0.chatId, data: $0.data) }
             }
@@ -169,9 +248,26 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
     }
 
-    public func deleteChat(chatId: String) throws {
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        let observation = ValueObservation.tracking { db in
+            try ChatRecord.fetchAll(db)
+                .map { DuckAiChatRecord(chatId: $0.chatId, data: $0.data) }
+        }
         do {
-            try dbQueue.write { db in
+            let queue = try dbQueue()
+            return observation
+                .publisher(in: queue, scheduling: .async(onQueue: .main))
+                .mapError { DuckAiNativeDataStoreError.databaseError($0) }
+                .eraseToAnyPublisher()
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
+    }
+
+    public func deleteChat(chatId: String) throws {
+        let queue = try dbQueue()
+        do {
+            try queue.write { db in
                 try db.execute(sql: "DELETE FROM duck_ai_chats WHERE chatId = ?", arguments: [chatId])
             }
         } catch {
@@ -180,8 +276,9 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func deleteAllChats() throws {
+        let queue = try dbQueue()
         do {
-            try dbQueue.write { db in
+            try queue.write { db in
                 try db.execute(sql: "DELETE FROM duck_ai_chats")
             }
         } catch {
@@ -200,6 +297,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     public func putFile(uuid: String, chatId: String, data: Data) throws {
         let normalizedUUID = try validatedFileUUID(for: uuid)
+        let queue = try dbQueue()
         let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
 
         do {
@@ -217,7 +315,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         let fileName = fileURL.lastPathComponent
         let record = FileRecord(uuid: normalizedUUID, chatId: chatId, dataSize: data.count, filePath: fileName)
         do {
-            try dbQueue.write { db in
+            try queue.write { db in
                 try record.save(db)
             }
         } catch {
@@ -228,11 +326,12 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     public func getFile(uuid: String) throws -> DuckAiFileContent? {
         let normalizedUUID = try validatedFileUUID(for: uuid)
+        let queue = try dbQueue()
         let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
 
         let record: FileRecord?
         do {
-            record = try dbQueue.read { db in
+            record = try queue.read { db in
                 try FileRecord.fetchOne(db, key: normalizedUUID)
             }
         } catch {
@@ -257,8 +356,9 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func listFiles() throws -> [DuckAiFileMetadata] {
+        let queue = try dbQueue()
         do {
-            return try dbQueue.read { db in
+            return try queue.read { db in
                 let records = try FileRecord.fetchAll(db)
                 return records.map { DuckAiFileMetadata(uuid: $0.uuid, chatId: $0.chatId, dataSize: $0.dataSize) }
             }
@@ -269,11 +369,12 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     public func deleteFile(uuid: String) throws {
         let normalizedUUID = try validatedFileUUID(for: uuid)
+        let queue = try dbQueue()
         let fileURL = filesDirectoryURL.appendingPathComponent(normalizedUUID)
         try? FileManager.default.removeItem(at: fileURL)
 
         do {
-            try dbQueue.write { db in
+            try queue.write { db in
                 try db.execute(sql: "DELETE FROM duck_ai_files WHERE uuid = ?", arguments: [normalizedUUID])
             }
         } catch {
@@ -281,7 +382,36 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
     }
 
+    public func deleteFiles(chatId: String) throws {
+        let queue = try dbQueue()
+        let fileNames: [String]
+        do {
+            fileNames = try queue.read { db in
+                try FileRecord
+                    .filter(Column("chatId") == chatId)
+                    .fetchAll(db)
+                    .map { $0.filePath }
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+
+        for fileName in fileNames {
+            let fileURL = filesDirectoryURL.appendingPathComponent(fileName)
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        do {
+            try queue.write { db in
+                try db.execute(sql: "DELETE FROM duck_ai_files WHERE chatId = ?", arguments: [chatId])
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
     public func deleteAllFiles() throws {
+        let queue = try dbQueue()
         let fileManager = FileManager.default
         if let contents = try? fileManager.contentsOfDirectory(at: filesDirectoryURL, includingPropertiesForKeys: nil) {
             for fileURL in contents {
@@ -290,7 +420,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
 
         do {
-            try dbQueue.write { db in
+            try queue.write { db in
                 try db.execute(sql: "DELETE FROM duck_ai_files")
             }
         } catch {

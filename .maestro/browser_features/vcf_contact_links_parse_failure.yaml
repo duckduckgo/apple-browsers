@@ -1,0 +1,27 @@
+# vcf_contact_links_parse_failure.yaml
+# A malformed .vcf is NOT previewed in QuickLook; the app shows the
+# parse-failure toast instead.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/contact-malformed.vcf"
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: "Unable to add contact. Try opening the contact file from Downloads instead."
+    timeout: 15000
+
+# QuickLook must not be presented for a malformed file.
+- assertNotVisible:
+    id: "QLOverlayDoneButtonAccessibilityIdentifier"

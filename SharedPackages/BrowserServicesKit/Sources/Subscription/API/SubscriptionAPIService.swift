@@ -17,7 +17,9 @@
 //
 
 import Foundation
+import DDGError
 import Common
+import FoundationExtensions
 import os.log
 import Networking
 
@@ -73,14 +75,6 @@ public enum APICachePolicy {
     case reloadIgnoringLocalCacheData
     case returnCacheDataElseLoad
 
-    public var subscriptionCachePolicy: SubscriptionCachePolicy {
-        switch self {
-        case .reloadIgnoringLocalCacheData:
-            return .remoteFirst
-        case .returnCacheDataElseLoad:
-            return .cacheFirst
-        }
-    }
 }
 
 public struct DefaultSubscriptionAPIService: SubscriptionAPIService {

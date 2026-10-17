@@ -21,6 +21,17 @@ import Foundation
 public protocol AIChatsHandling {
     func delete(until: Date, token: String) async throws
     func delete(chatIds: [String], token: String) async throws
+    func patch(updates: [AIChatUpdate], token: String) async throws
+}
+
+public struct AIChatUpdate: Equatable {
+    public let chatId: String
+    public let pinned: Bool
+
+    public init(chatId: String, pinned: Bool) {
+        self.chatId = chatId
+        self.pinned = pinned
+    }
 }
 
 public final class AIChats: AIChatsHandling {
@@ -81,4 +92,35 @@ public final class AIChats: AIChatsHandling {
         }
     }
 
+    public func patch(updates: [AIChatUpdate], token: String) async throws {
+        guard !updates.isEmpty else { return }
+
+        let now = dateFormatter.string(from: Date())
+        let payload: [[String: Any]] = updates.map { update in
+            [
+                "id": update.chatId,
+                "client_last_modified": now,
+                "edit_timestamp": now,
+                "pinned": update.pinned ? "pinned" : NSNull()
+            ]
+        }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+
+        let request = api.createAuthenticatedJSONRequest(
+            url: endpoints.aiChats,
+            method: .patch,
+            authToken: token,
+            json: jsonData,
+            headers: [:],
+            parameters: [:]
+        )
+
+        let result = try await request.execute()
+        let statusCode = result.response.statusCode
+
+        guard statusCode == 204 else {
+            throw SyncError.unexpectedStatusCode(statusCode)
+        }
+    }
 }

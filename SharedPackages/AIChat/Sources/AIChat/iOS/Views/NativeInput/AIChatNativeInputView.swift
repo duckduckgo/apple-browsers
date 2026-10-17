@@ -47,6 +47,7 @@ public final class AIChatNativeInputView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
         static let placeholderTrailingSpacing: CGFloat = 8
         static let buttonSize: CGFloat = 40
+        static let minimumButtonHitSize: CGFloat = 44
         static let bottomBarHeight: CGFloat = 56
         static let bottomBarHorizontalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 16
@@ -92,6 +93,14 @@ public final class AIChatNativeInputView: UIView {
         didSet { updateButtonStates() }
     }
 
+    /// Shown in place of the arrow when set, e.g. "Ask" while a disclaimer asks for an explicit tap.
+    public var submitButtonTitle: String? {
+        didSet {
+            guard submitButtonTitle != oldValue else { return }
+            updateSubmitButtonContent()
+        }
+    }
+
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
 
@@ -117,11 +126,12 @@ public final class AIChatNativeInputView: UIView {
         textView.font = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
-        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.tintColor = UIColor(designSystemColor: .accentPrimary)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.textContainerInset = Constants.textContainerInset
         textView.isScrollEnabled = false
         textView.delegate = self
+        textView.accessibilityIdentifier = "AIChatNativeInputView.textView"
         textView.translatesAutoresizingMaskIntoConstraints = false
         return textView
     }()
@@ -164,6 +174,7 @@ public final class AIChatNativeInputView: UIView {
         let view = UIView()
         view.backgroundColor = .clear
         view.layer.cornerRadius = Constants.buttonSize / 2
+        view.isUserInteractionEnabled = false
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -171,7 +182,9 @@ public final class AIChatNativeInputView: UIView {
     private lazy var submitButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .accent)
+        button.tintColor = UIColor(designSystemColor: .accentPrimary)
+        button.accessibilityIdentifier = "AIChatNativeInputView.submitButton"
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(submitButtonTapped), for: .touchUpInside)
         button.isEnabled = false
@@ -182,6 +195,7 @@ public final class AIChatNativeInputView: UIView {
 
     private var isShowingClearButton = false
     private var chipHeightConstraint: NSLayoutConstraint?
+    private var submitButtonContainerWidthConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -266,10 +280,9 @@ public final class AIChatNativeInputView: UIView {
         chipView.configure(state: state)
     }
 
-    /// Sets the tap-to-attach callback on the current chip view (for placeholder taps).
+    /// Placeholder chips are no longer rendered; attach is handled by the attachment menu.
     public func setChipTapCallback(_ callback: @escaping () -> Void) {
-        guard let chipView = currentChipView as? AIChatContextChipView else { return }
-        chipView.onTapToAttach = callback
+        _ = callback
     }
 }
 
@@ -285,7 +298,7 @@ private extension AIChatNativeInputView {
         mainContainer.addSubview(chipContainer)
         mainContainer.addSubview(bottomBar)
         bottomBar.addSubview(submitButtonContainer)
-        submitButtonContainer.addSubview(submitButton)
+        bottomBar.addSubview(submitButton)
 
         setupConstraints()
         updateButtonStates()
@@ -293,6 +306,7 @@ private extension AIChatNativeInputView {
 
     func setupConstraints() {
         chipHeightConstraint = chipContainer.heightAnchor.constraint(equalToConstant: 0)
+        submitButtonContainerWidthConstraint = submitButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize)
 
         // Vertical layout chain: textView → chipContainer → bottomBar
         // Using inequality constraints allows textView to flex between min/max height
@@ -332,16 +346,28 @@ private extension AIChatNativeInputView {
 
             submitButtonContainer.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
             submitButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
-            submitButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            submitButtonContainerWidthConstraint!,
             submitButtonContainer.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
             submitButton.centerXAnchor.constraint(equalTo: submitButtonContainer.centerXAnchor),
             submitButton.centerYAnchor.constraint(equalTo: submitButtonContainer.centerYAnchor),
+            submitButton.widthAnchor.constraint(equalTo: submitButtonContainer.widthAnchor,
+                                                constant: Constants.minimumButtonHitSize - Constants.buttonSize),
+            submitButton.heightAnchor.constraint(equalToConstant: Constants.minimumButtonHitSize),
         ])
     }
 
     func updatePlaceholderVisibility() {
         placeholderLabel.isHidden = !text.isEmpty
+    }
+
+    func updateSubmitButtonContent() {
+        submitButton.setImage(submitButtonTitle == nil ? DesignSystemImages.Glyphs.Size24.arrowUp : nil, for: .normal)
+        submitButton.setTitle(submitButtonTitle, for: .normal)
+        submitButton.accessibilityLabel = submitButtonTitle
+        submitButtonContainerWidthConstraint?.constant = submitButtonTitle.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.buttonSize)
+        } ?? Constants.buttonSize
     }
 
     func updateTextViewScrolling() {
@@ -370,7 +396,7 @@ private extension AIChatNativeInputView {
 
         submitButton.isEnabled = hasSubmittableText
         if hasSubmittableText {
-            submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accent)
+            submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accentPrimary)
             submitButton.tintColor = .white
         } else {
             submitButtonContainer.backgroundColor = .clear

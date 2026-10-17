@@ -252,6 +252,7 @@ private extension RemoteMessagingConfigProcessorTests {
                 subscriptionDaysSinceSubscribed: -1,
                 subscriptionDaysUntilExpiry: -1,
                 subscriptionPurchasePlatform: nil,
+                subscriptionTier: nil,
                 isSubscriptionActive: false,
                 isSubscriptionExpiring: false,
                 isSubscriptionExpired: false,
@@ -263,7 +264,11 @@ private extension RemoteMessagingConfigProcessorTests {
                 enabledFeatureFlags: [],
                 isSyncEnabled: false,
                 shouldShowWinBackOfferUrgencyMessage: false,
-                isCurrentPIRUser: false
+                isCurrentPIRUser: false,
+                isReturningUser: nil,
+                isAIChatEnabled: false,
+                triedAIChatDuringOnboarding: false,
+                isAIChatBoostActive: nil
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

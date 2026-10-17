@@ -68,7 +68,7 @@ final class AddEditBookmarkDialogViewModel: BookmarkDialogEditing {
 
     private var hasValidInput: Bool {
         guard let url = bookmarkURLPath.url else { return false }
-        return !bookmarkName.trimmingWhitespace().isEmpty && url.isValid
+        return url.isValid
     }
 
     let isOtherActionDisabled: Bool = false

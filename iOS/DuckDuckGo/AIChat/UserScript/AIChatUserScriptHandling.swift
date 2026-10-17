@@ -26,9 +26,12 @@ import AIChat
 import OSLog
 import WebKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Core
 import Persistence
+import FeatureFlags_iOS
+import PixelKit
 
 /// The current display mode of the AI Chat interface.
 enum AIChatDisplayMode {
@@ -64,6 +67,9 @@ enum PageContextRequestReason: String {
     }
 }
 
+/// Provides page context for a `getAIChatPageContext` request.
+typealias PageContextAsyncProvider = @MainActor (PageContextRequestReason) async -> AIChatPageContextData?
+
 /// Response structure for getAIChatPageContext
 struct PageContextResponse: Encodable {
     let pageContext: AIChatPageContextData?
@@ -73,18 +79,95 @@ protocol AIChatMetricReportingHandling: AnyObject {
     func didReportMetric(_ metric: AIChatMetric)
 }
 
+enum AIChatUserScriptErrorFailureReason: String {
+    case keyNotFound = "key_not_found"
+    case typeMismatch = "type_mismatch"
+    case valueNotFound = "value_not_found"
+    case dataCorrupted = "data_corrupted"
+    case unknownDecodingError = "unknown_decoding_error"
+
+    init(error: Error) {
+        switch error {
+        case DecodingError.keyNotFound(_, _):
+            self = .keyNotFound
+        case DecodingError.typeMismatch(_, _):
+            self = .typeMismatch
+        case DecodingError.valueNotFound(_, _):
+            self = .valueNotFound
+        case DecodingError.dataCorrupted(_):
+            self = .dataCorrupted
+        default:
+            self = .unknownDecodingError
+        }
+    }
+}
+
+enum AIChatUserScriptErrorEvent: Equatable {
+    case reportMetricDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
+    case responseStateDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
+
+    static func == (lhs: AIChatUserScriptErrorEvent, rhs: AIChatUserScriptErrorEvent) -> Bool {
+        switch (lhs, rhs) {
+        case (.reportMetricDecodingFailed, .reportMetricDecodingFailed),
+             (.responseStateDecodingFailed, .responseStateDecodingFailed):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
+
+    private enum Parameters {
+        static let failureReason = "failureReason"
+    }
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        super.init { event, _, _, _ in
+            switch event {
+            case .reportMetricDecodingFailed(let error, let failureReason):
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatReportMetricDecodeError.withError(error),
+                    frequency: .dailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
+                )
+            case .responseStateDecodingFailed(let error, let failureReason):
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatResponseStateDecodeError.withError(error),
+                    frequency: .dailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
+                )
+            }
+        }
+    }
+
+    @available(*, unavailable, message: "Use init(pixelFiring:) instead")
+    override init(mapping: @escaping EventMapping<AIChatUserScriptErrorEvent>.Mapping) {
+        fatalError("Use init(pixelFiring:) instead")
+    }
+}
+
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
     var isFireModeProvider: (() -> Bool)? { get set }
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
+    var focusChatInputHandler: (@MainActor () -> Void)? { get set }
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
+    /// The `termsAccepted` value `prompt` carries across the bridge.
+    func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
+    func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?)
@@ -101,6 +184,19 @@ protocol AIChatUserScriptHandling: AnyObject {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
+    func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable?
+    func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable?
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -117,17 +213,38 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private let promptHandler: any AIChatConsumableDataHandling
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
+    private var openLinkHandler: ((URL) -> Void)?
+    private var chatStatusHandler: (@MainActor (AIChatStatusValue) -> Void)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let syncHandler: AIChatSyncHandling
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
-    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let devicePlatform: DevicePlatformProviding.Type
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
-    private let keyValueStore: KeyValueStoring
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let isNativeStorageBridgeAvailable: Bool
+    private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
+    private let installDateProvider: () -> Date?
+    private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
+    private let attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore
+    private let attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling?
+
+    private var isAttachmentPrivacyEnabled: Bool {
+        !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
+    }
+
+    @MainActor private lazy var attachmentPrivacyDisclosure = AttachmentPrivacyDisclosure(
+        store: attachmentPrivacyDisplayStore,
+        webKeySource: attachmentPrivacyWebKeySource,
+        isEnabled: { [weak self] in self?.isAttachmentPrivacyEnabled == true }
+    )
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -136,25 +253,53 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Each owner (tab, contextual sheet, modal) is responsible for setting this.
     var isFireModeProvider: (() -> Bool)?
 
+    /// Called when the FE requests focus on the native address bar via `focusChatInput`.
+    var focusChatInputHandler: (@MainActor () -> Void)?
+
     /// Closure that provides page context on getAIChatPageContext requests.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
-    private var pageContextProvider: ((PageContextRequestReason) -> AIChatPageContextData?)?
+    private var pageContextProvider: PageContextAsyncProvider?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
          featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
+         aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
+         isNativeStorageBridgeAvailable: Bool = false,
+         attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore = AttachmentPrivacyDisclosureStore(),
+         attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
+         installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
+         installTypeProvider: @escaping () -> AIChatInstallType = {
+             StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
-        self.keyValueStore = keyValueStore
+        self.termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: keyValueStore)
         self.promptHandler = promptHandler
-        self.aichatFullModeFeature = aichatFullModeFeature
+        self.devicePlatform = devicePlatform
         self.aichatContextualModeFeature = aichatContextualModeFeature
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
+        self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
+        self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.attachmentPrivacyDisplayStore = attachmentPrivacyDisplayStore
+        self.attachmentPrivacyWebKeySource = attachmentPrivacyWebKeySource
+        self.installDateProvider = installDateProvider
+        self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
         setUpSyncStatusObserver()
+    }
+
+    @MainActor
+    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
+        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosure.claim())
     }
 
     enum AIChatKeys {
@@ -171,27 +316,56 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
         }
 
-        NotificationCenter.default.post(
-            name: .urlInterceptAIChat,
-            object: payload,
-            userInfo: nil
-        )
+        var userInfo: [AnyHashable: Any] = [TabURLInterceptorParameter.aiChatRequestHost: message.messageHost]
+        if let pageURL = message.messageWebView?.url {
+            userInfo[TabURLInterceptorParameter.aiChatRequestURL] = pageURL
+        }
+        NotificationCenter.default.post(name: .urlInterceptAIChat, object: payload, userInfo: userInfo)
 
         return nil
     }
 
-    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
-        if let paramsDict = params as? [String: Any],
-           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? {
+        return await openAIChatLink(params: params, message: message)
+    }
 
-            let decoder = JSONDecoder()
-            do {
-                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
-                handleTermsAcceptedIfNeeded(metric)
-                metricReportingHandler?.didReportMetric(metric)
-            } catch {
-                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
-            }
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? {
+        return await openAIChatLink(params: params, message: message)
+    }
+
+    @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params),
+              let url = URL(string: openLinkParams.url),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil else {
+            return nil
+        }
+
+        openLinkHandler?(url)
+        return nil
+    }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let paramsDict = params as? [String: Any] else {
+            aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
+                error: nil,
+                failureReason: .typeMismatch
+            ))
+            return nil
+        }
+
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: paramsDict, options: [])
+            let metric = try JSONDecoder().decode(AIChatMetric.self, from: jsonData)
+            handleTermsAcceptedIfNeeded(metric)
+            metricReportingHandler?.didReportMetric(metric)
+        } catch {
+            Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
+            aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
+                error: error,
+                failureReason: AIChatUserScriptErrorFailureReason(error: error)
+            ))
         }
         return nil
     }
@@ -204,21 +378,34 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     // MARK: - Terms and Conditions
 
-    private static let hasAcceptedTermsAndConditionsKey = "aichat.hasAcceptedTermsAndConditions"
-
     private func handleTermsAcceptedIfNeeded(_ metric: AIChatMetric) {
         guard metric.metricName == .userDidAcceptTermsAndConditions else { return }
+        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
 
-        let alreadyAccepted = keyValueStore.object(forKey: Self.hasAcceptedTermsAndConditionsKey) as? Bool == true
+        let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
+            ? .aiChatTermsAcceptedDuplicateSyncOn
+            : .aiChatTermsAcceptedDuplicateSyncOff
+        PixelKit.fire(pixel, frequency: .dailyAndCount)
+    }
 
-        if alreadyAccepted {
-            let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
-                ? .aiChatTermsAcceptedDuplicateSyncOn
-                : .aiChatTermsAcceptedDuplicateSyncOff
-            DailyPixel.fireDailyAndCount(pixel: pixel)
+    /// `true` only when the prompt was sent with Ask and the acceptance is on record; every other prompt
+    /// reads `false`. `nil` omits the key wherever native Terms of Service is off.
+    func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool? {
+        guard sendsTermsAcceptedMarker else {
+            Logger.aiChat.debug("[TermsOfService] Prompt crosses the bridge without termsAccepted: native Terms of Service is off")
+            return nil
         }
+        let sentWithAsk = prompt.termsAccepted == true
+        let termsAccepted = sentWithAsk && termsOfServiceStore.hasAccepted
+        Logger.aiChat.debug("[TermsOfService] Prompt crosses the bridge with termsAccepted=\(termsAccepted, privacy: .public) (sentWithAsk=\(sentWithAsk, privacy: .public), hasAccepted=\(self.termsOfServiceStore.hasAccepted, privacy: .public))")
+        return termsAccepted
+    }
 
-        keyValueStore.set(true, forKey: Self.hasAcceptedTermsAndConditionsKey)
+    /// iPhone shows the disclaimer in its native chat input; iPad shows it in the address bar and the
+    /// contextual sheet whenever the flag is on, including over a full-tab chat.
+    private var sendsTermsAcceptedMarker: Bool {
+        guard featureFlagger.isFeatureOn(.duckAINativeTermsOfService) else { return false }
+        return devicePlatform.isIphone ? nativeModeSupport.supportsNativeChatInput : true
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -235,7 +422,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
+    private var nativeModeSupport: (supportsFullMode: Bool, supportsContextualMode: Bool, supportsNativeChatInput: Bool) {
         let defaults = AIChatNativeConfigValues.defaultValues
 
         let supportsFullMode: Bool
@@ -243,21 +430,32 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         switch displayMode {
         case .fullTab:
-            supportsFullMode = aichatFullModeFeature.isAvailable
+            supportsFullMode = devicePlatform.isIphone
             supportsContextualMode = false
         case .contextual:
             supportsFullMode = false
             supportsContextualMode = aichatContextualModeFeature.isAvailable
         case .none:
-            supportsFullMode = aichatFullModeFeature.isAvailable || defaults.supportsAIChatFullMode
+            supportsFullMode = devicePlatform.isIphone || defaults.supportsAIChatFullMode
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
-        let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && unifiedToggleInputFeature.isAvailable
+        return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
+    }
+
+    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
+        let defaults = AIChatNativeConfigValues.defaultValues
+        let (supportsFullMode, supportsContextualMode, supportsNativeChatInput) = nativeModeSupport
+        let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
 
-        return AIChatNativeConfigValues(
+        let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
+            && devicePlatform.isIphone
+            && supportsNativeChatInput
+            && isNativeStorageBridgeAvailable
+        let config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
@@ -273,8 +471,36 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts)
+            supportsMultipleContexts: supportsContextualMode,
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
+            supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
+            supportsPromoCards: supportsNativeChatInput,
+            supportsSuggestions: supportsSuggestions,
+            supportsNativeUsageWarnings: supportsNativeUsageWarnings,
+            supportsBlobSafeDataClearing: true,
+            installType: installTypeProvider(),
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
+            supportsAttachmentPrivacyDisplay: isAttachmentPrivacyEnabled,
+            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
+            supportsCanonicalChatFormat: true
         )
+        return config
+    }
+
+    // MARK: - Homepage chat suggestions
+
+    private func supportsHomePageChatSuggestions(for message: UserScriptMessage) -> Bool {
+        HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost) && homepageAiChatsProvider?.isSupported == true
+    }
+
+    @MainActor
+    func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
     }
 
     @MainActor
@@ -283,11 +509,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
             inputBoxHandler?.aiChatStatus = decodedStatus.status
+            chatStatusHandler?(decodedStatus.status)
             if let attachments = decodedStatus.attachments {
                 inputBoxHandler?.attachmentUsage = attachments
             }
             return nil
         } catch {
+            Logger.aiChat.debug("Failed to decode response state JSON in AIChatUserScript: \(error)")
+            aiChatUserScriptErrorEventMapper.fire(.responseStateDecodingFailed(
+                error: error,
+                failureReason: AIChatUserScriptErrorFailureReason(error: error)
+            ))
             return nil
         }
     }
@@ -305,27 +537,31 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
-        promptHandler.consumeData() as? AIChatNativePrompt
+        guard let prompt = promptHandler.consumeData() as? AIChatNativePrompt else { return nil }
+        return prompt.withTermsAccepted(termsAcceptedMarker(for: prompt))
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
         AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
     }
 
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable? {
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? {
         let request: GetPageContextRequest? = DecodableHelper.decode(from: params)
         let reason = PageContextRequestReason(rawValue: request?.reason)
-        let pageContext = pageContextProvider?(reason)
-        if let context = pageContext {
-            Logger.aiChat.debug("[PageContext] Frontend requested context (reason: \(request?.reason ?? "none")) - returning \(context.content.count) chars")
-        } else {
-            Logger.aiChat.debug("[PageContext] Frontend requested context (reason: \(request?.reason ?? "none")) - returning nil")
-        }
+        let pageContext = await pageContextProvider?(reason)
         return PageContextResponse(pageContext: pageContext)
     }
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {
         self.payloadHandler = payloadHandler
+    }
+
+    func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {
+        openLinkHandler = handler
+    }
+
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
+        chatStatusHandler = handler
     }
 
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
@@ -336,7 +572,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.metricReportingHandler = metricHandler
     }
 
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?) {
         self.pageContextProvider = provider
     }
 
@@ -391,6 +627,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
     }
 
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard featureFlagger.isFeatureOn(.nativeAIPromptEditing) else {
+            return EditPromptReply.cancelled
+        }
+        guard let request: EditPromptRequest = DecodableHelper.decode(from: params) else {
+            Logger.aiChat.error("editPrompt: invalid params")
+            return EditPromptReply.cancelled
+        }
+        guard let inputBoxHandler else { return EditPromptReply.cancelled }
+        return await inputBoxHandler.editPrompt(request)
+    }
+
+    @MainActor
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.cancelEdit()
+        return nil
+    }
+
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any] else {
             return AIChatErrorResponse(reason: "invalid_params")
@@ -422,14 +676,80 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
-        NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: nil)
-        Pixel.fire(pixel: .voiceSessionStarted)
+        // `object` carries the source webView so listeners can route per-tab (matches macOS).
+        NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
+        PixelKit.fire(Pixel.Event.voiceSessionStarted)
         return nil
     }
 
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
-        NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: nil)
+        NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable? {
+        var userInfo: [String: Any] = [:]
+        if let backgroundColor = (params as? [String: Any])?[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] as? String {
+            userInfo[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] = backgroundColor
+        }
+        NotificationCenter.default.post(name: .aiChatVoiceModeOpened, object: message.messageWebView, userInfo: userInfo)
+        return nil
+    }
+
+    @MainActor
+    func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatVoiceModeClosed, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Image Generation Chat
+
+    @MainActor
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Model Picker
+
+    @MainActor
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
+        return nil
+    }
+    
+    @MainActor
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatShowReasoningPicker, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatOpenFilePicker, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Recovery-Card Submit Block
+
+    @MainActor
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.isSubmitBlockedByRecoveryCard = true
+        return nil
+    }
+
+    @MainActor
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.isSubmitBlockedByRecoveryCard = false
+        return nil
+    }
+
+    @MainActor
+    func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard unifiedToggleInputFeature.isAvailable else { return nil }
+        focusChatInputHandler?()
         return nil
     }
 
@@ -587,13 +907,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     private func fireSyncAiChatActiveDailyIfNeeded() {
-        DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+        PixelKit.fire(Pixel.Event.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
     }
 
     @MainActor
     private func fireSyncDailyAndCountPixel(_ pixel: Pixel.Event,
                                             withAdditionalParameters params: [String: String]) {
-        DailyPixel.fireDailyAndCount(pixel: pixel, withAdditionalParameters: params)
+        PixelKit.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
 }
 // swiftlint:enable inclusive_language
+
+extension AIChatUserScriptHandler {
+
+    struct OpenLink: Codable, Equatable {
+        let url: String
+    }
+}

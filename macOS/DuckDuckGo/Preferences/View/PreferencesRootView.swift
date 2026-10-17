@@ -18,12 +18,15 @@
 
 import BrowserServicesKit
 import Common
+import DesignResourcesKit
+import FoundationExtensions
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
 import PixelKit
+import WideEvent
 import Subscription
 import SubscriptionUI
 import AIChat
@@ -47,9 +50,18 @@ enum Preferences {
     }
 
     struct RootViewV2: View {
+        private struct ScrollViewID: Hashable {
+            enum DetailPane: Hashable {
+                case websitePermission(WebsitePermissionCategory)
+            }
+
+            let pane: PreferencePaneIdentifier
+            let detailPane: DetailPane?
+        }
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
+        @StateObject private var websitePermissionsModel: WebsitePermissionsViewModel
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -61,6 +73,8 @@ enum Preferences {
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
+        let aiChatTabOpener: AIChatTabOpening
+        let aiChatConversationSourceHandler: AIChatConversationSourceHandler
         let wideEvent: WideEventManaging
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
@@ -68,6 +82,18 @@ enum Preferences {
         let pinningManager: PinningManager
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
+        }
+
+        private var scrollViewID: ScrollViewID {
+            let detailPane: ScrollViewID.DetailPane?
+            switch model.selectedPane {
+            case .websitePermissions:
+                detailPane = websitePermissionsModel.viewState.detailModel.map { .websitePermission($0.viewState.category) }
+            default:
+                detailPane = nil
+            }
+
+            return ScrollViewID(pane: model.selectedPane, detailPane: detailPane)
         }
 
         init(
@@ -78,8 +104,12 @@ enum Preferences {
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
+            permissionManager: PermissionManagerProtocol,
+            websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
+            aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
+            aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
             blackFridayCampaignProvider: BlackFridayCampaignProviding = NSApp.delegateTyped.blackFridayCampaignProvider,
             pixelHandler: @escaping (SubscriptionPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
@@ -91,7 +121,12 @@ enum Preferences {
             self.featureFlagger = featureFlagger
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
+            self.aiChatTabOpener = aiChatTabOpener
+            self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
             self.wideEvent = wideEvent
+            self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
+                                                                                                 featureFlagger: featureFlagger,
+                                                                                                 defaults: websitePermissionDefaults))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
@@ -111,17 +146,46 @@ enum Preferences {
                     .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
-                ScrollView(.vertical) {
-                    HStack(spacing: 0) {
-                        contentView
-                        Spacer()
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical) {
+                        HStack(spacing: 0) {
+                            contentView
+                            Spacer()
+                        }
+                    }
+                    .id(scrollViewID)
+                    .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
+                    .accessibilityIdentifier("Settings.ScrollView")
+                    // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
+                    // evaluation, so it's already the current value and `onChange` never fires for it.
+                    .onReceive(model.$scrollTarget) { anchor in
+                        guard let anchor else { return }
+                        scroll(proxy, to: anchor)
                     }
                 }
-                .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
-                .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
+            .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onReceive(model.$websitePermissionTarget) { category in
+                guard let category else { return }
+                DispatchQueue.main.async {
+                    guard model.selectedPane == .websitePermissions, model.websitePermissionTarget == category else { return }
+                    websitePermissionsModel.send(action: .openDetail(category))
+                    model.resetWebsitePermissionRequest()
+                }
+            }
+            .onChange(of: model.selectedPane) { selectedPane in
+                guard selectedPane != .websitePermissions else { return }
+                websitePermissionsModel.send(action: .closeDetail)
+            }
+        }
+
+        private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesScrollAnchor) {
+            DispatchQueue.main.async {
+                proxy.scrollTo(anchor, anchor: .top)
+                model.resetScrollRequest()
+            }
         }
 
         @ViewBuilder
@@ -154,7 +218,8 @@ enum Preferences {
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 autoplayModel: NSApp.delegateTyped.autoplayPreferences,
-                                dockModel: model.dockPreferences)
+                                dockModel: model.dockPreferences,
+                                showWebsitePermissions: { model.selectPane(.websitePermissions) })
                 case .sync:
                     SyncView()
                 case .appearance:
@@ -181,7 +246,9 @@ enum Preferences {
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
-                case .otherPlatforms:
+                case .websitePermissions:
+                    PreferencesWebsitePermissionsView(model: websitePermissionsModel)
+                case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab
                     Spacer()
                 case .about:
@@ -193,6 +260,7 @@ enum Preferences {
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)
             .padding(.vertical, Const.panePaddingVertical)
             .padding(.horizontal, Const.panePaddingHorizontal)
+            .id(PreferencesScrollAnchor.top)
         }
 
         private func makePurchaseSubscriptionViewModel() -> PreferencesPurchaseSubscriptionModel {
@@ -207,6 +275,10 @@ enum Preferences {
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
                         pixelHandler(.subscriptionWinBackOfferSettingsPageCTAClicked, .standard)
                         showTab(.subscription(url))
+                    case .didOpenSubscriptionPurchase:
+                        pixelHandler(.subscriptionEntrySettingsImpression, .standard)
+                    case .didClickPurchase:
+                        pixelHandler(.subscriptionEntrySettingsSubscriptionClick, .standard)
                     }
                 }
             }
@@ -225,22 +297,20 @@ enum Preferences {
                     wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
-                    if #available(macOS 12.0, *) {
-                        Task {
-                            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
-                            let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
-                                restorePlatform: .appleAccount,
-                                funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
-                            )
-                            let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
-                                                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                                     uiHandler: subscriptionUIHandler,
-                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
-                            await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
+                    Task {
+                        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+                        let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
+                            restorePlatform: .appleAccount,
+                            funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
+                        )
+                        let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
+                                                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                 uiHandler: subscriptionUIHandler,
+                                                                                                 subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
+                        await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-                        }
+                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                     }
                 })
 
@@ -258,7 +328,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         pixelHandler(.subscriptionPersonalInformationRemovalSettings, .standard)
-                        showTab(.dataBrokerProtection)
+                        showTab(.dataBrokerProtection(.subscribed))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -278,7 +348,8 @@ enum Preferences {
                      case .openAIC:
                          pixelHandler(.subscriptionPaidAIChatSettings, .standard)
                          let aiChatURL = self.aiChatURLSettings.aiChatURL
-                         showTab(.url(aiChatURL, source: .ui))
+                         self.aiChatConversationSourceHandler.setData(.settings)
+                         self.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:
@@ -382,9 +453,10 @@ enum Preferences {
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {
-                    pixelHandler(.subscriptionOfferScreenImpression, .standard)
+                    pixelHandler(.subscriptionOfferScreenImpression(origin: SubscriptionFunnelOrigin.appSettings.rawValue), .standard)
                 }
             }
         }
     }
+
 }

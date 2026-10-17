@@ -18,10 +18,11 @@
 
 import Bookmarks
 import Combine
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -191,18 +192,13 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.syncAppIconWithTheme)
     }
 
-    func testMaxNextStepsCardsDemonstrationDaysUpdatesWhenFeatureFlagIsUpdated() {
-        let featureFlagger = MockFeatureFlagger()
+    func testMaxNextStepsCardsDemonstrationDaysIs14() {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger,
+            featureFlagger: MockFeatureFlagger(),
             aiChatMenuConfig: MockAIChatConfig()
         )
-
-        XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 9)
-
-        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget, .nextStepsListAdvancedCardOrdering]
 
         XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 14)
     }

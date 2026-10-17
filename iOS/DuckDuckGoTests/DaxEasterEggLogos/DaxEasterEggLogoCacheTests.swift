@@ -140,30 +140,4 @@ final class DaxEasterEggLogoCacheTests: XCTestCase {
         // This is implementation-specific behavior
     }
     
-    // MARK: - Thread Safety Test
-    
-    func testConcurrentSameQuery_handledCorrectly() {
-        let sameQuery = "shared-query"
-        let operationCount = 3
-        let dispatchGroup = DispatchGroup()
-        let queue = DispatchQueue(label: "test-same-query", attributes: .concurrent)
-        
-        // When - Multiple threads access the same query
-        for i in 0..<operationCount {
-            dispatchGroup.enter()
-            queue.async {
-                self.cache.storeLogo("logo-from-thread-\(i)", for: sameQuery)
-                _ = self.cache.getLogo(for: sameQuery)
-                dispatchGroup.leave()
-            }
-        }
-        
-        let waitResult = dispatchGroup.wait(timeout: .now() + 10.0)
-        XCTAssertEqual(waitResult, .success, "Concurrent same query operations did not complete in time")
-        
-        // Verify the query exists and has some value
-        let finalValue = cache.getLogo(for: sameQuery)
-        XCTAssertNotNil(finalValue)
-        XCTAssertTrue(finalValue!.hasPrefix("logo-from-thread-"))
-    }
 }

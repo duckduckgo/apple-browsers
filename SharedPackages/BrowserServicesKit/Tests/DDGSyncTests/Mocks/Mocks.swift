@@ -20,8 +20,7 @@ import Combine
 import Common
 import Foundation
 import Gzip
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Networking
@@ -49,6 +48,18 @@ extension RegisteredDevice {
     }
 }
 
+extension ProtectedKeyPublicKey {
+    static var mock: ProtectedKeyPublicKey {
+        ProtectedKeyPublicKey(alg: "RSA-OAEP-256",
+                              e: "AQAB",
+                              ext: true,
+                              keyOps: ["encrypt"],
+                              kty: "RSA",
+                              n: "mod",
+                              use: "enc")
+    }
+}
+
 extension LoginResult {
     static var mock: LoginResult {
         LoginResult(account: .mock, devices: [.mock])
@@ -56,12 +67,15 @@ extension LoginResult {
 }
 
 class AccountManagingMock: AccountManaging {
+    var createAccountCalls: [(deviceName: String, deviceType: String)] = []
+    var createAccountStub = AccountCreationResult(account: .mock, didPublishDeviceInfo: false)
     var createAccountError: Error?
-    func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
+    func createAccount(deviceName: String, deviceType: String) async throws -> AccountCreationResult {
+        createAccountCalls.append((deviceName: deviceName, deviceType: deviceType))
         if let error = createAccountError {
             throw error
         }
-        return .mock
+        return createAccountStub
     }
 
     func deleteAccount(_ account: SyncAccount) async throws {}
@@ -79,14 +93,59 @@ class AccountManagingMock: AccountManaging {
         return loginStub ?? .mock
     }
 
+    var refreshTokenStub: LoginResult?
+    var refreshTokenError: Error?
+    var refreshTokenHandler: ((SyncAccount, String) async throws -> LoginResult)?
+    var refreshTokenCalled: Bool = false
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
-        .mock
+        refreshTokenCalled = true
+        if let refreshTokenHandler {
+            return try await refreshTokenHandler(account, deviceName)
+        }
+        if let refreshTokenError {
+            throw refreshTokenError
+        }
+        return refreshTokenStub ?? .mock
     }
 
-    func logout(deviceId: String, token: String) async throws {}
+    var logoutCalls: [(deviceId: String, token: String)] = []
+    var logoutError: Error?
+    func logout(deviceId: String, token: String) async throws {
+        logoutCalls.append((deviceId: deviceId, token: token))
+        if let logoutError {
+            throw logoutError
+        }
+    }
 
-    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice] {
-        [.mock]
+    var fetchDevicesForAccountCalls: [SyncAccount] = []
+    var fetchDevicesForAccountStub = RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: false)
+    var fetchDevicesForAccountError: Error?
+    var fetchDevicesForAccountHandler: ((SyncAccount) async throws -> RegisteredDeviceMappingResult)?
+    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult {
+        fetchDevicesForAccountCalls.append(account)
+        if let fetchDevicesForAccountHandler {
+            return try await fetchDevicesForAccountHandler(account)
+        }
+        if let fetchDevicesForAccountError {
+            throw fetchDevicesForAccountError
+        }
+        return fetchDevicesForAccountStub
+    }
+
+    var updateDeviceCalls: [(update: UpdateDevices.Update, account: SyncAccount)] = []
+    var updateDeviceStub: [RegisteredDevice]?
+    var updateDeviceError: Error?
+    var updateDeviceHandler: ((UpdateDevices.Update, SyncAccount) async throws -> [RegisteredDevice])?
+    func updateDevice(_ update: UpdateDevices.Update,
+                      for account: SyncAccount) async throws -> [RegisteredDevice] {
+        updateDeviceCalls.append((update: update, account: account))
+        if let updateDeviceHandler {
+            return try await updateDeviceHandler(update, account)
+        }
+        if let updateDeviceError {
+            throw updateDeviceError
+        }
+        return updateDeviceStub ?? []
     }
 }
 
@@ -150,6 +209,41 @@ class MockErrorHandler: EventMapping<SyncError> {
     }
 }
 
+final class UnifiedDeviceListEventMappingMock: EventMapping<UnifiedDeviceListEvent> {
+
+    private final class Storage {
+        private let lock = NSLock()
+        private var recordedEvents: [UnifiedDeviceListEvent] = []
+
+        var events: [UnifiedDeviceListEvent] {
+            lock.lock()
+            defer { lock.unlock() }
+            return recordedEvents
+        }
+
+        func append(_ event: UnifiedDeviceListEvent) {
+            lock.lock()
+            recordedEvents.append(event)
+            lock.unlock()
+        }
+    }
+
+    private let storage: Storage
+
+    var events: [UnifiedDeviceListEvent] {
+        storage.events
+    }
+
+    init() {
+        let storage = Storage()
+        self.storage = storage
+        super.init { event, _, _, onComplete in
+            storage.append(event)
+            onComplete(nil)
+        }
+    }
+}
+
 extension DefaultInternalUserDecider {
     convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
         self.init(store: mockedStore)
@@ -188,6 +282,10 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
         return nil
     }
 
+    func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
+    }
+
     var identifier: String = "abcd"
     var version: String? = "123456789"
     var userUnprotectedDomains: [String] = []
@@ -208,6 +306,8 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
 
     var endpoints: Endpoints = Endpoints(baseURL: URL(string: "https://dev.null")!)
     var account: AccountManaging = AccountManagingMock()
+    var scopedAccess: ScopedAccessCredentialManaging = ScopedAccessCredentialManagingMock()
+    var accountInfoKeys: AccountInfoKeyManaging = AccountInfoKeyManagingMock()
     var api: RemoteAPIRequestCreating = RemoteAPIRequestCreatingMock()
     var payloadCompressor: SyncPayloadCompressing = SyncGzipPayloadCompressorMock()
     var secureStore: SecureStoring = SecureStorageStub()
@@ -215,7 +315,28 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var scheduler: SchedulingInternal = SchedulerMock()
     var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
+    var unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent> = EventMapping { _, _, _, onComplete in
+        onComplete(nil)
+    }
     var shouldPreserveAccountWhenSyncDisabled: () -> Bool = { false }
+    var isScopedAccessCredentialsEnabled: () -> Bool = { true }
+    var isPairingV2ScanningEnabled: () -> Bool = { true }
+    var isPairingV2CodeEnabled: () -> Bool = { true }
+    var canUseExchangeV2Point1: () -> Bool = { false }
+    var canSendExchangeChannelSecret: () -> Bool = { true }
+    var canWriteUnifiedDeviceList: () -> Bool = { false }
+    var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
+    var canReadUnifiedDeviceList: () -> Bool = { false }
+    lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
+        isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
+        isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
+        isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true },
+        canUseExchangeV2Point1: { [weak self] in self?.canUseExchangeV2Point1() == true },
+        canSendExchangeChannelSecret: { [weak self] in self?.canSendExchangeChannelSecret() == true },
+        canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
+        canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
+        canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true }
+    )
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
     var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
 
@@ -255,6 +376,23 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         createExchangeRecoveryKeyTransmitterStub ?? MockExchangeRecoveryKeyTransmitting()
     }
 
+    var createPairingV2MessageExchangerStub: PairingV2MessageExchanging?
+    var createPairingV2MessageExchangerCallCount = 0
+    func createPairingV2MessageExchanger() -> PairingV2MessageExchanging {
+        createPairingV2MessageExchangerCallCount += 1
+        return createPairingV2MessageExchangerStub ?? PairingV2MessageExchangingMock()
+    }
+
+    var createThirdPartyAccountUpgradeCoordinatorStub: ThirdPartyAccountUpgradeCoordinating?
+    func createThirdPartyAccountUpgradeCoordinator() -> ThirdPartyAccountUpgradeCoordinating {
+        createThirdPartyAccountUpgradeCoordinatorStub ?? ThirdPartyAccountUpgradeCoordinatingMock()
+    }
+
+    var createDeviceInfoMigrationCoordinatorStub: DeviceInfoMigrationCoordinating?
+    func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating {
+        createDeviceInfoMigrationCoordinatorStub ?? DeviceInfoMigrationCoordinatingMock()
+    }
+
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {}
 
     var createTokenRescopeStub: TokenRescoping?
@@ -267,6 +405,352 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         createAIChatsStub ?? MockAIChatsHandling()
     }
 
+}
+
+final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
+    var openChannelCalls: [String] = []
+    var openChannelAuthorizationSecrets: [String?] = []
+    var openChannelHandler: ((String) async throws -> Void)?
+    var sendCalls: [(messages: [PairingV2EncryptedMessage], channelID: String)] = []
+    var sendAuthorizationSecrets: [String?] = []
+    var sendHandler: (([PairingV2EncryptedMessage], String) async throws -> Void)?
+    var sendError: Error?
+    var fetchMessagesCalls: [(channelID: String, sequence: Int)] = []
+    var fetchMessagesAuthorizationSecrets: [String?] = []
+    var fetchMessagesHandler: ((String, Int) async throws -> [PairingV2SequencedMessage])?
+    var fetchMessagesStub: [PairingV2SequencedMessage] = []
+    var fetchMessagesError: Error?
+    var closeChannelCalls: [String] = []
+    var closeChannelAuthorizationSecrets: [String?] = []
+    var closeChannelHandler: ((String) async throws -> Void)?
+
+    func openChannel(_ channelID: String, authorizationSecret: String?) async throws {
+        openChannelCalls.append(channelID)
+        openChannelAuthorizationSecrets.append(authorizationSecret)
+        try await openChannelHandler?(channelID)
+    }
+
+    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String, authorizationSecret: String?) async throws {
+        sendCalls.append((messages: messages, channelID: channelID))
+        sendAuthorizationSecrets.append(authorizationSecret)
+        if let sendError {
+            throw sendError
+        }
+        if let sendHandler {
+            try await sendHandler(messages, channelID)
+        }
+    }
+
+    func fetchMessages(from channelID: String, after sequence: Int, authorizationSecret: String?) async throws -> [PairingV2SequencedMessage] {
+        fetchMessagesCalls.append((channelID: channelID, sequence: sequence))
+        fetchMessagesAuthorizationSecrets.append(authorizationSecret)
+        if let fetchMessagesError {
+            throw fetchMessagesError
+        }
+        if let fetchMessagesHandler {
+            return try await fetchMessagesHandler(channelID, sequence)
+        }
+        return fetchMessagesStub
+    }
+
+    func closeChannel(_ channelID: String, authorizationSecret: String?) async throws {
+        closeChannelCalls.append(channelID)
+        closeChannelAuthorizationSecrets.append(authorizationSecret)
+        try await closeChannelHandler?(channelID)
+    }
+}
+
+final class AccountInfoKeyFactoryMock: AccountInfoKeyFactory {
+    var makeProtectedKeysCalls: [(accountSecretKey: Data, thirdPartyMainKey: Data?)] = []
+    var makeProtectedKeysStub: [ProtectedKey] = []
+    var makeProtectedKeysError: Error?
+
+    func makeProtectedKeys(accountSecretKey: Data, thirdPartyMainKey: Data?) throws -> [ProtectedKey] {
+        makeProtectedKeysCalls.append((accountSecretKey: accountSecretKey, thirdPartyMainKey: thirdPartyMainKey))
+        if let makeProtectedKeysError {
+            throw makeProtectedKeysError
+        }
+        return makeProtectedKeysStub
+    }
+}
+
+final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
+    var loadKeyCalls: [SyncAccount] = []
+    var loadKeyStub: AccountInfoKey?
+    var loadKeyError: Error?
+    func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
+        loadKeyCalls.append(account)
+        if let loadKeyError {
+            throw loadKeyError
+        }
+        guard let loadKeyStub else {
+            throw AccountInfoKeyManagerError.missingProtectedKey
+        }
+        return loadKeyStub
+    }
+
+    var preloadKeyCalls: [(protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], account: SyncAccount)] = []
+    var preloadKeyError: Error?
+    func preloadKey(from protectedKeys: [ProtectedKey],
+                    accessCredentials: [AccessCredential],
+                    for account: SyncAccount) async throws {
+        preloadKeyCalls.append((protectedKeys: protectedKeys,
+                                accessCredentials: accessCredentials,
+                                account: account))
+        if let preloadKeyError {
+            throw preloadKeyError
+        }
+    }
+
+    var refreshKeyCalls: [SyncAccount] = []
+    var refreshKeyStub: AccountInfoKey?
+    var refreshKeyError: Error?
+    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
+        refreshKeyCalls.append(account)
+        if let refreshKeyError {
+            throw refreshKeyError
+        }
+        guard let refreshKeyStub else {
+            throw AccountInfoKeyManagerError.missingProtectedKey
+        }
+        return refreshKeyStub
+    }
+
+    var clearCachedKeyCalls: [SyncAccount] = []
+    var clearCachedKeyHandler: ((SyncAccount) -> Void)?
+    func clearCachedKey(for account: SyncAccount) async {
+        clearCachedKeyCalls.append(account)
+        clearCachedKeyHandler?(account)
+    }
+}
+
+final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
+
+    var recoverScopedPasswordCalls: [(accessCredentials: [AccessCredential]?, primaryKey: Data, userID: String)] = []
+    var recoverScopedPasswordStub: Data?
+    var recoverScopedPasswordError: Error?
+    func recoverScopedPassword(from accessCredentials: [AccessCredential]?, primaryKey: Data, userID: String) throws -> Data? {
+        recoverScopedPasswordCalls.append((accessCredentials: accessCredentials, primaryKey: primaryKey, userID: userID))
+        if let recoverScopedPasswordError {
+            throw recoverScopedPasswordError
+        }
+        return recoverScopedPasswordStub
+    }
+
+    var ensureThirdPartyScopedPasswordCalls: [(account: SyncAccount, purpose: String)] = []
+    var ensureThirdPartyScopedPasswordStub: EnsuredThirdPartyCredential?
+    var ensureThirdPartyScopedPasswordError: Error?
+    func ensureThirdPartyScopedPassword(for account: SyncAccount,
+                                        purpose: String,
+                                        cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential {
+        ensureThirdPartyScopedPasswordCalls.append((account: account, purpose: purpose))
+        if let ensureThirdPartyScopedPasswordError {
+            throw ensureThirdPartyScopedPasswordError
+        }
+        if let ensureThirdPartyScopedPasswordStub {
+            return ensureThirdPartyScopedPasswordStub
+        }
+        return EnsuredThirdPartyCredential(scopedPassword: try cachedScopedPassword() ?? Data(repeating: 1, count: 32),
+                                           protectedKeysToCache: [])
+    }
+
+    var ensureAccountInfoProtectedKeysCalls: [SyncAccount] = []
+    var ensureAccountInfoProtectedKeysStub: [ProtectedKey] = []
+    var ensureAccountInfoProtectedKeysError: Error?
+    var ensureAccountInfoProtectedKeysHandler: ((SyncAccount) async throws -> [ProtectedKey])?
+    func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
+        ensureAccountInfoProtectedKeysCalls.append(account)
+        if let ensureAccountInfoProtectedKeysHandler {
+            return try await ensureAccountInfoProtectedKeysHandler(account)
+        }
+        if let ensureAccountInfoProtectedKeysError {
+            throw ensureAccountInfoProtectedKeysError
+        }
+        return ensureAccountInfoProtectedKeysStub
+    }
+
+    var makeRecoveryCodeCalls: [(account: SyncAccount, scopedPassword: Data)] = []
+    var makeRecoveryCodeStub: String?
+    func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String? {
+        makeRecoveryCodeCalls.append((account: account, scopedPassword: scopedPassword))
+        if let makeRecoveryCodeStub {
+            return makeRecoveryCodeStub
+        }
+        guard !scopedPassword.isEmpty else {
+            return nil
+        }
+        let payload = SyncCode.RecoveryKeyV2(
+            userId: account.userId,
+            secret: Base64URL.encode(scopedPassword),
+            cid: SyncCode.RecoveryKeyV2.thirdPartyCredentialId,
+            v: SyncCode.RecoveryKeyV2.currentVersion
+        )
+        guard let json = try? SyncCode(recovery: .v2(payload)).toJSON() else {
+            return nil
+        }
+        return Base64URL.encode(json)
+    }
+
+    var fetchAccessCredentialsCalls: [SyncAccount] = []
+    var fetchAccessCredentialsStub: [AccessCredential] = []
+    var fetchAccessCredentialsError: Error?
+    func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential] {
+        fetchAccessCredentialsCalls.append(account)
+        if let fetchAccessCredentialsError {
+            throw fetchAccessCredentialsError
+        }
+        return fetchAccessCredentialsStub
+    }
+
+    var fetchProtectedKeysCalls: [SyncAccount] = []
+    var fetchProtectedKeysStub: [ProtectedKey] = []
+    var fetchProtectedKeysError: Error?
+    func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey] {
+        fetchProtectedKeysCalls.append(account)
+        if let fetchProtectedKeysError {
+            throw fetchProtectedKeysError
+        }
+        return fetchProtectedKeysStub
+    }
+
+    var setKeysIfAbsentCalls: [(purpose: String, keys: [ProtectedKey], account: SyncAccount)] = []
+    var setKeysIfAbsentStub: [ProtectedKey] = []
+    var setKeysIfAbsentError: Error?
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey] {
+        setKeysIfAbsentCalls.append((purpose: purpose, keys: keys, account: account))
+        if let setKeysIfAbsentError {
+            throw setKeysIfAbsentError
+        }
+        return setKeysIfAbsentStub
+    }
+}
+
+final class ThirdPartyAccountUpgradeCoordinatingMock: ThirdPartyAccountUpgradeCoordinating {
+    var upgradeThirdPartyAccountCalls: [(recoveryCode: String, deviceName: String, deviceType: String)] = []
+    var upgradeThirdPartyAccountStub = UpgradedThirdPartyAccount(account: .mock,
+                                                                devices: [.mock],
+                                                                scopedPassword: Data(repeating: 1, count: 32),
+                                                                protectedKeys: [])
+    var upgradeThirdPartyAccountError: Error?
+
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String,
+                                                     deviceName: String,
+                                                     deviceType: String) async throws -> UpgradedThirdPartyAccount {
+        upgradeThirdPartyAccountCalls.append((recoveryCode: recoveryCode, deviceName: deviceName, deviceType: deviceType))
+        if let upgradeThirdPartyAccountError {
+            throw upgradeThirdPartyAccountError
+        }
+        return upgradeThirdPartyAccountStub
+    }
+}
+
+final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating {
+
+    struct Call {
+        let account: SyncAccount
+    }
+
+    private let lock = NSLock()
+    private var recordedCalls: [Call] = []
+    private var recordedRepairCalls: [Call] = []
+    private var recordedRenameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] = []
+    private var recordedSuccessfulUnifiedWriteCalls: [Call] = []
+    private var recordedResetCallCount = 0
+    var hasCompletedMigrationStub = false
+    var calls: [Call] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedCalls
+    }
+    var repairCalls: [Call] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedRepairCalls
+    }
+    var resetCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedResetCallCount
+    }
+    var renameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedRenameCalls
+    }
+    var successfulUnifiedWriteCalls: [Call] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedSuccessfulUnifiedWriteCalls
+    }
+    var migrateCurrentDeviceHandler: (() async -> Void)?
+    var repairCurrentDeviceInfoHandler: (() async -> Void)?
+    var renameCurrentDeviceStub: [RegisteredDevice] = []
+    var renameCurrentDeviceError: Error?
+    var renameCurrentDeviceHandler: (() async throws -> [RegisteredDevice])?
+
+    func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
+        let handler = record(Call(account: account))
+        await handler?()
+    }
+
+    func repairCurrentDeviceInfo(for account: SyncAccount) async {
+        let handler = recordRepair(Call(account: account))
+        await handler?()
+    }
+
+    func renameCurrentDevice(to name: String,
+                             for account: SyncAccount,
+                             mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice] {
+        let result = recordRename(name: name, account: account, mode: mode)
+        if let handler = result.handler {
+            return try await handler()
+        }
+        if let error = result.error {
+            throw error
+        }
+        return result.stub
+    }
+
+    private func recordRename(name: String,
+                              account: SyncAccount,
+                              mode: DeviceInfoRenameMode) -> (handler: (() async throws -> [RegisteredDevice])?, error: Error?, stub: [RegisteredDevice]) {
+        lock.lock()
+        defer { lock.unlock() }
+        recordedRenameCalls.append((name: name, account: account, mode: mode))
+        return (renameCurrentDeviceHandler, renameCurrentDeviceError, renameCurrentDeviceStub)
+    }
+
+    func hasCompletedMigration(for account: SyncAccount) -> Bool {
+        hasCompletedMigrationStub
+    }
+
+    func recordSuccessfulUnifiedWrite(for account: SyncAccount) {
+        lock.lock()
+        recordedSuccessfulUnifiedWriteCalls.append(Call(account: account))
+        lock.unlock()
+    }
+
+    func reset() {
+        lock.lock()
+        recordedResetCallCount += 1
+        lock.unlock()
+    }
+
+    private func record(_ call: Call) -> (() async -> Void)? {
+        lock.lock()
+        recordedCalls.append(call)
+        let handler = migrateCurrentDeviceHandler
+        lock.unlock()
+        return handler
+    }
+
+    private func recordRepair(_ call: Call) -> (() async -> Void)? {
+        lock.lock()
+        recordedRepairCalls.append(call)
+        let handler = repairCurrentDeviceInfoHandler
+        lock.unlock()
+        return handler
+    }
 }
 
 final class MockRemoteConnecting: RemoteConnecting {
@@ -285,7 +769,7 @@ final class MockRemoteConnecting: RemoteConnecting {
 
     var stopPollingCalled = 0
     func stopPolling() {
-        pollForRecoveryKeyCalled += 1
+        stopPollingCalled += 1
     }
 }
 
@@ -368,7 +852,9 @@ final class MockAIChatsHandling: AIChatsHandling {
 
     private(set) var deleteCalls: [(until: Date, token: String)] = []
     private(set) var deleteChatIdsCalls: [(chatIds: [String], token: String)] = []
+    private(set) var patchCalls: [(updates: [AIChatUpdate], token: String)] = []
     var deleteError: Error?
+    var patchError: Error?
 
     func delete(until: Date, token: String) async throws {
         deleteCalls.append((until: until, token: token))
@@ -381,6 +867,13 @@ final class MockAIChatsHandling: AIChatsHandling {
         deleteChatIdsCalls.append((chatIds: chatIds, token: token))
         if let deleteError {
             throw deleteError
+        }
+    }
+
+    func patch(updates: [AIChatUpdate], token: String) async throws {
+        patchCalls.append((updates: updates, token: token))
+        if let patchError {
+            throw patchError
         }
     }
 }
@@ -400,7 +893,7 @@ class HTTPRequestingMock: HTTPRequesting {
     }
 
     var executeCallCount = 0
-    var error: SyncError?
+    var error: Error?
     var result: HTTPResult
 
     func execute() async throws -> HTTPResult {
@@ -409,6 +902,26 @@ class HTTPRequestingMock: HTTPRequesting {
             throw error
         }
         return result
+    }
+}
+
+final class SequencedHTTPRequestingMock: HTTPRequestingMock {
+    private var results: [HTTPResult]
+
+    init(results: [HTTPResult]) {
+        self.results = results
+        super.init(result: results.last ?? .init(data: Data(), response: HTTPURLResponse()))
+    }
+
+    override func execute() async throws -> HTTPResult {
+        executeCallCount += 1
+        if let error {
+            throw error
+        }
+        if results.count > 1 {
+            return results.removeFirst()
+        }
+        return results.first ?? result
     }
 }
 
@@ -484,6 +997,13 @@ struct CryptingMock: CryptingInternal {
 
     var _encryptAndBase64Encode: (String) throws -> String = { "encrypted_\($0)" }
     var _base64DecodeAndDecrypt: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
+    var _extractLoginInfo: (SyncCode.RecoveryKey) throws -> ExtractedLoginInfo = { _ in
+        ExtractedLoginInfo(userId: "user", primaryKey: Data(), passwordHash: Data(), stretchedPrimaryKey: Data())
+    }
+    var _createAccountCreationKeys: (String, String) throws -> AccountCreationKeys = { _, _ in
+        AccountCreationKeys(primaryKey: Data(), secretKey: Data(), protectedSecretKey: Data(), passwordHash: Data())
+    }
+    var _extractSecretKey: (Data, Data) throws -> Data = { _, _ in Data() }
 
     func fetchSecretKey() throws -> Data {
         .init()
@@ -494,12 +1014,15 @@ struct CryptingMock: CryptingInternal {
         if let string = String(data: value, encoding: .utf8) {
             return try encrypt(string, using: secretKey)
         }
-        return value
+        return Data(Base64URL.encode(value).utf8)
     }
 
     func decryptData(_ value: Data, using secretKey: Data) throws -> Data {
+        if let string = String(data: value, encoding: .utf8), let decoded = Base64URL.decode(string) {
+            return decoded
+        }
         // Test helper: decrypt to UTF-8 string and return UTF-8 bytes.
-        Data(try decrypt(value, using: secretKey).utf8)
+        return Data(try decrypt(value, using: secretKey).utf8)
     }
 
     func encrypt(_ value: String, using secretKey: Data) throws -> Data {
@@ -546,15 +1069,15 @@ struct CryptingMock: CryptingInternal {
     }
 
     func createAccountCreationKeys(userId: String, password: String) throws -> AccountCreationKeys {
-        AccountCreationKeys(primaryKey: Data(), secretKey: Data(), protectedSecretKey: Data(), passwordHash: Data())
+        try _createAccountCreationKeys(userId, password)
     }
 
     func extractLoginInfo(recoveryKey: SyncCode.RecoveryKey) throws -> ExtractedLoginInfo {
-        ExtractedLoginInfo(userId: "user", primaryKey: Data(), passwordHash: Data(), stretchedPrimaryKey: Data())
+        try _extractLoginInfo(recoveryKey)
     }
 
     func extractSecretKey(protectedSecretKey: Data, stretchedPrimaryKey: Data) throws -> Data {
-        Data()
+        try _extractSecretKey(protectedSecretKey, stretchedPrimaryKey)
     }
 
     func prepareForConnect() throws -> ConnectInfo {

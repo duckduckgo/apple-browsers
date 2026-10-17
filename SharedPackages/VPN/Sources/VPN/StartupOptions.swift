@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Networking
 import os.log
 
@@ -30,7 +31,21 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let selectedLocation: VPNSettings.SelectedLocation
     let dnsSettings: NetworkProtectionDNSSettings
     let excludeLocalNetworks: Bool
-    let wideEventPostEndpointEnabled: Bool?
+    let excludeCGNAT: Bool
+    let enforceRoutes: Bool
+    let sessionHealthTelemetryEnabled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case registrationKeyValidity
+        case selectedEnvironment
+        case selectedServer
+        case selectedLocation
+        case dnsSettings
+        case excludeLocalNetworks
+        case excludeCGNAT
+        case enforceRoutes
+        case sessionHealthTelemetryEnabled
+    }
 
     /// Create a snapshot of the current VPN settings
     public init(from settings: VPNSettings) {
@@ -40,7 +55,9 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.selectedLocation = settings.selectedLocation
         self.dnsSettings = settings.dnsSettings
         self.excludeLocalNetworks = settings.excludeLocalNetworks
-        self.wideEventPostEndpointEnabled = settings.wideEventPostEndpointEnabled
+        self.excludeCGNAT = settings.excludeCGNAT
+        self.enforceRoutes = settings.enforceRoutes
+        self.sessionHealthTelemetryEnabled = settings.sessionHealthTelemetryEnabled
     }
 
     /// Create a snapshot with explicit values
@@ -50,14 +67,33 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 selectedLocation: VPNSettings.SelectedLocation,
                 dnsSettings: NetworkProtectionDNSSettings,
                 excludeLocalNetworks: Bool,
-                wideEventPostEndpointEnabled: Bool = false) {
+                excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue,
+                enforceRoutes: Bool = UserDefaults.enforceRoutesDefaultValue,
+                sessionHealthTelemetryEnabled: Bool = UserDefaults.sessionHealthTelemetryEnabledDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
         self.selectedLocation = selectedLocation
         self.dnsSettings = dnsSettings
         self.excludeLocalNetworks = excludeLocalNetworks
-        self.wideEventPostEndpointEnabled = wideEventPostEndpointEnabled
+        self.excludeCGNAT = excludeCGNAT
+        self.enforceRoutes = enforceRoutes
+        self.sessionHealthTelemetryEnabled = sessionHealthTelemetryEnabled
+    }
+
+    /// Custom decoding so snapshots persisted by older versions still decode, falling back to default
+    /// behavior for settings that older payloads did not include.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        registrationKeyValidity = try container.decode(VPNSettings.RegistrationKeyValidity.self, forKey: .registrationKeyValidity)
+        selectedEnvironment = try container.decode(VPNSettings.SelectedEnvironment.self, forKey: .selectedEnvironment)
+        selectedServer = try container.decode(VPNSettings.SelectedServer.self, forKey: .selectedServer)
+        selectedLocation = try container.decode(VPNSettings.SelectedLocation.self, forKey: .selectedLocation)
+        dnsSettings = try container.decode(NetworkProtectionDNSSettings.self, forKey: .dnsSettings)
+        excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
+        excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
+        enforceRoutes = try container.decodeIfPresent(Bool.self, forKey: .enforceRoutes) ?? UserDefaults.enforceRoutesDefaultValue
+        sessionHealthTelemetryEnabled = try container.decodeIfPresent(Bool.self, forKey: .sessionHealthTelemetryEnabled) ?? UserDefaults.sessionHealthTelemetryEnabledDefaultValue
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -68,7 +104,9 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.selectedLocation = selectedLocation
         settings.dnsSettings = dnsSettings
         settings.excludeLocalNetworks = excludeLocalNetworks
-        settings.wideEventPostEndpointEnabled = wideEventPostEndpointEnabled ?? false
+        settings.excludeCGNAT = excludeCGNAT
+        settings.enforceRoutes = enforceRoutes
+        settings.sessionHealthTelemetryEnabled = sessionHealthTelemetryEnabled
     }
 }
 
@@ -129,6 +167,17 @@ public struct StartupOptions {
             switch self {
             case .set(let value):
                 return String(describing: value)
+            case .reset:
+                return "reset"
+            case .useExisting:
+                return "useExisting"
+            }
+        }
+
+        var stateDescription: String {
+            switch self {
+            case .set:
+                return "set"
             case .reset:
                 return "reset"
             case .useExisting:
@@ -200,7 +249,7 @@ public struct StartupOptions {
         """
 #if os(macOS)
         result += """
-            tokenContainer: \(self.tokenContainer),
+            tokenContainer: \(self.tokenContainer.stateDescription),
         """
 #endif
         return result

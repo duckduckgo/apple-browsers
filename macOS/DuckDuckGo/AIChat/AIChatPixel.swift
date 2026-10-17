@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import PixelKit
 
@@ -26,7 +27,7 @@ import PixelKit
 /// [Sidebar Pixel Triage](https://app.asana.com/1/137249556945/project/1209671977594486/task/1210676151750614)
 /// [Summarization Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210636012460969?focus=true)
 
-enum AIChatPixel: PixelKitEvent {
+enum AIChatPixel: PixelKit.Event {
 
     /// Event Trigger: AI Chat is opened via the ... Menu -> New Duck.ai Chat
     case aichatApplicationMenuAppClicked
@@ -82,7 +83,16 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks in the Omnibar duck.ai button
     case aiChatAddressBarButtonClicked(action: AIChatAddressBarAction)
 
+    // MARK: - Direct navigation
+
+    /// Event Trigger: A tab reaches Duck.ai by navigating to it directly rather than from a Duck.ai surface.
+    case aiChatDuckAIDirectNavigation(via: AIChatDirectNavigationVia, duckAIEnabled: Bool, toggleEnabled: Bool)
+
     // MARK: - Sidebar
+
+    /// Event Trigger: A surface opens Duck.ai in a tab, a window or the sidebar.
+    /// `source` names the surface; `target` is where Duck.ai opened.
+    case aiChatEntryPoint(source: AIChatConversationSource, target: AIChatEntryPointTarget)
 
     /// Event Trigger: User opens a tab sidebar
     case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?, minutesSinceSidebarHidden: Int?)
@@ -115,6 +125,20 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the Duck.ai button in the tab bar to open a new chat tab.
     case aiChatTabbarButtonClicked
 
+    /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button.
+    case aiChatNewChatTitleBarMenu
+
+    /// Event Trigger: User picks "Chats" from the tab-bar Duck.ai menu button.
+    case aiChatChatsTitleBarMenu
+
+    /// Event Trigger: User clicks the tab-bar Duck.ai menu button and its menu opens.
+    /// `sidebarEntry` is the sidebar item the menu offers.
+    case aiChatTitleBarMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry)
+
+    /// Event Trigger: User middle-clicks or ⌘-clicks the tab-bar Duck.ai menu button, which opens a new chat
+    /// tab without showing the menu.
+    case aiChatTitleBarMiddleClickNewChat
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -138,6 +162,20 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User removes page context from the prompt using a button in the input field
     case aiChatPageContextRemoved(automaticEnabled: Bool)
 
+    /// Event Trigger: User attaches selected text as page context via the "Attach to Duck.ai" context-menu action
+    case aiChatAttachSelection
+
+    // MARK: - Page Context Extraction
+
+    /// Event Trigger: Page-context extraction produced usable content.
+    case aiChatPageContextExtractionSuccess(contextType: String)
+
+    /// Event Trigger: Page-context extraction was attempted but produced no usable content.
+    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?, contextType: String)
+
+    /// Event Trigger: Page-context extraction was skipped because the page is not attachable (blocklisted media type or special page).
+    case aiChatPageContextExtractionPrevented(category: String, trigger: String)
+
     // MARK: - Deleting chat history
 
     /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
@@ -151,10 +189,11 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Address bar toggle pixels
 
-    /// Event Trigger: User selects address bar and toggle settings is ON (duck.ai mode)
+    /// Event Trigger: User activates the address bar while Duck.ai is enabled and the Search & Duck.ai toggle setting is on.
+    /// Reports the setting, not the toggle's current mode.
     case aiChatAddressBarActivatedToggleOn
 
-    /// Event Trigger: User selects address bar and toggle settings is OFF (search mode)
+    /// Event Trigger: User activates the address bar while Duck.ai is enabled and the Search & Duck.ai toggle setting is off
     case aiChatAddressBarActivatedToggleOff
 
     /// Event Trigger: User changes toggle to duck.ai
@@ -198,6 +237,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
     case aiChatRecentChatDeleteCancelled
 
+    /// Event Trigger: A single chat deletion (address bar or NTP) succeeds — native delete and JS clear both OK.
+    case aiChatSingleDeleteSuccessful
+
+    /// Event Trigger: A single chat deletion (address bar or NTP) fails — native delete or JS clear errored.
+    case aiChatSingleDeleteFailed
+
     case aiChatSyncScopedSyncTokenError(reason: String)
     case aiChatSyncEncryptionError(reason: String)
     case aiChatSyncDecryptionError(reason: String)
@@ -205,6 +250,7 @@ enum AIChatPixel: PixelKitEvent {
 
     case aiChatTermsAcceptedDuplicateSyncOff
     case aiChatTermsAcceptedDuplicateSyncOn
+    case aiChatReportMetricDecodeError(NSError?, failureReason: AIChatUserScriptErrorFailureReason)
 
     // MARK: - Image Attachments
 
@@ -217,10 +263,123 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt that includes one or more image attachments
     case aiChatAddressBarSubmitWithImage(imageCount: Int)
 
+    /// Event Trigger: User submits a prompt that includes one or more page-content tab
+    /// attachments via the omnibar's Attach Page Content menu.
+    case aiChatAddressBarSubmitWithTabs(tabCount: Int)
+
+    /// Event Trigger: User attaches a file (PDF etc.) via the file picker in the duck.ai omnibar.
+    case aiChatAddressBarFileAttached
+
+    /// Event Trigger: User removes an attached file (PDF etc.) in the duck.ai omnibar by clicking
+    /// the × on the carousel card.
+    case aiChatAddressBarFileRemoved
+
+    /// Event Trigger: A file the user picked for the duck.ai omnibar failed validation and was
+    /// rejected (too large, too many pages, unsupported type, encrypted, or unreadable). `reason`
+    /// mirrors the iOS `m_aichat_unified_input_file_validation_failed` reason values.
+    case aiChatAddressBarFileValidationFailed(reason: String)
+
+    /// Event Trigger: User submits a prompt that includes one or more file attachments.
+    case aiChatAddressBarSubmitWithFiles(fileCount: Int)
+
+    // MARK: - Tab Attachments
+
+    /// Event Trigger: User opens the duck.ai omnibar attach menu's "Add Page Content" submenu.
+    case aiChatAddressBarAttachTabsPickerShown
+
+    /// Event Trigger: User toggles a tab ON inside the "Add Page Content" submenu, adding
+    /// that tab's page content as an attachment.
+    case aiChatAddressBarAttachTabChosen
+
+    /// Event Trigger: User toggles a tab OFF inside the "Add Page Content" submenu, removing
+    /// that tab's page content attachment.
+    case aiChatAddressBarAttachTabRemoved
+
+    /// Event Trigger: User dismisses the "Add Page Content" submenu without toggling any tab
+    /// during that open session (no chosen / removed events fired between open and close).
+    case aiChatAddressBarAttachPickerCanceled
+
+    /// Event Trigger: The duck.ai omnibar's `@`-mention tab picker appears — user typed `@`
+    /// and the picker transitioned from hidden to visible.
+    case aiChatAddressBarMentionPickerShown
+
+    /// Event Trigger: User picks a previously-unattached tab in the `@`-mention picker.
+    case aiChatAddressBarMentionTabChosen
+
+    /// Event Trigger: User picks an already-attached tab in the `@`-mention picker, removing
+    /// that tab's page-content attachment.
+    case aiChatAddressBarMentionTabRemoved
+
+    /// Event Trigger: User dismisses the `@`-mention picker without accepting any row
+    /// (Esc, click outside, caret leaves the `@`-token, etc.).
+    case aiChatAddressBarMentionPickerCanceled
+
     // MARK: - Model Picker
 
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
+
+    /// Event Trigger: User selects a reasoning effort from the native omnibar picker
+    case aiChatAddressBarReasoningEffortSelected
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the native omnibar picker,
+    /// routing them to the subscription purchase/upgrade flow.
+    case aiChatAddressBarSubscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String, origin: String)
+
+    /// Event Trigger: The native subscription upsell dialog was shown after a gated pick in the
+    /// address bar. Pairs with `aiChatAddressBarSubscriptionUpsellTriggered` for a view-to-click rate.
+    case aiChatAddressBarSubscriptionUpsellShown(origin: String)
+
+    /// Event Trigger: The native subscription upsell dialog was shown after a gated pick in the
+    /// New Tab Page omnibar.
+    case aiChatNtpSubscriptionUpsellShown(origin: String)
+
+    /// Event Trigger: The New Tab Page omnibar reported a picker impression over `telemetryEvent`.
+    /// The `tryForFree`/`upgrade` variants mean the gated section carried that CTA.
+    case aiChatNtpModelPickerShown(origin: String)
+    case aiChatNtpModelPickerTryForFreeShown(origin: String)
+    case aiChatNtpModelPickerUpgradeShown(origin: String)
+    case aiChatNtpReasoningPickerShown(origin: String)
+    case aiChatNtpReasoningPickerTryForFreeShown(origin: String)
+    case aiChatNtpReasoningPickerUpgradeShown(origin: String)
+
+    /// Event Trigger: The address bar's model picker opened showing at least one gated model.
+    case aiChatAddressBarModelPickerShown(origin: String)
+
+    /// Event Trigger: The address bar's reasoning picker opened showing at least one gated effort.
+    case aiChatAddressBarReasoningPickerShown(origin: String)
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the address bar picker.
+    case aiChatAddressBarGatedRowClick(origin: String)
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page picker.
+    case aiChatNtpGatedRowClick(origin: String)
+
+    // MARK: - Duck.ai Subscription Funnel (frontend-reported)
+
+    /// Event Trigger: A Duck.ai subscription-funnel entry point is shown in the web frontend, reported over the `reportMetric` bridge. `origin` is the entry point.
+    case aiChatSubscriptionFunnelImpression(origin: String)
+
+    /// Event Trigger: The CTA on a Duck.ai subscription-funnel entry point is clicked, reported over the `reportMetric` bridge.
+    case aiChatSubscriptionFunnelClick(origin: String)
+
+    /// Event Trigger: The Duck.ai subscribe modal is shown. `origin` is the entry point it was opened from.
+    case aiChatSubscriptionFunnelSubscribeModalImpression(origin: String)
+
+    /// Event Trigger: The subscribe CTA in the Duck.ai subscribe modal is clicked.
+    case aiChatSubscriptionFunnelSubscribeModalSubscribeClick(origin: String)
+
+    /// Event Trigger: The "I have a subscription" CTA in the Duck.ai subscribe modal is clicked.
+    case aiChatSubscriptionFunnelSubscribeModalActivateClick(origin: String)
+
+    /// Event Trigger: The Duck.ai upgrade-to-Pro modal is shown. `origin` is the entry point it was opened from.
+    case aiChatSubscriptionFunnelUpgradeToProModalImpression(origin: String)
+
+    /// Event Trigger: The upgrade CTA in the Duck.ai upgrade-to-Pro modal is clicked.
+    case aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(origin: String)
+
+    /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
+    case aiChatNewVoiceChatOmnibarNative
 
     // MARK: - Image Generation Mode
 
@@ -232,6 +391,18 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User submits a prompt while image generation mode is active
     case aiChatAddressBarImageGenerationSubmitted
+
+    /// Event Trigger: Selecting Create Image switches an unsupported model to an image-capable model.
+    case aiChatAddressBarCreateImageModelSwitched(fromModelId: String, toModelId: String, fromModelPrivacyPreserving: Bool)
+
+    /// Event Trigger: User dismisses the model-switch notice shown after selecting Create Image.
+    case aiChatAddressBarCreateImageModelSwitchNoticeDismissed
+
+    /// Event Trigger: Create Image cannot find an accessible image-capable model.
+    case aiChatAddressBarCreateImageUnavailable
+
+    /// Error monitor: a Create Image prompt is submitted while the selected model is known not to support image generation.
+    case aiChatAddressBarCreateImageSubmittedWithUnsupportedModel
 
     // MARK: - Web Search Mode
 
@@ -250,8 +421,36 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the New Tab Page model picker
     case aiChatNtpModelSelected
 
+    /// Event Trigger: User selects a reasoning effort from the New Tab Page omnibar picker
+    case aiChatNtpReasoningEffortSelected
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page omnibar,
+    /// routing them to the subscription purchase/upgrade flow.
+    case aiChatNtpSubscriptionUpsellTriggered(flowType: String, source: String, origin: String)
+
     /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
     case aiChatNtpViewAllChatsClicked
+
+    /// Event Trigger: User opens a new voice Duck.ai chat from the New Tab Page omnibar
+    case aiChatNewVoiceChatOmnibarNtp
+
+    // MARK: - NTP Image Generation Mode
+
+    /// Event Trigger: User submits a prompt while image generation mode is active on the New Tab Page
+    case aiChatNtpImageGenerationSubmitted
+
+    // MARK: - NTP Web Search Mode
+
+    /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
+    case aiChatNtpWebSearchSubmitted
+
+    // MARK: - Customize Responses
+
+    /// Event Trigger: User opens Customize Responses from the native address bar Tools menu
+    case aiChatAddressBarCustomizeResponsesOpened
+
+    /// Event Trigger: User opens Customize Responses from the New Tab Page omnibar Tools menu
+    case aiChatNtpCustomizeResponsesOpened
 
     /// Event Trigger: User taps "View all chats" from the native address bar omnibar
     case aiChatViewAllChatsClicked
@@ -261,11 +460,26 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Prompt Metrics
 
-    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation
-    case aiChatMetricStartNewConversation
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
+    case aiChatMetricStartNewConversation(source: AIChatConversationSource,
+                                          hasPageContext: Bool,
+                                          surface: AIChatPromptSurface,
+                                          firstPromptNewInstall: Bool)
 
-    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
-    case aiChatMetricSentPromptOngoingChat
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
+    /// `source` is how that conversation was opened; `surface` is where this prompt was submitted.
+    case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource,
+                                           hasPageContext: Bool,
+                                           surface: AIChatPromptSurface,
+                                           firstPromptNewInstall: Bool)
+
+    /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
+    /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
+    case aiChatSuggestionSelected(suggestionId: String, pageType: String)
+
+    /// Event Trigger: The Duck.ai sidebar presents page-suggestion chips to the user.
+    /// `isSmart` indicates whether the suggestions were smart (page-tailored); `pageType` is the FE's coarse page classification.
+    case aiChatSuggestionsViewed(isSmart: Bool, pageType: String)
 
     // MARK: - Onboarding
 
@@ -327,10 +541,45 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User taps "View All Chats..." from the more options menu
     case aiChatViewAllChatsMoreOptionsMenu
 
+    /// Event Trigger: Duck.ai tab WebKit process terminates
+    case aiChatTabDidTerminate(error: Error)
+
+    /// Event Trigger: Duck.ai tab enters a WebKit content-process crash loop (repeated terminations within the crash-loop window)
+    case aiChatTabTerminationLoop(error: Error)
+
     // MARK: - Daily
 
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
     case aiChatIsEnabled(isEnabled: Bool)
+
+    /// Event Trigger: Fires daily when the app becomes active, reporting the Duck.ai settings.
+    /// The settings' own pixels only cover users who change them; this sizes each setting's base.
+    case aiChatSettingsState(duckAIEnabled: Bool,
+                             addressBarToggle: Bool,
+                             tabBarButton: Bool,
+                             globalShortcut: Bool,
+                             menuBarIcon: Bool,
+                             newTabPage: AIChatNewTabPageSettingsState?)
+
+    /// Event Trigger: The Duck.ai FE reported that `getUserMedia()` rejected while attempting
+    /// to start a voice chat. `reason` distinguishes the case we acted on (`mic_os_denied`)
+    /// from anything else (`other`) — useful for measuring how often the FE hook fires for
+    /// unrelated WebKit failures and for sizing the OS-deny remediation funnel.
+    case aiChatVoiceChatStartFailed(reason: AIChatVoiceChatStartFailedReason)
+
+    // MARK: - AI Features telemetry
+
+    // These deliberately omit the `m_mac_` prefix (fired with `doNotEnforcePrefix: true`) so the
+    // name body + params match the other platforms exactly.
+    case aiFeaturesState(duckAI: Bool, searchAssist: String, hideAIImages: Bool, noAI: Bool)
+    case aiFeaturesDisabled
+    case aiFeaturesSearchAssistNever
+    case aiFeaturesSearchAssistOnDemand
+    case aiFeaturesSearchAssistSometimes
+    case aiFeaturesSearchAssistOften
+    case aiFeaturesHideImagesOn
+    case aiFeaturesHideImagesOff
+    case serpSettingsUnrecognizedValue
 
     // MARK: -
 
@@ -366,6 +615,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_settings_displayed"
         case .aiChatAddressBarButtonClicked:
             return "aichat_addressbar_button_clicked"
+        case .aiChatDuckAIDirectNavigation:
+            return "aichat_duck_ai_direct_navigation_macos"
+        case .aiChatEntryPoint:
+            return "aichat_entry_point_macos"
         case .aiChatSidebarOpened:
             return "aichat_sidebar_opened"
         case .aiChatSidebarClosed:
@@ -386,6 +639,14 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sidebar_floating_tab_activated"
         case .aiChatTabbarButtonClicked:
             return "aichat_tabbar_button_clicked"
+        case .aiChatNewChatTitleBarMenu:
+            return "aichat_new_chat_title_bar_menu"
+        case .aiChatChatsTitleBarMenu:
+            return "aichat_chats_title_bar_menu"
+        case .aiChatTitleBarMenuShown:
+            return "aichat_title_bar_menu_shown_macos"
+        case .aiChatTitleBarMiddleClickNewChat:
+            return "aichat_title_bar_middle_click_new_chat_macos"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -400,6 +661,14 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
             return "aichat_page_context_removed"
+        case .aiChatAttachSelection:
+            return "aichat_attach_selection"
+        case .aiChatPageContextExtractionSuccess:
+            return "aichat_page_context_extraction_success"
+        case .aiChatPageContextExtractionFailed:
+            return "aichat_page_context_extraction_failed"
+        case .aiChatPageContextExtractionPrevented:
+            return "aichat_page_context_extraction_prevented"
         case let .aiChatAutoClearHistorySettingToggled(enabled):
             if enabled {
                 return "m_mac_aichat_history_autoclear_enabled"
@@ -442,6 +711,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_delete_confirmed"
         case .aiChatRecentChatDeleteCancelled:
             return "aichat_recent_chat_delete_cancelled"
+        case .aiChatSingleDeleteSuccessful:
+            return "aichat_single_delete_successful"
+        case .aiChatSingleDeleteFailed:
+            return "aichat_single_delete_failed"
 
         case .aiChatSyncScopedSyncTokenError:
             return "aichat_sync_internal_scoped-sync-token-error"
@@ -455,6 +728,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_terms_accepted_duplicate_sync_off"
         case .aiChatTermsAcceptedDuplicateSyncOn:
             return "aichat_terms_accepted_duplicate_sync_on"
+        case .aiChatReportMetricDecodeError:
+            return "aichat_report_metric_decode_error"
         case .aiChatOnboardingTogglePreferenceOn:
             return "aichat_onboarding_toggle_preference_on"
         case .aiChatOnboardingTogglePreferenceOff:
@@ -469,14 +744,92 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_image_removed"
         case .aiChatAddressBarSubmitWithImage:
             return "aichat_addressbar_submit_with_image"
+        case .aiChatAddressBarSubmitWithTabs:
+            return "aichat_addressbar_submit_with_tabs"
+        case .aiChatAddressBarFileAttached:
+            return "aichat_addressbar_file_attached"
+        case .aiChatAddressBarFileRemoved:
+            return "aichat_addressbar_file_removed"
+        case .aiChatAddressBarFileValidationFailed:
+            return "aichat_addressbar_file_validation_failed"
+        case .aiChatAddressBarSubmitWithFiles:
+            return "aichat_addressbar_submit_with_files"
+        case .aiChatAddressBarAttachTabsPickerShown:
+            return "aichat_addressbar_attach_tabs_picker_shown"
+        case .aiChatAddressBarAttachTabChosen:
+            return "aichat_addressbar_attach_tab_chosen"
+        case .aiChatAddressBarAttachTabRemoved:
+            return "aichat_addressbar_attach_tab_removed"
+        case .aiChatAddressBarAttachPickerCanceled:
+            return "aichat_addressbar_attach_picker_canceled"
+        case .aiChatAddressBarMentionPickerShown:
+            return "aichat_addressbar_mention_picker_shown"
+        case .aiChatAddressBarMentionTabChosen:
+            return "aichat_addressbar_mention_tab_chosen"
+        case .aiChatAddressBarMentionTabRemoved:
+            return "aichat_addressbar_mention_tab_removed"
+        case .aiChatAddressBarMentionPickerCanceled:
+            return "aichat_addressbar_mention_picker_canceled"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatAddressBarReasoningEffortSelected:
+            return "aichat_addressbar_reasoning_effort_selected"
+        case .aiChatAddressBarSubscriptionUpsellTriggered:
+            return "aichat_addressbar_subscription_upsell_triggered"
+        case .aiChatAddressBarSubscriptionUpsellShown:
+            return "aichat_addressbar_subscription_upsell_shown"
+        case .aiChatNtpSubscriptionUpsellShown:
+            return "aichat_ntp_subscription_upsell_shown"
+        case .aiChatNtpModelPickerShown:
+            return "aichat_ntp_model_picker_shown"
+        case .aiChatNtpModelPickerTryForFreeShown:
+            return "aichat_ntp_model_picker_tryforfree_shown"
+        case .aiChatNtpModelPickerUpgradeShown:
+            return "aichat_ntp_model_picker_upgrade_shown"
+        case .aiChatNtpReasoningPickerShown:
+            return "aichat_ntp_reasoning_picker_shown"
+        case .aiChatNtpReasoningPickerTryForFreeShown:
+            return "aichat_ntp_reasoning_picker_tryforfree_shown"
+        case .aiChatNtpReasoningPickerUpgradeShown:
+            return "aichat_ntp_reasoning_picker_upgrade_shown"
+        case .aiChatAddressBarModelPickerShown:
+            return "aichat_addressbar_model_picker_shown"
+        case .aiChatAddressBarReasoningPickerShown:
+            return "aichat_addressbar_reasoning_picker_shown"
+        case .aiChatAddressBarGatedRowClick:
+            return "aichat_addressbar_gated_row_click"
+        case .aiChatNtpGatedRowClick:
+            return "aichat_ntp_gated_row_click"
+        case .aiChatSubscriptionFunnelImpression:
+            return "aichat_subscription-funnel_impression"
+        case .aiChatSubscriptionFunnelClick:
+            return "aichat_subscription-funnel_click"
+        case .aiChatSubscriptionFunnelSubscribeModalImpression:
+            return "aichat_subscription-funnel_subscribe-modal_impression"
+        case .aiChatSubscriptionFunnelSubscribeModalSubscribeClick:
+            return "aichat_subscription-funnel_subscribe-modal_subscribe_click"
+        case .aiChatSubscriptionFunnelSubscribeModalActivateClick:
+            return "aichat_subscription-funnel_subscribe-modal_activate_click"
+        case .aiChatSubscriptionFunnelUpgradeToProModalImpression:
+            return "aichat_subscription-funnel_upgrade-to-pro-modal_impression"
+        case .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick:
+            return "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click"
+        case .aiChatNewVoiceChatOmnibarNative:
+            return "aichat_new_voice_chat_omnibar_native"
         case .aiChatAddressBarImageGenerationActivated:
             return "aichat_addressbar_image_generation_activated"
         case .aiChatAddressBarImageGenerationDeactivated:
             return "aichat_addressbar_image_generation_deactivated"
         case .aiChatAddressBarImageGenerationSubmitted:
             return "aichat_addressbar_image_generation_submitted"
+        case .aiChatAddressBarCreateImageModelSwitched:
+            return "aichat_addressbar_create_image_model_switched"
+        case .aiChatAddressBarCreateImageModelSwitchNoticeDismissed:
+            return "aichat_addressbar_create_image_model_switch_notice_dismissed"
+        case .aiChatAddressBarCreateImageUnavailable:
+            return "aichat_addressbar_create_image_unavailable"
+        case .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel:
+            return "aichat_addressbar_create_image_submitted_with_unsupported_model"
         case .aiChatAddressBarWebSearchActivated:
             return "aichat_addressbar_web_search_activated"
         case .aiChatAddressBarWebSearchDeactivated:
@@ -487,8 +840,22 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_submit_with_image"
         case .aiChatNtpModelSelected:
             return "aichat_ntp_model_selected"
+        case .aiChatNtpReasoningEffortSelected:
+            return "aichat_ntp_reasoning_effort_selected"
+        case .aiChatNtpSubscriptionUpsellTriggered:
+            return "aichat_ntp_subscription_upsell_triggered"
         case .aiChatNtpViewAllChatsClicked:
             return "aichat_ntp_view_all_chats_clicked"
+        case .aiChatNewVoiceChatOmnibarNtp:
+            return "aichat_new_voice_chat_omnibar_ntp"
+        case .aiChatNtpImageGenerationSubmitted:
+            return "aichat_ntp_image_generation_submitted"
+        case .aiChatNtpWebSearchSubmitted:
+            return "aichat_ntp_web_search_submitted"
+        case .aiChatAddressBarCustomizeResponsesOpened:
+            return "aichat_addressbar_customize_responses_opened"
+        case .aiChatNtpCustomizeResponsesOpened:
+            return "aichat_ntp_customize_responses_opened"
         case .aiChatViewAllChatsClicked:
             return "aichat_view_all_chats_clicked"
         case .aiChatModelsFetchFailed:
@@ -497,6 +864,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_start_new_conversation"
         case .aiChatMetricSentPromptOngoingChat:
             return "aichat_sent_prompt_ongoing_chat"
+        case .aiChatSuggestionSelected:
+            return "aichat_suggestion_selected"
+        case .aiChatSuggestionsViewed:
+            return "aichat_suggestions_viewed"
         case .aiChatOpenDuckAiMainMenu:
             return "aichat_open_duck_ai_main_menu"
         case .aiChatNewChatMainMenu:
@@ -525,8 +896,34 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_main_menu"
         case .aiChatViewAllChatsMoreOptionsMenu:
             return "aichat_view_all_chats_more_options_menu"
+        case .aiChatTabDidTerminate:
+            return "aichat_tab_did_terminate"
+        case .aiChatTabTerminationLoop:
+            return "aichat_tab_termination_loop"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
+        case .aiChatSettingsState:
+            return "aichat_settings_state_macos"
+        case .aiChatVoiceChatStartFailed:
+            return "aichat_voice_chat_start_failed"
+        case .aiFeaturesState:
+            return "ai_features_state"
+        case .aiFeaturesDisabled:
+            return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever:
+            return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand:
+            return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes:
+            return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften:
+            return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn:
+            return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff:
+            return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue:
+            return "serp_settings_unrecognized_value"
         }
     }
 
@@ -553,10 +950,14 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarFloatingClosed,
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
+                .aiChatNewChatTitleBarMenu,
+                .aiChatChatsTitleBarMenu,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
+                .aiChatAttachSelection,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -576,30 +977,49 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatDeleteButtonClicked,
                 .aiChatRecentChatDeleteConfirmed,
                 .aiChatRecentChatDeleteCancelled,
+                .aiChatSingleDeleteSuccessful,
+                .aiChatSingleDeleteFailed,
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
                 .aiChatOnboardingFinishedToggleOff,
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
+                .aiChatAddressBarFileAttached,
+                .aiChatAddressBarFileRemoved,
+                .aiChatAddressBarAttachTabsPickerShown,
+                .aiChatAddressBarAttachTabChosen,
+                .aiChatAddressBarAttachTabRemoved,
+                .aiChatAddressBarAttachPickerCanceled,
+                .aiChatAddressBarMentionPickerShown,
+                .aiChatAddressBarMentionTabChosen,
+                .aiChatAddressBarMentionTabRemoved,
+                .aiChatAddressBarMentionPickerCanceled,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarCreateImageModelSwitchNoticeDismissed,
+                .aiChatAddressBarCreateImageUnavailable,
+                .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel,
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
+                .aiChatNewVoiceChatOmnibarNtp,
+                .aiChatNtpImageGenerationSubmitted,
+                .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
-                .aiChatMetricStartNewConversation,
-                .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,
+                .aiChatNewVoiceChatOmnibarNative,
                 .aiChatNewImageChatMainMenu,
                 .aiChatRecentChatSelectedMainMenu,
                 .aiChatDeleteAllChatsMainMenu,
@@ -610,15 +1030,114 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
                 .aiChatViewAllChatsMainMenu,
-                .aiChatViewAllChatsMoreOptionsMenu:
+                .aiChatViewAllChatsMoreOptionsMenu,
+                .aiChatTabDidTerminate,
+                .aiChatTabTerminationLoop,
+                .aiFeaturesDisabled,
+                .aiFeaturesSearchAssistNever,
+                .aiFeaturesSearchAssistOnDemand,
+                .aiFeaturesSearchAssistSometimes,
+                .aiFeaturesSearchAssistOften,
+                .aiFeaturesHideImagesOn,
+                .aiFeaturesHideImagesOff,
+                .aiChatAddressBarCustomizeResponsesOpened,
+                .aiChatNtpCustomizeResponsesOpened,
+                .serpSettingsUnrecognizedValue:
             return nil
+        case .aiChatMetricStartNewConversation(let source, let hasPageContext, let surface, let firstPromptNewInstall),
+                .aiChatMetricSentPromptOngoingChat(let source, let hasPageContext, let surface, let firstPromptNewInstall):
+            var params = [
+                "source": source.rawValue,
+                // Derived from `source`; kept for continuity with dashboards that predate it.
+                "isOpenedFromAskDuckAiButton": source.isAskDuckAiButton ? "true" : "false",
+                "hasPageContext": hasPageContext ? "true" : "false",
+                "surface": surface.rawValue
+            ]
+            if firstPromptNewInstall {
+                params["first_prompt_new_install"] = "true"
+            }
+            return params
+        case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
+            return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType, "origin": origin]
+        case .aiChatAddressBarCreateImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
+            return [
+                "from_model_id": fromModelId,
+                "to_model_id": toModelId,
+                "from_model_privacy_preserving": String(fromModelPrivacyPreserving),
+                "entry_point": "tools_menu"
+            ]
+        case .aiChatAddressBarSubscriptionUpsellShown(let origin),
+                .aiChatNtpSubscriptionUpsellShown(let origin):
+            return ["origin": origin]
+        case .aiChatAddressBarModelPickerShown(let origin),
+                .aiChatAddressBarReasoningPickerShown(let origin),
+                .aiChatAddressBarGatedRowClick(let origin),
+                .aiChatNtpGatedRowClick(let origin),
+                .aiChatNtpModelPickerShown(let origin),
+                .aiChatNtpModelPickerTryForFreeShown(let origin),
+                .aiChatNtpModelPickerUpgradeShown(let origin),
+                .aiChatNtpReasoningPickerShown(let origin),
+                .aiChatNtpReasoningPickerTryForFreeShown(let origin),
+                .aiChatNtpReasoningPickerUpgradeShown(let origin):
+            return ["origin": origin]
+        case .aiChatSubscriptionFunnelImpression(let origin),
+                .aiChatSubscriptionFunnelClick(let origin),
+                .aiChatSubscriptionFunnelSubscribeModalImpression(let origin),
+                .aiChatSubscriptionFunnelSubscribeModalSubscribeClick(let origin),
+                .aiChatSubscriptionFunnelSubscribeModalActivateClick(let origin),
+                .aiChatSubscriptionFunnelUpgradeToProModalImpression(let origin),
+                .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(let origin):
+            return ["origin": origin]
+        case .aiChatNtpSubscriptionUpsellTriggered(let flowType, let source, let origin):
+            return ["flow_type": flowType, "source": source, "origin": origin]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
+        case .aiChatSettingsState(let duckAIEnabled, let addressBarToggle, let tabBarButton, let globalShortcut, let menuBarIcon, let newTabPage):
+            var params = [
+                "duckai_enabled": String(duckAIEnabled),
+                "addressbar_toggle": String(addressBarToggle),
+                "tabbar_button": String(tabBarButton),
+                "global_shortcut": String(globalShortcut),
+                "menubar_icon": String(menuBarIcon)
+            ]
+            if let newTabPage {
+                params["ntp_search_box"] = String(newTabPage.isSearchBoxVisible)
+                params["ntp_duckai"] = String(newTabPage.isDuckAIShortcutEnabled)
+                params["ntp_mode"] = newTabPage.isDuckAIModeSelected ? "ai" : "search"
+            }
+            return params
+        case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
+            return [
+                "duck_ai": duckAI ? "true" : "false",
+                "search_assist": searchAssist,
+                "hide_ai_images": hideAIImages ? "on" : "off",
+                "no_ai": noAI ? "true" : "false"
+            ]
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
+        case .aiChatAddressBarSubmitWithTabs(let tabCount):
+            return ["tabCount": String(tabCount)]
+        case .aiChatAddressBarSubmitWithFiles(let fileCount):
+            return ["fileCount": String(fileCount)]
+        case .aiChatAddressBarFileValidationFailed(let reason):
+            return ["reason": reason]
+        case .aiChatPageContextExtractionSuccess(let contextType):
+            return ["context_type": contextType]
+        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency, let contextType):
+            var params = ["reason": reason, "trigger": trigger, "context_type": contextType]
+            if let latency {
+                params["latency"] = latency
+            }
+            return params
+        case .aiChatPageContextExtractionPrevented(let category, let trigger):
+            return ["category": category, "reason": "non_attachable", "trigger": trigger]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
+        case .aiChatDuckAIDirectNavigation(let via, let duckAIEnabled, let toggleEnabled):
+            return ["via": via.rawValue, "duckai_enabled": String(duckAIEnabled), "toggle_enabled": String(toggleEnabled)]
+        case .aiChatEntryPoint(let source, let target):
+            return ["source": source.rawValue, "target": target.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
             var params = ["source": source.rawValue]
             if let shouldAutomaticallySendPageContext {
@@ -630,6 +1149,8 @@ enum AIChatPixel: PixelKitEvent {
             return params
         case .aiChatSidebarClosed(let source):
             return ["source": source.rawValue]
+        case .aiChatTitleBarMenuShown(let sidebarEntry):
+            return ["sidebarEntry": sidebarEntry.rawValue]
         case .aiChatSidebarResized(let width):
             return ["width": String(width)]
         case .aiChatSummarizeText(let source):
@@ -641,6 +1162,14 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSyncDecryptionError(let reason),
                 .aiChatSyncHistoryEnabledError(let reason):
             return ["reason": reason]
+        case .aiChatReportMetricDecodeError(_, let failureReason):
+            return ["failureReason": failureReason.rawValue]
+        case .aiChatVoiceChatStartFailed(let reason):
+            return ["reason": reason.rawValue]
+        case .aiChatSuggestionSelected(let suggestionId, let pageType):
+            return ["suggestionId": suggestionId, "pageType": pageType]
+        case .aiChatSuggestionsViewed(let isSmart, let pageType):
+            return ["isSmart": String(isSmart), "pageType": pageType]
         }
     }
 
@@ -662,6 +1191,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSettingsDisplayed,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatAddressBarButtonClicked,
+                .aiChatDuckAIDirectNavigation,
+                .aiChatEntryPoint,
                 .aiChatSidebarOpened,
                 .aiChatSidebarClosed,
                 .aiChatSidebarExpanded,
@@ -672,6 +1203,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarFloatingClosed,
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
+                .aiChatNewChatTitleBarMenu,
+                .aiChatChatsTitleBarMenu,
+                .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -679,6 +1214,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatPageContextAdded,
                 .aiChatPageContextRemoved,
+                .aiChatAttachSelection,
+                .aiChatPageContextExtractionSuccess,
+                .aiChatPageContextExtractionFailed,
+                .aiChatPageContextExtractionPrevented,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
                 .aiChatDeleteHistoryFailed,
@@ -697,6 +1236,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatDeleteButtonClicked,
                 .aiChatRecentChatDeleteConfirmed,
                 .aiChatRecentChatDeleteCancelled,
+                .aiChatSingleDeleteSuccessful,
+                .aiChatSingleDeleteFailed,
                 .aiChatSyncScopedSyncTokenError,
                 .aiChatSyncEncryptionError,
                 .aiChatSyncDecryptionError,
@@ -708,19 +1249,62 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
+                .aiChatAddressBarSubmitWithTabs,
+                .aiChatAddressBarFileAttached,
+                .aiChatAddressBarFileRemoved,
+                .aiChatAddressBarFileValidationFailed,
+                .aiChatAddressBarSubmitWithFiles,
+                .aiChatAddressBarAttachTabsPickerShown,
+                .aiChatAddressBarAttachTabChosen,
+                .aiChatAddressBarAttachTabRemoved,
+                .aiChatAddressBarAttachPickerCanceled,
+                .aiChatAddressBarMentionPickerShown,
+                .aiChatAddressBarMentionTabChosen,
+                .aiChatAddressBarMentionTabRemoved,
+                .aiChatAddressBarMentionPickerCanceled,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
+                .aiChatAddressBarSubscriptionUpsellTriggered,
+                .aiChatAddressBarSubscriptionUpsellShown,
+                .aiChatNtpSubscriptionUpsellShown,
+                .aiChatAddressBarModelPickerShown,
+                .aiChatAddressBarReasoningPickerShown,
+                .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick,
+                .aiChatNtpModelPickerShown,
+                .aiChatNtpModelPickerTryForFreeShown,
+                .aiChatNtpModelPickerUpgradeShown,
+                .aiChatNtpReasoningPickerShown,
+                .aiChatNtpReasoningPickerTryForFreeShown,
+                .aiChatNtpReasoningPickerUpgradeShown,
+                .aiChatSubscriptionFunnelImpression,
+                .aiChatSubscriptionFunnelClick,
+                .aiChatSubscriptionFunnelSubscribeModalImpression,
+                .aiChatSubscriptionFunnelSubscribeModalSubscribeClick,
+                .aiChatSubscriptionFunnelSubscribeModalActivateClick,
+                .aiChatSubscriptionFunnelUpgradeToProModalImpression,
+                .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
+                .aiChatNtpSubscriptionUpsellTriggered,
                 .aiChatNtpViewAllChatsClicked,
+                .aiChatNewVoiceChatOmnibarNtp,
+                .aiChatNtpImageGenerationSubmitted,
+                .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
+                .aiChatSuggestionSelected,
+                .aiChatSuggestionsViewed,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatReportMetricDecodeError,
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,
+                .aiChatNewVoiceChatOmnibarNative,
                 .aiChatNewImageChatMainMenu,
                 .aiChatRecentChatSelectedMainMenu,
                 .aiChatDeleteAllChatsMainMenu,
@@ -735,14 +1319,66 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarCreateImageModelSwitched,
+                .aiChatAddressBarCreateImageModelSwitchNoticeDismissed,
+                .aiChatAddressBarCreateImageUnavailable,
+                .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel,
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
-                .aiChatIsEnabled:
+                .aiChatIsEnabled,
+                .aiChatSettingsState,
+                .aiChatVoiceChatStartFailed,
+                .aiChatTabDidTerminate,
+                .aiChatTabTerminationLoop,
+                .aiFeaturesState,
+                .aiFeaturesDisabled,
+                .aiFeaturesSearchAssistNever,
+                .aiFeaturesSearchAssistOnDemand,
+                .aiFeaturesSearchAssistSometimes,
+                .aiFeaturesSearchAssistOften,
+                .aiFeaturesHideImagesOn,
+                .aiFeaturesHideImagesOff,
+                .aiChatAddressBarCustomizeResponsesOpened,
+                .aiChatNtpCustomizeResponsesOpened,
+                .serpSettingsUnrecognizedValue:
             return [.pixelSource]
         }
     }
 
+    // Native gated-row pixels and new `_macos` pixels omit the legacy platform prefix used by existing AI Chat pixels.
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick,
+                .aiChatDuckAIDirectNavigation,
+                .aiChatEntryPoint,
+                .aiChatSettingsState,
+                .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMiddleClickNewChat:
+            return .none
+        default:
+            return .platformDefault
+        }
+    }
+
+}
+
+/// Where a Duck.ai prompt was submitted, as the prompt pixels report it.
+enum AIChatPromptSurface: String, CaseIterable {
+    case addressBar = "address_bar"
+    case newTabPage = "new_tab_page"
+    case promptBar = "prompt_bar"
+    case duckAI = "duck_ai"
+    case sidebar
+    case floating
+}
+
+/// The New Tab Page search box settings, reported only where that search box exists.
+struct AIChatNewTabPageSettingsState {
+    let isSearchBoxVisible: Bool
+    let isDuckAIShortcutEnabled: Bool
+    let isDuckAIModeSelected: Bool
 }
 
 /// Action performed when address bar button is clicked
@@ -752,6 +1388,26 @@ enum AIChatAddressBarAction: String, CaseIterable {
     case tabWithPrompt = "tab-with-prompt"
 }
 
+/// How a tab reached Duck.ai directly, as `aiChatDuckAIDirectNavigation` reports it.
+enum AIChatDirectNavigationVia: String, CaseIterable {
+    case typed, suggestion, bookmark, favorite, history, external, link
+    case newTabPage = "new_tab_page"
+
+    /// The chat's source when no Duck.ai surface stamped it.
+    var conversationSource: AIChatConversationSource {
+        switch self {
+        case .typed: .directTyped
+        case .suggestion: .directSuggestion
+        case .bookmark: .directBookmark
+        case .favorite: .directFavorite
+        case .history: .directHistory
+        case .external: .directExternal
+        case .link: .directLink
+        case .newTabPage: .directNewTabPage
+        }
+    }
+}
+
 /// Source of AI Chat sidebar open action
 enum AIChatSidebarOpenSource: String, CaseIterable {
     case addressBarButton = "address-bar-button"
@@ -759,7 +1415,51 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case serp = "serp"
     case contextMenu = "context-menu"
     case translation = "translation"
+    case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
+    case askAboutPage = "ask-about-page"
+    /// The tab-bar menu's sidebar item on a page that can't be attached, where it reads "Open Sidebar".
+    case openSidebar = "open-sidebar"
+    case mainMenuAskAboutPage = "main-menu-ask-about-page"
+}
+
+/// The sidebar item the tab-bar Duck.ai menu offers. Resolved once per menu, so the item's title, its
+/// action and `aiChatTitleBarMenuShown` can't disagree.
+enum AIChatMenuButtonSidebarEntry: String, CaseIterable {
+    case askAboutPage = "ask-about-page"
+    case openSidebar = "open-sidebar"
+    case closeSidebar = "close-sidebar"
+
+    enum Action: Equatable {
+        case open(AIChatSidebarOpenSource)
+        case close
+    }
+
+    /// A presented chat, docked or floating, can only be closed. Otherwise "Ask About Page" needs a
+    /// page to attach; without one the same item just opens the sidebar.
+    init(isChatPresented: Bool, isPageAttachable: Bool) {
+        if isChatPresented {
+            self = .closeSidebar
+        } else {
+            self = isPageAttachable ? .askAboutPage : .openSidebar
+        }
+    }
+
+    var action: Action {
+        switch self {
+        case .askAboutPage: .open(.askAboutPage)
+        case .openSidebar: .open(.openSidebar)
+        case .closeSidebar: .close
+        }
+    }
+}
+
+/// Where an entry point opened Duck.ai, as `aiChatEntryPoint` reports it.
+enum AIChatEntryPointTarget: String, CaseIterable {
+    case currentTab = "current_tab"
+    case newTab = "new_tab"
+    case newWindow = "new_window"
+    case sidebar
 }
 
 /// Source of AI Chat sidebar close action
@@ -768,4 +1468,13 @@ enum AIChatSidebarCloseSource: String, CaseIterable {
     case sidebarCloseButton = "sidebar-close-button"
     case contextMenu = "context-menu"
     case tabbarButton = "tabbar-button"
+}
+
+/// Reason associated with a Duck.ai voice-chat start failure reported by the FE
+enum AIChatVoiceChatStartFailedReason: String, CaseIterable {
+    /// FE reported `NotAllowedError` and the OS has denied microphone access to the app —
+    /// the remediation surface was shown.
+    case micOsDenied = "mic_os_denied"
+    /// Any other reason (transient WebKit error, hardware unavailable, etc.) — no action taken.
+    case other
 }

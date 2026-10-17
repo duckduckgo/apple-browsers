@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import WebKit
@@ -24,7 +24,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 class SerpHeadersNavigationResponderTests: XCTestCase {
 
     let ddgUrls = [

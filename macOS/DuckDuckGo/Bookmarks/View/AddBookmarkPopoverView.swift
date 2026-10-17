@@ -34,9 +34,7 @@ struct AddBookmarkPopoverView: View {
         if let addFolderViewModel = model.addFolderViewModel {
             AddBookmarkFolderPopoverView(model: addFolderViewModel)
         } else {
-            addBookmarkView.onAppear {
-                syncButtonModel.viewDidLoad()
-            }
+            addBookmarkView
         }
     }
 
@@ -92,7 +90,7 @@ struct AddBookmarkPopoverView: View {
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard))
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: DismissableSyncDeviceButtonModel(source: .bookmarkAdded))
         .preferredColorScheme(.light)
 }
 
@@ -107,7 +105,7 @@ struct AddBookmarkPopoverView: View {
     )
     bkman.loadBookmarks()
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard))
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: DismissableSyncDeviceButtonModel(source: .bookmarkAdded))
         .preferredColorScheme(.dark)
 }
 #endif

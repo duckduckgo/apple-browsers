@@ -48,7 +48,8 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.currentToggleState, .aiChat)
     }
 
-    func test_initialState_voiceDisabled_buttonStateIsNoButtons() {
+    func test_searchMode_voiceSearchDisabled_buttonStateIsNoButtons() {
+        sut.setToggleState(.search)
         XCTAssertEqual(sut.buttonState, .noButtons)
     }
 
@@ -62,6 +63,18 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertFalse(sut.isTopBarPosition)
         XCTAssertFalse(sut.isUsingExpandedBottomBarHeight)
         XCTAssertFalse(sut.isCurrentTextValidURL)
+        XCTAssertTrue(sut.usesExpandedAIChatTextEntryLayout)
+    }
+
+    // MARK: - Fire Tab
+
+    func test_initialState_isFireTab_defaultsFalse() {
+        XCTAssertFalse(sut.isFireTab)
+    }
+
+    func test_init_withFireTabTrue_setsIsFireTab() {
+        sut = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true)
+        XCTAssertTrue(sut.isFireTab)
     }
 
     // MARK: - updateCurrentText
@@ -76,7 +89,8 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .clearOnly)
     }
 
-    func test_updateCurrentText_emptyWithVoiceDisabled_buttonStateIsNoButtons() {
+    func test_updateCurrentText_emptyInSearchModeWithVoiceDisabled_buttonStateIsNoButtons() {
+        sut.setToggleState(.search)
         sut.updateCurrentText("hello")
         sut.updateCurrentText("")
         XCTAssertEqual(sut.buttonState, .noButtons)
@@ -100,6 +114,79 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         sut.updateCurrentText("world")
+        waitForExpectations(timeout: 1)
+    }
+
+    // MARK: - isCurrentTextValidURL
+
+    func test_updateCurrentText_withValidURL_setsIsCurrentTextValidURLTrue() {
+        sut.updateCurrentText("https://duckduckgo.com")
+        XCTAssertTrue(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_withSearchTerm_setsIsCurrentTextValidURLFalse() {
+        sut.updateCurrentText("hello world")
+        XCTAssertFalse(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_clearedFromURL_revertsIsCurrentTextValidURLToFalse() {
+        sut.updateCurrentText("https://duckduckgo.com")
+        sut.updateCurrentText("")
+        XCTAssertFalse(sut.isCurrentTextValidURL)
+    }
+
+    func test_updateCurrentText_withValidURL_publishesTrue() {
+        let expectation = expectation(description: "isCurrentTextValidURLPublisher emits true")
+        sut.isCurrentTextValidURLPublisher
+            .dropFirst()
+            .sink { isValid in
+                XCTAssertTrue(isValid)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.updateCurrentText("https://duckduckgo.com")
+        waitForExpectations(timeout: 1)
+    }
+
+    // MARK: - resetInteractionState
+
+    func test_resetInteractionState_clearsHasUserInteractedWithText() {
+        sut.markUserInteraction()
+        XCTAssertTrue(sut.hasUserInteractedWithText)
+
+        sut.resetInteractionState()
+
+        XCTAssertFalse(sut.hasUserInteractedWithText)
+    }
+
+    func test_resetInteractionState_publishesFalse() {
+        sut.markUserInteraction()
+
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher emits false after reset")
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { hasInteracted in
+                XCTAssertFalse(hasInteracted)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_resetInteractionState_alreadyFalse_doesNotPublishChange() {
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher does not fire when already false")
+        expectation.isInverted = true
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
         waitForExpectations(timeout: 1)
     }
 
@@ -134,6 +221,30 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    /// Return and Paste & Go never count as tapping Ask.
+    func test_submitText_withoutATrigger_reportsTextEntry() {
+        var triggers: [TextSubmissionTrigger] = []
+        sut.textSubmissionPublisher
+            .sink { triggers.append($0.trigger) }
+            .store(in: &cancellables)
+
+        sut.submitText("hello")
+
+        XCTAssertEqual(triggers, [.textEntry])
+    }
+
+    func test_submitText_fromTheSendButton_reportsTheSendButton() {
+        var triggers: [TextSubmissionTrigger] = []
+        sut.textSubmissionPublisher
+            .sink { triggers.append($0.trigger) }
+            .store(in: &cancellables)
+
+        sut.submitText("hello", trigger: .sendButton)
+        sut.submitAIChatAttachmentOnlyPrompt()
+
+        XCTAssertEqual(triggers, [.sendButton, .sendButton])
+    }
+
     func test_submitText_trimsWhitespace() {
         let expectation = expectation(description: "trimmed text submitted")
         sut.textSubmissionPublisher
@@ -147,6 +258,21 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    /// The greyed-out button is not the only route into a prompt: the keyboard return key and
+    /// Paste & Go both come through here.
+    func test_submitText_whenInputIsBlockedByUsageLimit_doesNotFirePublisher() {
+        var fired = false
+        sut.textSubmissionPublisher
+            .sink { _ in fired = true }
+            .store(in: &cancellables)
+        sut.isInputBlockedByUsageLimit = true
+
+        sut.submitText("hello")
+        sut.submitAIChatAttachmentOnlyPrompt()
+
+        XCTAssertFalse(fired)
+    }
+
     func test_submitText_emptyString_doesNotFirePublisher() {
         var fired = false
         sut.textSubmissionPublisher
@@ -157,6 +283,22 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.submitText("   ")
 
         XCTAssertFalse(fired)
+    }
+
+    func test_submitAIChatAttachmentOnlyPrompt_firesEmptyAIChatSubmission() {
+        let expectation = expectation(description: "empty AI chat submission fires")
+        sut.setToggleState(.search)
+
+        sut.textSubmissionPublisher
+            .sink { submission in
+                XCTAssertEqual(submission.text, "")
+                XCTAssertEqual(submission.mode, .aiChat)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.submitAIChatAttachmentOnlyPrompt()
+        waitForExpectations(timeout: 1)
     }
 
     func test_submitText_usesCurrentToggleMode() {
@@ -222,7 +364,8 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .voiceOnly)
     }
 
-    func test_setVoiceDisabled_withEmptyText_updatesButtonStateToNoButtons() {
+    func test_setVoiceDisabled_inSearchModeWithEmptyText_updatesButtonStateToNoButtons() {
+        sut.setToggleState(.search)
         sut.isVoiceSearchEnabled = true
         sut.isVoiceSearchEnabled = false
         XCTAssertEqual(sut.buttonState, .noButtons)
@@ -232,6 +375,43 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.updateCurrentText("hello")
         sut.isVoiceSearchEnabled = true
         XCTAssertEqual(sut.buttonState, .clearOnly)
+    }
+
+    func test_aiVoiceChat_aiChatModeWithEmptyText_keepsInlineVoiceSearchButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.isExpanded = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_aiVoiceChat_collapsedAIChatWithVoiceSearchDisabled_showsVoiceButton() {
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_aiVoiceChat_expandedAIChatWithVoiceSearchDisabled_hidesVoiceButton() {
+        sut.isExpanded = true
+        sut.setToggleState(.aiChat)
+
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_aiVoiceChat_aiChatModeWithText_keepsClearButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.setToggleState(.aiChat)
+        sut.updateCurrentText("hello")
+
+        XCTAssertEqual(sut.buttonState, .clearOnly)
+    }
+
+    func test_hidesVoiceButton_aiChatModeWithAIVoiceChatEnabled_hidesInlineVoiceSearchButton() {
+        sut.isVoiceSearchEnabled = true
+        sut.setToggleState(.aiChat)
+        sut.hidesVoiceButton = true
+
+        XCTAssertEqual(sut.buttonState, .noButtons)
     }
 
     // MARK: - microphoneButtonTapped
@@ -246,11 +426,23 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func test_aiVoiceChatButtonTapped_firesPublisher() {
+        let expectation = expectation(description: "aiVoiceChatButtonTappedPublisher fires")
+        sut.aiVoiceChatButtonTappedPublisher
+            .sink { expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.aiVoiceChatButtonTapped()
+        waitForExpectations(timeout: 1)
+    }
+
     // MARK: - updateBarPosition
 
-    func test_updateBarPosition_doesNotChangeConstants() {
-        sut.updateBarPosition(isTop: true)
+    func test_updateBarPosition_updatesTopBarPosition() {
         XCTAssertFalse(sut.isTopBarPosition)
+
+        sut.updateBarPosition(isTop: true)
+        XCTAssertTrue(sut.isTopBarPosition)
 
         sut.updateBarPosition(isTop: false)
         XCTAssertFalse(sut.isTopBarPosition)
@@ -263,10 +455,10 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
     }
 
-    func test_isGenerating_collapsed_toggleDisabled_showsStopGeneratingAndSearchGoTo() {
+    func test_isGenerating_collapsed_toggleDisabled_stillShowsStopGeneratingOnly() {
         sut.isToggleEnabled = false
         sut.isGenerating = true
-        XCTAssertEqual(sut.buttonState, .stopGeneratingAndSearchGoTo)
+        XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
     }
 
     func test_isGenerating_expanded_doesNotShowStopInCollapsedBar() {
@@ -291,7 +483,7 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.isGenerating = true
         XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
         sut.isGenerating = false
-        XCTAssertEqual(sut.buttonState, .noButtons)
+        XCTAssertEqual(sut.buttonState, .voiceOnly, "Collapsed .aiChat falls back to the Duck AI voice button")
     }
 
     func test_isGenerating_false_withText_showsClear() {
@@ -312,5 +504,89 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
 
         sut.stopGeneratingButtonTapped()
         waitForExpectations(timeout: 1)
+    }
+
+    // MARK: - AI Chat Shortcut Button State
+
+    func test_toggleOff_searchMode_empty_voiceOn_aiShortcutOn_showsVoiceAndAIChatShortcut() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: true,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: true
+        )
+        sut.setToggleState(.search)
+
+        XCTAssertEqual(sut.buttonState, .voiceAndAIChatShortcut)
+    }
+
+    func test_toggleOff_searchMode_empty_voiceOff_aiShortcutOn_showsAIChatShortcutOnly() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: false,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: true
+        )
+        sut.setToggleState(.search)
+
+        XCTAssertEqual(sut.buttonState, .aiChatShortcutOnly)
+    }
+
+    func test_toggleOff_searchMode_empty_aiShortcutOff_fallsBackToVoiceOnlyOrNoButtons() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: true,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: false
+        )
+        sut.setToggleState(.search)
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+
+        sut.isVoiceSearchEnabled = false
+        XCTAssertEqual(sut.buttonState, .noButtons)
+    }
+
+    func test_toggleOff_searchMode_hasText_aiShortcutOn_showsClearAndAIChatShortcut() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: true,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: true
+        )
+        sut.setToggleState(.search)
+        sut.updateCurrentText("hello")
+
+        XCTAssertEqual(sut.buttonState, .clearAndAIChatShortcut)
+    }
+
+    func test_toggleOn_searchMode_empty_aiShortcutAvailable_doesNotShowAIChatShortcut() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: true,
+            isToggleEnabled: true,
+            isAIChatShortcutAvailable: true
+        )
+        sut.setToggleState(.search)
+
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_toggleOff_aiChatMode_empty_voiceOn_fallsBackToVoiceOnly() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: true,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: true
+        )
+        // Default state is .aiChat; with the search-go-to escape hatch removed, toggle-off + .aiChat
+        // falls through to the voice-only branch (or .noButtons when voice is unavailable).
+        XCTAssertEqual(sut.buttonState, .voiceOnly)
+    }
+
+    func test_isAIChatShortcutAvailable_setterRefreshesButtonState() {
+        sut = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: false,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: false
+        )
+        sut.setToggleState(.search)
+        XCTAssertEqual(sut.buttonState, .noButtons)
+
+        sut.isAIChatShortcutAvailable = true
+        XCTAssertEqual(sut.buttonState, .aiChatShortcutOnly)
     }
 }

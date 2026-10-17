@@ -37,6 +37,10 @@ final class AIChatSession {
 
     var floatingWindowController: AIChatFloatingWindowController?
 
+    /// Set for a sidebar or floating chat restored at launch; the next view controller built for
+    /// it reports its chat as `session-restore`. Transient, so `AIChatState` stays persisted state only.
+    var isRestoredFromPreviousSession = false
+
     private let chatViewControllerSubject = CurrentValueSubject<AIChatViewController?, Never>(nil)
     private var restorationDataCancellable: AnyCancellable?
 
@@ -65,6 +69,10 @@ final class AIChatSession {
             .eraseToAnyPublisher()
     }
 
+    var chatViewControllerPublisher: AnyPublisher<AIChatViewController?, Never> {
+        chatViewControllerSubject.eraseToAnyPublisher()
+    }
+
     /// The live AI Chat URL (reads from the VC if alive, falls back to persisted state).
     var currentAIChatURL: URL {
         chatViewController?.currentAIChatURL ?? state.currentAIChatURL
@@ -85,6 +93,10 @@ final class AIChatSession {
         viewController.tabID = tabID
         if let restorationData = state.restorationData {
             viewController.setAIChatRestorationData(restorationData)
+        }
+        if isRestoredFromPreviousSession {
+            viewController.noteRestoredFromPreviousSession()
+            isRestoredFromPreviousSession = false
         }
         chatViewController = viewController
         return viewController

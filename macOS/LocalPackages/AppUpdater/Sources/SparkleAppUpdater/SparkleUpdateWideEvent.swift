@@ -18,10 +18,11 @@
 
 import AppUpdaterShared
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
-import PixelKit
+import WideEvent
 import PrivacyConfig
 
 /// Orchestrates Wide Event tracking for Sparkle update cycles.
@@ -201,7 +202,7 @@ public final class SparkleUpdateWideEvent {
         }
         defer { currentFlowID = nil }
 
-        var data = flowData
+        let data = flowData
         data.totalDuration?.complete()
         data.downloadDuration?.complete()
         data.extractionDuration?.complete()

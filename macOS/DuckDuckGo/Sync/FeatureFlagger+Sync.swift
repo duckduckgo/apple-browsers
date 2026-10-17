@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 extension FeatureFlagger {
     var isNewSyncEntryPointsFeatureOn: Bool {
-        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.refactorOfSyncPreferences) && isFeatureOn(.syncFeatureLevel3)
+        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.syncFeatureLevel3)
     }
 }

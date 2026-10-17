@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Network
 import NetworkExtension
-import Common
 import os.log
 
 /// This class takes care of testing whether the Network Protection connection is working or not.  Results are handled by

@@ -28,23 +28,31 @@ public final class ConnectionFailureLoopDetector {
     private static let threshold = 3
 
     private let store: ThrowingKeyValueStoring
-    private let isFeatureEnabled: Bool
+
+    public private(set) var shouldSuppressCurrentAttemptTelemetry = false
 
     public var connectionLoopDetected: Bool {
-        guard isFeatureEnabled else { return false }
         let count = (try? store.object(forKey: Keys.consecutiveFailureCount) as? Int) ?? 0
         return count > Self.threshold
     }
 
-    public init(store: ThrowingKeyValueStoring, isFeatureEnabled: Bool) {
+    public init(store: ThrowingKeyValueStoring) {
         self.store = store
-        self.isFeatureEnabled = isFeatureEnabled
+    }
+
+    /// Latches suppression for the whole attempt so nested telemetry, such as AuthV2 refresh,
+    /// uses the failure count from before the outer VPN failure is recorded.
+    public func connectionStarted(isOnDemand: Bool) {
+        let count = (try? store.object(forKey: Keys.consecutiveFailureCount) as? Int) ?? 0
+        shouldSuppressCurrentAttemptTelemetry = isOnDemand && count >= Self.threshold
+    }
+
+    public func connectionFinished() {
+        shouldSuppressCurrentAttemptTelemetry = false
     }
 
     @discardableResult
     public func connectionFailed(isOnDemand: Bool) -> Bool {
-        guard isFeatureEnabled else { return false }
-
         if !isOnDemand {
             resetState()
             return false
@@ -58,16 +66,15 @@ public final class ConnectionFailureLoopDetector {
     }
 
     public func connectionSucceeded() {
-        guard isFeatureEnabled else { return }
         resetState()
     }
 
     public func reset() {
-        guard isFeatureEnabled else { return }
         resetState()
     }
 
     private func resetState() {
+        connectionFinished()
         try? store.set(0, forKey: Keys.consecutiveFailureCount)
     }
 }

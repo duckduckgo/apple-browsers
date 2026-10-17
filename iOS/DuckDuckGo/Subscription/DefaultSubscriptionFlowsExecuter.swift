@@ -20,7 +20,7 @@
 import Foundation
 import Subscription
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 /// Protocol for performing App Store subscription tier changes (upgrade, downgrade, cancel pending downgrade).
@@ -70,7 +70,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         setTransactionStatus?(.changingPlan)
 
         // Get current subscription info for wide event tracking
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let fromPlan = currentSubscription?.productId ?? ""
         let resolvedChangeType = determineChangeType(change: changeType)
 
@@ -129,7 +129,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         wideEvent.updateFlow(wideData)
 
         // Complete the tier change by confirming with the backend
-        let completeResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, additionalParams: nil)
+        let completeResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, experimentAttribution: nil)
 
         switch completeResult {
         case .success:

@@ -19,6 +19,7 @@
 import XCTest
 import Common
 @testable import Subscription
+@_spi(Testing) import Networking
 import SubscriptionTestingUtilities
 
 extension SubscriptionManagerTests {

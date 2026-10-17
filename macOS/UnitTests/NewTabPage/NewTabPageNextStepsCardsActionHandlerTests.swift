@@ -17,6 +17,9 @@
 //
 
 import BrowserServicesKit
+import FeatureFlags_macOS
+import PixelExperimentKit
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 import PrivacyConfigTestsUtils
 import Subscription
@@ -33,7 +36,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     private var navigator: MockNavigator!
     private var syncLauncher: MockSyncLauncher!
-    private var featureFlagger: MockFeatureFlagger!
+    private var pixelFiring: PixelKitMock!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -46,9 +49,14 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
         navigator = MockNavigator()
         syncLauncher = MockSyncLauncher()
-        featureFlagger = MockFeatureFlagger()
+        pixelFiring = PixelKitMock()
 
-        actionHandler = NewTabPageNextStepsCardsActionHandler(
+        actionHandler = makeActionHandler(featureFlagger: MockFeatureFlagger())
+    }
+
+    @MainActor
+    private func makeActionHandler(featureFlagger: FeatureFlagger) -> NewTabPageNextStepsCardsActionHandler {
+        NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
             dataImportProvider: capturingDataImportProvider,
@@ -57,11 +65,15 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             pixelHandler: pixelHandler,
             newTabPageNavigator: navigator,
             syncLauncher: syncLauncher,
+            pixelFiring: pixelFiring,
             featureFlagger: featureFlagger
         )
     }
 
     override func tearDown() {
+        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
+                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                        fire: { _, _, _ in })
         actionHandler = nil
         capturingDefaultBrowserProvider = nil
         capturingDataImportProvider = nil
@@ -71,7 +83,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         pixelHandler = nil
         navigator = nil
         syncLauncher = nil
-        featureFlagger = nil
+        pixelFiring = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -89,22 +101,12 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertTrue(capturingDefaultBrowserProvider.openSystemPreferencesCalled)
     }
 
-    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagEnabledThenItAddsAppToDockAndCallsRefreshCardsAction() {
+    @MainActor func testWhenAskedToPerformActionForDockThenItAddsAppToDockAndCallsRefreshCardsAction() {
         var cardsRefreshed = false
-        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
 
         XCTAssertTrue(dockCustomizer.isAddedToDock)
         XCTAssertTrue(cardsRefreshed)
-    }
-
-    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagDisabledThenItAddsAppToDockWithoutRefreshCardsAction() {
-        var cardsRefreshed = false
-        featureFlagger.enabledFeatureFlags = []
-        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
-
-        XCTAssertTrue(dockCustomizer.isAddedToDock)
-        XCTAssertFalse(cardsRefreshed)
     }
 
     @MainActor func testWhenAskedToPerformActionForImportPromptThenItOpensImportWindowAndCallsRefreshCardsAction() {
@@ -150,6 +152,54 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertTrue(syncLauncher.startDeviceSyncFlowCalled)
         XCTAssertEqual(syncLauncher.syncSource, .nextStepsCard)
         XCTAssertNotNil(syncLauncher.capturedCompletion)
+    }
+
+    @MainActor
+    func testSetupCardsReportDayZeroMetricsForBothCohorts() {
+        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+            let flags = MockFeatureFlagger(resolveCohortStub: cohort)
+            flags.allActiveExperiments = [
+                MacOSBrowserConfigSubfeature.onboardingNonBlockingV2.rawValue: ExperimentData(
+                    parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
+                    cohortID: cohort.rawValue, enrollmentDate: Date())
+            ]
+            var events: [PixelKit.Event] = []
+            PixelKit.configureExperimentKit(featureFlagger: flags,
+                                            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                            fire: { event, _, _ in events.append(event) })
+            let handler = makeActionHandler(featureFlagger: flags)
+
+            handler.performAction(for: .bringStuff, refreshCardsAction: nil)
+            handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+            XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
+            XCTAssertTrue(dockCustomizer.isAddedToDock)
+            XCTAssertEqual(events.count, 2)
+            for metric in ["importRequested", "addToDockRequested"] {
+                let matching = events.filter { $0.parameters?["metric"] == metric }
+                XCTAssertEqual(Set(matching.compactMap { $0.parameters?["conversionWindowDays"] }), ["0"])
+                XCTAssertTrue(matching.allSatisfy { $0.parameters?["value"] == "true" })
+            }
+            XCTAssertFalse(flags.didCallResolveCohort)
+        }
+    }
+
+    @MainActor
+    func testSetupCardsDoNotEnrollOrReportExperimentMetricsForUnenrolledUsers() {
+        let flags = MockFeatureFlagger()
+        var events: [PixelKit.Event] = []
+        PixelKit.configureExperimentKit(featureFlagger: flags,
+                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                        fire: { event, _, _ in events.append(event) })
+        let handler = makeActionHandler(featureFlagger: flags)
+
+        handler.performAction(for: .bringStuff, refreshCardsAction: nil)
+        handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+        XCTAssertTrue(events.isEmpty)
+        XCTAssertFalse(flags.didCallResolveCohort)
+        XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
     }
 
     // MARK: - Pixel Tests
@@ -203,6 +253,20 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         actionHandler.performAction(for: .sync, refreshCardsAction: nil)
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .sync)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSyncThenItFiresSyncPromoConfirmedPixelWithNextStepsCardSource() {
+        actionHandler.performAction(for: .sync, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            ExpectedFireCall(pixel: SyncPromoPixelKitEvent.syncPromoConfirmed, frequency: .standard, additionalParameters: ["source": "nextStepsCard"])
+        ])
+    }
+
+    @MainActor func testWhenAskedToPerformActionForYTAdBlockingThenItFiresPixel() {
+        actionHandler.performAction(for: .youtubeAdBlocking, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .youtubeAdBlocking)
     }
 
 }

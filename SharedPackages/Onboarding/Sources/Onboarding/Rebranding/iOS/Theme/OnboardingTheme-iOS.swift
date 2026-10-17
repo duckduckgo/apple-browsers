@@ -31,33 +31,28 @@ public extension OnboardingTheme {
     static let iOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
-        let bubbleBorderColor = Color(uiColor: UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return UIColor(singleUseColor: .rebranding(.surfaceTertiary))
-            default:
-                return UIColor(singleUseColor: .rebranding(.accentAltPrimary))
-            }
-        })
+        let bubbleBorderColor = OnboardingRebrandColor.bubbleBorder
 
         let typography: OnboardingTheme.Typography = .duckSans
         let colorPalette = ColorPalette(
             background: Color(singleUseColor: .rebranding(.backdrop)),
             bubbleBorder: bubbleBorderColor,
-            bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+            bubbleBackground: OnboardingRebrandColor.surfaceTertiary,
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
             textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
             optionsListBorderColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
+            optionsListHoverColor: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.1),
+            optionsListPressedColor: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.2),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
             primaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsPrimaryPressed)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
             secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsSecondaryDefault)),
             secondaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsSecondaryPressed)),
             secondaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsSecondaryText)),
-            backgroundAccent: Color(singleUseColor: .rebranding(.backgroundAccent))
+            backgroundAccent: OnboardingRebrandColor.backgroundAccent
         )
         let bubbleMetrics = BubbleMetrics(
             contentInsets: bubbleContentInsets,
@@ -89,14 +84,11 @@ public extension OnboardingTheme {
             contentInnerSpacing: 20,
             buttonSpacing: 12,
             bubbleMaxWidth: 360,
-            bubbleTailOffset: 0.8,
             topMarginRatio: 0.18,
             minTopMargin: 16,
             maxTopMargin: 16,
             progressBarTrailingPadding: 16.0,
             progressBarTopPadding: 12.0,
-            rebrandingBadgeLeadingPadding: 12.0,
-            rebrandingBadgeTopPadding: 12.0,
             dialogVerticalOffsetPercentage: MetricBuilder<CGFloat>(default: 0.1).iPhoneSmallScreen(0.01),
             actionsSpacing: 12
         )
@@ -151,7 +143,7 @@ public extension OnboardingTheme {
                     OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
                         contentPadding: dismissButtonMetrics.contentPadding,
                         backgroundColor: colorPalette.bubbleBackground,
-                        borderColor: Color(singleUseColor: .rebranding(.accentAltPrimary)), // Dark mode bubble does not have a border color, hence reference the color directly.
+                        borderColor: OnboardingRebrandColor.accentAltPrimary, // Dark mode bubble does not have a border color, hence reference the color directly.
                         borderWidth: borderWidth,
                         buttonSize: dismissButtonMetrics.buttonSize
                     )

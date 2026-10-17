@@ -1,74 +1,43 @@
 // Update Flow pixels
 // See https://app.asana.com/0/72649045549333/1208001118995887/f
 {
-    "m_mac_app_store_check_for_update": {
-        "description": "Pixel",
-        "owners": ["jotaemepereira"],
-        "triggers": ["other"],
-        "parameters": [
-            {
-                "key": "source",
-                "type": "string",
-                "description": "The source where the action happens",
-                "enum": ["about", "more_options", "main_menu"]
-            },
-            "appVersion",
-            "pixelSource"
-        ]
-    },
     "m_mac_update_notification_shown": {
         "description": "Fired when the update notification popover appears after an update is detected",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_update_notification_tapped": {
         "description": "Fired when user interacts with the update notification popover",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_update_duckduckgo_button_tapped": {
         "description": "Fired when user taps the \"Update DuckDuckGo\" button in the About preferences",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_check_for_updates_from_main_menu": {
+        "description": "Fired when the user clicks the \"Check for Updates…\" item in the menu bar, on all build types. pixelSource distinguishes App Store (browser-appstore) from Sparkle/DMG (browser-dmg) builds.",
+        "owners": ["diegoreymendez", "jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_release_metadata_fetch_failed": {
         "description": "Fired when the network request to fetch latest release information fails",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
-        "parameters": [
-            {
-                "key": "e",
-                "type": "integer",
-                "description": "Error code of the LatestReleaseError enum"
-            },
-            {
-                "key": "d",
-                "type": "string",
-                "description": "Error description of the LatestReleaseError enum"
-            },
-            {
-                "key": "ud",
-                "type": "string",
-                "description": "Error domain of the LatestReleaseError enum"
-            },
-            {
-                "key": "ud2",
-                "type": "string",
-                "description": "Underlying error of the LatestReleaseError enum"
-            },
-            "appVersion",
-            "pixelSource"
-        ]
+        "parameters": ["errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain", "appVersion", "pixelSource", "channel"]
     },
     "m_mac_release_notes_loading_error": {
         "description": "Fires when the release notes page shows a loading error (no update info available after update cycle completes or hasn't started). Debounced by 1 second.",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_wide_sparkle_update_cycle": {
         "description": "Wide pixel tracking the complete Sparkle update cycle from check to installation",
@@ -207,7 +176,8 @@
                 "type": "string",
                 "description": "Context name for the update flow",
                 "enum": ["sparkle_update"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_update_application_success": {
@@ -254,7 +224,8 @@
                 "description": "macOS version"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_application_failure": {
@@ -317,7 +288,8 @@
                 "description": "macOS version"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_configuration": {
@@ -333,7 +305,8 @@
                 "enum": ["automatic", "manual"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_application_unexpected": {
@@ -358,7 +331,8 @@
                 "description": "macOS version"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     }
 }

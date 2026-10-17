@@ -44,14 +44,27 @@ public struct VPNWidgetTunnelController: Sendable {
         }
     }
 
-    public func start() async throws {
+    public func start(settings: VPNSettings) async throws {
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         guard let manager = managers.first else {
             throw StartFailure.vpnNotConfigured
         }
 
+        // Re-apply configuration from current settings so route/exclusion changes
+        // the user made in-app actually reach the system VPN profile.
+        //
+        // Known gap: unlike the main tunnel controller, this widget process doesn't evaluate the
+        // Strict routing feature flag, so it can't scrub a stale `enforceRoutes` value here. A
+        // tunnel started solely from the widget, in the window after the flag is withdrawn but
+        // before the app next runs and resets the setting, could apply the relaxed value. Changing
+        // the toggle happens in VPN settings (in the app), so the app runs whenever the value
+        // changes, which keeps the window small. Closing it fully would require persisting flag
+        // availability to shared defaults for this process to read.
+        manager.applyDuckDuckGoConfiguration(from: settings)
         manager.isOnDemandEnabled = true
+
         try await manager.saveToPreferences()
+        try await manager.loadFromPreferences()
         try manager.connection.startVPNTunnel()
 
         try await awaitUntilStatusIsNoLongerTransitioning(manager: manager)
@@ -65,6 +78,7 @@ public struct VPNWidgetTunnelController: Sendable {
 
         manager.isOnDemandEnabled = false
         try await manager.saveToPreferences()
+        try await manager.loadFromPreferences()
         manager.connection.stopVPNTunnel()
 
         try await awaitUntilStatusIsNoLongerTransitioning(manager: manager)

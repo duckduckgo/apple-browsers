@@ -1,16 +1,41 @@
 appId: com.duckduckgo.mobile.ios
+# Creates a Sync account on this device using the simplified Sync setup UI.
+# Enables the "Sync This Device" toggle, chooses "Sync This Device Only" on the
+# sync-another-device prompt, then copies the recovery code from the success screen
+# so downstream flows can paste it. Starts on the Settings screen.
 ---
 
 - tapOn: Sync & Backup
-- assertVisible: Sync & Backup 
-- tapOn: Sync and Back Up This Device
+- assertVisible: Sync & Backup
+- tapOn:
+    id: "SyncToggle"
+# Sync-another-device prompt shown after enabling the toggle, before authenticating.
+- extendedWaitUntil:
+    visible: Sync This Device Only
+    timeout: 30000
+- tapOn: Sync This Device Only
+# The passcode screen auto-focuses its field, so wait for the screen and type directly.
+# Its field's label differs across iOS versions, so don't match "Passcode field" by name.
+- extendedWaitUntil:
+    visible: Unlock device to set up Sync & Backup
+    timeout: 30000
 - inputText: "0000"
 - pressKey: Enter
-- assertVisible: You can sync with your other devices later.
-- tapOn: Turn On Sync & Backup
-- assertVisible: Recover Your Data Easily
-- tapOn: Copy Code
-- tapOn: Next
-- assertVisible: Your data is synced!
-- tapOn: Done
-- assertVisible: Sync Enabled
+# Success screen for the new account (title carries the device name, so match by id).
+- extendedWaitUntil:
+    visible:
+      id: "SyncSuccessTitle"
+    timeout: 60000
+# Copy the recovery code so recover/login flows can paste it later.
+- tapOn:
+    id: "SyncSuccessCopyRecoveryCodeButton"
+# Re-authenticate only if the auth session has expired since enabling sync.
+- runFlow:
+    when:
+      visible: Unlock device to set up Sync & Backup
+    commands:
+      - inputText: "0000"
+      - pressKey: Enter
+- tapOn:
+    id: "SyncSuccessDoneButton"
+- assertVisible: Sync & Backup

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 import Foundation
 
 enum DefaultBrowserAndDockPromptType {
@@ -51,13 +52,15 @@ enum DefaultBrowserAndDockPromptContent {
         switch self {
         case let .popover(content):
             switch content {
-            case .addToDockPrompt: return .attIconPopover
-            default: return .addAsDefaultPopoverIcon
+            case .addToDockPrompt:
+                return NSImage(resource: .dockAddMac128)
+            default:
+                return NSImage(resource: .laptopDDGInstallMac128)
             }
         case .banner:
-            return .daxBannerView
+            return NSImage(resource: .daxBannerView)
         case .inactive:
-            return .daxSearch
+            return NSImage(resource: .daxSearch)
         }
     }
 

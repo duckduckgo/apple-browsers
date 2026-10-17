@@ -18,6 +18,7 @@
 
 import AppKitExtensions
 import Common
+import FoundationExtensions
 import CoreData
 import Foundation
 import Persistence

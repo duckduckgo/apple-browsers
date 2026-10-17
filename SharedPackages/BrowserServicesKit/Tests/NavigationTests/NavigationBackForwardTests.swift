@@ -23,9 +23,9 @@ import Common
 import Swifter
 import WebKit
 import XCTest
-@testable import Navigation
+@testable import DDGNavigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
 
     func testGoBackForward() throws {

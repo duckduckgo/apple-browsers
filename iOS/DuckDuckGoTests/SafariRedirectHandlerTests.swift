@@ -18,9 +18,11 @@
 //
 
 import XCTest
-import UIKit
 import Common
+import FoundationExtensions
 import BrowserServicesKit
+import PixelKit
+import WebKit
 @testable import DuckDuckGo
 
 final class SafariRedirectHandlerTests: XCTestCase {
@@ -28,7 +30,7 @@ final class SafariRedirectHandlerTests: XCTestCase {
     private var handler: SafariRedirectHandler!
     private var delegate: MockSafariRedirectHandlerDelegate!
 
-    private let xSafariURL = URL(string: "x-safari-https://example.com/page")!
+    private let xSafariHTTPSURL = URL(string: "x-safari-https://example.com/page")!
     private let httpsURL = URL(string: "https://example.com/page")!
     private let regularURL = URL(string: "https://example.com/other")!
 
@@ -39,7 +41,7 @@ final class SafariRedirectHandlerTests: XCTestCase {
         handler.delegate = delegate
     }
 
-    // MARK: - Non x-safari-https URLs
+    // MARK: - Non x-safari URLs
 
     func testHandleRedirectReturnsFalseForNonXSafariScheme() {
         XCTAssertFalse(handler.handleRedirect(to: regularURL))
@@ -51,198 +53,158 @@ final class SafariRedirectHandlerTests: XCTestCase {
         XCTAssertFalse(handler.handleRedirect(to: httpURL))
     }
 
-    // MARK: - First redirect shows Alert 1
+    // MARK: - First redirect
 
-    func testFirstRedirectShowsTryOpenAlert() {
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL))
-        XCTAssertEqual(delegate.presentedAlerts.count, 1)
-        XCTAssertEqual(delegate.presentedAlerts.first?.title, UserText.xSafariHTTPSTryOpenTitle)
-        XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
-    }
-
-    func testFirstRedirectDoesNotLoadOrOpenExternally() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        XCTAssertTrue(delegate.loadedURLs.isEmpty)
-        XCTAssertTrue(delegate.openedExternallyURLs.isEmpty)
-    }
-
-    func testRedirectsWhileAlertShowingAreConsumedSilently() {
-        _ = handler.handleRedirect(to: xSafariURL) // Shows alert
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL)) // Consumed
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL)) // Consumed
-
-        XCTAssertEqual(delegate.presentedAlerts.count, 1) // No extra alerts
-        XCTAssertTrue(delegate.loadedURLs.isEmpty) // No silent loads
-    }
-
-    // MARK: - "Stay in DuckDuckGo" flow
-
-    func testStayActionConvertsToHTTPSAndLoads() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // "Stay in DuckDuckGo" (cancel style, first added)
+    func testFirstHTTPSRedirectConvertsToHTTPSAndLoads() {
+        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
 
         XCTAssertEqual(delegate.loadedURLs.count, 1)
         XCTAssertEqual(delegate.loadedURLs.first?.scheme, "https")
         XCTAssertEqual(delegate.loadedURLs.first?.host, "example.com")
+        XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
     }
 
-    func testAfterStaySubsequentRedirectsSilentlyConvert() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
+    // MARK: - Loop handling
 
-        // Next two redirects should silently convert
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL))
-        XCTAssertEqual(delegate.loadedURLs.count, 2)
-        XCTAssertEqual(delegate.presentedAlerts.count, 1) // No new alert
+    func testFirstThreeRedirectsConvertToHTTPSAndLoad() {
+        for _ in 0..<3 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
 
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL))
         XCTAssertEqual(delegate.loadedURLs.count, 3)
-        XCTAssertEqual(delegate.presentedAlerts.count, 1)
+        XCTAssertTrue(delegate.loadedURLs.allSatisfy { $0.scheme == "https" })
+        XCTAssertTrue(delegate.loadedURLs.allSatisfy { $0.host == "example.com" })
+        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
     }
 
-    func testAfterStayThirdRedirectShowsLoopAlert() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
+    func testFourthRedirectRequestsLoopError() {
+        for _ in 0..<3 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
+        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
 
-        _ = handler.handleRedirect(to: xSafariURL) // count 1
-        _ = handler.handleRedirect(to: xSafariURL) // count 2
-        _ = handler.handleRedirect(to: xSafariURL) // count 3 → loop
-
-        XCTAssertEqual(delegate.presentedAlerts.count, 2)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSLoopTitle)
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
+        XCTAssertEqual(delegate.loopErrorURLs.first?.scheme, "x-safari-https")
+        XCTAssertEqual(delegate.loopErrorURLs.first?.host, "example.com")
     }
 
-    func testRedirectsWhileLoopAlertShowingAreConsumedSilently() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
+    func testWhenRedirectsContinueAfterMaximumAttemptsThenLoopErrorIsRequestedOnce() {
+        for _ in 0..<3 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
 
-        _ = handler.handleRedirect(to: xSafariURL) // count 1
-        _ = handler.handleRedirect(to: xSafariURL) // count 2
-        _ = handler.handleRedirect(to: xSafariURL) // count 3 → loop alert
+        for _ in 0..<1_000 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
 
-        XCTAssertEqual(delegate.presentedAlerts.count, 2)
-
-        // Additional redirects while loop alert is showing should be consumed silently
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL))
-        XCTAssertTrue(handler.handleRedirect(to: xSafariURL))
-
-        XCTAssertEqual(delegate.presentedAlerts.count, 2) // No extra alerts
-        XCTAssertEqual(delegate.loadedURLs.count, 3) // No extra loads (1 from Stay + 2 silent converts)
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
     }
 
-    // MARK: - "Open in Safari" flow
+    func testWhenSubframeRedirectsOccurThenTheyAreConsumedWithoutLoadingOrUsingRetryBudget() {
+        for _ in 0..<10 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL, isMainFrame: false))
+        }
 
-    func testOpenInSafariDelegatesExternalOpen() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 1, ofAlert: 0) // "Open in Safari"
-
-        XCTAssertEqual(delegate.openedExternallyURLs.count, 1)
-        XCTAssertEqual(delegate.openedExternallyURLs.first, xSafariURL)
-    }
-
-    func testOpenInSafariResetsAlertShownForNextRedirect() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 1, ofAlert: 0) // Open in Safari
-
-        // Next redirect should show Alert 1 again
-        _ = handler.handleRedirect(to: xSafariURL)
-        XCTAssertEqual(delegate.presentedAlerts.count, 2)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSTryOpenTitle)
-    }
-
-    func testOpenInSafariDoesNotMarkAsSuppressed() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 1, ofAlert: 0) // "Open in Safari"
-
+        XCTAssertTrue(delegate.loadedURLs.isEmpty)
+        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
         XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
+
+        for _ in 0..<3 {
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
     }
 
-    // MARK: - Loop alert actions
+    func testWhenSubframeRedirectsOccurAfterLoopDetectionThenNoAdditionalErrorIsRequested() {
+        for _ in 0..<4 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
 
-    func testLoopAlertGoBackDelegatesAndResetsState() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
-        _ = handler.handleRedirect(to: xSafariURL)
-        _ = handler.handleRedirect(to: xSafariURL)
-        _ = handler.handleRedirect(to: xSafariURL) // Loop alert
+        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL, isMainFrame: false))
 
-        delegate.tapAlertAction(at: 0, ofAlert: 1) // "Go Back"
-        XCTAssertTrue(delegate.goBackRequested)
-
-        // After go back, next redirect should show Alert 1 again
-        _ = handler.handleRedirect(to: xSafariURL)
-        XCTAssertEqual(delegate.presentedAlerts.count, 3)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSTryOpenTitle)
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
     }
 
-    func testLoopAlertOpenInSafariDelegates() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
-        _ = handler.handleRedirect(to: xSafariURL)
-        _ = handler.handleRedirect(to: xSafariURL)
-        _ = handler.handleRedirect(to: xSafariURL) // Loop alert
+    func testWhenNewMainFrameNavigationStartsThenRetryBudgetAndLoopErrorAreReset() {
+        let navigationTypes: [WKNavigationType] = [.linkActivated, .formSubmitted, .backForward, .reload, .formResubmitted]
+        for navigationType in navigationTypes {
+            handler.reset()
+            delegate.loadedURLs.removeAll()
+            delegate.loopErrorURLs.removeAll()
+            for _ in 0..<4 {
+                _ = handler.handleRedirect(to: xSafariHTTPSURL)
+            }
 
-        delegate.tapAlertAction(at: 1, ofAlert: 1) // "Open in Safari"
-        XCTAssertEqual(delegate.openedExternallyURLs.count, 1)
+            handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL), navigationType: navigationType),
+                                 isUserInitiated: false)
+
+            XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
+            for _ in 0..<4 {
+                _ = handler.handleRedirect(to: xSafariHTTPSURL)
+            }
+            XCTAssertEqual(delegate.loadedURLs.count, 6, "\(navigationType)")
+            XCTAssertEqual(delegate.loopErrorURLs.count, 2, "\(navigationType)")
+        }
     }
 
-    func testLoopAlertOpenInSafariResetsStateForFreshAlert() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
-        _ = handler.handleRedirect(to: xSafariURL)
-        _ = handler.handleRedirect(to: xSafariURL)
-        _ = handler.handleRedirect(to: xSafariURL) // Loop alert
+    func testWhenUserInitiatedOtherNavigationStartsThenRetryBudgetIsReset() {
+        for _ in 0..<4 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
 
-        delegate.tapAlertAction(at: 1, ofAlert: 1) // "Open in Safari"
+        handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL)), isUserInitiated: true)
+        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
 
-        // Next redirect should show Alert 1 again, not loop alert
-        _ = handler.handleRedirect(to: xSafariURL)
-        XCTAssertEqual(delegate.presentedAlerts.count, 3)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSTryOpenTitle)
-        XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
+        XCTAssertEqual(delegate.loadedURLs.count, 4)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
     }
 
-    // MARK: - Suppress branch loop detection
+    func testWhenAutomaticMainFrameNavigationsOccurThenLoopDetectionIsPreserved() {
+        for _ in 0..<10 {
+            handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL)), isUserInitiated: false)
+            XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+        }
 
-    func testSuppressBranchDetectsLoopWhenAlertDismissedWithoutStay() {
-        // First redirect shows alert
-        _ = handler.handleRedirect(to: xSafariURL)
-        // Simulate: alert shown but user chose "Open in Safari" — alertShown reset
-        delegate.tapAlertAction(at: 1, ofAlert: 0)
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
+    }
 
-        // Show alert again
-        _ = handler.handleRedirect(to: xSafariURL)
-        // This time user taps Stay
-        delegate.tapAlertAction(at: 0, ofAlert: 1)
+    func testWhenUserInitiatedSubframeNavigationOccursThenMainFrameLoopStateIsPreserved() {
+        for _ in 0..<4 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
 
-        // Now stayEnabled, subsequent redirects count
-        _ = handler.handleRedirect(to: xSafariURL) // 1
-        _ = handler.handleRedirect(to: xSafariURL) // 2
-        _ = handler.handleRedirect(to: xSafariURL) // 3 → loop
-        XCTAssertEqual(delegate.presentedAlerts.count, 3) // alert1, alert1 again, loop alert
+        handler.willNavigate(TestNavigationAction(request: URLRequest(url: httpsURL),
+                                                  isTargetingMainFrame: false,
+                                                  navigationType: .linkActivated),
+                             isUserInitiated: true)
+        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
+
+        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
     }
 
     // MARK: - Per-host scoping
 
-    func testDifferentHostGetsFreshAlert() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay on example.com
+    func testDifferentHostGetsFreshRetryBudget() {
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
 
         let otherHostURL = URL(string: "x-safari-https://other.com/page")!
         _ = handler.handleRedirect(to: otherHostURL)
 
-        // Should show Alert 1 for the new host
-        XCTAssertEqual(delegate.presentedAlerts.count, 2)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSTryOpenTitle)
+        XCTAssertEqual(delegate.loadedURLs.count, 2)
+        XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: URL(string: "https://other.com/page")!))
     }
 
     func testSuppressedRedirectTrackedPerHost() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay on example.com
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
 
         let otherHostURL = URL(string: "x-safari-https://other.com/page")!
         _ = handler.handleRedirect(to: otherHostURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 1) // Stay on other.com
 
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: URL(string: "https://other.com/page")!))
@@ -252,50 +214,41 @@ final class SafariRedirectHandlerTests: XCTestCase {
     func testSubdomainRedirectMatchesParentDomain() {
         let subdomainURL = URL(string: "x-safari-https://redirect.example.com/page")!
         _ = handler.handleRedirect(to: subdomainURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
 
-        // Breakage report for example.com should detect the suppressed redirect
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
     }
 
     // MARK: - Reset
 
     func testResetClearsAllState() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
 
         handler.reset()
 
         XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
-
-        // After reset, should show Alert 1 fresh
-        _ = handler.handleRedirect(to: xSafariURL)
-        XCTAssertEqual(delegate.presentedAlerts.count, 2)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSTryOpenTitle)
     }
 
-    func testResetMidLoopStartsFresh() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
-        _ = handler.handleRedirect(to: xSafariURL) // count 1
-        _ = handler.handleRedirect(to: xSafariURL) // count 2
+    func testResetAfterMaximumAttemptsStartsFresh() {
+        for _ in 0..<3 {
+            _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        }
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
 
         handler.reset()
 
-        // Fresh start — should show Alert 1
-        _ = handler.handleRedirect(to: xSafariURL)
-        XCTAssertEqual(delegate.presentedAlerts.last?.title, UserText.xSafariHTTPSTryOpenTitle)
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        XCTAssertEqual(delegate.loadedURLs.count, 4)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
     }
 
     // MARK: - isAfterSuppressedXSafariRedirect
 
     func testIsAfterSuppressedXSafariRedirectPersistsAcrossMultipleRedirects() {
-        _ = handler.handleRedirect(to: xSafariURL)
-        delegate.tapAlertAction(at: 0, ofAlert: 0) // Stay
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
 
-        _ = handler.handleRedirect(to: xSafariURL)
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
     }
 
@@ -304,48 +257,70 @@ final class SafariRedirectHandlerTests: XCTestCase {
     }
 
     func testIsAfterSuppressedXSafariRedirectFalseForDifferentHost() {
-        _ = handler.handleRedirect(to: xSafariURL)
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
         let differentHostURL = URL(string: "https://other.com/page")!
         XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: differentHostURL))
+    }
+
+    func testWhenSafariRedirectPixelsAreCreatedThenNamesArePreserved() {
+        XCTAssertEqual(
+            SafariRedirectPixel.loadURLRequested.name,
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested")
+        XCTAssertEqual(
+            SafariRedirectPixel.loopErrorPageShown.name,
+            "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown")
+        XCTAssertEqual(
+            SafariRedirectPixel.reportBrokenSiteFromErrorPage.name,
+            "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site")
+    }
+
+    func testWhenSafariRedirectPixelsAreScheduledThenFrequencySuffixPrecedesPlatformSuffix() throws {
+        let pixel = SafariRedirectPixel.loadURLRequested
+        let suiteName = "SafariRedirectHandlerTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let pixelsFired = expectation(description: "Pixels fired")
+        pixelsFired.expectedFulfillmentCount = 2
+        var firedPixelNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                defaults: defaults) { name, _, _, _, _, _ in
+            firedPixelNames.append(name)
+            pixelsFired.fulfill()
+        }
+
+        pixelKit.fire(pixel.dailyPixel, frequency: .legacyDailyNoSuffix)
+        pixelKit.fire(pixel.countPixel)
+
+        wait(for: [pixelsFired], timeout: 1)
+
+        XCTAssertEqual(firedPixelNames, [
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested_daily_ios_phone",
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested_count_ios_phone",
+        ])
     }
 }
 
 // MARK: - Mock Delegate
 
+private struct TestNavigationAction: NavigationActionProtocol {
+    let request: URLRequest
+    var isTargetingMainFrame = true
+    var navigationType: WKNavigationType = .other
+}
+
 private final class MockSafariRedirectHandlerDelegate: SafariRedirectHandlerDelegate {
 
     var loadedURLs: [URL] = []
-    var openedExternallyURLs: [URL] = []
-    var goBackRequested = false
-    var presentedAlerts: [UIAlertController] = []
+    var loopErrorURLs: [URL] = []
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
         loadedURLs.append(url)
     }
 
-    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestOpenExternallyURL url: URL) {
-        openedExternallyURLs.append(url)
-    }
-
-    func safariRedirectHandlerDidRequestGoBack(_ handler: SafariRedirectHandling) {
-        goBackRequested = true
-    }
-
-    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestPresentAlert alert: UIAlertController) {
-        presentedAlerts.append(alert)
-    }
-
-    /// Tap an action by index on a specific alert.
-    func tapAlertAction(at actionIndex: Int, ofAlert alertIndex: Int) {
-        guard alertIndex < presentedAlerts.count else { return }
-        let alert = presentedAlerts[alertIndex]
-        guard actionIndex < alert.actions.count else { return }
-        let action = alert.actions[actionIndex]
-        // UIAlertAction handler is stored as a private property; use the typealias trick to invoke it
-        typealias AlertHandler = @convention(block) (UIAlertAction) -> Void
-        let key = "handler"
-        guard let block = action.value(forKey: key) else { return }
-        let handler = unsafeBitCast(block as AnyObject, to: AlertHandler.self)
-        handler(action)
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
+        loopErrorURLs.append(url)
     }
 }

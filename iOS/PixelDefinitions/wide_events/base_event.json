@@ -9,7 +9,7 @@
         "name": {
             "type": "string",
             "description": "The name of the application",
-            "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+            "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
         },
         "version": {
             "type": "string",

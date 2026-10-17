@@ -19,7 +19,8 @@
 import AppUpdaterShared
 import Cocoa
 import Combine
-import Navigation
+import DesignResourcesKitIcons
+import DDGNavigation
 import Persistence
 import PixelKit
 import UserScript
@@ -79,7 +80,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
     func testMenuItemImage_IsUpdateMenuItemIcon() {
         let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
 
-        XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
+        XCTAssertEqual(menuItem.image?.pngData(), DesignSystemImages.Glyphs.Size12.updateRecolorable.pngData())
     }
 }
 
@@ -88,6 +89,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 private final class MockSparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     var isAtRestartCheckpoint = false
+    var shouldAutoCheckOnReleaseNotesLoad = true
 
     // MARK: - SparkleUpdateControlling
 
@@ -131,7 +133,6 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
     var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var clearsNotificationDotOnMenuOpen = true
     var lastUpdateCheckDate: Date?
-    var lastUpdateNotificationShownDate = Date.distantPast
 
     @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }

@@ -18,9 +18,10 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import History
 import HistoryView
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import TrackerRadarKit
@@ -63,6 +64,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
 
@@ -94,7 +96,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
                                        syncErrorHandler: SyncErrorHandler(),
                                        webExtensionAvailability: nil,
-                                       dockCustomization: DockCustomizerMock())
+                                       dockCustomization: DockCustomizerMock(),
+                                       reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
+                                       installDateProvider: { Date() })
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

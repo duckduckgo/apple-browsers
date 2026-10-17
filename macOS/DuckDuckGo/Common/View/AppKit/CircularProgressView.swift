@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
 import SwiftUI
 
 final class CircularProgressView: NSView {
@@ -46,7 +47,7 @@ final class CircularProgressView: NSView {
             progressLayer.strokeColor = strokeColor.cgColor
         }
     }
-    @IBInspectable var backgroundStrokeColor: NSColor = .buttonMouseOver {
+    @IBInspectable var backgroundStrokeColor: NSColor = NSColor(resource: .buttonMouseOver) {
         didSet {
             backgroundLayer.fillColor = backgroundStrokeColor.cgColor
         }

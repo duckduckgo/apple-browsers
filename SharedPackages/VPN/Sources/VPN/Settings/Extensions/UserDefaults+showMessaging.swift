@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import Common
+import FoundationExtensions
 
 extension UserDefaults {
     private var showEntitlementAlertKey: String {

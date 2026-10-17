@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import XCTest
 
 final class SSLErrorTests: UITestCase {
@@ -24,6 +25,16 @@ final class SSLErrorTests: UITestCase {
     // MARK: - Properties
 
     private var addressBarTextField: XCUIElement!
+
+    /// Public hosts serving an expired certificate. badssl.com goes first; the others keep the tests running when it is slow or down.
+    private let expiredCertificateURLs = [
+        URL(string: "https://expired.badssl.com/")!,
+        URL(string: "https://expired-rsa-dv.ssl.com/")!,
+        URL(string: "https://expired.sca1a.amazontrust.com/")!
+    ]
+
+    /// Host that served the SSL error page in the current test
+    private var sslSiteHost = ""
 
     private var addressBarImageButton: XCUIElement {
         app.buttons["AddressBarButtonsViewController.imageButton"]
@@ -37,8 +48,25 @@ final class SSLErrorTests: UITestCase {
         app.staticTexts["Warning: This site may be insecure"].firstMatch
     }
 
+    /// Content of the badssl.com expired page, shown once the risk is accepted
     private var expiredSiteContent: XCUIElement {
         app.staticTexts["expired."].firstMatch
+    }
+
+    /// Text that only the loaded site shows (the warning page doesn't contain it), for each host in `expiredCertificateURLs`
+    private var loadedSiteContent: XCUIElement {
+        switch sslSiteHost {
+        case "expired-rsa-dv.ssl.com":
+            return staticText(containing: "test website")
+        case "expired.sca1a.amazontrust.com":
+            return staticText(containing: "Amazon Root CA 1")
+        default:
+            return expiredSiteContent
+        }
+    }
+
+    private func staticText(containing text: String) -> XCUIElement {
+        app.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] %@ OR label CONTAINS[c] %@", text, text)).firstMatch
     }
 
     private var homePageElement: XCUIElement {
@@ -69,12 +97,14 @@ final class SSLErrorTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         addressBarTextField = app.addressBar
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Address bar should be available")
+        // Navigating before the home page has loaded replaces it in the history, so there is nothing to go back to
+        XCTAssertTrue(homePageElement.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "Home page should be loaded before the test navigates away")
     }
 
     override func tearDown() {
@@ -91,9 +121,19 @@ final class SSLErrorTests: UITestCase {
     }
 
     private func navigateToExpiredSSLErrorPage() {
-        navigateTo(URL(string: "https://expired.badssl.com/")!)
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "SSL warning page should appear")
+        navigateToSSLErrorPage(candidates: expiredCertificateURLs)
+    }
+
+    /// Navigates to the first candidate that shows the SSL warning page, so a slow or unreachable test host
+    /// doesn't fail the test. A repeated URL is a retry of the same host.
+    private func navigateToSSLErrorPage(candidates: [URL]) {
+        for url in candidates {
+            navigateTo(url)
+            guard warningTitle.waitForExistence(timeout: UITests.Timeouts.localTestServer) else { continue }
+            sslSiteHost = url.host ?? ""
+            return
+        }
+        XCTFail("SSL warning page should appear for one of \(candidates.map(\.absoluteString))")
     }
 
     private func clickAdvancedButton() {
@@ -131,9 +171,9 @@ final class SSLErrorTests: UITestCase {
     }
 
     private func verifyOnSSLSite(context: String = "") {
-        XCTAssertTrue(expiredSiteContent.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(loadedSiteContent.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "SSL site content should be visible \(context)")
-        verifyAddressBarContains("expired.badssl.com", context: context)
+        verifyAddressBarContains(sslSiteHost, context: context)
         verifyShieldWithDot(context: context)
     }
 
@@ -144,13 +184,15 @@ final class SSLErrorTests: UITestCase {
     }
 
     private func verifyOnSSLErrorPage(context: String = "") {
-        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(warningTitle.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "SSL warning page should appear \(context)")
     }
 
     private func verifyShieldWithDot(context: String = "") {
         XCTAssertTrue(privacyDashboardButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Privacy dashboard button should be visible \(context)")
+        // The shield updates once the navigation to the accepted site commits
+        _ = privacyDashboardButton.wait(for: NSPredicate(format: "value == %@", "shieldDot"), timeout: UITests.Timeouts.navigation)
         XCTAssertEqual(privacyDashboardButton.value as? String, "shieldDot",
                        "Shield should show dot indicator \(context)")
     }
@@ -198,11 +240,11 @@ final class SSLErrorTests: UITestCase {
 
     /// Unified helper for testing SSL warning page content for different certificate types
     private func verifySSLWarningPageContent(
-        url: URL,
+        candidates: [URL],
         certificateType: String,
         specificErrorText: String
     ) {
-        navigateTo(url)
+        navigateToSSLErrorPage(candidates: candidates)
 
         // Verify warning page elements
         verifyOnSSLErrorPage(context: "for \(certificateType)")
@@ -216,11 +258,16 @@ final class SSLErrorTests: UITestCase {
         verifyLeaveThisSiteButtonIsAvailable()
     }
 
+    /// badssl.com is the only public host for this certificate error, so the URL is tried twice
+    private func retried(_ url: URL) -> [URL] {
+        [url, url]
+    }
+
     // MARK: - Error Page Content Tests
 
     func testWhenNavigatingToExpiredCertificate_ShowsExpectedSSLWarningPage() throws {
         verifySSLWarningPageContent(
-            url: URL(string: "https://expired.badssl.com/")!,
+            candidates: expiredCertificateURLs,
             certificateType: "expired certificate",
             specificErrorText: "is expired"
         )
@@ -228,7 +275,7 @@ final class SSLErrorTests: UITestCase {
 
     func testWhenNavigatingToWrongHostCertificate_ShowsSSLWarningPage() throws {
         verifySSLWarningPageContent(
-            url: URL(string: "https://wrong.host.badssl.com/")!,
+            candidates: retried(URL(string: "https://wrong.host.badssl.com/")!),
             certificateType: "wrong host certificate",
             specificErrorText: "does not match"
         )
@@ -236,7 +283,7 @@ final class SSLErrorTests: UITestCase {
 
     func testWhenNavigatingToSelfSignedCertificate_ShowsSSLWarningPage() throws {
         verifySSLWarningPageContent(
-            url: URL(string: "https://self-signed.badssl.com/")!,
+            candidates: retried(URL(string: "https://self-signed.badssl.com/")!),
             certificateType: "self-signed certificate",
             specificErrorText: "not trusted by your device"
         )
@@ -244,7 +291,7 @@ final class SSLErrorTests: UITestCase {
 
     func testWhenNavigatingToUntrustedRootCertificate_ShowsSSLWarningPage() throws {
         verifySSLWarningPageContent(
-            url: URL(string: "https://untrusted-root.badssl.com/")!,
+            candidates: retried(URL(string: "https://untrusted-root.badssl.com/")!),
             certificateType: "untrusted root certificate",
             specificErrorText: "not trusted by your device"
         )
@@ -287,19 +334,19 @@ final class SSLErrorTests: UITestCase {
     func testWhenOnAcceptedRiskSite_ShowsShieldWithDotAndPrivacyDashboardShowsCertificateError() throws {
         // Navigate to SSL error page and accept risk
         navigateToExpiredSSLErrorPage()
-        verifyAddressBarContains("expired.badssl.com", context: "on error page")
+        verifyAddressBarContains(sslSiteHost, context: "on error page")
         acceptRiskAndVisitSite()
         verifyOnSSLSite(context: "after accepting risk")
 
         // Verify privacy dashboard shows certificate error
         privacyDashboardButton.click()
         verifySpecificErrorMessage(containing: "certificate", context: "Privacy dashboard")
-        verifySpecificErrorMessage(containing: "expired.badssl.com", context: "Privacy dashboard domain")
+        verifySpecificErrorMessage(containing: sslSiteHost, context: "Privacy dashboard domain")
         app.typeKey(.escape, modifierFlags: [])
 
         // Navigate to secure site and verify shield without dot
         navigateTo(URL(string: "https://www.wikipedia.org/")!)
-        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "Wikipedia should load")
         verifyAddressBarContains("wikipedia.org", context: "on Wikipedia")
         verifyShieldWithoutDot(context: "on secure site")

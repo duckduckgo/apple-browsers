@@ -20,8 +20,9 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 
 extension Tab: NavigationResponder {
@@ -33,11 +34,16 @@ extension Tab: NavigationResponder {
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
+            // Re-collect page context/signals once a page finishes loading (sidebar suggestions)
+            .weak(nullable: self.pageContext),
+
+            .weak(nullable: self.tabCrashRecovery),
+
             // Pop-ups and Navigation Key Modifiers handling
             .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
-            .weak(nullable: self.tabCrashRecovery),
+            .weak(nullable: self.pageSignals),
 
             // redirect to SERP for non-valid domains entered by user
             // should be before `self` to avoid Tab presenting an error screen
@@ -74,8 +80,6 @@ extension Tab: NavigationResponder {
 
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
-            // update click-to-load state
-            .weak(nullable: self.fbProtection),
 
             // Special Error Page script handler and Malicious Site detection
             .weak(nullable: self.specialErrorPage),
@@ -93,11 +97,11 @@ extension Tab: NavigationResponder {
 
             .weak(nullable: self.networkProtection),
 
-            // Internal Feedback Form
-            .weak(nullable: self.internalFeedbackForm),
-
             // Tab Suspension
             .weak(nullable: self.tabSuspension),
+
+            // EventHub — observe navigation starts to reset per-tab web-event dedup on URL change
+            .weak(nullable: self.eventHub),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
@@ -112,6 +116,11 @@ extension Tab: NavigationResponder {
         if let downloadsExtension = self.downloads {
             navigationDelegate
                 .registerCustomDelegateMethodHandler(.weak(downloadsExtension), forSelectorNamed: "_webView:contextMenuDidCreateDownload:")
+        }
+
+        if featureFlagger.isFeatureOn(.pageSignals), let pageSignals = self.pageSignals {
+            navigationDelegate
+                .registerCustomDelegateMethodHandler(.weak(pageSignals), forSelectorNamed: PageSignalsTabExtension.contentRuleListActionSelectorName)
         }
     }
 

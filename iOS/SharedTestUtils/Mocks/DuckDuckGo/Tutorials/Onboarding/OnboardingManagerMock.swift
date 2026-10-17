@@ -19,10 +19,36 @@
 
 import Foundation
 import Core
+import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingStepsProvider {
+final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadReasonHandling, OnboardingAddToDockVisibilityManager, OnboardingFlowManaging {
+
     private(set) var didCallSettingsURLPath = false
+    private(set) var didCallConfigureOnboardingFlow = false
+    private(set) var capturedURL: URL?
+    private(set) var didCallEvaluateOnboardingFlow = false
 
     var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+
+    private(set) var didCallSelectDownloadReason = false
+    private(set) var capturedDownloadReason: OnboardingDownloadReason?
+    var currentDownloadReason: OnboardingDownloadReason?
+    var stubbedRemainingSteps: [DuckDuckGo.OnboardingIntroStep] = []
+
+    var userHasSeenAddToDockPromoDuringOnboarding: Bool = false
+
+    var currentOnboardingFlow: OnboardingFlowType = .default
+
+    func configureOnboardingFlow(from url: URL?) {
+        didCallConfigureOnboardingFlow = true
+        capturedURL = url
+    }
+
+    func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [DuckDuckGo.OnboardingIntroStep] {
+        didCallSelectDownloadReason = true
+        capturedDownloadReason = reason
+        currentDownloadReason = reason
+        return stubbedRemainingSteps
+    }
 }

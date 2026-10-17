@@ -28,7 +28,7 @@ struct SubscriptionPromoLaunchView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let title: String
-    let message: String
+    let message: AttributedString
     let ctaText: String
     let closeAction: () -> Void
     let ctaAction: () -> Void
@@ -42,12 +42,14 @@ struct SubscriptionPromoLaunchView: View {
                 .padding(.horizontal, Metrics.Header.horizontalPadding)
             Content(title: title, message: message)
                 .padding(.horizontal, horizontalPadding)
-                .padding(.bottom, Metrics.Content.bottomPadding)
+                .padding(.bottom, SheetMetrics.contentBottomPadding)
             Footer(ctaText: ctaText, dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip, ctaAction: ctaAction, dismissAction: closeAction)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, Metrics.Footer.verticalPadding)
         }
         .background(Color(designSystemColor: .surface))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("subscriptionPromoSheet")
     }
 }
 
@@ -68,8 +70,9 @@ private extension SubscriptionPromoLaunchView {
                         .resizable()
                         .scaledToFit()
                         .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
-                        .foregroundStyle(Color.primary)
                 }
+                .buttonStyle(CloseButtonStyle())
+                .accessibilityIdentifier("subscriptionPromoCloseButton")
             }
         }
     }
@@ -79,18 +82,18 @@ private extension SubscriptionPromoLaunchView {
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
         let title: String
-        let message: String
+        let message: AttributedString
 
         var body: some View {
-            VStack(spacing: Metrics.Content.itemsVerticalSpacing) {
+            VStack(spacing: SheetMetrics.contentSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(.sheetIcon)
+                Image(rebrandable: "Subscription-Clock-128")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)
 
-                VStack(spacing: Metrics.Content.textVerticalSpacing) {
+                VStack(spacing: SheetMetrics.headerSpacing) {
                     Text(title)
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
@@ -147,10 +150,7 @@ private enum Metrics {
     }
 
     enum Content {
-        static let itemsVerticalSpacing: CGFloat = 24
-        static let textVerticalSpacing: CGFloat = 4
         static let imageSize = MetricBuilder<CGSize>(default: CGSize(width: 128, height: 96)).iPhone(landscape: .init(width: 96, height: 72))
-        static let bottomPadding: CGFloat = 20
     }
 
     enum Footer {
@@ -164,7 +164,7 @@ private enum Metrics {
 #Preview {
     SubscriptionPromoLaunchView(
         title: "Did you know?",
-        message: "DuckDuckGo also has an optional paid subscription, available with a VPN and advanced, private AI.",
+        message: AttributedString("DuckDuckGo also has an optional paid subscription, available with a VPN and advanced, private AI."),
         ctaText: "Learn More",
         closeAction: {},
         ctaAction: {}

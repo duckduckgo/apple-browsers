@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 struct BrokerProfileOptOutSubJob {
@@ -70,8 +70,7 @@ struct BrokerProfileOptOutSubJob {
                                                               database: dependencies.database,
                                                               pixelHandler: dependencies.pixelHandler,
                                                               vpnConnectionState: vpnConnectionState,
-                                                              vpnBypassStatus: vpnBypassStatus,
-                                                              featureFlagger: dependencies.featureFlagger)
+                                                              vpnBypassStatus: vpnBypassStatus)
 
         // Set up a defer block to report opt-out job completion regardless of its success:
         defer {
@@ -96,17 +95,14 @@ struct BrokerProfileOptOutSubJob {
 
             startWideEventRecorders(brokerProfileQueryData: brokerProfileQueryData,
                                     repository: dependencies.database,
-                                    extractedProfile: extractedProfile,
                                     identifiers: identifiers)
 
             try await executeOptOut(on: runner,
-                                    brokerProfileQueryData: brokerProfileQueryData,
                                     extractedProfile: extractedProfile,
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
-            if dependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
-               brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
+            if brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
                 try handleEmailConfirmationDecoupling(database: dependencies.database,
                                                       pixelHandler: dependencies.pixelHandler,
                                                       brokerProfileQueryData: brokerProfileQueryData,
@@ -124,6 +120,7 @@ struct BrokerProfileOptOutSubJob {
                                 brokerProfileQueryData: brokerProfileQueryData,
                                 database: dependencies.database,
                                 schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                                featureFlagger: dependencies.featureFlagger,
                                 identifiers: identifiers,
                                 stageDurationCalculator: stageDurationContext.stageDurationCalculator)
 
@@ -135,12 +132,10 @@ struct BrokerProfileOptOutSubJob {
 
     private func startWideEventRecorders(brokerProfileQueryData: BrokerProfileQueryData,
                                          repository: DataBrokerProtectionRepository,
-                                         extractedProfile: ExtractedProfile,
                                          identifiers: OptOutIdentifiers) {
         guard let wideEvent = dependencies.wideEvent else { return }
 
-        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: extractedProfile.identifier,
-                                                    brokerId: identifiers.brokerId,
+        let wideEventId = OptOutWideEventIdentifier(brokerId: identifiers.brokerId,
                                                     profileQueryId: identifiers.profileQueryId,
                                                     extractedProfileId: identifiers.extractedProfileId)
         let recordFoundDate = RecordFoundDateResolver.resolve(repository: repository,
@@ -204,8 +199,7 @@ struct BrokerProfileOptOutSubJob {
                                              database: DataBrokerProtectionRepository,
                                              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                              vpnConnectionState: String,
-                                             vpnBypassStatus: String,
-                                             featureFlagger: DBPFeatureFlagging) -> StageDurationContext {
+                                             vpnBypassStatus: String) -> StageDurationContext {
         // 5. Set up dependencies used to report the status of the opt-out job:
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
@@ -214,8 +208,7 @@ struct BrokerProfileOptOutSubJob {
             parentURL: brokerProfileQueryData.dataBroker.parent,
             isFreeScan: false,
             vpnConnectionState: vpnConnectionState,
-            vpnBypassStatus: vpnBypassStatus,
-            featureFlagger: featureFlagger
+            vpnBypassStatus: vpnBypassStatus
         )
 
         // 6. Record the start of the opt-out job:
@@ -247,13 +240,11 @@ struct BrokerProfileOptOutSubJob {
     }
 
     internal func executeOptOut(on runner: BrokerProfileOptOutSubJobWebRunning,
-                                brokerProfileQueryData: BrokerProfileQueryData,
                                 extractedProfile: ExtractedProfile,
                                 showWebView: Bool,
                                 shouldRunNextStep: @escaping () -> Bool) async throws {
         // 8c. Perform the opt-out itself:
-        try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                extractedProfile: extractedProfile,
+        try await runner.optOut(extractedProfile: extractedProfile,
                                 showWebView: showWebView,
                                 shouldRunNextStep: shouldRunNextStep)
     }
@@ -301,17 +292,14 @@ struct BrokerProfileOptOutSubJob {
         stageDurationCalculator.fireOptOutValidate()
         stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
-        let profileIdentifier = brokerProfileQueryData.optOutJobData
-            .first(where: { $0.extractedProfile.id == identifiers.extractedProfileId })?
-            .extractedProfile.identifier
         markSubmissionWideEventCompleted(brokerProfileQueryData: brokerProfileQueryData,
                                          database: database,
-                                         profileIdentifier: profileIdentifier,
                                          brokerId: identifiers.brokerId,
                                          profileQueryId: identifiers.profileQueryId,
                                          extractedProfileId: identifiers.extractedProfileId)
 
-        let updater = OperationPreferredDateUpdater(database: database)
+        let updater = OperationPreferredDateUpdater(database: database,
+                                                    featureFlagger: dependencies.featureFlagger)
         try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker,
                                                         profileQueryId: identifiers.profileQueryId)
 
@@ -334,7 +322,6 @@ struct BrokerProfileOptOutSubJob {
 
     private func markSubmissionWideEventCompleted(brokerProfileQueryData: BrokerProfileQueryData,
                                                   database: DataBrokerProtectionRepository,
-                                                  profileIdentifier: String?,
                                                   brokerId: Int64,
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) {
@@ -342,8 +329,7 @@ struct BrokerProfileOptOutSubJob {
                                                               brokerId: brokerId,
                                                               profileQueryId: profileQueryId,
                                                               extractedProfileId: extractedProfileId)
-        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
-                                                    brokerId: brokerId,
+        let wideEventId = OptOutWideEventIdentifier(brokerId: brokerId,
                                                     profileQueryId: profileQueryId,
                                                     extractedProfileId: extractedProfileId)
         OptOutSubmissionWideEventRecorder.startIfPossible(
@@ -359,6 +345,7 @@ struct BrokerProfileOptOutSubJob {
                                       brokerProfileQueryData: BrokerProfileQueryData,
                                       database: DataBrokerProtectionRepository,
                                       schedulingConfig: DataBrokerScheduleConfig,
+                                      featureFlagger: OptOutRetryErrorFeatureFlagging,
                                       identifiers: OptOutIdentifiers,
                                       stageDurationCalculator: DataBrokerProtectionStageDurationCalculator) {
         // 9. Records opt out failures caught on the main  orchestration function
@@ -374,7 +361,8 @@ struct BrokerProfileOptOutSubJob {
             extractedProfileId: identifiers.extractedProfileId,
             error: error,
             database: database,
-            schedulingConfig: schedulingConfig
+            schedulingConfig: schedulingConfig,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -394,7 +382,8 @@ struct BrokerProfileOptOutSubJob {
                 profileQueryId: profileQueryId,
                 extractedProfileId: extractedProfileId,
                 schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                database: database
+                database: database,
+                featureFlagger: dependencies.featureFlagger
             )
         } catch {
             handleOperationError(
@@ -404,7 +393,8 @@ struct BrokerProfileOptOutSubJob {
                 extractedProfileId: extractedProfileId,
                 error: error,
                 database: database,
-                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig
+                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                featureFlagger: dependencies.featureFlagger
             )
         }
         notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishOptOut, object: brokerProfileQueryData.dataBroker.name)
@@ -442,8 +432,9 @@ struct BrokerProfileOptOutSubJob {
                                            profileQueryId: Int64,
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
-                                           database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdater(database: database)
+                                           database: DataBrokerProtectionRepository,
+                                           featureFlagger: OptOutRetryErrorFeatureFlagging) throws {
+        let dateUpdater = OperationPreferredDateUpdater(database: database, featureFlagger: featureFlagger)
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,
@@ -457,7 +448,8 @@ struct BrokerProfileOptOutSubJob {
                                       extractedProfileId: Int64?,
                                       error: Error,
                                       database: DataBrokerProtectionRepository,
-                                      schedulingConfig: DataBrokerScheduleConfig) {
+                                      schedulingConfig: DataBrokerScheduleConfig,
+                                      featureFlagger: OptOutRetryErrorFeatureFlagging) {
         let event: HistoryEvent
 
         if let extractedProfileId = extractedProfileId {
@@ -483,7 +475,8 @@ struct BrokerProfileOptOutSubJob {
                 profileQueryId: profileQueryId,
                 extractedProfileId: extractedProfileId,
                 schedulingConfig: schedulingConfig,
-                database: database
+                database: database,
+                featureFlagger: featureFlagger
             )
         } catch {
             Logger.dataBrokerProtection.log("Can't update operation date after error")

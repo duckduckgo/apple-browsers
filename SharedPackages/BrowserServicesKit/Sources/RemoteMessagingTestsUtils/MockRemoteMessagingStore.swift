@@ -29,6 +29,8 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
     public var dismissRemoteMessageCalls = 0
     public var fetchDismissedRemoteMessageIDsCalls = 0
     public var updateRemoteMessageCalls = 0
+    public var recordRemoteMessageImpressionCalls = 0
+    public var recordRemoteMessageImpressionResult: RemoteMessageImpressionResult?
 
     public var capturedSurfaces: RemoteMessageSurfaceType?
 
@@ -61,9 +63,12 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
         return remoteMessagingConfig
     }
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
+    public var capturedTriggerFilter: TriggerFilter?
+
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter = .noTrigger) -> RemoteMessageModel? {
         fetchScheduledRemoteMessageCalls += 1
         capturedSurfaces = surfaces
+        capturedTriggerFilter = triggerFilter
         return scheduledRemoteMessage
     }
 
@@ -89,10 +94,22 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
     public func updateRemoteMessage(withID id: String, asShown shown: Bool) {
         updateRemoteMessageCalls += 1
         if shown {
-            shownRemoteMessagesIDs.append(id)
+            if !shownRemoteMessagesIDs.contains(id) {
+                shownRemoteMessagesIDs.append(id)
+            }
         } else {
             shownRemoteMessagesIDs.removeAll(where: { $0 == id })
         }
+    }
+
+    public func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult {
+        recordRemoteMessageImpressionCalls += 1
+        if let recordRemoteMessageImpressionResult {
+            return recordRemoteMessageImpressionResult
+        }
+        let isFirstImpression = !shownRemoteMessagesIDs.contains(id)
+        updateRemoteMessage(withID: id, asShown: true)
+        return .recorded(isFirstImpression: isFirstImpression, impressionCount: nil)
     }
 
     public func resetRemoteMessages() {}

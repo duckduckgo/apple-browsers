@@ -24,13 +24,7 @@ import SwiftUI
 import SwiftUIExtensions
 
 fileprivate extension Preferences.Const {
-    static let autoLockWarningOffset: CGFloat = {
-        if #available(macOS 12.0, *) {
-            return 18
-        } else {
-            return 20
-        }
-    }()
+    static let autoLockWarningOffset: CGFloat = 18
 }
 
 extension Preferences {
@@ -93,7 +87,7 @@ extension Preferences {
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(Color(.textSecondary))
                 }
 
                 if !NSApp.isSandboxed {
@@ -189,6 +183,7 @@ extension Preferences {
                         Text(UserText.autofillNeverLock).tag(false)
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
@@ -204,6 +199,9 @@ extension Preferences {
             .onReceive(bitwardenStatusPublisher) { status in
                 bitwardenStatus = status
             }
+            .onAppear {
+                model.viewDidAppear()
+            }
         }
 
         @ViewBuilder
@@ -212,6 +210,7 @@ extension Preferences {
                 content()
             }, label: {})
             .pickerStyle(.radioGroup)
+            .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
         }
 
@@ -389,7 +388,7 @@ struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 HStack {
-                    Text("1.")
+                    Text(verbatim: "1.")
                     Button(UserText.bitwardenIncompatibleStep1, action: {
                         openNewTab(with: URL(string: "https://github.com/bitwarden/clients/releases/download/desktop-mac-v2025.4.2/Bitwarden-2025.4.2-universal.dmg")!)
                     }).foregroundColor(.accentColor)

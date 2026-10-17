@@ -17,6 +17,11 @@
         "description": "Daily pixel suffix",
         "enum": ["daily"]
     },
+    "monthly": {
+        "type": "string",
+        "description": "Monthly pixel suffix",
+        "enum": ["monthly"]
+    },
     "daily_standard": {
         "type": "string",
         "description": "Daily and standard pixel suffixes",
@@ -41,5 +46,10 @@
         "type": "string",
         "description": "Count pixel schedule type",
         "enum": ["count"]
+    },
+    "daily_count": {
+        "type": "string",
+        "description": "Daily and count pixel schedule type",
+        "enum": ["daily", "count"]
     }
 }

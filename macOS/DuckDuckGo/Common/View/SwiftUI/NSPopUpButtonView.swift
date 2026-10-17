@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import SwiftUI
 import Utilities
 
@@ -84,7 +85,7 @@ struct NSPopUpButtonView<SelectionValue: Equatable>: NSViewRepresentable {
 
                     } else {
                         menuItem = NSMenuItem(title: element.title, representedObject: element.selectionValue)
-                        menuItem.image = element.icon
+                        menuItem.withImage(element.icon, visibleOnMacOS27: true)
                         menuItem.keyEquivalent = element.keyEquivalent
                         menuItem.indentationLevel = element.indentation
                     }

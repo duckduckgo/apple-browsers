@@ -20,6 +20,34 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "m_netp_ev_enable_attempt": {
+        "description": "Fired at the start of a VPN connection attempt",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "connectionAttemptSource"]
+    },
+    "m_netp_ev_enable_attempt_success": {
+        "description": "Fired when a VPN connection attempt succeeds",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "connectionAttemptSource"]
+    },
+    "m_netp_ev_enable_attempt_failure": {
+        "description": "Fired when a VPN connection attempt fails",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "connectionAttemptSource"]
+    },
+    "m_netp_tunnel_start_attempt_on_demand_without_access_token": {
+        "description": "Fired when an on-demand VPN start attempt fails before reaching the actual tunnel start, due to a prerequisite failure such as a missing or unfetchable subscription token, missing settings, or other startup errors. Error parameters identify the underlying cause.",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
     "m_ios_wide_vpn_connection": {
         "description": "Wide pixel sent at the end of a vpn connection flow",
@@ -38,10 +66,14 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Description of the failure when the VPN connection flow ends in error. Mix of stable case-name tokens and human-readable messages, depending on which error type surfaced."
+            },
             {
                 "key": "meta.type",
                 "type": "string",
@@ -78,7 +110,29 @@
                 "key": "feature.data.ext.is_setup",
                 "type": "string",
                 "description": "Is the current flow setup or reconnection",
-                "enum": ["yes", "no", "unknown", "true", "false"]
+                "enum": ["yes", "no", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.vpn_screen_source",
+                "type": "string",
+                "description": "The app surface that opened the VPN screen before the connection attempt. Only present for user-initiated starts; on-demand and system-initiated starts omit this dimension",
+                "enum": [
+                    "subscription_settings",
+                    "subscription_email",
+                    "subscription_flow",
+                    "browser_menu",
+                    "toolbar",
+                    "address_bar",
+                    "widget",
+                    "shortcut",
+                    "notification"
+                ]
+            },
+            {
+                "key": "feature.data.ext.vpn_screen_entry_token_state",
+                "type": "string",
+                "description": "Whether a local Privacy Pro token container was present at connect time. Only present for user-initiated starts; on-demand and system-initiated starts omit this dimension",
+                "enum": ["present", "missing", "read_error"]
             },
             // Overall latency
             {
@@ -88,38 +142,38 @@
             },
             // Per-step latencies
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_latency_ms",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_latency_ms$",
                 "type": "integer",
                 "description": "Latency for VPN connection steps (in ms)"
             },
             // Per-step error domains
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.domain",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.domain$",
                 "type": "string",
                 "description": "Error domain for VPN connection step failures"
             },
             // Per-step error codes
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.code",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.code$",
                 "type": "integer",
                 "description": "Error code for VPN connection step failures"
             },
             // Per-step error descriptions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description$",
                 "type": "string",
                 "description": "Human-readable error description for VPN connection step failures",
                 "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
             },
             // Per-step underlying error domains
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]?",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]?$",
                 "type": "string",
                 "description": "Underlying error domain for VPN connection step failures"
             },
             // Per-step underlying error codes
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]?",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]?$",
                 "type": "integer",
                 "description": "Underlying error code for VPN connection step failures"
             },
@@ -128,6 +182,12 @@
                 "type": "string",
                 "description": "Context name for the flow",
                 "enum": ["funnel_appsettings_ios", "funnel_systemsettings_multiple", "funnel_others_multiple"]
+            },
+            {
+                "key": "feature.data.ext.onboarding_status",
+                "type": "string",
+                "description": "VPN onboarding status at the time of the connection flow",
+                "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "completed", "unknown"]
             }
         ]
     },
@@ -137,5 +197,278 @@
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_ios_wide_vpn_ip_leak_check": {
+        "description": "Wide pixel sent at the end of each VPN IP leak check cycle (HTTP/HTTPS/STUN probes over IPv4 and IPv6 against the leak check endpoint, classified against the current tunnel egress IP)",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-vpn-ip-leak-check"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["vpn-ip-leak-check"]
+            },
+            {
+                "key": "feature.data.ext.trigger",
+                "type": "string",
+                "description": "What caused the leak check cycle to run",
+                "enum": ["tunnel_start", "reassert", "periodic", "rekey"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason attached to an UNKNOWN status: one or more probes errored without a leak; the cycle did not complete; or the tunnel interface resolved to a non-tunnel interface and the check was skipped",
+                "enum": ["checks_errored", "check_interrupted", "unexpected_tunnel_interface"]
+            },
+            {
+                "key": "feature.data.ext.latency_ms_bucketed",
+                "type": "integer",
+                "description": "Total cycle duration, rounded up to the nearest 500 ms and capped at 5000",
+                "enum": [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
+            },
+            {
+                "key": "feature.data.ext.egress_server_name",
+                "type": "string",
+                "description": "Name of the VPN egress server the cycle ran against",
+                "examples": ["yvr2-netp-prod-egress2"]
+            },
+            {
+                "key": "feature.data.ext.os_version",
+                "type": "string",
+                "description": "Operating system major/minor version at the time of the leak check, for example 13.7 or 26.4"
+            },
+            {
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.leak_ip_type$",
+                "type": "string",
+                "description": "Classification of the leaked IP, present when any probe of that IP family reported a leak",
+                "enum": ["public", "private", "unknown"]
+            },
+            {
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.status$",
+                "type": "string",
+                "description": "Per-probe outcome for the IP family × probe combination",
+                "enum": ["success", "leak", "error"]
+            },
+            {
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_domain|underlying_domain)$",
+                "type": "string",
+                "description": "Error domain associated with a per-probe error (outer or underlying)",
+                "examples": ["NWErrorDomain", "NSURLErrorDomain", "LeakCheckHTTPResponseParser.ParseError"]
+            },
+            {
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_code|underlying_code)$",
+                "type": "integer",
+                "description": "Error code associated with a per-probe error (outer or underlying)"
+            },
+            {
+                "keyPattern": "^feature\\.data\\.ext\\.ipv4\\.(http|https|stun)\\.leak_octet[1-4]_matched$",
+                "type": "boolean",
+                "description": "Whether the corresponding octet of the observed IPv4 address matched the egress IP, present only when a probe reported a leak"
+            }
+        ]
+    },
+    "m_ios_wide_vpn_session_health": {
+        "description": "Wide pixel sent once per VPN runtime event, measuring whether an already-running VPN stayed healthy, including tunnels that stayed connected but stopped routing traffic",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-vpn-session-health"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["vpn-session-health"]
+            },
+            {
+                "key": "feature.data.ext.start_reason",
+                "type": "string",
+                "description": "Why the event began.",
+                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start"]
+            },
+            {
+                "key": "feature.data.ext.end_reason",
+                "type": "string",
+                "description": "Why the event ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch; `restarted_without_stop` means a start arrived while an event was still open.",
+                "enum": [
+                    "stopped_by_user",
+                    "stopped_by_failure",
+                    "stopped_administratively",
+                    "stopped_without_network",
+                    "cancelled_with_error",
+                    "restarted_without_stop",
+                    "process_died"
+                ]
+            },
+            {
+                "key": "feature.data.ext.failure_reason",
+                "type": "string",
+                "description": "The reason an event FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `routing_outage_at_user_stop` = the user switched the VPN off while a tester outage was still active; `stale_handshake` = no WireGuard handshake for over 5 minutes.",
+                "enum": [
+                    "routing_outage",
+                    "routing_outage_at_user_stop",
+                    "stale_handshake",
+                    "failure_recovery_failed",
+                    "stopped_with_failure",
+                    "cancelled_with_error"
+                ]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "The activity that failed to produce a judgement, for an event that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the event ended before the first result.",
+                "enum": [
+                    "monitors_never_started",
+                    "connection_tester_never_reported",
+                    "extension_process_died",
+                    "os_stopped_without_network"
+                ]
+            },
+            {
+                "key": "feature.data.ext.monitoring_coverage",
+                "type": "string",
+                "description": "How much of the event was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
+                "enum": ["full", "partial", "none"]
+            },
+            {
+                "key": "feature.data.ext.event_duration_seconds_bucketed",
+                "type": "string",
+                "description": "Wall-clock length of the event, bucketed (lower end of bucket, in seconds). Includes paused periods.",
+                "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+            },
+            {
+                "key": "feature.data.ext.event_duration_exceeds_process_lifetime",
+                "type": "boolean",
+                "description": "Whether the unbucketed wall-clock event duration is strictly greater than elapsed wall-clock time since the current tunnel provider initialized, captured at completion or orphan recovery. Both durations include sleep. Recovered sessions may legitimately exceed the current process lifetime."
+            },
+            {
+                "key": "feature.data.ext.current_process_start_reason",
+                "type": "string",
+                "description": "Start reason of the process that recovered this orphaned event. Present only on orphan recovery.",
+                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start"]
+            },
+            {
+                "key": "feature.data.ext.process_restart_gap_seconds_bucketed",
+                "type": "string",
+                "description": "Wall-clock time from the orphaned event's last observation to the start of the process that recovered it, bucketed (lower end of bucket, in seconds). An upper bound: observations are not written while paused. Present only on orphan recovery.",
+                "enum": ["0", "60", "300", "900", "1800", "3600", "43200"]
+            },
+            {
+                "key": "feature.data.ext.process_id_changed",
+                "type": "boolean",
+                "description": "Present only as true when the PID at session start differs from the completing or orphan-recovering process PID. Omitted when PIDs match or the starting PID is unavailable. Equal PIDs do not guarantee the same process instance because PIDs can be reused."
+            },
+            {
+                "key": "feature.data.ext.app_version_changed",
+                "type": "boolean",
+                "description": "Present only as true when the app version at session start differs from the completing or orphan-recovering process app version. Omitted when versions match."
+            },
+            {
+                "key": "feature.data.ext.time_to_first_error_seconds_bucketed",
+                "type": "string",
+                "description": "Time from event start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
+                "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+            },
+            {
+                "key": "feature.data.ext.connection_tester_outage_count_bucketed",
+                "type": "string",
+                "description": "How many distinct connection-tester outages occurred, bucketed (lower end of bucket).",
+                "enum": ["0", "1", "2", "4", "9"]
+            },
+            {
+                "key": "feature.data.ext.outage_duration_seconds_bucketed",
+                "type": "string",
+                "description": "Summed monitored duration of all connection-tester outages during the event, bucketed (lower end of bucket, in seconds). The `0` bucket also covers a total under one second.",
+                "enum": ["0", "1", "15", "60", "300", "900", "1800", "3600"]
+            },
+            {
+                "key": "feature.data.ext.extension_type",
+                "type": "string",
+                "description": "Which network extension served the event.",
+                "enum": ["app", "system", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.connection_tester_failure_seen",
+                "type": "boolean",
+                "description": "Whether any connection-tester failure occurred, including one that recovered."
+            },
+            {
+                "key": "feature.data.ext.connection_tester_extended_failure_seen",
+                "type": "boolean",
+                "description": "Whether a tester outage crossed the extended failure threshold. The primary routing_outage input."
+            },
+            {
+                "key": "feature.data.ext.connection_tester_failure_active_at_end",
+                "type": "boolean",
+                "description": "Whether a tester failure was still active when the event ended."
+            },
+            {
+                "key": "feature.data.ext.stale_handshake_seen",
+                "type": "boolean",
+                "description": "Whether the stale-handshake monitor reported a failure."
+            },
+            {
+                "key": "feature.data.ext.stale_handshake_recovered",
+                "type": "boolean",
+                "description": "Whether a reported stale handshake later recovered. Present only when stale_handshake_seen."
+            },
+            {
+                "key": "feature.data.ext.failure_recovery_attempted",
+                "type": "boolean",
+                "description": "Whether server failure recovery was attempted."
+            },
+            {
+                "key": "feature.data.ext.failure_recovery_succeeded",
+                "type": "boolean",
+                "description": "Whether that recovery succeeded. Present only when a recovery finished."
+            },
+            {
+                "key": "feature.data.ext.stopped_by_user_with_active_failure",
+                "type": "boolean",
+                "description": "Whether a deliberate user disable coincided with an active routing failure. The headline diagnostic for silently broken tunnels."
+            },
+            {
+                "key": "feature.data.ext.ip_leak_detected",
+                "type": "boolean",
+                "description": "Whether an IP leak was confirmed during the event. Diagnostic only."
+            }
+        ]
     }
 }

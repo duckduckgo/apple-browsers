@@ -18,7 +18,9 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
+import MetricBuilder
 
 struct DuckPlayerEntryPillView: View {
     @ObservedObject var viewModel: DuckPlayerEntryPillViewModel
@@ -37,7 +39,6 @@ struct DuckPlayerEntryPillView: View {
         static let vStackSpacing: CGFloat = 4
         static let hStackSpacing: CGFloat = 10
         static let fontSize: CGFloat = 16
-        static let playButtonFont: CGFloat = 16
         static let cornerRadius: CGFloat = 16
         static let shadowOpacity: CGFloat = 0.1
         static let shadowRadius: CGFloat = 3
@@ -46,11 +47,10 @@ struct DuckPlayerEntryPillView: View {
     }
 
     private var playButton: some View {
-        Image(systemName: Constants.playImage)
-            .font(.system(size: Constants.playButtonFont))
+        Image(uiImage: DesignSystemImages.Glyphs.Size16.playSolid)
             .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
             .frame(width: iconSize, height: iconSize)
-            .background(Color(designSystemColor: .buttonsPrimaryDefault))
+            .background(Color(designSystemColor: .accentPrimary))
             .clipShape(Circle())
     }
 
@@ -93,7 +93,9 @@ struct DuckPlayerEntryPillView: View {
                     )
 
                 }
-                .cornerRadius(Constants.cornerRadius)
+                .cornerRadius(AppRebrand.isAppRebranded() ?
+                              ContainerMetrics.cornerRadius
+                              : Constants.cornerRadius)
                 .shadow(
                     color: Color.black.opacity(Constants.shadowOpacity), radius: Constants.shadowRadius,
                     x: Constants.shadowOffset.width, y: Constants.shadowOffset.height

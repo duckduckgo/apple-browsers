@@ -41,6 +41,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "tab_count",
                 "description": "Number of tab crashes that occurred in the burst (within 100ms window)",

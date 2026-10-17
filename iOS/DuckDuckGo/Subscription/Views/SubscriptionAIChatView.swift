@@ -49,7 +49,7 @@ struct SubscriptionAIChatView: View {
                     SettingsCustomCell(content: {
                         Text(UserText.openAIFeaturesSettings)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                     }, action: {
                         viewModel.openAIFeaturesSettings()
                     }, isButton: true)
@@ -59,7 +59,7 @@ struct SubscriptionAIChatView: View {
                     SettingsCustomCell(content: {
                         Text(UserText.aiChatSubscriptionEnableAIFeatures)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                     }, action: {
                         viewModel.openAIFeaturesSettings()
                     }, isButton: true)

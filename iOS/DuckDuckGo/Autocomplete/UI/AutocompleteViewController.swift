@@ -1,0 +1,416 @@
+//
+//  AutocompleteViewController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2017 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import BrowserServicesKit
+import Common
+import FoundationExtensions
+import UIKit
+import Core
+import DesignResourcesKit
+import Suggestions
+import Networking
+import CoreData
+import Persistence
+import History
+import Combine
+import PrivacyConfig
+import SwiftUI
+import AIChat
+import FeatureFlags_iOS
+import PixelKit
+
+class AutocompleteViewController: UIHostingController<AutocompleteView> {
+
+    private static let debounceDelayMS = 100
+    private static let session = URLSession(configuration: .ephemeral)
+
+    var selectedSuggestion: Suggestion?
+
+    /// The keyboard-highlighted suggestion. Reads the live model selection (unlike `selectedSuggestion`, which is never set).
+    var highlightedSuggestion: Suggestion? {
+        model.selection?.suggestion
+    }
+
+    var isKeyboardSelectionAtFirstRow: Bool {
+        model.isSelectionAtFirstRow
+    }
+
+    func clearKeyboardSelection() {
+        model.selection = nil
+    }
+
+    weak var delegate: AutocompleteViewControllerDelegate?
+    weak var presentationDelegate: AutocompleteViewControllerPresentationDelegate?
+
+    private let appSettings: AppSettings
+    private let model: AutocompleteViewModel
+
+    @Published private var query = ""
+    private var queryDebounceCancellable: AnyCancellable?
+
+    private var lastResults: SuggestionResult?
+    private var loader: SuggestionLoader?
+    private var featureFlagger: FeatureFlagger
+    private let historyManager: HistoryManaging
+    private let bookmarksDatabase: CoreDataDatabase
+    private let tabsModel: TabsModelManaging
+    private let aiChatSettings: AIChatSettingsProvider
+    private let featureDiscovery: FeatureDiscovery
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
+    private var task: URLSessionDataTask?
+
+    private var isUsingUnifiedPrediction: Bool {
+        featureFlagger.isFeatureOn(.unifiedURLPredictor)
+    }
+
+    lazy var dataSource: AutocompleteSuggestionsDataSource = {
+        return AutocompleteSuggestionsDataSource(
+            historyManager: historyManager,
+            bookmarksDatabase: bookmarksDatabase,
+            featureFlagger: featureFlagger,
+            tabsModel: tabsModel) { [weak self] request, completion in
+                self?.task = Self.session.dataTask(with: request) { data, _, error in
+                    completion(data, error)
+                }
+                self?.task?.resume()
+        }
+    }()
+
+    let showAskAIChat: Bool
+    var suggestionFilter: AutocompleteSuggestionFilter = .all
+
+    var isEmpty: Bool {
+        guard let results = lastResults else { return true }
+        return results.topHits.isEmpty && results.duckduckgoSuggestions.isEmpty && results.localSuggestions.isEmpty
+    }
+
+    init(historyManager: HistoryManaging,
+         bookmarksDatabase: CoreDataDatabase,
+         appSettings: AppSettings,
+         tabsModel: TabsModelManaging,
+         featureFlagger: FeatureFlagger,
+         aiChatSettings: AIChatSettingsProvider,
+         featureDiscovery: FeatureDiscovery,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
+
+        self.tabsModel = tabsModel
+        self.historyManager = historyManager
+        self.bookmarksDatabase = bookmarksDatabase
+        self.featureDiscovery = featureDiscovery
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
+        self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
+        self.aiChatSettings = aiChatSettings
+
+        let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
+        self.showAskAIChat = aiChatSettings.isAIChatEnabled
+        self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
+                                           showAskAIChat: showAskAIChat)
+
+        super.init(rootView: AutocompleteView(model: model))
+        self.model.delegate = self
+        self.model.isPad = isPad
+    }
+    
+    @MainActor required dynamic init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = UIColor(designSystemColor: .background)
+
+        queryDebounceCancellable = $query
+            .debounce(for: .milliseconds(Self.debounceDelayMS), scheduler: RunLoop.main)
+            .sink { [weak self] query in
+                self?.requestSuggestions(query: query)
+            }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.autocompleteUsed()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        fireUsagePixels()
+    }
+
+    func keyboardMoveSelectionDown() {
+        model.nextSelection()
+    }
+
+    func keyboardMoveSelectionUp() {
+        model.previousSelection()
+    }
+    
+    func updateQuery(_ query: String) {
+        model.selection = nil
+        guard self.query != query else {
+            reapplyFilterIfNeeded()
+            return
+        }
+        cancelInFlightRequests()
+        self.query = query
+        model.query = query
+    }
+
+    func refreshSuggestions() {
+        requestSuggestions(query: self.query)
+    }
+
+    func setSectionTitle(_ title: String?) {
+        model.sectionTitle = title
+    }
+
+    func reapplyFilterIfNeeded() {
+        guard model.suggestionFilter != suggestionFilter, var results = lastResults else { return }
+        if suggestionFilter == .urlsOnly {
+            results = results.filteringToURLsOnly()
+        }
+        model.suggestionFilter = suggestionFilter
+        model.updateSuggestions(results)
+        updateHeight()
+    }
+
+    private func fireUsagePixels() {
+        var bookmark = false
+        var favorite = false
+        var history = false
+        var openTab = false
+
+        lastResults?.all.forEach {
+            switch $0 {
+            case .bookmark(_, _, isFavorite: let isFavorite, _):
+                if isFavorite {
+                    favorite = true
+                } else {
+                    bookmark = true
+                }
+
+            case .historyEntry:
+                history = true
+
+            case .openTab:
+                openTab = true
+
+            default: break
+            }
+        }
+
+        if bookmark {
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedLocalBookmark)
+        }
+
+        if favorite {
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedLocalFavorite)
+        }
+
+        if history {
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedLocalHistory)
+        }
+
+        if openTab {
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedOpenedTab)
+        }
+
+    }
+
+    private func cancelInFlightRequests() {
+        task?.cancel()
+        task = nil
+    }
+
+    private func requestSuggestions(query: String) {
+        model.selection = nil
+
+        loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
+            // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
+            // We define this as a URL with a path equal to a single slash (root URL).
+            // Skip suggestions when all of the following are true:
+            // * input can be converted to a URL
+            // * input starts with http[s]
+            // * converted URL is root (no path)
+            // * the user typed the trailing "/"
+            guard let self,
+                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction),
+                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction)
+            else {
+                return true
+            }
+
+            if let scheme = url.scheme, scheme.description.hasPrefix("http"), url.isRoot, phrase.last == "/" {
+                return false
+            }
+            return true
+        }, isUrlIgnored: { _ in false })
+
+        loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
+            guard let self, error == nil else { return }
+            var updatedResults = result ?? .empty
+            if self.suggestionFilter == .urlsOnly {
+                updatedResults = updatedResults.filteringToURLsOnly()
+            }
+            self.lastResults = updatedResults
+            self.model.suggestionFilter = self.suggestionFilter
+            model.updateSuggestions(updatedResults)
+            updateHeight()
+            self.presentationDelegate?.autocompleteDidReloadResults(self)
+        }
+
+    }
+
+    private func updateHeight() {
+        guard let lastResults else { return }
+
+        let sectionPadding = 12
+        let controllerPadding = 20
+
+        let height =
+            sectionHeight(lastResults.topHits) +
+            (lastResults.topHits.isEmpty ? 0 : sectionPadding) +
+            sectionHeight(lastResults.duckduckgoSuggestions) +
+            (lastResults.duckduckgoSuggestions.isEmpty ? 0 : sectionPadding) +
+            sectionHeight(lastResults.localSuggestions) +
+            (lastResults.localSuggestions.isEmpty ? 0 : sectionPadding) +
+            (showAskAIChat ? sectionHeight([.askAIChat(value: "")]) + sectionPadding : 0) +
+            controllerPadding
+
+        self.presentationDelegate?
+            .autocompleteDidChangeContentHeight(height: CGFloat(height))
+    }
+
+    func sectionHeight(_ suggestions: [Suggestion]) -> Int {
+        let standardCellHeight: Int
+        let subtitledCellHeight: Int
+        if #available(iOS 26, *) {
+            standardCellHeight = 52
+            subtitledCellHeight = 66
+        } else {
+            standardCellHeight = 44
+            subtitledCellHeight = 58
+        }
+
+        var height = 0
+        for suggestion in suggestions {
+            switch suggestion {
+            case .phrase, .website:
+                height += standardCellHeight
+
+            default:
+                height += subtitledCellHeight
+            }
+        }
+        return height
+    }
+
+}
+
+extension AutocompleteViewController: AutocompleteViewModelDelegate {
+
+    func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
+        switch suggestion {
+        case .bookmark(_, _, let isFavorite, _):
+            PixelKit.fire(isFavorite ? Pixel.Event.autocompleteClickFavorite : .autocompleteClickBookmark)
+
+        case .historyEntry(_, let url, _):
+            PixelKit.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
+
+        case .phrase:
+            PixelKit.fire(Pixel.Event.autocompleteClickPhrase)
+
+        case .website:
+            PixelKit.fire(Pixel.Event.autocompleteClickWebsite)
+
+        case .openTab:
+            PixelKit.fire(Pixel.Event.autocompleteClickOpenTab)
+
+        case .askAIChat:
+            let params = featureDiscovery.addToParams([:], forFeature: .aiChat)
+            if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+                PixelKit.fire(Pixel.Event.autocompleteAskAIChatExperimentalExperience, frequency: .dailyAndCount, options: .parameters(params))
+            } else {
+                PixelKit.fire(Pixel.Event.autocompleteAskAIChatLegacyExperience, frequency: .dailyAndCount, options: .parameters(params))
+            }
+
+        default:
+            // NO-OP
+            break
+        }
+        self.delegate?.autocomplete(selectedSuggestion: suggestion)
+    }
+
+    func onTapAhead(_ suggestion: Suggestion) {
+        self.delegate?.autocomplete(pressedPlusButtonForSuggestion: suggestion)
+    }
+
+    func onSuggestionHighlighted(_ suggestion: Suggestion, forQuery query: String) {
+        self.delegate?.autocomplete(highlighted: suggestion, for: query)
+    }
+
+    func deleteSuggestion(_ suggestion: Suggestion) {
+        switch suggestion {
+        case .historyEntry(_, let url, _):
+            Task {
+                await deleteURLSuggestion(suggestion, url: url)
+            }
+        default:
+            assertionFailure("Only history items can be deleted")
+        }
+    }
+
+    private func deleteURLSuggestion(_ suggestion: Suggestion, url: URL) async {
+        await historyManager.deleteHistoryForURL(url)
+        requestSuggestions(query: self.query)
+        delegate?.autocomplete(deletedSuggestion: suggestion)
+
+        PixelKit.fire(Pixel.Event.autocompleteDeleteHistoryEntry)
+        PixelKit.fire(Pixel.Event.autocompleteDeleteHistoryEntryDaily, frequency: .legacyDailyNoSuffix)
+    }
+
+    private func createPixelIndexParam(for index: Int?) -> [String: String] {
+        return index.map { i in
+            ["search_suggestion_index": String(i)]
+        } ?? [:]
+    }
+}
+
+private extension SuggestionResult {
+    static let empty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
+}
+
+extension HistoryEntry: HistorySuggestion {
+
+    public var numberOfVisits: Int {
+        return numberOfTotalVisits
+    }
+
+}
+
+struct OpenTab: BrowserTab {
+
+    let tabId: String?
+    let title: String
+    let url: URL
+
+}

@@ -28,7 +28,6 @@
                     "share",
                     "addEditBookmark",
                     "addEditFavorite",
-                    "voiceSearch",
                     "zoom",
                     "none",
                     "home",
@@ -37,7 +36,8 @@
                     "downloads",
                     "fire",
                     "vpn",
-                    "passwords"
+                    "passwords",
+                    "duckAIVoice"
                 ]
             }
         ]
@@ -57,7 +57,6 @@
                     "share",
                     "addEditBookmark",
                     "addEditFavorite",
-                    "voiceSearch",
                     "zoom",
                     "none",
                     "home",
@@ -66,7 +65,8 @@
                     "downloads",
                     "fire",
                     "vpn",
-                    "passwords"
+                    "passwords",
+                    "duckAIVoice"
                 ]
             }
         ]

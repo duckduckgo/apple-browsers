@@ -24,12 +24,14 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
     var navigationDelegate: CapturingOnboardingNavigationDelegate!
     var searchSuggestionsVM: OnboardingSearchSuggestionsViewModel!
     var siteSuggestionsVM: OnboardingSiteSuggestionsViewModel!
+    var onSuggestionPressedCalled: Bool = false
 
     override func setUp() {
         suggestionsProvider = MockOnboardingSuggestionsProvider()
         navigationDelegate = CapturingOnboardingNavigationDelegate()
-        searchSuggestionsVM = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: suggestionsProvider, delegate: navigationDelegate)
-        siteSuggestionsVM = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestionsProvider, delegate: navigationDelegate)
+        let onSuggestionPressed = { self.onSuggestionPressedCalled = true }
+        searchSuggestionsVM = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: suggestionsProvider, delegate: navigationDelegate, onSuggestionPressed: onSuggestionPressed)
+        siteSuggestionsVM = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestionsProvider, delegate: navigationDelegate, onSuggestionPressed: onSuggestionPressed)
     }
 
     override func tearDown() {
@@ -37,6 +39,7 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
         navigationDelegate = nil
         searchSuggestionsVM = nil
         siteSuggestionsVM = nil
+        onSuggestionPressedCalled = false
     }
 
     func testSearchSuggestionsViewModelReturnsExpectedSuggestionsList() {
@@ -51,7 +54,7 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
         XCTAssertEqual(searchSuggestionsVM.itemsList, expectedSearchList)
     }
 
-    func testSearchSuggestionsViewModelOnListItemPressed_AsksDelegateToSearchForQuery() {
+    func testSearchSuggestionsViewModelOnListItemPressed_AsksDelegateToSearchForQuery_AndCallsOnSuggestionPressed() {
         // GIVEN
         let item1 = ContextualOnboardingListItem.search(title: "search something")
         let item2 = ContextualOnboardingListItem.surprise(title: "search something else", visibleTitle: "Surprise Me!")
@@ -63,6 +66,7 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(navigationDelegate.suggestedSearchQuery, randomItem.title)
+        XCTAssertTrue(onSuggestionPressedCalled)
     }
 
     func testSiteSuggestionsViewModelReturnsExpectedSuggestionsList() {
@@ -77,7 +81,7 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
         XCTAssertEqual(siteSuggestionsVM.itemsList, expectedSiteList)
     }
 
-    func testSiteSuggestionsViewModelOnListItemPressed_AsksDelegateToNavigateToURL() {
+    func testSiteSuggestionsViewModelOnListItemPressed_AsksDelegateToNavigateToURL_AndCallsOnSuggestionPressed() {
         // GIVEN
         let item1 = ContextualOnboardingListItem.site(title: "somesite.com")
         let item2 = ContextualOnboardingListItem.surprise(title: "someothersite.com", visibleTitle: "Surprise Me!")
@@ -90,6 +94,7 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
         // THEN
         XCTAssertNotNil(navigationDelegate.urlToNavigateTo)
         XCTAssertEqual(navigationDelegate.urlToNavigateTo, URL(string: randomItem.title))
+        XCTAssertTrue(onSuggestionPressedCalled)
     }
 }
 

@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PrivacyConfig
@@ -1194,6 +1195,10 @@ final class MockHistoryViewDateFormatter: HistoryViewDateFormatting {
 
     func timeString(for date: Date) -> String {
         "10:08"
+    }
+
+    func shortString(for date: Date) -> String {
+        "Jun 2"
     }
 
     var date: Date = Date()

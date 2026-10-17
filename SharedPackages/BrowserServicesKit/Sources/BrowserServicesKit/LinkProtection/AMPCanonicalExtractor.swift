@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import Common
+import FoundationExtensions
 import PrivacyConfig
 
 #if canImport(UIKit)
@@ -129,7 +130,8 @@ public final class AMPCanonicalExtractor: NSObject {
         guard settings.deepExtractionEnabled else { return false }
         guard let url = url, !linkCleaner.isURLExcluded(url: url) else { return false }
         let urlStr = url.absoluteString
-        guard urlStr.count < Constants.maxURLLength else { return false }
+        // `count` walks every grapheme cluster, which stalls the main thread on very long URLs.
+        guard urlStr.utf16.count < Constants.maxURLLength else { return false }
 
         let ampKeywords = settings.ampKeywords
 

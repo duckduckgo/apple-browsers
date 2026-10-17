@@ -166,7 +166,7 @@ extension HeadlessWebViewCoordinator: WKNavigationDelegate {
         // Handle custom schemes (e.g., tel:, facetime:, etc.)
         if Constants.externalSchemes.contains(scheme), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
-            Logger.subscription.debug("HeadlessWebViewCoordinator - webView(_:decidePolicyFor:decisionHandler:) External scheme: \(url.absoluteString)")
+            Logger.subscription.debug("HeadlessWebViewCoordinator - webView(_:decidePolicyFor:decisionHandler:) External scheme: \(url.shortDescription)")
             decisionHandler(.cancel)
             return
         }
@@ -181,7 +181,7 @@ extension HeadlessWebViewCoordinator: WKNavigationDelegate {
                 url.isPart(ofDomain: domain)
             }
 
-            Logger.subscription.debug("HeadlessWebViewCoordinator - webView(_:decidePolicyFor:decisionHandler:) \(isURLAllowed ? ".allow" : ".cancel"): \(url.absoluteString)")
+            Logger.subscription.debug("HeadlessWebViewCoordinator - webView(_:decidePolicyFor:decisionHandler:) \(isURLAllowed ? ".allow" : ".cancel"): \(url.shortDescription)")
             decisionHandler(isURLAllowed ? .allow : .cancel)
             return
         }

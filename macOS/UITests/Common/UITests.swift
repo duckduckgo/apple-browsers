@@ -16,24 +16,22 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import ObjectiveC
-import SharedTestUtilities
 import Carbon
+import Foundation
+import ObjectiveC
+import os.log
+import SharedTestUtilities
+@_exported import UITestingSupport
+import XCTest
 
 /// Helper values for the UI tests
 enum UITests {
     /// Timeout constants for different test requirements
     enum Timeouts {
-        /// Mostly, we use timeouts to wait for element existence. This is about 3x longer than needed, for CI resilience
-        static let elementExistence: Double = 5.0
-        /// The fire animation time has environmental dependencies, so we want to wait for completion so we don't try to type into it
-        static let fireAnimation: Double = 30.0
-        /// Navigation timeout for page loads and network requests
-        static let navigation: Double = 30.0
-        /// Local test server timeout for localhost connections
-        static let localTestServer: Double = 15.0
+        static let elementExistence = UITestTimeouts.elementExistence
+        static let fireAnimation = UITestTimeouts.fireAnimation
+        static let navigation = UITestTimeouts.navigation
+        static let localTestServer = UITestTimeouts.localTestServer
     }
 
     /// A page simple enough to test favorite, bookmark, and history storage
@@ -68,33 +66,11 @@ enum UITests {
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
         let app = XCUIApplication.setUp()
-
-        let settings = app.menuItems["MainMenu.preferencesMenuItem"]
-        XCTAssertTrue(
-            settings.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-
-        settings.click()
-        let generalPreferencesButton = app.buttons["PreferencesSidebar.generalButton"]
-        let autocompleteToggle = app.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
-        XCTAssertTrue(
-            generalPreferencesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The user settings appearance section button didn't become available in a reasonable timeframe."
-        )
-        generalPreferencesButton.click(forDuration: 0.5, thenDragTo: generalPreferencesButton)
-
-        let currentToggleState = try? XCTUnwrap(
-            autocompleteToggle.value as? Bool,
-            "It wasn't possible to get the \"Autocomplete\" value as a Bool"
-        )
-
-        switch (requestedToggleState, currentToggleState) { // Click autocomplete toggle if it is different than our request
-        case (false, true), (true, false):
-            autocompleteToggle.click()
-        default:
-            break
-        }
+        // Settings opens as a tab, so it needs a browser window to host it
+        app.enforceSingleWindow()
+        app.openGeneralPreferences()
+        let autocompleteToggle = app.preferencesWindow.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
+        autocompleteToggle.toggleCheckboxIfNeeded(to: requestedToggleState, validate: true, ensureHittable: app.ensureHittable)
         app.terminate()
     }
 
@@ -106,16 +82,8 @@ enum UITests {
         app.typeKey("w", modifierFlags: [.command, .option])
     }
 
-    static func dismissNotificationCenterMessages() {
-        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        if notificationCenter.exists { // If tests-server is asking for network permissions, deny them.
-            notificationCenter.typeKey(.escape, modifierFlags: [])
-        }
-    }
-
     /// Avoid some first-run states that we aren't testing.
     static func firstRun(_ callback: (XCUIApplication) -> Void = { _ in }) {
-        dismissNotificationCenterMessages()
         let app = XCUIApplication.setUp()
         app.typeKey("n", modifierFlags: .command)
         callback(app)
@@ -125,10 +93,35 @@ enum UITests {
 }
 
 class TestFailureObserver: NSObject, XCTestObservation {
+
     func testCase(_ testCase: XCTestCase, didRecord issue: XCTIssue) {
-        print("Failed test with name: \(testCase.name)")
+        guard !issue.description.hasPrefix("Runtime Issue:") else {
+            Logger.log("🟣 \(issue)")
+            return
+        }
+        Logger.log("🔴 Issue recorded: \(issue)")
+        if XCUIApplication.notificationCenter.buttons.firstMatch.exists {
+            let descr = (try? XCUIApplication.notificationCenter.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
+            Logger.log("⚠️ TCC prompt shown: \(descr)")
+        }
+        Logger.log("🌐 tests-server \(Self.probeTestsServer())")
         let screenshotName = "\(testCase.name)-failure"
         testCase.takeScreenshot(screenshotName)
+    }
+
+    private static func probeTestsServer() -> String {
+        let url = URL.testsServer.appendingTestParameters(data: Data("ok".utf8))
+        var result: String?
+        let session = URLSession(configuration: .ephemeral)
+        session.dataTask(with: URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)) { data, response, error in
+            let status = (response as? HTTPURLResponse)?.statusCode ??? "nil"
+            result = "status=\(status) error=\(error ??? "nil") body=\(data.flatMap { String(data: $0, encoding: .utf8) } ??? "nil")"
+        }.resume()
+        let deadline = Date().addingTimeInterval(UITests.Timeouts.elementExistence)
+        while result == nil, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        return result ?? "timeout"
     }
 }
 
@@ -139,7 +132,12 @@ class UITestCase: XCTestCase {
     private static let failureObserver = TestFailureObserver()
     private var cleanupPaths: Set<String> = []
 
+    private static var didCallFirstRun = false
+    private static var systemPermissionPromptPollingTimer: Timer?
+    var isSystemPermissionPromptPollingTimerEnabled: Bool { true }
+
     override class func setUp() {
+        Logger.log("🟠 class \(self.self).setUp()")
         // Set up method swizzling to enable precise keyboard/mouse event simulation.
         // This allows tests to simulate "hold key" scenarios (keyDown/keyUp with proper timing)
         // and middle-click events that aren't directly supported by XCTest's standard APIs.
@@ -147,13 +145,53 @@ class UITestCase: XCTestCase {
         _ = XCUIDevice.swizzlePerformWithKeyModifiersOnce
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
+    }
 
-        Logger.log("Resetting environment for the first run")
-        UITests.firstRun()
+    /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
+    /// on the main run loop fires during XCTest waits and dismisses them before the next click.
+    private func startSystemPermissionPromptDismissTimerIfNeeded() {
+        guard Self.systemPermissionPromptPollingTimer == nil else { return }
+
+        let timer = Timer(timeInterval: 5, repeats: true) { _ in
+            Logger.log("⏰ Checking for TCC prompts")
+            _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        Self.systemPermissionPromptPollingTimer = timer
     }
 
     override class func tearDown() {
+        systemPermissionPromptPollingTimer?.invalidate()
+        systemPermissionPromptPollingTimer = nil
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
+        super.tearDown()
+    }
+
+    // Handles both super.setUp() and super.setUpWithError() calls.
+    override func setUpWithError() throws {
+        Logger.log("🟠 \(self.className).setUpWithError()")
+        try super.setUpWithError()
+
+        continueAfterFailure = false
+
+        addUIInterruptionMonitor(withDescription: "Interruption Monitor") { element in
+            Logger.log("🟠 Received interruption event: \((try? element.snapshot().toDictionary()) ??? "<nil>")")
+            return XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        }
+
+        if isSystemPermissionPromptPollingTimerEnabled {
+            startSystemPermissionPromptDismissTimerIfNeeded()
+        }
+        if !Self.didCallFirstRun {
+            Self.didCallFirstRun = true
+            Logger.log("🥇 Resetting environment for the first run")
+            UITests.firstRun()
+        }
+    }
+
+    override func tearDown() {
+        cleanupTrackedFiles()
+        cleanupPaths.removeAll()
         super.tearDown()
     }
 
@@ -277,12 +315,6 @@ extension UITestCase {
         set {}
     }
 
-    override func tearDown() {
-        cleanupTrackedFiles()
-        cleanupPaths.removeAll()
-        super.tearDown()
-    }
-
     static func log(_ message: String) {
         Logger.log(message)
     }
@@ -381,11 +413,7 @@ extension UITestCase {
 }
 
 struct Logger {
-    static var debug: Logger = Logger()
-
-    func log(_ message: String) {
-        Logger.log(message)
-    }
+    private static let logger = os.Logger()
 
     /// Log a debug message using XCTest's private debug log handler
     /// - Parameter message: The message to log
@@ -396,9 +424,13 @@ struct Logger {
         guard let context = XCTContext.perform(currentContextSelector)?.takeUnretainedValue() else {
             fatalError("Could not retrieve current XCTContext")
         }
-        // Escape any %-escaped values in the message before passing it as the format string
-        let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
-        _ = context.perform(logFormatSelector, with: escapedMessage)
+        if context.responds(to: logFormatSelector) {
+            // Escape any %-escaped values in the message before passing it as the format string
+            let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
+            _ = context.perform(logFormatSelector, with: escapedMessage)
+        }
+
+        logger.log(level: .info, "\(message)")
     }
 }
 

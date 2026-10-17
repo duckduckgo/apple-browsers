@@ -50,11 +50,11 @@ private struct HTTPSUpgradesRefTests: Decodable {
 final class HTTPSUpgradeReferenceTests: XCTestCase {
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/https-upgrades/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/https-upgrades/tests.json"
-        static let allowList = "Resources/privacy-reference-tests/https-upgrades/https_allowlist_reference.json"
-        static let bloomFilterSpec = "Resources/privacy-reference-tests/https-upgrades/https_bloomfilter_spec_reference.json"
-        static let bloomFilter = "Resources/privacy-reference-tests/https-upgrades/https_bloomfilter_reference"
+        static let config = "Res/privacy-reference-tests/https-upgrades/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/https-upgrades/tests.json"
+        static let allowList = "Res/privacy-reference-tests/https-upgrades/https_allowlist_reference.json"
+        static let bloomFilterSpec = "Res/privacy-reference-tests/https-upgrades/https_bloomfilter_spec_reference.json"
+        static let bloomFilter = "Res/privacy-reference-tests/https-upgrades/https_bloomfilter_reference"
     }
 
     private static let data = JsonTestDataLoader()
@@ -150,6 +150,19 @@ final class HTTPSUpgradeReferenceTests: XCTestCase {
         }
 
         XCTAssertEqual(resultURL.absoluteString, url.absoluteString, "FAILED: \(resultURL)")
+    }
+
+    func testURLWithExplicitPortShouldNotUpgradeToHTTPS() async {
+        let httpsUpgrade = HTTPSUpgrade(store: mockStore, privacyManager: makePrivacyManager(), logger: Logger())
+        await httpsUpgrade.loadData()
+
+        let url = URL(string: "http://upgradable.url:8080")!
+        let result = await httpsUpgrade.upgrade(url: url)
+
+        guard case .failure(.explicitPort) = result else {
+            XCTFail("Expected explicit port HTTP URL not to upgrade, got \(result)")
+            return
+        }
     }
 
     func testLocalUnprotectedDomainShouldUpgradeSubdomainToHTTPS() async {

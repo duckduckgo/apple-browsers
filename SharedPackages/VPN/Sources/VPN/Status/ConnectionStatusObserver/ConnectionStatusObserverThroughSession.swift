@@ -21,6 +21,7 @@ import Foundation
 import NetworkExtension
 import NotificationCenter
 import Common
+import FoundationExtensions
 import os.log
 
 /// This status observer can only be used from the App that owns the tunnel, as other Apps won't have access to the

@@ -19,7 +19,7 @@
 import PixelKit
 import WebExtensions
 
-enum WebExtensionPixel: PixelKitEvent {
+enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Installation
 
@@ -37,6 +37,7 @@ enum WebExtensionPixel: PixelKitEvent {
 
     case loaded
     case loadError(error: Error)
+    case reloadError(parameters: [String: String])
 
     // MARK: - Embedded Extensions
 
@@ -60,6 +61,13 @@ enum WebExtensionPixel: PixelKitEvent {
     case adBlockingExtensionEnabled
     case adBlockingExtensionDisabled
 
+    case adBlockingExtensionAddressBarActiveClicked
+    case adBlockingExtensionAddressBarInactiveClicked
+    case adBlockingExtensionPopoverAlwaysOn
+    case adBlockingExtensionPopoverAlwaysOff
+    case adBlockingExtensionPopoverDisableUntilRelaunch
+    case adBlockingExtensionBreakageReportEntered
+
     // MARK: - Scriptlet Lifecycle
 
     case scriptletFetchSuccess(extensionType: String, version: String, count: Int)
@@ -68,11 +76,22 @@ enum WebExtensionPixel: PixelKitEvent {
     case scriptletInstalled(extensionType: String, version: String)
     case scriptletInstallError(extensionType: String, error: Error)
 
+    // MARK: - State Monitor
+
+    case stateChecked
+    case embeddedNotLoaded
+    case darkReaderNotLoaded
+    case adBlockingExtensionNotLoaded
+    case adBlockingScriptletsNotFetched(extensionLoaded: Bool)
     // MARK: - Daily State
 
-    case dailyAdBlockingState(isEnabled: Bool)
+    case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
 
-    // MARK: - PixelKitEvent
+    // MARK: - Debug
+
+    case debugCPM(CPMWebExtensionPixelMetadata)
+
+    // MARK: - PixelKit.Event
 
     var name: String {
         switch self {
@@ -92,6 +111,8 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_loaded"
         case .loadError:
             return "m_mac_web_extension_load_error"
+        case .reloadError:
+            return "debug_web_extension_reload_failed"
         case .embeddedInstalled:
             return "m_mac_web_extension_embedded_installed"
         case .embeddedUpgraded:
@@ -118,6 +139,18 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_ad_blocking_enabled"
         case .adBlockingExtensionDisabled:
             return "m_mac_web_extension_ad_blocking_disabled"
+        case .adBlockingExtensionAddressBarActiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_active_clicked"
+        case .adBlockingExtensionAddressBarInactiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_inactive_clicked"
+        case .adBlockingExtensionPopoverAlwaysOn:
+            return "m_mac_web_extension_ad_blocking_popover_always_on"
+        case .adBlockingExtensionPopoverAlwaysOff:
+            return "m_mac_web_extension_ad_blocking_popover_always_off"
+        case .adBlockingExtensionPopoverDisableUntilRelaunch:
+            return "m_mac_web_extension_ad_blocking_popover_disable_until_relaunch"
+        case .adBlockingExtensionBreakageReportEntered:
+            return "m_mac_web_extension_ad_blocking_breakage_report_entered"
         case .scriptletFetchSuccess:
             return "m_mac_web_extension_scriptlet_fetch_success"
         case .scriptletFetchError:
@@ -130,6 +163,18 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_scriptlet_install_error"
         case .dailyAdBlockingState:
             return "m_mac_web_extension_daily_ad_blocking_state"
+        case .stateChecked:
+            return "web_extension_state_checked_macos"
+        case .embeddedNotLoaded:
+            return "web_extension_embedded_not_loaded_macos"
+        case .darkReaderNotLoaded:
+            return "web_extension_dark_reader_not_loaded_macos"
+        case .adBlockingExtensionNotLoaded:
+            return "web_extension_ad_blocking_not_loaded_macos"
+        case .adBlockingScriptletsNotFetched:
+            return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
+        case .debugCPM(let metadata):
+            return metadata.name
         }
     }
 
@@ -154,10 +199,28 @@ enum WebExtensionPixel: PixelKitEvent {
             return ["extension_type": extensionType]
         case .scriptletInstalled(let extensionType, let version):
             return ["extension_type": extensionType, "version": version]
-        case .dailyAdBlockingState(let isEnabled):
-            return ["is_enabled": isEnabled ? "true" : "false"]
+        case .dailyAdBlockingState(let isEnabled, let analyticsEnabled):
+            return [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            return ["extension_loaded": extensionLoaded ? "true" : "false"]
+        case .debugCPM(let metadata):
+            return metadata.parameters
+        case .reloadError(let parameters):
+            return parameters
         default:
             return nil
+        }
+    }
+
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .debugCPM, .reloadError:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 
@@ -174,6 +237,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedInstalled
         case .darkReader: return .darkReaderInstalled
         case .adBlockingExtension: return .adBlockingExtensionInstalled
+        case .searchToken: return nil
         }
     }
 
@@ -182,6 +246,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .darkReader: return .darkReaderUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .adBlockingExtension: return .adBlockingExtensionUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .searchToken: return nil
         }
     }
 
@@ -190,6 +255,16 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedInstallError(error: error)
         case .darkReader: return .darkReaderInstallError(error: error)
         case .adBlockingExtension: return .adBlockingExtensionInstallError(error: error)
+        case .searchToken: return nil
+        }
+    }
+
+    var notLoadedPixel: WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedNotLoaded
+        case .darkReader: return .darkReaderNotLoaded
+        case .adBlockingExtension: return .adBlockingExtensionNotLoaded
+        case .searchToken: return nil
         }
     }
 }
@@ -201,6 +276,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
+        let frequency: PixelKit.Frequency
         switch event {
         case .installed:
             pixel = .installed
@@ -218,6 +294,14 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .loaded
         case .loadError(let error):
             pixel = .loadError(error: error)
+        case .reloadError(let type, let trigger, let phase, let error):
+            let metadata = WebExtensionReloadErrorPixelMetadata(
+                type: type,
+                trigger: trigger,
+                phase: phase,
+                error: error
+            )
+            pixel = .reloadError(parameters: metadata.parameters)
         case .embeddedInstalled(let type):
             guard let macPixel = type.installedPixel else { return }
             pixel = macPixel
@@ -237,7 +321,37 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .scriptletInstalled(extensionType: type.rawValue, version: version)
         case .scriptletInstallError(let type, let error):
             pixel = .scriptletInstallError(extensionType: type.rawValue, error: error)
+        case .stateChecked:
+            pixel = .stateChecked
+        case .expectedExtensionNotLoaded(let type):
+            guard let macPixel = type.notLoadedPixel else { return }
+            pixel = macPixel
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
+        case .cpmInitializationFailed,
+             .cpmMessagingStuck,
+             .cpmMessagingRecoveredWithoutExtensionReload,
+             .cpmMessagingRecoveredAfterExtensionReload,
+             .cpmMessagingExtensionReloadFailed:
+            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+            pixel = .debugCPM(metadata)
         }
-        PixelKit.fire(pixel, frequency: .dailyAndStandard)
+        if case .reloadError = event {
+            frequency = .dailyAndCount
+        } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+            frequency = metadata.frequency.pixelKitFrequency
+        } else {
+            frequency = .dailyAndStandard
+        }
+        PixelKit.fire(pixel, frequency: frequency)
+    }
+}
+
+private extension CPMWebExtensionPixelFrequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .daily: return .daily
+        case .dailyAndCount: return .dailyAndCount
+        }
     }
 }

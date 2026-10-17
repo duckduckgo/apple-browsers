@@ -35,6 +35,14 @@ final class MockDDGSyncing: DDGSyncing {
         
     }
 
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
+        ""
+    }
+
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] {
+        []
+    }
+
     func mainTokenRescope(to scope: String) async throws -> String? {
         nil
     }
@@ -43,6 +51,9 @@ final class MockDDGSyncing: DDGSyncing {
     }
     
     func deleteAIChats(chatIds: [String]) async throws {
+    }
+
+    func patchAIChats(updates: [AIChatUpdate]) async throws {
     }
 
     func setAIChatHistoryEnabled(_ enabled: Bool) {
@@ -79,6 +90,10 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     var account: SyncAccount?
+    var recoveryCodeOverride: String?
+    var recoveryCode: String? {
+        recoveryCodeOverride ?? account?.legacyRecoveryCodeV1
+    }
 
     var scheduler: Scheduling
 
@@ -189,19 +204,27 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
     func cancel() async {
     }
 
+    var startExchangeModeError: Error?
     func startExchangeMode() async throws -> PairingInfo {
-        .init(base64Code: "", deviceName: "")
+        if let startExchangeModeError {
+            throw startExchangeModeError
+        }
+        return .init(base64Code: "", deviceName: "")
     }
 
+    var startConnectModeError: Error?
     func startConnectMode() async throws -> PairingInfo {
-        .init(base64Code: "", deviceName: "")
+        if let startConnectModeError {
+            throw startConnectModeError
+        }
+        return .init(base64Code: "", deviceName: "")
     }
 
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
         true
     }
 
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
+    func syncCodeEntered(code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         true
     }
 

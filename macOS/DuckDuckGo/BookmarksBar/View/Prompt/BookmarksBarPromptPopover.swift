@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import SwiftUI
 import SwiftUIExtensions
@@ -51,13 +52,20 @@ final class BookmarksBarPromptPopover: NSPopover {
         contentViewController?.preferredContentSize = NSSize(width: 356, height: 292)
     }
 
+    /// Closes the popover as a forced retraction rather than a user choice — suppresses the
+    /// implicit "user rejected" side effect that `popoverDidClose` would otherwise apply.
+    func retract() {
+        viewController.rootView.model.userDidDismiss = true
+        close()
+    }
+
 }
 
 extension BookmarksBarPromptPopover: NSPopoverDelegate {
 
     func popoverDidClose(_ notification: Notification) {
         if !viewController.rootView.model.userDidDismiss {
-            viewController.rootView.model.rejectBookmarksBar()
+            viewController.rootView.model.rejectBookmarksBar(wasExplicit: false)
         }
     }
 
@@ -92,18 +100,10 @@ struct BookmarksBarPromptView: View {
                 .font(.system(size: 15).weight(.semibold))
                 .padding(.bottom, 16)
 
-            if #available(macOS 12, *) {
-                // Use Markdown for macOS 12 and newer
-                // .init is required for markdown to be correctly parsed from NSLocalizedString
-                Text(.init(UserText.bookmarksBarPromptMessageMarkdown))
-                    .font(.system(size: 13))
-                    .padding(.bottom, 20)
-            } else {
-                // Fallback for earlier macOS versions
-                Text(UserText.bookmarksBarPromptMessageFallback)
-                    .font(.system(size: 13))
-                    .padding(.bottom, 20)
-            }
+            // .init is required for markdown to be correctly parsed from NSLocalizedString
+            Text(.init(UserText.bookmarksBarPromptMessageMarkdown))
+                .font(.system(size: 13))
+                .padding(.bottom, 20)
 
             HStack {
                 Button {
@@ -116,7 +116,7 @@ struct BookmarksBarPromptView: View {
                         .frame(height: 28)
                 }
                 .accessibilityIdentifier("BookmarksBarPopover.hide")
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(pillShape: true))
                 .padding(0)
 
                 Button {
@@ -130,16 +130,16 @@ struct BookmarksBarPromptView: View {
 
                 }
                 .accessibilityIdentifier("BookmarksBarPopover.show")
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, pillShape: true))
                 .padding(0)
             }
 
         }
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 16)
         .padding(.top, 20)
-        .padding(.bottom, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .background(Color(.interfaceBackground))
     }
 
@@ -151,21 +151,24 @@ final class BookmarksBarPromptViewModel: ObservableObject {
 
     let prefs: AppearancePreferences
     var userDidDismiss = false
+    var onDismiss: ((PromoResult) -> Void)?
 
     init(prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.prefs = prefs
     }
 
-    func rejectBookmarksBar() {
+    func rejectBookmarksBar(wasExplicit: Bool = true) {
         userDidDismiss = true
         prefs.showBookmarksBar = false
         delegate?.dismiss()
+        onDismiss?(wasExplicit ? .actioned() : .ignored())
     }
 
     func acceptBookmarksBar() {
         userDidDismiss = true
         prefs.showBookmarksBar = true
         delegate?.dismiss()
+        onDismiss?(.actioned())
     }
 
 }

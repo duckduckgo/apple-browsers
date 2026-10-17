@@ -17,11 +17,13 @@
 //  limitations under the License.
 //
 
-import Testing
-import Foundation
-import MaliciousSiteProtection
-import enum UIKit.UIBackgroundRefreshStatus
 import CombineSchedulers
+import ConcurrencyExtensions
+import enum UIKit.UIBackgroundRefreshStatus
+import Foundation
+import FoundationExtensions
+import MaliciousSiteProtection
+import Testing
 @testable import DuckDuckGo
 
 @Suite("Malicious Site Protection - Datasets Fetcher")

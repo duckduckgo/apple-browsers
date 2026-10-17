@@ -404,7 +404,7 @@ public struct ExtractedProfileDB: Codable {
     let id: Int64?
     let brokerId: Int64
     let profileQueryId: Int64
-    let profile: Data // Stored as Data JSON
+    var profile: Data // Stored as Data JSON
     var removedDate: Date?
 }
 

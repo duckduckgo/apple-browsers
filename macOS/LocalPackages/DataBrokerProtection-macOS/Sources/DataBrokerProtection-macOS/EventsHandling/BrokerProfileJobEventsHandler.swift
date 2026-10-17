@@ -19,6 +19,7 @@
 import Foundation
 import UserNotifications
 import Common
+import FoundationExtensions
 import AppKit
 import os.log
 import PixelKit

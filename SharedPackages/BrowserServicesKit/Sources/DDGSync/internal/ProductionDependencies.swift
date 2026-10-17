@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -26,6 +27,8 @@ struct ProductionDependencies: SyncDependencies {
     let fileStorageUrl: URL
     let endpoints: Endpoints
     let account: AccountManaging
+    let scopedAccess: ScopedAccessCredentialManaging
+    let accountInfoKeys: AccountInfoKeyManaging
     let api: RemoteAPIRequestCreating
     let payloadCompressor: SyncPayloadCompressing
     var keyValueStore: ThrowingKeyValueStoring
@@ -35,13 +38,17 @@ struct ProductionDependencies: SyncDependencies {
     let scheduler: SchedulingInternal
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let errorEvents: EventMapping<SyncError>
+    let unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>
     let shouldPreserveAccountWhenSyncDisabled: () -> Bool
+    let syncFeatureFlags: any SyncFeatureFlagProviding
 
     init(
         serverEnvironment: ServerEnvironment,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
         errorEvents: EventMapping<SyncError>,
+        unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
+        syncFeatureFlags: any SyncFeatureFlagProviding,
         shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }
     ) {
         self.init(fileStorageUrl: FileManager.default.applicationSupportDirectoryForComponent(named: "Sync"),
@@ -51,6 +58,8 @@ struct ProductionDependencies: SyncDependencies {
                   secureStore: SecureStorage(),
                   privacyConfigurationManager: privacyConfigurationManager,
                   errorEvents: errorEvents,
+                  unifiedDeviceListEvents: unifiedDeviceListEvents,
+                  syncFeatureFlags: syncFeatureFlags,
                   shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled)
     }
 
@@ -62,6 +71,8 @@ struct ProductionDependencies: SyncDependencies {
         secureStore: SecureStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         errorEvents: EventMapping<SyncError>,
+        unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
+        syncFeatureFlags: any SyncFeatureFlagProviding,
         shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool
     ) {
         self.fileStorageUrl = fileStorageUrl
@@ -71,13 +82,45 @@ struct ProductionDependencies: SyncDependencies {
         self.secureStore = secureStore
         self.privacyConfigurationManager = privacyConfigurationManager
         self.errorEvents = errorEvents
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? .noOp
         self.shouldPreserveAccountWhenSyncDisabled = shouldPreserveAccountWhenSyncDisabled
+        self.syncFeatureFlags = syncFeatureFlags
 
         api = RemoteAPIRequestCreator()
         payloadCompressor = SyncGzipPayloadCompressor()
 
         crypter = Crypter(secureStore: secureStore)
-        account = AccountManager(endpoints: endpoints, api: api, crypter: crypter)
+        let accountInfoKeyFactory = DefaultAccountInfoKeyFactory(crypter: crypter)
+        let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                         api: api,
+                                                         crypter: crypter,
+                                                         accountInfoKeyFactory: accountInfoKeyFactory,
+                                                         unifiedDeviceListEvents: self.unifiedDeviceListEvents,
+                                                         canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
+        let accountInfoKeyManager = AccountInfoKeyManager(secureStore: secureStore,
+                                                          scopedAccess: scopedAccess,
+                                                          crypter: crypter)
+        accountInfoKeys = accountInfoKeyManager
+        let deviceInfoCodec = DeviceInfoCodec()
+        let registeredDeviceMapper = RegisteredDeviceMapper(crypter: crypter,
+                                                            scopedAccess: scopedAccess,
+                                                            accountInfoKeys: accountInfoKeyManager,
+                                                            deviceInfoCodec: deviceInfoCodec,
+                                                            cachedScopedPassword: secureStore.scopedPassword,
+                                                            isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
+                                                            canReadUnifiedDeviceList: { syncFeatureFlags.canReadUnifiedDeviceList() })
+        account = AccountManager(endpoints: endpoints,
+                                 api: api,
+                                 crypter: crypter,
+                                 registeredDeviceMapper: registeredDeviceMapper,
+                                 accountInfoKeys: accountInfoKeyManager,
+                                 accountInfoKeyFactory: accountInfoKeyFactory,
+                                 deviceInfoCodec: deviceInfoCodec,
+                                 unifiedDeviceListEvents: self.unifiedDeviceListEvents,
+                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
+                                 canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() },
+                                 canReadUnifiedDeviceList: { syncFeatureFlags.canReadUnifiedDeviceList() })
+        self.scopedAccess = scopedAccess
         scheduler = SyncScheduler()
     }
 
@@ -112,6 +155,29 @@ struct ProductionDependencies: SyncDependencies {
 
     func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> any ExchangeRecoveryKeyTransmitting {
         return ExchangeRecoveryKeyTransmitter(endpoints: endpoints, api: api, crypter: crypter, storage: secureStore, exchangeMessage: exchangeMessage)
+    }
+
+    func createPairingV2MessageExchanger() -> PairingV2MessageExchanging {
+        PairingV2MessageExchanger(endpoints: endpoints, api: api)
+    }
+
+    func createThirdPartyAccountUpgradeCoordinator() -> ThirdPartyAccountUpgradeCoordinating {
+        ThirdPartyAccountUpgradeCoordinator(endpoints: endpoints,
+                                            api: api,
+                                            crypter: crypter,
+                                            scopedAccess: scopedAccess,
+                                            account: account,
+                                            unifiedDeviceListEvents: unifiedDeviceListEvents)
+    }
+
+    func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating {
+        DeviceInfoMigrationCoordinator(accountManager: account,
+                                       scopedAccess: scopedAccess,
+                                       crypter: crypter,
+                                       secureStore: secureStore,
+                                       keyValueStore: keyValueStore,
+                                       unifiedDeviceListEvents: unifiedDeviceListEvents,
+                                       canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
     }
 
     func createTokenRescope() -> TokenRescoping {

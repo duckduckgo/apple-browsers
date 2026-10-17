@@ -16,7 +16,8 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
+import PrivacyConfig
 import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -31,8 +32,16 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_fullScreenPlaceholderView")))
     }
 
+    func testWebViewRespondsTo_webProcessIdentifier() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_webProcessIdentifier")))
+    }
+
     func testWebViewRespondsTo_loadAlternateHTMLString() {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_loadAlternateHTMLString:baseURL:forUnreachableURL:")))
+    }
+
+    func testWebViewRespondsTo_evaluateJavaScriptWithoutUserGesture() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_evaluateJavaScriptWithoutUserGesture:completionHandler:")))
     }
 
     func testWebViewRespondsTo_immediateActionAnimationControllerForHitTestResult() {
@@ -63,33 +72,32 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     }
 
     func testWKPDFHUDViewClassAvailable() {
-        XCTAssertNotNil(WKPDFHUDViewWrapper.WKPDFHUDViewClass)
-        XCTAssertTrue(WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.performActionForControlSelector) ==  true)
-        XCTAssertTrue(WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) ==  true)
+        XCTAssertFalse(WKPDFHUDViewWrapper.hudViewClasses.isEmpty)
+        for hudViewClass in WKPDFHUDViewWrapper.hudViewClasses {
+            XCTAssertTrue(hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.performActionForControlSelector), "\(hudViewClass)")
+            // WKPDFHUDViewWrapper takes the legacy path when `_setVisible:` is available and needs `show` otherwise
+            XCTAssertTrue(hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) || hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.showSelector), "\(hudViewClass)")
+        }
+
+        if #available(macOS 27, *) {
+            XCTAssertTrue(WKPDFHUDViewWrapper.hudViewClasses.contains { $0.instancesRespond(to: WKPDFHUDViewWrapper.showSelector) }, "\(WKPDFHUDViewWrapper.hudViewClasses)")
+        } else {
+            let hudViewClass: AnyClass? = NSClassFromString("WKPDFHUDView")
+            XCTAssertNotNil(hudViewClass)
+            XCTAssertTrue(hudViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) == true)
+        }
     }
 
     func testWebViewRespondsTo_isPlayingAudio() {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_isPlayingAudio")))
     }
 
-    func testWebViewConfigurationRespondsTo_processName() {
-        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.processName))
-        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.setProcessName))
-    }
-
-    @MainActor
-    func testApplyStandardConfigurationDoesModifyProcessNameWhenPrivateProcessNameIsEnabled() {
-        let configuration = WKWebViewConfiguration()
-
-        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: true)
-        XCTAssertEqual(configuration.systemProcessName, "DuckDuckGo Web Content")
-    }
-
-    @MainActor
-    func testApplyStandardConfigurationDoesNotModifyProcessNameWhenPrivateProcessNameIsDisabled() {
-        let configuration = WKWebViewConfiguration()
-
-        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: false)
-        XCTAssertEqual(configuration.systemProcessName, "")
+    /// `WebKitPasskeyRequestCanceller` recognises WebKit's passkey requests by this delegate class, reports cancelled
+    /// requests to it through the error callback, and swizzles both completion callbacks to report how requests end.
+    func test_WKASDelegateClassAvailable() {
+        let webKitDelegateClass: AnyClass? = NSClassFromString("_WKASDelegate")
+        XCTAssertNotNil(webKitDelegateClass)
+        XCTAssertTrue(webKitDelegateClass?.instancesRespond(to: NSSelectorFromString("authorizationController:didCompleteWithAuthorization:")) == true)
+        XCTAssertTrue(webKitDelegateClass?.instancesRespond(to: NSSelectorFromString("authorizationController:didCompleteWithError:")) == true)
     }
 }

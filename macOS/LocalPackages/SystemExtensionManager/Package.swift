@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SystemExtensionManager",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -26,6 +26,12 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .testTarget(
+            name: "SystemExtensionManagerTests",
+            dependencies: [
+                "SystemExtensionManager"
             ]
         )
     ]

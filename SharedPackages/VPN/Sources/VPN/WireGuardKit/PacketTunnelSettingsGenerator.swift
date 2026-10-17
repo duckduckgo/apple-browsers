@@ -5,6 +5,7 @@ import Foundation
 import Network
 import NetworkExtension
 import Common
+import FoundationExtensions
 import os.log
 
 protocol PacketTunnelSettingsGenerating: AnyObject {

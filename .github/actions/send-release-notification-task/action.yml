@@ -58,7 +58,7 @@ runs:
         echo "task-desc=${DESC}" >> "$GITHUB_OUTPUT"
 
     - name: Create Asana task
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ inputs.asana-access-token }}

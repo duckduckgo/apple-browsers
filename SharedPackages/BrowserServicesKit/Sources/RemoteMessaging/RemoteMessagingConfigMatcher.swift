@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 public struct RemoteMessagingConfigMatcher {
@@ -145,7 +146,8 @@ private extension RemoteMessagingConfigMatcher {
 
                 if userPercentile > messagePercentile {
                     Logger.remoteMessaging.info("\(type.percentileFailMessage) for entity with ID \(entityID, privacy: .public)")
-                    return .fail
+                    result = .fail
+                    continue
                 }
             }
 
@@ -194,7 +196,8 @@ extension RemoteMessageModel {
             content: content?.withNewItems(items),
             matchingRules: self.matchingRules,
             exclusionRules: self.exclusionRules,
-            isMetricsEnabled: self.isMetricsEnabled
+            isMetricsEnabled: self.isMetricsEnabled,
+            displayConditions: self.displayConditions
         )
     }
 

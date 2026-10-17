@@ -26,7 +26,7 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
-    let addButton = MouseOverButton(image: .add, target: nil, action: #selector(TabBarViewController.addButtonAction))
+    let addButton = MouseOverButton(image: NSImage(resource: .add), target: nil, action: #selector(TabBarViewController.addButtonAction))
 
     var target: MouseOverButtonDelegate? {
         get {

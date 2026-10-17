@@ -16,11 +16,30 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Cocoa
 import Combine
 import PrivacyConfig
 
 final class AppIconChanger {
+
+    private enum AppIconName: String {
+        case beta = "AppIcon-Beta"
+        case black = "AppIcon-Black"
+        case blossom = "AppIcon-Blossom"
+        case debugBeta = "AppIcon-Debug-Beta"
+        case lilypad = "AppIcon-Lilypad"
+        case pink = "AppIcon-Pink"
+        case pollen = "AppIcon-Pollen"
+        case pondwater = "AppIcon-Pondwater"
+        case reviewBeta = "AppIcon-Review-Beta"
+        case white = "AppIcon-White"
+
+        var image: NSImage? {
+            NSImage(named: rawValue)
+        }
+    }
 
     private var cancellables = Set<AnyCancellable>()
     private var isInternalUser: Bool = false
@@ -54,13 +73,13 @@ final class AppIconChanger {
         if isInternalChannel {
             let buildType = StandardApplicationBuildType()
             if buildType.isDebugBuild {
-                icon = .internalChannelIconDebug
+                icon = AppIconName.debugBeta.image
             } else if buildType.isReviewBuild {
-                icon = .internalChannelIconReview
+                icon = AppIconName.reviewBeta.image
             } else if buildType.isAlphaBuild {
                 icon = nil // Don't override icon for alpha builds
             } else {
-                icon = .internalChannelIcon
+                icon = AppIconName.beta.image
             }
         } else {
             icon = nil
@@ -97,28 +116,30 @@ final class AppIconChanger {
     }
 
     private func icon(for themeName: ThemeName) -> NSImage? {
-        let iconName: String
+        guard let iconName = iconName(for: themeName) else { return nil }
 
+        return iconName.image
+    }
+
+    private func iconName(for themeName: ThemeName) -> AppIconName? {
         switch themeName {
         case .default:
-            iconName = "Browser-Theme-Default"
+            nil
         case .coolGray:
-            iconName = "Browser-Theme-CoolGray"
+            .black
         case .desert:
-            iconName = "Browser-Theme-Desert"
+            .white
         case .green:
-            iconName = "Browser-Theme-Green"
+            .lilypad
         case .orange:
-            iconName = "Browser-Theme-Orange"
+            .pollen
         case .rose:
-            iconName = "Browser-Theme-Rose"
+            .pink
         case .slateBlue:
-            iconName = "Browser-Theme-SlateBlue"
+            .pondwater
         case .violet:
-            iconName = "Browser-Theme-Violet"
+            .blossom
         }
-
-        return NSImage(named: iconName)
     }
 
 }

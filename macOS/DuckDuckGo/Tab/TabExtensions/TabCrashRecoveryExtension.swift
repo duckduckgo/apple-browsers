@@ -16,10 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
+import AIChat
+import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 import PixelKit
 import PrivacyConfig
@@ -81,8 +86,11 @@ final class TabCrashRecoveryExtension {
 
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
-    private let firePixel: (PixelKitEvent, [String: String]) -> Void
+    private let firePixel: (PixelKit.Event, [String: String]) -> Void
+    private let reportBrokenSite: (NSWindow?) -> Void
     private let tabCrashAggregator: TabCrashAggregator
+    /// Marks the next completed navigation so CPM health reporting can attribute it to this crash.
+    private let onTabCrash: () -> Void
 
     private var cancellables = Set<AnyCancellable>()
     private var lastPixelFireTime: Date?
@@ -93,14 +101,18 @@ final class TabCrashRecoveryExtension {
         webViewPublisher: some Publisher<WKWebView, Never>,
         webViewErrorPublisher: some Publisher<WKError?, Never>,
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
-        firePixel: @escaping (PixelKitEvent, [String: String]) -> Void = { event, parameters in
+        onTabCrash: @escaping () -> Void = {},
+        firePixel: @escaping (PixelKit.Event, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
         },
+        reportBrokenSite: @escaping (NSWindow?) -> Void,
         tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
+        self.onTabCrash = onTabCrash
         self.firePixel = firePixel
+        self.reportBrokenSite = reportBrokenSite
         self.tabCrashAggregator = tabCrashAggregator
 
         contentPublisher.sink { [weak self] content in
@@ -122,6 +134,22 @@ final class TabCrashRecoveryExtension {
 
 extension TabCrashRecoveryExtension: NavigationResponder {
 
+    @MainActor
+    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        guard navigationAction.url == .errorPageReportBrokenSite else {
+            return .next
+        }
+        guard navigationAction.isUserInitiated,
+              navigationAction.isForMainFrame,
+              navigationAction.sourceFrame.isMainFrame,
+              webViewError?.isWebContentProcessTerminated == true else {
+            return .cancel
+        }
+
+        reportBrokenSite(navigationAction.sourceFrame.webView?.window)
+        return .cancel
+    }
+
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {
         guard let webView, (webViewError?.code.rawValue ?? WKError.Code.unknown.rawValue) != WKError.Code.webContentProcessTerminated.rawValue else {
             return
@@ -135,7 +163,12 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
         ])
 
-        attemptTabCrashRecovery(for: error, in: webView)
+        let isDuckAITab = webView.url?.isDuckAIURL == true || content?.urlForWebView?.isDuckAIURL == true
+        if isDuckAITab {
+            PixelKit.fire(AIChatPixel.aiChatTabDidTerminate(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+
+        attemptTabCrashRecovery(for: error, in: webView, isDuckAITab: isDuckAITab)
 
         let now = Date()
         let lastFireTime = lastPixelFireTime ?? Date.distantPast
@@ -156,10 +189,11 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         }
     }
 
-    private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView) {
+    private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView, isDuckAITab: Bool) {
         let crashTimestamp = crashLoopDetector.currentDate()
         let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
         tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
+        onTabCrash()
         lastCrashedAt = crashTimestamp
 
         if isCrashLoop {
@@ -167,6 +201,10 @@ extension TabCrashRecoveryExtension: NavigationResponder {
 
             Task.detached(priority: .utility) {
                 self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
+            }
+
+            if isDuckAITab {
+                PixelKit.fire(AIChatPixel.aiChatTabTerminationLoop(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
         }
 

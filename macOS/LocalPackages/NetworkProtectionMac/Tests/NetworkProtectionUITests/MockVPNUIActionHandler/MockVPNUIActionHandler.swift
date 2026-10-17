@@ -40,7 +40,11 @@ public final class MockVPNUIActionHandler: VPNUIActionHandling {
         // placeholder
     }
 
-    public func showSubscription() async {
+    public func showVPNSettings() async {
+        // placeholder
+    }
+
+    public func showSubscription(origin: String?) async {
         // placeholder
     }
 

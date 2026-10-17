@@ -17,9 +17,8 @@
 //
 
 import XCTest
-import PixelKitTestingUtilities
 import Combine
-@testable import PixelKit
+@_spi(Testing) @testable import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 class SortBookmarksViewModelTests: XCTestCase {

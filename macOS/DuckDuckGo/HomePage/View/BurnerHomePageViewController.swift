@@ -17,30 +17,62 @@
 //
 
 import AppKit
+import PrivacyConfig
 import SwiftUI
+import Subscription
 
 @MainActor
 final class BurnerHomePageViewController: NSViewController {
 
     let appearancePreferences: AppearancePreferences
     let themeManager: ThemeManager
+    let subscriptionPromoViewModel: SubscriptionPromoViewModel
+
+    var openSubscriptionPage: (() -> Void)?
 
     required init?(coder: NSCoder) {
         fatalError("BurnerHomePageViewController: Bad initializer")
     }
 
-    init(appearancePreferences: AppearancePreferences? = nil, themeManager: ThemeManager? = nil) {
+    init(appearancePreferences: AppearancePreferences? = nil,
+         themeManager: ThemeManager? = nil,
+         subscriptionManager: any SubscriptionManager,
+         promoDelegate: FireWindowSubscriptionPromoDelegate?,
+         dateProvider: @escaping () -> Date = Date.init) {
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
+        self.subscriptionPromoViewModel = SubscriptionPromoViewModel(
+            subscriptionManager: subscriptionManager,
+            dateProvider: dateProvider,
+            promoDelegate: promoDelegate
+        )
 
         super.init(nibName: nil, bundle: nil)
+
+        self.subscriptionPromoViewModel.onButtonAction = { [weak self] in
+            self?.openSubscriptionPage?()
+        }
     }
 
     override func loadView() {
-        let rootView = BurnerHomePageView()
+        let rootView = BurnerHomePageView(promoViewModel: subscriptionPromoViewModel)
             .environmentObject(appearancePreferences)
             .environmentObject(themeManager)
 
         self.view = NSHostingView(rootView: rootView)
     }
+
+    func updatePromoState(for tab: Tab) {
+        let tabPromo = tab.subscriptionPromo
+
+        subscriptionPromoViewModel.onPromoEvaluated = { [weak tabPromo] shouldShow in
+            tabPromo?.markEvaluated(shouldShowPromo: shouldShow)
+        }
+        subscriptionPromoViewModel.onPromoDismissed = { [weak tabPromo] in
+            tabPromo?.markForceDismissed()
+        }
+
+        subscriptionPromoViewModel.updateForTab(tabPromo?.promoState ?? .notEvaluated)
+    }
+
 }

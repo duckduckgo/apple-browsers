@@ -1,0 +1,38 @@
+// iPad Duck.ai navigation bar shortcut (chrome chip) interaction metrics.
+{
+    "m_aichat_navigation_bar_shortcut_open": {
+        "description": "Fires when the user opens a new Duck.ai tab from the iPad navigation bar shortcut",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_navigation_bar_contextual_sheet_opened": {
+        "description": "Fires when the user opens the Duck.ai contextual sheet from the iPad navigation bar shortcut icon",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_navigation_bar_shortcut_menu_opened": {
+        "description": "Fires when the user opens the options menu on the iPad Duck.ai navigation bar shortcut (long-press / context menu)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_navigation_bar_shortcut_menu_hide_tapped": {
+        "description": "Fires when the user taps 'Hide Duck.ai Shortcut' in the iPad navigation bar shortcut options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_navigation_bar_shortcut_menu_open_settings_tapped": {
+        "description": "Fires when the user taps 'Open AI Settings' in the iPad navigation bar shortcut options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

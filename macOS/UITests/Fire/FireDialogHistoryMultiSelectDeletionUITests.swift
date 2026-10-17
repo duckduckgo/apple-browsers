@@ -67,8 +67,13 @@ final class FireDialogHistoryMultiSelectDeletionUITests: UITestCase, FireDialogU
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for multi-select deletion")
 
+        // Verify no history toggle appears
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for multi-select deletion")
+
+        // Verify no close tabs toggle appears
+        XCTAssertFalse(fireDialogTabsToggle.exists, "Close Tabs toggle should not appear for multi-select deletion")
+
         // Configure toggles: only history
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -122,8 +127,13 @@ final class FireDialogHistoryMultiSelectDeletionUITests: UITestCase, FireDialogU
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for multi-select deletion")
 
+        // Verify no history toggle appears
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for multi-select deletion")
+
+        // Verify no close tabs toggle appears
+        XCTAssertFalse(fireDialogTabsToggle.exists, "Close Tabs toggle should not appear for multi-select deletion")
+
         // Configure toggles: history + cookies
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -140,7 +150,7 @@ final class FireDialogHistoryMultiSelectDeletionUITests: UITestCase, FireDialogU
         verifyInitialCountersSet()
     }
 
-    func test_historyView_deleteMultipleRecords_viaDeleteButton_allToggles() throws {
+    func test_historyView_deleteMultipleRecords_viaDeleteButton_historyAndCookies() throws {
         let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
 
         app.openURL(storageURL)
@@ -183,11 +193,13 @@ final class FireDialogHistoryMultiSelectDeletionUITests: UITestCase, FireDialogU
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for multi-select deletion")
 
-        // Verify tabs toggle exists for multi-select (since it can close windows with history)
-        XCTAssertFalse(fireDialogTabsToggle.exists, "Tabs toggle should not exist for multi-select deletion")
+        // Verify no history toggle appears
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for multi-select deletion")
 
-        // Configure toggles: all active
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
+        // Verify no close tabs toggle appears
+        XCTAssertFalse(fireDialogTabsToggle.exists, "Close Tabs toggle should not appear for multi-select deletion")
+
+        // Configure toggles: delete cookies
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -278,8 +290,13 @@ final class FireDialogHistoryMultiSelectDeletionUITests: UITestCase, FireDialogU
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for multi-select deletion")
 
-        // Configure toggles: only history
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
+        // Verify no history toggle appears
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for multi-select deletion")
+
+        // Verify no close tabs toggle appears
+        XCTAssertFalse(fireDialogTabsToggle.exists, "Close Tabs toggle should not appear for multi-select deletion")
+
+        // Configure toggles: don't delete cookies
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
 
         // Burn

@@ -18,6 +18,7 @@
 
 import AppUpdaterShared
 import Cocoa
+import DesignResourcesKitIcons
 
 final class AppStoreUpdateMenuItemFactory {
 
@@ -25,7 +26,7 @@ final class AppStoreUpdateMenuItemFactory {
         let item = NSMenuItem(title: UserText.updateAvailableMenuItemAppStore)
         item.target = Application.appDelegate.updateController
         item.action = #selector(UpdateController.openUpdatesPage)
-        item.image = NSImage.updateMenuItemIcon
+        item.withImage(DesignSystemImages.Glyphs.Size12.updateRecolorable, visibleOnMacOS27: true)
         return item
     }
 }

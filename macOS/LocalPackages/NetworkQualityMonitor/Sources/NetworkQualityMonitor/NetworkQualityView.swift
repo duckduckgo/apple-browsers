@@ -24,43 +24,19 @@ public struct NetworkQualityView: View {
     public init() {}
 
     public var body: some View {
-        if #available(macOS 12.0, iOS 15.0, *) {
-            VStack(spacing: 0) {
-                if let results = viewModel.results {
-                    resultsView(results)
-                } else if viewModel.isRunning {
-                    progressView
-                } else {
-                    startView
-                }
+        VStack(spacing: 0) {
+            if let results = viewModel.results {
+                resultsView(results)
+            } else if viewModel.isRunning {
+                progressView
+            } else {
+                startView
             }
-            .frame(width: 680, height: 650)
-        } else {
-            // Fallback for macOS 11.4
-            VStack(spacing: 20) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 48))
-                    .foregroundColor(.orange)
-
-                Text("Network Quality Test")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-
-                Text("This feature requires macOS 12.0 or later")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
-
-                Text("Please upgrade your system to use network quality testing")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-            }
-            .frame(width: 680, height: 650)
         }
+        .frame(width: 680, height: 650)
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     private var startView: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -90,7 +66,7 @@ public struct NetworkQualityView: View {
         .padding(.horizontal, 100)
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     private var progressView: some View {
         VStack(spacing: 24) {
             Text("Testing Network Quality")
@@ -112,7 +88,7 @@ public struct NetworkQualityView: View {
         .padding(40)
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     private func resultsView(_ results: NetworkTestResults) -> some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -300,7 +276,7 @@ public struct NetworkQualityView: View {
 
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 struct MetricCard: View {
     let title: String
     let value: String

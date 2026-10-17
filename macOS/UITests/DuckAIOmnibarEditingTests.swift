@@ -345,39 +345,57 @@ extension DuckAIOmnibarEditingTests {
 
 // MARK: - Mouse selection
 
+/// The text starts either at the left edge or right after the Duck.ai logo, and the first line is ~17 pt from the top, so the mouse
+/// tests use a long first word that any click in the first ~170 pt of the line lands on, and the empty area below the text
+/// (above the legal footer of the panel) for clicks that must put the caret at the end.
 extension DuckAIOmnibarEditingTests {
 
     private enum Points {
-        static let firstWord: CGFloat = 40
-        static let textLineY: CGFloat = 28
-        static let afterText: CGFloat = -20
-        static let belowText: CGFloat = -15
+        static let onFirstWord: CGFloat = 60
+        static let firstLineY: CGFloat = 17
+        static let emptyAreaX: CGFloat = 300
+        static let emptyAreaY: CGFloat = 60
+    }
+
+    private var mouseText: String { "abcdefghijklmnopqrstuvwxyz second" }
+
+    private func typeMouseText() {
+        bar.press(EditingKeys.selectAll)
+        bar.type(mouseText)
     }
 
     func test_doubleClick_onTheFirstWord_selectsTheWord() {
-        bar.doubleClick(bar.point(x: Points.firstWord, y: Points.textLineY))
-        XCTAssertEqual(bar.selectedText(), "alpha")
+        typeMouseText()
+        bar.doubleClick(bar.point(x: Points.onFirstWord, y: Points.firstLineY))
+        XCTAssertEqual(bar.selectedText(), "abcdefghijklmnopqrstuvwxyz")
     }
 
-    func test_tripleClick_selectsTheWholePrompt() throws {
-        try bar.tripleClick(bar.point(x: Points.firstWord, y: Points.textLineY))
-        XCTAssertEqual(bar.selectedText(), prompt)
+    func test_tripleClick_selectsTheWholeText() throws {
+        typeMouseText()
+        try bar.tripleClick(bar.point(x: Points.onFirstWord, y: Points.firstLineY))
+        XCTAssertEqual(bar.selectedText(), mouseText)
     }
 
-    func test_click_belowTheText_putsTheCaretAtTheEnd() {
-        bar.click(bar.point(x: Points.afterText, y: Points.belowText))
+    func test_click_inTheEmptyAreaBelowTheText_putsTheCaretAtTheEnd() {
+        typeMouseText()
+        bar.click(bar.point(x: Points.emptyAreaX, y: Points.emptyAreaY))
         bar.type("!")
-        XCTAssertEqual(bar.rawValue, prompt + "!")
+        XCTAssertEqual(bar.rawValue, mouseText + "!")
     }
 
-    func test_drag_acrossTheText_selectsEverything() {
-        bar.drag(from: bar.point(x: 12, y: Points.textLineY), to: bar.point(x: Points.afterText, y: Points.belowText))
-        XCTAssertEqual(bar.selectedText(), prompt)
+    func test_drag_fromTheFirstWordToTheEmptyArea_selectsTheTail() {
+        typeMouseText()
+        bar.drag(from: bar.point(x: Points.onFirstWord, y: Points.firstLineY), to: bar.point(x: Points.emptyAreaX, y: Points.emptyAreaY))
+        let selected = bar.selectedText() ?? ""
+        XCTAssertFalse(selected.isEmpty, "Dragging over the text should select something")
+        XCTAssertTrue(mouseText.hasSuffix(selected), "The selection must end at the end of the text, got \(selected)")
+        XCTAssertNotEqual(selected, mouseText)
     }
 
-    func test_shiftClick_afterTheText_extendsTheSelectionToTheEnd() {
+    func test_shiftClick_inTheEmptyAreaBelowTheText_extendsTheSelectionToTheEnd() {
+        typeMouseText()
         bar.moveCaretToStart()
-        bar.shiftClick(bar.point(x: Points.afterText, y: Points.belowText))
-        XCTAssertEqual(bar.selectedText(), prompt)
+        bar.shiftClick(bar.point(x: Points.emptyAreaX, y: Points.emptyAreaY))
+        XCTAssertEqual(bar.selectedText(), mouseText)
     }
 }

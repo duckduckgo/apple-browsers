@@ -41,7 +41,6 @@ final class TabBarViewItemTests: XCTestCase {
         tabBarViewItem.delegate = delegate
     }
 
-
     // MARK: - Hover highlight of inactive tab
 
     @MainActor

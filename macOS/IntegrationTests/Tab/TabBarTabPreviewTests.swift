@@ -100,7 +100,6 @@ final class TabBarTabPreviewTests: XCTestCase {
         try await waitUntil("preview is hidden") { !self.isTabPreviewShown }
     }
 
-
     /// The tab bar keeps the tab width unchanged after closing a tab while the cursor is inside it (so the next close button stays under the cursor)
     /// and releases it when the mouse exits. A tab covered by another window gets `mouseExited` while the cursor is still over it:
     /// the layout must not stay frozen.

@@ -990,6 +990,7 @@ extension DefaultOmniBarViewController {
     fileprivate func refreshPastedTextLimit(prompt: String) {
         let violation = selectedTextEntryMode == .aiChat ? attachmentController?.pastedTextLimitViolation(prompt: prompt) : nil
         omniBarView.isAIChatSubmitBlockedByInputLimit = violation != nil
+        omniBarView.attachmentsStripView.showsPastedTextError = violation != nil
         guard violation != pastedTextLimitViolation else { return }
         pastedTextLimitViolation = violation
         refreshFooterMessage(animated: true)

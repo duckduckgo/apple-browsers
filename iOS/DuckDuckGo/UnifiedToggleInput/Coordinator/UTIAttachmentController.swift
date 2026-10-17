@@ -69,6 +69,8 @@ final class UTIAttachmentController {
         var isFireTab: () -> Bool = { false }
         var isPastedTextEnabled: () -> Bool = { false }
         var currentText: () -> String = { "" }
+        /// Editing a sent prompt: the FE matches returned pastes by content, so chips can be read but not changed.
+        var isPastedTextReadOnly: () -> Bool = { false }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -739,6 +741,7 @@ extension UTIAttachmentController {
             pastedText,
             otherContentLength: others.totalLength,
             maxInputCharacters: others.effectiveLimit,
+            isReadOnly: environment.isPastedTextReadOnly(),
             from: presenter,
             onSave: { [weak self] content in
                 self?.updatePastedText(id: id, content: content)

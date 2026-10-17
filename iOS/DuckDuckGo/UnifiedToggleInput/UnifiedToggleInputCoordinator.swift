@@ -579,7 +579,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested },
                 isFireTab: { [weak self] in self?.viewController.handler.isFireTab ?? false },
                 isPastedTextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) ?? false },
-                currentText: { [weak self] in self?.currentText ?? "" }
+                currentText: { [weak self] in self?.currentText ?? "" },
+                isPastedTextReadOnly: { [weak self] in self?.isEditing ?? false }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -2385,6 +2386,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let violation = attachmentController.pastedTextLimitViolation
         footerController?.setPastedTextLimitViolation(violation)
         viewController.isSubmitBlockedByInputLimit = violation != nil
+        viewController.showsPastedTextError = violation != nil
     }
 
     /// The sheet took first responder; give it back so the user can keep typing where they were.

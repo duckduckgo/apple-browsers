@@ -23,7 +23,7 @@ import Foundation
 public struct AIChatPastedText: Identifiable, Equatable, Sendable {
 
     /// A paste at least this long becomes a chip. Applies at paste time only, so editing below it keeps the chip.
-    public static let conversionThreshold = 5_000
+    public static let conversionThreshold = 4_000
 
     /// The FE's per-model `inputCharLimit`; `/models` doesn't carry it yet, so it is hardcoded here.
     public static let maxInputCharacters = 16_000
@@ -91,7 +91,7 @@ public struct AIChatPastedTextMessage: Equatable, Sendable {
                 pastedTextLengths: [Int],
                 hasImage: Bool = false,
                 maxInputCharsWithImages: Int? = nil) {
-        self.promptLength = prompt.trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
+        self.promptLength = prompt.utf16.count
         self.pastedTextLengths = pastedTextLengths
         self.hasImage = hasImage
         self.maxInputCharsWithImages = maxInputCharsWithImages

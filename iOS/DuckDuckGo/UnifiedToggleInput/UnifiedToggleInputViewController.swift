@@ -205,6 +205,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByInputLimit = newValue }
     }
 
+    var showsPastedTextError: Bool {
+        get { inputBarView.showsPastedTextError }
+        set { inputBarView.showsPastedTextError = newValue }
+    }
+
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
     /// controls that would offer one.
     var isInputBlockedByUsageLimit: Bool = false {

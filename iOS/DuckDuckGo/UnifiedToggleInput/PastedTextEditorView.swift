@@ -27,15 +27,17 @@ struct PastedTextEditorView: View {
 
     @State private var text: String
     private let limit: Int
+    private let isReadOnly: Bool
     private let onSave: (String) -> Void
     private let onCancel: () -> Void
 
-    init(pastedText: AIChatPastedText, otherContentLength: Int, maxInputCharacters: Int,
+    init(pastedText: AIChatPastedText, otherContentLength: Int, maxInputCharacters: Int, isReadOnly: Bool = false,
          onSave: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
         _text = State(initialValue: pastedText.content)
         limit = AIChatPastedText.editLimit(ownLength: pastedText.length,
                                            otherContentLength: otherContentLength,
                                            maxInputCharacters: maxInputCharacters)
+        self.isReadOnly = isReadOnly
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -65,6 +67,7 @@ struct PastedTextEditorView: View {
                 // safe area, so neither is hidden by the keyboard while editing.
                 TextEditor(text: $text)
                     .daxBodyRegular()
+                    .disabled(isReadOnly)
                     .accessibilityIdentifier("PastedTextEditor.TextView")
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
 
@@ -77,13 +80,15 @@ struct PastedTextEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(UserText.actionCancel, action: onCancel)
+                    Button(isReadOnly ? UserText.navigationTitleDone : UserText.actionCancel, action: onCancel)
                         .accessibilityIdentifier("PastedTextEditor.Cancel")
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(UserText.actionSave) { onSave(text) }
-                        .disabled(!canSave)
-                        .accessibilityIdentifier("PastedTextEditor.Save")
+                if !isReadOnly {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(UserText.actionSave) { onSave(text) }
+                            .disabled(!canSave)
+                            .accessibilityIdentifier("PastedTextEditor.Save")
+                    }
                 }
             }
         }
@@ -103,6 +108,7 @@ enum PastedTextEditorPresenter {
     static func present(_ pastedText: AIChatPastedText,
                         otherContentLength: Int,
                         maxInputCharacters: Int,
+                        isReadOnly: Bool = false,
                         from presenter: UIViewController,
                         onSave: @escaping (String) -> Void,
                         onDismiss: @escaping () -> Void) {
@@ -111,6 +117,7 @@ enum PastedTextEditorPresenter {
             pastedText: pastedText,
             otherContentLength: otherContentLength,
             maxInputCharacters: maxInputCharacters,
+            isReadOnly: isReadOnly,
             onSave: { content in
                 onSave(content)
                 weakController?.dismiss(animated: true)
@@ -122,7 +129,7 @@ enum PastedTextEditorPresenter {
         let controller = PastedTextEditorHostingController(rootView: editor, onDismiss: onDismiss)
         controller.modalPresentationStyle = .formSheet
         if let sheet = controller.sheetPresentationController {
-            // Large only: at 5,000+ characters a medium detent plus the keyboard leaves almost no text visible.
+            // Large only: at 4,000+ characters a medium detent plus the keyboard leaves almost no text visible.
             sheet.detents = [.large()]
             sheet.prefersGrabberVisible = true
         }

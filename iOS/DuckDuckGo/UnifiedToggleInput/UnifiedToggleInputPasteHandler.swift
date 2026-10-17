@@ -50,7 +50,7 @@ enum AttachmentPasteRouting {
         return true
     }
 
-    /// Called with text UIKit is about to insert. Typing never inserts 5,000 units in one edit, so only a paste,
+    /// Called with text UIKit is about to insert. Typing never inserts 4,000 units in one edit, so only a paste,
     /// drop or keyboard paste suggestion reaches the threshold; UIKit has already read the pasteboard, so a read we
     /// aren't authorised for can't swallow the paste.
     static func routeInsertedText(_ text: String, with handler: AttachmentPasteHandling?) -> Bool {

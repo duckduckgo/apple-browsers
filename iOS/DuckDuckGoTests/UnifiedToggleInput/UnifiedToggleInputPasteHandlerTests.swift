@@ -325,7 +325,7 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         let textView = try XCTUnwrap(firstTextView(in: sut))
         let selection = NSRange(location: 10, length: 10)
 
-        XCTAssertFalse(sut.textView(textView, shouldChangeTextIn: selection, replacementText: String(repeating: "a", count: 5_000)))
+        XCTAssertFalse(sut.textView(textView, shouldChangeTextIn: selection, replacementText: String(repeating: "a", count: 4_000)))
 
         XCTAssertEqual(textView.text, "keep this,")
         textView.selectedRange = NSRange(location: 3, length: 0)

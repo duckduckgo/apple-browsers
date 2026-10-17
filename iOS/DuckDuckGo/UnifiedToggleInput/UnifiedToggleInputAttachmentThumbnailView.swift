@@ -51,6 +51,13 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     var onTap: ((UUID) -> Void)? {
         didSet { tapRecognizer.isEnabled = onTap != nil }
     }
+    /// A pasted-text chip over the prompt's text limit takes the invalid-file chip's error styling.
+    var showsError = false {
+        didSet {
+            guard showsError != oldValue else { return }
+            applyAppearance()
+        }
+    }
     private lazy var tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
     private let attachment: UnifiedToggleInputAttachment
     private let usesCompactLayout: Bool
@@ -190,14 +197,18 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
 private extension UnifiedToggleInputAttachmentThumbnailView {
 
+    var isErrorStyled: Bool {
+        attachment.isInvalid || (showsError && attachment.pastedText != nil)
+    }
+
     var borderColor: UIColor {
-        attachment.isInvalid
+        isErrorStyled
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.60 : 0.34)
             : UIColor(designSystemColor: .lines)
     }
 
     var chipBackgroundColor: UIColor {
-        attachment.isInvalid
+        isErrorStyled
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.24 : 0.18)
             : UIColor(designSystemColor: .controlsFillPrimary)
     }

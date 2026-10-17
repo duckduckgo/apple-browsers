@@ -244,6 +244,11 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByInputLimit = isToolbarSubmitBlockedByInputLimit }
     }
 
+    var showsPastedTextError: Bool {
+        get { attachmentsStrip.showsPastedTextError }
+        set { attachmentsStrip.showsPastedTextError = newValue }
+    }
+
     var isInputBlockedByUsageLimit: Bool = false {
         didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
     }

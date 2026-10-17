@@ -39,6 +39,16 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     var onPageContextTap: (() -> Void)?
     var onSelectionContextRemove: ((String) -> Void)?
 
+    /// Pasted-text chips show the error state while the prompt is over its text limit.
+    var showsPastedTextError = false {
+        didSet {
+            guard showsPastedTextError != oldValue else { return }
+            for case let thumbnail as UnifiedToggleInputAttachmentThumbnailView in stackView.arrangedSubviews {
+                thumbnail.showsError = showsPastedTextError
+            }
+        }
+    }
+
     private(set) var hasVisiblePageContext = false
     private(set) var hasVisibleSelectionContext = false
 
@@ -303,6 +313,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             self?.removeAttachment(id: id, isUserInitiated: true)
         }
         if attachment.pastedText != nil {
+            thumbnail.showsError = showsPastedTextError
             thumbnail.onTap = { [weak self] id in
                 self?.onAttachmentTapped?(id)
             }

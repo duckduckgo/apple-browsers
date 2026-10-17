@@ -78,10 +78,18 @@ struct AIChatPastedTextTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func conversionThresholdCountsUTF16Units() {
-        #expect(!AIChatPastedText.shouldConvert(String(repeating: "a", count: 4_999)))
-        #expect(AIChatPastedText.shouldConvert(String(repeating: "a", count: 5_000)))
-        // 2,500 emoji are 2,500 Characters but 5,000 UTF-16 units, which is what the FE measures.
-        #expect(AIChatPastedText.shouldConvert(String(repeating: "😀", count: 2_500)))
+        #expect(!AIChatPastedText.shouldConvert(String(repeating: "a", count: 3_999)))
+        #expect(AIChatPastedText.shouldConvert(String(repeating: "a", count: 4_000)))
+        // 2,000 emoji are 2,000 Characters but 4,000 UTF-16 units, which is what the FE measures.
+        #expect(AIChatPastedText.shouldConvert(String(repeating: "😀", count: 2_000)))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func promptLengthIsUntrimmedLikeTheFE() {
+        let message = AIChatPastedTextMessage(prompt: "  hi \n", pastedTextLengths: [10])
+        #expect(message.promptLength == 6)
+        #expect(message.totalLength == 16)
     }
 
     @available(iOS 16, macOS 13, *)

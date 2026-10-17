@@ -45,7 +45,8 @@ struct UTIFooterMessageMapper {
 
     static let privacyTermsURL = URL(string: "https://duckduckgo.com/duckai/privacy-terms")!
 
-    /// Required and not dismissible: it explains why Send is disabled, and clears when the draft fits.
+    /// A persistent error (`MessageType.error`), not dismissible: it shows alone in place of the Required messages,
+    /// explains why Send is disabled, and clears when the draft fits.
     func message(for violation: AIChatPastedTextLimitViolation) -> UTIFooterMessage {
         UTIFooterMessage(icon: .alert,
                          title: UserText.aiChatPastedTextTooLong,

@@ -18,20 +18,38 @@
 
 import Foundation
 
-/// App-owned launch facts shared with CPM diagnostics; does not read or persist application state.
+/// App-owned launch facts and an optional app-state reader; no application state is persisted here.
 public struct CPMAppSessionDiagnostics {
     public enum VersionChange: String, Sendable {
         case updated
         case downgraded
     }
 
+    public enum ApplicationState: String, Sendable {
+        case active
+        case inactive
+        case background
+    }
+
     public let appVersionChange: VersionChange?
     public let launchDate: Date
+    /// Read only when an attributed background-load error is recorded, never as a generic episode dimension.
+    public let applicationState: (@MainActor () -> ApplicationState)?
 
-    public init(appVersionChange: VersionChange?, launchDate: Date) {
+    public init(appVersionChange: VersionChange?, launchDate: Date,
+                applicationState: (@MainActor () -> ApplicationState)? = nil) {
         self.appVersionChange = appVersionChange
         self.launchDate = launchDate
+        self.applicationState = applicationState
     }
+}
+
+/// Load evidence from WebKit; readiness does not prove delivery of a particular init request or response.
+public enum CPMBackgroundReadiness: Equatable, Sendable {
+    case noBackground
+    case pending
+    case loaded(secondsAfterViewCreation: TimeInterval)
+    case failed
 }
 
 /// Best-effort state attached to Web Extension messaging failures. Unavailable facts are omitted.
@@ -78,8 +96,14 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     // Observed through `CPMBackgroundWebViewDelegateProxy` on the background web view.
     /// `WKWebView._webProcessIsResponsive` for the background view: WebKit's hang-detection verdict at snapshot time.
     public var backgroundWebProcessResponsive: Bool?
-    /// Whether the background-process termination associated with this health episode had treatment enabled.
-    public var backgroundGraveyardTreatmentEnabled: Bool?
+    /// Error 6 observed for the latest background-load attempt; false/unknown omits both error parameters.
+    public var hasBackgroundLoadError: Bool?
+    public var backgroundLoadErrorAppState: CPMAppSessionDiagnostics.ApplicationState?
+    public var secondsFromBackgroundViewToLoadError: TimeInterval?
+    /// Age of the current view, omitted after it disappears.
+    public var secondsSinceBackgroundViewCreation: TimeInterval?
+    /// Omitted when observation is disabled or was not started for this view.
+    public var backgroundReadiness: CPMBackgroundReadiness?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
     /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
     public var backgroundEvents: [BackgroundEvent] = []
@@ -98,11 +122,9 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         tabControllerMatchesContext: Bool? = nil,
         tabHasExtensionUserScripts: Bool? = nil,
         backgroundWebProcessResponsive: Bool? = nil,
-        backgroundGraveyardTreatmentEnabled: Bool? = nil,
         backgroundEvents: [BackgroundEvent] = []
     ) {
         self.backgroundWebProcessResponsive = backgroundWebProcessResponsive
-        self.backgroundGraveyardTreatmentEnabled = backgroundGraveyardTreatmentEnabled
         self.backgroundEvents = backgroundEvents
         self.extensionContextLoaded = extensionContextLoaded
         self.secondsSinceCriticalMemoryPressure = secondsSinceCriticalMemoryPressure
@@ -136,8 +158,11 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         public static let tabControllerMatchesContext = "tab_controller_match"
         public static let tabHasExtensionUserScripts = "tab_has_ext_scripts"
         public static let backgroundWebProcessResponsive = "bg_process_responsive"
-        public static let backgroundGraveyardTreatmentEnabled = "background_graveyard_enabled"
         public static let backgroundEvents = "bg_events"
+        public static let backgroundLoadErrorAppState = "bg_load_error_app_state"
+        public static let backgroundLoadErrorAfter = "bg_load_error_after"
+        public static let backgroundViewAge = "bg_view_age"
+        public static let backgroundReadyAfter = "bg_ready_after"
     }
 
     /// Longest `bg_events` value; older events are dropped first.
@@ -162,14 +187,62 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         parameters[ParameterName.tabControllerMatchesContext] = tabControllerMatchesContext.map(String.init)
         parameters[ParameterName.tabHasExtensionUserScripts] = tabHasExtensionUserScripts.map(String.init)
         parameters[ParameterName.backgroundWebProcessResponsive] = backgroundWebProcessResponsive.map(String.init)
-        parameters[ParameterName.backgroundGraveyardTreatmentEnabled] = backgroundGraveyardTreatmentEnabled.map(String.init)
         if !backgroundEvents.isEmpty {
             parameters[ParameterName.backgroundEvents] = Self.backgroundEventsValue(backgroundEvents)
+        }
+        parameters.merge(backgroundLoadParameters) { _, value in value }
+        return parameters
+    }
+
+    /// The four allowlisted load fields shared by local diagnostics and the terminal episode report.
+    /// Error facts are conditional on an attributed error 6; absence never uploads a synthetic `none` error.
+    var backgroundLoadParameters: [String: String] {
+        var parameters: [String: String] = [:]
+        parameters[ParameterName.backgroundReadyAfter] = backgroundReadiness.map(Self.readinessValue)
+        parameters[ParameterName.backgroundViewAge] = secondsSinceBackgroundViewCreation.map(Self.backgroundViewAgeBucket)
+        if hasBackgroundLoadError == true {
+            parameters[ParameterName.backgroundLoadErrorAppState] = backgroundLoadErrorAppState?.rawValue
+            parameters[ParameterName.backgroundLoadErrorAfter] = secondsFromBackgroundViewToLoadError.map(Self.loadErrorDelayBucket)
         }
         return parameters
     }
 
     // MARK: - Bucketing
+
+    static func loadErrorDelayBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<5: return "under_5s"
+        case ..<25: return "5s_to_25s"
+        case ..<35: return "25s_to_35s"
+        default: return "over_35s"
+        }
+    }
+
+    static func backgroundViewAgeBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<4: return "under_4s"
+        case ..<8: return "4s_to_8s"
+        case ..<30: return "8s_to_30s"
+        case ..<120: return "30s_to_2m"
+        default: return "over_2m"
+        }
+    }
+
+    static func readinessValue(_ readiness: CPMBackgroundReadiness) -> String {
+        switch readiness {
+        case .noBackground: return "none"
+        case .pending: return "pending"
+        case .failed: return "failed"
+        case .loaded(let seconds):
+            switch seconds {
+            case ..<1: return "under_1s"
+            case ..<4: return "1s_to_4s"
+            case ..<10: return "4s_to_10s"
+            case ..<30: return "10s_to_30s"
+            default: return "over_30s"
+            }
+        }
+    }
 
     static func memoryPressureBucket(_ seconds: TimeInterval?) -> String {
         guard let seconds else { return "none" }

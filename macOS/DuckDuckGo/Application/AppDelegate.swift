@@ -119,7 +119,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .downgraded: versionChange = .downgraded
         case .noChange: versionChange = nil
         }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
+            NSApp.isActive ? .active : .inactive
+        }
     }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()

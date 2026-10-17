@@ -61,13 +61,13 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
             Name.extensionContextErrors, Name.backgroundViewCreateCount, Name.backgroundViewAlive,
             Name.backgroundViewLeakedCount, Name.backgroundWebProcessAlive, Name.tabKnownToWebKit,
             Name.nativeMessageHandlerRegistered, Name.tabControllerMatchesContext, Name.tabHasExtensionUserScripts,
-            Name.backgroundWebProcessResponsive, Name.backgroundGraveyardTreatmentEnabled, Name.backgroundEvents
+            Name.backgroundWebProcessResponsive, Name.backgroundEvents
         ], [
             "context_loaded", "critical_memory_age", "network_restarted",
             "context_errors", "bg_view_creations", "bg_view_alive",
             "bg_view_leaked_count", "bg_process_alive", "tab_in_context",
             "handler_registered", "tab_controller_match", "tab_has_ext_scripts",
-            "bg_process_responsive", "background_graveyard_enabled", "bg_events"
+            "bg_process_responsive", "bg_events"
         ])
     }
 
@@ -132,6 +132,35 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         XCTAssertEqual(CPMMessagingDiagnostics.countBucket(6), "over_5")
     }
 
+    func testBackgroundReadinessBucketsCoverTheGraceAndUnloadBoundaries() {
+        let times: [TimeInterval] = [0, 0.999, 1, 3.999, 4, 9.999, 10, 29.999, 30]
+        XCTAssertEqual(times.map { CPMMessagingDiagnostics.readinessValue(.loaded(secondsAfterViewCreation: $0)) },
+                       ["under_1s", "under_1s", "1s_to_4s", "1s_to_4s", "4s_to_10s", "4s_to_10s", "10s_to_30s", "10s_to_30s", "over_30s"])
+        XCTAssertEqual([CPMBackgroundReadiness.noBackground, .pending, .failed].map(CPMMessagingDiagnostics.readinessValue),
+                       ["none", "pending", "failed"])
+    }
+
+    func testBackgroundAgeAndLoadErrorBucketsAtEveryBoundary() {
+        XCTAssertEqual([0, 3.999, 4, 7.999, 8, 29.999, 30, 119.999, 120].map(CPMMessagingDiagnostics.backgroundViewAgeBucket),
+                       ["under_4s", "under_4s", "4s_to_8s", "4s_to_8s", "8s_to_30s", "8s_to_30s", "30s_to_2m", "30s_to_2m", "over_2m"])
+        XCTAssertEqual([0, 4.999, 5, 24.999, 25, 34.999, 35].map(CPMMessagingDiagnostics.loadErrorDelayBucket),
+                       ["under_5s", "under_5s", "5s_to_25s", "5s_to_25s", "25s_to_35s", "25s_to_35s", "over_35s"])
+    }
+
+    func testLoadErrorFieldsRequireAnAttributedErrorAndOmitUnknownFacts() {
+        var diagnostics = CPMMessagingDiagnostics()
+        diagnostics.backgroundLoadErrorAppState = .background
+        diagnostics.secondsFromBackgroundViewToLoadError = 30
+        for errorPresent in [nil, false, true] as [Bool?] {
+            diagnostics.hasBackgroundLoadError = errorPresent
+            let expected = errorPresent == true ? [Name.backgroundLoadErrorAppState: "background", Name.backgroundLoadErrorAfter: "25s_to_35s"] : [:]
+            XCTAssertEqual(diagnostics.backgroundLoadParameters, expected)
+        }
+        diagnostics.backgroundLoadErrorAppState = nil
+        diagnostics.secondsFromBackgroundViewToLoadError = nil
+        XCTAssertTrue(diagnostics.backgroundLoadParameters.isEmpty)
+    }
+
     func testFullDiagnosticsRenderEveryParameter() {
         var diagnostics = CPMMessagingDiagnostics()
         diagnostics.extensionContextLoaded = true
@@ -147,7 +176,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         diagnostics.tabControllerMatchesContext = false
         diagnostics.tabHasExtensionUserScripts = false
         diagnostics.backgroundWebProcessResponsive = false
-        diagnostics.backgroundGraveyardTreatmentEnabled = true
         diagnostics.backgroundEvents = [
             .init(token: "load", secondsBeforeSnapshot: 600.4),
             .init(token: "view", secondsBeforeSnapshot: 599),
@@ -157,7 +185,6 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
         XCTAssertEqual(diagnostics.pixelParameters, [
             Name.backgroundWebProcessResponsive: "false",
-            Name.backgroundGraveyardTreatmentEnabled: "true",
             Name.backgroundEvents: "load@15m,view@15m,died_crash@1m,error_background_failed_to_load:nsurlerrordomain:-1100@1m",
             Name.extensionContextLoaded: "true",
             Name.memoryPressureCritical: "1m",

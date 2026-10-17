@@ -173,7 +173,7 @@ public final class AMPCanonicalExtractor: NSObject {
             return keywords.contains { keyword in
                 var keyword = keyword
                 return keyword.withUTF8 { needle in
-                    guard let needleBase = needle.baseAddress else { return false }
+                    guard let needleBase = needle.baseAddress, !needle.isEmpty else { return false }
                     return memmem(haystack, end, needleBase, needle.count) != nil
                 }
             }

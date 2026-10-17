@@ -41,6 +41,11 @@ final class AMPKeywordSearchTests: XCTestCase {
         XCTAssertFalse(contains(""))
     }
 
+    func testWhenKeywordIsEmptyThenItNeverMatches() {
+        XCTAssertFalse(AMPCanonicalExtractor.urlString("https://example.com/article", containsAnyOf: [""]))
+        XCTAssertTrue(AMPCanonicalExtractor.urlString("https://example.com/amp/article", containsAnyOf: ["", "/amp"]))
+    }
+
     func testWhenKeywordIsOnlyInFragmentThenItIsIgnored() {
         XCTAssertFalse(contains("https://example.com/article#/amp/"))
         XCTAssertFalse(contains("https://example.com/article#?amp=1"))

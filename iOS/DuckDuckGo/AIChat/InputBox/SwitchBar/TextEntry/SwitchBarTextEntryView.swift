@@ -136,6 +136,12 @@ class SwitchBarTextEntryView: UIView {
 
     private let textView = SwitchBarTextView()
     private let textField = SwitchBarTextField()
+    var isInputFrozen = false {
+        didSet {
+            textView.isInputFrozen = isInputFrozen
+            if isInputFrozen { mentionHandler?.dismiss() }
+        }
+    }
     private let placeholderLabel = UILabel()
     private var buttonsView = SwitchBarButtonsView()
     private var currentButtonState: SwitchBarButtonState {
@@ -393,13 +399,13 @@ class SwitchBarTextEntryView: UIView {
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         if action == #selector(pasteURLAndGo) {
-            return UIPasteboard.general.hasStrings
+            return !isInputFrozen && UIPasteboard.general.hasStrings
         }
         return super.canPerformAction(action, withSender: sender)
     }
 
     @objc private func pasteURLAndGo() {
-        guard let pastedText = UIPasteboard.general.string,
+        guard !isInputFrozen, let pastedText = UIPasteboard.general.string,
               !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         handler.updateCurrentText(pastedText)
         handler.submitText(pastedText, trigger: .pasteAndGo)
@@ -1013,7 +1019,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func insertNewlineAtCursor() {
-        guard !usesTextField else { return }
+        guard !isInputFrozen, !usesTextField else { return }
         let selectedRange = textView.selectedTextRange
             ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
         if let selectedRange {
@@ -1113,6 +1119,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     @objc private func textFieldEditingChanged() {
+        guard !isInputFrozen else {
+            textField.text = handler.currentText
+            return
+        }
         hasBeenInteractedWith = true
         updatePlaceholderVisibility()
         handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
@@ -1160,6 +1170,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
+        guard !isInputFrozen else {
+            textView.text = handler.currentText
+            return
+        }
         hasBeenInteractedWith = true
         
         updatePlaceholderVisibility()
@@ -1180,9 +1194,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        // Refusing the edit rather than clearing `isEditable`: that would end editing and take the
-        // keyboard, and the card explaining the block down with it.
-        guard !handler.isInputBlockedByUsageLimit else { return false }
+        // Refuse edits without ending editing, so the keyboard stays visible.
+        guard !handler.isInputBlockedByUsageLimit, !isInputFrozen else { return false }
         if text == "\n" {
             if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true
@@ -1205,6 +1218,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
 extension SwitchBarTextEntryView: UITextFieldDelegate {
 
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        !isInputFrozen
+    }
+
     @available(iOS 16.0, *)
     func textField(_ textField: UITextField, editMenuForCharactersIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
         pasteAndGoEditMenu(appendingTo: suggestedActions)
@@ -1222,7 +1239,7 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard usesTextField else { return false }
+        guard usesTextField, !isInputFrozen else { return false }
         fireKeyboardGoPressedPixel()
         let currentText = textField.text ?? ""
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

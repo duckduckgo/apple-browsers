@@ -67,7 +67,7 @@ class DuckAIOmnibarEditingTests: UITestCase {
         XCTAssertTrue(container.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Duck.ai panel should appear")
         // The container hides the text view from the accessibility tree: the keys go to the focused text view through the app
         // and its contents are read by copying.
-        let driver = EditingDriver(element: app, readsContentByCopying: true)
+        let driver = EditingDriver(element: app, readsContentByCopying: true, mouseTarget: container)
         // Keys sent right after the switch can be lost until the text view takes focus: retry replacing the text
         for _ in 0..<3 {
             driver.press(EditingKeys.selectAll)
@@ -274,5 +274,110 @@ class DuckAIOmnibarEditingTests: UITestCase {
         bar.press(EditingKeys.left)
         bar.type("!")
         XCTAssertEqual(bar.rawValue, "!" + prompt + "!")
+    }
+}
+
+// MARK: - Remaining positions
+
+extension DuckAIOmnibarEditingTests {
+
+    func test_optShiftLeft_atTheStart_selectsNothing() {
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.optShiftLeft)
+        XCTAssertNil(bar.selectedText())
+    }
+
+    func test_optShiftRight_atTheEnd_selectsNothing() {
+        bar.moveCaretToEnd()
+        bar.press(EditingKeys.optShiftRight)
+        XCTAssertNil(bar.selectedText())
+    }
+
+    func test_shiftLeft_andShiftRight_fromMiddle_selectOneCharacter() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.shiftRight)
+        XCTAssertEqual(bar.selectedText(), "g")
+        bar.press(EditingKeys.left)
+        bar.press(EditingKeys.shiftLeft)
+        XCTAssertEqual(bar.selectedText(), " ")
+    }
+
+    func test_cmdShiftLeft_fromEnd_andCmdShiftRight_fromStart_selectEverything() {
+        bar.moveCaretToEnd()
+        bar.press(EditingKeys.cmdShiftLeft)
+        XCTAssertEqual(bar.selectedText(), prompt)
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.cmdShiftRight)
+        XCTAssertEqual(bar.selectedText(), prompt)
+    }
+
+    func test_optDelete_fromMiddle_deletesThePreviousWord() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optDelete)
+        XCTAssertEqual(bar.rawValue, "alpha gamma delta")
+    }
+
+    func test_optForwardDelete_fromMiddle_deletesTheNextWord() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optForwardDelete)
+        XCTAssertEqual(bar.rawValue, "alpha beta  delta")
+    }
+
+    func test_backspace_fromMiddle_deletesOneCharacterBack() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press([EditingKeys.fnDelete, EditingKeys.ctrlH])
+        XCTAssertEqual(bar.rawValue, "alpha bet" + "gamma delta")
+    }
+
+    func test_forwardDelete_fromMiddle_deletesOneCharacterForward() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press([EditingKeys.forwardDelete, EditingKeys.ctrlD])
+        XCTAssertEqual(bar.rawValue, "alpha beta mma delta")
+    }
+
+    func test_cmdDelete_andCmdForwardDelete_withSelection_deleteOnlyTheSelection() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optShiftRight)
+        bar.press(EditingKeys.cmdDelete)
+        XCTAssertEqual(bar.rawValue, "alpha beta  delta")
+    }
+}
+
+// MARK: - Mouse selection
+
+extension DuckAIOmnibarEditingTests {
+
+    private enum Points {
+        static let firstWord: CGFloat = 40
+        static let textLineY: CGFloat = 28
+        static let afterText: CGFloat = -20
+        static let belowText: CGFloat = -15
+    }
+
+    func test_doubleClick_onTheFirstWord_selectsTheWord() {
+        bar.doubleClick(bar.point(x: Points.firstWord, y: Points.textLineY))
+        XCTAssertEqual(bar.selectedText(), "alpha")
+    }
+
+    func test_tripleClick_selectsTheWholePrompt() {
+        bar.tripleClick(bar.point(x: Points.firstWord, y: Points.textLineY))
+        XCTAssertEqual(bar.selectedText(), prompt)
+    }
+
+    func test_click_belowTheText_putsTheCaretAtTheEnd() {
+        bar.click(bar.point(x: Points.afterText, y: Points.belowText))
+        bar.type("!")
+        XCTAssertEqual(bar.rawValue, prompt + "!")
+    }
+
+    func test_drag_acrossTheText_selectsEverything() {
+        bar.drag(from: bar.point(x: 12, y: Points.textLineY), to: bar.point(x: Points.afterText, y: Points.belowText))
+        XCTAssertEqual(bar.selectedText(), prompt)
+    }
+
+    func test_shiftClick_afterTheText_extendsTheSelectionToTheEnd() {
+        bar.moveCaretToStart()
+        bar.shiftClick(bar.point(x: Points.afterText, y: Points.belowText))
+        XCTAssertEqual(bar.selectedText(), prompt)
     }
 }

@@ -39,6 +39,7 @@ class AddressBarUrlEditingTests: UITestCase {
         app.enforceSingleWindow()
         bar = EditingDriver(element: app.addressBar)
         bar.element.typeURL(try XCTUnwrap(URL(string: url)), pressingEnter: false)
+        XCTAssertTrue(bar.rawValue.contains(EditingDriver.suffixSeparator), "The ‘Visit …’ suffix should be displayed after the URL")
     }
 
     private func repeated(_ key: EditingKey, _ times: Int) -> [EditingKey] {
@@ -330,5 +331,107 @@ class AddressBarUrlEditingTests: UITestCase {
         bar.press(EditingKeys.left)
         bar.type("!")
         XCTAssertEqual(bar.value, "!" + url + "!")
+    }
+}
+
+// MARK: - Remaining positions and the suffix
+
+extension AddressBarUrlEditingTests {
+
+    private var urlBeforeResults: String { "https://duckduckgo.com/duckduckgo-help-pages/" }
+
+    func test_optShiftLeft_atTheStart_selectsNothing() {
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.optShiftLeft)
+        XCTAssertNil(bar.selectedText())
+    }
+
+    func test_optShiftRight_atTheEnd_selectsNothing() {
+        bar.moveCaretToEnd()
+        bar.press(EditingKeys.optShiftRight)
+        XCTAssertNil(bar.selectedText(), "The suffix must not be selected")
+    }
+
+    func test_shiftLeft_atTheStart_selectsNothing() {
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.shiftLeft)
+        XCTAssertNil(bar.selectedText())
+    }
+
+    func test_shiftLeft_andShiftRight_fromMiddle_selectOneCharacter() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.shiftRight)
+        XCTAssertEqual(bar.selectedText(), "r")
+        bar.press(EditingKeys.left)
+        bar.press(EditingKeys.shiftLeft)
+        XCTAssertEqual(bar.selectedText(), "/")
+    }
+
+    func test_cmdShiftLeft_fromEnd_selectsEverything() {
+        bar.moveCaretToEnd()
+        bar.press(EditingKeys.cmdShiftLeft)
+        XCTAssertEqual(bar.selectedText(), url)
+    }
+
+    func test_cmdShiftRight_fromStart_selectsEverythingWithoutTheSuffix() {
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.cmdShiftRight)
+        XCTAssertEqual(bar.selectedText(), url)
+    }
+
+    func test_optDelete_fromMiddle_deletesThePreviousWord() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optDelete)
+        XCTAssertEqual(bar.value, "https://duckduckgo.com/duckduckgo-help-results/translation/")
+    }
+
+    func test_optForwardDelete_fromMiddle_deletesTheNextWord() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optForwardDelete)
+        XCTAssertEqual(bar.value, urlBeforeResults + "/translation/")
+    }
+
+    func test_backspace_fromMiddle_deletesOneCharacterBack() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press([EditingKeys.fnDelete, EditingKeys.ctrlH])
+        XCTAssertEqual(bar.value, "https://duckduckgo.com/duckduckgo-help-pageresults/translation/")
+    }
+
+    func test_forwardDelete_fromMiddle_deletesOneCharacterForward() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press([EditingKeys.forwardDelete, EditingKeys.ctrlD])
+        XCTAssertEqual(bar.value, urlBeforeResults + "sults/translation/")
+    }
+
+    func test_cmdDelete_withSelection_deletesOnlyTheSelection() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optShiftRight)
+        bar.press(EditingKeys.cmdDelete)
+        XCTAssertEqual(bar.value, urlBeforeResults + "/translation/")
+    }
+
+    func test_cmdForwardDelete_withSelection_deletesOnlyTheSelection() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optShiftRight)
+        bar.press(EditingKeys.cmdForwardDelete)
+        XCTAssertEqual(bar.value, urlBeforeResults + "/translation/")
+    }
+
+    /// Every way of selecting towards the end of the text must stop before the “ – Visit …” suffix.
+    func test_suffix_isNeverSelectedByTheKeyboard() {
+        bar.moveCaretToEnd()
+        let keys = [EditingKeys.shiftRight, EditingKeys.optShiftRight, EditingKeys.cmdShiftRight]
+        for key in keys {
+            bar.press(key)
+            XCTAssertNil(bar.selectedText(), "Selecting towards the suffix must select nothing")
+        }
+        bar.press(EditingKeys.selectAll)
+        let selected = bar.selectedText()
+        XCTAssertTrue(bar.selectionExcludesSuffix(selected), "Select All must not include the suffix, got \(selected ?? "nil")")
+        XCTAssertEqual(selected, url)
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.cmdShiftRight)
+        XCTAssertEqual(bar.selectedText(), url)
+        XCTAssertTrue(bar.rawValue.contains(EditingDriver.suffixSeparator), "The suffix must still be there")
     }
 }

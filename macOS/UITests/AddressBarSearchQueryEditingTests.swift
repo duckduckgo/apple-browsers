@@ -37,6 +37,7 @@ class AddressBarSearchQueryEditingTests: UITestCase {
         app.enforceSingleWindow()
         bar = EditingDriver(element: app.addressBar)
         bar.type(query)
+        XCTAssertTrue(bar.rawValue.contains(EditingDriver.suffixSeparator), "The ‘Search with DuckDuckGo’ suffix should be displayed")
     }
 
     func test_suffix_isShownAfterTheQuery() throws {
@@ -217,5 +218,71 @@ class AddressBarSearchQueryEditingTests: UITestCase {
 
     private func repeated(_ key: EditingKey, _ times: Int) -> [EditingKey] {
         Array(repeating: key, count: times)
+    }
+}
+
+// MARK: - Remaining positions and the suffix
+
+extension AddressBarSearchQueryEditingTests {
+
+    func test_optShiftLeft_atTheStart_selectsNothing() {
+        bar.moveCaretToStart()
+        bar.press(EditingKeys.optShiftLeft)
+        XCTAssertNil(bar.selectedText())
+    }
+
+    func test_shiftLeft_andShiftRight_fromMiddle_selectOneCharacter() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.shiftRight)
+        XCTAssertEqual(bar.selectedText(), "b")
+        bar.press(EditingKeys.left)
+        bar.press(EditingKeys.shiftLeft)
+        XCTAssertEqual(bar.selectedText(), " ")
+    }
+
+    func test_cmdShiftLeft_andCmdShiftRight_fromMiddle_selectToTheBounds() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.cmdShiftLeft)
+        XCTAssertEqual(bar.selectedText(), "alpha ")
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.cmdShiftRight)
+        XCTAssertEqual(bar.selectedText(), "beta gamma", "The suffix must not be selected")
+    }
+
+    func test_optDelete_fromMiddle_deletesThePreviousWord() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optDelete)
+        XCTAssertEqual(bar.value, "beta gamma")
+    }
+
+    func test_backspace_fromMiddle_deletesOneCharacterBack() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.fnDelete)
+        XCTAssertEqual(bar.value, "alphabeta gamma")
+    }
+
+    func test_cmdDelete_andCmdForwardDelete_withSelection_deleteOnlyTheSelection() {
+        bar.moveCaretTwoWordsFromEnd()
+        bar.press(EditingKeys.optShiftRight)
+        bar.press(EditingKeys.cmdDelete)
+        XCTAssertEqual(bar.value, "alpha  gamma")
+    }
+
+    /// Every way of selecting towards the end of the text must stop before the “ – Search with DuckDuckGo” suffix.
+    func test_suffix_isNeverSelectedByTheKeyboard() {
+        bar.moveCaretToEnd()
+        let keys = [EditingKeys.shiftRight, EditingKeys.optShiftRight, EditingKeys.cmdShiftRight]
+        for key in keys {
+            bar.press(key)
+            XCTAssertNil(bar.selectedText(), "Selecting towards the suffix must select nothing")
+        }
+        bar.press(EditingKeys.selectAll)
+        let selected = bar.selectedText()
+        XCTAssertTrue(bar.selectionExcludesSuffix(selected), "Select All must not include the suffix, got \(selected ?? "nil")")
+        XCTAssertEqual(selected, query)
+        bar.press(EditingKeys.ctrlE)
+        bar.type("!")
+        XCTAssertEqual(bar.value, query + "!")
+        XCTAssertTrue(bar.rawValue.contains(EditingDriver.suffixSeparator), "The suffix must still be there")
     }
 }

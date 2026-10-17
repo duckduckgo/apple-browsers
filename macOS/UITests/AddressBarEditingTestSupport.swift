@@ -69,6 +69,9 @@ struct EditingDriver {
     /// which replaces the current selection.
     var readsContentByCopying = false
 
+    /// The element the mouse coordinates are relative to, when it differs from `element`.
+    var mouseTarget: XCUIElement?
+
     /// The element contents including any address bar suffix.
     var rawValue: String {
         guard readsContentByCopying else { return element.value as? String ?? "" }
@@ -148,5 +151,59 @@ struct EditingDriver {
             return item
         }
         pasteboard.writeObjects(items)
+    }
+}
+
+// MARK: - Suffix and mouse helpers
+
+extension EditingDriver {
+
+    /// `true` when the selected text does not contain the address bar suffix (it always starts with the “ – ” separator).
+    func selectionExcludesSuffix(_ text: String?) -> Bool {
+        !(text ?? "").contains(Self.suffixSeparator)
+    }
+
+    /// A point `x`/`y` points from the top left of the mouse target. Negative values count from the right/bottom edge;
+    /// `y` defaults to the vertical center.
+    func point(x: CGFloat, y: CGFloat? = nil) -> XCUICoordinate {
+        let target = mouseTarget ?? element
+        let size = target.frame.size
+        let resolvedX = x >= 0 ? x : size.width + x
+        let resolvedY = y.map { $0 >= 0 ? $0 : size.height + $0 } ?? size.height / 2
+        let origin = target.coordinate(withNormalizedOffset: .zero)
+        return origin.withOffset(CGVector(dx: resolvedX, dy: resolvedY))
+    }
+
+    func click(_ point: XCUICoordinate) {
+        point.click()
+    }
+
+    func doubleClick(_ point: XCUICoordinate) {
+        point.doubleClick()
+    }
+
+    /// XCUI has no triple click: post three left clicks with an increasing click count at the point.
+    func tripleClick(_ point: XCUICoordinate) {
+        point.hover()
+        let location = point.screenPoint
+        let source = CGEventSource(stateID: .hidSystemState)
+        for clickState in 1...3 {
+            for type in [CGEventType.leftMouseDown, .leftMouseUp] {
+                let event = CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: location, mouseButton: .left)
+                event?.setIntegerValueField(.mouseEventClickState, value: Int64(clickState))
+                event?.post(tap: .cghidEventTap)
+            }
+        }
+        Thread.sleep(forTimeInterval: 0.3)
+    }
+
+    func shiftClick(_ point: XCUICoordinate) {
+        XCUIElement.perform(withKeyModifiers: .shift) {
+            point.click()
+        }
+    }
+
+    func drag(from start: XCUICoordinate, to end: XCUICoordinate) {
+        start.click(forDuration: 0.3, thenDragTo: end)
     }
 }

@@ -3206,6 +3206,7 @@ class MainViewController: UIViewController {
         }
 
         tab.tabModel.openedAfterIdle = false
+        tab.userDidRequestNavigation()
         request()
         lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()

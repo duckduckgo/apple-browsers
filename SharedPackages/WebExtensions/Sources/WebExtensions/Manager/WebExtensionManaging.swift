@@ -38,9 +38,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var webExtensionIdentifiers: [String] { get }
 
-    /// The web extension controller.
+    /// Lets web views created with `configuration` run the loaded web
+    /// extensions.
     @available(macOS 15.4, iOS 18.4, *)
-    var controller: WKWebExtensionController { get }
+    func attachExtensions(to configuration: WKWebViewConfiguration)
 
     /// The events listener for web extension events.
     @available(macOS 15.4, iOS 18.4, *)

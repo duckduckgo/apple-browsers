@@ -425,7 +425,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
-            configuration.webExtensionController = webExtensionManager.controller
+            configuration.attachWebExtensions(of: webExtensionManager)
         }
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
@@ -565,7 +565,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         let shouldCreateFireTab = model.shouldCreateFireTabs
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
-            configCopy.webExtensionController = webExtensionManager.controller
+            configCopy.attachWebExtensions(of: webExtensionManager)
         }
 
         let tab: Tab

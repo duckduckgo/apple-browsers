@@ -4976,8 +4976,6 @@
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
 		A1B2C3D42EA0000100AB0012 /* HoverTrackingAreaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42EA0000100AB0011 /* HoverTrackingAreaTests.swift */; };
 		A1B2C3D42EA0000100AB0013 /* HoverTrackingAreaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42EA0000100AB0011 /* HoverTrackingAreaTests.swift */; };
-		A1B2C3D42EA0000100AB0022 /* TabBarTabPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42EA0000100AB0021 /* TabBarTabPreviewTests.swift */; };
-		A1B2C3D42EA0000100AB0023 /* TabBarTabPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42EA0000100AB0021 /* TabBarTabPreviewTests.swift */; };
 		A1B2C3D42EA0000100AB0032 /* TabPreviewOverlayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42EA0000100AB0031 /* TabPreviewOverlayUITests.swift */; };
 /* End PBXBuildFile section */
 
@@ -7624,7 +7622,6 @@
 		FE6295B8821741B1BF7FDCF6 /* BookmarksBarPromptViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarPromptViewModelTests.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
 		A1B2C3D42EA0000100AB0011 /* HoverTrackingAreaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverTrackingAreaTests.swift; sourceTree = "<group>"; };
-		A1B2C3D42EA0000100AB0021 /* TabBarTabPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarTabPreviewTests.swift; sourceTree = "<group>"; };
 		A1B2C3D42EA0000100AB0031 /* TabPreviewOverlayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabPreviewOverlayUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -12772,7 +12769,6 @@
 				B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */,
 				204C7ECD68D14598A90DFA93 /* BrowserTabViewControllerContentOverlayDismissalTests.swift */,
 				56A054322C205814007D8FAB /* OnboardingPageTests.swift */,
-				A1B2C3D42EA0000100AB0021 /* TabBarTabPreviewTests.swift */,
 				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
 				B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */,
 			);
@@ -17921,7 +17917,6 @@
 				563A3CFB2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
 				8434E6B82DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054362C205820007D8FAB /* OnboardingPageTests.swift in Sources */,
-				A1B2C3D42EA0000100AB0022 /* TabBarTabPreviewTests.swift in Sources */,
 				8434E6AD2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
 				845F57332E98021F00C7F78A /* FireproofDomainsStoreMock.swift in Sources */,
 				84524C042D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */,
@@ -17989,7 +17984,6 @@
 				563A3CFA2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
 				8434E6B72DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054352C20581F007D8FAB /* OnboardingPageTests.swift in Sources */,
-				A1B2C3D42EA0000100AB0023 /* TabBarTabPreviewTests.swift in Sources */,
 				8434E6AC2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
 				845F57322E98021F00C7F78A /* FireproofDomainsStoreMock.swift in Sources */,
 				84524C032D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */,

@@ -34,7 +34,7 @@ public protocol AIChatBonusMessageHandling {
     /// Delivers on the main queue, in the order the writes happened.
     var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> { get }
 
-    /// Returns the stored record.
+    /// Returns the stored record, after ending the boost if it has expired.
     ///
     /// Handles `getAIChatBonusRecord`, which Duck.ai sends when it loads, to find out where the offer stands.
     ///
@@ -82,12 +82,16 @@ public protocol AIChatBonusMessageHandling {
 /// The single owner of the bonus record. Every change goes through here, never straight to the store.
 ///
 /// Each change is atomic: read, mutation from `AIChatBonusRecordRules` followed by a write.
+///
+/// Every read first ends a boost that has expired, so its Bonus ID doesn't stay on the device after expiry.
 public final class AIChatBonusService: @unchecked Sendable {
     private let store: AIChatBonusStoring
     private let pixelFiring: AIChatBonusPixelFiring
     private let now: () -> Date
     private let makeBonusId: () -> String
     private let lock = NSLock()
+    /// Set when a permanent delete failed, so the next access retries it.
+    private var isDeletePending = false
     private let recordSubject = PassthroughSubject<AIChatBonusRecord, Never>()
 
     /// Create a new instance of the `AIChatBonusService` with the specified parameters.
@@ -163,31 +167,72 @@ extension AIChatBonusService: AIChatBonusStateProviding {
 
 }
 
-// MARK: - Private
+// MARK: - App lifecycle
+
+public extension AIChatBonusService {
+
+    /// Deletes the record for good (e.g. App re-install).
+    ///
+    /// Publishes nothing. If the delete fails, every later read or write in this session retries it first, and throws while it keeps failing, so the record isn't returned while the app keeps running.
+    ///
+    /// - Throws: `AIChatBonusStoreError` when the record can't be deleted.
+    func permanentlyDeleteRecord() throws {
+        try withLock { try permanentlyDelete() }
+    }
+
+    /// Ends the boost if it has expired, clearing its Bonus ID.
+    ///
+    /// Duck.ai ends an expired boost itself, but only while it's open. Every read and write here already does it too.
+    /// Called when neither may happen soon, e.g. when the app becomes active.
+    /// With Duck.ai closed, the change reaches it the next time it loads and reads the record.
+    ///
+    /// - Throws: `AIChatBonusStoreError` when the record can't be read. A failed write while ending the boost
+    ///   doesn't throw: the next read tries again.
+    func endBoostIfExpired() throws {
+        try withLock { _ = endExpiredBoostIfNeeded(for: try storedRecord()) }
+    }
+
+}
+
+// MARK: - Locking
 
 private extension AIChatBonusService {
 
-    /// Locks, reads the record and hands it to `mutation`, which may change it through `write(_:)`. Holds the lock
-    /// until `mutation` returns, so no other change can slip in between its read and its write.
+    /// Locks and runs `body`.
     ///
-    /// Reports and re-throws any store error, so every read and write is reported in one place.
+    /// Reports and re-throws any store error, so every failure is reported in one place.
     ///
     /// - Parameters:
-    ///   - caller: The public method calling it, for the log. Filled in by the compiler.
-    ///   - mutation: The mutation to apply to the stored record, or `nil` when the device has none.
-    /// - Returns: What `mutation` returns.
-    func withLockedRecord<Result>(
-        caller: String = #function,
-        _ mutation: (AIChatBonusRecord?) throws -> Result
-    ) throws -> Result {
+    ///   - caller: The public method calling it, for the log.
+    ///   - block: The work to do while holding the lock.
+    /// - Returns: What `block` returns.
+    func withLock<Result>(caller: String = #function, _ block: () throws -> Result) throws -> Result {
         lock.lock()
         defer { lock.unlock() }
 
         do {
-            return try mutation(try store.read())
+            return try block()
         } catch {
             reportStoreFailure(error, caller: caller)
             throw error
+        }
+    }
+
+    /// Locks, reads the current record and hands it to block, which may change it through `write(_:)`.
+    /// Holds the lock until `block` returns, so no other change can slip in between its read and its write.
+    ///
+    /// - Parameters:
+    ///   - caller: The public method calling it, for the log.
+    ///   - block: The block to apply to the current record, or `nil` when the device has none.
+    /// - Returns: What `block` returns.
+    func withLockedRecord<Result>(
+        caller: String = #function,
+        _ block: (AIChatBonusRecord?) throws -> Result
+    ) throws -> Result {
+        try withLock(caller: caller) {
+            // Reads the record and ends the boost if it has expired
+            let currentRecord = endExpiredBoostIfNeeded(for: try storedRecord())
+            return try block(currentRecord)
         }
     }
 
@@ -212,12 +257,74 @@ private extension AIChatBonusService {
         }
     }
 
-    /// Writes `record` and publishes it. Call only from a `withLockedRecord` mutation, so the send happens
-    /// inside the lock and pushes follow the order of the writes.
+}
+
+// MARK: - Store access
+
+private extension AIChatBonusService {
+
+    /// The record as stored, after retrying a delete that failed earlier.
+    ///
+    /// Throws while that delete keeps failing, so a record that should be gone is never returned.
+    func storedRecord() throws -> AIChatBonusRecord? {
+        if isDeletePending {
+            try store.delete()
+            isDeletePending = false
+            Logger.aiChat.debug("Duck.ai bonus: deleted the record on retry")
+        }
+        return try store.read()
+    }
+
+    /// Writes `record` and publishes it. Sent inside the lock, so pushes follow the order of the writes.
     func write(_ record: AIChatBonusRecord) throws {
         try store.write(record)
         recordSubject.send(record)
     }
+
+    /// Ends the boost in `record` if it has expired, applying the same change as `aiChatBonusEnd`.
+    ///
+    /// - Parameter record: The stored record.
+    /// - Returns: The ended record, or `record` unchanged when there's no expired boost or the write fails.
+    func endExpiredBoostIfNeeded(for record: AIChatBonusRecord?) -> AIChatBonusRecord? {
+        // If boost has not expired return the record
+        guard
+            let record,
+            record.hasBoostExpired(at: now()),
+            case .write(let ended) = AIChatBonusRecordRules.end(record)
+        else {
+            return record
+        }
+
+        do {
+            try write(ended)
+            Logger.aiChat.debug("Duck.ai bonus: ended an expired boost")
+            return ended
+        } catch {
+            reportStoreFailure(error)
+            // Duck.ai checks the expiry itself, so a failed cleanup mustn't fail the read. The next read tries again.
+            return record
+        }
+    }
+
+    /// Deletes the record.
+    ///
+    /// On failure, marks the delete as pending so `storedRecord()` retries it, then re-throws.
+    func permanentlyDelete() throws {
+        do {
+            try store.delete()
+            isDeletePending = false
+            Logger.aiChat.debug("Duck.ai bonus: deleted the record")
+        } catch {
+            isDeletePending = true
+            throw error
+        }
+    }
+
+}
+
+// MARK: - Helpers
+
+private extension AIChatBonusService {
 
     /// Logs a store failure and fires the debug pixel, then leaves it to the caller to decide what to do.
     ///

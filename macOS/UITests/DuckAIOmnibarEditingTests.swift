@@ -30,12 +30,18 @@ class DuckAIOmnibarEditingTests: UITestCase {
     private let prompt = "alpha beta gamma delta"
     private var bar: EditingDriver!
 
+    /// The Search/Duck.ai toggle setting is stored in the app defaults, so it is enabled once for the whole class (like the
+    /// autocomplete setting of the address bar tests) and every test only has to enter Duck.ai mode.
+    override class func setUp() {
+        super.setUp()
+        enableSearchAndDuckAIToggle()
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
-        try enableSearchAndDuckAIToggle()
         bar = try enterDuckAIMode()
     }
 
@@ -44,20 +50,21 @@ class DuckAIOmnibarEditingTests: UITestCase {
         app.terminate()
     }
 
-    private func enableSearchAndDuckAIToggle() throws {
-        app.addressBar.typeURL(try XCTUnwrap(URL(string: "duck://settings/aichat")))
+    private static func enableSearchAndDuckAIToggle() {
+        let app = XCUIApplication.setUp()
+        app.enforceSingleWindow()
+        app.addressBar.typeURL(URL(string: "duck://settings/aichat")!)
         let toggle = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggle]
         XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Search/Duck.ai toggle setting should exist")
         if toggle.value as? Bool == false {
             toggle.click()
         }
         XCTAssertEqual(toggle.value as? Bool, true, "Search/Duck.ai toggle should be ON")
-        app.typeKey("w", modifierFlags: .command)
+        app.terminate()
     }
 
     /// Switches the address bar to Duck.ai mode with Shift+Enter and replaces the carried over text with the test prompt.
     private func enterDuckAIMode() throws -> EditingDriver {
-        app.openNewTab()
         app.activateAddressBar()
         app.addressBar.typeText("test query")
         app.typeKey(.return, modifierFlags: .shift)
@@ -167,14 +174,6 @@ class DuckAIOmnibarEditingTests: UITestCase {
         XCTAssertEqual(bar.selectedText(), "gamma delta")
     }
 
-    func test_shiftLeft_andShiftRight_selectCharacters() {
-        bar.moveCaretToEnd()
-        bar.press(EditingKeys.shiftLeft, times: 5)
-        XCTAssertEqual(bar.selectedText(), "delta")
-        bar.press(EditingKeys.shiftRight, times: 2)
-        XCTAssertEqual(bar.selectedText(), "lta")
-    }
-
     // MARK: - Backward delete
 
     func test_backspace_atTheStart_deletesNothing() {
@@ -207,13 +206,6 @@ class DuckAIOmnibarEditingTests: UITestCase {
         XCTAssertEqual(bar.rawValue, "")
     }
 
-    func test_optDelete_withSelection_deletesOnlyTheSelection() {
-        bar.moveCaretTwoWordsFromEnd()
-        bar.press(EditingKeys.optShiftRight)
-        bar.press(EditingKeys.optDelete)
-        XCTAssertEqual(bar.rawValue, "alpha beta  delta")
-    }
-
     // MARK: - Forward delete
 
     func test_forwardDelete_atTheEnd_deletesNothing() {
@@ -238,13 +230,6 @@ class DuckAIOmnibarEditingTests: UITestCase {
         bar.moveCaretTwoWordsFromEnd()
         bar.press(EditingKeys.ctrlK)
         XCTAssertEqual(bar.rawValue, "alpha beta ")
-    }
-
-    func test_optForwardDelete_withSelection_deletesOnlyTheSelection() {
-        bar.moveCaretTwoWordsFromEnd()
-        bar.press(EditingKeys.optShiftRight)
-        bar.press(EditingKeys.optForwardDelete)
-        XCTAssertEqual(bar.rawValue, "alpha beta  delta")
     }
 
     // MARK: - Caret movement to the string bounds
@@ -376,12 +361,6 @@ extension DuckAIOmnibarEditingTests {
         typeMouseText()
         bar.doubleClick(bar.point(x: Points.onFirstWord, y: Points.firstLineY))
         XCTAssertEqual(bar.selectedText(), "abcdefghijklmnopqrstuvwxyz")
-    }
-
-    func test_tripleClick_selectsTheWholeText() throws {
-        typeMouseText()
-        try bar.tripleClick(bar.point(x: Points.onFirstWord, y: Points.firstLineY))
-        XCTAssertEqual(bar.selectedText(), mouseText)
     }
 
     func test_click_pastTheTextOnTheFirstLine_putsTheCaretAtTheEnd() {

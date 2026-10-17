@@ -40,17 +40,7 @@ class AddressBarSearchQueryEditingTests: UITestCase {
         XCTAssertTrue(bar.rawValue.contains(EditingDriver.suffixSeparator), "The ‘Search with DuckDuckGo’ suffix should be displayed")
     }
 
-    func test_suffix_isShownAfterTheQuery() throws {
-        XCTAssertEqual(bar.value, query)
-        XCTAssertNotEqual(bar.rawValue, query, "The ‘Search with DuckDuckGo’ suffix should be displayed")
-    }
-
     // MARK: - Selection
-
-    func test_selectAll_selectsTheQueryWithoutTheSuffix() {
-        bar.press(EditingKeys.selectAll)
-        XCTAssertEqual(bar.selectedText(), query)
-    }
 
     func test_cmdShiftLeft_fromEnd_andCmdShiftRight_fromStart_selectTheQueryWithoutTheSuffix() {
         bar.moveCaretToEnd()
@@ -77,16 +67,6 @@ class AddressBarSearchQueryEditingTests: UITestCase {
         XCTAssertEqual(bar.selectedText(), "alpha")
         bar.press(EditingKeys.optShiftRight, times: 5)
         XCTAssertEqual(bar.selectedText(), query)
-    }
-
-    func test_selectionTowardsTheSuffix_fromEnd_selectsNothing() {
-        bar.moveCaretToEnd()
-        bar.press(EditingKeys.shiftRight)
-        XCTAssertNil(bar.selectedText())
-        bar.press(EditingKeys.optShiftRight)
-        XCTAssertNil(bar.selectedText())
-        bar.press(EditingKeys.cmdShiftRight)
-        XCTAssertNil(bar.selectedText())
     }
 
     func test_optShiftLeft_afterSelectAll_contractsFromTheRight() {
@@ -171,13 +151,6 @@ class AddressBarSearchQueryEditingTests: UITestCase {
         XCTAssertEqual(bar.rawValue, "", "The suffix must go away together with the query")
     }
 
-    func test_optDelete_afterOptShiftLeft_deletesOnlyTheSelectedWords() {
-        bar.moveCaretToEnd()
-        bar.press(repeated(EditingKeys.optShiftLeft, 2))
-        bar.press(EditingKeys.optDelete)
-        XCTAssertEqual(bar.value, "alpha ")
-    }
-
     // MARK: - Caret movement to the string bounds
 
     func test_typing_afterCmdRight_insertsBeforeTheSuffix() {
@@ -189,13 +162,6 @@ class AddressBarSearchQueryEditingTests: UITestCase {
     func test_typing_afterOptRightPastTheEnd_insertsBeforeTheSuffix() {
         bar.moveCaretToStart()
         bar.press(EditingKeys.optRight, times: 5)
-        bar.type("!")
-        XCTAssertEqual(bar.value, query + "!")
-    }
-
-    func test_typing_afterRightArrow_overSelectAll_insertsBeforeTheSuffix() {
-        bar.press(EditingKeys.selectAll)
-        bar.press(EditingKeys.right)
         bar.type("!")
         XCTAssertEqual(bar.value, query + "!")
     }

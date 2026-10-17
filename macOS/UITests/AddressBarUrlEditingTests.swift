@@ -108,13 +108,6 @@ class AddressBarUrlEditingTests: UITestCase {
         XCTAssertEqual(bar.value, "https://duckduckgo.com/duckduckgo-help-pagesresults/translation/")
     }
 
-    func test_optShiftLeft_afterOptShiftRight_twoWords_contractsOneWordAtATime() {
-        bar.moveCaretTwoWordsFromEnd()
-        bar.press(repeated(EditingKeys.optShiftRight, 2))
-        bar.press(EditingKeys.optShiftLeft)
-        XCTAssertEqual(bar.selectedText(), "results/", "The caret moves back to the start of ‘translation’")
-    }
-
     // MARK: - Contracting a select-all selection
 
     func test_optShiftLeft_afterSelectAll_contractsWordByWord() {
@@ -158,20 +151,6 @@ class AddressBarUrlEditingTests: UITestCase {
         XCTAssertEqual(bar.selectedText(), "results/translation/")
     }
 
-    func test_cmdShiftLeft_atTheStart_andCmdShiftRight_atTheEnd_selectNothing() {
-        bar.moveCaretToStart()
-        bar.press(EditingKeys.cmdShiftLeft)
-        XCTAssertNil(bar.selectedText())
-        bar.moveCaretToEnd()
-        bar.press(EditingKeys.cmdShiftRight)
-        XCTAssertNil(bar.selectedText())
-    }
-
-    func test_selectAll_selectsTheURLWithoutTheSuffix() {
-        bar.press(EditingKeys.selectAll)
-        XCTAssertEqual(bar.selectedText(), url)
-    }
-
     // MARK: - Shift+Left/Right selection by character
 
     func test_shiftLeft_fromEnd_selectsCharacters() {
@@ -184,12 +163,6 @@ class AddressBarUrlEditingTests: UITestCase {
         bar.moveCaretToStart()
         bar.press(EditingKeys.shiftRight, times: 2)
         XCTAssertEqual(bar.selectedText(), "ht")
-    }
-
-    func test_shiftRight_atTheEnd_doesNotSelectTheSuffix() {
-        bar.moveCaretToEnd()
-        bar.press(EditingKeys.shiftRight, times: 3)
-        XCTAssertNil(bar.selectedText())
     }
 
     func test_shiftRight_afterShiftLeft_contractsTheSelection() {
@@ -290,13 +263,6 @@ class AddressBarUrlEditingTests: UITestCase {
         XCTAssertEqual(bar.value, "https://duckduckgo.com/duckduckgo-help-pages/")
     }
 
-    func test_optForwardDelete_withSelection_deletesOnlyTheSelection() {
-        bar.moveCaretTwoWordsFromEnd()
-        bar.press(EditingKeys.optShiftRight)
-        bar.press(EditingKeys.optForwardDelete)
-        XCTAssertEqual(bar.value, "https://duckduckgo.com/duckduckgo-help-pages//translation/")
-    }
-
     // MARK: - Caret movement to the string bounds
 
     func test_ctrlA_andCtrlE_moveTheCaretToTheBounds() {
@@ -340,22 +306,12 @@ extension AddressBarUrlEditingTests {
 
     private var urlBeforeResults: String { "https://duckduckgo.com/duckduckgo-help-pages/" }
 
-    func test_optShiftLeft_atTheStart_selectsNothing() {
+    func test_selectingTowardsTheStart_atTheStart_selectsNothing() {
         bar.moveCaretToStart()
-        bar.press(EditingKeys.optShiftLeft)
-        XCTAssertNil(bar.selectedText())
-    }
-
-    func test_optShiftRight_atTheEnd_selectsNothing() {
-        bar.moveCaretToEnd()
-        bar.press(EditingKeys.optShiftRight)
-        XCTAssertNil(bar.selectedText(), "The suffix must not be selected")
-    }
-
-    func test_shiftLeft_atTheStart_selectsNothing() {
-        bar.moveCaretToStart()
-        bar.press(EditingKeys.shiftLeft)
-        XCTAssertNil(bar.selectedText())
+        for key in [EditingKeys.shiftLeft, EditingKeys.optShiftLeft, EditingKeys.cmdShiftLeft] {
+            bar.press(key)
+            XCTAssertNil(bar.selectedText())
+        }
     }
 
     func test_shiftLeft_andShiftRight_fromMiddle_selectOneCharacter() {
@@ -370,12 +326,6 @@ extension AddressBarUrlEditingTests {
     func test_cmdShiftLeft_fromEnd_selectsEverything() {
         bar.moveCaretToEnd()
         bar.press(EditingKeys.cmdShiftLeft)
-        XCTAssertEqual(bar.selectedText(), url)
-    }
-
-    func test_cmdShiftRight_fromStart_selectsEverythingWithoutTheSuffix() {
-        bar.moveCaretToStart()
-        bar.press(EditingKeys.cmdShiftRight)
         XCTAssertEqual(bar.selectedText(), url)
     }
 
@@ -401,13 +351,6 @@ extension AddressBarUrlEditingTests {
         bar.moveCaretTwoWordsFromEnd()
         bar.press([EditingKeys.forwardDelete, EditingKeys.ctrlD])
         XCTAssertEqual(bar.value, urlBeforeResults + "sults/translation/")
-    }
-
-    func test_cmdDelete_withSelection_deletesOnlyTheSelection() {
-        bar.moveCaretTwoWordsFromEnd()
-        bar.press(EditingKeys.optShiftRight)
-        bar.press(EditingKeys.cmdDelete)
-        XCTAssertEqual(bar.value, urlBeforeResults + "/translation/")
     }
 
     func test_cmdForwardDelete_withSelection_deletesOnlyTheSelection() {

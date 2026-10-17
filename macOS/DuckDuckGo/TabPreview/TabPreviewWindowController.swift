@@ -27,6 +27,8 @@ final class TabPreviewWindowController: NSWindowController {
     static let padding: CGFloat = 2
     static let bottomPadding: CGFloat = 40
     static let delay: CGFloat = 1
+    /// The preview is hidden from accessibility, except for UI tests that need to observe it
+    static let uiTestsAccessibilityIdentifier = "TabPreviewWindowController.window"
 
     private var previewTimer: Timer? {
         willSet {
@@ -76,8 +78,12 @@ final class TabPreviewWindowController: NSWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.animationBehavior = .utilityWindow
-        window.setAccessibilityEnabled(false)
-        window.setAccessibilityElement(false)
+        if AppVersion.runType == .uiTests {
+            window.setAccessibilityIdentifier(uiTestsAccessibilityIdentifier)
+        } else {
+            window.setAccessibilityEnabled(false)
+            window.setAccessibilityElement(false)
+        }
 
         return window
     }

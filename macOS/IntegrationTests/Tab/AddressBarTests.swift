@@ -113,6 +113,25 @@ class AddressBarTests: XCTestCase {
         NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .shared
 
         NSApp.activate(ignoringOtherApps: true)
+        logFocusDiagnostics("setUp")
+    }
+
+    // TEMP DIAGNOSTICS: investigating focus failures on Bitrise runners
+    @MainActor
+    func logFocusDiagnostics(_ label: String) {
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        let session = CGSessionCopyCurrentDictionary() as? [String: Any] ?? [:]
+        let windows = NSApp.windows.map { w in
+            "\(Swift.type(of: w))#\(w.windowNumber) visible=\(w.isVisible) key=\(w.isKeyWindow) main=\(w.isMainWindow) canKey=\(w.canBecomeKey) level=\(w.level.rawValue) title=\(w.title)"
+        }
+        Logger.tests.info("""
+        🔍 [\(label)] isActive=\(NSApp.isActive) isHidden=\(NSApp.isHidden) policy=\(NSApp.activationPolicy().rawValue) \
+        keyWindow=\(String(describing: NSApp.keyWindow)) mainWindow=\(String(describing: NSApp.mainWindow)) \
+        modal=\(String(describing: NSApp.modalWindow)) testWindowKey=\(String(describing: self.window?.isKeyWindow)) \
+        frontmost=\(frontmost?.bundleIdentifier ?? "nil") pid=\(frontmost?.processIdentifier ?? -1) ownPid=\(ProcessInfo.processInfo.processIdentifier) \
+        screens=\(NSScreen.screens.count) session=\(session)
+        windows=\(windows)
+        """)
     }
 
     override var allowedNonNilVariables: Set<String> {
@@ -121,6 +140,7 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     override func tearDown() {
+        logFocusDiagnostics("tearDown")
         TestRunHelper.allowAppSendUserEvents = false
 
         autoreleasepool {
@@ -579,6 +599,7 @@ class AddressBarTests: XCTestCase {
 
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
 
+        logFocusDiagnostics("beforeEscape")
         type("\u{1b}", global: true) // send escape key
         await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
 

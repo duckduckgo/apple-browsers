@@ -346,25 +346,28 @@ extension DuckAIOmnibarEditingTests {
 // MARK: - Mouse selection
 
 /// The text starts either at the left edge or right after the Duck.ai logo, and the first line is ~17 pt from the top, so the mouse
-/// tests use a long first word that any click in the first ~170 pt of the line lands on, and the empty area below the text
-/// (above the legal footer of the panel) for clicks that must put the caret at the end.
+/// tests use a long first word that any click in the first ~170 pt of the line lands on, and a point on the same line past the end
+/// of the text for clicks that must put the caret at the end. (The panel height differs between macOS versions, so nothing
+/// below the first line is used.)
 extension DuckAIOmnibarEditingTests {
 
     private enum Points {
         static let onFirstWord: CGFloat = 60
         static let firstLineY: CGFloat = 17
-        static let emptyAreaX: CGFloat = 300
-        static let emptyAreaY: CGFloat = 60
+        static let pastTheTextX: CGFloat = 300
     }
 
     private var mouseText: String { "abcdefghijklmnopqrstuvwxyz second" }
 
     /// Replaces the text; keys right after Select All can lose the first character, so retry until the text matches.
+    /// Reading the text selects everything, so the caret is moved to the start afterwards: the clicks must move it.
     private func typeMouseText() {
         for _ in 0..<3 {
             bar.press(EditingKeys.selectAll)
             bar.type(mouseText)
-            if bar.rawValue == mouseText { return }
+            guard bar.rawValue == mouseText else { continue }
+            bar.moveCaretToStart()
+            return
         }
         XCTFail("The Duck.ai text view did not accept the typed text")
     }
@@ -381,16 +384,16 @@ extension DuckAIOmnibarEditingTests {
         XCTAssertEqual(bar.selectedText(), mouseText)
     }
 
-    func test_click_inTheEmptyAreaBelowTheText_putsTheCaretAtTheEnd() {
+    func test_click_pastTheTextOnTheFirstLine_putsTheCaretAtTheEnd() {
         typeMouseText()
-        bar.click(bar.point(x: Points.emptyAreaX, y: Points.emptyAreaY))
+        bar.click(bar.point(x: Points.pastTheTextX, y: Points.firstLineY))
         bar.type("!")
         XCTAssertEqual(bar.rawValue, mouseText + "!")
     }
 
-    func test_drag_fromTheFirstWordToTheEmptyArea_selectsTheTail() {
+    func test_drag_fromTheFirstWordPastTheTextEnd_selectsTheTail() {
         typeMouseText()
-        bar.drag(from: bar.point(x: Points.onFirstWord, y: Points.firstLineY), to: bar.point(x: Points.emptyAreaX, y: Points.emptyAreaY))
+        bar.drag(from: bar.point(x: Points.onFirstWord, y: Points.firstLineY), to: bar.point(x: Points.pastTheTextX, y: Points.firstLineY))
         let selected = bar.selectedText() ?? ""
         XCTAssertFalse(selected.isEmpty, "Dragging over the text should select something")
         XCTAssertTrue(mouseText.hasSuffix(selected), "The selection must end at the end of the text, got \(selected)")

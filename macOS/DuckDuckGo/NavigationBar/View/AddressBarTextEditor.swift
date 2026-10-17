@@ -210,6 +210,34 @@ final class AddressBarTextEditor: NSTextView {
         setSelectedRange(selectedRange(), affinity: .downstream, stillSelecting: false)
     }
 
+    // Cmd+Shift+Left/Right: the caret ends up at the moved end. macOS 12 keeps the previous selection affinity here, while
+    // newer systems update it, so set it explicitly: Opt+Shift+Left/Right rely on it to tell which end is the caret.
+    override func moveToBeginningOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToBeginningOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.upstream)
+    }
+
+    override func moveToLeftEndOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToLeftEndOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.upstream)
+    }
+
+    override func moveToEndOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToEndOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.downstream)
+    }
+
+    override func moveToRightEndOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToRightEndOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.downstream)
+    }
+
+    private func setSelectionAffinityKeepingRange(_ affinity: NSSelectionAffinity) {
+        let range = selectedRange()
+        guard range.length > 0 else { return }
+        setSelectedRange(range, affinity: affinity, stillSelecting: false)
+    }
+
     func selectToTheEnd(from offset: Int? = nil) {
         let string = self.string
         let startIndex: String.Index

@@ -76,6 +76,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
     public init(storageProvider: WebExtensionStorageProviding,
                 isInspectable: Bool = false,
                 permissionController: WebExtensionPermissionController? = nil) {
+        // The loader creates every extension context, so its `errors` are
+        // safe before any of them exists.
+        WebExtensionErrorsSwizzling.install()
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
         self.permissionController = permissionController
@@ -112,7 +115,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
             for: extensionURL,
             installFolder: storageProvider.extensionsDirectory.appendingPathComponent(identifier))
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: loadableURL)
+        let webExtension = try await WKWebExtension.makeCopyingErrors(
+            at: loadableURL
+        )
 
         let context = try await makeContext(for: webExtension, identifier: identifier)
 
@@ -182,7 +187,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         do {
-            try controller.load(context)
+            try controller.loadCopyingErrors(context)
         } catch {
             permissionController?.didUnload(identifier)
             throw error
@@ -223,7 +228,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.failedToFindContextForIdentifier(identifier: identifier)
         }
 
-        try controller.unload(context)
+        try controller.unloadCopyingErrors(context)
         permissionController?.didUnload(identifier)
     }
 

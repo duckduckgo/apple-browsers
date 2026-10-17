@@ -25,11 +25,6 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
-    /// Background for grouped-list rows and visually associated inline cards.
-    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
-    /// legacy palette and app-rebranding feature flag are removed.
-    case groupedListContentBackground
-
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -64,8 +59,8 @@ public enum SingleUseColor {
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
 
-    /// Color used for 2026 Rebranding. Currently used only in Onboarding, hence they're isolated to avoid bleeding in other parts of the App.
-    /// DefaultColorPalette should be updated with new colors when the time comes.
+    /// Colors introduced for the 2026 rebrand. Some have the same value as a `DesignSystemColor` (e.g. `accentPrimary`,
+    /// `destructivePrimary`) – for new code, prefer using the `DesignSystemColor` instead.
     case rebranding(Rebranding)
 
     /// On iOS 26 toolbar buttons get some effect applied to them which affects the lightness of the color.  This is temporary

@@ -65,7 +65,11 @@ final class AmpMatchingTests: XCTestCase {
     private static let config = data.fromJsonFile(Resource.config)
 
     private var privacyManager: PrivacyConfigurationManager {
-        let embeddedDataProvider = MockEmbeddedDataProvider(data: Self.config,
+        makePrivacyManager(config: Self.config)
+    }
+
+    private func makePrivacyManager(config: Data) -> PrivacyConfigurationManager {
+        let embeddedDataProvider = MockEmbeddedDataProvider(data: config,
                                                             etag: "embedded")
         let localProtection = MockDomainsProtectionStore()
         localProtection.unprotectedDomains = []
@@ -132,6 +136,46 @@ final class AmpMatchingTests: XCTestCase {
             let result = ampExtractor.urlContainsAMPKeyword(ampUrl)
             XCTAssertEqual(result, test.expectAmpDetected, "\(test.ampURL) not correctly identified. Expected: \(test.expectAmpDetected.description)")
         }
+    }
+
+    private static let deepExtractionConfig = """
+    {
+        "features": {
+            "ampLinks": {
+                "state": "enabled",
+                "exceptions": [],
+                "settings": {
+                    "deepExtractionEnabled": true,
+                    "keywords": ["/amp"],
+                    "linkFormats": []
+                }
+            }
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8) ?? Data()
+
+    private func makeDeepExtractionAMPExtractor() -> AMPCanonicalExtractor {
+        let deepExtractionPrivacyManager = makePrivacyManager(config: Self.deepExtractionConfig)
+        return AMPCanonicalExtractor(linkCleaner: LinkCleaner(privacyManager: deepExtractionPrivacyManager),
+                                     privacyManager: deepExtractionPrivacyManager,
+                                     contentBlockingManager: contentBlockingManager,
+                                     errorReporting: nil)
+    }
+
+    func testWhenURLIsWithinMaxLengthThenAMPKeywordIsDetected() throws {
+        let ampExtractor = makeDeepExtractionAMPExtractor()
+        let url = try XCTUnwrap(URL(string: "https://www.example.com/amp/article?query=value"))
+
+        XCTAssertTrue(ampExtractor.urlContainsAMPKeyword(url))
+    }
+
+    func testWhenURLExceedsMaxLengthThenAMPKeywordIsNotDetected() throws {
+        let ampExtractor = makeDeepExtractionAMPExtractor()
+        let longQuery = String(repeating: "a", count: AMPCanonicalExtractor.Constants.maxURLLength)
+        let url = try XCTUnwrap(URL(string: "https://www.example.com/amp/article?query=\(longQuery)"))
+
+        XCTAssertFalse(ampExtractor.urlContainsAMPKeyword(url))
     }
 
 }

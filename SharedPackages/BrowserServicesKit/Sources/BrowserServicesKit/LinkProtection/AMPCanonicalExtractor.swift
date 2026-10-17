@@ -130,8 +130,7 @@ public final class AMPCanonicalExtractor: NSObject {
         guard settings.deepExtractionEnabled else { return false }
         guard let url = url, !linkCleaner.isURLExcluded(url: url) else { return false }
         let urlStr = url.absoluteString
-        // `String.count` walks every grapheme cluster, which stalls the main thread on multi-megabyte URLs.
-        // `utf16.count` is O(1) for the CFString-backed `absoluteString`.
+        // `count` walks every grapheme cluster, which stalls the main thread on very long URLs.
         guard urlStr.utf16.count < Constants.maxURLLength else { return false }
 
         let ampKeywords = settings.ampKeywords

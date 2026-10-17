@@ -206,6 +206,7 @@ final class MainCoordinator {
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
             await appSwitcherSnapshotCleaner.clearSnapshots()
         }
+        WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,

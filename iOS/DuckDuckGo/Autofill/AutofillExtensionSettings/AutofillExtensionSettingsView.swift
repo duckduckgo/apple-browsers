@@ -54,7 +54,7 @@ struct AutofillExtensionSettingsView: View {
                 }
 
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
         .applyInsetGroupedListStyle()
         .sheet(isPresented: $viewModel.isShowingActivationView) {

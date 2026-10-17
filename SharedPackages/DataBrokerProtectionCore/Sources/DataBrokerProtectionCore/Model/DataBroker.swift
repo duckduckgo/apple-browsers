@@ -279,8 +279,11 @@ public struct DataBroker: Codable, Sendable {
     }
 
     static func initFromResource(_ url: URL) throws -> BrokerResource {
+        try initFromData(try Data(contentsOf: url))
+    }
+
+    static func initFromData(_ data: Data) throws -> BrokerResource {
         do {
-            let data = try Data(contentsOf: url)
             let jsonDecoder = JSONDecoder()
             jsonDecoder.dateDecodingStrategy = .millisecondsSince1970
             let broker = try jsonDecoder.decode(DataBroker.self, from: data)

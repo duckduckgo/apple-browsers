@@ -97,6 +97,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let source = "source"
         public static let sourceDBP = "dbp"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
+        public static let reasonParamKey = "reason"
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let isFreeScan = "free_scan"
@@ -224,6 +225,8 @@ public enum DataBrokerProtectionSharedPixels {
     // Broker update pixels
     case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?)
     case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?, error: Error)
+    case bundleVerificationFailure(reason: BrokerBundleVerificationError)
+    case bundleVerificationSuccess
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKit.Event {
@@ -351,6 +354,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             // Broker update pixels
         case .updateDataBrokersSuccess: return "dbp_update_databrokers_success"
         case .updateDataBrokersFailure: return "dbp_update_databrokers_failure"
+        case .bundleVerificationFailure: return "dbp_bundle_verification_failure"
+        case .bundleVerificationSuccess: return "dbp_bundle_verification_success"
         }
     }
 
@@ -657,6 +662,10 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .bundleVerificationFailure(let reason):
+            return [Consts.reasonParamKey: reason.rawValue]
+        case .bundleVerificationSuccess:
+            return [:]
         }
     }
 
@@ -750,7 +759,9 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .serviceEmailConfirmationMaxRetriesExceeded,
                 .serviceEmailConfirmationJobSuccess,
                 .updateDataBrokersSuccess,
-                .updateDataBrokersFailure:
+                .updateDataBrokersFailure,
+                .bundleVerificationFailure,
+                .bundleVerificationSuccess:
             return [.pixelSource]
 
 #if os(iOS)
@@ -878,6 +889,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .mainFrameChallengeDetected,
                     .challengeClearanceObserved:
                 pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
+            case .bundleVerificationFailure:
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
+            case .bundleVerificationSuccess:
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .daily)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)
             case .updateDataBrokersFailure(_, _, _, let error):
